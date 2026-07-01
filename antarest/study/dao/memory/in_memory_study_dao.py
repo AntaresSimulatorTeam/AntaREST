@@ -55,6 +55,7 @@ from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
@@ -68,6 +69,10 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_reserve_certification_model import (
+    ThermalReserveCertification,
+    ThermalReserveCertificationMapping,
+)
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -91,6 +96,8 @@ from antarest.study.dao.common import (
     StStorageConstraintSeriesMapping,
     StStorageId,
     StStorageSeriesMapping,
+    ThermalId,
+    ThermalReserveSymmetriesMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -134,6 +141,13 @@ class AdditionalConstraintKey:
     constraint_id: str
 
 
+@dataclass(frozen=True)
+class ThermalReserveCertificationKey:
+    area_id: str
+    thermal_id: str
+    reserve_id: str
+
+
 def link_key(area1_id: str, area2_id: str) -> LinkKey:
     area1_id, area2_id = sorted((area1_id, area2_id))
     return LinkKey(area1_id, area2_id)
@@ -149,6 +163,10 @@ def reserve_key(area_id: str, reserve_id: str) -> ReserveKey:
 
 def additional_constraint_key(area_id: str, storage_id: str, constraint_id: str) -> AdditionalConstraintKey:
     return AdditionalConstraintKey(area_id, storage_id, constraint_id)
+
+
+def thermal_reserve_certification_key(area_id: str, thermal_id: str, reserve_id: str) -> ThermalReserveCertificationKey:
+    return ThermalReserveCertificationKey(area_id, thermal_id, reserve_id)
 
 
 class InMemoryStudyDao(StudyDao):
@@ -271,6 +289,10 @@ class InMemoryStudyDao(StudyDao):
         self._solar: dict[str, str] = {}
         # Wind
         self._wind: dict[str, str] = {}
+        # Thermal Reserve Certifications
+        self._thermal_reserve_certifications: dict[ThermalReserveCertificationKey, ThermalReserveCertification] = {}
+        # Thermal Reserve Symmetries
+        self._thermal_reserve_symmetries: ThermalReserveSymmetriesMapping = {}
 
     @override
     def get_study_id(self) -> str:
@@ -1684,3 +1706,43 @@ class InMemoryStudyDao(StudyDao):
     def save_wind(self, series: AreaSeriesMapping) -> None:
         for area_id, series_id in series.items():
             self._wind[area_id] = series_id
+
+    @override
+    def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
+        result: dict[AreaId, ThermalReserveCertificationMapping] = {}
+        for key, certification in self._thermal_reserve_certifications.items():
+            reserve_id = ReserveDefinitionId(key.reserve_id)
+            result.setdefault(key.area_id, {}).setdefault(reserve_id, {})[key.thermal_id] = certification
+        return result
+
+    @override
+    def get_thermal_reserve_certifications(
+        self, area_id: AreaId
+    ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
+        result: dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]] = {}
+        for key, certification in self._thermal_reserve_certifications.items():
+            if key.area_id == area_id:
+                result.setdefault(ReserveDefinitionId(key.reserve_id), {})[key.thermal_id] = certification
+        return result
+
+    @override
+    def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
+        for area_id, by_cluster in data.items():
+            for thermal_id, reserves_dict in by_cluster.items():
+                for reserve_id, certification in reserves_dict.items():
+                    key = thermal_reserve_certification_key(area_id, thermal_id, reserve_id)
+                    self._thermal_reserve_certifications[key] = certification
+
+    @override
+    def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
+        return self._thermal_reserve_symmetries
+
+    @override
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ReserveSymmetry]]:
+        return self._thermal_reserve_symmetries[area_id]
+
+    @override
+    def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+        for area_id, thermal_dict in data.items():
+            for thermal_id, symmetries in thermal_dict.items():
+                self._thermal_reserve_symmetries[area_id][thermal_id] = symmetries

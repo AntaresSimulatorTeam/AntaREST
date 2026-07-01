@@ -34,7 +34,8 @@ from antarest.study.business.model.hydro_model import HydroManagement, HydroProp
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Ruleset, ScenarioType
 from antarest.study.business.model.sts_model import (
@@ -44,6 +45,10 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_reserve_certification_model import (
+    ThermalReserveCertification,
+    ThermalReserveCertificationMapping,
+)
 from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -87,10 +92,19 @@ from antarest.study.dao.api.scenario_builder_dao import ReadOnlyScenarioBuilderD
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
+from antarest.study.dao.api.thermal_reserve_certification_dao import (
+    ReadOnlyThermalReserveCertificationDao,
+    ThermalReserveCertificationDao,
+)
+from antarest.study.dao.api.thermal_reserve_symmetries_dao import (
+    ReadOnlyThermalReserveSymmetriesDao,
+    ThermalReserveSymmetriesDao,
+)
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
 from antarest.study.dao.common import (
+    AreaId,
     AreaSeriesMapping,
     BindingConstraintSeriesMapping,
     LinkSeriesMapping,
@@ -99,6 +113,8 @@ from antarest.study.dao.common import (
     ReserveNeedsMapping,
     StStorageConstraintSeriesMapping,
     StStorageSeriesMapping,
+    ThermalId,
+    ThermalReserveSymmetriesMapping,
     ThermalSeriesMapping,
     XpansionCapacitiesMapping,
     XpansionConstraintsMapping,
@@ -137,6 +153,8 @@ class ReadOnlyStudyDao(
     ReadOnlyAreaDao,
     ReadOnlyReservesGlobalParametersDao,
     ReadOnlyReserveDefinitionDao,
+    ReadOnlyThermalReserveCertificationDao,
+    ReadOnlyThermalReserveSymmetriesDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -188,6 +206,8 @@ class StudyDao(
     AreaDao,
     ReservesGlobalParametersDao,
     ReserveDefinitionDao,
+    ThermalReserveCertificationDao,
+    ThermalReserveSymmetriesDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -883,3 +903,21 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_reserve_needs(self) -> ReserveNeedsMapping:
         return self._adaptee.get_all_reserve_needs()
+
+    @override
+    def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
+        return self._adaptee.get_all_thermal_reserve_certifications()
+
+    @override
+    def get_thermal_reserve_certifications(
+        self, area_id: AreaId
+    ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
+        return self._adaptee.get_thermal_reserve_certifications(area_id)
+
+    @override
+    def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
+        return self._adaptee.get_all_thermal_reserve_symmetries()
+
+    @override
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ReserveSymmetry]]:
+        return self._adaptee.get_thermal_reserve_symmetries(area_id)

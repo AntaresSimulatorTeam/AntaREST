@@ -11,26 +11,19 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.model import STUDY_VERSION_10_0
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.cluster.area.list import (
     InputThermalClustersAreaList,
 )
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLFileNode
 
 
 class InputThermalClustersArea(FolderNode):
-    def __init__(
-        self,
-        matrix_storage_context: MatrixStorageContext,
-        config: FileStudyTreeConfig,
-        area: str,
-    ):
-        super().__init__(matrix_storage_context, config)
-        self.area = area
-
     @override
     def build(self) -> TREE:
         children: TREE = {"list": InputThermalClustersAreaList(self.config.next_file("list.ini"))}
+        if self.config.version >= STUDY_VERSION_10_0:
+            children["reserve-participations"] = YAMLFileNode(self.config.next_file("reserve-participations.yaml"))
         return children

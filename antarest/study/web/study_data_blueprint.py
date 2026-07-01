@@ -100,6 +100,7 @@ from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinitionCreation,
     ReserveDefinitionUpdate,
 )
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.business.model.reserves_global_parameters_model import (
     ReservesGlobalParameters,
     ReservesGlobalParametersUpdate,
@@ -120,6 +121,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterUpdate,
 )
+from antarest.study.business.model.thermal_reserve_certification_model import ReserveCertifications
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.model import CommentsDto
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -1645,6 +1647,54 @@ def create_study_data_routes() -> APIRouter:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         study_service.reserve_definitions_manager.delete_reserve_definitions(study_interface, area_id, reserve_ids)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves/symmetries",
+        summary="Fetch all reserve symmetries for a given area",
+    )
+    def get_reserve_symmetries(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
+    ) -> ReserveSymmetries:
+        logger.info("Fetching reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_symmetries_manager.get_symmetries(study_interface, area_id)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/reserves/symmetries",
+        summary="Saves new reserve symmetries for a given area",
+    )
+    def save_reserve_symmetries(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: ReserveSymmetries
+    ) -> ReserveSymmetries:
+        logger.info("Saving reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_symmetries_manager.set_symmetries(study_interface, area_id, data)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves/certifications",
+        summary="Fetch all reserve certifications for a given area",
+    )
+    def get_reserve_certifications(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
+    ) -> ReserveCertifications:
+        logger.info("Fetching reserve certifications for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_certifications_manager.get_certifications(study_interface, area_id)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/reserves/certifications",
+        summary="Saves new reserve certifications for a given area",
+    )
+    def save_reserve_certifications(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: ReserveCertifications
+    ) -> ReserveCertifications:
+        logger.info("Saving reserve certifications for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_certifications_manager.set_certifications(study_interface, area_id, data)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
