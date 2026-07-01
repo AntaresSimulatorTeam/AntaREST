@@ -61,7 +61,6 @@ function EditReserveDrawer({ open, onClose, reserve, onSubmit }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  // Only send the changed fields: the update endpoint accepts a partial payload.
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<EditReserveValues>) => {
     return onSubmit(dirtyValues);
   };

@@ -75,6 +75,10 @@ export interface GroupedDataTableProps<
   readOnly?: boolean;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((rows: TData[]) => string);
+  /**
+   * Extra actions rendered next to the built-in Add/Duplicate/Delete buttons.
+   */
+  toolbarActions?: React.ReactNode;
   fillPendingRow?: (
     pendingRow: RowData<TGroups[number]>,
   ) => RowData<TGroups[number]> & Partial<TData>;
@@ -102,6 +106,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   isLoading,
   deleteConfirmationMessage,
   fillPendingRow,
+  toolbarActions,
 }: GroupedDataTableProps<TGroups, TData>) {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState<"add" | "duplicate" | "delete" | "">("");
@@ -286,6 +291,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
             {t("global.delete")}
           </Button>
         )}
+        {toolbarActions}
       </Box>
     ),
     renderToolbarInternalActions: ({ table }) => (

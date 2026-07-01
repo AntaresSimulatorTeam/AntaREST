@@ -16,14 +16,16 @@ import GroupedDataTable from "@/components/GroupedDataTable";
 import type { RowData } from "@/components/GroupedDataTable/types";
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
-import type { Reserve } from "@/services/api/studies/areas/reserves/types";
-import { Alert, Chip } from "@mui/material";
+import type { Reserve, UpdateReserveData } from "@/services/api/studies/areas/reserves/types";
+import EditIcon from "@mui/icons-material/Edit";
+import { Alert, Button, Chip } from "@mui/material";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import CreateReserveDialog from "./-components/CreateReserveDialog";
+import EditGlobalParametersDrawer from "./-components/EditGlobalParametersDrawer";
 import EditReserveDrawer from "./-components/EditReserveDrawer";
 
 export const Route = createFileRoute(
@@ -73,12 +75,13 @@ function ReservesGeneral() {
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
   const [editingReserve, setEditingReserve] = useState<ReserveRow | null>(null);
+  const [isGlobalParametersOpen, setIsGlobalParametersOpen] = useState(false);
 
   const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
 
   const { queryKey: listQueryKey } = reserveQueries.list(studyId, areaId);
 
-  const { data: rows } = useSuspenseQuery({
+  const { data: rows, isFetching: isRowsFetching } = useSuspenseQuery({
     ...reserveQueries.list(studyId, areaId),
     select: reservesToRows,
   });
@@ -169,19 +172,13 @@ function ReservesGeneral() {
         <Alert severity="warning" sx={{ mb: 1 }}>
           {t("study.modeling.reserves.readOnly.alert")}
         </Alert>
-      {editingReserve && (
-        />
-          onSubmit={handleUpdate}
-          onClose={() => setEditingReserve(null)}
-          reserve={editingReserve}
-          open
-        <EditReserveDrawer
       )}
       <GroupedDataTable
         key={`${studyId}-${areaId}`}
         data={rows}
         columns={columns}
         readOnly={!reservesEnabled}
+        isLoading={isRowsFetching}
         onCreate={handleCreate}
         renderCreateDialog={({ open, onClose, onSubmit, existingNames }) => (
           <CreateReserveDialog
@@ -199,7 +196,33 @@ function ReservesGeneral() {
             reserveNames: rowsToDelete.map((row) => row.name),
           })
         }
+        toolbarActions={
+          <Button
+            variant="outlined"
+            startIcon={<EditIcon />}
+            onClick={() => setIsGlobalParametersOpen(true)}
+            disabled={!reservesEnabled}
+          >
+            {t("study.modeling.reserves.globalParameters")}
+          </Button>
+        }
       />
+      {editingReserve && (
+        <EditReserveDrawer
+          open
+          reserve={editingReserve}
+          onClose={() => setEditingReserve(null)}
+          onSubmit={handleUpdate}
+        />
+      )}
+      {isGlobalParametersOpen && (
+        <EditGlobalParametersDrawer
+          open
+          studyId={studyId}
+          areaId={areaId}
+          onClose={() => setIsGlobalParametersOpen(false)}
+        />
+      )}
     </>
   );
 }

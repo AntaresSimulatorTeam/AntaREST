@@ -25,7 +25,6 @@ import {
   Divider,
   Drawer,
   IconButton,
-  Toolbar,
   Tooltip,
   Typography,
   type DrawerProps,
@@ -58,11 +57,6 @@ export interface FormDrawerProps<
   titleIcon?: SvgIconComponent;
   cancelButtonText?: string;
   onCancel: VoidFunction;
-  /**
-   * Width of the drawer paper.
-   *
-   * @default 480
-   */
   width?: number | string;
 }
 
@@ -86,7 +80,7 @@ function FormDrawer<TFieldValues extends FieldValues, TContext, SubmitReturnValu
   allowSubmitOnPristine = false,
   title,
   titleIcon: TitleIcon,
-  width = 480,
+  width = 380,
   anchor = "right",
   ...drawerProps
 }: FormDrawerProps<TFieldValues, TContext, SubmitReturnValue>) {
@@ -106,7 +100,6 @@ function FormDrawer<TFieldValues extends FieldValues, TContext, SubmitReturnValu
     setIsSubmitAllowed((isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled);
   };
 
-  // Close the drawer after a successful submit.
   const handleSubmitSuccessful: FormProps<
     TFieldValues,
     TContext,
@@ -138,21 +131,23 @@ function FormDrawer<TFieldValues extends FieldValues, TContext, SubmitReturnValu
       anchor={anchor}
       {...drawerProps}
       onClose={handleClose}
-      PaperProps={{ sx: { width, maxWidth: "100%", display: "flex", flexDirection: "column" } }}
+      slotProps={{
+        paper: { sx: { width, maxWidth: "100%", display: "flex", flexDirection: "column" } },
+      }}
     >
-      <Toolbar sx={{ flexShrink: 0 }}>
-        {TitleIcon && <TitleIcon sx={{ mr: 1 }} />}
-        <Typography variant="h6" sx={{ flex: 1 }} noWrap>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 2, flexShrink: 0 }}>
+        {TitleIcon && <TitleIcon fontSize="small" sx={{ color: "text.secondary" }} />}
+        <Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 600 }} noWrap>
           {title}
         </Typography>
         <Tooltip title={cancelButtonText || t("global.close")}>
           <span>
-            <IconButton onClick={handleCancel} disabled={isSubmitting} edge="end">
-              <CloseIcon />
+            <IconButton onClick={handleCancel} disabled={isSubmitting} edge="end" size="small">
+              <CloseIcon fontSize="small" />
             </IconButton>
           </span>
         </Tooltip>
-      </Toolbar>
+      </Box>
       <Divider />
       <Form
         config={config}
@@ -167,7 +162,7 @@ function FormDrawer<TFieldValues extends FieldValues, TContext, SubmitReturnValu
         {children}
       </Form>
       <Divider />
-      <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, p: 1.5, flexShrink: 0 }}>
+      <Box sx={{ display: "flex", gap: 1, p: 2, flexShrink: 0 }}>
         <Button onClick={handleCancel} disabled={isSubmitting}>
           {cancelButtonText || t("global.cancel")}
         </Button>
