@@ -27,9 +27,6 @@ import CreateReserveDialog from "./-components/CreateReserveDialog";
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general",
 )({
-  loader: async ({ context, params: { studyId, areaId } }) => {
-    await context.queryClient.ensureQueryData(reserveQueries.list(studyId, areaId));
-  },
   component: ReservesGeneral,
 });
 
@@ -74,9 +71,7 @@ function ReservesGeneral() {
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
 
-  // Reserves are editable only when enabled in the optimization configuration
-  // ("includeReserves"). Otherwise the table is shown in read-only mode.
-  const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.includeReserves(studyId));
+  const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
 
   const { queryKey: listQueryKey } = reserveQueries.list(studyId, areaId);
 
