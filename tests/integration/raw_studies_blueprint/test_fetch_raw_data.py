@@ -744,11 +744,6 @@ def test_retrieve_output_data(client: TestClient, user_access_token: str, storag
         res = client.get(f"/v1/studies/{study_id}/raw", params={"path": path})
         assert res.status_code == 200
 
-    # Ensures the code still works for R scripts usage. To be removed when the new R script release pops up.
-    res = client.get(f"/v1/studies/{study_id}/raw", params={"path": "output", "depth": 4})
-    assert res.status_code == 200
-    assert res.json() == {output_id: ANY}
-
 
 def _import_output(client: TestClient, study_id: str) -> str:
     # Imports an output inside the study
