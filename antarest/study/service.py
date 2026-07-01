@@ -2857,13 +2857,7 @@ class StudyService:
         ######## Outputs ########
 
         if url and url[0] == "output":
-            output_access = self._get_outputs_access()
-
-            # todo: Remove this once the R scripts have adapted their code and use the GET /outputs endpoint
-            if url == ["output"]:
-                return output_access.get_outputs_details(study.id)
-
-            return output_access.get_output_raw_content(study.id, url[1], url[2:], formatted)
+            return self._get_outputs_access().get_output_raw_content(study.id, url[1], url[2:], formatted)
 
         ######## Inputs ########
 
