@@ -639,7 +639,6 @@
   "study.modeling.renewables.select": "Renewable",
   "study.modeling.renewables.parameters": "Parameters",
   "study.modeling.reserves": "Reserves",
-  "study.modeling.reserves.error.optimizationConfig": "Unable to retrieve the reserves configuration",
   "study.modeling.reserves.readOnly.alert": "Reserves are read-only. Enable them in the optimization configuration to edit.",
   "study.modeling.reserves.needs": "Needs",
   "study.modeling.reserves.needs.select": "Reserve",

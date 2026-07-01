@@ -14,11 +14,9 @@
 
 import GroupedDataTable from "@/components/GroupedDataTable";
 import type { RowData } from "@/components/GroupedDataTable/types";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
-import { getOptimization } from "@/services/api/studies/config/optimization";
 import { Alert, Chip } from "@mui/material";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
@@ -78,13 +76,7 @@ function ReservesGeneral() {
 
   // Reserves are editable only when enabled in the optimization configuration
   // ("includeReserves"). Otherwise the table is shown in read-only mode.
-  const { data: showReserves, isLoading } = usePromiseWithSnackbarError(
-    () => getOptimization({ studyId }).then((o) => o.includeReserves),
-    {
-      errorMessage: t("study.modeling.reserves.error.optimizationConfig"),
-      deps: [studyId],
-    },
-  );
+  const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.includeReserves(studyId));
 
   const { queryKey: listQueryKey } = reserveQueries.list(studyId, areaId);
 
@@ -153,7 +145,7 @@ function ReservesGeneral() {
 
   return (
     <>
-      {showReserves === false && (
+      {reservesEnabled === false && (
         <Alert severity="warning" sx={{ mb: 1 }}>
           {t("study.modeling.reserves.readOnly.alert")}
         </Alert>
@@ -162,8 +154,7 @@ function ReservesGeneral() {
         key={`${studyId}-${areaId}`}
         data={rows}
         columns={columns}
-        readOnly={!showReserves}
-        isLoading={isLoading}
+        readOnly={!reservesEnabled}
         onCreate={handleCreate}
         renderCreateDialog={({ open, onClose, onSubmit, existingNames }) => (
           <CreateReserveDialog
