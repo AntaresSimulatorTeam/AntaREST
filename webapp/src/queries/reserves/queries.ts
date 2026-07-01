@@ -44,11 +44,9 @@ export const reserveQueries = {
       queryFn: () => getReserveGlobalParameters({ studyId, areaId }),
     });
   },
-  // Reserves are editable only when enabled in the optimization configuration
-  // ("includeReserves"). Shared by all reserve tabs to drive read-only mode.
-  includeReserves: (studyId: Study["id"]) => {
+  enabled: (studyId: Study["id"]) => {
     return queryOptions({
-      queryKey: reserveKeys.includeReserves(studyId),
+      queryKey: reserveKeys.enabled(studyId),
       queryFn: () => getOptimization({ studyId }).then((o) => o.includeReserves),
     });
   },

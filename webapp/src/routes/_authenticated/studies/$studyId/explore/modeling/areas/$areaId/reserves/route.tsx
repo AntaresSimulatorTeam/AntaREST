@@ -20,8 +20,9 @@ import { useTranslation } from "react-i18next";
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves",
 )({
-  loader: async ({ context, params: { studyId } }) => {
-    await context.queryClient.ensureQueryData(reserveQueries.includeReserves(studyId));
+  loader: async ({ context, params: { studyId, areaId } }) => {
+    await context.queryClient.ensureQueryData(reserveQueries.list(studyId, areaId));
+    await context.queryClient.ensureQueryData(reserveQueries.enabled(studyId));
   },
   component: ReservesLayout,
 });
