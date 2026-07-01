@@ -27,6 +27,9 @@ from tests.helpers import create_raw_study, with_db_context
 
 
 def _setup(dao: StudyDao) -> None:
+    """
+    Create 3 areas, with hydro correlation between them.
+    """
     for area_name in ["fr", "be", "pl"]:
         props = AreaProperties()
         initialize_area_properties(props, dao.get_version())
@@ -46,24 +49,24 @@ def _setup(dao: StudyDao) -> None:
 
 @with_db_context
 def test_conversion(dao: StudyDao, study_factory: StudyFactory, tmp_path: Path) -> None:
+    # Set Up
     _setup(dao)
     source_dao = dao
-
     matrix_service = source_dao.matrix_service
-    db_dao_factory = DatabaseStudyDaoFactory(matrix_service, Mock())
     study_id, study_version = str(uuid.uuid4()), source_dao.get_version()
-    study_path = tmp_path / study_id
-    paths_getter = Mock()
-    paths_getter.return_value = ResourcePaths(study_path=study_path, output_path=None)
-    fs_dao_factory = FileStudyDaoFactory(matrix_service, Mock(), Mock(), study_factory, LocalCache(), paths_getter)
 
     creation = StudyMetadataCreation(id=study_id, version=study_version, managed=True)
     if isinstance(source_dao, DatabaseStudyDao):
         study = create_raw_study(id=study_id, version=str(study_version), storage_mode=StorageMode.DATABASE)
         db.session.add(study)
         db.session.commit()
+        db_dao_factory = DatabaseStudyDaoFactory(matrix_service, Mock())
         new_dao = db_dao_factory.create_study_dao(creation)
     else:
+        study_path = tmp_path / study_id
+        paths_getter = Mock()
+        paths_getter.return_value = ResourcePaths(study_path=study_path, output_path=None)
+        fs_dao_factory = FileStudyDaoFactory(matrix_service, Mock(), Mock(), study_factory, LocalCache(), paths_getter)
         study = create_raw_study(
             id=study_id, version=str(study_version), storage_mode=StorageMode.FILESYSTEM, path=str(study_path)
         )
