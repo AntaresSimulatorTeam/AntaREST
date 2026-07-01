@@ -80,6 +80,7 @@ def test_conversion(dao: StudyDao, study_factory: StudyFactory, tmp_path: Path) 
 
     # Then, save the correlation. This mimics the study conversion code.
     correlation_dict = source_dao.get_hydro_correlation_matrix().to_hydro_correlations()
+    assert sorted(correlation_dict) == ["be", "fr", "pl"]
     new_dao.save_hydro_correlation(correlation_dict)
 
     # Finally, ensures the correlation was saved successfully.
