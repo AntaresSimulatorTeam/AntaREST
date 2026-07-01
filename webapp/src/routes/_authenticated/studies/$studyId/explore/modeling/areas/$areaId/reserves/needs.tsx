@@ -47,6 +47,8 @@ function ReservesNeeds() {
     select: getReserveIds,
   });
 
+  const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.includeReserves(studyId));
+
   const [selectedReserveId, setSelectedReserveId] = useState(() => reserveIds[0] ?? "");
 
   if (reserveIds.length > 0 && !reserveIds.includes(selectedReserveId)) {
@@ -84,6 +86,7 @@ function ReservesNeeds() {
           key={`${areaId}-${selectedReserveId}`}
           studyId={studyId}
           url={`input/reserves/${areaId}/${selectedReserveId}`}
+          readOnly={!reservesEnabled}
         />
       </Box>
     </Stack>
