@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from pathlib import Path
 
 import numpy as np
 import polars as pl
@@ -49,8 +48,6 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_RUN_OF_RIVER_TABLE,
     HYDRO_WATER_VALUES_TABLE,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from tests.helpers import with_db_context
 from tests.study.dao.utils import save_area
 
 
@@ -808,8 +805,7 @@ class TestConvertHydroPmax:
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
 
 
-@with_db_context
-def test_hydro_correlation(dao: StudyDao, study_factory: StudyFactory, tmp_path: Path) -> None:
+def test_hydro_correlation(dao: StudyDao) -> None:
     """
     Ensures we're able to save hydro correlation containing data repetition without any issue
     """
