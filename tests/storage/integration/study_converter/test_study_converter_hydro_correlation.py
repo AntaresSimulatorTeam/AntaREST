@@ -20,7 +20,7 @@ from antarest.study.business.model.hydro_correlation_model import HydroCorrelati
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
 from antarest.study.model import StorageMode, StudyMetadataCreation
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from tests.helpers import create_raw_study, with_db_context
@@ -51,16 +51,11 @@ def test_conversion(dao: StudyDao, study_factory: StudyFactory, tmp_path: Path) 
 
     matrix_service = source_dao.matrix_service
     db_dao_factory = DatabaseStudyDaoFactory(matrix_service, Mock())
-    fs_dao_factory = FileStudyDaoFactory(
-        matrix_service,
-        Mock(),
-        Mock(),
-        study_factory,
-        LocalCache(),
-        Mock(),  # probably to do ...
-    )
-
     study_id, study_version = str(uuid.uuid4()), source_dao.get_version()
+    study_path = tmp_path / study_id
+    paths_getter = Mock()
+    paths_getter.return_value = ResourcePaths(study_path=study_path, output_path=None)
+    fs_dao_factory = FileStudyDaoFactory(matrix_service, Mock(), Mock(), study_factory, LocalCache(), paths_getter)
 
     creation = StudyMetadataCreation(id=study_id, version=study_version, managed=True)
     if isinstance(source_dao, DatabaseStudyDao):
@@ -70,7 +65,7 @@ def test_conversion(dao: StudyDao, study_factory: StudyFactory, tmp_path: Path) 
         new_dao = db_dao_factory.create_study_dao(creation)
     else:
         study = create_raw_study(
-            id=study_id, version=str(study_version), storage_mode=StorageMode.FILESYSTEM, path=str(tmp_path / study_id)
+            id=study_id, version=str(study_version), storage_mode=StorageMode.FILESYSTEM, path=str(study_path)
         )
         db.session.add(study)
         db.session.commit()
