@@ -18,6 +18,7 @@ import {
   getReserves,
 } from "@/services/api/studies/areas/reserves";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
+import { getOptimization } from "@/services/api/studies/config/optimization";
 import type { AreaWithId } from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
 import { queryListOptions } from "../utils";
@@ -41,6 +42,12 @@ export const reserveQueries = {
     return queryOptions({
       queryKey: reserveKeys.globalParameters(studyId, areaId),
       queryFn: () => getReserveGlobalParameters({ studyId, areaId }),
+    });
+  },
+  enabled: (studyId: Study["id"]) => {
+    return queryOptions({
+      queryKey: reserveKeys.enabled(studyId),
+      queryFn: () => getOptimization({ studyId }).then((o) => !!o.includeReserves),
     });
   },
 };

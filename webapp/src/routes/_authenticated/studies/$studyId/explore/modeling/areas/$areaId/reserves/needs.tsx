@@ -28,9 +28,6 @@ import { useTranslation } from "react-i18next";
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs",
 )({
-  loader: async ({ context, params: { studyId, areaId } }) => {
-    await context.queryClient.ensureQueryData(reserveQueries.list(studyId, areaId));
-  },
   component: ReservesNeeds,
 });
 
@@ -46,6 +43,8 @@ function ReservesNeeds() {
     ...reserveQueries.list(studyId, areaId),
     select: getReserveIds,
   });
+
+  const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
 
   const [selectedReserveId, setSelectedReserveId] = useState(() => reserveIds[0] ?? "");
 
@@ -84,6 +83,7 @@ function ReservesNeeds() {
           key={`${areaId}-${selectedReserveId}`}
           studyId={studyId}
           url={`input/reserves/${areaId}/${selectedReserveId}`}
+          readOnly={!reservesEnabled}
         />
       </Box>
     </Stack>

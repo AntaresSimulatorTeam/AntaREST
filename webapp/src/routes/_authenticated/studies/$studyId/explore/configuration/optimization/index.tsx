@@ -23,6 +23,8 @@ import {
   setOptimizationForm,
 } from "@/services/api/studies/config/optimization";
 import type { OptimizationForm } from "@/services/api/studies/config/optimization/types";
+import { reserveQueries } from "@/queries/reserves/queries";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
@@ -44,6 +46,7 @@ export const Route = createFileRoute(
 function Optimization() {
   const { t } = useTranslation();
   const study = useStudy();
+  const queryClient = useQueryClient();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -55,6 +58,13 @@ function Optimization() {
       values: dirtyValues,
       studyVersion: study.version,
     });
+  };
+
+  const handleSubmitSuccessful = (
+    _: SubmitHandlerPlus<OptimizationForm>,
+    { includeReserves }: OptimizationForm,
+  ) => {
+    queryClient.setQueryData(reserveQueries.enabled(study.id).queryKey, () => !!includeReserves);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -69,6 +79,7 @@ function Optimization() {
             getOptimizationForm({ studyId: study.id, studyVersion: study.version }),
         }}
         onSubmit={handleSubmit}
+        onSubmitSuccessful={handleSubmitSuccessful}
         enableUndoRedo
       >
         {({ control }) => (
