@@ -14,7 +14,8 @@
 
 import type { DateTimeMetadataDTO } from "@/components/Matrix/shared/types";
 import client from "@/services/api/client";
-import { adaptVariableViewParamsToDto, sanitizeNaNResponse } from "./adapters";
+import { sanitizeJsonResponse } from "@/utils/apiUtils";
+import { adaptVariableViewParamsToDto } from "./adapters";
 import type {
   ExportVariableViewParams,
   GetTimeIndexParams,
@@ -60,7 +61,7 @@ export async function getVariableViewData({
       params: queryParams,
       // Custom transformer to handle NaN values from backend
       // The backend sends invalid JSON with literal NaN tokens that must be sanitized
-      transformResponse: [(data) => sanitizeNaNResponse(data)],
+      transformResponse: [sanitizeJsonResponse],
     },
   );
   return data;
