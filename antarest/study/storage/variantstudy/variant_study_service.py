@@ -261,6 +261,7 @@ class VariantStudyService(AbstractStudyService):
         study = self._get_variant_study(study_id)
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
+        self._notify_study_edition(study)
         return study_id
 
     def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
