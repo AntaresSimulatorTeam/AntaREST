@@ -165,8 +165,9 @@ from antarest.study.storage.utils import (
     is_managed,
     is_study_folder,
     notify_study_creation,
+    notify_study_data_edition,
     notify_study_edition,
-    remove_from_cache, notify_study_data_edition,
+    remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
@@ -1704,7 +1705,7 @@ class StudyService:
             parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
         self.get_study_interface(study).add_commands(parsed_commands)
 
-        notify_study_edition(self.event_bus, study)
+        notify_study_data_edition(self.event_bus, study)
         logger.info("Study %s updated by user %s", uuid, get_user_id())
         return None
 
@@ -1744,7 +1745,7 @@ class StudyService:
         else:
             self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
-        notify_study_edition(self.event_bus, study)
+        notify_study_data_edition(self.event_bus, study)
         logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
         return cast(JSON, new)
 
@@ -1876,7 +1877,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         new_area = self.area_manager.create_area(self.get_study_interface(study), area_creation_dto)
-        notify_study_edition(self.event_bus, study)
+        notify_study_data_edition(self.event_bus, study)
         return new_area
 
     def create_link(
@@ -1888,7 +1889,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         new_link = self.links_manager.create_link(self.get_study_interface(study), link_creation_dto)
-        notify_study_edition(self.event_bus, study)
+        notify_study_data_edition(self.event_bus, study)
         return new_link
 
     def update_link(
@@ -1904,7 +1905,7 @@ class StudyService:
         updated_link = self.links_manager.update_link(
             self.get_study_interface(study), area_from, area_to, link_update_dto
         )
-        notify_study_edition(self.event_bus, study)
+        notify_study_data_edition(self.event_bus, study)
         return updated_link
 
     def update_area_ui(
@@ -1945,7 +1946,7 @@ class StudyService:
 
         # Delete the area
         self.area_manager.delete_area(study_interface, area_id)
-        notify_study_edition(self.event_bus, study)
+        notify_study_data_edition(self.event_bus, study)
 
     def delete_link(
         self,
@@ -1977,7 +1978,7 @@ class StudyService:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
         self.links_manager.delete_link(study_interface, area_from, area_to)
-        notify_study_edition(self.event_bus, study)
+        notify_study_data_edition(self.event_bus, study)
 
     def archive(self, uuid: str) -> str:
         logger.info(f"Archiving study {uuid}")
