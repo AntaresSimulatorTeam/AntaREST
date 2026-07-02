@@ -66,6 +66,7 @@ from antarest.study.storage.utils import (
     get_current_user_name,
     get_user_name_from_id,
     is_managed,
+    notify_study_edition,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
@@ -247,7 +248,7 @@ class VariantStudyService(AbstractStudyService):
         study = self._get_variant_study(study_id)
         command_ids = self._modify_commands(study, commands, replace_commands=False)
         self.on_variant_advance(study)
-        self._notify_study_edition(study)
+        notify_study_edition(self.event_bus, study)
         return command_ids
 
     def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
@@ -261,7 +262,7 @@ class VariantStudyService(AbstractStudyService):
         study = self._get_variant_study(study_id)
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
-        self._notify_study_edition(study)
+        notify_study_edition(self.event_bus, study)
         return study_id
 
     def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
@@ -290,15 +291,6 @@ class VariantStudyService(AbstractStudyService):
         study.commands.extend(new_commands)
         self._update_editor(study)
         return [c.id for c in new_commands]
-
-    def _notify_study_edition(self, study: Study) -> None:
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
 
     def remove_command(self, study_id: str, command_id: str) -> None:
         """
