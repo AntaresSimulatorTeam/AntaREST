@@ -351,9 +351,7 @@ class VariantStudyService(AbstractStudyService):
             MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
         """
         study = self._get_study_by_id(study_id)
-
-        assert isinstance(study, VariantStudy)
-        return study
+        return _cast_study_to_variant(study)
 
     def _get_study_by_id(
         self,
@@ -743,7 +741,7 @@ class SnapshotCleanerTask:
                 )
             )
             for variant in variant_list:
-                assert isinstance(variant, VariantStudy)
+                variant = _cast_study_to_variant(variant)
                 now_utc = current_time()
                 if variant.updated_at and variant.updated_at < now_utc - self._retention_time:
                     if variant.last_access and variant.last_access < now_utc - self._retention_time:
