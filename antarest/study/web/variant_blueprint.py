@@ -181,7 +181,7 @@ def create_study_variant_routes() -> APIRouter:
         logger.info(f"Appending new command to variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
         internal_command = variant_study_service.convert_commands(uuid, [command])[0]
-        return variant_study_service.append_command(uuid, internal_command)
+        return variant_study_service.append_commands(uuid, [internal_command])[0]
 
     @bp.get(
         "/studies/{uuid}/commands/{cid}",

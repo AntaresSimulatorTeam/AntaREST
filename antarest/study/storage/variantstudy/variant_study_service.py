@@ -258,17 +258,6 @@ class VariantStudyService(AbstractStudyService):
                     exc_info=e,
                 )
 
-    def append_command(self, study_id: str, command: CommandDTO) -> str:
-        """
-        Add command to list of commands (at the end)
-        Args:
-            study_id: study id
-            command: new command
-        Returns: None
-        """
-        command_ids = self.append_commands(study_id, [command])
-        return command_ids[0]
-
     def append_commands(self, study_id: str, commands: list[CommandDTO]) -> list[str]:
         """
         Add command to list of commands (at the end)
