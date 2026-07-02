@@ -23,7 +23,7 @@ import {
   setOptimizationForm,
 } from "@/services/api/studies/config/optimization";
 import type { OptimizationForm } from "@/services/api/studies/config/optimization/types";
-import { reserveKeys } from "@/queries/reserves/keys";
+import { reserveQueries } from "@/queries/reserves/queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -60,8 +60,11 @@ function Optimization() {
     });
   };
 
-  const handleSubmitSuccessful = () => {
-    queryClient.invalidateQueries({ queryKey: reserveKeys.enabled(study.id) });
+  const handleSubmitSuccessful = (
+    _: SubmitHandlerPlus<OptimizationForm>,
+    { includeReserves }: OptimizationForm,
+  ) => {
+    queryClient.setQueryData(reserveQueries.enabled(study.id).queryKey, () => !!includeReserves);
   };
 
   ////////////////////////////////////////////////////////////////

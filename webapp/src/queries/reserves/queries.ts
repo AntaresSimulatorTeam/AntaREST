@@ -47,7 +47,7 @@ export const reserveQueries = {
   enabled: (studyId: Study["id"]) => {
     return queryOptions({
       queryKey: reserveKeys.enabled(studyId),
-      queryFn: () => getOptimization({ studyId }).then((o) => o.includeReserves),
+      queryFn: () => getOptimization({ studyId }).then((o) => !!o.includeReserves),
     });
   },
 };
