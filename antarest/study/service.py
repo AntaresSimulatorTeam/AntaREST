@@ -1740,7 +1740,7 @@ class StudyService:
         self.get_study_interface(study).add_commands(commands)
         return commands  # for testing purpose
 
-    def apply_commands(self, uuid: str, commands: list[CommandDTO]) -> list[str] | None:
+    def apply_commands(self, uuid: str, commands: list[CommandDTO]) -> None:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
