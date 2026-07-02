@@ -35,8 +35,8 @@ from antarest.core.exceptions import (
     VariantStudyParentNotValid,
 )
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.model import PermissionInfo, StudyPermissionType
+from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.model import StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
@@ -66,6 +66,7 @@ from antarest.study.storage.utils import (
     get_current_user_name,
     get_user_name_from_id,
     is_managed,
+    notify_study_creation,
     notify_study_edition,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
@@ -529,13 +530,7 @@ class VariantStudyService(AbstractStudyService):
             storage_mode=study.storage_mode,
         )
         self.repository.save(variant_study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_CREATED,
-                payload=variant_study.to_json_summary(),
-                permissions=PermissionInfo.from_study(variant_study),
-            )
-        )
+        notify_study_creation(self.event_bus, variant_study)
         logger.info(
             "variant study %s created by user %s",
             variant_study.id,

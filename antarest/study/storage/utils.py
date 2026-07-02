@@ -706,3 +706,13 @@ def notify_study_edition(event_bus: IEventBus, study: Study) -> None:
             permissions=PermissionInfo.from_study(study),
         )
     )
+
+
+def notify_study_creation(event_bus: IEventBus, study: Study) -> None:
+    event_bus.push(
+        Event(
+            type=EventType.STUDY_CREATED,
+            payload=study.to_json_summary(),
+            permissions=PermissionInfo.from_study(study),
+        )
+    )
