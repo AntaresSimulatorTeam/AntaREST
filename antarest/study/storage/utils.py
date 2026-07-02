@@ -698,10 +698,20 @@ def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
         df.write_csv(path_or_buf, separator="\t", include_header=False)
 
 
-def notify_study_edition(event_bus: IEventBus, study: Study) -> None:
+def notify_study_data_edition(event_bus: IEventBus, study: Study) -> None:
     event_bus.push(
         Event(
             type=EventType.STUDY_DATA_EDITED,
+            payload=study.to_json_summary(),
+            permissions=PermissionInfo.from_study(study),
+        )
+    )
+
+
+def notify_study_edition(event_bus: IEventBus, study: Study) -> None:
+    event_bus.push(
+        Event(
+            type=EventType.STUDY_EDITED,
             payload=study.to_json_summary(),
             permissions=PermissionInfo.from_study(study),
         )

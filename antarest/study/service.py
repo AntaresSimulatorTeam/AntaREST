@@ -166,7 +166,7 @@ from antarest.study.storage.utils import (
     is_study_folder,
     notify_study_creation,
     notify_study_edition,
-    remove_from_cache,
+    remove_from_cache, notify_study_data_edition,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
@@ -919,7 +919,7 @@ class StudyService:
         if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
 
-        notify_study_edition(self.event_bus, study)
+        notify_study_data_edition(self.event_bus, study)
 
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         return self.get_study_information(study.id)
