@@ -17,7 +17,6 @@ import humanize
 from fastapi import APIRouter, Body, Depends
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.tasks.model import TaskDTO
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
@@ -111,15 +110,6 @@ def create_study_variant_routes() -> APIRouter:
         variant_study_service = study_service.storage_service.variant_study_service
         return variant_study_service.get_commands(uuid)
 
-    @bp.get(
-        "/studies/{uuid}/commands/_matrices",
-        summary="Export a variant's commands matrices",
-    )
-    def export_matrices(study_service: StudyServiceDep, uuid: UuidStr) -> FileDownloadTaskDTO:
-        logger.info(f"Exporting commands matrices for variant study {uuid}")
-        variant_study_service = study_service.storage_service.variant_study_service
-        return variant_study_service.export_commands_matrices(uuid)
-
     @bp.post(
         "/studies/{uuid}/commands",
         summary="Append a command to variant",
@@ -182,48 +172,6 @@ def create_study_variant_routes() -> APIRouter:
         variant_study_service = study_service.storage_service.variant_study_service
         internal_command = variant_study_service.convert_commands(uuid, [command])[0]
         return variant_study_service.append_commands(uuid, [internal_command])[0]
-
-    @bp.get(
-        "/studies/{uuid}/commands/{cid}",
-        summary="Get a command detail",
-        responses={
-            200: {
-                "description": "The detail of a command content",
-                "model": CommandDTOAPI,
-            }
-        },
-    )
-    def get_command(study_service: StudyServiceDep, uuid: UuidStr, cid: SanitizedStr) -> CommandDTOAPI:
-        logger.info(f"Fetching command {cid} info of variant study {uuid}")
-        variant_study_service = study_service.storage_service.variant_study_service
-        sanitized_cid = sanitize_string(cid)
-        return variant_study_service.get_command(uuid, sanitized_cid)
-
-    @bp.put(
-        "/studies/{uuid}/commands/{cid}/move",
-        summary="Move a command to an other index",
-    )
-    def move_command(study_service: StudyServiceDep, uuid: UuidStr, cid: SanitizedStr, index: int) -> None:
-        logger.info(f"Moving command {cid} to index {index} for variant study {uuid}")
-        variant_study_service = study_service.storage_service.variant_study_service
-        sanitized_cid = sanitize_string(cid)
-        variant_study_service.move_command(uuid, sanitized_cid, index)
-
-    @bp.put(
-        "/studies/{uuid}/commands/{cid}",
-        summary="Move a command to an other index",
-    )
-    def update_command(
-        study_service: StudyServiceDep,
-        uuid: UuidStr,
-        cid: SanitizedStr,
-        command: CommandDTOAPI,
-    ) -> None:
-        logger.info(f"Update command {cid} for variant study {uuid}")
-        variant_study_service = study_service.storage_service.variant_study_service
-        sanitized_cid = sanitize_string(cid)
-        internal_command = variant_study_service.convert_commands(uuid, [command])[0]
-        variant_study_service.update_command(uuid, sanitized_cid, internal_command)
 
     @bp.delete(
         "/studies/{uuid}/commands/{cid}",

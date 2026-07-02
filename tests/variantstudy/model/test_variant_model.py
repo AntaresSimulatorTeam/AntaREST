@@ -132,9 +132,7 @@ class TestVariantStudyService:
 
         # Get command
         assert commands[0] == CommandDTOAPI.model_validate(
-            variant_study_service.get_command(saved_id, commands[0].id).model_dump(
-                mode="json", exclude={"study_version"}
-            )
+            variant_study_service.get_commands(saved_id)[0].model_dump(mode="json", exclude={"study_version"})
         )
 
         # Remove command (area "Maybe")
