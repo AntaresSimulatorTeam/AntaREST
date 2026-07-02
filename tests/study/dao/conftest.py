@@ -113,23 +113,6 @@ def build_fs_dao(
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao(
-    request,
-    db_session: Session,
-    matrix_service: ISimpleMatrixService,
-    command_context: "CommandContext",
-    tmp_path: Path,
-    core_cache: "ICache",
-) -> StudyDao:
-    """A DAO parameterized over both backends (v8.8+)."""
-    if request.param == "db":
-        return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-    else:
-        dao, _ = build_fs_dao(db_session, STUDY_VERSION_8_8, command_context, core_cache, tmp_path)
-        return dao
-
-
-@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_builder(
     request,
     db_session: Session,

@@ -20,10 +20,12 @@ from antares.study.version.create_app import CreateApp
 from sqlalchemy.orm import Session
 
 from antarest.blobstore.in_memory import InMemoryBlobService
+from antarest.core.interfaces.cache import ICache
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -245,12 +247,24 @@ def build_filesystem_dao(
 
 
 @pytest.fixture
-def db_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-
-
-@pytest.fixture
 def fs_dao(
     db_session: Session, command_context: CommandContext, tmp_path: Path, study_factory: StudyFactory
 ) -> FileStudyTreeDao:
     return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def dao(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: CommandContext,
+    tmp_path: Path,
+    core_cache: ICache,
+) -> StudyDao:
+    """A DAO parameterized over both backends (v8.8+)."""
+    if request.param == "db":
+        return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
+    else:
+        study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
+        return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
