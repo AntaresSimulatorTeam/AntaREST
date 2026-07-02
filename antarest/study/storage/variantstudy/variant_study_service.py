@@ -270,6 +270,7 @@ class VariantStudyService(AbstractStudyService):
         validated_commands = transform_command_to_dto(command_objs, commands)
         if replace_commands:
             first_index = 0
+            study.commands = []
         else:
             first_index = len(study.commands)
 
