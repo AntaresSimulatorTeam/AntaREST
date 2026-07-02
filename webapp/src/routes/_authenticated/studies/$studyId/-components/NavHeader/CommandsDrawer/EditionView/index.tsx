@@ -13,7 +13,6 @@
  */
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
-import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import EmptyView from "@/components/page/EmptyView";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { TaskEventPayload, WsEvent, WsEventTypeValue } from "@/services/webSocket/types";
@@ -35,7 +34,6 @@ import { TaskStatus } from "../../../../../../../../services/api/tasks/constants
 import {
   applyCommands,
   deleteCommand,
-  exportCommandsMatrices,
   getCommand,
   getCommands,
   getStudyTask,
@@ -74,7 +72,6 @@ function EditionView(props: Props) {
   const [openClearCommandsDialog, setOpenClearCommandsDialog] = useState(false);
   const [openDeleteCommandDialog, setOpenDeleteCommandDialog] = useState(-1);
   const [openExportCommandsDialog, setOpenExportCommandsDialog] = useState(false);
-  const [exportMatrices, setExportMatrices] = useState(false);
   const [generationStatus, setGenerationStatus] = useState(false);
   const [generationTaskId, setGenerationTaskId] = useState<string>();
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(-1);
@@ -143,15 +140,11 @@ function EditionView(props: Props) {
   const onGlobalExport = async () => {
     try {
       const items = await getCommands(studyId);
-      if (exportMatrices) {
-        await exportCommandsMatrices(studyId);
-      }
       exportJson(fromCommandDTOToJsonCommand(items), `${studyId}_commands.json`);
     } catch (e) {
       enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
     } finally {
       if (isMounted()) {
-        setExportMatrices(false);
         setOpenExportCommandsDialog(false);
       }
     }
@@ -504,13 +497,7 @@ function EditionView(props: Props) {
           open={openExportCommandsDialog}
           onConfirm={onGlobalExport}
           onCancel={() => setOpenExportCommandsDialog(false)}
-        >
-          <CheckBoxFE
-            value={exportMatrices}
-            label={t("variants.commands.exportMatrices")}
-            onChange={() => setExportMatrices(!exportMatrices)}
-          />
-        </ConfirmationDialog>
+        />
       )}
     </Root>
   );

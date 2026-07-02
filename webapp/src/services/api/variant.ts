@@ -14,7 +14,6 @@
 
 import type { CommandDTO, StudySynthesis } from "../../types/types";
 import client from "./client";
-import type { FileDownloadTask } from "./downloads";
 import { taskSchema } from "./tasks/schemas";
 
 export const appendCommands = async (studyId: string, commands: CommandDTO[]): Promise<string> => {
@@ -69,11 +68,6 @@ export const getCommand = async (studyId: string, commandId: string): Promise<Co
 
 export const getCommands = async (studyId: string): Promise<CommandDTO[]> => {
   const res = await client.get(`/v1/studies/${studyId}/commands`);
-  return res.data;
-};
-
-export const exportCommandsMatrices = async (studyId: string): Promise<FileDownloadTask> => {
-  const res = await client.get(`/v1/studies/${studyId}/commands/_matrices`);
   return res.data;
 };
 
