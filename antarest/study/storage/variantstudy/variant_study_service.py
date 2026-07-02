@@ -14,9 +14,7 @@ import logging
 import re
 from collections.abc import Callable
 from datetime import timedelta
-from functools import reduce
 from pathlib import Path
-from typing import cast
 from uuid import uuid4
 
 import humanize
@@ -26,7 +24,6 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
-    CommandNotFoundError,
     CommandNotValid,
     CommandUpdateAuthorizationError,
     NoParentStudyError,
@@ -37,7 +34,6 @@ from antarest.core.exceptions import (
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
 )
-from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, StudyPermissionType
@@ -46,9 +42,9 @@ from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this, current_time, suppress_exception
+from antarest.core.utils.utils import current_time
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
-from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
@@ -191,24 +187,6 @@ class VariantStudyService(AbstractStudyService):
         study.editor = user_name
         self.repository.save(study)
 
-    def get_command(self, study_id: str, command_id: str) -> CommandDTOAPI:
-        """
-        Get command lists
-        Args:
-            study_id: study id
-            command_id: command id
-        Returns: List of commands
-        """
-        study = self._get_variant_study(study_id)
-
-        try:
-            index = [command.id for command in study.commands].index(command_id)
-            command: CommandBlock = study.commands[index]
-            user_name = get_user_name_from_id(command.user_id) if command.user_id else None
-            return command.to_dto().to_api(user_name)
-        except ValueError:
-            raise CommandNotFoundError(f"Command with id {command_id} not found") from None
-
     def get_commands(self, study_id: str) -> list[CommandDTOAPI]:
         """
         Get commands list
@@ -257,17 +235,6 @@ class VariantStudyService(AbstractStudyService):
                     f"Failed to retrieve generation task for study {metadata.id}",
                     exc_info=e,
                 )
-
-    def append_command(self, study_id: str, command: CommandDTO) -> str:
-        """
-        Add command to list of commands (at the end)
-        Args:
-            study_id: study id
-            command: new command
-        Returns: None
-        """
-        command_ids = self.append_commands(study_id, [command])
-        return command_ids[0]
 
     def append_commands(self, study_id: str, commands: list[CommandDTO]) -> list[str]:
         """
@@ -337,28 +304,6 @@ class VariantStudyService(AbstractStudyService):
         self.on_variant_rebase(study)
         return str(study.id)
 
-    def move_command(self, study_id: str, command_id: str, new_index: int) -> None:
-        """
-        Move command place in the list of command
-        Args:
-            study_id: study id
-            command_id: command_id
-            new_index: new index of the command
-        Returns: None
-        """
-        study = self._get_variant_study(study_id)
-        self._check_update_authorization(study)
-
-        index = [command.id for command in study.commands].index(command_id)
-        if index >= 0 and len(study.commands) > new_index >= 0:
-            command = study.commands[index]
-            study.commands.pop(index)
-            study.commands.insert(new_index, command)
-            for idx in range(len(study.commands)):
-                study.commands[idx].index = idx
-            self._update_editor(study)
-            self.on_variant_rebase(study)
-
     def remove_command(self, study_id: str, command_id: str) -> None:
         """
         Remove command
@@ -391,45 +336,6 @@ class VariantStudyService(AbstractStudyService):
         study.commands = []
         self._update_editor(study)
         self.on_variant_rebase(study)
-
-    def update_command(self, study_id: str, command_id: str, command: CommandDTO) -> None:
-        """
-        Update a command
-        Args:
-            study_id: study id
-            command_id: command id
-            command: new command
-        Returns: None
-        """
-        study = self._get_variant_study(study_id)
-        self._check_update_authorization(study)
-        command_objs = self._check_commands_validity(study_id, [command])
-        validated_commands = transform_command_to_dto(command_objs, [command])
-        assert_this(len(validated_commands) == 1)
-        index = [command.id for command in study.commands].index(command_id)
-        if index >= 0:
-            study.commands[index].command = validated_commands[0].action
-            study.commands[index].args = to_json_string(validated_commands[0].args)
-            self._update_editor(study)
-            self.on_variant_rebase(study)
-
-    def export_commands_matrices(self, study_id: str) -> FileDownloadTaskDTO:
-        study = self._get_variant_study(study_id)
-        matrices = {
-            matrix
-            for command in study.commands
-            for matrix in suppress_exception(
-                lambda: reduce(
-                    lambda m, c: m + c.get_inner_matrices().matrices,
-                    self.command_factory.to_command(command.to_dto()),
-                    cast(list[str], []),
-                ),
-                lambda e: logger.warning(f"Failed to parse command {command}", exc_info=e),
-            )
-            or []
-        }
-        matrix_service = cast(MatrixService, self._matrix_service)
-        return matrix_service.download_matrix_list(list(matrices), f"{study.name}_{study.id}_matrices")
 
     def _get_variant_study(
         self,

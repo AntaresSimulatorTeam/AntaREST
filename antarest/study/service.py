@@ -551,7 +551,6 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
-        # get current user if not in session, otherwise get session user
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 
     @override
@@ -1743,15 +1742,13 @@ class StudyService:
 
     def apply_commands(self, uuid: str, commands: list[CommandDTO]) -> list[str] | None:
         study = self.get_study(uuid)
-        if isinstance(study, VariantStudy):
-            return self.storage_service.variant_study_service.append_commands(uuid, commands)
-        else:
-            assert_permission(study, StudyPermissionType.WRITE)
-            self.assert_study_unarchived(study)
-            parsed_commands: list[ICommand] = []
-            for command in commands:
-                parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
-            self.get_study_interface(study).add_commands(parsed_commands)
+        assert_permission(study, StudyPermissionType.WRITE)
+        self.assert_study_unarchived(study)
+
+        parsed_commands: list[ICommand] = []
+        for command in commands:
+            parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
+        self.get_study_interface(study).add_commands(parsed_commands)
 
         self.event_bus.push(
             Event(
@@ -1760,11 +1757,7 @@ class StudyService:
                 permissions=PermissionInfo.from_study(study),
             )
         )
-        logger.info(
-            "Study %s updated by user %s",
-            uuid,
-            get_user_id(),
-        )
+        logger.info("Study %s updated by user %s", uuid, get_user_id())
         return None
 
     def edit_study(self, uuid: str, url: str, new: SUB_JSON) -> JSON:
