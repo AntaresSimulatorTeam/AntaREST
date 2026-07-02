@@ -45,7 +45,6 @@ from antarest.core.interfaces.cache import (
     study_config_cache_key,
     study_raw_cache_key,
 )
-from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
@@ -696,33 +695,3 @@ def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
         path_or_buf.write_bytes(b"")
     else:
         df.write_csv(path_or_buf, separator="\t", include_header=False)
-
-
-def notify_study_data_edition(event_bus: IEventBus, study: Study) -> None:
-    event_bus.push(
-        Event(
-            type=EventType.STUDY_DATA_EDITED,
-            payload=study.to_json_summary(),
-            permissions=PermissionInfo.from_study(study),
-        )
-    )
-
-
-def notify_study_edition(event_bus: IEventBus, study: Study) -> None:
-    event_bus.push(
-        Event(
-            type=EventType.STUDY_EDITED,
-            payload=study.to_json_summary(),
-            permissions=PermissionInfo.from_study(study),
-        )
-    )
-
-
-def notify_study_creation(event_bus: IEventBus, study: Study) -> None:
-    event_bus.push(
-        Event(
-            type=EventType.STUDY_CREATED,
-            payload=study.to_json_summary(),
-            permissions=PermissionInfo.from_study(study),
-        )
-    )

@@ -117,6 +117,7 @@ from antarest.study.business.xpansion_management import (
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.directory_service import DirectoryService
 from antarest.study.dtos import StudySynthesis
+from antarest.study.events import notify_study_creation, notify_study_data_edition, notify_study_edition
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -164,9 +165,6 @@ from antarest.study.storage.utils import (
     get_matrix_index,
     is_managed,
     is_study_folder,
-    notify_study_creation,
-    notify_study_data_edition,
-    notify_study_edition,
     remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto

@@ -48,6 +48,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
+from antarest.study.events import notify_study_creation, notify_study_data_edition
 from antarest.study.model import (
     RawStudy,
     StorageMode,
@@ -66,8 +67,6 @@ from antarest.study.storage.utils import (
     get_current_user_name,
     get_user_name_from_id,
     is_managed,
-    notify_study_creation,
-    notify_study_data_edition,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
@@ -531,11 +530,7 @@ class VariantStudyService(AbstractStudyService):
         )
         self.repository.save(variant_study)
         notify_study_creation(self.event_bus, variant_study)
-        logger.info(
-            "variant study %s created by user %s",
-            variant_study.id,
-            get_user_id(),
-        )
+        logger.info("variant study %s created by user %s", variant_study.id, get_user_id())
         return variant_study
 
     def generate_task(
