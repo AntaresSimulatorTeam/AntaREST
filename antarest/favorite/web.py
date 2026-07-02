@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends
 from antarest.core.api_types import UuidStr
 from antarest.core.utils.web import APITag
 from antarest.dependencies import (
+    FavoriteAggregateServiceDep,
     FavoriteDirectoryServiceDep,
     FavoriteExternalDirectoryServiceDep,
     FavoriteStudyServiceDep,
@@ -25,6 +26,7 @@ from antarest.dependencies import (
 )
 from antarest.favorite.model import (
     DirectoryPathType,
+    FavoriteAggregateDTO,
     FavoriteDirectoryDTO,
     FavoriteExternalDirectoryDTO,
     FavoriteStudyDTO,
@@ -109,5 +111,12 @@ def create_favorite_routes() -> APIRouter:
     ) -> None:
         logger.info("Deleting external directory from favorites.")
         favorite_external_directory_service.delete_favorite(workspace=workspace, path=path)
+
+    @bp.get("/favorites", summary="Listing all favorites for current user", status_code=HTTPStatus.OK)
+    def list_all_favorites(
+        favorite_aggregate_service: FavoriteAggregateServiceDep,
+    ) -> FavoriteAggregateDTO:
+        logger.info("Listing all favorites for current user.")
+        return favorite_aggregate_service.list_favorites()
 
     return bp

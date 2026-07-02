@@ -118,3 +118,9 @@ class FavoriteExternalDirectory(Base):
 
     def to_dto(self) -> FavoriteExternalDirectoryDTO:
         return FavoriteExternalDirectoryDTO(path=PurePosixPath(self.path), workspace=self.workspace)
+
+
+class FavoriteAggregateDTO(AntaresBaseModel, extra="forbid"):
+    studies: list[FavoriteStudyDTO]
+    directories: list[FavoriteDirectoryDTO]
+    external_directories: list[FavoriteExternalDirectoryDTO]
