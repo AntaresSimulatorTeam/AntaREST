@@ -238,11 +238,11 @@ class VariantStudyService(AbstractStudyService):
 
     def append_commands(self, study_id: str, commands: list[CommandDTO]) -> list[str]:
         """
-        Add command to list of commands (at the end)
+        Add commands to the list of existing ones
         Args:
             study_id: study id
             commands: list of new command
-        Returns: None
+        Returns: The added command ids as a list of str
         """
         study = self._get_variant_study(study_id)
         self._check_update_authorization(study)
@@ -277,11 +277,11 @@ class VariantStudyService(AbstractStudyService):
 
     def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
         """
-        Add command to list of commands (at the end)
+        Replace existing commands by new ones
         Args:
             study_id: study id
             commands: list of new command
-        Returns: None
+        Returns: Study's id
         """
         study = self._get_variant_study(study_id)
         self._check_update_authorization(study)
