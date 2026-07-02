@@ -461,6 +461,9 @@ class DatabaseHydroDao(HydroDao):
         )
         session.execute(stmt_delete)
 
+        # Store the area pairs with the coefficient to ensure that the matrix is symmetric
+        seen_area_pairs = {}
+
         # Insert new correlations in canonical upper-triangle order (area_from < area_to)
         insert_values = []
         for area_id, correlation in correlation_dict.items():
@@ -469,14 +472,21 @@ class DatabaseHydroDao(HydroDao):
                     continue
                 coefficient = corr_area.coefficient / 100
                 a, b = sorted([area_id, corr_area.area_id])
-                insert_values.append(
-                    {
-                        "study_id": study_id,
-                        "area_from": a,
-                        "area_to": b,
-                        "coefficient": coefficient,
-                    }
-                )
+
+                pair = (a, b)
+                if pair not in seen_area_pairs:
+                    seen_area_pairs[pair] = coefficient
+                    insert_values.append(
+                        {
+                            "study_id": study_id,
+                            "area_from": a,
+                            "area_to": b,
+                            "coefficient": coefficient,
+                        }
+                    )
+                else:
+                    if coefficient != seen_area_pairs[pair]:
+                        raise ValueError(f"Correlation matrix is not symmetric for area pair {a} <-> {b}")
 
         try:
             if insert_values:
