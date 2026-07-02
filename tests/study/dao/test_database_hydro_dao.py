@@ -803,3 +803,39 @@ class TestConvertHydroPmax:
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
         dao.convert_hydro_pmax(HydroPmax.DAILY)
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
+
+
+def test_hydro_correlation(dao: StudyDao) -> None:
+    """
+    Ensures we're able to save hydro correlation containing data repetition without any issue
+    """
+    for area_name in ["fr", "be", "pl"]:
+        save_area(dao, area_name)
+    dao.save_hydro_correlation(
+        {
+            "fr": HydroCorrelation(
+                correlation=[
+                    HydroCorrelationArea(area_id="fr", coefficient=100.0),
+                    HydroCorrelationArea(area_id="be", coefficient=72.0),
+                    HydroCorrelationArea(area_id="pl", coefficient=85.0),
+                ]
+            ),
+            "be": HydroCorrelation(correlation=[HydroCorrelationArea(area_id="fr", coefficient=72.0)]),
+        }
+    )
+
+    assert dao.get_hydro_correlation("fr") == HydroCorrelation(
+        correlation=[
+            HydroCorrelationArea(area_id="be", coefficient=72.0),
+            HydroCorrelationArea(area_id="fr", coefficient=100.0),
+            HydroCorrelationArea(area_id="pl", coefficient=85.0),
+        ]
+    )
+
+    assert dao.get_hydro_correlation("be") == HydroCorrelation(
+        correlation=[
+            HydroCorrelationArea(area_id="be", coefficient=100.0),
+            HydroCorrelationArea(area_id="fr", coefficient=72.0),
+            HydroCorrelationArea(area_id="pl", coefficient=0.0),
+        ]
+    )
