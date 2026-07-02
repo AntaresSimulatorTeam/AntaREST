@@ -90,6 +90,7 @@ export interface StudyMetadata {
   workspace: string;
   managed: boolean;
   archived: boolean;
+  storageMode: StorageMode;
   groups: Array<{ id: string; name: string }>;
   publicMode: StudyPublicMode;
   folder?: string;
