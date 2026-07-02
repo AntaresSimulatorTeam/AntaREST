@@ -1120,7 +1120,13 @@ class StudyService:
                     )
                     study.missing = now
                     self.repository.save(study)
-                    notify_study_edition(self.event_bus, study)
+                    self.event_bus.push(
+                        Event(
+                            type=EventType.STUDY_DELETED,
+                            payload=study.to_enhanced_json_summary(),
+                            permissions=PermissionInfo.from_study(study),
+                        )
+                    )
 
                 if study.missing and study.missing < clean_up_missing_studies_threshold:
                     logger.info(
