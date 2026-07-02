@@ -918,7 +918,7 @@ class StudyService:
         if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
 
-        notify_study_data_edition(self.event_bus, study)
+        notify_study_edition(self.event_bus, study)
 
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         return self.get_study_information(study.id)
