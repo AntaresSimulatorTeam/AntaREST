@@ -245,10 +245,32 @@ class VariantStudyService(AbstractStudyService):
         Returns: The added command ids as a list of str
         """
         study = self._get_variant_study(study_id)
+        command_ids = self._modify_commands(study, commands, replace_commands=False)
+        self.on_variant_advance(study)
+        self._notify_study_edition(study)
+        return command_ids
+
+    def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
+        """
+        Replace existing commands by new ones
+        Args:
+            study_id: study id
+            commands: list of new command
+        Returns: Study's id
+        """
+        study = self._get_variant_study(study_id)
+        self._modify_commands(study, commands, replace_commands=True)
+        self.on_variant_rebase(study)
+        return study_id
+
+    def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
         self._check_update_authorization(study)
-        command_objs = self._check_commands_validity(study_id, commands)
+        command_objs = self._check_commands_validity(study.id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
-        first_index = len(study.commands)
+        if replace_commands:
+            first_index = 0
+        else:
+            first_index = len(study.commands)
 
         # noinspection PyArgumentList
         new_commands = [
@@ -265,7 +287,9 @@ class VariantStudyService(AbstractStudyService):
         ]
         study.commands.extend(new_commands)
         self._update_editor(study)
-        self.on_variant_advance(study)
+        return [c.id for c in new_commands]
+
+    def _notify_study_edition(self, study: Study) -> None:
         self.event_bus.push(
             Event(
                 type=EventType.STUDY_DATA_EDITED,
@@ -273,36 +297,6 @@ class VariantStudyService(AbstractStudyService):
                 permissions=PermissionInfo.from_study(study),
             )
         )
-        return [c.id for c in new_commands]
-
-    def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
-        """
-        Replace existing commands by new ones
-        Args:
-            study_id: study id
-            commands: list of new command
-        Returns: Study's id
-        """
-        study = self._get_variant_study(study_id)
-        self._check_update_authorization(study)
-        command_objs = self._check_commands_validity(study_id, commands)
-        validated_commands = transform_command_to_dto(command_objs, commands)
-        # noinspection PyArgumentList
-        study.commands = [
-            CommandBlock(
-                command=command.action,
-                args=to_json_string(command.args),
-                index=i,
-                version=command.version,
-                study_version=str(command.study_version),
-                user_id=get_user_id(),
-                updated_at=current_time(),
-            )
-            for i, command in enumerate(validated_commands)
-        ]
-        self._update_editor(study)
-        self.on_variant_rebase(study)
-        return str(study.id)
 
     def remove_command(self, study_id: str, command_id: str) -> None:
         """
