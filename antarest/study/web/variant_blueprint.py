@@ -110,19 +110,9 @@ def create_study_variant_routes() -> APIRouter:
         variant_study_service = study_service.storage_service.variant_study_service
         return variant_study_service.get_commands(uuid)
 
-    @bp.post(
-        "/studies/{uuid}/commands",
-        summary="Append a command to variant",
-        responses={
-            200: {
-                "description": "The id of the study",
-            }
-        },
-    )
-    def append_commands(
-        study_service: StudyServiceDep,
-        uuid: UuidStr,
-        commands: Annotated[list[CommandDTOAPI], Body()],
+    @bp.post("/studies/{uuid}/commands", summary="Applies commands to a study")
+    def apply_commands(
+        study_service: StudyServiceDep, uuid: UuidStr, commands: Annotated[list[CommandDTOAPI], Body()]
     ) -> list[str] | None:
         """
         Append a list of commands to a variant study.
