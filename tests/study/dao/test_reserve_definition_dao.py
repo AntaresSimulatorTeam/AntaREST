@@ -12,7 +12,7 @@
 import polars as pl
 import pytest
 
-from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound
+from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, ReserveDefinitionsNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_definition_model import (
@@ -136,7 +136,7 @@ def test_delete(dao_10_0: StudyDao) -> None:
 
 def test_delete_not_found_raises(dao_10_0: StudyDao) -> None:
     save_area(dao_10_0, "paris")
-    with pytest.raises(ReserveDefinitionNotFound):
+    with pytest.raises((ReserveDefinitionNotFound, ReserveDefinitionsNotFound)):
         dao_10_0.delete_reserve_definitions("paris", ["unknown"])
 
 
