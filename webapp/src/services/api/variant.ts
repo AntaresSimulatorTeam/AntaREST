@@ -12,28 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import type { CommandDTO, StudySynthesis } from "../../types/types";
+import type { CommandDTO } from "../../types/types";
 import client from "./client";
 import { taskSchema } from "./tasks/schemas";
 
 export const appendCommands = async (studyId: string, commands: CommandDTO[]): Promise<string> => {
   const res = await client.post(`/v1/studies/${studyId}/commands`, commands);
-  return res.data;
-};
-
-export const appendCommand = async (studyId: string, command: CommandDTO): Promise<string> => {
-  const res = await client.post(`/v1/studies/${studyId}/command`, command);
-  return res.data;
-};
-
-export const moveCommand = async (
-  studyId: string,
-  commandId: string,
-  index: number,
-): Promise<void> => {
-  const res = await client.put(
-    `/v1/studies/${studyId}/commands/${commandId}/move?index=${encodeURIComponent(index)}`,
-  );
   return res.data;
 };
 
@@ -56,11 +40,6 @@ export const deleteCommand = async (studyId: string, commandId: string): Promise
   return res.data;
 };
 
-export const deleteAllCommands = async (studyId: string): Promise<void> => {
-  const res = await client.delete(`/v1/studies/${studyId}/commands`);
-  return res.data;
-};
-
 export const getCommand = async (studyId: string, commandId: string): Promise<CommandDTO> => {
   const res = await client.get(`/v1/studies/${studyId}/commands/${commandId}`);
   return res.data;
@@ -80,10 +59,5 @@ export async function getStudyTask(studyId: string) {
   const res = await client.get(`/v1/studies/${studyId}/task`);
   return taskSchema.parse(res.data);
 }
-
-export const getStudySynthesis = async (studyId: string): Promise<StudySynthesis> => {
-  const res = await client.get(`/v1/studies/${studyId}/synthesis`);
-  return res.data;
-};
 
 export default {};
