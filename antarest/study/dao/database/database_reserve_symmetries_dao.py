@@ -91,19 +91,19 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao):
         values = []
         for area_id, thermal_dict in data.items():
             for thermal_id, symmetries in thermal_dict.items():
+                if symmetries == [[]]:
+                    continue
                 values.append(_convert_model_to_row(self._study_id, area_id, thermal_id, symmetries))
         try:
             # First, clean the DB
             area_ids = set(data)
-            thermal_ids = {thermal_id for area_id, thermal_dict in data.items() for thermal_id in thermal_dict}
             stmt = delete(_THERMAL_TABLE).where(
-                (_THERMAL_TABLE.c.study_id == self._study_id)
-                & (_THERMAL_TABLE.c.area_id.in_(area_ids))
-                & _THERMAL_TABLE.c.thermal_id.in_(thermal_ids)
+                (_THERMAL_TABLE.c.study_id == self._study_id) & (_THERMAL_TABLE.c.area_id.in_(area_ids))
             )
             self._db_session.execute(stmt)
             # Then, insert the new values
-            self._db_session.execute(insert(_THERMAL_TABLE), values)
+            if values:
+                self._db_session.execute(insert(_THERMAL_TABLE), values)
         except IntegrityError as e:
             thermals = {area_id: list(thermal_dict) for area_id, thermal_dict in data.items()}
             self.get_impl().raise_the_right_thermal_exception(thermals, exc=e)
