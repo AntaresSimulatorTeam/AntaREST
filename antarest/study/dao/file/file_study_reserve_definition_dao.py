@@ -142,6 +142,34 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         for reserve_id in reserve_ids:
             file_study.tree.delete(_reserve_need_matrix_path(area_id, reserve_id))
 
+        # Remove the reserve from the certifications
+        certifications = self.get_impl().get_thermal_reserve_certifications(area_id)
+        should_update_certifications = False
+        for reserve_id in reserve_ids:
+            if reserve_id in certifications:
+                del certifications[reserve_id]
+                should_update_certifications = True
+        if should_update_certifications:
+            self.get_impl().save_thermal_reserve_certifications({area_id: certifications})
+
+        # Remove the reserve from the symmetries
+        should_update_symmetries = False
+        symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
+        for thermal_id, symmetries in symmetries_dict.items():
+            for i, symmetry in enumerate(symmetries):
+                symmetries[i] = [reserve_id for reserve_id in symmetry if reserve_id not in ids_to_remove]
+                if len(symmetries[i]) != len(symmetry):
+                    should_update_symmetries = True
+                if len(symmetries[i]) == 1:
+                    # We only have one reserve left in the symmetry, we should remove it
+                    symmetries[i] = []
+        if should_update_symmetries:
+            self.get_impl().save_thermal_reserve_symmetries({area_id: symmetries_dict})
+
+        # Remove the reserve from the reserve definition file
+        for reserve_id in reserve_ids:
+            file_study.tree.delete(_reserve_section_path(area_id, reserve_id))
+
         # Keep config in sync — remove deleted reserves from the area's list.
         area_config = file_study.config.areas[area_id]
         area_config.reserves = [rid for rid in area_config.reserves if rid not in reserve_ids]

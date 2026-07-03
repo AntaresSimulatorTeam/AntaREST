@@ -30,4 +30,6 @@ def parse_thermal_reserves_symmetries(data: dict[str, Any]) -> dict[str, Reserve
 
 
 def serialize_reserve_symmetries(symmetries: ReserveSymmetries) -> list[dict[str, Any]]:
+    if symmetries == [[]]:
+        return []
     return [{"reserves": symmetry} for symmetry in symmetries]
