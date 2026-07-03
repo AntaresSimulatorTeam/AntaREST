@@ -424,6 +424,7 @@ def create_study_data_routes() -> APIRouter:
     @bp.put(
         "/studies/{uuid}/areas/{area_id}/hydro/form",
         summary="Set Hydro config with values from form",
+        response_model_exclude_none=True,
     )
     def set_hydro_form_values(
         study_service: StudyServiceDep,
@@ -509,6 +510,7 @@ def create_study_data_routes() -> APIRouter:
     @bp.put(
         path="/studies/{uuid}/config/thematictrimming/form",
         summary="Set thematic trimming config",
+        response_model_exclude_none=True,
     )
     def set_thematic_trimming(
         study_service: StudyServiceDep,
@@ -714,6 +716,7 @@ def create_study_data_routes() -> APIRouter:
     @bp.put(
         path="/studies/{uuid}/config/general/form",
         summary="Set General config with values from form",
+        response_model_exclude_none=True,
     )
     def set_general_form_values(
         study_service: StudyServiceDep,
@@ -742,6 +745,7 @@ def create_study_data_routes() -> APIRouter:
     @bp.put(
         path="/studies/{uuid}/config/optimization/form",
         summary="Set optimization config with values from form",
+        response_model_exclude_none=True,
     )
     def set_optimization_form_values(
         study_service: StudyServiceDep,
@@ -770,6 +774,7 @@ def create_study_data_routes() -> APIRouter:
     @bp.put(
         path="/studies/{uuid}/config/adequacypatch/form",
         summary="Set adequacy patch config with values from form",
+        response_model_exclude_none=True,
     )
     def set_adequacy_patch_form_values(
         study_service: StudyServiceDep,
@@ -798,6 +803,7 @@ def create_study_data_routes() -> APIRouter:
     @bp.put(
         path="/studies/{uuid}/timeseries/config",
         summary="Sets the TS Generation config",
+        response_model_exclude_none=True,
     )
     def set_ts_generation_config(
         study_service: StudyServiceDep,
@@ -1434,6 +1440,7 @@ def create_study_data_routes() -> APIRouter:
     @bp.put(
         path="/studies/{uuid}/config/advancedparameters/form",
         summary="Set Advanced parameters new values",
+        response_model_exclude_none=True,
     )
     def set_advanced_parameters(
         study_service: StudyServiceDep,
@@ -1464,6 +1471,7 @@ def create_study_data_routes() -> APIRouter:
     @bp.put(
         path="/studies/{uuid}/config/compatibility/form",
         summary="Set Compatibility parameters new values",
+        response_model_exclude_none=True,
     )
     def set_compatibility_parameters(
         study_service: StudyServiceDep,
