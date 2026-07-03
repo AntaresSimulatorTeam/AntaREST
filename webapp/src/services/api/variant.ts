@@ -59,5 +59,3 @@ export async function getStudyTask(studyId: string) {
   const res = await client.get(`/v1/studies/${studyId}/task`);
   return taskSchema.parse(res.data);
 }
-
-export default {};
