@@ -20,7 +20,7 @@ from antarest.study.business.model.thermal_reserve_certification_model import (
     ThermalReserveCertification,
     ThermalReserveCertificationMapping,
 )
-from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalReserveCertificationDao
+from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
 from antarest.study.dao.common import AreaId
 from antarest.study.dao.file.common import (
     check_area_exists,
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
-class FileStudyThermalReserveCertificationDao(ThermalReserveCertificationDao, ABC):
+class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
         pass

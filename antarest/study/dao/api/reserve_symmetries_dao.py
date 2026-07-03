@@ -19,7 +19,7 @@ from antarest.study.dao.common import (
 )
 
 
-class ReadOnlyThermalReserveSymmetriesDao(ABC):
+class ReadOnlyReserveSymmetriesDao(ABC):
     @abstractmethod
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
         raise NotImplementedError()
@@ -29,7 +29,7 @@ class ReadOnlyThermalReserveSymmetriesDao(ABC):
         raise NotImplementedError()
 
 
-class ThermalReserveSymmetriesDao(ReadOnlyThermalReserveSymmetriesDao):
+class ReserveSymmetriesDao(ReadOnlyReserveSymmetriesDao):
     @abstractmethod
     def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
         raise NotImplementedError()

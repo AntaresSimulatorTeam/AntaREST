@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ReserveDefinitionNotFound, ThermalClusterNotFound
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
-from antarest.study.dao.api.thermal_reserve_symmetries_dao import ThermalReserveSymmetriesDao
+from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
     ThermalId,
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
-class FileStudyThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao, ABC):
+class FileStudyThermalReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
         pass

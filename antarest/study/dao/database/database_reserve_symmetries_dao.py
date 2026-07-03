@@ -21,7 +21,7 @@ from typing_extensions import override
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
-from antarest.study.dao.api.thermal_reserve_symmetries_dao import ThermalReserveSymmetriesDao
+from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
     ThermalId,
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-_TABLE = THERMAL_RESERVE_SYMMETRIES_TABLE
+_THERMAL_TABLE = THERMAL_RESERVE_SYMMETRIES_TABLE
 
 
 def _convert_row_to_model(row: Row[Any]) -> ReserveSymmetries:
@@ -47,8 +47,8 @@ def _convert_model_to_row(
     return values
 
 
-class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
-    """Database implementation of ThermalReserveSymmetriesDao."""
+class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao):
+    """Database implementation of ReserveSymmetriesDao."""
 
     def __init__(self, study_id: str, db_session: Session) -> None:
         self._study_id = study_id
@@ -60,7 +60,7 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
 
     @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
-        stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
+        stmt = select(_THERMAL_TABLE).where(_THERMAL_TABLE.c.study_id == self._study_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: ThermalReserveSymmetriesMapping = {}
         for row in rows:
@@ -69,7 +69,9 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
 
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
-        stmt = select(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id))
+        stmt = select(_THERMAL_TABLE).where(
+            (_THERMAL_TABLE.c.study_id == self._study_id) & (_THERMAL_TABLE.c.area_id == area_id)
+        )
         rows = self._db_session.execute(stmt).fetchall()
         result = {}
         for row in rows:
@@ -94,14 +96,14 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
             # First, clean the DB
             area_ids = set(data)
             thermal_ids = {thermal_id for area_id, thermal_dict in data.items() for thermal_id in thermal_dict}
-            stmt = delete(_TABLE).where(
-                (_TABLE.c.study_id == self._study_id)
-                & (_TABLE.c.area_id.in_(area_ids))
-                & _TABLE.c.thermal_id.in_(thermal_ids)
+            stmt = delete(_THERMAL_TABLE).where(
+                (_THERMAL_TABLE.c.study_id == self._study_id)
+                & (_THERMAL_TABLE.c.area_id.in_(area_ids))
+                & _THERMAL_TABLE.c.thermal_id.in_(thermal_ids)
             )
             self._db_session.execute(stmt)
             # Then, insert the new values
-            self._db_session.execute(insert(_TABLE), values)
+            self._db_session.execute(insert(_THERMAL_TABLE), values)
         except IntegrityError as e:
             thermals = {area_id: list(thermal_dict) for area_id, thermal_dict in data.items()}
             self.get_impl().raise_the_right_thermal_exception(thermals, exc=e)

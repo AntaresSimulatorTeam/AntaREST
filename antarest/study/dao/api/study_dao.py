@@ -80,9 +80,17 @@ from antarest.study.dao.api.optimization_preferences_dao import (
 )
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao, ReadOnlyPlaylistConfigDao
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
+from antarest.study.dao.api.reserve_certification_dao import (
+    ReadOnlyReserveCertificationDao,
+    ReserveCertificationDao,
+)
 from antarest.study.dao.api.reserve_definition_dao import (
     ReadOnlyReserveDefinitionDao,
     ReserveDefinitionDao,
+)
+from antarest.study.dao.api.reserve_symmetries_dao import (
+    ReadOnlyReserveSymmetriesDao,
+    ReserveSymmetriesDao,
 )
 from antarest.study.dao.api.reserves_global_parameters_dao import (
     ReadOnlyReservesGlobalParametersDao,
@@ -92,14 +100,6 @@ from antarest.study.dao.api.scenario_builder_dao import ReadOnlyScenarioBuilderD
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
 from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
-from antarest.study.dao.api.thermal_reserve_certification_dao import (
-    ReadOnlyThermalReserveCertificationDao,
-    ThermalReserveCertificationDao,
-)
-from antarest.study.dao.api.thermal_reserve_symmetries_dao import (
-    ReadOnlyThermalReserveSymmetriesDao,
-    ThermalReserveSymmetriesDao,
-)
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
@@ -153,8 +153,8 @@ class ReadOnlyStudyDao(
     ReadOnlyAreaDao,
     ReadOnlyReservesGlobalParametersDao,
     ReadOnlyReserveDefinitionDao,
-    ReadOnlyThermalReserveCertificationDao,
-    ReadOnlyThermalReserveSymmetriesDao,
+    ReadOnlyReserveCertificationDao,
+    ReadOnlyReserveSymmetriesDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -206,8 +206,8 @@ class StudyDao(
     AreaDao,
     ReservesGlobalParametersDao,
     ReserveDefinitionDao,
-    ThermalReserveCertificationDao,
-    ThermalReserveSymmetriesDao,
+    ReserveCertificationDao,
+    ReserveSymmetriesDao,
 ):
     """
     Abstraction for access to study data. Handles all reading

@@ -17,7 +17,7 @@ from antarest.study.business.model.thermal_reserve_certification_model import (
 from antarest.study.dao.common import AreaId
 
 
-class ReadOnlyThermalReserveCertificationDao(ABC):
+class ReadOnlyReserveCertificationDao(ABC):
     @abstractmethod
     def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
         raise NotImplementedError()
@@ -27,7 +27,7 @@ class ReadOnlyThermalReserveCertificationDao(ABC):
         raise NotImplementedError()
 
 
-class ThermalReserveCertificationDao(ReadOnlyThermalReserveCertificationDao):
+class ReserveCertificationDao(ReadOnlyReserveCertificationDao):
     @abstractmethod
     def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
         raise NotImplementedError()

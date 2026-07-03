@@ -26,7 +26,7 @@ from antarest.study.business.model.thermal_reserve_certification_model import (
     ThermalReserveCertification,
     ThermalReserveCertificationMapping,
 )
-from antarest.study.dao.api.thermal_reserve_certification_dao import ThermalReserveCertificationDao
+from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
 from antarest.study.dao.common import AreaId
 from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-_TABLE = THERMAL_RESERVE_CERTIFICATION_TABLE
+_THERMAL_TABLE = THERMAL_RESERVE_CERTIFICATION_TABLE
 
 
 def _convert_row_to_model(row: Row[Any]) -> ThermalReserveCertification:
@@ -56,19 +56,19 @@ def _convert_model_to_row(
     return values
 
 
-class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
-    """Database implementation of ThermalReserveCertificationDao."""
+class DatabaseReserveCertificationDao(ReserveCertificationDao):
+    """Database implementation of ReserveCertificationDao."""
 
     def __init__(self, study_id: str, db_session: Session) -> None:
         self._study_id = study_id
         self._db_session = db_session
 
     def _select_one(self, area_id: str, thermal_id: str, reserve_id: str) -> Select[Any]:
-        return select(_TABLE).where(
-            (_TABLE.c.study_id == self._study_id)
-            & (_TABLE.c.area_id == area_id)
-            & (_TABLE.c.thermal_id == thermal_id)
-            & (_TABLE.c.reserve_id == reserve_id)
+        return select(_THERMAL_TABLE).where(
+            (_THERMAL_TABLE.c.study_id == self._study_id)
+            & (_THERMAL_TABLE.c.area_id == area_id)
+            & (_THERMAL_TABLE.c.thermal_id == thermal_id)
+            & (_THERMAL_TABLE.c.reserve_id == reserve_id)
         )
 
     @abstractmethod
@@ -77,7 +77,7 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
 
     @override
     def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
-        stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
+        stmt = select(_THERMAL_TABLE).where(_THERMAL_TABLE.c.study_id == self._study_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: dict[AreaId, ThermalReserveCertificationMapping] = {}
         for row in rows:
@@ -87,7 +87,9 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
 
     @override
     def get_thermal_reserve_certifications(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
-        stmt = select(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id))
+        stmt = select(_THERMAL_TABLE).where(
+            (_THERMAL_TABLE.c.study_id == self._study_id) & (_THERMAL_TABLE.c.area_id == area_id)
+        )
         rows = self._db_session.execute(stmt).fetchall()
         result: ThermalReserveCertificationMapping = {}
         for row in rows:
@@ -107,14 +109,14 @@ class DatabaseThermalReserveCertificationDao(ThermalReserveCertificationDao):
             # First, clean the DB
             area_ids = set(data)
             reserve_ids = {reserve_id for area_id, reserves_dict in data.items() for reserve_id in reserves_dict}
-            stmt = delete(_TABLE).where(
-                (_TABLE.c.study_id == self._study_id)
-                & (_TABLE.c.area_id.in_(area_ids))
-                & _TABLE.c.reserve_id.in_(reserve_ids)
+            stmt = delete(_THERMAL_TABLE).where(
+                (_THERMAL_TABLE.c.study_id == self._study_id)
+                & (_THERMAL_TABLE.c.area_id.in_(area_ids))
+                & _THERMAL_TABLE.c.reserve_id.in_(reserve_ids)
             )
             self._db_session.execute(stmt)
             # Then, insert the new values
-            self._db_session.execute(insert(_TABLE), values)
+            self._db_session.execute(insert(_THERMAL_TABLE), values)
         except IntegrityError as e:
             self._raise_the_right_thermal_reserve_exception(data, exc=e)
         self._db_session.commit()
