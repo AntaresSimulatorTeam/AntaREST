@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import json
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.exc import IntegrityError
@@ -19,7 +19,8 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound
-from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry, merge_symmetries
+from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.api.thermal_reserve_symmetries_dao import ThermalReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
@@ -35,20 +36,14 @@ if TYPE_CHECKING:
 _TABLE = THERMAL_RESERVE_SYMMETRIES_TABLE
 
 
-def _convert_row_to_model(row: Row[Any]) -> list[ReserveSymmetry]:
-    symmetries: list[ReserveSymmetry] = json.loads(row.symmetries)
-    return merge_symmetries(symmetries)
+def _convert_row_to_model(row: Row[Any]) -> ReserveSymmetries:
+    return cast(ReserveSymmetries, json.loads(row.symmetries))
 
 
 def _convert_model_to_row(
-    study_id: str, area_id: str, thermal_id: str, symmetries: list[ReserveSymmetry]
+    study_id: str, area_id: str, thermal_id: str, symmetries: ReserveSymmetries
 ) -> dict[str, Any]:
-    values = {
-        "study_id": study_id,
-        "area_id": area_id,
-        "thermal_id": thermal_id,
-        "symmetries": json.dumps(merge_symmetries(symmetries)),
-    }
+    values = {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "symmetries": json.dumps(symmetries)}
     return values
 
 
@@ -73,7 +68,7 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
         return result
 
     @override
-    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ReserveSymmetry]]:
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
         stmt = select(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id))
         rows = self._db_session.execute(stmt).fetchall()
         result = {}
@@ -114,7 +109,7 @@ class DatabaseThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao):
 
     @staticmethod
     def _checks_foreign_key_integrity(
-        new_data: ThermalReserveSymmetriesMapping, reserve_ids: dict[AreaId, ReserveSymmetry]
+        new_data: ThermalReserveSymmetriesMapping, reserve_ids: dict[AreaId, list[ReserveDefinitionId]]
     ) -> None:
         """
         There is no foreign key constraint between symmetries and reserve ids but they are linked.

@@ -17,7 +17,7 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import InvalidFieldForVersionError
-from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry, merge_symmetries
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.common import AreaId, ThermalId
 from antarest.study.model import (
@@ -44,23 +44,20 @@ class ReplaceThermalReserveSymmetries(ICommand):
     # ==================
 
     area_id: AreaId
-    symmetries: dict[ThermalId, list[ReserveSymmetry]]
+    symmetries: dict[ThermalId, ReserveSymmetries]
 
     @model_validator(mode="after")
-    def _validate_version_and_symmetries(self) -> Self:
+    def _validate_version(self) -> Self:
         if self.study_version < STUDY_VERSION_10_0:
             msg = "Thermal cluster reserve symmetries are not valid for study version before 10.0"
             raise InvalidFieldForVersionError(msg)
-
-        for thermal_id in self.symmetries:
-            self.symmetries[thermal_id] = merge_symmetries(self.symmetries[thermal_id])
 
         return self
 
     @override
     def _apply_dao(
         self, study_data: StudyDao, listener: ICommandListener | None = None
-    ) -> CommandOutput[dict[ThermalId, list[ReserveSymmetry]]]:
+    ) -> CommandOutput[dict[ThermalId, ReserveSymmetries]]:
         study_data.save_thermal_reserve_symmetries({self.area_id: self.symmetries})
 
         msg = f"Reserve symmetries in area '{self.area_id}' replaced successfully."

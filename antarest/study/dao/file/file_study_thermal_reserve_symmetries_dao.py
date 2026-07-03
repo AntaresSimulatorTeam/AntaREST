@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from antarest.core.exceptions import ReserveDefinitionNotFound, ThermalClusterNotFound
-from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.api.thermal_reserve_symmetries_dao import ThermalReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
@@ -58,7 +58,7 @@ class FileStudyThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao, ABC):
         return result
 
     @override
-    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ReserveSymmetry]]:
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
         ini_content = get_thermal_reserve_participations_as_yaml_content(area_id, self.get_file_study())
         return parse_thermal_reserves_symmetries(ini_content)
 
@@ -69,7 +69,7 @@ class FileStudyThermalReserveSymmetriesDao(ThermalReserveSymmetriesDao, ABC):
             check_area_exists(file_study.config, area_id)
             self._save_reserve_symmetries(area_id, data[area_id])
 
-    def _save_reserve_symmetries(self, area_id: AreaId, data: dict[ThermalId, list[ReserveSymmetry]]) -> None:
+    def _save_reserve_symmetries(self, area_id: AreaId, data: dict[ThermalId, ReserveSymmetries]) -> None:
         file_study = self.get_file_study()
         # Verify that the thermals and the reserves exist
         for thermal_id, symmetries in data.items():

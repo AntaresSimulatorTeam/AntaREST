@@ -55,7 +55,7 @@ from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
-from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetry
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
@@ -1738,7 +1738,7 @@ class InMemoryStudyDao(StudyDao):
         return self._thermal_reserve_symmetries
 
     @override
-    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, list[ReserveSymmetry]]:
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
         return self._thermal_reserve_symmetries[area_id]
 
     @override
