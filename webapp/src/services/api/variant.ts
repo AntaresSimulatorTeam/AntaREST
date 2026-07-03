@@ -40,11 +40,6 @@ export const deleteCommand = async (studyId: string, commandId: string): Promise
   return res.data;
 };
 
-export const getCommand = async (studyId: string, commandId: string): Promise<CommandDTO> => {
-  const res = await client.get(`/v1/studies/${studyId}/commands/${commandId}`);
-  return res.data;
-};
-
 export const getCommands = async (studyId: string): Promise<CommandDTO[]> => {
   const res = await client.get(`/v1/studies/${studyId}/commands`);
   return res.data;
