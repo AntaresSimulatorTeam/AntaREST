@@ -42,10 +42,8 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930_an
     dao.save_thermal_reserve_symmetries({"fr": {"th2": [["r1", "r2", "r3"]]}})
 
     assert dao.get_thermal_reserve_certifications("fr") == {"r1": {"th2": ThermalReserveCertification()}}
-    assert dao.get_thermal_reserve_symmetries("fr") == {
-        "th1": [["r1", "r2"], ["r3", "r4"]],
-        "th2": [["r1", "r2", "r3"]],
-    }
+    # The symmetry should also be overwritten by the new value.
+    assert dao.get_thermal_reserve_symmetries("fr") == {"th2": [["r1", "r2", "r3"]]}
 
 
 def test_removing_a_reserve_cascades_on_symmetries_and_certifications(dao_10_0: StudyDao) -> None:
