@@ -85,6 +85,34 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
     result = dao_10_0.get_all_thermal_reserve_symmetries()
     assert result == {"fr": {"th1": [["r2", "r3"], ["r1", "r4"]], "th2": [["r1", "r2"]]}}
 
+    # Ensures replacing existing data with new one erases the old values
+    new_symmetries = {"th2": [["r1", "r3", "r4"]]}
+
+    cmd = ReplaceThermalReserveSymmetries(
+        area_id="fr",
+        symmetries=new_symmetries,
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_0,
+    )
+    output = cmd.apply(dao_10_0)
+    assert output.status
+
+    result = dao_10_0.get_thermal_reserve_symmetries("fr")
+    assert result == new_symmetries
+
+    # Ensures we're able to remove all certifications
+    cmd = ReplaceThermalReserveSymmetries(
+        area_id="fr",
+        symmetries={},
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_0,
+    )
+    output = cmd.apply(dao_10_0)
+    assert output.status
+
+    result = dao_10_0.get_thermal_reserve_symmetries("fr")
+    assert result == {}
+
 
 def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> None:
     _set_up(dao_10_0, command_context)

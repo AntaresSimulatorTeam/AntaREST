@@ -96,7 +96,7 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
     result = dao_10_0.get_thermal_reserve_certifications("fr")
     assert result == new_certifications
 
-    # Ensures replacing existing data with new one erase the old values
+    # Ensures replacing existing data with new one erases the old values
     new_certifications = {"r2": {"th1": ThermalReserveCertification(participation_cost=4, max_power=1.2)}}
 
     cmd = ReplaceThermalReserveCertifications(
