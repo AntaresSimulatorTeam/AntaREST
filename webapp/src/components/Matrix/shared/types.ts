@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
+import type { NonEmptyArray } from "@/utils/tsUtils";
 import type { BaseGridColumn, EditableGridCell, Item } from "@glideapps/glide-data-grid";
 import type { Aggregate, Column, TimeFrequency } from "./constants";
-import type { NonEmptyArray } from "@/utils/tsUtils";
 
 // Derived types
 export type ColumnType = (typeof Column)[keyof typeof Column];
@@ -117,10 +117,10 @@ export interface MatrixDataDTO {
   index: number[];
 }
 
-export interface ResultMatrixDTO {
+export interface MatrixResultDTO {
   data: number[][];
-  columns: string[][];
-  index: string[];
+  // Each column is represented as a tuple of [variable, unit, stat]
+  columns: Array<[string, string, string]>;
 }
 
 // Shape of updates provided by Glide Data Grid

@@ -14,6 +14,7 @@
 
 import BackButton from "@/components/buttons/BackButton";
 import ListView, { type ListViewItem } from "@/components/page/list/ListView";
+import TabsView from "@/components/page/TabsView";
 import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { sortByName } from "@/services/utils";
 import AutoAwesomeMotionIcon from "@mui/icons-material/AutoAwesomeMotion";
@@ -24,6 +25,7 @@ import { useTranslation } from "react-i18next";
 import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getDistricts, getLinks } from "../../../../../../../redux/selectors";
 import OutputMatrixViewer from "./-components/OutputMatrixViewer";
+import OutputMatrixViewer2 from "./-components/OutputMatrixViewer2";
 import SynthesisViewer from "./-components/SynthesisViewer";
 import useOutput from "./-hooks/useOutput";
 import { isDistrict, SYNTHESIS_ITEMS, type Item, type ListType } from "./-utils";
@@ -108,7 +110,22 @@ function Output() {
       }
       renderItemView={({ id, data }) => {
         if (data) {
-          return <OutputMatrixViewer output={output} selectedItem={data} />;
+          return (
+            <TabsView
+              tabs={[
+                {
+                  id: "NEW",
+                  label: "NEW",
+                  content: <OutputMatrixViewer2 selectedItem={data} />,
+                },
+                {
+                  id: "original",
+                  label: "ORIGINAL",
+                  content: <OutputMatrixViewer output={output} selectedItem={data} />,
+                },
+              ]}
+            />
+          );
         }
         return <SynthesisViewer gridId={id} />;
       }}

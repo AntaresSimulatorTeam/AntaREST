@@ -20,7 +20,7 @@ import {
   isNonEmptyMatrix,
   type DateTimes,
   type EnhancedGridColumn,
-  type ResultMatrixDTO,
+  type MatrixResultDTO,
 } from "@/components/Matrix/shared/types";
 import EmptyView from "@/components/page/EmptyView";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
@@ -31,7 +31,7 @@ import GridOffIcon from "@mui/icons-material/GridOff";
 import { useTranslation } from "react-i18next";
 
 interface Props {
-  matrixRes: UsePromiseResponse<ResultMatrixDTO | undefined>;
+  matrixRes: UsePromiseResponse<MatrixResultDTO | undefined>;
   resultColHeaders: string[][];
   filteredData: number[][];
   resultColumns: EnhancedGridColumn[];

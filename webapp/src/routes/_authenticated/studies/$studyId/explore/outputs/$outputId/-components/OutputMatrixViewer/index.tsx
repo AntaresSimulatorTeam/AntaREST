@@ -14,7 +14,7 @@
 
 import type { FilterableMatrixGridHandle } from "@/components/Matrix/components/FilterableMatrixGrid";
 import { Column } from "@/components/Matrix/shared/constants";
-import type { ResultMatrixDTO } from "@/components/Matrix/shared/types";
+import type { MatrixResultDTO } from "@/components/Matrix/shared/types";
 import {
   generateCustomColumns,
   generateDateTime,
@@ -34,7 +34,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useVariablePerVariable } from "../../-hooks/useVariablePerVariable";
 import {
-  createPath,
+  createOutputDataPath,
   MAX_YEAR,
   type DataType,
   type Frequency,
@@ -89,7 +89,7 @@ function OutputMatrixViewer({ selectedItem, output }: Props) {
 
   const path = useMemo(() => {
     if (output) {
-      return createPath({
+      return createOutputDataPath({
         output,
         item: selectedItem,
         dataType,
@@ -100,7 +100,7 @@ function OutputMatrixViewer({ selectedItem, output }: Props) {
     return "";
   }, [output, selectedItem, dataType, frequency, year]);
 
-  const matrixRes = usePromise<ResultMatrixDTO | undefined>(
+  const matrixRes = usePromise<MatrixResultDTO | undefined>(
     async () => {
       if (!output || !path || isVariablePerVariable) {
         return new Promise(() => {
@@ -282,7 +282,7 @@ function OutputMatrixViewer({ selectedItem, output }: Props) {
             flexDirection: "column",
           }}
         >
-          {mcMode === "variable-per-variable" ? (
+          {isVariablePerVariable ? (
             <VariableMatrix
               variablesMetadata={variablesMetadata ?? null}
               selectedItem={selectedItem}

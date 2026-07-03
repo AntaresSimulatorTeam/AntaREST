@@ -246,7 +246,7 @@ function parseResponse(res: string | MatrixDataDTO): string {
   }
 
   try {
-    const parsed = sanitizeJsonResponse(res);
+    const parsed = sanitizeJsonResponse<MatrixDataDTO>(res);
     return formatMatrixToString(parsed.data);
   } catch {
     // If JSON parsing fails, assume it's plain text

@@ -26,7 +26,8 @@
  * @returns Properly parsed JSON object with "NaN" and "Infinity" as strings,
  * or the original response if already parsed.
  */
-export function sanitizeJsonResponse(response: unknown) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function sanitizeJsonResponse<T = unknown>(response: any): T {
   if (typeof response !== "string") {
     return response;
   }

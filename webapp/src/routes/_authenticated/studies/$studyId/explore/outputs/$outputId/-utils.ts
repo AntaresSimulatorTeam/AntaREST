@@ -13,6 +13,7 @@
  */
 
 import type { ListViewItem } from "@/components/page/list/ListView";
+import type { Output } from "@/services/api/studies/outputs/types";
 import type {
   AreaVariablesDTO,
   RenewableClusterVariablesDTO,
@@ -22,7 +23,6 @@ import type {
   VariableViewParams,
 } from "@/services/api/studies/outputs/variableViews/types";
 import type { AreaWithId, District, LinkElement } from "@/types/types";
-import type { StudyOutput } from "./-hooks/useOutput";
 
 export type ListType = "areas" | "links" | "synthesis";
 export type DataType = "values" | "details" | "details-res" | "id" | "details-STstorage";
@@ -30,14 +30,6 @@ export type Frequency = "hourly" | "daily" | "weekly" | "monthly" | "annual";
 export type MonteCarloMode = "mc-ind" | "mc-all" | "variable-per-variable";
 
 export type Item = AreaWithId | District | LinkElement;
-
-interface Params {
-  output: StudyOutput;
-  item: Item;
-  dataType: DataType;
-  frequency: Frequency;
-  year?: number;
-}
 
 export const MAX_YEAR = 99999;
 
@@ -57,7 +49,15 @@ export function isLink(item: Item): item is LinkElement {
   return "area1" in item;
 }
 
-export function createPath(params: Params): string {
+interface CreateOutputDataPathParams {
+  output: Output;
+  item: Item;
+  dataType: DataType;
+  frequency: Frequency;
+  year?: number;
+}
+
+export function createOutputDataPath(params: CreateOutputDataPathParams): string {
   const { output, item, dataType, frequency, year } = params;
   const { id, mode = "economy" } = output;
   const isYearPeriod = year && year > 0;
