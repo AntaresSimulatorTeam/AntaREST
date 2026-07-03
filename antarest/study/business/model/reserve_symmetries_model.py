@@ -21,8 +21,8 @@ def _symmetry_validator(data: list[str]) -> list[str]:
         raise ValueError(f"Reserve symmetries should have at least 2 elements, and was {data}")
     if len(set(data)) != len(data):
         raise ValueError(f"Reserve symmetries should not contain duplicates, and was {data}")
-    return data
+    return sorted(data)
 
 
 ReserveSymmetry: TypeAlias = Annotated[list[ReserveDefinitionId], BeforeValidator(_symmetry_validator)]
-ReserveSymmetries: TypeAlias = Annotated[list[ReserveSymmetry], BeforeValidator(lambda x: sorted(x))]
+ReserveSymmetries: TypeAlias = list[ReserveSymmetry]
