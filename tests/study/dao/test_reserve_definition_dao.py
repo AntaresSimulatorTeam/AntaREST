@@ -20,7 +20,7 @@ from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinitionId,
     ReserveType,
 )
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
@@ -170,7 +170,11 @@ def test_removing_a_reserve_cascades_on_symmetries_and_certifications(dao_10_0: 
     # Create 1 area with 2 thermal clusters and 4 reserves
     dao = dao_10_0
     dao.save_areas_with_properties({"fr": AreaProperties()})
-    dao.save_thermals({"fr": [ThermalCluster(name="th1"), ThermalCluster(name="th2")]})
+    th1 = ThermalCluster(name="th1")
+    th2 = ThermalCluster(name="th2")
+    initialize_thermal_cluster(th1, dao.get_version())
+    initialize_thermal_cluster(th2, dao.get_version())
+    dao.save_thermals({"fr": [th1, th2]})
     reserves = []
     for reserve_name in ["r1", "r2", "r3", "r4"]:
         reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN))
