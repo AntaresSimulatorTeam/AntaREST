@@ -13,12 +13,17 @@
  */
 
 import TabsView from "@/components/page/TabsView";
+import { reserveQueries } from "@/queries/reserves/queries";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves",
 )({
+  loader: async ({ context, params: { studyId, areaId } }) => {
+    await context.queryClient.ensureQueryData(reserveQueries.list(studyId, areaId));
+    await context.queryClient.ensureQueryData(reserveQueries.enabled(studyId));
+  },
   component: ReservesLayout,
 });
 
