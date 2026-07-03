@@ -15,12 +15,13 @@ from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_10_0
 
 
-def _set_up(dao: FileStudyTreeDao) -> FileStudyTreeDao:
+def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930_and_matrix_service) -> None:
     # Build a v10.0 FS DAO.
+    dao, _ = fs_dao_930_and_matrix_service
     dao.get_file_study().config.version = STUDY_VERSION_10_0
     # Create 1 area with 2 thermal clusters and 4 reserves
     dao.save_areas_with_properties({"fr": AreaProperties()})
@@ -29,12 +30,6 @@ def _set_up(dao: FileStudyTreeDao) -> FileStudyTreeDao:
     for reserve_name in ["r1", "r2", "r3", "r4"]:
         reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN))
     dao.save_reserve_definitions({"fr": reserves})
-    return dao
-
-
-def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930_and_matrix_service) -> None:
-    dao, _ = fs_dao_930_and_matrix_service
-    _set_up(dao)
 
     # Save 2 symmetries. Then 1 certification. Ensures the certification writing didn't affect the symmetries.
     dao.save_thermal_reserve_symmetries({"fr": {"th1": [["r1", "r2"], ["r3", "r4"]]}})
@@ -53,9 +48,15 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930_an
     }
 
 
-def test_removing_a_reserve_cascades_on_symmetries_and_certifications(fs_dao_930_and_matrix_service) -> None:
-    dao, _ = fs_dao_930_and_matrix_service
-    _set_up(dao)
+def test_removing_a_reserve_cascades_on_symmetries_and_certifications(dao_10_0: StudyDao) -> None:
+    # Create 1 area with 2 thermal clusters and 4 reserves
+    dao = dao_10_0
+    dao.save_areas_with_properties({"fr": AreaProperties()})
+    dao.save_thermals({"fr": [ThermalCluster(name="th1"), ThermalCluster(name="th2")]})
+    reserves = []
+    for reserve_name in ["r1", "r2", "r3", "r4"]:
+        reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN))
+    dao.save_reserve_definitions({"fr": reserves})
 
     # Save 1 symmetry and 1 certitification.
     dao.save_thermal_reserve_symmetries({"fr": {"th1": [["r1", "r2"]]}})
