@@ -22,6 +22,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, ReserveDefinitionsNotFound
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
+from antarest.study.dao.api.common import remove_reserve_symmetries_by_cascade
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
 from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
 from antarest.study.dao.database.common import area_exists, get_row_representation_as_dict, validate_area_exists
@@ -137,12 +138,13 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
             if invalid_ids := set(reserve_ids) - existing:
                 raise ReserveDefinitionsNotFound({area_id: invalid_ids})  # type: ignore
 
-        # We have to delete the reserve symmetries associated to the reserve as we do not have a foreign key constraint
-        """
-        table = THERMAL_RESERVE_SYMMETRIES_TABLE
-        self.get_impl().get_thermal_reserve_symmetries(area_id)
-        """
         self._db_session.commit()
+
+        # We have to delete the reserve symmetries associated with the reserve as we do not have a foreign key constraint
+        symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
+        new_symmetries = remove_reserve_symmetries_by_cascade(symmetries_dict, set(reserve_ids))
+        if new_symmetries is not None:
+            self.get_impl().save_thermal_reserve_symmetries({area_id: new_symmetries})
 
     @override
     def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
