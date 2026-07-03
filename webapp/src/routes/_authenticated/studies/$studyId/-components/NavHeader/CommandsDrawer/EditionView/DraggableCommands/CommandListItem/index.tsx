@@ -14,7 +14,6 @@
 
 // @flow
 import LogModal from "@/components/LogModal";
-import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import InfoIcon from "@mui/icons-material/Info";
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
@@ -30,7 +29,6 @@ import { useState } from "react";
 import ReactJson, { type InteractionProps } from "react-json-view";
 import type { CommandResultDTO } from "../../../../../../../../../../types/types";
 import type { CommandItem } from "../../commandTypes";
-import CommandImportButton from "../CommandImportButton";
 import CommandDetails from "./CommandDetails";
 import CommandMatrixViewer from "./CommandMatrixViewer";
 import {
@@ -62,8 +60,6 @@ interface PropsType {
   onDelete: (index: number) => void;
   onArgsUpdate: (index: number, json: object) => void;
   onSave: (index: number) => void;
-  onCommandImport: (index: number, json: object) => void;
-  onCommandExport: (index: number) => void;
   onExpanded: (index: number, value: boolean) => void;
   expandedIndex: number;
 }
@@ -78,8 +74,6 @@ function CommandListItem({
   onDelete,
   onArgsUpdate,
   onSave,
-  onCommandImport,
-  onCommandExport,
   onExpanded,
 }: PropsType) {
   const [jsonData, setJsonData] = useState<object>(item.args);
@@ -88,18 +82,6 @@ function CommandListItem({
   const updateJson = (e: InteractionProps) => {
     setJsonData(e.updated_src);
     onArgsUpdate(index, e.updated_src);
-  };
-
-  const onImport = async (json: object) => {
-    // setJsonData((json as any)['args']);
-    const oldJson = { ...jsonData };
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setJsonData(json as any);
-      await onCommandImport(index, json);
-    } catch {
-      setJsonData(oldJson);
-    }
   };
 
   const itemElements = () => {
@@ -150,13 +132,6 @@ function CommandListItem({
               <Header>
                 {item.updated && (
                   <SaveOutlinedIcon sx={{ ...headerIconStyle }} onClick={() => onSave(index)} />
-                )}
-                {!generationStatus && <CommandImportButton onImport={onImport} />}
-                {!generationStatus && (
-                  <CloudDownloadOutlinedIcon
-                    sx={{ ...headerIconStyle }}
-                    onClick={() => onCommandExport(index)}
-                  />
                 )}
               </Header>
               <JsonContainer>

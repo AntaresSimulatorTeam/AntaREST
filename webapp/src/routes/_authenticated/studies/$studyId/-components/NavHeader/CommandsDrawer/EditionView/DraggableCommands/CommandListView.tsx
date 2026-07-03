@@ -24,8 +24,6 @@ const Row = memo((props: ListChildComponentProps) => {
     onDelete,
     onArgsUpdate,
     onSave,
-    onCommandImport,
-    onCommandExport,
     onExpanded,
     expandedIndex,
     generationStatus,
@@ -43,8 +41,6 @@ const Row = memo((props: ListChildComponentProps) => {
       onDelete={onDelete}
       onArgsUpdate={onArgsUpdate}
       onSave={onSave}
-      onCommandImport={onCommandImport}
-      onCommandExport={onCommandExport}
       onExpanded={onExpanded}
     />
   );
@@ -59,8 +55,6 @@ export interface DraggableListProps {
   onDelete: (index: number) => void;
   onArgsUpdate: (index: number, json: object) => void;
   onSave: (index: number) => void;
-  onCommandImport: (index: number, json: object) => void;
-  onCommandExport: (index: number) => void;
   onExpanded: (index: number, value: boolean) => void;
   expandedIndex: number;
 }
@@ -73,8 +67,6 @@ function CommandListView({
   onDelete,
   onArgsUpdate,
   onSave,
-  onCommandImport,
-  onCommandExport,
   onExpanded,
 }: DraggableListProps) {
   const listRef = useRef(null);
@@ -100,8 +92,6 @@ function CommandListView({
         onDelete,
         onArgsUpdate,
         onSave,
-        onCommandImport,
-        onCommandExport,
         onExpanded,
         generationStatus,
         generationIndex,

@@ -34,7 +34,6 @@ import { TaskStatus } from "../../../../../../../../services/api/tasks/constants
 import {
   applyCommands,
   deleteCommand,
-  getCommand,
   getCommands,
   getStudyTask,
   replaceCommands,
@@ -109,32 +108,6 @@ function EditionView(props: Props) {
     tmpCommand[index].args = { ...args };
     tmpCommand[index].updated = true;
     setCommands(tmpCommand);
-  };
-
-  const onCommandImport = async (index: number, json: object) => {
-    try {
-      let tmpCommand: CommandItem[] = [];
-      tmpCommand = tmpCommand.concat(commands);
-      const elm = tmpCommand[index];
-      elm.args = { ...json };
-      elm.updated = false;
-      await updateCommand(studyId, elm.id as string, elm);
-      setCommands(tmpCommand);
-      enqueueSnackbar(t("variants.success.import"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
-    }
-  };
-
-  const onCommandExport = async (index: number) => {
-    try {
-      const elm = await getCommand(studyId, commands[index].id as string);
-      exportJson({ action: elm.action, args: elm.args }, `${elm.id}_command.json`);
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
-    }
   };
 
   const onGlobalExport = async () => {
@@ -457,8 +430,6 @@ function EditionView(props: Props) {
             onDelete={onDelete}
             onArgsUpdate={onArgsUpdate}
             onSave={onSave}
-            onCommandImport={onCommandImport}
-            onCommandExport={onCommandExport}
             onExpanded={onExpanded}
           />
         </Body>
