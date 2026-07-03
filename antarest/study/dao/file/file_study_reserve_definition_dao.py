@@ -24,6 +24,7 @@ from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinition,
     ReserveDefinitionId,
 )
+from antarest.study.dao.api.common import remove_reserve_symmetries_by_cascade
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
 from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
 from antarest.study.dao.file.common import check_area_exists
@@ -153,18 +154,10 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
             self.get_impl().save_thermal_reserve_certifications({area_id: certifications})
 
         # Remove the reserve from the symmetries
-        should_update_symmetries = False
         symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
-        for thermal_id, symmetries in symmetries_dict.items():
-            for i, symmetry in enumerate(symmetries):
-                symmetries[i] = [reserve_id for reserve_id in symmetry if reserve_id not in ids_to_remove]
-                if len(symmetries[i]) != len(symmetry):
-                    should_update_symmetries = True
-                if len(symmetries[i]) == 1:
-                    # We only have one reserve left in the symmetry, we should remove it
-                    symmetries[i] = []
-        if should_update_symmetries:
-            self.get_impl().save_thermal_reserve_symmetries({area_id: symmetries_dict})
+        new_symmetries = remove_reserve_symmetries_by_cascade(symmetries_dict, ids_to_remove)
+        if new_symmetries is not None:
+            self.get_impl().save_thermal_reserve_symmetries({area_id: new_symmetries})
 
         # Remove the reserve from the reserve definition file
         for reserve_id in reserve_ids:

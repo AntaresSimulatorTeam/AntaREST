@@ -136,6 +136,12 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
             existing = {row.reserve_id for row in self._get_all_reserve_definitions_for_area(area_id)}
             if invalid_ids := set(reserve_ids) - existing:
                 raise ReserveDefinitionsNotFound({area_id: invalid_ids})  # type: ignore
+
+        # We have to delete the reserve symmetries associated to the reserve as we do not have a foreign key constraint
+        """
+        table = THERMAL_RESERVE_SYMMETRIES_TABLE
+        self.get_impl().get_thermal_reserve_symmetries(area_id)
+        """
         self._db_session.commit()
 
     @override
