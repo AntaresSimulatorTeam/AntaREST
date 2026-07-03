@@ -129,11 +129,11 @@ function CommandListItem({
           </AccordionSummary>
           <AccordionDetails sx={{ ...detailsStyle }}>
             <Box sx={{ ...detailsStyle }}>
-              <Header>
-                {item.updated && (
+              {item.updated && (
+                <Header>
                   <SaveOutlinedIcon sx={{ ...headerIconStyle }} onClick={() => onSave(index)} />
-                )}
-              </Header>
+                </Header>
+              )}
               <JsonContainer>
                 <ReactJson
                   src={jsonData}
