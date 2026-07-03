@@ -108,15 +108,13 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao):
         try:
             # First, clean the DB
             area_ids = set(data)
-            reserve_ids = {reserve_id for area_id, reserves_dict in data.items() for reserve_id in reserves_dict}
             stmt = delete(_THERMAL_TABLE).where(
-                (_THERMAL_TABLE.c.study_id == self._study_id)
-                & (_THERMAL_TABLE.c.area_id.in_(area_ids))
-                & _THERMAL_TABLE.c.reserve_id.in_(reserve_ids)
+                (_THERMAL_TABLE.c.study_id == self._study_id) & (_THERMAL_TABLE.c.area_id.in_(area_ids))
             )
             self._db_session.execute(stmt)
             # Then, insert the new values
-            self._db_session.execute(insert(_THERMAL_TABLE), values)
+            if values:
+                self._db_session.execute(insert(_THERMAL_TABLE), values)
         except IntegrityError as e:
             self._raise_the_right_thermal_reserve_exception(data, exc=e)
         self._db_session.commit()
