@@ -82,33 +82,23 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
                     if not self.get_impl().thermal_exists(area_id, thermal_id):
                         raise ThermalClusterNotFound(area_id, thermal_id)
 
-            # Save the given certifications
-            all_certifications = self.get_thermal_reserve_certifications(area_id)
-            for reserve_id, value in reserves_dict.items():
-                if reserve_id in all_certifications:
-                    # First, save certifications for existing reserves
-                    for thermal_id in value:
-                        all_certifications[reserve_id][thermal_id] = data[area_id][reserve_id][thermal_id]
-                else:
-                    # Then, save certifications for new reserves
-                    all_certifications[reserve_id] = value
-
             # Reorganize data as the YAML file is organized by thermals and not by reserves
             thermal_certifications: dict[str, dict[ReserveDefinitionId, ThermalReserveCertification]] = {}
-            for reserve_id, value in all_certifications.items():
+            for reserve_id, value in reserves_dict.items():
                 for thermal_id, certification in value.items():
                     thermal_certifications.setdefault(thermal_id, {})[reserve_id] = certification
 
-            # Serialize the new content to write it into the YAML file
+            # First, reset certifications for non-given thermals and replace for given ones
             yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
             for participation in yaml_content["participations"]:
                 thermal_id = transform_name_to_id(participation["cluster"])
-                if thermal_id not in thermal_certifications:
-                    # Means the file contains symmetries but no certifications for this thermal
-                    continue
-                certifications = thermal_certifications.pop(thermal_id)
-                participation["certifications"] = serialize_thermal_reserve_certifications(certifications)
+                if thermal_id in thermal_certifications:
+                    new_content = serialize_thermal_reserve_certifications(thermal_certifications.pop(thermal_id))
+                else:
+                    new_content = []
+                participation["certifications"] = new_content
 
+            # Then, add certifications for new thermals
             for thermal_id, certifications in thermal_certifications.items():
                 yaml_content["participations"].append(
                     {"cluster": thermal_id, "certifications": serialize_thermal_reserve_certifications(certifications)}

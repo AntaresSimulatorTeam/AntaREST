@@ -83,13 +83,13 @@ class FileStudyThermalReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
         yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
 
         # First, reset symmetries for non-given thermals and replace for given ones
-        for k, participation in enumerate(yaml_content["participations"]):
+        for participation in yaml_content["participations"]:
             thermal_id = transform_name_to_id(participation["cluster"])
             if thermal_id in data:
                 new_content = serialize_reserve_symmetries(data.pop(thermal_id))
             else:
                 new_content = []
-            yaml_content["participations"][k]["symmetries"] = new_content
+            participation["symmetries"] = new_content
 
         # Then, add symmetries for new thermals
         for thermal_id, symmetries in data.items():
