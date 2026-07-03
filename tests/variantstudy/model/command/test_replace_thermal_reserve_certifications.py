@@ -96,6 +96,34 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
     result = dao_10_0.get_thermal_reserve_certifications("fr")
     assert result == new_certifications
 
+    # Ensures replacing existing data with new one erase the old values
+    new_certifications = {"r2": {"th1": ThermalReserveCertification(participation_cost=4, max_power=1.2)}}
+
+    cmd = ReplaceThermalReserveCertifications(
+        area_id="fr",
+        certifications=new_certifications,
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_0,
+    )
+    output = cmd.apply(dao_10_0)
+    assert output.status
+
+    result = dao_10_0.get_thermal_reserve_certifications("fr")
+    assert result == new_certifications
+
+    # Ensures we're able to remove all certifications
+    cmd = ReplaceThermalReserveCertifications(
+        area_id="fr",
+        certifications={},
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_0,
+    )
+    output = cmd.apply(dao_10_0)
+    assert output.status
+
+    result = dao_10_0.get_thermal_reserve_certifications("fr")
+    assert result == {}
+
 
 def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> None:
     _set_up(dao_10_0, command_context)
