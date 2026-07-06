@@ -182,6 +182,7 @@ function JSONEditor({
       // The save button is added to the menu only when the `onSave` callback is provided
       onSaveRef.current &&
       editor &&
+      editor.menu &&
       ["tree", "form", "code", "text"].includes(editor.getMode())
     ) {
       editor.menu.append(saveBtn);
@@ -200,7 +201,7 @@ function JSONEditor({
     // Changing the mode resets undo/redo history and undo/redo are not available in all modes.
     // So the change mode button is disabled when the JSON is dirty.
 
-    const editorModeBtn = editorRef.current?.menu.querySelector("button.jsoneditor-modes");
+    const editorModeBtn = editorRef.current?.menu?.querySelector("button.jsoneditor-modes");
 
     if (enable) {
       editorModeBtn?.setAttribute("disabled", "");

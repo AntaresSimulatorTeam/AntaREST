@@ -37,7 +37,6 @@ import {
   getCommands,
   getStudyTask,
   replaceCommands,
-  updateCommand,
 } from "../../../../../../../../services/api/variant";
 import {
   addWsEventListener,
@@ -80,34 +79,8 @@ function EditionView(props: Props) {
   const taskFetchPeriod = 3000;
   const taskTimeoutId = useRef<NodeJS.Timeout>(undefined);
 
-  const onSave = async (index: number) => {
-    try {
-      const elm = commands[index];
-      if (elm.updated) {
-        await updateCommand(studyId, elm.id as string, elm);
-        let tmpCommand: CommandItem[] = [];
-        tmpCommand = tmpCommand.concat(commands);
-        tmpCommand[index].updated = false;
-        setCommands(tmpCommand);
-        enqueueSnackbar(t("variants.success.save"), {
-          variant: "success",
-        });
-      }
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.commandUpdated"), e as AxiosError);
-    }
-  };
-
   const onDelete = async (index: number) => {
     setOpenDeleteCommandDialog(index);
-  };
-
-  const onArgsUpdate = (index: number, args: object) => {
-    let tmpCommand: CommandItem[] = [];
-    tmpCommand = tmpCommand.concat(commands);
-    tmpCommand[index].args = { ...args };
-    tmpCommand[index].updated = true;
-    setCommands(tmpCommand);
   };
 
   const onGlobalExport = async () => {
@@ -428,8 +401,6 @@ function EditionView(props: Props) {
             expandedIndex={expandedIndex}
             generationIndex={currentCommandGenerationIndex}
             onDelete={onDelete}
-            onArgsUpdate={onArgsUpdate}
-            onSave={onSave}
             onExpanded={onExpanded}
           />
         </Body>
