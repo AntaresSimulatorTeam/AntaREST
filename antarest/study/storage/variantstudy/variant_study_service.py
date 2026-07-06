@@ -14,9 +14,7 @@ import logging
 import re
 from collections.abc import Callable
 from datetime import timedelta
-from functools import reduce
 from pathlib import Path
-from typing import cast
 from uuid import uuid4
 
 import humanize
@@ -26,7 +24,6 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
-    CommandNotFoundError,
     CommandNotValid,
     CommandUpdateAuthorizationError,
     NoParentStudyError,
@@ -37,21 +34,21 @@ from antarest.core.exceptions import (
     VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
 )
-from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.interfaces.cache import ICache
-from antarest.core.interfaces.eventbus import Event, EventType, IEventBus
-from antarest.core.model import PermissionInfo, StudyPermissionType
+from antarest.core.interfaces.eventbus import IEventBus
+from antarest.core.model import StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import assert_this, current_time, suppress_exception
+from antarest.core.utils.utils import current_time
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
-from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
+from antarest.study.events import notify_study_creation, notify_study_data_edition
 from antarest.study.model import (
     RawStudy,
     StorageMode,
@@ -191,24 +188,6 @@ class VariantStudyService(AbstractStudyService):
         study.editor = user_name
         self.repository.save(study)
 
-    def get_command(self, study_id: str, command_id: str) -> CommandDTOAPI:
-        """
-        Get command lists
-        Args:
-            study_id: study id
-            command_id: command id
-        Returns: List of commands
-        """
-        study = self._get_variant_study(study_id)
-
-        try:
-            index = [command.id for command in study.commands].index(command_id)
-            command: CommandBlock = study.commands[index]
-            user_name = get_user_name_from_id(command.user_id) if command.user_id else None
-            return command.to_dto().to_api(user_name)
-        except ValueError:
-            raise CommandNotFoundError(f"Command with id {command_id} not found") from None
-
     def get_commands(self, study_id: str) -> list[CommandDTOAPI]:
         """
         Get commands list
@@ -258,30 +237,43 @@ class VariantStudyService(AbstractStudyService):
                     exc_info=e,
                 )
 
-    def append_command(self, study_id: str, command: CommandDTO) -> str:
-        """
-        Add command to list of commands (at the end)
-        Args:
-            study_id: study id
-            command: new command
-        Returns: None
-        """
-        command_ids = self.append_commands(study_id, [command])
-        return command_ids[0]
-
     def append_commands(self, study_id: str, commands: list[CommandDTO]) -> list[str]:
         """
-        Add command to list of commands (at the end)
+        Add commands to the list of existing ones
         Args:
             study_id: study id
             commands: list of new command
-        Returns: None
+        Returns: The added command ids as a list of str
         """
         study = self._get_variant_study(study_id)
+        command_ids = self._modify_commands(study, commands, replace_commands=False)
+        self.on_variant_advance(study)
+        notify_study_data_edition(self.event_bus, study)
+        return command_ids
+
+    def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
+        """
+        Replace existing commands by new ones
+        Args:
+            study_id: study id
+            commands: list of new command
+        Returns: Study's id
+        """
+        study = self._get_variant_study(study_id)
+        self._modify_commands(study, commands, replace_commands=True)
+        self.on_variant_rebase(study)
+        notify_study_data_edition(self.event_bus, study)
+        return study_id
+
+    def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
         self._check_update_authorization(study)
-        command_objs = self._check_commands_validity(study_id, commands)
+        command_objs = self._check_commands_validity(study.id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
-        first_index = len(study.commands)
+        if replace_commands:
+            first_index = 0
+            study.commands = []
+        else:
+            first_index = len(study.commands)
 
         # noinspection PyArgumentList
         new_commands = [
@@ -298,66 +290,7 @@ class VariantStudyService(AbstractStudyService):
         ]
         study.commands.extend(new_commands)
         self._update_editor(study)
-        self.on_variant_advance(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
         return [c.id for c in new_commands]
-
-    def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
-        """
-        Add command to list of commands (at the end)
-        Args:
-            study_id: study id
-            commands: list of new command
-        Returns: None
-        """
-        study = self._get_variant_study(study_id)
-        self._check_update_authorization(study)
-        command_objs = self._check_commands_validity(study_id, commands)
-        validated_commands = transform_command_to_dto(command_objs, commands)
-        # noinspection PyArgumentList
-        study.commands = [
-            CommandBlock(
-                command=command.action,
-                args=to_json_string(command.args),
-                index=i,
-                version=command.version,
-                study_version=str(command.study_version),
-                user_id=get_user_id(),
-                updated_at=current_time(),
-            )
-            for i, command in enumerate(validated_commands)
-        ]
-        self._update_editor(study)
-        self.on_variant_rebase(study)
-        return str(study.id)
-
-    def move_command(self, study_id: str, command_id: str, new_index: int) -> None:
-        """
-        Move command place in the list of command
-        Args:
-            study_id: study id
-            command_id: command_id
-            new_index: new index of the command
-        Returns: None
-        """
-        study = self._get_variant_study(study_id)
-        self._check_update_authorization(study)
-
-        index = [command.id for command in study.commands].index(command_id)
-        if index >= 0 and len(study.commands) > new_index >= 0:
-            command = study.commands[index]
-            study.commands.pop(index)
-            study.commands.insert(new_index, command)
-            for idx in range(len(study.commands)):
-                study.commands[idx].index = idx
-            self._update_editor(study)
-            self.on_variant_rebase(study)
 
     def remove_command(self, study_id: str, command_id: str) -> None:
         """
@@ -392,45 +325,6 @@ class VariantStudyService(AbstractStudyService):
         self._update_editor(study)
         self.on_variant_rebase(study)
 
-    def update_command(self, study_id: str, command_id: str, command: CommandDTO) -> None:
-        """
-        Update a command
-        Args:
-            study_id: study id
-            command_id: command id
-            command: new command
-        Returns: None
-        """
-        study = self._get_variant_study(study_id)
-        self._check_update_authorization(study)
-        command_objs = self._check_commands_validity(study_id, [command])
-        validated_commands = transform_command_to_dto(command_objs, [command])
-        assert_this(len(validated_commands) == 1)
-        index = [command.id for command in study.commands].index(command_id)
-        if index >= 0:
-            study.commands[index].command = validated_commands[0].action
-            study.commands[index].args = to_json_string(validated_commands[0].args)
-            self._update_editor(study)
-            self.on_variant_rebase(study)
-
-    def export_commands_matrices(self, study_id: str) -> FileDownloadTaskDTO:
-        study = self._get_variant_study(study_id)
-        matrices = {
-            matrix
-            for command in study.commands
-            for matrix in suppress_exception(
-                lambda: reduce(
-                    lambda m, c: m + c.get_inner_matrices().matrices,
-                    self.command_factory.to_command(command.to_dto()),
-                    cast(list[str], []),
-                ),
-                lambda e: logger.warning(f"Failed to parse command {command}", exc_info=e),
-            )
-            or []
-        }
-        matrix_service = cast(MatrixService, self._matrix_service)
-        return matrix_service.download_matrix_list(list(matrices), f"{study.name}_{study.id}_matrices")
-
     def _get_variant_study(
         self,
         study_id: str,
@@ -449,9 +343,7 @@ class VariantStudyService(AbstractStudyService):
             MustBeAuthenticatedError: If the user is not authenticated (HTTP status 403).
         """
         study = self._get_study_by_id(study_id)
-
-        assert isinstance(study, VariantStudy)
-        return study
+        return _cast_study_to_variant(study)
 
     def _get_study_by_id(
         self,
@@ -637,18 +529,8 @@ class VariantStudyService(AbstractStudyService):
             storage_mode=study.storage_mode,
         )
         self.repository.save(variant_study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_CREATED,
-                payload=variant_study.to_json_summary(),
-                permissions=PermissionInfo.from_study(variant_study),
-            )
-        )
-        logger.info(
-            "variant study %s created by user %s",
-            variant_study.id,
-            get_user_id(),
-        )
+        notify_study_creation(self.event_bus, variant_study)
+        logger.info("variant study %s created by user %s", variant_study.id, get_user_id())
         return variant_study
 
     def generate_task(
@@ -841,7 +723,7 @@ class SnapshotCleanerTask:
                 )
             )
             for variant in variant_list:
-                assert isinstance(variant, VariantStudy)
+                variant = _cast_study_to_variant(variant)
                 now_utc = current_time()
                 if variant.updated_at and variant.updated_at < now_utc - self._retention_time:
                     if variant.last_access and variant.last_access < now_utc - self._retention_time:
