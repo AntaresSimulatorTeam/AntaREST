@@ -75,6 +75,7 @@ function ReservesGeneral() {
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
   const [editingReserve, setEditingReserve] = useState<ReserveRow | null>(null);
+  const [isEditReserveOpen, setIsEditReserveOpen] = useState(false);
   const [isGlobalParametersOpen, setIsGlobalParametersOpen] = useState(false);
 
   const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
@@ -115,8 +116,12 @@ function ReservesGeneral() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
+  const handleNameClick = (row: ReserveRow) => {
+    setEditingReserve(row);
+    setIsEditReserveOpen(true);
+  };
+
   const handleCreate = async ({ name, type }: RowData & Partial<ReserveRow>) => {
-    // `type` is always set: it's a required field of the create dialog
     if (!type) {
       throw new Error("Reserve type is required");
     }
@@ -131,7 +136,6 @@ function ReservesGeneral() {
   };
 
   const handleDuplicate = async (row: ReserveRow, newName: string) => {
-    // The extra `name` row prop is stripped by the create input schema
     const newReserve = await createMutation.mutateAsync({
       studyId,
       areaId,
@@ -190,6 +194,7 @@ function ReservesGeneral() {
         )}
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
+        onNameClick={handleNameClick}
         deleteConfirmationMessage={(rowsToDelete) =>
           t("study.modeling.reserves.question.delete", {
             count: rowsToDelete.length,
@@ -209,20 +214,16 @@ function ReservesGeneral() {
       />
       {editingReserve && (
         <EditReserveDrawer
-          open
+          open={isEditReserveOpen}
           reserve={editingReserve}
-          onClose={() => setEditingReserve(null)}
+          onClose={() => setIsEditReserveOpen(false)}
           onSubmit={handleUpdate}
         />
       )}
-      {isGlobalParametersOpen && (
-        <EditGlobalParametersDrawer
-          open
-          studyId={studyId}
-          areaId={areaId}
-          onClose={() => setIsGlobalParametersOpen(false)}
-        />
-      )}
+      <EditGlobalParametersDrawer
+        open={isGlobalParametersOpen}
+        onClose={() => setIsGlobalParametersOpen(false)}
+      />
     </>
   );
 }

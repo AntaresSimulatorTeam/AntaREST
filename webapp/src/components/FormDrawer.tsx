@@ -20,11 +20,11 @@ import CloseIcon from "@mui/icons-material/Close";
 import SaveIcon from "@mui/icons-material/Save";
 import type { SvgIconComponent } from "@mui/icons-material";
 import {
-  Box,
   Button,
   Divider,
   Drawer,
   IconButton,
+  Stack,
   Tooltip,
   Typography,
   type DrawerProps,
@@ -45,8 +45,9 @@ type SuperType<TFieldValues extends FieldValues, TContext, SubmitReturnValue> = 
  * Props for {@link FormDrawer}.
  *
  * Mirrors `FormDialogProps` but for a Drawer: all `Form` props plus the drawer-specific
- * `title`, `titleIcon`, `width` and `anchor`. `onCancel` is required and is called both
- * when the user dismisses the drawer and after a successful submit.
+ * `title`, `titleIcon`, `width` and `anchor`. `onCancel` is required and is called when the
+ * user dismisses the drawer. Closing after a successful submit is left to the caller, via
+ * `onSubmitSuccessful`.
  */
 export interface FormDrawerProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -63,8 +64,9 @@ export interface FormDrawerProps<
 // Renders a `Form` inside a Drawer with Cancel/Save actions in a sticky footer.
 //
 // It's the Drawer counterpart of `FormDialog`: a submittable form that can be opened from any
-// click event (table row, button, menu item…). The drawer closes automatically after a
-// successful submit, and closing is blocked while a submission is in progress.
+// click event (table row, button, menu item…). Closing is blocked while a submission is in
+// progress; whether to close after a successful submit is left to the caller (see
+// `onSubmitSuccessful`).
 function FormDrawer<TFieldValues extends FieldValues, TContext, SubmitReturnValue>({
   config,
   onSubmit,
@@ -100,15 +102,6 @@ function FormDrawer<TFieldValues extends FieldValues, TContext, SubmitReturnValu
     setIsSubmitAllowed((isDirty || allowSubmitOnPristine) && !isSubmitting && !isDisabled);
   };
 
-  const handleSubmitSuccessful: FormProps<
-    TFieldValues,
-    TContext,
-    SubmitReturnValue
-  >["onSubmitSuccessful"] = (data, submitResult) => {
-    onSubmitSuccessful?.(data, submitResult);
-    onCancel();
-  };
-
   const handleCancel = () => {
     if (!isSubmitting) {
       onCancel();
@@ -133,9 +126,14 @@ function FormDrawer<TFieldValues extends FieldValues, TContext, SubmitReturnValu
       onClose={handleClose}
       slotProps={{
         paper: { sx: { width, maxWidth: "100%", display: "flex", flexDirection: "column" } },
+        backdrop: {
+          sx: {
+            backgroundColor: "transparent",
+          },
+        },
       }}
     >
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1, p: 2, flexShrink: 0 }}>
+      <Stack direction="row" alignItems="center" gap={1} p={2} flexShrink={0}>
         {TitleIcon && <TitleIcon fontSize="small" sx={{ color: "text.secondary" }} />}
         <Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 600 }} noWrap>
           {title}
@@ -147,12 +145,12 @@ function FormDrawer<TFieldValues extends FieldValues, TContext, SubmitReturnValu
             </IconButton>
           </span>
         </Tooltip>
-      </Box>
+      </Stack>
       <Divider />
       <Form
         config={config}
         onSubmit={onSubmit}
-        onSubmitSuccessful={handleSubmitSuccessful}
+        onSubmitSuccessful={onSubmitSuccessful}
         onInvalid={onInvalid}
         id={formId}
         onStateChange={handleFormStateChange}
@@ -162,7 +160,7 @@ function FormDrawer<TFieldValues extends FieldValues, TContext, SubmitReturnValu
         {children}
       </Form>
       <Divider />
-      <Box sx={{ display: "flex", gap: 1, p: 2, flexShrink: 0 }}>
+      <Stack direction="row" gap={1} p={2} flexShrink={0}>
         <Button onClick={handleCancel} disabled={isSubmitting}>
           {cancelButtonText || t("global.cancel")}
         </Button>
@@ -177,7 +175,7 @@ function FormDrawer<TFieldValues extends FieldValues, TContext, SubmitReturnValu
         >
           {submitButtonText || t("global.save")}
         </Button>
-      </Box>
+      </Stack>
     </Drawer>
   );
 }

@@ -48,15 +48,6 @@ const RESERVE_TYPES = reserveTypeSchema.options;
 function EditReserveDrawer({ open, onClose, reserve, onSubmit }: Props) {
   const { t } = useTranslation();
 
-  const defaultValues: EditReserveValues = {
-    type: reserve.type,
-    failureCost: reserve.failureCost,
-    spillageCost: reserve.spillageCost,
-    referenceActivationDuration: reserve.referenceActivationDuration,
-    powerActivationRatio: reserve.powerActivationRatio,
-    energyActivationRatio: reserve.energyActivationRatio,
-  };
-
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
@@ -75,7 +66,8 @@ function EditReserveDrawer({ open, onClose, reserve, onSubmit }: Props) {
       title={reserve.id}
       titleIcon={EditIcon}
       onCancel={onClose}
-      config={{ defaultValues }}
+      onSubmitSuccessful={onClose}
+      config={{ defaultValues: reserve }}
       onSubmit={handleSubmit}
     >
       {({ control }) => (

@@ -16,11 +16,11 @@ import FormDrawer from "@/components/FormDrawer";
 import NumberFE from "@/components/fieldEditors/NumberFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import useArea from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-hooks/useArea";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
 import type { ReserveGlobalParameters } from "@/services/api/studies/areas/reserves/types";
-import type { AreaWithId } from "@/types/types";
-import type { Study } from "@/services/api/studies/types";
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -28,13 +28,13 @@ import { useTranslation } from "react-i18next";
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  studyId: Study["id"];
-  areaId: AreaWithId["id"];
 }
 
-function EditGlobalParametersDrawer({ open, onClose, studyId, areaId }: Props) {
+function EditGlobalParametersDrawer({ open, onClose }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const { id: studyId } = useStudy();
+  const { id: areaId } = useArea();
   const { queryKey } = reserveQueries.globalParameters(studyId, areaId);
 
   const updateMutation = useMutation({
@@ -47,10 +47,6 @@ function EditGlobalParametersDrawer({ open, onClose, studyId, areaId }: Props) {
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
-
-  const getDefaultValues = () => {
-    return queryClient.fetchQuery(reserveQueries.globalParameters(studyId, areaId));
-  };
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ReserveGlobalParameters>) => {
     return updateMutation.mutateAsync({ studyId, areaId, data: dirtyValues });
@@ -66,7 +62,11 @@ function EditGlobalParametersDrawer({ open, onClose, studyId, areaId }: Props) {
       title={t("study.modeling.reserves.globalParameters")}
       titleIcon={SettingsIcon}
       onCancel={onClose}
-      config={{ defaultValues: getDefaultValues }}
+      onSubmitSuccessful={onClose}
+      config={{
+        defaultValues: () =>
+          queryClient.fetchQuery(reserveQueries.globalParameters(studyId, areaId)),
+      }}
       onSubmit={handleSubmit}
     >
       {({ control }) => (
