@@ -58,7 +58,7 @@ def create_favorite_routes() -> APIRouter:
     @bp.delete(
         "/favorites/studies/{uuid}",
         summary="Delete a study from the favorite list",
-        status_code=HTTPStatus.ACCEPTED,
+        status_code=HTTPStatus.NO_CONTENT,
     )
     def delete_favorite_study(favorite_service: FavoriteStudyServiceDep, uuid: UuidStr) -> None:
         logger.info(f"Deleting study {uuid} from favorites.")
@@ -87,7 +87,7 @@ def create_favorite_routes() -> APIRouter:
     @bp.delete(
         "/favorites/directories/{uuid}",
         summary="Delete a directory from the list of favorite directories",
-        status_code=HTTPStatus.ACCEPTED,
+        status_code=HTTPStatus.NO_CONTENT,
     )
     def delete_favorite_directory(favorite_directory_service: FavoriteDirectoryServiceDep, uuid: UuidStr) -> None:
         logger.info(f"Deleting directory {uuid} from favorites.")
@@ -120,7 +120,7 @@ def create_favorite_routes() -> APIRouter:
     @bp.delete(
         "/favorites/external-directories",
         summary="Delete an external directory from the list of favorite directories",
-        status_code=HTTPStatus.ACCEPTED,
+        status_code=HTTPStatus.NO_CONTENT,
     )
     def delete_favorite_external_directory(
         favorite_external_directory_service: FavoriteExternalDirectoryServiceDep,

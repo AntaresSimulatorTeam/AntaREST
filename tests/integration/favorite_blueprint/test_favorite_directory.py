@@ -45,14 +45,14 @@ def test_favorite_directory(client: TestClient, admin_access_token: str) -> None
     assert actual_favorite_directories_list == expected_favorite_directories_list
 
     resp = client.delete(f"/v1/favorites/directories/{dt_1_id}")
-    assert resp.status_code == 202
+    assert resp.status_code == 204
     expected_favorite_directories_list.remove(directory_dto_1)
     actual_favorite_directories_list = client.get("/v1/favorites/directories").json()
 
     assert actual_favorite_directories_list == [directory_dto_2]
 
     resp = client.delete(f"/v1/favorites/directories/{dt_2_id}")
-    assert resp.status_code == 202
+    assert resp.status_code == 204
     actual_favorite_directories_list = client.get("/v1/favorites/directories").json()
 
     assert actual_favorite_directories_list == []
