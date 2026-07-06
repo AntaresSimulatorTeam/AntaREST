@@ -84,7 +84,11 @@ def create_favorite_routes() -> APIRouter:
         logger.info(f"Adding directory {uuid} as a favorite.")
         return favorite_directory_service.add_favorite(uuid)
 
-    @bp.delete("/favorites/directories/{uuid}", summary="Delete a directory from the list of favorite directories", status_code=HTTPStatus.ACCEPTED)
+    @bp.delete(
+        "/favorites/directories/{uuid}",
+        summary="Delete a directory from the list of favorite directories",
+        status_code=HTTPStatus.ACCEPTED,
+    )
     def delete_favorite_directory(favorite_directory_service: FavoriteDirectoryServiceDep, uuid: UuidStr) -> None:
         logger.info(f"Deleting directory {uuid} from favorites.")
         favorite_directory_service.delete_favorite(uuid)
