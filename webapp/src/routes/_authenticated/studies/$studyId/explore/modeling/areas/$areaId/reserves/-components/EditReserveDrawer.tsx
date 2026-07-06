@@ -63,7 +63,7 @@ function EditReserveDrawer({ open, onClose, reserve, onSubmit }: Props) {
   return (
     <FormDrawer
       open={open}
-      title={reserve.id}
+      title={reserve.name}
       titleIcon={EditIcon}
       onCancel={onClose}
       onSubmitSuccessful={onClose}

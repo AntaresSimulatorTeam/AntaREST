@@ -34,19 +34,7 @@ export const Route = createFileRoute(
   component: ReservesGeneral,
 });
 
-interface ReserveRow extends Reserve {
-  name: string;
-}
-
-function reserveToRow(reserve: Reserve): ReserveRow {
-  return { ...reserve, name: reserve.id };
-}
-
-function reservesToRows(reserves: Reserve[]): ReserveRow[] {
-  return reserves.map(reserveToRow);
-}
-
-const columnHelper = createMRTColumnHelper<ReserveRow>();
+const columnHelper = createMRTColumnHelper<Reserve>();
 
 const columns = [
   columnHelper.accessor("type", {
@@ -74,7 +62,7 @@ function ReservesGeneral() {
   const { t } = useTranslation();
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
-  const [editingReserve, setEditingReserve] = useState<ReserveRow | null>(null);
+  const [editingReserve, setEditingReserve] = useState<Reserve | null>(null);
   const [isEditReserveOpen, setIsEditReserveOpen] = useState(false);
   const [isGlobalParametersOpen, setIsGlobalParametersOpen] = useState(false);
 
@@ -82,10 +70,9 @@ function ReservesGeneral() {
 
   const { queryKey: listQueryKey } = reserveQueries.list(studyId, areaId);
 
-  const { data: rows, isFetching: isRowsFetching } = useSuspenseQuery({
-    ...reserveQueries.list(studyId, areaId),
-    select: reservesToRows,
-  });
+  const { data: rows, isFetching: isRowsFetching } = useSuspenseQuery(
+    reserveQueries.list(studyId, areaId),
+  );
 
   const createMutation = useMutation({
     ...reserveMutations.create(studyId, areaId),
@@ -116,36 +103,32 @@ function ReservesGeneral() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleNameClick = (row: ReserveRow) => {
+  const handleNameClick = (row: Reserve) => {
     setEditingReserve(row);
     setIsEditReserveOpen(true);
   };
 
-  const handleCreate = async ({ name, type }: RowData & Partial<ReserveRow>) => {
+  const handleCreate = ({ name, type }: RowData & Partial<Reserve>) => {
     if (!type) {
       throw new Error("Reserve type is required");
     }
 
-    const newReserve = await createMutation.mutateAsync({
+    return createMutation.mutateAsync({
       studyId,
       areaId,
-      data: { id: name, type },
+      data: { name, type },
     });
-
-    return reserveToRow(newReserve);
   };
 
-  const handleDuplicate = async (row: ReserveRow, newName: string) => {
-    const newReserve = await createMutation.mutateAsync({
+  const handleDuplicate = (row: Reserve, newName: string) => {
+    return createMutation.mutateAsync({
       studyId,
       areaId,
-      data: { ...row, id: newName },
+      data: { ...row, name: newName },
     });
-
-    return reserveToRow(newReserve);
   };
 
-  const handleDelete = (rowsToDelete: ReserveRow[]) => {
+  const handleDelete = (rowsToDelete: Reserve[]) => {
     return deleteMutation.mutateAsync({
       studyId,
       areaId,
