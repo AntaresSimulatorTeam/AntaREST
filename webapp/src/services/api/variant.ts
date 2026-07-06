@@ -21,15 +21,6 @@ export const appendCommands = async (studyId: string, commands: CommandDTO[]): P
   return res.data;
 };
 
-export const updateCommand = async (
-  studyId: string,
-  commandId: string,
-  command: CommandDTO,
-): Promise<void> => {
-  const res = await client.put(`/v1/studies/${studyId}/commands/${commandId}`, command);
-  return res.data;
-};
-
 export const replaceCommands = async (studyId: string, commands: CommandDTO[]): Promise<string> => {
   const res = await client.put(`/v1/studies/${studyId}/commands`, commands);
   return res.data;
