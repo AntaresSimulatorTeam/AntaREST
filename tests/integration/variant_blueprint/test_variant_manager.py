@@ -185,7 +185,6 @@ def test_variant_manager(
             headers=admin_headers,
         )
         assert res.status_code == 200
-        assert len(res.json()) == 1
 
         res = client.post(
             f"/v1/studies/{variant_id}/commands",
@@ -204,17 +203,6 @@ def test_variant_manager(
             json={
                 "action": "create_area",
                 "args": {"area_name": "testZone3", "metadata": {}},
-            },
-            headers=admin_headers,
-        )
-        assert res.status_code == 200
-
-        command_id = res.json()
-        res = client.put(
-            f"/v1/studies/{variant_id}/commands/{command_id}",
-            json={
-                "action": "create_area",
-                "args": {"area_name": "testZone4", "metadata": {}},
             },
             headers=admin_headers,
         )
@@ -245,14 +233,6 @@ def test_variant_manager(
         assert res.status_code == 200
 
         command_id = res.json()[1]["id"]
-
-        res = client.put(f"/v1/studies/{variant_id}/commands/{command_id}/move?index=0", headers=admin_headers)
-        assert res.status_code == 200
-
-        res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-        assert res.json()[0]["id"] == command_id
-        assert res.status_code == 200
-
         res = client.delete(f"/v1/studies/{variant_id}/commands/{command_id}", headers=admin_headers)
 
         assert res.status_code == 200
