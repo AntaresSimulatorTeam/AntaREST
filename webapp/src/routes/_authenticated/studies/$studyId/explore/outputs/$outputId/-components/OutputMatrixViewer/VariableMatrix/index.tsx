@@ -14,11 +14,10 @@
 
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import FilterableMatrixGrid, {
-  type FilterableMatrixGridHandle,
+  type FilterableMatrixGridProps,
 } from "@/components/Matrix/components/FilterableMatrixGrid";
 import {
   isNonEmptyMatrix,
-  type DateTimeMetadataDTO,
   type DateTimes,
   type EnhancedGridColumn,
 } from "@/components/Matrix/shared/types";
@@ -29,6 +28,7 @@ import type {
   VariablesListDTO,
   VariableViewMatrixDTO,
 } from "@/services/api/studies/outputs/variableViews/types";
+import type { MatrixIndex } from "@/types/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
@@ -42,9 +42,9 @@ interface VariableMatrixProps {
   isMaterializing: boolean;
   variableViewDataRes: UsePromiseResponse<VariableViewMatrixDTO | null>;
   resultColumns: EnhancedGridColumn[];
-  matrixGridRef: React.RefObject<FilterableMatrixGridHandle | null>;
+  matrixGridRef: FilterableMatrixGridProps["ref"];
   dateTime?: DateTimes;
-  dateTimeMetadata?: DateTimeMetadataDTO;
+  dateTimeMetadata?: MatrixIndex;
 }
 
 function hasVariablesForItem(variablesMetadata: VariablesListDTO, selectedItem: Item): boolean {

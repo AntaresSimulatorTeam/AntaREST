@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { DateTimeMetadataDTO } from "@/components/Matrix/shared/types";
 import client from "@/services/api/client";
+import type { MatrixIndex } from "@/types/types";
 import { sanitizeJsonResponse } from "@/utils/apiUtils";
 import { adaptVariableViewParamsToDto } from "./adapters";
 import type {
@@ -34,15 +34,55 @@ export async function getVariablesList({ studyId, outputId }: GetVariablesListPa
   const { data } = await client.get<VariablesListDTO>(
     `/v1/studies/${studyId}/output/${outputId}/variables-list`,
   );
-  return data;
+  // return data;
+
+  return {
+    mcInd: {
+      areas: [
+        {
+          name: "areain-1",
+          variables: ["A. DEMAND", "A. GEN", "Z. LOAD"],
+          thermalClusters: [
+            {
+              name: "cluster in2",
+              variables: ["TC1. GEN", "TC1. COST"],
+            },
+          ],
+          renewableClusters: [
+            {
+              name: "ren1",
+              variables: ["RC1. GEN", "RC1. COST"],
+            },
+          ],
+          shortTermStorages: [
+            {
+              name: "stor1",
+              variables: ["STS1. GEN", "STS1. COST"],
+            },
+          ],
+        },
+      ],
+      links: [
+        {
+          area1Name: "areain-1",
+          area2Name: "areain-2",
+          variables: ["L. FLOW", "L. LOSS"],
+        },
+      ],
+    },
+    mcAll: {
+      areas: [],
+      links: [],
+    },
+  } satisfies VariablesListDTO;
 }
 
 ////////////////////////////////////////////////////////////////
 // Variable View Data
 ////////////////////////////////////////////////////////////////
 
-export async function getTimeIndex({ studyId, outputId, frequency }: GetTimeIndexParams) {
-  const { data } = await client.get<DateTimeMetadataDTO>(
+export async function getOutputMatrixIndex({ studyId, outputId, frequency }: GetTimeIndexParams) {
+  const { data } = await client.get<MatrixIndex>(
     `/v1/studies/${studyId}/output/${outputId}/time-index`,
     { params: { frequency } },
   );

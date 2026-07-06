@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { FilterableMatrixGridHandle } from "@/components/Matrix/components/FilterableMatrixGrid";
+import type { MatrixFilterHandle } from "@/components/Matrix/components/MatrixFilter/types";
 import { Column } from "@/components/Matrix/shared/constants";
 import type { MatrixResultDTO } from "@/components/Matrix/shared/types";
 import {
@@ -65,7 +65,7 @@ function OutputMatrixViewer({ selectedItem, output }: Props) {
   const [selectedClusterId, setSelectedClusterId] = useState("");
   const [resultColHeaders, setResultColHeaders] = useState<string[][]>([]);
   const [headerIndices, setHeaderIndices] = useState<number[]>([]);
-  const matrixGridRef = useRef<FilterableMatrixGridHandle>(null);
+  const matrixGridRef = useRef<MatrixFilterHandle>(null);
 
   const isVariablePerVariable = mcMode === "variable-per-variable";
 

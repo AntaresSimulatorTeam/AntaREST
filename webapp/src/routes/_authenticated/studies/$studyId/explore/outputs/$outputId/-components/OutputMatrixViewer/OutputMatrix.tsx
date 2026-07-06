@@ -14,7 +14,7 @@
 
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import FilterableMatrixGrid, {
-  type FilterableMatrixGridHandle,
+  type FilterableMatrixGridProps,
 } from "@/components/Matrix/components/FilterableMatrixGrid";
 import {
   isNonEmptyMatrix,
@@ -35,7 +35,7 @@ interface Props {
   resultColHeaders: string[][];
   filteredData: number[][];
   resultColumns: EnhancedGridColumn[];
-  matrixGridRef: React.RefObject<FilterableMatrixGridHandle | null>;
+  matrixGridRef: FilterableMatrixGridProps["ref"];
   dateTime: DateTimes | undefined;
   dateTimeMetadata: MatrixIndex | undefined;
 }

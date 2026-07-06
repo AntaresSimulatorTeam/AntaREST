@@ -755,7 +755,6 @@
   "study.outputs.variablePerVariable": "Variable per Variable",
   "study.outputs.variable": "Variable",
   "study.outputs.noVariables": "No variables available",
-  "study.outputs.cluster": "Cluster",
   "study.outputs.thermalCluster": "Thermal Cluster",
   "study.outputs.renewableCluster": "Renewable Cluster",
   "study.outputs.shortTermStorage": "Short-Term Storage",

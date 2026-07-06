@@ -116,7 +116,7 @@ function Output() {
                 {
                   id: "NEW",
                   label: "NEW",
-                  content: <OutputMatrixViewer2 selectedItem={data} />,
+                  content: <OutputMatrixViewer2 item={data} />,
                 },
                 {
                   id: "original",

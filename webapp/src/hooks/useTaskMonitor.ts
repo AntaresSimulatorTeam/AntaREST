@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { useEffect } from "react";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import {
@@ -21,6 +20,7 @@ import {
   subscribeWsChannels,
   unsubscribeWsChannels,
 } from "@/services/webSocket/ws";
+import { useEffect } from "react";
 
 interface UseTaskMonitorOptions {
   taskId: string | null;

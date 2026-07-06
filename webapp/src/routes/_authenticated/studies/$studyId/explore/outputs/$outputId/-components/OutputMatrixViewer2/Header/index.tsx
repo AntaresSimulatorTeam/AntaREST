@@ -13,31 +13,43 @@
  */
 
 import DownloadMatrixButton from "@/components/buttons/DownloadMatrixButton";
-import CustomScrollbar from "@/components/CustomScrollbar";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import { Box, IconButton, Stack, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import { useToggle } from "react-use";
+import useOutput from "../../../-hooks/useOutput";
 import useOutputFilters from "../../../-hooks/useOutputFilters";
+import { buildVariableViewParams, createOutputDataPath } from "../../../-utils";
 import ColumnsFilter from "./ColumnsFIlter";
+import DownloadVariableViewButton from "./DownloadVariableViewButton";
 import ResultFilters from "./ResultFilters";
 
-interface Props {
-  outputDataPath: string;
-}
-
-function Header({ outputDataPath }: Props) {
+function Header() {
   const { t } = useTranslation();
-  const { columnsSearch, matrixGridRef } = useOutputFilters();
+  const {
+    item,
+    monteCarloMode,
+    dataType,
+    frequency,
+    year,
+    clusterId,
+    variable,
+    columnsSearch,
+    isMatrixDataLoaded,
+    matrixGridRef,
+  } = useOutputFilters();
   const [openColumnsFilter, toggleColumnsFilter] = useToggle(false);
   const study = useStudy();
+  const output = useOutput();
 
   const isColumnsFilterActive =
     columnsSearch.variables.length > 0 ||
     columnsSearch.units.length > 0 ||
     columnsSearch.stats.length > 0;
+
+  const isVariablePerVariable = monteCarloMode === "variable-per-variable";
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -54,27 +66,45 @@ function Header({ outputDataPath }: Props) {
   return (
     <>
       <Box>
-        <CustomScrollbar>
-          <Stack spacing={1} justifyContent="space-between" sx={{ py: 1 }}>
-            <ResultFilters />
-            <Stack spacing={0.5}>
+        <Stack spacing={1} justifyContent="space-between">
+          <ResultFilters />
+          <Stack spacing={0.5}>
+            {!isVariablePerVariable && (
               <Tooltip title="Filter columns">
                 <IconButton
                   onClick={toggleColumnsFilter}
                   color={isColumnsFilterActive ? "secondary" : "default"}
+                  disabled={!isMatrixDataLoaded}
                 >
                   <ViewColumnIcon />
                 </IconButton>
               </Tooltip>
-              <Tooltip title={t("matrix.filter.filterData")}>
-                <IconButton onClick={handleToggleColumnsFilter}>
-                  <FilterListIcon />
-                </IconButton>
-              </Tooltip>
-              <DownloadMatrixButton studyId={study.id} path={outputDataPath} />
-            </Stack>
+            )}
+            <Tooltip title={t("matrix.filter.filterData")}>
+              <IconButton onClick={handleToggleColumnsFilter} disabled={!isMatrixDataLoaded}>
+                <FilterListIcon />
+              </IconButton>
+            </Tooltip>
+            {isVariablePerVariable ? (
+              <DownloadVariableViewButton
+                params={buildVariableViewParams(dataType, clusterId, item, variable, frequency)}
+                disabled={!isMatrixDataLoaded}
+              />
+            ) : (
+              <DownloadMatrixButton
+                studyId={study.id}
+                path={createOutputDataPath({
+                  output,
+                  item,
+                  dataType,
+                  frequency,
+                  year,
+                })}
+                disabled={!isMatrixDataLoaded}
+              />
+            )}
           </Stack>
-        </CustomScrollbar>
+        </Stack>
       </Box>
       <ColumnsFilter open={openColumnsFilter} onClose={toggleColumnsFilter} />
     </>

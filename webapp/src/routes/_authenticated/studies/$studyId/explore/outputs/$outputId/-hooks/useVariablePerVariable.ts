@@ -37,7 +37,7 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromise from "@/hooks/usePromise";
 import { useTaskMonitor } from "@/hooks/useTaskMonitor";
 import {
-  getTimeIndex,
+  getOutputMatrixIndex,
   getVariablesList,
   getVariableViewData,
   materializeVariableView,
@@ -94,7 +94,7 @@ export function useVariablePerVariable({
   const { data: timeIndexMetadata } = usePromise(
     () => {
       if (outputId && isEnabled) {
-        return getTimeIndex({ studyId, outputId, frequency });
+        return getOutputMatrixIndex({ studyId, outputId, frequency });
       }
 
       return Promise.resolve(undefined);

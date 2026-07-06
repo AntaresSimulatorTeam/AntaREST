@@ -14,10 +14,14 @@
 
 import type { MatrixFilterHandle } from "@/components/Matrix/components/MatrixFilter/types";
 import { createContext } from "react";
-import type { DataType, Frequency, MonteCarloMode } from "../../-utils";
+import type { DataType, Frequency, Item, MonteCarloMode } from "../../-utils";
 import type { ColumnsInfo } from "./utils";
 
-export interface OutputFiltersContextValue {
+export interface OutputContextValue {
+  item: Item;
+  isMatrixDataLoaded: boolean;
+  setIsMatrixDataLoaded: React.Dispatch<React.SetStateAction<boolean>>;
+  // Result filters
   monteCarloMode: MonteCarloMode;
   setMonteCarloMode: React.Dispatch<React.SetStateAction<MonteCarloMode>>;
   year: number;
@@ -26,12 +30,18 @@ export interface OutputFiltersContextValue {
   setDataType: React.Dispatch<React.SetStateAction<DataType>>;
   frequency: Frequency;
   setFrequency: React.Dispatch<React.SetStateAction<Frequency>>;
+  variable: string;
+  setVariable: React.Dispatch<React.SetStateAction<string>>;
+  clusterId: string;
+  setClusterId: React.Dispatch<React.SetStateAction<string>>;
+  // Columns filters
   columnsSearch: ColumnsInfo;
   setColumnsSearch: React.Dispatch<React.SetStateAction<ColumnsInfo>>;
   columnsData: ColumnsInfo;
+  setColumnsData: React.Dispatch<React.SetStateAction<ColumnsInfo>>;
   matrixGridRef: React.RefObject<MatrixFilterHandle | null>;
 }
 
-const OutputFiltersContext = createContext<OutputFiltersContextValue | undefined>(undefined);
+const OutputContext = createContext<OutputContextValue | undefined>(undefined);
 
-export default OutputFiltersContext;
+export default OutputContext;

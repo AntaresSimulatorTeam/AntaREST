@@ -13,10 +13,10 @@
  */
 
 import { useContext } from "react";
-import OutputFiltersContext from "../-components/OutputMatrixViewer2/OutputFiltersContext";
+import OutputContext from "../-components/OutputMatrixViewer2/OutputContext";
 
 function useOutputFilters() {
-  const filters = useContext(OutputFiltersContext);
+  const filters = useContext(OutputContext);
 
   if (!filters) {
     throw new Error("useOutputFilters() must be used within a <FiltersContext>");

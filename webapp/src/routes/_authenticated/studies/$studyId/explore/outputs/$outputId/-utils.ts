@@ -57,8 +57,13 @@ interface CreateOutputDataPathParams {
   year?: number;
 }
 
-export function createOutputDataPath(params: CreateOutputDataPathParams): string {
-  const { output, item, dataType, frequency, year } = params;
+export function createOutputDataPath({
+  output,
+  item,
+  dataType,
+  frequency,
+  year,
+}: CreateOutputDataPathParams): string {
   const { id, mode = "economy" } = output;
   const isYearPeriod = year && year > 0;
   const periodFolder = isYearPeriod

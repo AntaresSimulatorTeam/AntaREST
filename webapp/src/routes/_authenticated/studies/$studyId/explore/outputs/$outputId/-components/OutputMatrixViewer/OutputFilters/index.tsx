@@ -36,8 +36,8 @@ import {
   type Item,
   type MonteCarloMode,
 } from "../../../-utils";
+import DownloadVariableViewButton from "../../OutputMatrixViewer2/Header/DownloadVariableViewButton";
 import ClusterSelector from "./ClusterSelector";
-import DownloadVariableViewButton from "./DownloadVariableViewButton";
 import MonteCarloModeSelector from "./MonteCarloModeSelector";
 import VariableSelector from "./VariableSelector";
 
@@ -405,8 +405,6 @@ function OutputFilters({
             </Tooltip>
             {isVariablePerVariable && selectedItem ? (
               <DownloadVariableViewButton
-                studyId={studyId}
-                outputId={outputId}
                 params={buildVariableViewParams(
                   dataType,
                   selectedClusterId,

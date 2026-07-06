@@ -12,27 +12,26 @@
  * This file is part of the Antares project.
  */
 
-import { exportVariableViewData } from "@/services/api/studies/outputs/variableViews";
-import type { VariableViewParams } from "@/services/api/studies/outputs/variableViews/types";
-import type { StudyMetadata } from "@/types/types";
-import { downloadFile } from "@/utils/fileUtils";
-import { useTranslation } from "react-i18next";
 import DownloadButton from "@/components/buttons/DownloadButton";
 import {
   EXPORT_FORMAT_OPTIONS,
   EXPORT_FORMAT_TO_OPTIONS,
   type ExportFormat,
 } from "@/components/utils/buttonOptions";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { exportVariableViewData } from "@/services/api/studies/outputs/variableViews";
+import type { VariableViewParams } from "@/services/api/studies/outputs/variableViews/types";
+import { downloadFile } from "@/utils/fileUtils";
+import { useTranslation } from "react-i18next";
+import useOutput from "../../../-hooks/useOutput";
 
 export interface DownloadVariableViewButtonProps {
-  studyId: StudyMetadata["id"];
-  outputId: string;
   params: VariableViewParams;
   disabled?: boolean;
   label?: string;
 }
 
-const variableViewParamsToFilenameSuffix = (params: VariableViewParams): string => {
+const variableViewParamsToFilenameSuffix = (params: VariableViewParams) => {
   switch (params.type) {
     case "area":
       return `area_${params.areaId}`;
@@ -50,7 +49,9 @@ const variableViewParamsToFilenameSuffix = (params: VariableViewParams): string 
 
 function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
   const { t } = useTranslation();
-  const { studyId, outputId, params, disabled, label = t("global.export") } = props;
+  const { params, disabled, label = t("global.export") } = props;
+  const study = useStudy();
+  const output = useOutput();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -60,14 +61,15 @@ function DownloadVariableViewButton(props: DownloadVariableViewButtonProps) {
     const { extension, ...options } = EXPORT_FORMAT_TO_OPTIONS[format];
 
     const blob = await exportVariableViewData({
-      studyId,
-      outputId,
+      studyId: study.id,
+      outputId: output.id,
       params,
       ...options,
     });
 
     const outputArea = variableViewParamsToFilenameSuffix(params);
-    const filename = `matrix_${studyId}_output_${outputId}_${outputArea}_${params.variableName}_${params.frequency}.${extension}`;
+    const filename = `matrix_${study.id}_output_${output.id}_${outputArea}_${params.variableName}_${params.frequency}.${extension}`;
+
     downloadFile(blob, filename);
   };
 
