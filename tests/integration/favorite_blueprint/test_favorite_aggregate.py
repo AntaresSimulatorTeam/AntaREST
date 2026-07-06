@@ -19,7 +19,7 @@ def test_favorite_aggregate_success_no_favorite_added(admin_client: TestClient):
     aggregate_res = admin_client.get("/v1/favorites").json()
     assert aggregate_res["studies"] == []
     assert aggregate_res["directories"] == []
-    assert aggregate_res["external_directories"] == []
+    assert aggregate_res["externalDirectories"] == []
 
 
 def test_favorite_aggregate_success_added_each_type_of_favorite(admin_client: TestClient, tmp_path: Path):
@@ -40,9 +40,11 @@ def test_favorite_aggregate_success_added_each_type_of_favorite(admin_client: Te
     )
     aggregate_res = admin_client.get("/v1/favorites").json()
 
+    fav_ext_directory_response.json()["path"] = path.as_posix()
+
     assert aggregate_res == {
         "directories": [fav_directory_response.json()],
-        "external_directories": [fav_ext_directory_response.json()],
+        "externalDirectories": [fav_ext_directory_response.json()],
         "studies": [fav_study_response.json()],
     }
 
@@ -59,7 +61,7 @@ def test_favorite_aggregate_success_one_user_added_two_favorites_that_cant_be_se
 
     # Add the study to favorites
     study_res = admin_client.post(f"/v1/favorites/studies/{study_id}")
-    assert study_res.status_code in [200, 201, 204]
+    assert study_res.status_code == 201
 
     # Add a directory to favorites
     # Create directory structure 'foo/bar' before moving the study
@@ -71,7 +73,7 @@ def test_favorite_aggregate_success_one_user_added_two_favorites_that_cant_be_se
 
     directory_id = res.json()["id"]
     directory_res = admin_client.post(f"/v1/favorites/directories/{directory_id}")
-    assert directory_res.status_code in [200, 201, 204]
+    assert directory_res.status_code == 201
 
     # Verify the study appears in the aggregate
     aggregate_res = admin_client.get("/v1/favorites").json()
@@ -85,10 +87,10 @@ def test_favorite_aggregate_success_one_user_added_two_favorites_that_cant_be_se
     admin_client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     response = admin_client.get("/v1/favorites").json()
-    assert response == {"directories": [], "external_directories": [], "studies": []}
+    assert response == {"directories": [], "externalDirectories": [], "studies": []}
 
     # Next thing : the other user adds the favorites and checks that they are there
     directory_res = admin_client.post(f"/v1/favorites/directories/{directory_id}").json()
     study_res = admin_client.post(f"/v1/favorites/studies/{study_id}").json()
     aggregate_res = admin_client.get("/v1/favorites").json()
-    assert aggregate_res == {"directories": [directory_res], "external_directories": [], "studies": [study_res]}
+    assert aggregate_res == {"directories": [directory_res], "externalDirectories": [], "studies": [study_res]}

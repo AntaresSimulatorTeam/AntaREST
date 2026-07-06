@@ -92,7 +92,7 @@ class FavoriteDirectory(Base):
         return FavoriteDirectoryDTO(directory_id=self.directory_id, directory_name=self.directory.name)
 
 
-class FavoriteExternalDirectoryDTO(AntaresBaseModel, extra="forbid"):
+class FavoriteExternalDirectoryDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     path: PurePosixPath
     workspace: str
 
@@ -120,7 +120,7 @@ class FavoriteExternalDirectory(Base):
         return FavoriteExternalDirectoryDTO(path=PurePosixPath(self.path), workspace=self.workspace)
 
 
-class FavoriteAggregateDTO(AntaresBaseModel, extra="forbid"):
+class FavoriteAggregateDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     studies: list[FavoriteStudyDTO]
     directories: list[FavoriteDirectoryDTO]
     external_directories: list[FavoriteExternalDirectoryDTO]
