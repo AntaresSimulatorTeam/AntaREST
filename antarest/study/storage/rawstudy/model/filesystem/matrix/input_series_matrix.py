@@ -24,7 +24,6 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
-from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.core.utils.polars import create_polars_dataframe, read_input_dataframe
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -300,11 +299,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
         """
         suffix = self.config.path.suffix
         filename = self.config.path.name
-        if self.config.archive_path:
-            content = read_original_file_in_archive(
-                self.config.archive_path, self.get_relative_path_inside_archive(self.config.archive_path)
-            )
-        elif self._has_link():
+        if self._has_link():
             target_path = self.config.path.with_suffix(".txt")
             buffer = io.BytesIO()
             df = self.parse_as_dataframe()

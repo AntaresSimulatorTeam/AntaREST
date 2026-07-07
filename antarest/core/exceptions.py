@@ -851,3 +851,8 @@ class STStoragesNotFound(HTTPException):
     def __init__(self, invalid_sts_ids: dict[str, set[str]]) -> None:
         msg = f"Short term storages not found: {invalid_sts_ids}"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+class SevenZipNotSupportedOnThisMachine(Exception):
+    def __init__(self) -> None:
+        msg = "7z command line is not supported on this machine. Consider installing it if you want to unarchive these files."
+        super().__init__(msg)

@@ -11,22 +11,18 @@
 # This file is part of the Antares project.
 
 import contextlib
-import io
 import logging
 import os
 import tempfile
-import zipfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
 
-import py7zr
 import pydantic_core
 from filelock import FileLock
 from typing_extensions import override
 
-from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import JSON, SUB_JSON
 from antarest.core.serde.ini_reader import (
     IniReader,
@@ -274,20 +270,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url = url or []
         kwargs = self._get_filtering_kwargs(url)
 
-        if self.config.archive_path:
-            inside_archive_path = self.config.path.relative_to(self.config.archive_path.with_suffix("")).as_posix()
-            if self.config.archive_path.suffix == ".zip":
-                with zipfile.ZipFile(self.config.archive_path, mode="r") as zipped_folder:
-                    with io.TextIOWrapper(zipped_folder.open(inside_archive_path)) as f:
-                        data = self.reader.read(f, **kwargs)
-            elif self.config.archive_path.suffix == ".7z":
-                with py7zr.SevenZipFile(self.config.archive_path, mode="r") as zipped_folder:
-                    with io.TextIOWrapper(zipped_folder.read([inside_archive_path])[inside_archive_path]) as f:
-                        data = self.reader.read(f, **kwargs)
-            else:
-                raise ShouldNotHappenException(f"Unsupported archived study format: {self.config.archive_path.suffix}")
-        else:
-            data = self.reader.read(self.path, **kwargs)
+        data = self.reader.read(self.path, **kwargs)
 
         return _match_url(data, url, depth).get_part()
 

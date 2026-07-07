@@ -21,9 +21,7 @@ from pathlib import Path
 from subprocess import CalledProcessError, run
 from typing import Any, BinaryIO
 
-import py7zr
-
-from antarest.core.exceptions import BadArchiveContent, ShouldNotHappenException
+from antarest.core.exceptions import BadArchiveContent, SevenZipNotSupportedOnThisMachine, ShouldNotHappenException
 
 logger = logging.getLogger(__name__)
 
@@ -62,11 +60,8 @@ def archive_dir(
             except CalledProcessError as e:
                 logger.error(f"Error while creating archive: {e}")
                 raise
-        # else, fallback to py7zr, less performant
         else:
-            logger.info("Using py7zr to create archive")
-            with py7zr.SevenZipFile(target_archive_path, mode="w") as szf:
-                szf.writeall(src_dir_path, arcname="")
+            raise SevenZipNotSupportedOnThisMachine()
     elif target_archive_path.suffix == ArchiveFormat.ZIP:
         with zipfile.ZipFile(target_archive_path, mode="w", compression=zipfile.ZIP_DEFLATED, compresslevel=2) as zipf:
             len_dir_path = len(str(src_dir_path))
@@ -190,9 +185,6 @@ def extract_file_to_tmp_dir(archive_path: Path, inside_archive_path: Path) -> tu
         if archive_path.suffix == ArchiveFormat.ZIP:
             with zipfile.ZipFile(archive_path) as zip_obj:
                 zip_obj.extract(str_inside_archive_path, tmp_dir.name)
-        elif archive_path.suffix == ArchiveFormat.SEVEN_ZIP:
-            with py7zr.SevenZipFile(archive_path, mode="r") as szf:
-                szf.extract(path=tmp_dir.name, targets=[str_inside_archive_path])
         else:
             raise ValueError(f"Unsupported archive format for {archive_path}")
     except Exception as e:

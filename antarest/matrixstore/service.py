@@ -24,7 +24,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import polars as pl
-import py7zr
 from fastapi import UploadFile
 from polars import String
 from typing_extensions import override
