@@ -33,6 +33,7 @@ import {
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
 } from "material-react-table";
+import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -124,17 +125,33 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   // Keep rows in sync when their source data changes outside this component's own
   // create/duplicate/delete handlers.
   useEffect(() => {
-    setTableData((prev) =>
-      prev.map((row) => {
+    setTableData((prev) => {
+      // NOTE: matching by `name` is fragile it breaks if a consumer ever allows
+      // renaming rows from outside (the renamed row keeps stale values), and rows
+      // sharing a name collapse onto the last one. Match on a stable id once
+      // `RowData` exposes one.
+      const dataByName = R.indexBy((d) => d.name, data);
+      let hasChanges = false;
+
+      const next = prev.map((row) => {
         if (isPendingRow(row)) {
           return row;
         }
 
-        const updatedRow = data.find((d) => d.name === row.name);
+        const updatedRow = dataByName[row.name];
 
-        return updatedRow ?? row;
-      }),
-    );
+        if (!updatedRow || R.equals(updatedRow, row)) {
+          return row;
+        }
+
+        hasChanges = true;
+
+        return updatedRow;
+      });
+
+      // Bail out with the same reference if nothing changed, to avoid unnecessary re-renders.
+      return hasChanges ? next : prev;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
