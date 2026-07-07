@@ -577,7 +577,8 @@ class VariantStudyService(AbstractStudyService):
             study_id = metadata.id
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
-                generate_result = self.generate(metadata, study_id, from_scratch, notifier)
+                study = self._get_variant_study(study_id)
+                generate_result = self.generate(study, study_id, from_scratch, notifier)
                 return TaskResult(
                     success=generate_result.success,
                     message=(
@@ -614,6 +615,11 @@ class VariantStudyService(AbstractStudyService):
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
     ) -> GenerationResultInfoDTO:
+        """
+        Generate a variant study synchronously.
+        """
+        if not study_id:
+            study_id = study.id
 
         if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
             # Nothing to do
@@ -624,8 +630,6 @@ class VariantStudyService(AbstractStudyService):
             # Build the Dao factory first
             dao_factory = self._study_dao_factories[study.storage_mode]
             # Then launch the generation
-            if not study_id:
-                study_id = study.id
             return generator.generate_snapshot(
                 study_id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
             )
