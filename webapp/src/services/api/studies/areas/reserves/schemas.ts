@@ -22,6 +22,7 @@ export const reserveTypeSchema = z.enum(["up", "down"]);
 
 export const reserveSchema = z.object({
   id: z.string(),
+  name: z.string(),
   type: reserveTypeSchema,
   failureCost: z.number(),
   spillageCost: z.number(),
@@ -43,8 +44,11 @@ export const reserveGlobalParametersSchema = z.object({
 // Input Schemas
 ////////////////////////////////////////////////////////////////
 
-export const createReserveParamsSchema = reserveSchema.partial().required({ id: true, type: true });
+export const createReserveParamsSchema = reserveSchema
+  .omit({ id: true })
+  .partial()
+  .required({ name: true, type: true });
 
-export const updateReserveParamsSchema = reserveSchema.omit({ id: true }).partial();
+export const updateReserveParamsSchema = reserveSchema.omit({ id: true, name: true }).partial();
 
 export const updateReserveGlobalParametersSchema = reserveGlobalParametersSchema.partial();
