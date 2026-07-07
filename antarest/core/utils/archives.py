@@ -109,6 +109,7 @@ def extract_archive_from_path(archive_path: Path, target_dir: Path) -> None:
     else:
         raise BadArchiveContent(f"Unsupported archive format: {suffix}")
 
+
 def unzip(dir_path: Path, zip_path: Path) -> None:
     """Extract an archive to ``dir_path`` and delete the archive file afterwards."""
     extract_archive_from_path(zip_path, dir_path)

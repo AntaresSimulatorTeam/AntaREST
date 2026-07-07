@@ -64,6 +64,7 @@ def test_get(tmp_path: Path) -> None:
     assert node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
     assert node.get(["part2", "key_bool"])
 
+
 def test_get_depth(tmp_path: Path) -> None:
     study_dir = tmp_path.joinpath("my_study")
     study_dir.mkdir()
@@ -84,6 +85,7 @@ def test_get_depth(tmp_path: Path) -> None:
         ),
     )
     assert node.get(depth=1) == expected_json
+
 
 def test_save(tmp_path: Path) -> None:
     ini_path = tmp_path.joinpath("test.ini")

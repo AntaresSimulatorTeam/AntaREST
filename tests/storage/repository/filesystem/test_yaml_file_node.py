@@ -44,6 +44,7 @@ stopping_threshold: 3.0
     assert node.get() == expected_json
     assert node.get(depth=2) == expected_json
 
+
 def test_save(tmp_path: Path) -> None:
     yaml_path = tmp_path / "file.yml"
 
