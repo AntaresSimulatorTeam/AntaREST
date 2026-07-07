@@ -67,7 +67,7 @@ function Thermals() {
     },
   );
 
-  const [totals, setTotals] = useState(getClustersWithCapacityTotals(clustersWithCapacity));
+  const [totals, setTotals] = useState(() => getClustersWithCapacityTotals(clustersWithCapacity));
 
   const columns = useMemo(() => {
     const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } = totals;
