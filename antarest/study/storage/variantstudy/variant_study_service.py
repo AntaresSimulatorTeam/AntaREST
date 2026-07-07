@@ -40,7 +40,13 @@ from antarest.core.model import StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
+from antarest.core.tasks.service import (
+    DEFAULT_AWAIT_MAX_TIMEOUT,
+    ITaskNotifier,
+    ITaskService,
+    NoopNotifier,
+    TaskNotFoundError,
+)
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
@@ -573,7 +579,7 @@ class VariantStudyService(AbstractStudyService):
             study_id = metadata.id
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
-                generate_result = self.generate(from_scratch, notifier, study_id, metadata.storage_mode)
+                generate_result = self.generate(from_scratch, study_id, metadata.storage_mode, notifier)
                 return TaskResult(
                     success=generate_result.success,
                     message=(
@@ -604,7 +610,7 @@ class VariantStudyService(AbstractStudyService):
         return self.launch_generation_task(variant_study, from_scratch=from_scratch)
 
     def generate(
-        self, from_scratch: bool, notifier: ITaskNotifier, study_id: str, storage_mode: StorageMode
+        self, from_scratch: bool, study_id: str, storage_mode: StorageMode, notifier: ITaskNotifier = NoopNotifier()
     ) -> GenerationResultInfoDTO:
         generator = SnapshotGenerator(variant_study_service=self)
 
