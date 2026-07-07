@@ -77,6 +77,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, Vari
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     CommandDTOAPI,
+    GenerationResultInfoDTO,
     VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
@@ -534,7 +535,7 @@ class VariantStudyService(AbstractStudyService):
         logger.info("variant study %s created by user %s", variant_study.id, get_user_id())
         return variant_study
 
-    def generate_task(self, metadata: VariantStudy, from_scratch: bool = False) -> str:
+    def launch_generation_task(self, metadata: VariantStudy, from_scratch: bool = False) -> str:
         """
         Schedule a snapshot generation task for the given variant study.
 
@@ -572,14 +573,7 @@ class VariantStudyService(AbstractStudyService):
             study_id = metadata.id
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
-                generator = SnapshotGenerator(variant_study_service=self)
-
-                # Build the Dao factory first
-                dao_factory = self._study_dao_factories[metadata.storage_mode]
-                # Then launch the generation
-                generate_result = generator.generate_snapshot(
-                    study_id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
-                )
+                generate_result = self.generate(from_scratch, notifier, study_id, metadata.storage_mode)
                 return TaskResult(
                     success=generate_result.success,
                     message=(
@@ -599,7 +593,7 @@ class VariantStudyService(AbstractStudyService):
             self.repository.save(metadata)
             return str(metadata.generation_task)
 
-    def generate(self, variant_study_id: str, from_scratch: bool) -> str:
+    def generate_variant_with_task(self, variant_study_id: str, from_scratch: bool) -> str:
         # Get variant study
         variant_study = self._get_variant_study(variant_study_id)
 
@@ -607,7 +601,19 @@ class VariantStudyService(AbstractStudyService):
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
 
-        return self.generate_task(variant_study, from_scratch=from_scratch)
+        return self.launch_generation_task(variant_study, from_scratch=from_scratch)
+
+    def generate(
+        self, from_scratch: bool, notifier: ITaskNotifier, study_id: str, storage_mode: StorageMode
+    ) -> GenerationResultInfoDTO:
+        generator = SnapshotGenerator(variant_study_service=self)
+
+        # Build the Dao factory first
+        dao_factory = self._study_dao_factories[storage_mode]
+        # Then launch the generation
+        return generator.generate_snapshot(
+            study_id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
+        )
 
     def get_study_task(self, study_id: str) -> TaskDTO:
         """
@@ -671,7 +677,7 @@ class VariantStudyService(AbstractStudyService):
 
             logger.info("🔹 Starting variant study generation...")
             # Create and run the generation task in a thread pool.
-            task_id = self.generate_task(study)
+            task_id = self.launch_generation_task(study)
             self.task_service.await_task(task_id, timeout)
             result = self.task_service.status_task(task_id)
             if not result.result:

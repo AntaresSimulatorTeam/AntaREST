@@ -199,10 +199,7 @@ class TestVariantStudyService:
         with current_user_context(jwt_user):
             study_service.get_study_interface(variant_study).add_commands([create_area_fr, create_st_storage])
             ## Run the "generate" task
-            actual_uui = variant_study_service.generate_task(
-                variant_study,
-                from_scratch=from_scratch,
-            )
+            actual_uui = variant_study_service.launch_generation_task(variant_study, from_scratch=from_scratch)
         assert re.fullmatch(
             r"[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}",
             actual_uui,
@@ -285,7 +282,7 @@ class TestVariantStudyService:
                 variant_study = variant_study_service.create_variant_study(raw_study.id, f"Variant{str(index)}")
                 variant_list.append(variant_study)
                 # Generate a snapshot for each variant
-                variant_study_service.generate(variant_list[index].id, False)
+                variant_study_service.generate_variant_with_task(variant_list[index].id, False)
 
                 # Modify the `created_at` and `updated_at` attributes in DB.
                 with db():

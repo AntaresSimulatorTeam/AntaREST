@@ -176,7 +176,7 @@ def create_study_variant_routes() -> APIRouter:
     ) -> str:
         logger.info(f"Generating snapshot for variant study {uuid}")
         variant_study_service = study_service.storage_service.variant_study_service
-        return variant_study_service.generate(uuid, from_scratch)
+        return variant_study_service.generate_variant_with_task(uuid, from_scratch)
 
     @bp.get(
         "/studies/{uuid}/task",
