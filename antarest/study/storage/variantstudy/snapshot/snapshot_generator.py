@@ -30,7 +30,6 @@ from antarest.study.storage.utils import (
     format_timestamp,
     remove_from_cache,
 )
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.variant_command_generator import apply_commands_to_variant
@@ -70,7 +69,6 @@ class SnapshotGenerator:
         dao_factory: StudyFactoryDao,
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
-        listener: ICommandListener | None = None,
     ) -> GenerationResultInfoDTO:
         # ATTENTION: since we are making changes to disk, a file lock is needed.
         # The locking is currently done in the `VariantStudyService.generate_task` function
@@ -102,7 +100,7 @@ class SnapshotGenerator:
             study_dao = dao_factory.get_study_dao(variant_study.id, True)
 
             logger.info(f"Applying commands to the reference study '{ref_study.id}'...")
-            results = self._apply_commands(study_dao, variant_study, cmd_blocks, listener)
+            results = self._apply_commands(study_dao, variant_study, cmd_blocks)
 
             # Finally, we can update the database.
             logger.info(f"Saving new snapshot for study {variant_study_id}")
@@ -143,14 +141,10 @@ class SnapshotGenerator:
         return root_study, descendants
 
     def _apply_commands(
-        self,
-        study_dao: StudyDao,
-        variant_study: VariantStudy,
-        cmd_blocks: Sequence[CommandBlock],
-        listener: ICommandListener | None = None,
+        self, study_dao: StudyDao, variant_study: VariantStudy, cmd_blocks: Sequence[CommandBlock]
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
-        results = apply_commands_to_variant(commands, study=study_dao, metadata=variant_study, listener=listener)
+        results = apply_commands_to_variant(commands, study=study_dao, metadata=variant_study)
         if not results.success:
             message = f"Failed to generate variant study {variant_study.id}"
             if results.details:

@@ -73,7 +73,6 @@ from antarest.study.storage.variantstudy.command_blob_usage_provider import Comm
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
@@ -263,6 +262,7 @@ class VariantStudyService(AbstractStudyService):
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
         notify_study_data_edition(self.event_bus, study)
+        self.safe_generation(study)
         return study_id
 
     def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
@@ -304,12 +304,12 @@ class VariantStudyService(AbstractStudyService):
         self._check_update_authorization(study)
 
         index = [command.id for command in study.commands].index(command_id)
-        if index >= 0:
-            study.commands.pop(index)
-            for idx, command in enumerate(study.commands):
-                command.index = idx
-            self._update_editor(study)
-            self.on_variant_rebase(study)
+        study.commands.pop(index)
+        for idx, command in enumerate(study.commands):
+            command.index = idx
+        self._update_editor(study)
+        self.on_variant_rebase(study)
+        self.safe_generation(study, 600)
 
     def remove_all_commands(self, study_id: str) -> None:
         """
@@ -324,6 +324,7 @@ class VariantStudyService(AbstractStudyService):
         study.commands = []
         self._update_editor(study)
         self.on_variant_rebase(study)
+        self.clear_snapshot(study)
 
     def _get_variant_study(
         self,
@@ -533,12 +534,7 @@ class VariantStudyService(AbstractStudyService):
         logger.info("variant study %s created by user %s", variant_study.id, get_user_id())
         return variant_study
 
-    def generate_task(
-        self,
-        metadata: VariantStudy,
-        from_scratch: bool = False,
-        listener: ICommandListener | None = None,
-    ) -> str:
+    def generate_task(self, metadata: VariantStudy, from_scratch: bool = False) -> str:
         """
         Schedule a snapshot generation task for the given variant study.
 
@@ -583,11 +579,7 @@ class VariantStudyService(AbstractStudyService):
                 dao_factory = self._study_dao_factories[metadata.storage_mode]
                 # Then launch the generation
                 generate_result = generator.generate_snapshot(
-                    study_id,
-                    dao_factory=dao_factory,
-                    from_scratch=from_scratch,
-                    notifier=notifier,
-                    listener=listener,
+                    study_id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
                 )
                 return TaskResult(
                     success=generate_result.success,

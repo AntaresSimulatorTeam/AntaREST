@@ -93,18 +93,9 @@ def _generate(
 
 
 def apply_commands_to_variant(
-    commands: list[list[ICommand]],
-    metadata: VariantStudy,
-    study: StudyDao,
-    listener: ICommandListener | None = None,
+    commands: list[list[ICommand]], metadata: VariantStudy, study: StudyDao
 ) -> GenerationResultInfoDTO:
     # Build file study
     logger.info("Building study tree")
 
-    return _generate(
-        commands,
-        study,
-        lambda command, data, _listener: command.apply(study, _listener),
-        metadata,
-        listener,
-    )
+    return _generate(commands, study, lambda command, data, _listener: command.apply(study, _listener), metadata)

@@ -338,21 +338,6 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 thermal_outage_details=self.thermal_outage_details,
             )
             self.study_interface_supplier(study).add_commands([command], listener)
-
-            if isinstance(study, VariantStudy):
-                # In this case we only added the command to the list.
-                # It means the generation will really be executed in the next snapshot generation.
-                # We don't want this, we want this task to generate the matrices no matter the study.
-                # Therefore, we have to launch a variant generation task inside the timeseries generation one.
-                variant_service = self.storage_service.variant_study_service
-                task_service = variant_service.task_service
-                generation_task_id = variant_service.generate_task(study, False, listener)
-                task_service.await_task(generation_task_id)
-                result = task_service.status_task(generation_task_id)
-                assert result.result is not None
-                if not result.result.success:
-                    raise ValueError(result.result.message)
-
             notify_study_edition(self.event_bus, study)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
@@ -541,6 +526,7 @@ class VariantStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
+        self._variant_service.safe_generation(self._study)
 
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
