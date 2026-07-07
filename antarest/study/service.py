@@ -526,7 +526,7 @@ class VariantStudyInterface(StudyInterface):
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
-        self._variant_service.safe_generation(self._study)
+        self._variant_service.generate(self._study)
 
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:

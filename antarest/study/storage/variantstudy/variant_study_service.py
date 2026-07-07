@@ -31,7 +31,6 @@ from antarest.core.exceptions import (
     StudyValidationError,
     UnsupportedOperationOnArchivedStudy,
     VariantGenerationError,
-    VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
 )
 from antarest.core.interfaces.cache import ICache
@@ -41,7 +40,6 @@ from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
 from antarest.core.tasks.service import (
-    DEFAULT_AWAIT_MAX_TIMEOUT,
     ITaskNotifier,
     ITaskService,
     NoopNotifier,
@@ -143,19 +141,19 @@ class VariantStudyService(AbstractStudyService):
     @override
     def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
         variant_study = _cast_study_to_variant(src_study)
-        self.safe_generation(variant_study, 600)
+        self.generate(variant_study)
         return self.raw_study_service.copy(src_study, metadata)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
         variant_study = _cast_study_to_variant(study)
-        self.safe_generation(variant_study, 600)
+        self.generate(variant_study)
         return self._study_dao_factories[study.storage_mode].get_study_dao(study.id, True)
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         variant = _cast_study_to_variant(study)
-        self.safe_generation(variant)
+        self.generate(variant)
         self.raw_study_service.export_study_flat(study, dst_path)
 
     ##########################
@@ -269,7 +267,7 @@ class VariantStudyService(AbstractStudyService):
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
         notify_study_data_edition(self.event_bus, study)
-        self.safe_generation(study)
+        self.generate(study)
         return study_id
 
     def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
@@ -316,7 +314,7 @@ class VariantStudyService(AbstractStudyService):
             command.index = idx
         self._update_editor(study)
         self.on_variant_rebase(study)
-        self.safe_generation(study, 600)
+        self.generate(study)
 
     def remove_all_commands(self, study_id: str) -> None:
         """
@@ -579,7 +577,7 @@ class VariantStudyService(AbstractStudyService):
             study_id = metadata.id
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
-                generate_result = self.generate(from_scratch, study_id, metadata.storage_mode, notifier)
+                generate_result = self.generate(metadata, study_id, from_scratch, notifier)
                 return TaskResult(
                     success=generate_result.success,
                     message=(
@@ -610,16 +608,31 @@ class VariantStudyService(AbstractStudyService):
         return self.launch_generation_task(variant_study, from_scratch=from_scratch)
 
     def generate(
-        self, from_scratch: bool, study_id: str, storage_mode: StorageMode, notifier: ITaskNotifier = NoopNotifier()
+        self,
+        study: VariantStudy,
+        study_id: str | None = None,
+        from_scratch: bool = False,
+        notifier: ITaskNotifier = NoopNotifier(),
     ) -> GenerationResultInfoDTO:
-        generator = SnapshotGenerator(variant_study_service=self)
 
-        # Build the Dao factory first
-        dao_factory = self._study_dao_factories[storage_mode]
-        # Then launch the generation
-        return generator.generate_snapshot(
-            study_id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
-        )
+        if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
+            # Nothing to do
+            return GenerationResultInfoDTO(success=True, should_invalidate_cache=False, details=[])
+
+        try:
+            generator = SnapshotGenerator(variant_study_service=self)
+            # Build the Dao factory first
+            dao_factory = self._study_dao_factories[study.storage_mode]
+            # Then launch the generation
+            if not study_id:
+                study_id = study.id
+            return generator.generate_snapshot(
+                study_id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
+            )
+        except Exception as e:
+            # raise a EXPECTATION_FAILED error (417)
+            logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
+            raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
 
     def get_study_task(self, study_id: str) -> TaskDTO:
         """
@@ -674,38 +687,6 @@ class VariantStudyService(AbstractStudyService):
             progress=None,
             custom_event_messages=None,
         )
-
-    def safe_generation(self, study: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        try:
-            if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
-                # Nothing to do
-                return
-
-            logger.info("🔹 Starting variant study generation...")
-            # Create and run the generation task in a thread pool.
-            task_id = self.launch_generation_task(study)
-            self.task_service.await_task(task_id, timeout)
-            result = self.task_service.status_task(task_id)
-            if not result.result:
-                raise ValueError("No task result")
-            if result.result.success:
-                # OK, the study has been generated
-                return
-            # The variant generation failed, we have to raise a clear exception.
-            error_msg = result.result.message
-            stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {study.id}")
-            raise ValueError(stripped_msg)
-
-        except TimeoutError as e:
-            # Raise a REQUEST_TIMEOUT error (408)
-            msg = f"⚡ Timeout while waiting for generation of variant study {study.id}"
-            logger.error(msg, exc_info=e)
-            raise VariantGenerationTimeoutError(msg) from None
-
-        except Exception as e:
-            # raise a EXPECTATION_FAILED error (417)
-            logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
-            raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
 
 
 class SnapshotCleanerTask:
