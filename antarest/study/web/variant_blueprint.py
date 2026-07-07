@@ -146,21 +146,6 @@ def create_study_variant_routes() -> APIRouter:
         internal_commands = variant_study_service.convert_commands(uuid, commands)
         return variant_study_service.replace_commands(uuid, internal_commands)
 
-    @bp.post(
-        "/studies/{uuid}/command",
-        summary="Append a command to variant",
-        responses={
-            200: {
-                "description": "The id a the appended command",
-            }
-        },
-    )
-    def append_command(study_service: StudyServiceDep, uuid: UuidStr, command: CommandDTOAPI) -> str:
-        logger.info(f"Appending new command to variant study {uuid}")
-        variant_study_service = study_service.storage_service.variant_study_service
-        internal_command = variant_study_service.convert_commands(uuid, [command])[0]
-        return variant_study_service.append_commands(uuid, [internal_command])[0]
-
     @bp.delete(
         "/studies/{uuid}/commands/{cid}",
         summary="Remove a command",

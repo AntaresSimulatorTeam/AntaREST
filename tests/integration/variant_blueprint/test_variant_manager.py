@@ -199,11 +199,13 @@ def test_variant_manager(
         assert res.status_code == 200
 
         res = client.post(
-            f"/v1/studies/{variant_id}/command",
-            json={
-                "action": "create_area",
-                "args": {"area_name": "testZone3", "metadata": {}},
-            },
+            f"/v1/studies/{variant_id}/commands",
+            json=[
+                {
+                    "action": "create_area",
+                    "args": {"area_name": "testZone3", "metadata": {}},
+                }
+            ],
             headers=admin_headers,
         )
         assert res.status_code == 200
