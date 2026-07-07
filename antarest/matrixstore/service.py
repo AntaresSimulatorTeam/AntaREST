@@ -24,7 +24,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import polars as pl
-import py7zr
 from fastapi import UploadFile
 from polars import String
 from typing_extensions import override
@@ -357,15 +356,6 @@ class MatrixService(ISimpleMatrixService):
                                 continue
                             matrix_id = self._file_importation(zf.read(info.filename), is_json=is_json)
                             matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
-                else:
-                    with py7zr.SevenZipFile(buffer, "r") as szf:
-                        for info in szf.list():
-                            if info.is_directory or info.filename in EXCLUDED_FILES:
-                                continue
-                            file_content = next(iter(szf.read([info.filename]).values()))
-                            matrix_id = self._file_importation(file_content.read(), is_json=is_json)
-                            matrix_info.append(MatrixInfoDTO(id=matrix_id, name=info.filename))
-                            szf.reset()
                 return matrix_info
             else:
                 matrix_id = self._file_importation(f.read(), is_json=is_json)

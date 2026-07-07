@@ -129,31 +129,19 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     )
     assert len(res.json()) == 8
 
-    # test matrices import for .zip and .7z files
+    # test matrices import
     matrices_zip_path = ASSETS_DIR / "matrices.zip"
-    res_zip = client.post(
+    res = client.post(
         "/v1/matrix/_import",
         headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
         files={"file": (matrices_zip_path.name, io.BytesIO(matrices_zip_path.read_bytes()), "application/zip")},
     )
-    matrices_seven_zip_path = ASSETS_DIR / "matrices.7z"
-    res_seven_zip = client.post(
-        "/v1/matrix/_import",
-        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
-        files={
-            "file": (
-                matrices_seven_zip_path.name,
-                io.BytesIO(matrices_seven_zip_path.read_bytes()),
-                "application/zip",
-            )
-        },
-    )
-    for res in [res_zip, res_seven_zip]:
-        assert res.status_code == 200
-        result = res.json()
-        assert len(result) == 2
-        assert result[0]["name"] == "fr.txt"
-        assert result[1]["name"] == "it.txt"
+
+    assert res.status_code == 200
+    result = res.json()
+    assert len(result) == 2
+    assert result[0]["name"] == "fr.txt"
+    assert result[1]["name"] == "it.txt"
 
     # Creates a v9.2 study
     study_path = tmp_path / "test"
