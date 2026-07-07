@@ -706,11 +706,7 @@ class VariantStudyService(AbstractStudyService):
 
 
 class SnapshotCleanerTask:
-    def __init__(
-        self,
-        variant_study_service: VariantStudyService,
-        retention_time: timedelta,
-    ) -> None:
+    def __init__(self, variant_study_service: VariantStudyService, retention_time: timedelta) -> None:
         self._variant_study_service = variant_study_service
         self._retention_time = retention_time
 
