@@ -87,31 +87,27 @@ def extract_archive_from_path(archive_path: Path, target_dir: Path) -> None:
         BadArchiveContent: If the archive format is unsupported or extraction fails.
     """
     suffix = archive_path.suffix.lower()
-    if suffix not in {ArchiveFormat.SEVEN_ZIP, ArchiveFormat.ZIP}:
-        raise BadArchiveContent(f"Unsupported archive format: {suffix}")
 
-    if _has_7z():
-        logger.info("Using 7z CLI to extract archive %s", archive_path)
+    if suffix == ArchiveFormat.ZIP:
+        logger.info("Using zipfile to extract archive %s", archive_path)
         try:
-            run(["7z", "x", str(archive_path), f"-o{target_dir}", "-y"], check=True)
-        except CalledProcessError as e:
-            raise BadArchiveContent(f"7z extraction failed for {archive_path}") from e
-    else:
-        if suffix == ArchiveFormat.SEVEN_ZIP:
-            logger.info("Using py7zr to extract archive %s", archive_path)
-            try:
-                with py7zr.SevenZipFile(archive_path, "r") as szf:
-                    szf.extractall(target_dir)
-            except py7zr.exceptions.Bad7zFile as e:
-                raise BadArchiveContent("Unsupported 7z format") from e
-        else:
-            logger.info("Using zipfile to extract archive %s", archive_path)
-            try:
-                with zipfile.ZipFile(archive_path, mode="r") as zf:
-                    zf.extractall(target_dir)
-            except zipfile.BadZipFile as e:
-                raise BadArchiveContent("Unsupported ZIP format") from e
+            with zipfile.ZipFile(archive_path, mode="r") as zf:
+                zf.extractall(target_dir)
+        except zipfile.BadZipFile as e:
+            raise BadArchiveContent("Unsupported ZIP format") from e
 
+    elif suffix == ArchiveFormat.SEVEN_ZIP:
+        if _has_7z():
+            logger.info("Using 7z CLI to extract archive %s", archive_path)
+            try:
+                run(["7z", "x", str(archive_path), f"-o{target_dir}", "-y"], check=True)
+            except CalledProcessError as e:
+                raise BadArchiveContent(f"7z extraction failed for {archive_path}") from e
+        else:
+            raise SevenZipNotSupportedOnThisMachine()
+
+    else:
+        raise BadArchiveContent(f"Unsupported archive format: {suffix}")
 
 def unzip(dir_path: Path, zip_path: Path) -> None:
     """Extract an archive to ``dir_path`` and delete the archive file afterwards."""
