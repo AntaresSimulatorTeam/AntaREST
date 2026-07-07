@@ -210,10 +210,19 @@ def read_original_file_in_archive(archive_path: Path, posix_path: str) -> bytes:
         with zipfile.ZipFile(archive_path) as zip_obj:
             with zip_obj.open(posix_path) as f:
                 return f.read()
+
     elif archive_path.suffix == ArchiveFormat.SEVEN_ZIP:
-        with py7zr.SevenZipFile(archive_path, mode="r") as szf:
-            output: bytes = szf.read([posix_path])[posix_path].read()
-            return output
+        if _has_7z():
+            logger.info("Using 7z CLI to read data inside archive %s", archive_path)
+            with tempfile.TemporaryDirectory() as target_dir:
+                try:
+                    run(["7z", "e", str(archive_path), f"-o{target_dir}", "-y", posix_path], check=True)
+                    return Path(target_dir).joinpath(posix_path).read_bytes()
+                except CalledProcessError as e:
+                    raise BadArchiveContent(f"7z extraction failed for {archive_path}") from e
+        else:
+            raise SevenZipNotSupportedOnThisMachine()
+
     else:
         raise ValueError(f"Unsupported {archive_path.suffix} archive format for {archive_path}")
 

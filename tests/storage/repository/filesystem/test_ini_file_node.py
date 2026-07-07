@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import shutil
 import textwrap
 import typing as t
 from pathlib import Path
