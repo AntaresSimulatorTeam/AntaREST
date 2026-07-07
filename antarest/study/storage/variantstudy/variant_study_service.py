@@ -578,7 +578,7 @@ class VariantStudyService(AbstractStudyService):
 
             def callback(notifier: ITaskNotifier) -> TaskResult:
                 study = self._get_variant_study(study_id)
-                generate_result = self.generate(study, study_id, from_scratch, notifier)
+                generate_result = self.generate(study, from_scratch, notifier)
                 return TaskResult(
                     success=generate_result.success,
                     message=(
@@ -609,18 +609,11 @@ class VariantStudyService(AbstractStudyService):
         return self.launch_generation_task(variant_study, from_scratch=from_scratch)
 
     def generate(
-        self,
-        study: VariantStudy,
-        study_id: str | None = None,
-        from_scratch: bool = False,
-        notifier: ITaskNotifier = NoopNotifier(),
+        self, study: VariantStudy, from_scratch: bool = False, notifier: ITaskNotifier = NoopNotifier()
     ) -> GenerationResultInfoDTO:
         """
-        Generate a variant study synchronously.
+        Generates a variant study synchronously.
         """
-        if not study_id:
-            study_id = study.id
-
         if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
             # Nothing to do
             return GenerationResultInfoDTO(success=True, should_invalidate_cache=False, details=[])
@@ -631,7 +624,7 @@ class VariantStudyService(AbstractStudyService):
             dao_factory = self._study_dao_factories[study.storage_mode]
             # Then launch the generation
             return generator.generate_snapshot(
-                study_id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
+                study.id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
             )
         except Exception as e:
             # raise a EXPECTATION_FAILED error (417)
