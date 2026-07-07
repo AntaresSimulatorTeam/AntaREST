@@ -121,6 +121,23 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => onDataChange?.(tableData), [tableData]);
 
+  // Keep rows in sync when their source data changes outside this component's own
+  // create/duplicate/delete handlers.
+  useEffect(() => {
+    setTableData((prev) =>
+      prev.map((row) => {
+        if (isPendingRow(row)) {
+          return row;
+        }
+
+        const updatedRow = data.find((d) => d.name === row.name);
+
+        return updatedRow ?? row;
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
   const existingNames = useMemo(() => tableData.map((row) => row.name.toLowerCase()), [tableData]);
 
   const hasGroups = groups !== undefined;
