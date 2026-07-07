@@ -16,6 +16,7 @@ from fastapi import HTTPException
 
 from antarest.core.config import Config
 from antarest.favorite.model import (
+    FavoriteAggregateDTO,
     FavoriteDirectory,
     FavoriteDirectoryDTO,
     FavoriteExternalDirectory,
@@ -191,3 +192,27 @@ class FavoriteExternalDirectoryService:
                 status_code=http.HTTPStatus.NOT_FOUND,
                 detail=f"Favorite external directory with path {path} and workspace {workspace} not found",
             )
+
+
+class FavoriteAggregateService:
+    def __init__(
+        self,
+        favorite_study_service: FavoriteStudyService,
+        favorite_directory_service: FavoriteDirectoryService,
+        favorite_external_directory_service: FavoriteExternalDirectoryService,
+    ):
+        self.favorite_study_service = favorite_study_service
+        self.favorite_directory_service = favorite_directory_service
+        self.favorite_external_directory_service = favorite_external_directory_service
+
+    def list_favorites(self) -> FavoriteAggregateDTO:
+        """
+        Aggregate all favorite studies, favorite directories and favorite external directories from the current user
+        Returns: The list of favorite studies, favorite directories and favorite external directories of the current user
+
+        """
+        studies = self.favorite_study_service.list_favorites()
+        directories = self.favorite_directory_service.list_favorites()
+        external_directories = self.favorite_external_directory_service.list_favorites()
+
+        return FavoriteAggregateDTO(studies=studies, directories=directories, external_directories=external_directories)

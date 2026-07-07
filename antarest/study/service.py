@@ -117,6 +117,7 @@ from antarest.study.business.xpansion_management import (
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.directory_service import DirectoryService
 from antarest.study.dtos import StudySynthesis
+from antarest.study.events import notify_study_creation, notify_study_data_edition, notify_study_edition
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -352,13 +353,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 if not result.result.success:
                     raise ValueError(result.result.message)
 
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study),
-                )
-            )
+            notify_study_edition(self.event_bus, study)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         msg = f"Generating thermal timeseries for study '{self._study_id}'"
@@ -404,13 +399,7 @@ class StudyUpgraderTask:
             remove_from_cache(self.cache_service, study_to_upgrade.id)
             study_to_upgrade.version = f"{self._target_version:2d}"
             self.repository.save(study_to_upgrade)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study_to_upgrade.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study_to_upgrade),
-                )
-            )
+            notify_study_edition(self.event_bus, study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -551,7 +540,6 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
-        # get current user if not in session, otherwise get session user
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 
     @override
@@ -930,13 +918,7 @@ class StudyService:
         if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_edition(self.event_bus, study)
 
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         return self.get_study_information(study.id)
@@ -1024,13 +1006,7 @@ class StudyService:
         self.repository.save(raw)
         self.storage_service.raw_study_service.create_study_dao(raw)
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_CREATED,
-                payload=raw.to_json_summary(),
-                permissions=PermissionInfo.from_study(raw),
-            )
-        )
+        notify_study_creation(self.event_bus, raw)
 
         logger.info("study %s created by user %s with storage_mode=%s", raw.id, get_user_id(), storage_mode)
         return str(raw.id)
@@ -1201,13 +1177,7 @@ class StudyService:
                     # study.content_status = self._analyse_study(study)
 
                     self.repository.save(study)
-                    self.event_bus.push(
-                        Event(
-                            type=EventType.STUDY_CREATED,
-                            payload=study.to_json_summary(),
-                            permissions=PermissionInfo.from_study(study),
-                        )
-                    )
+                    notify_study_creation(self.event_bus, study)
                 except Exception as e:
                     logger.error(f"Failed to add study {folder.path}", exc_info=e)
             elif directory and (workspace, study_path) in studies_by_path_workspace:
@@ -1298,13 +1268,7 @@ class StudyService:
                 new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
                 self.job_result_repository.save_all(new_jobs)
 
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_CREATED,
-                    payload=study.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study),
-                )
-            )
+            notify_study_creation(self.event_bus, study)
 
             logger.info(
                 "study %s copied to %s by user %s",
@@ -1356,13 +1320,7 @@ class StudyService:
         study.directory_id = directory_id
 
         self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_edition(self.event_bus, study)
 
     def export_study(
         self,
@@ -1642,13 +1600,7 @@ class StudyService:
                 self.repository.delete(study.id)
                 raise StudyImportFailed(sid, reason=str(e))
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_CREATED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_creation(self.event_bus, study)
 
         logger.info("study %s imported by user %s", study.id, get_user_id())
         return study.id
@@ -1741,30 +1693,18 @@ class StudyService:
         self.get_study_interface(study).add_commands(commands)
         return commands  # for testing purpose
 
-    def apply_commands(self, uuid: str, commands: list[CommandDTO]) -> list[str] | None:
+    def apply_commands(self, uuid: str, commands: list[CommandDTO]) -> None:
         study = self.get_study(uuid)
-        if isinstance(study, VariantStudy):
-            return self.storage_service.variant_study_service.append_commands(uuid, commands)
-        else:
-            assert_permission(study, StudyPermissionType.WRITE)
-            self.assert_study_unarchived(study)
-            parsed_commands: list[ICommand] = []
-            for command in commands:
-                parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
-            self.get_study_interface(study).add_commands(parsed_commands)
+        assert_permission(study, StudyPermissionType.WRITE)
+        self.assert_study_unarchived(study)
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
-        logger.info(
-            "Study %s updated by user %s",
-            uuid,
-            get_user_id(),
-        )
+        parsed_commands: list[ICommand] = []
+        for command in commands:
+            parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
+        self.get_study_interface(study).add_commands(parsed_commands)
+
+        notify_study_data_edition(self.event_bus, study)
+        logger.info("Study %s updated by user %s", uuid, get_user_id())
         return None
 
     def edit_study(self, uuid: str, url: str, new: SUB_JSON) -> JSON:
@@ -1803,13 +1743,7 @@ class StudyService:
         else:
             self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_data_edition(self.event_bus, study)
         logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
         return cast(JSON, new)
 
@@ -1834,13 +1768,7 @@ class StudyService:
 
         study.owner = new_owner
         self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_edition(self.event_bus, study)
 
         self.get_study_interface(study).update_study_metadata(StudyMetadataUpdate(author=new_owner.name or ""))
 
@@ -1863,13 +1791,7 @@ class StudyService:
         if group not in study.groups:
             study.groups = study.groups + [group]
         self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_edition(self.event_bus, study)
 
         logger.info(
             "adding group %s to study %s by user %s",
@@ -1892,13 +1814,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         study.groups = [group for group in study.groups if group.id != group_id]
         self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_edition(self.event_bus, study)
 
         logger.info(
             "removing group %s to study %s by user %s",
@@ -1921,18 +1837,8 @@ class StudyService:
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         study.public_mode = mode
         self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
-        logger.info(
-            "updated public mode of study %s by user %s",
-            study_id,
-            get_user_id(),
-        )
+        notify_study_edition(self.event_bus, study)
+        logger.info("updated public mode of study %s by user %s", study_id, get_user_id())
 
     def get_all_areas_info(
         self,
@@ -1969,13 +1875,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         new_area = self.area_manager.create_area(self.get_study_interface(study), area_creation_dto)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_data_edition(self.event_bus, study)
         return new_area
 
     def create_link(
@@ -1987,13 +1887,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         new_link = self.links_manager.create_link(self.get_study_interface(study), link_creation_dto)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_data_edition(self.event_bus, study)
         return new_link
 
     def update_link(
@@ -2009,13 +1903,7 @@ class StudyService:
         updated_link = self.links_manager.update_link(
             self.get_study_interface(study), area_from, area_to, link_update_dto
         )
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_data_edition(self.event_bus, study)
         return updated_link
 
     def update_area_ui(
@@ -2056,13 +1944,7 @@ class StudyService:
 
         # Delete the area
         self.area_manager.delete_area(study_interface, area_id)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_data_edition(self.event_bus, study)
 
     def delete_link(
         self,
@@ -2094,13 +1976,7 @@ class StudyService:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
         self.links_manager.delete_link(study_interface, area_from, area_to)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_data_edition(self.event_bus, study)
 
     def archive(self, uuid: str) -> str:
         logger.info(f"Archiving study {uuid}")
@@ -2140,13 +2016,7 @@ class StudyService:
                     raise StudyNotFoundError(uuid)
                 study_db.archived = True
                 self.repository.save(study_db)
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_EDITED,
-                        payload=study_db.to_json_summary(),
-                        permissions=PermissionInfo.from_study(study_db),
-                    )
-                )
+                notify_study_edition(self.event_bus, study_db)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2189,13 +2059,7 @@ class StudyService:
                     raise StudyNotFoundError(uuid)
                 study_db.archived = False
                 self.repository.save(study_db)
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_EDITED,
-                        payload=study_db.to_json_summary(),
-                        permissions=PermissionInfo.from_study(study_db),
-                    )
-                )
+                notify_study_edition(self.event_bus, study_db)
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
 
             return TaskResult(success=True, message="ok")

@@ -28,6 +28,9 @@ export const reserveKeys = {
   globalParameters: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.all(), "globalParameters", { studyId, areaId }];
   },
+  enabled: (studyId: Study["id"]) => {
+    return [...reserveKeys.all(), "enabled", { studyId }];
+  },
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.list(studyId, areaId), "createReserve"];
   },

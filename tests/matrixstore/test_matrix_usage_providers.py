@@ -269,7 +269,7 @@ def test_command_matrix_usage_provider_with_snapshot(
         command_context=command_context, study_version=version, thermal_outage_details=False
     )
     assert command.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=True)
-    variant_study_service.append_command(variant_study.id, command.to_dto())
+    variant_study_service.append_commands(variant_study.id, [command.to_dto()])
 
     # Generate the snapshot
     variant_study_service.safe_generation(variant_study)
@@ -295,7 +295,7 @@ def test_command_matrix_usage_provider_with_snapshot(
     variant_study = variant_study_service.create_variant_study(parent_id, "variant_study2")
     command = CreateArea(area_name="be", command_context=command_context, study_version=version)
     assert command.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=False)
-    variant_study_service.append_command(variant_study.id, command.to_dto())
+    variant_study_service.append_commands(variant_study.id, [command.to_dto()])
     # Generate its snapshot
     variant_study_service.safe_generation(variant_study)
     # Ensures no matrix is used even if the snapshot exists
