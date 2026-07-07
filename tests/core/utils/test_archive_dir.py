@@ -47,7 +47,7 @@ class TestArchiveDir:
         with zipfile.ZipFile(archive_path) as zf:
             _assert_archive_contains_sample_files(set(zf.namelist()))
 
-    def test_7z_calls_cli_when_available(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_7z_calls_cli(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         src = _create_sample_dir(tmp_path)
         archive_path = tmp_path / "output.7z"
         run_calls = []
@@ -111,7 +111,7 @@ def _assert_extracted_sample_files(target_dir: Path) -> None:
 
 
 class TestExtractArchiveFromPath:
-    def test_7z_calls_cli_when_available(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_7z_calls_cli(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         archive_path = _create_sample_archive_7z(tmp_path)
         target_dir = tmp_path / "output"
         target_dir.mkdir()
@@ -129,25 +129,10 @@ class TestExtractArchiveFromPath:
         assert str(archive_path) in args[2]
         assert f"-o{target_dir}" in args[3]
 
-    def test_zip_calls_cli_when_available(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_zip_nominal_case(self, tmp_path: Path) -> None:
         archive_path = _create_sample_archive_zip(tmp_path)
         target_dir = tmp_path / "output"
         target_dir.mkdir()
-        run_calls = []
-
-        monkeypatch.setattr(archives, "_has_7z", lambda: True)
-        monkeypatch.setattr(archives, "run", lambda *a, **kw: run_calls.append((a, kw)))
-
-        extract_archive_from_path(archive_path, target_dir)
-
-        assert len(run_calls) == 1
-
-    def test_zip_uses_zipfile_when_cli_unavailable(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        archive_path = _create_sample_archive_zip(tmp_path)
-        target_dir = tmp_path / "output"
-        target_dir.mkdir()
-
-        monkeypatch.setattr(archives, "_has_7z", lambda: False)
 
         extract_archive_from_path(archive_path, target_dir)
 
@@ -164,26 +149,10 @@ class TestExtractArchiveFromPath:
 
 
 class TestUnzip:
-    def test_unzip_calls_cli_when_available(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_unzip_nominal_case(self, tmp_path: Path) -> None:
         archive_path = _create_sample_archive_zip(tmp_path)
         target_dir = tmp_path / "output"
         target_dir.mkdir()
-        run_calls = []
-
-        monkeypatch.setattr(archives, "_has_7z", lambda: True)
-        monkeypatch.setattr(archives, "run", lambda *a, **kw: run_calls.append((a, kw)))
-
-        unzip(target_dir, archive_path)
-
-        assert len(run_calls) == 1
-        assert not archive_path.exists()
-
-    def test_unzip_uses_zipfile_when_cli_unavailable(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-        archive_path = _create_sample_archive_zip(tmp_path)
-        target_dir = tmp_path / "output"
-        target_dir.mkdir()
-
-        monkeypatch.setattr(archives, "_has_7z", lambda: False)
 
         unzip(target_dir, archive_path)
 
