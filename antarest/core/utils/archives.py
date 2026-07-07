@@ -217,7 +217,7 @@ def read_original_file_in_archive(archive_path: Path, posix_path: str) -> bytes:
             logger.info("Using 7z CLI to read data inside archive %s", archive_path)
             with tempfile.TemporaryDirectory() as target_dir:
                 try:
-                    run(["7z", "e", str(archive_path), f"-o{target_dir}", "-y", posix_path], check=True)
+                    run(["7z", "x", str(archive_path), f"-o{target_dir}", "-y", posix_path], check=True)
                     return Path(target_dir).joinpath(posix_path).read_bytes()
                 except CalledProcessError as e:
                     raise BadArchiveContent(f"7z extraction failed for {archive_path}") from e
