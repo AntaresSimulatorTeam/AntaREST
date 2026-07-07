@@ -547,7 +547,6 @@ class VariantStudyService(AbstractStudyService):
             metadata: The variant study to generate.
             from_scratch: If True, regenerate from the root study, ignoring cached
                 ancestor snapshots.
-            listener: Optional listener notified as commands are applied.
 
         Returns:
             The ID of the (new or in-progress) generation task.
