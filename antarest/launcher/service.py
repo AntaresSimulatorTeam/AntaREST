@@ -298,8 +298,6 @@ class LauncherService:
         owner_id: int = 0
         if user := get_current_user():
             owner_id = user.impersonator if user.type == "bots" else user.id
-        # The job stays PENDING while it is exported, submitted, and (for a scheduled launch) held in
-        # the SLURM queue. The monitoring loop flips it to RUNNING once the cluster actually starts it.
         job_status = JobResult(
             id=job_uuid,
             study_id=study_uuid,

@@ -12,6 +12,7 @@
 
 import argparse
 import logging
+import math
 import os
 import re
 import shutil
@@ -693,7 +694,8 @@ def _format_slurm_begin(run_at: datetime | None) -> str | None:
     """
     if run_at is None:
         return None
-    minutes = round((run_at - current_time()).total_seconds() / 60)
+    # Round up: a partial minute must never schedule the job *before* `run_at` (e.g. +30s => 1 min).
+    minutes = math.ceil((run_at - current_time()).total_seconds() / 60)
     return f"now+{max(0, minutes)}minutes"
 
 
