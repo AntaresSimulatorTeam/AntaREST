@@ -70,10 +70,9 @@ def generate_snapshot_fixture(
         variant_id = res.json()
         variant_ids.append(variant_id)
 
-        # Generate snapshot for each variant
-        task_id = client.put(f"/v1/studies/{variant_ids[index]}/generate")
-        wait_task_completion(client, admin_access_token, task_id.json())  # wait for the filesystem to be updated
-        client.get(f"v1/studies/{variant_ids[index]}")
+        # Create an area inside each study to generate a snapshot
+        res = client.post(f"v1/studies/{variant_id}/areas", json={"name": "area1"})
+        res.raise_for_status()
 
         # Modify the `created_at` and `updated_at` attributes in DB.
         with db():
@@ -385,9 +384,10 @@ def test_clear_snapshots(
     # Set up
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    older = Path(tmp_path).joinpath("internal_workspace", generate_snapshots[0], "snapshot")
-    old = Path(tmp_path).joinpath("internal_workspace", generate_snapshots[1], "snapshot")
-    recent = Path(tmp_path).joinpath("internal_workspace", generate_snapshots[2], "snapshot")
+    first_study_id = generate_snapshots[0]
+    older = tmp_path.joinpath("internal_workspace", first_study_id, "snapshot")
+    old = tmp_path.joinpath("internal_workspace", generate_snapshots[1], "snapshot")
+    recent = tmp_path.joinpath("internal_workspace", generate_snapshots[2], "snapshot")
 
     # Test
     # Check initial data
@@ -411,6 +411,10 @@ def test_clear_snapshots(
     task = response.json()
     wait_task_completion(client, admin_access_token, task)
     assert not (older.exists() and old.exists() and recent.exists())
+
+    # Ensures we're able to regenerate data from the study even if the snapshot was cleaned
+    res = client.get(f"/v1/studies/{first_study_id}/areas")
+    assert res.json() == [{"id": "area1", "name": "area1", "thermals": [], "type": "AREA"}]
 
 
 def test_deletion_while_generating(client: TestClient, admin_access_token: str, variant_id: str, tmp_path: str) -> None:
