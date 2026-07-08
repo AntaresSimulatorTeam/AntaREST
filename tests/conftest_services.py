@@ -41,7 +41,6 @@ from antarest.study.directory_service import DirectoryService
 from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -56,7 +55,6 @@ __all__ = (
     "blob_dir_fixture",
     "simple_blob_service_fixture",
     "generator_matrix_constants_fixture",
-    "uri_resolver_service_fixture",
     "core_cache_fixture",
     "study_factory_fixture",
     "core_config_fixture",
@@ -191,20 +189,6 @@ def generator_matrix_constants_fixture(matrix_service: ISimpleMatrixService) -> 
     return out_generator_matrix_constants
 
 
-@pytest.fixture(name="uri_resolver_service", scope="session")
-def uri_resolver_service_fixture(matrix_service: ISimpleMatrixService) -> MatrixStorageContext:
-    """
-    Fixture that creates an UriResolverService instance with a session-level scope.
-
-    Args:
-        matrix_service: : An instance of the InMemorySimpleMatrixService class.
-
-    Returns:
-        An instance of the MatrixStorageContext class representing the URI resolver service.
-    """
-    return MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
-
-
 @pytest.fixture(name="core_cache", scope="session")
 def core_cache_fixture() -> ICache:
     """
@@ -220,18 +204,18 @@ def core_cache_fixture() -> ICache:
 
 
 @pytest.fixture(name="study_factory", scope="session")
-def study_factory_fixture(uri_resolver_service: MatrixStorageContext, core_cache: ICache) -> StudyFactory:
+def study_factory_fixture(matrix_service: ISimpleMatrixService, core_cache: ICache) -> StudyFactory:
     """
     Fixture that creates a StudyFactory instance with a session-level scope.
 
     Args:
-        uri_resolver_service: An instance of the MatrixStorageContext class.
+        matrix_service: An instance of the InMemorySimpleMatrixService class.
         core_cache: An instance of the ICache class.
 
     Returns:
         An instance of the StudyFactory class representing the study factory used for all tests.
     """
-    return StudyFactory(matrix_service=uri_resolver_service.matrix_service, cache=core_cache)
+    return StudyFactory(matrix_service=matrix_service, cache=core_cache)
 
 
 @pytest.fixture(name="core_config")
