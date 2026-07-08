@@ -331,23 +331,22 @@ def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, t
     #  SET UP
     # =======================
 
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Only done to generate the variant folder
-    res = client.post(f"/v1/launcher/run/{variant_id}", headers=admin_headers)
+    res = client.post(f"/v1/launcher/run/{variant_id}")
     res.raise_for_status()
     job_id = res.json()["job_id"]
 
-    status = client.get(f"/v1/launcher/jobs/{job_id}", headers=admin_headers).json()["status"]
+    status = client.get(f"/v1/launcher/jobs/{job_id}").json()["status"]
     while status != "failed":
         time.sleep(0.2)
-        status = client.get(f"/v1/launcher/jobs/{job_id}", headers=admin_headers).json()["status"]
+        status = client.get(f"/v1/launcher/jobs/{job_id}").json()["status"]
 
     # Import an output to the study folder
     output_path_zip = ASSETS_DIR / "output_adq.zip"
     res = client.post(
         f"/v1/studies/{variant_id}/output",
-        headers=admin_headers,
         files={"output": io.BytesIO(output_path_zip.read_bytes())},
     )
     res.raise_for_status()
@@ -357,22 +356,18 @@ def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, t
     # =======================
 
     # Get output
-    res = client.get(f"/v1/studies/{variant_id}/outputs", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/outputs")
     assert res.status_code == 200, res.json()
     outputs = res.json()
     assert len(outputs) == 1
 
     # Generates the study
-    res = client.put(
-        f"/v1/studies/{variant_id}/generate",
-        headers=admin_headers,
-        params={"denormalize": False, "from_scratch": True},
-    )
+    res = client.put(f"/v1/studies/{variant_id}/generate", params={"from_scratch": True})
     res.raise_for_status()
     task_id = res.json()
 
     # Wait for task completion
-    res = client.get(f"/v1/tasks/{task_id}", headers=admin_headers, params={"wait_for_completion": True})
+    res = client.get(f"/v1/tasks/{task_id}", params={"wait_for_completion": True})
     res.raise_for_status()
     task_result = TaskDTO.model_validate(res.json())
     assert task_result.status == TaskStatus.COMPLETED
@@ -380,7 +375,7 @@ def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, t
     assert task_result.result.success
 
     # Get outputs again
-    res = client.get(f"/v1/studies/{variant_id}/outputs", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/outputs")
     assert res.status_code == 200, res.json()
     outputs = res.json()
     assert len(outputs) == 1
@@ -397,7 +392,7 @@ def test_clear_snapshots(
     The `snapshot/` directory must not exist after a call to `clear-snapshot`.
     """
     # Set up
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     older = Path(tmp_path).joinpath("internal_workspace", generate_snapshots[0], "snapshot")
     old = Path(tmp_path).joinpath("internal_workspace", generate_snapshots[1], "snapshot")
@@ -409,19 +404,19 @@ def test_clear_snapshots(
 
     # Delete the older snapshot (default retention hours implicitly equals to 24 hours)
     # and check if it was successfully deleted
-    response = client.put("v1/studies/variants/clear-snapshots", headers=admin_headers)
+    response = client.put("v1/studies/variants/clear-snapshots")
     task = response.json()
     wait_task_completion(client, admin_access_token, task)
     assert (not older.exists()) and old.exists() and recent.exists()
 
     # Delete the old snapshot and check if it was successfully deleted
-    response = client.put("v1/studies/variants/clear-snapshots?hours=6", headers=admin_headers)
+    response = client.put("v1/studies/variants/clear-snapshots?hours=6")
     task = response.json()
     wait_task_completion(client, admin_access_token, task)
     assert (not older.exists()) and (not old.exists()) and recent.exists()
 
     # Delete the recent snapshot and check if it was successfully deleted
-    response = client.put("v1/studies/variants/clear-snapshots?hours=-1", headers=admin_headers)
+    response = client.put("v1/studies/variants/clear-snapshots?hours=-1")
     task = response.json()
     wait_task_completion(client, admin_access_token, task)
     assert not (older.exists() and old.exists() and recent.exists())
