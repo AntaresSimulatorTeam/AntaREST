@@ -23,18 +23,45 @@ from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
-from antarest.login.utils import current_user_context
+from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.model import StorageMode
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI
 from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
+
+
+def create_root_study(
+    public_mode: PublicMode,
+    tmp_path: Path,
+    variant_study_service: VariantStudyService,
+    user_id: int,
+    storage_mode: StorageMode = StorageMode.FILESYSTEM,
+) -> str:
+    # Prepare a RAW study in the temporary folder
+    study_dir = tmp_path / "my_study"
+    root_study_id = str(uuid.uuid4())
+    root_study = create_raw_study(
+        id=root_study_id,
+        workspace="default",
+        path=str(study_dir),
+        version="860",
+        created_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        author="john.doe",
+        owner_id=user_id,
+        public_mode=PublicMode.EDIT if public_mode else PublicMode.NONE,
+        storage_mode=storage_mode,
+    )
+    with db():
+        # Save the root study in database
+        variant_study_service.repository.save(root_study)
+    return root_study_id
 
 
 class TestVariantStudyService:
@@ -70,35 +97,16 @@ class TestVariantStudyService:
     ) -> str:
         # Get public mode argument
         public_mode = request.param
-
-        # Prepare a RAW study in the temporary folder
-        study_dir = tmp_path / "my_study"
-        root_study_id = str(uuid.uuid4())
-        root_study = create_raw_study(
-            id=root_study_id,
-            workspace="default",
-            path=str(study_dir),
-            version="860",
-            created_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
-            updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
-            author="john.doe",
-            owner_id=jwt_user.id,
-            public_mode=PublicMode.EDIT if public_mode else PublicMode.NONE,
-        )
-        with db():
-            # Save the root study in database
-            variant_study_service.repository.save(root_study)
-        return root_study_id
+        return create_root_study(public_mode, tmp_path, variant_study_service, jwt_user.id)
 
     @with_admin_user
-    @pytest.mark.parametrize("root_study_id", [False], indirect=True)
     @with_db_context
+    @pytest.mark.parametrize("storage_mode", [StorageMode.FILESYSTEM, StorageMode.DATABASE])
     def test_commands_service(
-        self,
-        root_study_id: str,
-        generator_matrix_constants: GeneratorMatrixConstants,
-        variant_study_service: VariantStudyService,
+        self, variant_study_service: VariantStudyService, tmp_path: Path, storage_mode: StorageMode
     ) -> None:
+        jwt_user = get_current_user()
+        root_study_id = create_root_study(PublicMode.NONE, tmp_path, variant_study_service, jwt_user.id, storage_mode)
         # Create a new variant
         variant_study = variant_study_service.create_variant_study(root_study_id, "my-variant")
         study_version = StudyVersion.parse(variant_study.version)
