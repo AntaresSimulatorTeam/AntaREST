@@ -590,14 +590,6 @@ def test_launcher_workspace_init(run_with_mock: Any, tmp_path: Path, launcher_co
 
 
 class TestFormatSlurmBegin:
-    """
-    `_format_slurm_begin` turns a naive-UTC `run_at` into a SLURM `--begin=now+<minutes>minutes`
-    offset.
-
-    A relative offset is timezone-invariant, so scheduling stays correct regardless of the SLURM
-    controller's timezone or DST (it only relies on the controller clock being NTP-synced).
-    """
-
     def test_none_returns_none(self) -> None:
         assert _format_slurm_begin(None) is None
 
@@ -614,9 +606,8 @@ class TestFormatSlurmBegin:
         assert _format_slurm_begin(run_at) == "now+0minutes"
 
     def test_offset_is_computed_against_utc_now(self) -> None:
-        # Freeze `current_time` so the offset is deterministic and independent of the machine tz.
-        frozen_now = datetime(2026, 7, 7, 14, 0, 0)  # naive UTC
-        run_at = datetime(2026, 7, 7, 19, 0, 0)  # naive UTC, 5h later
+        frozen_now = datetime(2026, 7, 7, 14, 0, 0)
+        run_at = datetime(2026, 7, 7, 19, 0, 0)
         with patch(
             "antarest.launcher.adapters.slurm_launcher.slurm_launcher.current_time",
             return_value=frozen_now,
