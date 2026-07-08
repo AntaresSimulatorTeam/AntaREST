@@ -22,13 +22,9 @@ import { useTranslation } from "react-i18next";
 import { useUnmount } from "react-use";
 import useOutput from "../../../../-hooks/useOutput";
 import useOutputFilters from "../../../../-hooks/useOutputFilters";
-import {
-  getClusters,
-  getClusterVariables,
-  getVariables,
-  isAreaOrDistrict,
-} from "../../../../-utils";
+import { isAreaOrDistrict } from "../../../../-utils";
 import { isClusterDataType } from "../../utils";
+import { getClusters, getVariables } from "./utils";
 
 function VariablesFilters() {
   const study = useStudy();
@@ -49,19 +45,14 @@ function VariablesFilters() {
     if (!variablesList) {
       return [];
     }
-
-    if (showClusterField) {
-      return clusterId ? getClusterVariables(variablesList, item.id, dataType, clusterId) : [];
-    }
-
-    return getVariables(variablesList, item, dataType);
-  }, [clusterId, dataType, showClusterField, item, variablesList]);
+    return getVariables({ variablesList, item, dataType, clusterId });
+  }, [clusterId, dataType, item, variablesList]);
 
   const clusterOptions = useMemo(() => {
     if (!variablesList || !showClusterField) {
       return [];
     }
-    return getClusters(variablesList, item.id, dataType).map((cluster) => cluster.name);
+    return getClusters(variablesList, dataType, item.id).map((cluster) => cluster.name);
   }, [variablesList, showClusterField, dataType, item.id]);
 
   // Select the first variable by default

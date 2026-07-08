@@ -13,43 +13,135 @@
  */
 
 import DataGridSkeleton from "@/components/DataGridSkeleton";
-import FilterableMatrixGrid, {
-  type FilterableMatrixGridProps,
-} from "@/components/Matrix/components/FilterableMatrixGrid";
+import FilterableMatrixGrid from "@/components/Matrix/components/FilterableMatrixGrid";
+import { isNonEmptyMatrix, type MatrixResultDTO } from "@/components/Matrix/shared/types";
 import {
-  isNonEmptyMatrix,
-  type DateTimes,
-  type EnhancedGridColumn,
-  type MatrixResultDTO,
-} from "@/components/Matrix/shared/types";
+  generateDateTime,
+  generateResultColumns,
+  groupResultColumns,
+} from "@/components/Matrix/shared/utils";
 import EmptyView from "@/components/page/EmptyView";
-import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import type { UsePromiseResponse } from "@/hooks/usePromise";
+import UsePromiseCond, { mergeResponses } from "@/components/utils/UsePromiseCond";
+import usePromise from "@/hooks/usePromise";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { getStudyMatrixIndex } from "@/services/api/matrix";
+import { getStudyData } from "@/services/api/study";
 import type { MatrixIndex } from "@/types/types";
+import { sanitizeJsonResponse } from "@/utils/apiUtils";
 import { toError } from "@/utils/fnUtils";
+import { isSearchMatching } from "@/utils/stringUtils";
 import GridOffIcon from "@mui/icons-material/GridOff";
+import * as R from "ramda";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { useUnmount } from "react-use";
+import useOutput from "../../-hooks/useOutput";
+import useOutputFilters from "../../-hooks/useOutputFilters";
+import { createOutputDataPath, DATE_GRID_COLUMN } from "./utils";
 
-interface Props {
-  matrixRes: UsePromiseResponse<MatrixResultDTO | undefined>;
-  resultColHeaders: string[][];
-  filteredData: number[][];
-  resultColumns: EnhancedGridColumn[];
-  matrixGridRef: FilterableMatrixGridProps["ref"];
-  dateTime: DateTimes | undefined;
-  dateTimeMetadata: MatrixIndex | undefined;
-}
-
-function OutputMatrix({
-  matrixRes,
-  resultColHeaders,
-  filteredData,
-  resultColumns,
-  matrixGridRef,
-  dateTime,
-  dateTimeMetadata,
-}: Props) {
+function OutputMatrix() {
   const { t } = useTranslation();
+  const study = useStudy();
+  const output = useOutput();
+  const { isDarkMode } = useThemeColorScheme();
+  const {
+    item,
+    dataType,
+    frequency,
+    year,
+    columnsSearch,
+    setColumnsData,
+    setIsMatrixDataLoaded,
+    matrixGridRef,
+  } = useOutputFilters();
+
+  const path = createOutputDataPath({
+    output,
+    item,
+    dataType,
+    frequency,
+    year,
+  });
+
+  ////////////////////////////////////////////////////////////////
+  // Promises
+  ////////////////////////////////////////////////////////////////
+
+  const matrixResultResponse = usePromise(
+    async () => {
+      const data = await getStudyData<MatrixResultDTO | string>(study.id, path);
+      return sanitizeJsonResponse<MatrixResultDTO>(data);
+    },
+    {
+      onDataChange: (data) => {
+        const columns = data?.columns || [];
+
+        setColumnsData({
+          variables: R.uniq(columns.map((col) => col[0])),
+          units: R.uniq(columns.map((col) => col[1])),
+          stats: R.uniq(columns.map((col) => col[2].toLowerCase())),
+        });
+
+        setIsMatrixDataLoaded(!!data && isNonEmptyMatrix(data.data));
+      },
+      resetDataOnReload: true,
+      resetErrorOnReload: true,
+      deps: [study.id, path],
+    },
+  );
+
+  const matrixIndexResponse = usePromise<MatrixIndex | undefined>(
+    () => getStudyMatrixIndex(study.id, path),
+    {
+      resetDataOnReload: true,
+      resetErrorOnReload: true,
+      deps: [study.id, path],
+    },
+  );
+
+  useUnmount(() => {
+    setIsMatrixDataLoaded(false);
+  });
+
+  ////////////////////////////////////////////////////////////////
+  // Columns
+  ////////////////////////////////////////////////////////////////
+
+  const filteredColumns = useMemo(() => {
+    if (!matrixResultResponse.data) {
+      return [];
+    }
+
+    return matrixResultResponse.data.columns.filter(([variable, unit, stat]) => {
+      return (
+        (columnsSearch.variables.length === 0 ||
+          isSearchMatching(columnsSearch.variables, variable)) &&
+        (columnsSearch.units.length === 0 || isSearchMatching(columnsSearch.units, unit)) &&
+        (columnsSearch.stats.length === 0 || isSearchMatching(columnsSearch.stats, stat))
+      );
+    });
+  }, [matrixResultResponse.data, columnsSearch]);
+
+  const gridColumns = useMemo(() => {
+    if (filteredColumns.length === 0) {
+      return [];
+    }
+
+    return groupResultColumns(
+      [DATE_GRID_COLUMN, ...generateResultColumns({ titles: filteredColumns })],
+      isDarkMode,
+    );
+  }, [filteredColumns, isDarkMode]);
+
+  ////////////////////////////////////////////////////////////////
+  // DateTime
+  ////////////////////////////////////////////////////////////////
+
+  const dateTime = useMemo(
+    () => matrixIndexResponse.data && generateDateTime(matrixIndexResponse.data),
+    [matrixIndexResponse.data],
+  );
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -57,26 +149,21 @@ function OutputMatrix({
 
   return (
     <UsePromiseCond
-      response={matrixRes}
+      response={mergeResponses(matrixResultResponse, matrixIndexResponse)}
       ifPending={() => <DataGridSkeleton />}
-      ifFulfilled={() => {
-        if (resultColHeaders.length === 0) {
-          return <DataGridSkeleton />;
-        }
-
-        if (!isNonEmptyMatrix(filteredData)) {
+      ifFulfilled={([matrixResult, matrixIndex]) => {
+        if (!isNonEmptyMatrix(matrixResult.data)) {
           return <EmptyView title={t("study.outputs.noData")} icon={GridOffIcon} />;
         }
 
         return (
           <FilterableMatrixGrid
             ref={matrixGridRef}
-            key={`grid-${resultColHeaders.length}`}
-            data={filteredData}
-            rows={filteredData.length}
-            columns={resultColumns}
+            data={matrixResult.data}
+            rows={matrixResult.data.length}
+            columns={gridColumns}
             dateTime={dateTime}
-            timeFrequency={dateTimeMetadata?.level}
+            timeFrequency={matrixIndex.level}
             readOnly
           />
         );

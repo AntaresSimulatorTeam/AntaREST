@@ -38,13 +38,7 @@ function ResultFilters() {
     setDataType,
     frequency,
     setFrequency,
-    variable,
-    setVariable,
-    clusterId,
-    setClusterId,
   } = useOutputFilters();
-
-  console.log({ year, variable, clusterId });
 
   const isYearByYearMode = monteCarloMode === "mc-ind";
 

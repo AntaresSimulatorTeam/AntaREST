@@ -33,8 +33,7 @@ import { useTranslation } from "react-i18next";
 import { useUnmount } from "react-use";
 import useOutput from "../../-hooks/useOutput";
 import useOutputFilters from "../../-hooks/useOutputFilters";
-import { buildVariableViewParams } from "../../-utils";
-import { DATE_GRID_COLUMN, isClusterDataType } from "./utils";
+import { buildVariableViewParams, DATE_GRID_COLUMN, isClusterDataType } from "./utils";
 
 function OutputVariableMatrix() {
   const { t } = useTranslation();
@@ -56,7 +55,7 @@ function OutputVariableMatrix() {
       return getVariableViewData({
         studyId: study.id,
         outputId: output.id,
-        params: buildVariableViewParams(dataType, clusterId, item, variable, frequency),
+        params: buildVariableViewParams({ item, dataType, frequency, clusterId, variable }),
       });
     },
     {

@@ -21,7 +21,7 @@ import { useTranslation } from "react-i18next";
 import { useToggle } from "react-use";
 import useOutput from "../../../-hooks/useOutput";
 import useOutputFilters from "../../../-hooks/useOutputFilters";
-import { buildVariableViewParams, createOutputDataPath } from "../../../-utils";
+import { buildVariableViewParams, createOutputDataPath } from "../utils";
 import ColumnsFilter from "./ColumnsFIlter";
 import DownloadVariableViewButton from "./DownloadVariableViewButton";
 import ResultFilters from "./ResultFilters";
@@ -87,7 +87,7 @@ function Header() {
             </Tooltip>
             {isVariablePerVariable ? (
               <DownloadVariableViewButton
-                params={buildVariableViewParams(dataType, clusterId, item, variable, frequency)}
+                params={buildVariableViewParams({ item, dataType, frequency, clusterId, variable })}
                 disabled={!isMatrixDataLoaded}
               />
             ) : (
