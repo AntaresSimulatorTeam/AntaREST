@@ -34,7 +34,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI
 from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import AnyUUID, create_raw_study, with_admin_user, with_db_context
+from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 class TestVariantStudyService:
@@ -177,32 +177,7 @@ class TestVariantStudyService:
         assert results.model_dump() == {
             "success": True,
             "should_invalidate_cache": False,
-            "details": [
-                {
-                    "id": AnyUUID(),
-                    "name": "create_area",
-                    "status": True,
-                    "msg": "Area 'Yes' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_area",
-                    "status": True,
-                    "msg": "Area 'No' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_link",
-                    "status": True,
-                    "msg": "Link between 'no' and 'yes' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_cluster",
-                    "status": True,
-                    "msg": "Thermal cluster 'cl1' added to area 'yes'.",
-                },
-            ],
+            "details": [],  # Should be empty as we applied commands when appending them.
         }
         assert study.snapshot.id == study.id
 
