@@ -12,7 +12,6 @@
 
 import datetime
 import io
-import logging
 import time
 import typing as t
 from pathlib import Path
@@ -34,35 +33,24 @@ from tests.integration.utils import wait_task_completion
 
 
 @pytest.fixture(name="base_study_id")
-def base_study_id_fixture(client: TestClient, admin_access_token: str, caplog: t.Any) -> str:
+def base_study_id_fixture(client: TestClient, admin_access_token: str) -> str:
     """Create a base study and return its ID."""
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
-    with caplog.at_level(level=logging.WARNING):
-        res = client.post("/v1/studies?name=Base1", headers=admin_headers)
+    res = client.post("/v1/studies?name=Base1", headers=admin_headers)
     return t.cast(str, res.json())
 
 
 @pytest.fixture(name="variant_id")
-def variant_id_fixture(
-    client: TestClient,
-    admin_access_token: str,
-    base_study_id: str,
-    caplog: t.Any,
-) -> str:
+def variant_id_fixture(client: TestClient, admin_access_token: str, base_study_id: str) -> str:
     """Create a variant and return its ID."""
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
-    with caplog.at_level(level=logging.WARNING):
-        res = client.post(f"/v1/studies/{base_study_id}/variants?name=Variant1", headers=admin_headers)
+    res = client.post(f"/v1/studies/{base_study_id}/variants?name=Variant1", headers=admin_headers)
     return t.cast(str, res.json())
 
 
 @pytest.fixture(name="generate_snapshots")
 def generate_snapshot_fixture(
-    client: TestClient,
-    admin_access_token: str,
-    base_study_id: str,
-    monkeypatch: pytest.MonkeyPatch,
-    caplog: t.Any,
+    client: TestClient, admin_access_token: str, base_study_id: str, monkeypatch: pytest.MonkeyPatch
 ) -> t.List[str]:
     """Generate some snapshots with different date of update and last access"""
 
@@ -71,203 +59,195 @@ def generate_snapshot_fixture(
 
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    with caplog.at_level(level=logging.WARNING):
-        # Generate three different timestamp
-        now = current_time()
-        older_time = now - datetime.timedelta(hours=25)  # older than the default value which is 24
-        old_time = now - datetime.timedelta(hours=8)  # older than 6 hours
-        recent_time = now - datetime.timedelta(hours=2)  # older than 0 hours
+    # Generate three different timestamp
+    now = current_time()
+    older_time = now - datetime.timedelta(hours=25)  # older than the default value which is 24
+    old_time = now - datetime.timedelta(hours=8)  # older than 6 hours
+    recent_time = now - datetime.timedelta(hours=2)  # older than 0 hours
 
-        for index, different_time in enumerate([older_time, old_time, recent_time]):
-            res = client.post(f"/v1/studies/{base_study_id}/variants?name=variant{index}", headers=admin_headers)
-            variant_id = res.json()
-            variant_ids.append(variant_id)
+    for index, different_time in enumerate([older_time, old_time, recent_time]):
+        res = client.post(f"/v1/studies/{base_study_id}/variants?name=variant{index}", headers=admin_headers)
+        variant_id = res.json()
+        variant_ids.append(variant_id)
 
-            # Generate snapshot for each variant
-            task_id = client.put(f"/v1/studies/{variant_ids[index]}/generate", headers=admin_headers)
-            wait_task_completion(client, admin_access_token, task_id.json())  # wait for the filesystem to be updated
-            client.get(f"v1/studies/{variant_ids[index]}", headers=admin_headers)
+        # Generate snapshot for each variant
+        task_id = client.put(f"/v1/studies/{variant_ids[index]}/generate", headers=admin_headers)
+        wait_task_completion(client, admin_access_token, task_id.json())  # wait for the filesystem to be updated
+        client.get(f"v1/studies/{variant_ids[index]}", headers=admin_headers)
 
-            # Modify the `created_at` and `updated_at` attributes in DB.
-            with db():
-                variant = db.session.get(Study, variant_id)
-                variant.last_access = different_time
-                variant.updated_at = different_time
-                db.session.merge(variant)
-                db.session.commit()
+        # Modify the `created_at` and `updated_at` attributes in DB.
+        with db():
+            variant = db.session.get(Study, variant_id)
+            variant.last_access = different_time
+            variant.updated_at = different_time
+            db.session.merge(variant)
+            db.session.commit()
 
-    return t.cast(t.List[str], variant_ids)
+    return variant_ids
 
 
-def test_variant_manager(
-    client: TestClient,
-    admin_access_token: str,
-    base_study_id: str,
-    variant_id: str,
-    caplog: t.Any,
-) -> None:
+def test_variant_manager(client: TestClient, admin_access_token: str, base_study_id: str, variant_id: str) -> None:
     admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    with caplog.at_level(level=logging.WARNING):
-        client.post(f"/v1/launcher/run/{variant_id}", headers=admin_headers)
+    client.post(f"/v1/launcher/run/{variant_id}", headers=admin_headers)
 
-        res = client.get(f"v1/studies/{variant_id}/synthesis", headers=admin_headers)
+    res = client.get(f"v1/studies/{variant_id}/synthesis", headers=admin_headers)
 
-        assert res.json()["study_id"] == variant_id
+    assert res.json()["study_id"] == variant_id
 
-        client.post(f"/v1/studies/{variant_id}/variants?name=bar", headers=admin_headers)
-        client.post(f"/v1/studies/{variant_id}/variants?name=baz", headers=admin_headers)
-        res = client.get(f"/v1/studies/{base_study_id}/variants", headers=admin_headers)
-        children = res.json()
-        assert children["node"]["name"] == "Base1"
-        assert len(children["children"]) == 1
-        assert children["children"][0]["node"]["name"] == "Variant1"
-        assert len(children["children"][0]["children"]) == 2
-        # Variant children are sorted by creation date in reverse order
-        assert children["children"][0]["children"][0]["node"]["name"] == "baz"
-        assert children["children"][0]["children"][1]["node"]["name"] == "bar"
+    client.post(f"/v1/studies/{variant_id}/variants?name=bar", headers=admin_headers)
+    client.post(f"/v1/studies/{variant_id}/variants?name=baz", headers=admin_headers)
+    res = client.get(f"/v1/studies/{base_study_id}/variants", headers=admin_headers)
+    children = res.json()
+    assert children["node"]["name"] == "Base1"
+    assert len(children["children"]) == 1
+    assert children["children"][0]["node"]["name"] == "Variant1"
+    assert len(children["children"][0]["children"]) == 2
+    # Variant children are sorted by creation date in reverse order
+    assert children["children"][0]["children"][0]["node"]["name"] == "baz"
+    assert children["children"][0]["children"][1]["node"]["name"] == "bar"
 
-        # George creates a base study
-        # He creates a variant from this study : assert that no command is created and the editor is still George.
-        # The admin does the same : assert that no command is created and the editor is now the admin.
+    # George creates a base study
+    # He creates a variant from this study : assert that no command is created and the editor is still George.
+    # The admin does the same : assert that no command is created and the editor is now the admin.
 
-        client.post(
-            "/v1/users",
-            headers=admin_headers,
-            json={"name": "George", "password": "mypass"},
-        )
-        res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
-        george_credentials = res.json()
-        base_study_res = client.post(
-            "/v1/studies?name=foo",
-            headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
-        )
+    client.post(
+        "/v1/users",
+        headers=admin_headers,
+        json={"name": "George", "password": "mypass"},
+    )
+    res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
+    george_credentials = res.json()
+    base_study_res = client.post(
+        "/v1/studies?name=foo",
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
+    )
 
-        base_study_id = base_study_res.json()
+    base_study_id = base_study_res.json()
 
-        # George part
-        res = client.post(
-            f"/v1/studies/{base_study_id}/variants?name=foo_2",
-            headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
-        )
-        variant_id = res.json()
-        res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-        assert len(res.json()) == 0
-        res = client.get(f"/v1/studies/{variant_id}/raw?path=study", headers=admin_headers)
-        antares_content = res.json()["antares"]
-        assert antares_content["author"] == "George"
-        assert antares_content["editor"] == "George"
+    # George part
+    res = client.post(
+        f"/v1/studies/{base_study_id}/variants?name=foo_2",
+        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
+    )
+    variant_id = res.json()
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    assert len(res.json()) == 0
+    res = client.get(f"/v1/studies/{variant_id}/raw?path=study", headers=admin_headers)
+    antares_content = res.json()["antares"]
+    assert antares_content["author"] == "George"
+    assert antares_content["editor"] == "George"
 
-        # Admin part
-        res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo", headers=admin_headers)
-        variant_id = res.json()
-        res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-        assert len(res.json()) == 0
+    # Admin part
+    res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo", headers=admin_headers)
+    variant_id = res.json()
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    assert len(res.json()) == 0
 
-        res = client.get(f"/v1/studies/{variant_id}/raw?path=study", headers=admin_headers)
-        antares_content = res.json()["antares"]
-        assert antares_content["author"] == "George"
-        assert antares_content["editor"] == "admin"
+    res = client.get(f"/v1/studies/{variant_id}/raw?path=study", headers=admin_headers)
+    antares_content = res.json()["antares"]
+    assert antares_content["author"] == "George"
+    assert antares_content["editor"] == "admin"
 
-        res = client.get(f"/v1/studies/{variant_id}/parents", headers=admin_headers)
-        assert len(res.json()) == 1
-        assert res.json()[0]["id"] == base_study_id
-        assert res.status_code == 200
+    res = client.get(f"/v1/studies/{variant_id}/parents", headers=admin_headers)
+    assert len(res.json()) == 1
+    assert res.json()[0]["id"] == base_study_id
+    assert res.status_code == 200
 
-        res = client.post(
-            f"/v1/studies/{variant_id}/commands",
-            json=[
-                {
-                    "action": "create_area",
-                    "args": {"area_name": "testZone", "metadata": {}},
-                }
-            ],
-            headers=admin_headers,
-        )
-        assert res.status_code == 200
+    res = client.post(
+        f"/v1/studies/{variant_id}/commands",
+        json=[
+            {
+                "action": "create_area",
+                "args": {"area_name": "testZone", "metadata": {}},
+            }
+        ],
+        headers=admin_headers,
+    )
+    assert res.status_code == 200
 
-        res = client.post(
-            f"/v1/studies/{variant_id}/commands",
-            json=[
-                {
-                    "action": "create_area",
-                    "args": {"area_name": "testZone2", "metadata": {}},
-                }
-            ],
-            headers=admin_headers,
-        )
-        assert res.status_code == 200
+    res = client.post(
+        f"/v1/studies/{variant_id}/commands",
+        json=[
+            {
+                "action": "create_area",
+                "args": {"area_name": "testZone2", "metadata": {}},
+            }
+        ],
+        headers=admin_headers,
+    )
+    assert res.status_code == 200
 
-        res = client.post(
-            f"/v1/studies/{variant_id}/commands",
-            json=[
-                {
-                    "action": "create_area",
-                    "args": {"area_name": "testZone3", "metadata": {}},
-                }
-            ],
-            headers=admin_headers,
-        )
-        assert res.status_code == 200
+    res = client.post(
+        f"/v1/studies/{variant_id}/commands",
+        json=[
+            {
+                "action": "create_area",
+                "args": {"area_name": "testZone3", "metadata": {}},
+            }
+        ],
+        headers=admin_headers,
+    )
+    assert res.status_code == 200
 
-        res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-        assert len(res.json()) == 3
-        assert res.status_code == 200
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    assert len(res.json()) == 3
+    assert res.status_code == 200
 
-        res = client.put(
-            f"/v1/studies/{variant_id}/commands",
-            json=[
-                {
-                    "action": "create_area",
-                    "args": {"area_name": "testZoneReplace1", "metadata": {}},
-                },
-                {
-                    "action": "create_area",
-                    "args": {"area_name": "testZoneReplace1", "metadata": {}},
-                },
-            ],
-            headers=admin_headers,
-        )
-        assert res.status_code == 200
+    res = client.put(
+        f"/v1/studies/{variant_id}/commands",
+        json=[
+            {
+                "action": "create_area",
+                "args": {"area_name": "testZoneReplace1", "metadata": {}},
+            },
+            {
+                "action": "create_area",
+                "args": {"area_name": "testZoneReplace1", "metadata": {}},
+            },
+        ],
+        headers=admin_headers,
+    )
+    assert res.status_code == 200
 
-        res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-        assert len(res.json()) == 2
-        assert res.status_code == 200
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    assert len(res.json()) == 2
+    assert res.status_code == 200
 
-        command_id = res.json()[1]["id"]
-        res = client.delete(f"/v1/studies/{variant_id}/commands/{command_id}", headers=admin_headers)
+    command_id = res.json()[1]["id"]
+    res = client.delete(f"/v1/studies/{variant_id}/commands/{command_id}", headers=admin_headers)
 
-        assert res.status_code == 200
+    assert res.status_code == 200
 
-        res = client.put(f"/v1/studies/{variant_id}/generate", headers=admin_headers)
-        assert res.status_code == 200
+    res = client.put(f"/v1/studies/{variant_id}/generate", headers=admin_headers)
+    assert res.status_code == 200
 
-        res = client.get(f"/v1/tasks/{res.json()}?wait_for_completion=true", headers=admin_headers)
-        assert res.status_code == 200
-        task_result = TaskDTO.model_validate(res.json())
-        assert task_result.status == TaskStatus.COMPLETED
-        assert task_result.result.success  # type: ignore
+    res = client.get(f"/v1/tasks/{res.json()}?wait_for_completion=true", headers=admin_headers)
+    assert res.status_code == 200
+    task_result = TaskDTO.model_validate(res.json())
+    assert task_result.status == TaskStatus.COMPLETED
+    assert task_result.result.success  # type: ignore
 
-        res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
-        assert res.status_code == 200
+    res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
+    assert res.status_code == 200
 
-        new_study_id = "new_id"
+    new_study_id = "new_id"
 
-        res = client.get(f"/v1/studies/{new_study_id}", headers=admin_headers)
-        assert res.status_code == 404
+    res = client.get(f"/v1/studies/{new_study_id}", headers=admin_headers)
+    assert res.status_code == 404
 
-        res = client.delete(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-        assert res.status_code == 200
+    res = client.delete(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    assert res.status_code == 200
 
-        res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
-        assert res.status_code == 200
-        assert len(res.json()) == 0
+    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    assert res.status_code == 200
+    assert len(res.json()) == 0
 
-        res = client.delete(f"/v1/studies/{variant_id}", headers=admin_headers)
-        assert res.status_code == 200
+    res = client.delete(f"/v1/studies/{variant_id}", headers=admin_headers)
+    assert res.status_code == 200
 
-        res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
-        assert res.status_code == 404
+    res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
+    assert res.status_code == 404
 
 
 def test_create_variant_inherits_parent_directory_id(
