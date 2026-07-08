@@ -27,7 +27,6 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
-from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import Study
@@ -125,7 +124,7 @@ class TestVariantStudyService:
         # pytest parameter
         from_scratch: bool,
     ) -> None:
-        matrix_service = InMemorySimpleMatrixService()
+        matrix_service = generator_matrix_constants.matrix_service
         ## Prepare database objects
         # noinspection PyArgumentList
         user = User(id=1, name="admin")
