@@ -543,11 +543,6 @@ class VariantStudyService(AbstractStudyService):
         """
         Schedule a snapshot generation task for the given variant study.
 
-        A variant is a parent reference + commands, not a file tree. Replaying
-        commands to materialize a snapshot can be slow, so it runs as an async
-        task. The per-study `FileLock` and `generation_task` reuse prevent
-        concurrent callers from generating the same snapshot twice.
-
         Args:
             metadata: The variant study to generate.
             from_scratch: If True, regenerate from the root study, ignoring cached
@@ -556,47 +551,44 @@ class VariantStudyService(AbstractStudyService):
         Returns:
             The ID of the (new or in-progress) generation task.
         """
-        study_id = metadata.id
-        with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
-            logger.info(f"Starting variant study {study_id} generation")
-            self.repository.refresh(metadata)
-            if metadata.generation_task:
-                try:
-                    previous_task = self.task_service.status_task(metadata.generation_task)
-                    if not previous_task.status.is_final():
-                        logger.info(f"Returning already existing variant study {study_id} generation")
-                        return str(metadata.generation_task)
-                except TaskNotFoundError as e:
-                    logger.warning(
-                        f"Failed to retrieve generation task for study {study_id}",
-                        exc_info=e,
-                    )
-
-            # this is important because the callback will be called outside the current
-            # db context, so we need to fetch the id attribute before
+        # First, check if there's an ongoing generation task.
+        # If so, simply return its ID.
+        if metadata.generation_task:
             study_id = metadata.id
+            try:
+                previous_task = self.task_service.status_task(metadata.generation_task)
+                if not previous_task.status.is_final():
+                    logger.info(f"Returning already existing variant study {study_id} generation")
+                    return str(metadata.generation_task)
+            except TaskNotFoundError as e:
+                logger.warning(f"Failed to retrieve generation task for study {study_id}", exc_info=e)
 
-            def callback(notifier: ITaskNotifier) -> TaskResult:
-                study = self._get_variant_study(study_id)
-                generate_result = self.generate(study, from_scratch, notifier)
-                return TaskResult(
-                    success=generate_result.success,
-                    message=(
-                        f"{study_id} generated successfully" if generate_result.success else f"{study_id} not generated"
-                    ),
-                    return_value=generate_result.model_dump_json(),
-                )
+        # Store the study.id in a variable. It is important because the callback will be called outside the current
+        # db context, so we need to fetch the id attribute before
+        study_id = metadata.id
+        logger.info(f"Starting variant study {study_id} generation")
 
-            metadata.generation_task = self.task_service.add_task(
-                action=callback,
-                name=f"Generation of {metadata.id} study",
-                task_type=TaskType.VARIANT_GENERATION,
-                ref_id=study_id,
-                progress=None,
-                custom_event_messages=CustomTaskEventMessages(start=metadata.id, running=metadata.id, end=metadata.id),
+        def callback(notifier: ITaskNotifier) -> TaskResult:
+            study = self._get_variant_study(study_id)
+            generate_result = self.generate(study, from_scratch, notifier)
+            return TaskResult(
+                success=generate_result.success,
+                message=(
+                    f"{study_id} generated successfully" if generate_result.success else f"{study_id} not generated"
+                ),
+                return_value=generate_result.model_dump_json(),
             )
-            self.repository.save(metadata)
-            return str(metadata.generation_task)
+
+        metadata.generation_task = self.task_service.add_task(
+            action=callback,
+            name=f"Generation of {metadata.id} study",
+            task_type=TaskType.VARIANT_GENERATION,
+            ref_id=study_id,
+            progress=None,
+            custom_event_messages=CustomTaskEventMessages(start=metadata.id, running=metadata.id, end=metadata.id),
+        )
+        self.repository.save(metadata)
+        return str(metadata.generation_task)
 
     def generate_variant_with_task(self, variant_study_id: str, from_scratch: bool) -> str:
         # Get variant study
@@ -613,23 +605,25 @@ class VariantStudyService(AbstractStudyService):
     ) -> GenerationResultInfoDTO:
         """
         Generates a variant study synchronously.
+        The per-study `FileLock` prevents concurrent callers from generating the same snapshot twice.
         """
         if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
             # Nothing to do
             return GenerationResultInfoDTO(success=True, should_invalidate_cache=False, details=[])
 
-        try:
-            generator = SnapshotGenerator(variant_study_service=self)
-            # Build the Dao factory first
-            dao_factory = self._study_dao_factories[study.storage_mode]
-            # Then launch the generation
-            return generator.generate_snapshot(
-                study.id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
-            )
-        except Exception as e:
-            # raise a EXPECTATION_FAILED error (417)
-            logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
-            raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
+        with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study.id}.lock")):
+            try:
+                generator = SnapshotGenerator(variant_study_service=self)
+                # Build the Dao factory first
+                dao_factory = self._study_dao_factories[study.storage_mode]
+                # Then launch the generation
+                return generator.generate_snapshot(
+                    study.id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
+                )
+            except Exception as e:
+                # raise a EXPECTATION_FAILED error (417)
+                logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
+                raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
 
     def get_study_task(self, study_id: str) -> TaskDTO:
         """
