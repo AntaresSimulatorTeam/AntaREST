@@ -254,22 +254,22 @@ def test_create_variant_inherits_parent_directory_id(
     client: TestClient,
     admin_access_token: str,
 ) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    res = client.post("/v1/studies?name=BaseWithDirectory&directory=project/subfolder", headers=admin_headers)
+    res = client.post("/v1/studies?name=BaseWithDirectory&directory=project/subfolder")
     assert res.status_code == 201
     base_study_id = res.json()
 
-    res = client.get(f"/v1/studies/{base_study_id}", headers=admin_headers)
+    res = client.get(f"/v1/studies/{base_study_id}")
     assert res.status_code == 200
     parent_study = res.json()
     assert parent_study["directory_id"] is not None
 
-    res = client.post(f"/v1/studies/{base_study_id}/variants?name=VariantWithDirectory", headers=admin_headers)
+    res = client.post(f"/v1/studies/{base_study_id}/variants?name=VariantWithDirectory")
     assert res.status_code == 200
     variant_id = res.json()
 
-    res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}")
     assert res.status_code == 200
     variant_study = res.json()
     assert variant_study["parent_id"] == base_study_id
@@ -277,22 +277,22 @@ def test_create_variant_inherits_parent_directory_id(
 
 
 def test_comments(client: TestClient, admin_access_token: str, variant_id: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Put comments
     comment = "updated comment"
-    res = client.put(f"/v1/studies/{variant_id}/comments", json={"comments": comment}, headers=admin_headers)
+    res = client.put(f"/v1/studies/{variant_id}/comments", json={"comments": comment})
     assert res.status_code == 204
 
     # Asserts comments are updated
-    res = client.get(f"/v1/studies/{variant_id}/comments", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/comments")
     assert res.json() == comment
 
     # Generates the study
-    res = client.put(f"/v1/studies/{variant_id}/generate?denormalize=false&from_scratch=true", headers=admin_headers)
+    res = client.put(f"/v1/studies/{variant_id}/generate?denormalize=false&from_scratch=true")
     task_id = res.json()
     # Wait for task completion
-    res = client.get(f"/v1/tasks/{task_id}", headers=admin_headers, params={"wait_for_completion": True})
+    res = client.get(f"/v1/tasks/{task_id}", params={"wait_for_completion": True})
     assert res.status_code == 200
     task_result = TaskDTO.model_validate(res.json())
     assert task_result.status == TaskStatus.COMPLETED
@@ -300,28 +300,24 @@ def test_comments(client: TestClient, admin_access_token: str, variant_id: str) 
     assert task_result.result.success
 
     # Asserts comments did not disappear
-    res = client.get(f"/v1/studies/{variant_id}/comments", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/comments")
     assert res.json() == comment
 
 
 def test_recursive_variant_tree(client: TestClient, admin_access_token: str, base_study_id: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
     parent_id = base_study_id
     leaf_id = base_study_id
     for k in range(200):
-        res = client.post(
-            f"/v1/studies/{leaf_id}/variants",
-            headers=admin_headers,
-            params={"name": f"variant_{k}"},
-        )
+        res = client.post(f"/v1/studies/{leaf_id}/variants", params={"name": f"variant_{k}"})
         leaf_id = res.json()
 
     # Asserts that we do not trigger a Recursive Exception
-    res = client.get(f"/v1/studies/{parent_id}/variants", headers=admin_headers)
+    res = client.get(f"/v1/studies/{parent_id}/variants")
     assert res.status_code == 200, res.json()
 
     # `from_root=true` from the deepest variant returns the same tree as querying the root.
-    res = client.get(f"/v1/studies/{leaf_id}/variants", params={"from_root": True}, headers=admin_headers)
+    res = client.get(f"/v1/studies/{leaf_id}/variants", params={"from_root": True})
     assert res.status_code == 200, res.json()
     assert res.json()["node"]["id"] == parent_id
 
