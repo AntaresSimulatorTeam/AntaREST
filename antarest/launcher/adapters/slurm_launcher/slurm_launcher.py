@@ -187,7 +187,6 @@ class SlurmLauncher(AbstractLauncher):
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])
         self.thread: threading.Thread | None = None
         self.job_list: list[str] = []
-        # Names of launches already flipped from PENDING to RUNNING, so we notify only once.
         self._running_notified: set[str] = set()
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
@@ -291,8 +290,6 @@ class SlurmLauncher(AbstractLauncher):
         arguments.version = False
         arguments.post_processing = False
         arguments.other_options = None
-        # SLURM `--begin` value for scheduled launches (`None` => start now).
-        # Consumed by antares-launcher >= 1.5.0; silently ignored by older releases.
         arguments.begin = None
 
         return arguments
@@ -532,18 +529,13 @@ class SlurmLauncher(AbstractLauncher):
                         logger.warning(
                             f"Study {study_uuid} with job id {launch_uuid} does not seem to have been launched"
                         )
-
-                    # A successful submit only means the job is queued (and possibly held by `--begin`),
-                    # not that it is running. We leave it PENDING; the monitoring loop flips it to
-                    # RUNNING once the cluster actually starts it (see `_check_studies_state`).
-                    # Only a failed submit is reported here, as a terminal FAILED.
-                    if not launch_success:
                         self.callbacks.update_status(
                             launch_uuid,
                             JobStatus.FAILED,
                             None,
                             None,
                         )
+
                 except Exception as e:
                     stack_trace = traceback.format_exc()
                     msg = f"Failed to launch study {study_uuid}: see stack trace below:\n{stack_trace}"

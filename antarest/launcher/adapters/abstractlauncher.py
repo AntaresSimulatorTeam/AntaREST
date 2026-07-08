@@ -80,11 +80,6 @@ class AbstractLauncher(ABC):
         launcher_parameters: LauncherParametersDTO,
         run_at: datetime | None = None,
     ) -> None:
-        """
-        Args:
-            run_at: if set, the launch is scheduled to start at that (naive UTC) time instead of now.
-                Only supported by launchers able to defer a job (SLURM `--begin`).
-        """
         raise NotImplementedError()
 
     @abstractmethod
