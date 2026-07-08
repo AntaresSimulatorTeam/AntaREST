@@ -14,6 +14,7 @@ import random
 import textwrap
 import uuid
 from argparse import Namespace
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from unittest.mock import ANY, Mock, patch
@@ -35,6 +36,7 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     LOG_DIR_NAME,
     SlurmLauncher,
     VersionNotSupportedError,
+    _format_slurm_begin,
 )
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, XpansionParametersDTO
 
@@ -392,10 +394,12 @@ def test_run_study(
     assert f"solver_version = {version:ddd}" in study_antares_path.read_text(encoding="utf-8")
 
     slurm_launcher.callbacks.export_study.assert_called_once()
-    slurm_launcher.callbacks.update_status.assert_called_once_with(ANY, job_status, ANY, None)
     if job_status == JobStatus.RUNNING:
+        slurm_launcher.callbacks.update_status.assert_not_called()
         slurm_launcher.start.assert_called_once()
         slurm_launcher._delete_workspace_file.assert_called_once()
+    else:
+        slurm_launcher.callbacks.update_status.assert_called_once_with(ANY, JobStatus.FAILED, ANY, None)
 
 
 def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
@@ -530,6 +534,7 @@ def test_kill_job(
         xpansion_mode=None,
         other_options=None,
         oversubscribe=False,
+        begin=None,
     )
     launcher_parameters = MainParameters(
         json_dir=Path(tmp_path),
@@ -582,3 +587,39 @@ def test_launcher_workspace_init(run_with_mock: Any, tmp_path: Path, launcher_co
     workspaces = [p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME]
     assert len(workspaces) == 1
     assert workspaces[0] == tmp_path / "workspace-12"
+
+
+class TestFormatSlurmBegin:
+    """
+    `_format_slurm_begin` turns a naive-UTC `run_at` into a SLURM `--begin=now+<minutes>minutes`
+    offset.
+
+    A relative offset is timezone-invariant, so scheduling stays correct regardless of the SLURM
+    controller's timezone or DST (it only relies on the controller clock being NTP-synced).
+    """
+
+    def test_none_returns_none(self) -> None:
+        assert _format_slurm_begin(None) is None
+
+    def test_future_returns_positive_offset(self) -> None:
+        run_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=2)
+        result = _format_slurm_begin(run_at)
+        assert result is not None and result.startswith("now+") and result.endswith("minutes")
+        minutes = int(result.removeprefix("now+").removesuffix("minutes"))
+        # ~2h ahead; allow a minute of clock drift during the test
+        assert minutes == pytest.approx(120, abs=1)
+
+    def test_past_is_clamped_to_zero(self) -> None:
+        run_at = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
+        assert _format_slurm_begin(run_at) == "now+0minutes"
+
+    def test_offset_is_computed_against_utc_now(self) -> None:
+        # Freeze `current_time` so the offset is deterministic and independent of the machine tz.
+        frozen_now = datetime(2026, 7, 7, 14, 0, 0)  # naive UTC
+        run_at = datetime(2026, 7, 7, 19, 0, 0)  # naive UTC, 5h later
+        with patch(
+            "antarest.launcher.adapters.slurm_launcher.slurm_launcher.current_time",
+            return_value=frozen_now,
+        ):
+            result = _format_slurm_begin(run_at)
+        assert result == f"now+{5 * 60}minutes"

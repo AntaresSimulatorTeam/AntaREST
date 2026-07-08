@@ -20,6 +20,7 @@ import sys
 import threading
 import time
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -82,8 +83,15 @@ class LocalLauncher(AbstractLauncher):
 
     @override
     def run_study(
-        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
+        self,
+        study_uuid: str,
+        job_id: str,
+        version: SolverVersion,
+        launcher_parameters: LauncherParametersDTO,
+        run_at: datetime | None = None,
     ) -> None:
+        if run_at is not None:
+            raise ValueError("Scheduling a launch at a given time is only supported on SLURM launchers")
         antares_solver_path = self._select_best_binary(version)
         self.submitted_jobs[job_id] = launcher_parameters
 

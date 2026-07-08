@@ -142,6 +142,7 @@ class JobResultDTO(AntaresBaseModel):
     - launcher_params: Parameters related to the launcher.
     - status: The status of the task. It can be one of the following: "pending", "failed", "success", or "running".
     - creation_date: The date of creation of the task.
+    - scheduled_at: The requested start time.
     - completion_date: The date of completion of the task, if available.
     - msg: A message associated with the task, either for the user or for error description.
     - output_id: The identifier of the simulation results.
@@ -157,6 +158,7 @@ class JobResultDTO(AntaresBaseModel):
     launcher_params: str | None
     status: JobStatus
     creation_date: str
+    scheduled_at: str | None = None
     completion_date: str | None
     msg: str | None
     output_id: str | None
@@ -217,6 +219,7 @@ class JobResult(Base):
     launcher_params: Mapped[str | None] = mapped_column(String, nullable=True)
     job_status: Mapped[JobStatus | None] = mapped_column(Enum(JobStatus), nullable=True)
     creation_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     completion_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     msg: Mapped[str | None] = mapped_column(String())
     output_id: Mapped[str | None] = mapped_column(String())
@@ -240,6 +243,7 @@ class JobResult(Base):
             launcher_params=self.launcher_params,
             status=self.job_status,
             creation_date=str(self.creation_date),
+            scheduled_at=str(self.scheduled_at) if self.scheduled_at else None,
             completion_date=str(self.completion_date) if self.completion_date else None,
             msg=self.msg,
             output_id=self.output_id,

@@ -13,6 +13,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple, Protocol
 
@@ -72,8 +73,18 @@ class AbstractLauncher(ABC):
 
     @abstractmethod
     def run_study(
-        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
+        self,
+        study_uuid: str,
+        job_id: str,
+        version: SolverVersion,
+        launcher_parameters: LauncherParametersDTO,
+        run_at: datetime | None = None,
     ) -> None:
+        """
+        Args:
+            run_at: if set, the launch is scheduled to start at that (naive UTC) time instead of now.
+                Only supported by launchers able to defer a job (SLURM `--begin`).
+        """
         raise NotImplementedError()
 
     @abstractmethod
