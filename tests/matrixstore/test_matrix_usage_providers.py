@@ -319,7 +319,8 @@ def test_constants_matrix_usage_provider(constants_matrix_usage_provider: Consta
     assert constants_id == matrix_ref_ids
 
 
-def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user: Any) -> None:
+def test_dataset_matrix_usage_provider(matrix_service_on_disk: MatrixService, admin_user: Any) -> None:
+    matrix_service = matrix_service_on_disk
     with db():
         group_repo = GroupRepository()
         group = group_repo.save(Group(name="groupA", id="groupA"))
@@ -354,7 +355,8 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
 
 
 @with_db_context
-def test_output_variables_matrix_usage_provider(matrix_service: MatrixService) -> None:
+def test_output_variables_matrix_usage_provider(matrix_service_on_disk: MatrixService) -> None:
+    matrix_service = matrix_service_on_disk
     # Create a matrix to avoid ForeignKey issue
     matrix_id = matrix_service.create(pl.DataFrame([0]))
 
