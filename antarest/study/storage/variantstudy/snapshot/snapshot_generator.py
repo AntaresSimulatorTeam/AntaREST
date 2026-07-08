@@ -96,10 +96,6 @@ class SnapshotGenerator:
             if search_result.force_regenerate or not self.variant_study_service.has_snapshot(variant_study):
                 self.variant_study_service.create_snapshot(ref_study, variant_study)
 
-            if not cmd_blocks:
-                # No commands to apply, we can skip the generation
-                return GenerationResultInfoDTO(success=True, should_invalidate_cache=False, details=[])
-
             # The snapshot is generated, we also need to de-normalize the matrices.
             study_dao = dao_factory.get_study_dao(variant_study.id, True)
 

@@ -196,7 +196,9 @@ def test_variant_manager(client: TestClient, admin_access_token: str, base_study
             },
         ],
     )
-    assert res.status_code == 200
+    assert res.status_code == 417
+    assert "Area 'testZoneReplace1' already exists" in res.json()["description"]
+    assert res.json()["exception"] == "VariantGenerationError"
 
     res = client.get(f"/v1/studies/{variant_id}/commands")
     assert len(res.json()) == 2

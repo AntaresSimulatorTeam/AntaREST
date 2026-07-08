@@ -613,6 +613,7 @@ class VariantStudyService(AbstractStudyService):
 
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study.id}.lock")):
             try:
+                self.repository.refresh(study)
                 generator = SnapshotGenerator(variant_study_service=self)
                 # Build the Dao factory first
                 dao_factory = self._study_dao_factories[study.storage_mode]
