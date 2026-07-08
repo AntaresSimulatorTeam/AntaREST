@@ -278,7 +278,12 @@ def test_comments(client: TestClient, admin_access_token: str, variant_id: str) 
     res = client.get(f"/v1/studies/{variant_id}/comments")
     assert res.json() == comment
 
-    # Generates the study
+    # Ensures no generation task was created as we now generate the variant synchronously without using a task
+    res = client.get("/v1/tasks")
+    assert res.status_code == 200
+    assert not res.json()
+
+    # Generates the study manually to ensure it works as the R scripts still do this
     res = client.put(f"/v1/studies/{variant_id}/generate?denormalize=false&from_scratch=true")
     task_id = res.json()
     # Wait for task completion
