@@ -175,7 +175,7 @@ def simple_matrix_service_fixture(bucket_dir: Path) -> SimpleMatrixService:
     Returns:
         An instance of the SimpleMatrixService class representing the matrix service.
     """
-    matrix_content_repository = MatrixContentRepository(bucket_dir=bucket_dir, format=InternalMatrixFormat.TSV)
+    matrix_content_repository = MatrixContentRepository(bucket_dir=bucket_dir, format=InternalMatrixFormat.FEATHER)
     return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
 
 
