@@ -27,7 +27,7 @@ from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import STUDY_VERSION_8_6, StorageMode
+from antarest.study.model import STUDY_VERSION_8_6, StorageMode, StudyMetadataCreation
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import create_new_empty_study
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -65,6 +65,12 @@ def create_root_study(
     with db():
         # Save the root study in database
         variant_study_service.repository.save(root_study)
+        if storage_mode == StorageMode.DATABASE:
+            # Initialize the study data
+            ctx = variant_study_service.command_factory.command_context
+            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+            metadata = StudyMetadataCreation(id=root_study_id, name="my_study", version=STUDY_VERSION_8_6, managed=True)
+            factory.create_study_dao(metadata)
     return root_study_id
 
 
