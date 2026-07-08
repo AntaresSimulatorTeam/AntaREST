@@ -56,7 +56,7 @@ def create_root_study(
         updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
         author="john.doe",
         owner_id=user_id,
-        public_mode=PublicMode.EDIT if public_mode else PublicMode.NONE,
+        public_mode=public_mode,
         storage_mode=storage_mode,
     )
     if storage_mode == StorageMode.FILESYSTEM:
@@ -193,13 +193,9 @@ class TestVariantStudyService:
         }
         assert study.snapshot.id == study.id
 
-    @pytest.mark.parametrize("root_study_id", [True], indirect=True)
     @with_db_context
     def test_command_several_authors(
-        self,
-        jwt_user: JWTUser,
-        variant_study_service: VariantStudyService,
-        root_study_id: str,
+        self, jwt_user: JWTUser, variant_study_service: VariantStudyService, tmp_path: Path
     ) -> None:
         """
         Test two different users that are authors on two different commands of the same variant
@@ -213,7 +209,7 @@ class TestVariantStudyService:
             Test whether the commands have the `user_name` and `updated_at` attributes
             Test authors of the commands
         """
-        # Get the owner request parameters
+        root_study_id = create_root_study(PublicMode.EDIT, tmp_path, variant_study_service, jwt_user.id)
 
         # create another user that has the write privilege
         other_user = User(id=3, name="jane.doe", type="users")
@@ -258,13 +254,9 @@ class TestVariantStudyService:
         assert commands[0].user_name == "john.doe"
         assert commands[1].user_name == "jane.doe"
 
-    @pytest.mark.parametrize("root_study_id", [False], indirect=True)
     @with_db_context
     def test_command_same_author(
-        self,
-        jwt_user: JWTUser,
-        variant_study_service: VariantStudyService,
-        root_study_id: str,
+        self, jwt_user: JWTUser, variant_study_service: VariantStudyService, tmp_path: Path
     ) -> None:
         """
         Test the case of multiple commands was created by the same user.
@@ -291,6 +283,7 @@ class TestVariantStudyService:
                 nb_queries += 1
 
         # Generate a variant on a study that allow other user to edit it
+        root_study_id = create_root_study(PublicMode.NONE, tmp_path, variant_study_service, jwt_user.id)
         with current_user_context(jwt_user):
             variant_study = variant_study_service.create_variant_study(root_study_id, "new_variant")
 
@@ -314,14 +307,8 @@ class TestVariantStudyService:
         assert nb_queries == 1  # Ensure only two queries were made (one for study, one for user)
 
     @with_admin_user
-    @pytest.mark.parametrize("root_study_id", [False], indirect=True)
     @with_db_context
-    def test_update_editor(
-        self,
-        jwt_user: JWTUser,
-        variant_study_service: VariantStudyService,
-        root_study_id: str,
-    ) -> None:
+    def test_update_editor(self, jwt_user: JWTUser, variant_study_service: VariantStudyService, tmp_path: Path) -> None:
         """
         Test two different users, one that is the author and the other that is an editor on one study of the service
         Set up:
@@ -331,6 +318,7 @@ class TestVariantStudyService:
 
         Tests:
         """
+        root_study_id = create_root_study(PublicMode.NONE, tmp_path, variant_study_service, jwt_user.id)
         admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
         test_user_editor = User(id=2, name="jane.editor", type="users")
         jwt_user_editor = JWTUser(
