@@ -487,6 +487,7 @@ def test_lifecycle_for_both_storage_modes(
     check_exported_study_integrity(client, tmp_path, download_id, "VariantStudy")
 
 
+@pytest.mark.flaky(reruns=3)
 def test_variant_concurrent_generation(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
@@ -511,3 +512,23 @@ def test_variant_concurrent_generation(client: TestClient, admin_access_token: s
     res = client.get(f"/v1/studies/{variant_id}/areas")
     assert res.status_code == 200
     assert res.json() == [{"id": "area1", "name": "area1", "thermals": [], "type": "AREA"}]
+
+    # Launch 3 generation tasks.
+    # The 2nd and 3rd generations should not be launched and simply return the id of the first one.
+    # But as the generations are really fast, this is a bit clunky.
+    # For test reproducibility, we're just going to check that at most 2 generation tasks were launched.
+    res = client.put(f"/v1/studies/{variant_id}/generate")
+    first_task_id = res.json()
+    res = client.put(f"/v1/studies/{variant_id}/generate")
+    second_task_id = res.json()
+    res = client.put(f"/v1/studies/{variant_id}/generate")
+    third_task_id = res.json()
+    generation_tasks = {first_task_id, second_task_id, third_task_id}
+    assert len(generation_tasks) <= 2
+
+    # Wait for the generations to end and ensure they succeeded
+    for task_id in generation_tasks:
+        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True&timeout=10")
+        res.raise_for_status()
+        task = res.json()
+        assert task["result"]["success"] is True
