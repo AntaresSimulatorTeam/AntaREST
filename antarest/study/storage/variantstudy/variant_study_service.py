@@ -25,7 +25,6 @@ from typing_extensions import override
 from antarest.core.config import Config
 from antarest.core.exceptions import (
     CommandNotValid,
-    CommandUpdateAuthorizationError,
     NoParentStudyError,
     StudyNotFoundError,
     StudyValidationError,
@@ -228,19 +227,6 @@ class VariantStudyService(AbstractStudyService):
                 raise CommandNotValid(f"Command at index {i} for study {study_id}") from None
         return command_objects
 
-    def _check_update_authorization(self, metadata: VariantStudy) -> None:
-        if metadata.generation_task:
-            try:
-                previous_task = self.task_service.status_task(metadata.generation_task)
-                if not previous_task.status.is_final():
-                    logger.error(f"{metadata.id} generation in progress")
-                    raise CommandUpdateAuthorizationError(metadata.id)
-            except TaskNotFoundError as e:
-                logger.warning(
-                    f"Failed to retrieve generation task for study {metadata.id}",
-                    exc_info=e,
-                )
-
     def append_commands(self, study_id: str, commands: list[CommandDTO]) -> list[str]:
         """
         Add commands to the list of existing ones
@@ -271,7 +257,6 @@ class VariantStudyService(AbstractStudyService):
         return study_id
 
     def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
-        self._check_update_authorization(study)
         command_objs = self._check_commands_validity(study.id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
         if replace_commands:
@@ -306,7 +291,6 @@ class VariantStudyService(AbstractStudyService):
         Returns: None
         """
         study = self._get_variant_study(study_id)
-        self._check_update_authorization(study)
 
         index = [command.id for command in study.commands].index(command_id)
         study.commands.pop(index)
@@ -324,7 +308,6 @@ class VariantStudyService(AbstractStudyService):
         Returns: None
         """
         study = self._get_variant_study(study_id)
-        self._check_update_authorization(study)
 
         study.commands = []
         self._update_editor(study)

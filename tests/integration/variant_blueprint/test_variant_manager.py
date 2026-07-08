@@ -283,7 +283,7 @@ def test_comments(client: TestClient, admin_access_token: str, variant_id: str) 
     assert not res.json()
 
     # Generates the study manually to ensure it works as the R scripts still do this
-    res = client.put(f"/v1/studies/{variant_id}/generate?denormalize=false&from_scratch=true")
+    res = client.put(f"/v1/studies/{variant_id}/generate?from_scratch=true")
     task_id = res.json()
     # Wait for task completion
     res = client.get(f"/v1/tasks/{task_id}", params={"wait_for_completion": True})
@@ -485,3 +485,29 @@ def test_lifecycle_for_both_storage_modes(
     download_id = res.json()["file"]["id"]
 
     check_exported_study_integrity(client, tmp_path, download_id, "VariantStudy")
+
+
+def test_variant_concurrent_generation(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # Create a Variant study
+    res = client.post("/v1/studies?name=RawStudy")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    res = client.post(f"/v1/studies/{study_id}/variants?name=VariantStudy")
+    assert res.status_code == 200
+    variant_id = res.json()
+
+    # Launch a generation task
+    res = client.put(f"/v1/studies/{variant_id}/generate")
+    res.raise_for_status()
+
+    # Do not wait for the generation to end and add an area to the variant
+    res = client.post(f"/v1/studies/{variant_id}/areas", json={"name": "area1"})
+    assert res.status_code == 200
+
+    # Assert we can retrieve the area successfully
+    res = client.get(f"/v1/studies/{variant_id}/areas")
+    assert res.status_code == 200
+    assert res.json() == [{"id": "area1", "name": "area1", "thermals": [], "type": "AREA"}]
