@@ -84,11 +84,7 @@ def command_matrix_usage_provider(
     command_factory: CommandFactory,
     storage_mapping: dict[StorageMode, IStudyStorage],
 ) -> CommandMatrixUsageProvider:
-    command_matrix_usage_provider = CommandMatrixUsageProvider(
-        variant_study_repository, command_factory, storage_mapping
-    )
-
-    return command_matrix_usage_provider
+    return CommandMatrixUsageProvider(variant_study_repository, command_factory, storage_mapping)
 
 
 @pytest.fixture
