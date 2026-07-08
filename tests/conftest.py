@@ -83,8 +83,9 @@ def matrix_service_fixture() -> InMemorySimpleMatrixService:
 
 
 @pytest.fixture(name="real_matrix_service")
-def real_matrix_service_fixture(bucket_dir: Path) -> MatrixService:
+def real_matrix_service_fixture(tmp_path: Path) -> MatrixService:
     repo = MatrixRepository()
+    bucket_dir = tmp_path / "bucket_dir"
     content = MatrixContentRepository(bucket_dir, InternalMatrixFormat.FEATHER)
     dataset_repo = MatrixDataSetRepository()
 
