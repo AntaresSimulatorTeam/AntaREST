@@ -13,8 +13,8 @@
 import io
 import zipfile
 from pathlib import Path
+from subprocess import run
 
-import py7zr
 import pytest
 
 from antarest.core.exceptions import BadArchiveContent
@@ -39,11 +39,12 @@ class TestExtractArchive:
         # Finally, check the result
         assert (tmp_path / "test.txt").read_text() == "Hello world!"
 
-    def test_extract_zip__with_7z(self, tmp_path: Path) -> None:
+    def test_extract_archive__with_7z(self, tmp_path: Path) -> None:
         # First, create a small ZIP file
         zip_path = tmp_path / "test.7z"
-        with py7zr.SevenZipFile(zip_path, mode="w") as zipf:
-            zipf.writestr(data="Hello world!", arcname="test.txt")
+        txt_file = tmp_path / "test.txt"
+        txt_file.write_text("Hello world!")
+        run(["7z", "a", str(zip_path), str(txt_file)], check=True)
 
         # Then, call the function
         with open(zip_path, mode="rb") as stream:

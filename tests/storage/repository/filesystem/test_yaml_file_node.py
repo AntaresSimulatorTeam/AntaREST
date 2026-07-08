@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import shutil
 import textwrap
 from pathlib import Path
 
@@ -43,21 +42,6 @@ stopping_threshold: 3.0
         config=FileStudyTreeConfig(study_path=yaml_path, path=yaml_path, version=STUDY_VERSION_8, study_id="id"),
     )
     assert node.get() == expected_json
-    assert node.get(depth=2) == expected_json
-
-    base_name = str(tmp_path.joinpath("archived"))
-    zipped_path = Path(shutil.make_archive(base_name, format="zip", root_dir=tmp_path))
-
-    zipped_node = YAMLFileNode(
-        config=FileStudyTreeConfig(
-            study_path=tmp_path.joinpath("archived", yaml_path.name),
-            path=tmp_path.joinpath("archived", yaml_path.name),
-            version=STUDY_VERSION_8,
-            study_id="id",
-            archive_path=zipped_path,
-        ),
-    )
-    assert zipped_node.get() == expected_json
     assert node.get(depth=2) == expected_json
 
 

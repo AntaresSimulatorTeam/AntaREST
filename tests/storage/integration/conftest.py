@@ -14,10 +14,10 @@ import datetime
 import shutil
 import zipfile
 from pathlib import Path
+from subprocess import run
 from unittest.mock import Mock
 from zipfile import ZipFile
 
-import py7zr
 import pytest
 
 from antarest.blobstore.repository import BlobContentRepository
@@ -58,8 +58,7 @@ def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path
     with zipfile.ZipFile(sta_mini_zip_path, "r") as zf:
         zf.extractall(sta_mini_zip_path.parent)
     extracted_dir_path = sta_mini_zip_path.parent / "STA-mini"
-    with py7zr.SevenZipFile(target, "w") as szf:
-        szf.writeall(extracted_dir_path, arcname="")
+    run(["7z", "a", str(sta_mini_zip_path.parent / "STA-mini.7z"), str(extracted_dir_path), "-r"], check=True)
     shutil.rmtree(extracted_dir_path)
     return target
 

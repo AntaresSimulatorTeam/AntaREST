@@ -19,18 +19,7 @@ import CommandListItem from "./CommandListItem";
 
 const Row = memo((props: ListChildComponentProps) => {
   const { data, index, style } = props;
-  const {
-    items,
-    onDelete,
-    onArgsUpdate,
-    onSave,
-    onCommandImport,
-    onCommandExport,
-    onExpanded,
-    expandedIndex,
-    generationStatus,
-    generationIndex,
-  } = data;
+  const { items, onDelete, onExpanded, expandedIndex, generationStatus, generationIndex } = data;
   const item = items[index];
   return (
     <CommandListItem
@@ -41,10 +30,6 @@ const Row = memo((props: ListChildComponentProps) => {
       generationStatus={generationStatus}
       generationIndex={generationIndex}
       onDelete={onDelete}
-      onArgsUpdate={onArgsUpdate}
-      onSave={onSave}
-      onCommandImport={onCommandImport}
-      onCommandExport={onCommandExport}
       onExpanded={onExpanded}
     />
   );
@@ -57,10 +42,6 @@ export interface DraggableListProps {
   generationStatus: boolean;
   generationIndex: number;
   onDelete: (index: number) => void;
-  onArgsUpdate: (index: number, json: object) => void;
-  onSave: (index: number) => void;
-  onCommandImport: (index: number, json: object) => void;
-  onCommandExport: (index: number) => void;
   onExpanded: (index: number, value: boolean) => void;
   expandedIndex: number;
 }
@@ -71,10 +52,6 @@ function CommandListView({
   generationIndex,
   expandedIndex,
   onDelete,
-  onArgsUpdate,
-  onSave,
-  onCommandImport,
-  onCommandExport,
   onExpanded,
 }: DraggableListProps) {
   const listRef = useRef(null);
@@ -98,10 +75,6 @@ function CommandListView({
       itemData={{
         items,
         onDelete,
-        onArgsUpdate,
-        onSave,
-        onCommandImport,
-        onCommandExport,
         onExpanded,
         generationStatus,
         generationIndex,

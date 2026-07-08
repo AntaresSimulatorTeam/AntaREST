@@ -13,7 +13,6 @@
  */
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
-import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import EmptyView from "@/components/page/EmptyView";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { TaskEventPayload, WsEvent, WsEventTypeValue } from "@/services/webSocket/types";
@@ -35,12 +34,9 @@ import { TaskStatus } from "../../../../../../../../services/api/tasks/constants
 import {
   applyCommands,
   deleteCommand,
-  exportCommandsMatrices,
-  getCommand,
   getCommands,
   getStudyTask,
   replaceCommands,
-  updateCommand,
 } from "../../../../../../../../services/api/variant";
 import {
   addWsEventListener,
@@ -74,7 +70,6 @@ function EditionView(props: Props) {
   const [openClearCommandsDialog, setOpenClearCommandsDialog] = useState(false);
   const [openDeleteCommandDialog, setOpenDeleteCommandDialog] = useState(-1);
   const [openExportCommandsDialog, setOpenExportCommandsDialog] = useState(false);
-  const [exportMatrices, setExportMatrices] = useState(false);
   const [generationStatus, setGenerationStatus] = useState(false);
   const [generationTaskId, setGenerationTaskId] = useState<string>();
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(-1);
@@ -84,74 +79,18 @@ function EditionView(props: Props) {
   const taskFetchPeriod = 3000;
   const taskTimeoutId = useRef<NodeJS.Timeout>(undefined);
 
-  const onSave = async (index: number) => {
-    try {
-      const elm = commands[index];
-      if (elm.updated) {
-        await updateCommand(studyId, elm.id as string, elm);
-        let tmpCommand: CommandItem[] = [];
-        tmpCommand = tmpCommand.concat(commands);
-        tmpCommand[index].updated = false;
-        setCommands(tmpCommand);
-        enqueueSnackbar(t("variants.success.save"), {
-          variant: "success",
-        });
-      }
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.commandUpdated"), e as AxiosError);
-    }
-  };
-
   const onDelete = async (index: number) => {
     setOpenDeleteCommandDialog(index);
-  };
-
-  const onArgsUpdate = (index: number, args: object) => {
-    let tmpCommand: CommandItem[] = [];
-    tmpCommand = tmpCommand.concat(commands);
-    tmpCommand[index].args = { ...args };
-    tmpCommand[index].updated = true;
-    setCommands(tmpCommand);
-  };
-
-  const onCommandImport = async (index: number, json: object) => {
-    try {
-      let tmpCommand: CommandItem[] = [];
-      tmpCommand = tmpCommand.concat(commands);
-      const elm = tmpCommand[index];
-      elm.args = { ...json };
-      elm.updated = false;
-      await updateCommand(studyId, elm.id as string, elm);
-      setCommands(tmpCommand);
-      enqueueSnackbar(t("variants.success.import"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
-    }
-  };
-
-  const onCommandExport = async (index: number) => {
-    try {
-      const elm = await getCommand(studyId, commands[index].id as string);
-      exportJson({ action: elm.action, args: elm.args }, `${elm.id}_command.json`);
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
-    }
   };
 
   const onGlobalExport = async () => {
     try {
       const items = await getCommands(studyId);
-      if (exportMatrices) {
-        await exportCommandsMatrices(studyId);
-      }
       exportJson(fromCommandDTOToJsonCommand(items), `${studyId}_commands.json`);
     } catch (e) {
       enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
     } finally {
       if (isMounted()) {
-        setExportMatrices(false);
         setOpenExportCommandsDialog(false);
       }
     }
@@ -462,10 +401,6 @@ function EditionView(props: Props) {
             expandedIndex={expandedIndex}
             generationIndex={currentCommandGenerationIndex}
             onDelete={onDelete}
-            onArgsUpdate={onArgsUpdate}
-            onSave={onSave}
-            onCommandImport={onCommandImport}
-            onCommandExport={onCommandExport}
             onExpanded={onExpanded}
           />
         </Body>
@@ -504,13 +439,7 @@ function EditionView(props: Props) {
           open={openExportCommandsDialog}
           onConfirm={onGlobalExport}
           onCancel={() => setOpenExportCommandsDialog(false)}
-        >
-          <CheckBoxFE
-            value={exportMatrices}
-            label={t("variants.commands.exportMatrices")}
-            onChange={() => setExportMatrices(!exportMatrices)}
-          />
-        </ConfirmationDialog>
+        />
       )}
     </Root>
   );
