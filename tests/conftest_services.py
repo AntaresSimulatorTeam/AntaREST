@@ -36,7 +36,6 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
-from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.directory_service import DirectoryService
 from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
@@ -226,14 +225,13 @@ def study_factory_fixture(uri_resolver_service: MatrixStorageContext, core_cache
     Fixture that creates a StudyFactory instance with a session-level scope.
 
     Args:
-        simple_matrix_service: An instance of the SimpleMatrixService class.
         uri_resolver_service: An instance of the MatrixStorageContext class.
         core_cache: An instance of the ICache class.
 
     Returns:
         An instance of the StudyFactory class representing the study factory used for all tests.
     """
-    return StudyFactory(matrix_service=InMemorySimpleMatrixService(), cache=core_cache)
+    return StudyFactory(matrix_service=uri_resolver_service.matrix_service, cache=core_cache)
 
 
 @pytest.fixture(name="core_config")

@@ -75,7 +75,7 @@ def ini_cleaner() -> Callable[[str], str]:
     return cleaner
 
 
-@pytest.fixture(name="matrix_service")
+@pytest.fixture(name="matrix_service", scope="session")
 def matrix_service_fixture() -> InMemorySimpleMatrixService:
     return InMemorySimpleMatrixService()
 
