@@ -57,7 +57,7 @@ def generate_snapshot_fixture(
     # Initialize variant_ids list
     variant_ids = []
 
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Generate three different timestamp
     now = current_time()
@@ -66,14 +66,14 @@ def generate_snapshot_fixture(
     recent_time = now - datetime.timedelta(hours=2)  # older than 0 hours
 
     for index, different_time in enumerate([older_time, old_time, recent_time]):
-        res = client.post(f"/v1/studies/{base_study_id}/variants?name=variant{index}", headers=admin_headers)
+        res = client.post(f"/v1/studies/{base_study_id}/variants?name=variant{index}")
         variant_id = res.json()
         variant_ids.append(variant_id)
 
         # Generate snapshot for each variant
-        task_id = client.put(f"/v1/studies/{variant_ids[index]}/generate", headers=admin_headers)
+        task_id = client.put(f"/v1/studies/{variant_ids[index]}/generate")
         wait_task_completion(client, admin_access_token, task_id.json())  # wait for the filesystem to be updated
-        client.get(f"v1/studies/{variant_ids[index]}", headers=admin_headers)
+        client.get(f"v1/studies/{variant_ids[index]}")
 
         # Modify the `created_at` and `updated_at` attributes in DB.
         with db():
@@ -87,17 +87,17 @@ def generate_snapshot_fixture(
 
 
 def test_variant_manager(client: TestClient, admin_access_token: str, base_study_id: str, variant_id: str) -> None:
-    admin_headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    client.post(f"/v1/launcher/run/{variant_id}", headers=admin_headers)
+    client.post(f"/v1/launcher/run/{variant_id}")
 
-    res = client.get(f"v1/studies/{variant_id}/synthesis", headers=admin_headers)
+    res = client.get(f"v1/studies/{variant_id}/synthesis")
 
     assert res.json()["study_id"] == variant_id
 
-    client.post(f"/v1/studies/{variant_id}/variants?name=bar", headers=admin_headers)
-    client.post(f"/v1/studies/{variant_id}/variants?name=baz", headers=admin_headers)
-    res = client.get(f"/v1/studies/{base_study_id}/variants", headers=admin_headers)
+    client.post(f"/v1/studies/{variant_id}/variants?name=bar")
+    client.post(f"/v1/studies/{variant_id}/variants?name=baz")
+    res = client.get(f"/v1/studies/{base_study_id}/variants")
     children = res.json()
     assert children["node"]["name"] == "Base1"
     assert len(children["children"]) == 1
@@ -111,45 +111,37 @@ def test_variant_manager(client: TestClient, admin_access_token: str, base_study
     # He creates a variant from this study : assert that no command is created and the editor is still George.
     # The admin does the same : assert that no command is created and the editor is now the admin.
 
-    client.post(
-        "/v1/users",
-        headers=admin_headers,
-        json={"name": "George", "password": "mypass"},
-    )
+    client.post("/v1/users", json={"name": "George", "password": "mypass"})
     res = client.post("/v1/login", json={"username": "George", "password": "mypass"})
     george_credentials = res.json()
-    base_study_res = client.post(
-        "/v1/studies?name=foo",
-        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
-    )
+
+    georges_headers = {"Authorization": f"Bearer {george_credentials['access_token']}"}
+    base_study_res = client.post("/v1/studies?name=foo", headers=georges_headers)
 
     base_study_id = base_study_res.json()
 
     # George part
-    res = client.post(
-        f"/v1/studies/{base_study_id}/variants?name=foo_2",
-        headers={"Authorization": f"Bearer {george_credentials['access_token']}"},
-    )
+    res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo_2", headers=georges_headers)
     variant_id = res.json()
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/commands")
     assert len(res.json()) == 0
-    res = client.get(f"/v1/studies/{variant_id}/raw?path=study", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/raw?path=study")
     antares_content = res.json()["antares"]
     assert antares_content["author"] == "George"
     assert antares_content["editor"] == "George"
 
     # Admin part
-    res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo", headers=admin_headers)
+    res = client.post(f"/v1/studies/{base_study_id}/variants?name=foo")
     variant_id = res.json()
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/commands")
     assert len(res.json()) == 0
 
-    res = client.get(f"/v1/studies/{variant_id}/raw?path=study", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/raw?path=study")
     antares_content = res.json()["antares"]
     assert antares_content["author"] == "George"
     assert antares_content["editor"] == "admin"
 
-    res = client.get(f"/v1/studies/{variant_id}/parents", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/parents")
     assert len(res.json()) == 1
     assert res.json()[0]["id"] == base_study_id
     assert res.status_code == 200
@@ -162,7 +154,6 @@ def test_variant_manager(client: TestClient, admin_access_token: str, base_study
                 "args": {"area_name": "testZone", "metadata": {}},
             }
         ],
-        headers=admin_headers,
     )
     assert res.status_code == 200
 
@@ -174,7 +165,6 @@ def test_variant_manager(client: TestClient, admin_access_token: str, base_study
                 "args": {"area_name": "testZone2", "metadata": {}},
             }
         ],
-        headers=admin_headers,
     )
     assert res.status_code == 200
 
@@ -186,11 +176,10 @@ def test_variant_manager(client: TestClient, admin_access_token: str, base_study
                 "args": {"area_name": "testZone3", "metadata": {}},
             }
         ],
-        headers=admin_headers,
     )
     assert res.status_code == 200
 
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/commands")
     assert len(res.json()) == 3
     assert res.status_code == 200
 
@@ -206,47 +195,46 @@ def test_variant_manager(client: TestClient, admin_access_token: str, base_study
                 "args": {"area_name": "testZoneReplace1", "metadata": {}},
             },
         ],
-        headers=admin_headers,
     )
     assert res.status_code == 200
 
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/commands")
     assert len(res.json()) == 2
     assert res.status_code == 200
 
     command_id = res.json()[1]["id"]
-    res = client.delete(f"/v1/studies/{variant_id}/commands/{command_id}", headers=admin_headers)
+    res = client.delete(f"/v1/studies/{variant_id}/commands/{command_id}")
 
     assert res.status_code == 200
 
-    res = client.put(f"/v1/studies/{variant_id}/generate", headers=admin_headers)
+    res = client.put(f"/v1/studies/{variant_id}/generate")
     assert res.status_code == 200
 
-    res = client.get(f"/v1/tasks/{res.json()}?wait_for_completion=true", headers=admin_headers)
+    res = client.get(f"/v1/tasks/{res.json()}?wait_for_completion=true")
     assert res.status_code == 200
     task_result = TaskDTO.model_validate(res.json())
     assert task_result.status == TaskStatus.COMPLETED
     assert task_result.result.success  # type: ignore
 
-    res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}")
     assert res.status_code == 200
 
     new_study_id = "new_id"
 
-    res = client.get(f"/v1/studies/{new_study_id}", headers=admin_headers)
+    res = client.get(f"/v1/studies/{new_study_id}")
     assert res.status_code == 404
 
-    res = client.delete(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    res = client.delete(f"/v1/studies/{variant_id}/commands")
     assert res.status_code == 200
 
-    res = client.get(f"/v1/studies/{variant_id}/commands", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}/commands")
     assert res.status_code == 200
     assert len(res.json()) == 0
 
-    res = client.delete(f"/v1/studies/{variant_id}", headers=admin_headers)
+    res = client.delete(f"/v1/studies/{variant_id}")
     assert res.status_code == 200
 
-    res = client.get(f"/v1/studies/{variant_id}", headers=admin_headers)
+    res = client.get(f"/v1/studies/{variant_id}")
     assert res.status_code == 404
 
 
