@@ -106,23 +106,20 @@ class ThermalReserveParticipationsFileData(AntaresBaseModel):
         participations = []
         # First, iterate through symmetries
         for thermal_id, reserve_symmetries in symmetries.items():
-            certifications_dict = thermal_certifications.pop(thermal_id, {})
-            data = [{"reserve": r_id, **c.model_dump()} for r_id, c in certifications_dict.items()]
-            participation = {
-                "cluster": thermal_id,
-                "certifications": data,
-                "symmetries": [{"reserves": s} for s in reserve_symmetries],
-            }
+            certifs = thermal_certifications.pop(thermal_id, {})
+            participation: dict[str, Any] = {"cluster": thermal_id}
+            if certifs:
+                participation["certifications"] = [{"reserve": r_id, **c.model_dump()} for r_id, c in certifs.items()]
+            if reserve_symmetries:
+                participation["symmetries"] = [{"reserves": s} for s in reserve_symmetries]
 
             participations.append(participation)
 
         # Then iterate through certifications with a thermal id not in symmetries
         for cluster_id, values in thermal_certifications.items():
-            participation = {
-                "cluster": cluster_id,
-                "certifications": [{"reserve": r_id, **c.model_dump()} for r_id, c in values.items()],
-                "symmetries": [],
-            }
+            participation = {"cluster": cluster_id}
+            if values:
+                participation["certifications"] = [{"reserve": r_id, **c.model_dump()} for r_id, c in values.items()]
             participations.append(participation)
 
         return cls.model_validate({"participations": participations})
@@ -139,7 +136,8 @@ def serialize_thermal_reserve_participations(
     certifications: dict[ReserveDefinitionId, dict[str, ThermalReserveCertification]],
 ) -> dict[str, Any]:
     model = ThermalReserveParticipationsFileData.from_model(symmetries, certifications)
-    return model.model_dump(mode="json", by_alias=True)
+    # `exclude_unset` allows us to remove empty lists as they won't be written correctly in the file.
+    return model.model_dump(mode="json", by_alias=True, exclude_unset=True)
 
 
 def parse_thermal_reserves_symmetries(data: dict[str, Any]) -> dict[str, ReserveSymmetries]:
