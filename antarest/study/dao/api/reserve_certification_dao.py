@@ -20,6 +20,14 @@ from antarest.study.dao.common import AreaId
 class ReadOnlyReserveCertificationDao(ABC):
     @abstractmethod
     def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
+        """
+        Returns the thermal reserve certifications of the whole study.
+
+        Design notes:
+        - If an area has no certification, it won't be present in the returned data.
+        - If a thermal cluster has no certification, it also won't be present in the returned data.
+
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -30,4 +38,12 @@ class ReadOnlyReserveCertificationDao(ABC):
 class ReserveCertificationDao(ReadOnlyReserveCertificationDao):
     @abstractmethod
     def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
+        """
+        Replace the thermal reserve certifications with the given one.
+
+        Design notes:
+        - If an area is absent from the given data, its certifications are not modified.
+        - If a thermal cluster is absent from in the given data, its certifications will be removed.
+
+        """
         raise NotImplementedError()

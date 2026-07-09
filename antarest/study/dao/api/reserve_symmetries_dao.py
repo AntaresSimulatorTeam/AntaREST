@@ -22,6 +22,14 @@ from antarest.study.dao.common import (
 class ReadOnlyReserveSymmetriesDao(ABC):
     @abstractmethod
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
+        """
+        Returns the thermal reserve symmetries of the whole study.
+
+        Design notes:
+        - If an area has no symmetries, it won't be present in the returned data.
+        - If a thermal cluster has no symmetries, it also won't be present in the returned data.
+
+        """
         raise NotImplementedError()
 
     @abstractmethod
@@ -32,4 +40,12 @@ class ReadOnlyReserveSymmetriesDao(ABC):
 class ReserveSymmetriesDao(ReadOnlyReserveSymmetriesDao):
     @abstractmethod
     def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+        """
+        Replace the thermal reserve symmetries with the given one.
+
+        Design notes:
+        - If an area is absent from the given data, its symmetries are not modified.
+        - If a thermal cluster is absent from in the given data, its symmetries will be removed.
+
+        """
         raise NotImplementedError()
