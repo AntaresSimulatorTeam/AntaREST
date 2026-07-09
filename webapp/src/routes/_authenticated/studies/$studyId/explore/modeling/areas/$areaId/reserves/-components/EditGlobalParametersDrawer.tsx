@@ -24,6 +24,7 @@ import type { ReserveGlobalParameters } from "@/services/api/studies/areas/reser
 import SettingsIcon from "@mui/icons-material/Settings";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { validateNumber } from "@/utils/validation/number";
 
 interface Props {
   open: boolean;
@@ -76,11 +77,13 @@ function EditGlobalParametersDrawer({ open, onClose }: Props) {
               label={t("study.modeling.reserves.field.referenceActivationDuration")}
               name="referenceActivationDurationUp"
               control={control}
+              rules={{ validate: validateNumber({ min: 0 }) }}
             />
             <NumberFE
               label={t("study.modeling.reserves.field.energyActivationRatio")}
               name="energyActivationRatioUp"
               control={control}
+              rules={{ validate: validateNumber({ min: 0 }) }}
             />
           </Fieldset>
           <Fieldset fullFieldWidth legend={t("study.modeling.reserves.field.down")}>
@@ -88,11 +91,13 @@ function EditGlobalParametersDrawer({ open, onClose }: Props) {
               label={t("study.modeling.reserves.field.referenceActivationDuration")}
               name="referenceActivationDurationDown"
               control={control}
+              rules={{ validate: validateNumber({ min: 0 }) }}
             />
             <NumberFE
               label={t("study.modeling.reserves.field.energyActivationRatio")}
               name="energyActivationRatioDown"
               control={control}
+              rules={{ validate: validateNumber({ min: 0 }) }}
             />
           </Fieldset>
         </>
