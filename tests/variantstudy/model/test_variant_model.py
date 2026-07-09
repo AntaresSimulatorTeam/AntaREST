@@ -16,7 +16,6 @@ from pathlib import Path
 
 import pytest
 from antares.study.version import StudyVersion
-from sqlalchemy import event
 
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
@@ -34,6 +33,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI
 from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
+from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import AnyUUID, create_raw_study, with_admin_user, with_db_context
 
 
@@ -284,17 +284,6 @@ class TestVariantStudyService:
             the author of the currently retrieved command is not already known during
             the process
         """
-        from typing import Any
-
-        nb_queries = 0  # Store number of orm queries to database
-
-        # Watch orm events and update `nb_queries`
-        @event.listens_for(db.session, "do_orm_execute")
-        def check_orm_operations(orm_execute_state: Any) -> None:
-            if orm_execute_state.is_select:
-                nonlocal nb_queries
-                nb_queries += 1
-
         # Generate a variant on a study that allow other user to edit it
         root_study_id = create_root_study(PublicMode.NONE, tmp_path, variant_study_service, jwt_user.id)
         with current_user_context(jwt_user):
@@ -314,10 +303,14 @@ class TestVariantStudyService:
         with current_user_context(jwt_user):
             variant_study_service.append_commands(variant_study.id, commands)
 
-        nb_queries = 0
         with current_user_context(jwt_user):
-            variant_study_service.get_commands(variant_study.id)  # execute database query
-        assert nb_queries == 1  # Ensure only two queries were made (one for study, one for user)
+            with DBStatementRecorder(db.session.bind) as db_recorder:
+                variant_study_service.get_commands(variant_study.id)
+                # 3 queries must be executed:
+                # 1. Get the variant study
+                # 2. Ensures the user has read access on the variant study
+                # 3. Retrieves the user's name. Performed only once as the same user added the 5 commands (no N+1 query)
+                assert len(db_recorder.sql_statements) == 3
 
     @with_admin_user
     @with_db_context

@@ -75,9 +75,9 @@ class LauncherParametersDTO(AntaresBaseModel, extra="forbid"):
     # Warning ! This class must be retro-compatible (that's the reason for the weird bool/XpansionParametersDTO union)
     # The reason is that it's stored in json format in database and deserialized using the latest class version
     # If compatibility is to be broken, an (alembic) data migration script should be added
-    adequacy_patch: dict[str, Any] | None = None
+    adequacy_patch: dict[str, Any] | None = Field(deprecated=True, default=None)
     nb_cpu: int | None = None
-    post_processing: bool = False
+    post_processing: bool = Field(deprecated=True, default=False)
     time_limit: int = 240 * 3600  # Default value set to 240 hours (in seconds)
     xpansion: XpansionParametersDTO | bool | None = None
     xpansion_r_version: bool = False
@@ -85,8 +85,6 @@ class LauncherParametersDTO(AntaresBaseModel, extra="forbid"):
     auto_unzip: bool = True
     output_suffix: FileNameStr | None = None
     other_options: str | None = None
-
-    # add extensions field here
 
     @classmethod
     def from_launcher_params(cls, params: str | None) -> "LauncherParametersDTO":
