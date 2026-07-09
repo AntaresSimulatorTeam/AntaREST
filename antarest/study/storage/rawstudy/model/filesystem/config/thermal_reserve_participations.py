@@ -138,9 +138,8 @@ def serialize_thermal_reserve_participations(
     symmetries: dict[str, ReserveSymmetries],
     certifications: dict[ReserveDefinitionId, dict[str, ThermalReserveCertification]],
 ) -> dict[str, Any]:
-    return ThermalReserveParticipationsFileData.from_model(symmetries, certifications).model_dump(
-        mode="json", by_alias=True
-    )
+    model = ThermalReserveParticipationsFileData.from_model(symmetries, certifications)
+    return model.model_dump(mode="json", by_alias=True)
 
 
 def parse_thermal_reserves_symmetries(data: dict[str, Any]) -> dict[str, ReserveSymmetries]:

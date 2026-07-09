@@ -59,8 +59,8 @@ class FileStudyThermalReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
 
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
-        ini_content = get_thermal_reserve_participations_as_yaml_content(area_id, self.get_file_study())
-        return parse_thermal_reserves_symmetries(ini_content)
+        yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, self.get_file_study())
+        return parse_thermal_reserves_symmetries(yaml_content)
 
     @override
     def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
