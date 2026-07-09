@@ -139,7 +139,3 @@ def serialize_thermal_reserve_participations(
 
 def parse_thermal_reserves_symmetries(data: dict[str, Any]) -> dict[str, ReserveSymmetries]:
     return ThermalReserveParticipationsFileData.model_validate(data).get_symmetries()
-
-
-def serialize_reserve_symmetries(symmetries: ReserveSymmetries) -> list[dict[str, Any]]:
-    raise NotImplementedError

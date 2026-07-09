@@ -27,10 +27,10 @@ from antarest.study.dao.file.common import (
     get_thermal_reserve_participations_as_yaml_content,
     get_thermal_reserve_path,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_participations import (
+    parse_thermal_reserves_certifications,
     parse_thermal_reserves_symmetries,
-    serialize_reserve_symmetries,
+    serialize_thermal_reserve_participations,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -81,21 +81,8 @@ class FileStudyThermalReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
                         raise ReserveDefinitionNotFound(area_id, reserve_id)
 
         yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
-
-        # First, reset symmetries for non-given thermals and replace for given ones
-        for participation in yaml_content["participations"]:
-            thermal_id = transform_name_to_id(participation["cluster"])
-            if thermal_id in data:
-                new_content = serialize_reserve_symmetries(data.pop(thermal_id))
-            else:
-                new_content = []
-            participation["symmetries"] = new_content
-
-        # Then, add symmetries for new thermals
-        for thermal_id, symmetries in data.items():
-            yaml_content["participations"].append(
-                {"cluster": thermal_id, "symmetries": serialize_reserve_symmetries(symmetries)}
-            )
+        certifications = parse_thermal_reserves_certifications(yaml_content)
+        new_content = serialize_thermal_reserve_participations(data, certifications)
 
         # Saves the content into the YAML file
-        file_study.tree.save(yaml_content, get_thermal_reserve_path(area_id))
+        file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
