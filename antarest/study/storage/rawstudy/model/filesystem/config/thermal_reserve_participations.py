@@ -111,7 +111,7 @@ class ThermalReserveParticipationsFileData(AntaresBaseModel):
             participation: dict[str, Any] = {"cluster": thermal_id}
             if certifs:
                 participation["certifications"] = [{"reserve": r_id, **c.model_dump()} for r_id, c in certifs.items()]
-            if reserve_symmetries:
+            if reserve_symmetries != [[]]:
                 participation["symmetries"] = [{"reserves": s} for s in reserve_symmetries]
 
             participations.append(participation)
