@@ -91,12 +91,35 @@ class ThermalReserveParticipationsFileData(AntaresBaseModel):
             result[participation.cluster] = symmetries
         return result
 
-    @staticmethod
+    @classmethod
     def from_model(
+        cls,
         symmetries: dict[str, ReserveSymmetries],
         certifications: dict[ReserveDefinitionId, dict[str, ThermalReserveCertification]],
     ) -> Self:
-        pass
+        # Reorganize certifications to order them by thermal id.
+        thermal_certifications: dict[str, dict[ReserveDefinitionId, ThermalReserveCertification]] = {}
+        for reserve_id, value in certifications.items():
+            for thermal_id, certification in value.items():
+                thermal_certifications.setdefault(thermal_id, {})[reserve_id] = certification
+
+        participations = []
+        # First, iterate through symmetries
+        for thermal_id, reserve_symmetries in symmetries.items():
+            reserve_certifications = list(thermal_certifications.pop(thermal_id, {}).values())
+            participation = {
+                "cluster": thermal_id,
+                "certifications": reserve_certifications,
+                "symmetries": [{"reserves": s} for s in reserve_symmetries],
+            }
+
+            participations.append(participation)
+
+        # Then iterate through certifications with a thermal id not in symmetries
+        for cluster_id, value in thermal_certifications.items():
+            participations.append({"cluster": cluster_id, "certifications": list(value.values())})
+
+        return cls.model_validate({"participations": participations})
 
 
 def parse_thermal_reserves_certifications(
