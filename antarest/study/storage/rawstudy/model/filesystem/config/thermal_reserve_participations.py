@@ -88,7 +88,8 @@ class ThermalReserveParticipationsFileData(AntaresBaseModel):
             symmetries = []
             for symmetry in participation.symmetries:
                 symmetries.append(symmetry.reserves)
-            result[participation.cluster] = symmetries
+            if symmetries:
+                result[participation.cluster] = symmetries
         return result
 
     @classmethod
