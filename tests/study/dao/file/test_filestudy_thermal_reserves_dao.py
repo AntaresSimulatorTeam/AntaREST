@@ -51,7 +51,7 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930_an
     assert dao.get_thermal_reserve_symmetries("fr") == {"th2": [["r1", "r2", "r3"]]}
 
 
-def test_parsing_wrongly_formatted_yaml_raises() -> None:
+def test_parsing_errors() -> None:
     # Duplicated thermals
     content = {
         "cluster": "th1",
@@ -83,4 +83,12 @@ def test_parsing_wrongly_formatted_yaml_raises() -> None:
     with pytest.raises(
         ValueError, match=re.escape("Reserve symmetries should have at least 2 elements, and was ['r1']")
     ):
+        parse_thermal_reserves_symmetries({"participations": [content]})
+
+    # Duplicated reserve in symmetry
+    content = {
+        "cluster": "th1",
+        "symmetries": [{"reserves": [["r1", "r1"]]}],
+    }
+    with pytest.raises(ValueError, match="Reserve symmetries should not contain duplicates"):
         parse_thermal_reserves_symmetries({"participations": [content]})
