@@ -106,18 +106,24 @@ class ThermalReserveParticipationsFileData(AntaresBaseModel):
         participations = []
         # First, iterate through symmetries
         for thermal_id, reserve_symmetries in symmetries.items():
-            reserve_certifications = list(thermal_certifications.pop(thermal_id, {}).values())
+            certifications_dict = thermal_certifications.pop(thermal_id, {})
+            data = [{"reserve": r_id, **c.model_dump()} for r_id, c in certifications_dict.items()]
             participation = {
                 "cluster": thermal_id,
-                "certifications": reserve_certifications,
+                "certifications": data,
                 "symmetries": [{"reserves": s} for s in reserve_symmetries],
             }
 
             participations.append(participation)
 
         # Then iterate through certifications with a thermal id not in symmetries
-        for cluster_id, value in thermal_certifications.items():
-            participations.append({"cluster": cluster_id, "certifications": list(value.values())})
+        for cluster_id, values in thermal_certifications.items():
+            participation = {
+                "cluster": cluster_id,
+                "certifications": [{"reserve": r_id, **c.model_dump()} for r_id, c in values.items()],
+                "symmetries": [],
+            }
+            participations.append(participation)
 
         return cls.model_validate({"participations": participations})
 
