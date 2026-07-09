@@ -55,7 +55,7 @@ def test_parsing_errors() -> None:
     # Duplicated thermals
     content = {
         "cluster": "th1",
-        "symmetries": [{"reserves": [["r1", "r2"], ["r3", "r4"]]}],
+        "symmetries": [{"reserves": ["r1", "r2", "r3", "r4"]}],
         "certifications": [{"reserve": "r1"}],
     }
     duplicated_content = {"participations": [content, content]}
@@ -69,7 +69,7 @@ def test_parsing_errors() -> None:
     # Duplicated reserve
     content = {
         "cluster": "th1",
-        "symmetries": [{"reserves": [["r1", "r2"]]}],
+        "symmetries": [{"reserves": ["r1", "r2"]}],
         "certifications": [{"reserve": "r1"}, {"reserve": "r1"}],
     }
     with pytest.raises(ValueError, match="Some reserves are duplicated for cluster th1"):
@@ -78,7 +78,7 @@ def test_parsing_errors() -> None:
     # One symmetry only
     content = {
         "cluster": "th1",
-        "symmetries": [{"reserves": [["r1"]]}],
+        "symmetries": [{"reserves": ["r1"]}],
     }
     with pytest.raises(
         ValueError, match=re.escape("Reserve symmetries should have at least 2 elements, and was ['r1']")
@@ -88,7 +88,7 @@ def test_parsing_errors() -> None:
     # Duplicated reserve in symmetry
     content = {
         "cluster": "th1",
-        "symmetries": [{"reserves": [["r1", "r1"]]}],
+        "symmetries": [{"reserves": ["r1", "r1"]}],
     }
     with pytest.raises(ValueError, match="Reserve symmetries should not contain duplicates"):
         parse_thermal_reserves_symmetries({"participations": [content]})
