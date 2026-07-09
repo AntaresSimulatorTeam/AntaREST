@@ -27,7 +27,7 @@ def parse_thermal_reserves_certifications(
     existing_thermals = set()
     for content in data.get("participations", []):
         thermal_id = transform_name_to_id(content["cluster"])
-        if thermal_id in result:
+        if thermal_id in existing_thermals:
             raise ValueError(f"Duplicate thermal cluster id: {thermal_id}")
         existing_thermals.add(thermal_id)
         for certification in content.get("certifications", []):
@@ -42,10 +42,10 @@ class ThermalClusterReserveParticipationFileData(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
 
     reserve: str
-    max_power: float
-    max_power_off: float
-    participation_cost: float
-    participation_cost_off: float
+    max_power: float = 0.0
+    max_power_off: float = 0.0
+    participation_cost: float = 0.0
+    participation_cost_off: float = 0.0
 
     def reserve_id(self) -> ReserveDefinitionId:
         return ReserveDefinitionId(transform_name_to_id(self.reserve))
