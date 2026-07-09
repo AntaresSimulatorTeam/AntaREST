@@ -18,8 +18,9 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.model import STUDY_VERSION_10_0
 from antarest.study.storage.rawstudy.model.filesystem.config.reserve_symmetries import parse_thermal_reserves_symmetries
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_participations import \
-    parse_thermal_reserves_certifications
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_participations import (
+    parse_thermal_reserves_certifications,
+)
 
 
 def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930_and_matrix_service) -> None:
@@ -58,11 +59,20 @@ def test_parsing_wrongly_formatted_yaml_raises() -> None:
     }
     duplicated_content = {"participations": [content, content]}
 
-    with pytest.raises(ValueError, match="Duplicate thermal cluster id: th1"):
+    with pytest.raises(ValueError, match="Some thermals are duplicated"):
         parse_thermal_reserves_certifications(duplicated_content)
 
     with pytest.raises(ValueError, match="Duplicate thermal cluster id: th1"):
         parse_thermal_reserves_symmetries(duplicated_content)
+
+    # Duplicated reserve
+    content = {
+        "cluster": "th1",
+        "symmetries": [{"reserves": [["r1", "r2"]]}],
+        "certifications": [{"reserve": "r1"}, {"reserve": "r1"}],
+    }
+    with pytest.raises(ValueError, match="Some reserves are duplicated for cluster th1"):
+        parse_thermal_reserves_certifications({"participations": [content]})
 
     # One symmetry only
     content = {

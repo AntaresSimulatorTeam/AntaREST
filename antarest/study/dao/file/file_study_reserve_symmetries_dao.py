@@ -28,7 +28,7 @@ from antarest.study.dao.file.common import (
     get_thermal_reserve_path,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.config.reserve_symmetries import (
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_participations import (
     parse_thermal_reserves_symmetries,
     serialize_reserve_symmetries,
 )

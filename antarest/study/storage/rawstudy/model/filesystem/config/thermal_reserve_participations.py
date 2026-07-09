@@ -34,12 +34,18 @@ class Certification(AntaresBaseModel):
         return ThermalReserveCertification.model_validate(self.model_dump(exclude={"reserve"}))
 
 
+class Symmetry(AntaresBaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    reserves: ReserveSymmetries
+
+
 class Participation(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     cluster: str
     certifications: list[Certification]
-    symmetries: ReserveSymmetries
+    symmetries: list[Symmetry]
 
     @model_validator(mode="after")
     def _validate_model(self) -> Self:
@@ -79,7 +85,10 @@ class ThermalReserveParticipationsFileData(AntaresBaseModel):
     def get_symmetries(self) -> dict[str, ReserveSymmetries]:
         result = {}
         for participation in self.participations:
-            result[participation.cluster] = participation.symmetries
+            symmetries = []
+            for symmetry in participation.symmetries:
+                symmetries.append(symmetry.reserves)
+            result[participation.cluster] = symmetries
         return result
 
 
@@ -90,4 +99,12 @@ def parse_thermal_reserves_certifications(
 
 
 def serialize_thermal_reserve_certifications():
-    pass
+    raise NotImplementedError
+
+
+def parse_thermal_reserves_symmetries(data: dict[str, Any]) -> dict[str, ReserveSymmetries]:
+    return ThermalReserveParticipationsFileData.model_validate(data).get_symmetries()
+
+
+def serialize_reserve_symmetries(symmetries: ReserveSymmetries) -> list[dict[str, Any]]:
+    raise NotImplementedError
