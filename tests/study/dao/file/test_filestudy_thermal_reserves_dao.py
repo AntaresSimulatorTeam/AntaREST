@@ -10,12 +10,16 @@
 #
 # This file is part of the Antares project.
 
+import pytest
 
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.model import STUDY_VERSION_10_0
+from antarest.study.storage.rawstudy.model.filesystem.config.reserve_symmetries import parse_thermal_reserves_symmetries
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_participations import \
+    parse_thermal_reserves_certifications
 
 
 def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930_and_matrix_service) -> None:
@@ -43,3 +47,27 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930_an
     assert dao.get_thermal_reserve_certifications("fr") == {"r1": {"th2": ThermalReserveCertification()}}
     # The symmetry should also be overwritten by the new value.
     assert dao.get_thermal_reserve_symmetries("fr") == {"th2": [["r1", "r2", "r3"]]}
+
+
+def test_parsing_wrongly_formatted_yaml_raises() -> None:
+    # Duplicated thermals
+    content = {
+        "cluster": "th1",
+        "symmetries": [{"reserves": [["r1", "r2"], ["r3", "r4"]]}],
+        "certifications": [{"reserve": "r1"}],
+    }
+    duplicated_content = {"participations": [content, content]}
+
+    with pytest.raises(ValueError, match="Duplicate thermal cluster id: th1"):
+        parse_thermal_reserves_certifications(duplicated_content)
+
+    with pytest.raises(ValueError, match="Duplicate thermal cluster id: th1"):
+        parse_thermal_reserves_symmetries(duplicated_content)
+
+    # One symmetry only
+    content = {
+        "cluster": "th1",
+        "symmetries": [{"reserves": [["r1"]]}],
+    }
+    with pytest.raises(ValueError, match="One of the thermal clusters table is not filled as it should"):
+        parse_thermal_reserves_symmetries({"participations": [content]})
