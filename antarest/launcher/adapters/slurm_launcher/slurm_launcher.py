@@ -133,16 +133,6 @@ class LauncherArgs(argparse.Namespace):
                 )
                 self.n_cpu = nb_cores_cfg.default
 
-    def apply_post_processing(self, launcher_params: LauncherParametersDTO) -> None:
-        post_processing = launcher_params.post_processing
-        if post_processing is not None:
-            self.post_processing = post_processing
-
-    def apply_adequacy_patch(self, launcher_params: LauncherParametersDTO) -> None:
-        adequacy_patch = launcher_params.adequacy_patch
-        if adequacy_patch is not None:
-            self.post_processing = True
-
 
 def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> Path | None:
     pattern = {
@@ -564,9 +554,7 @@ class SlurmLauncher(AbstractLauncher):
             launcher_args.other_options = launcher_params.other_options or ""
             launcher_args.apply_xpansion_mode(launcher_params)
             launcher_args.apply_time_limit(launcher_params, self.slurm_config.time_limit)
-            launcher_args.apply_post_processing(launcher_params)
             launcher_args.apply_nb_cpu(launcher_params, self.slurm_config.nb_cores)
-            launcher_args.apply_adequacy_patch(launcher_params)
 
             if "'" in launcher_args.other_options:
                 # The launcher will wrongly interpret single quotes, which will cause Simulation fails and
