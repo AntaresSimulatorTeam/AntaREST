@@ -83,7 +83,7 @@ function EditGlobalParametersDrawer({ open, onClose }: Props) {
               label={t("study.modeling.reserves.field.energyActivationRatio")}
               name="energyActivationRatioUp"
               control={control}
-              rules={{ validate: validateNumber({ min: 0 }) }}
+              rules={{ validate: validateNumber({ min: 0, max: 1 }) }}
             />
           </Fieldset>
           <Fieldset fullFieldWidth legend={t("study.modeling.reserves.field.down")}>
@@ -97,7 +97,7 @@ function EditGlobalParametersDrawer({ open, onClose }: Props) {
               label={t("study.modeling.reserves.field.energyActivationRatio")}
               name="energyActivationRatioDown"
               control={control}
-              rules={{ validate: validateNumber({ min: 0 }) }}
+              rules={{ validate: validateNumber({ min: 0, max: 1 }) }}
             />
           </Fieldset>
         </>
