@@ -47,6 +47,23 @@ def _convert_model_to_row(
     return values
 
 
+def _checks_foreign_key_integrity(
+    new_data: ThermalReserveSymmetriesMapping, reserve_ids: dict[AreaId, list[ReserveDefinitionId]]
+) -> None:
+    """
+    There is no foreign key constraint between symmetries and reserve ids but they are linked.
+    So we have to check the data integrity manually.
+    """
+    for area_id, value in new_data.items():
+        if area_id not in reserve_ids:
+            raise AreaNotFound(area_id)
+        for symmetries in value.values():
+            for symmetry in symmetries:
+                for reserve_id in symmetry:
+                    if reserve_id not in reserve_ids[area_id]:
+                        raise ReserveDefinitionNotFound(area_id, reserve_id)
+
+
 class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao):
     """Database implementation of ReserveSymmetriesDao."""
 
@@ -85,7 +102,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao):
         existing_reserve_ids = {}
         for area_id, value in existing_reserve_definitions.items():
             existing_reserve_ids[area_id] = list(value)
-        self._checks_foreign_key_integrity(data, existing_reserve_ids)
+        _checks_foreign_key_integrity(data, existing_reserve_ids)
 
         # Save the new values
         values = []
@@ -108,20 +125,3 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao):
             thermals = {area_id: list(thermal_dict) for area_id, thermal_dict in data.items()}
             self.get_impl().raise_the_right_thermal_exception(thermals, exc=e)
         self._db_session.commit()
-
-    @staticmethod
-    def _checks_foreign_key_integrity(
-        new_data: ThermalReserveSymmetriesMapping, reserve_ids: dict[AreaId, list[ReserveDefinitionId]]
-    ) -> None:
-        """
-        There is no foreign key constraint between symmetries and reserve ids but they are linked.
-        So we have to check the data integrity manually.
-        """
-        for area_id, value in new_data.items():
-            if area_id not in reserve_ids:
-                raise AreaNotFound(area_id)
-            for symmetries in value.values():
-                for symmetry in symmetries:
-                    for reserve_id in symmetry:
-                        if reserve_id not in reserve_ids[area_id]:
-                            raise ReserveDefinitionNotFound(area_id, reserve_id)
