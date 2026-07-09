@@ -101,7 +101,7 @@ class DatabaseThermalDao(ThermalDao):
     def _get_thermal_matrix(self, area_id: str, thermal_id: str, table: Table) -> SeriesId:
         row = self._get_thermal_matrix_row(area_id, thermal_id, table)
         if not row:
-            self._raise_the_right_exception({area_id: [thermal_id]})
+            self.raise_the_right_thermal_exception({area_id: [thermal_id]})
         return str(row.matrix_id)
 
     def _save_thermal_matrix(self, series: ThermalSeriesMapping, table: Table) -> None:
@@ -117,11 +117,11 @@ class DatabaseThermalDao(ThermalDao):
             upsert_multiple(session, table, values)
         except IntegrityError as e:
             invalid_data = {area_id: list(thermal_dict) for area_id, thermal_dict in series.items()}
-            self._raise_the_right_exception(invalid_data, e)
+            self.raise_the_right_thermal_exception(invalid_data, e)
 
         session.commit()
 
-    def _raise_the_right_exception(
+    def raise_the_right_thermal_exception(
         self, data: dict[AreaId, list[ThermalId]], exc: IntegrityError | None = None
     ) -> NoReturn:
         # Checks if some areas are missing
@@ -165,7 +165,7 @@ class DatabaseThermalDao(ThermalDao):
             upsert_multiple(session=session, table=THERMAL_CLUSTER_TABLE, values=values)
         except IntegrityError as e:
             invalid_data = {area_id: [thermal.id.lower() for thermal in thermals] for area_id, thermals in data.items()}
-            self._raise_the_right_exception(invalid_data, e)
+            self.raise_the_right_thermal_exception(invalid_data, e)
 
         session.commit()
 
@@ -204,7 +204,7 @@ class DatabaseThermalDao(ThermalDao):
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect so the thermal did not exist
-            self._raise_the_right_exception({area_id: [thermal_id]})
+            self.raise_the_right_thermal_exception({area_id: [thermal_id]})
 
         session.commit()
 
@@ -252,7 +252,7 @@ class DatabaseThermalDao(ThermalDao):
         stmt = self._select_thermal_cluster(area_id, thermal_id)
         row = session.execute(stmt).fetchone()
         if not row:
-            self._raise_the_right_exception({area_id: [thermal_id]})
+            self.raise_the_right_thermal_exception({area_id: [thermal_id]})
 
         return self._convert_db_row_to_thermal(row)
 
