@@ -91,11 +91,27 @@ class ThermalReserveParticipationsFileData(AntaresBaseModel):
             result[participation.cluster] = symmetries
         return result
 
+    @staticmethod
+    def from_model(
+        symmetries: dict[str, ReserveSymmetries],
+        certifications: dict[ReserveDefinitionId, dict[str, ThermalReserveCertification]],
+    ) -> Self:
+        pass
+
 
 def parse_thermal_reserves_certifications(
     data: dict[str, Any],
 ) -> dict[ReserveDefinitionId, dict[str, ThermalReserveCertification]]:
     return ThermalReserveParticipationsFileData.model_validate(data).get_certifications()
+
+
+def serialize_thermal_reserve_participations(
+    symmetries: dict[str, ReserveSymmetries],
+    certifications: dict[ReserveDefinitionId, dict[str, ThermalReserveCertification]],
+) -> dict[str, Any]:
+    return ThermalReserveParticipationsFileData.from_model(symmetries, certifications).model_dump(
+        mode="json", by_alias=True
+    )
 
 
 def serialize_thermal_reserve_certifications():
