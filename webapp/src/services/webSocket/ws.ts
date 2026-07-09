@@ -69,7 +69,7 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
       makeStudyListener(dispatch),
       makeStudyJobStatusListener(dispatch),
       makeMaintenanceListener(dispatch),
-      makeStudyDataListener(dispatch),
+      makeStudyMapListener(dispatch),
       makeNotificationListener(dispatch),
     );
     globalListenerAdded = true;
@@ -245,10 +245,10 @@ function makeStudyJobStatusListener(dispatch: AppDispatch): WsEventListener {
   };
 }
 
-function makeStudyDataListener(dispatch: AppDispatch): WsEventListener {
+function makeStudyMapListener(dispatch: AppDispatch): WsEventListener {
   return function listener(e: WsEvent) {
     switch (e.type) {
-      case WsEventType.StudyDataEdited:
+      case WsEventType.StudyMapEdited:
         dispatch(refreshStudySynthesis(e.payload));
         break;
     }

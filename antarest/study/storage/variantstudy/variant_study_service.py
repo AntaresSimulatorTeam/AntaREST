@@ -48,7 +48,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory, ResourcePaths
-from antarest.study.events import notify_study_creation, notify_study_data_edition
+from antarest.study.events import notify_study_creation
 from antarest.study.model import (
     RawStudy,
     StorageMode,
@@ -248,7 +248,6 @@ class VariantStudyService(AbstractStudyService):
         study = self._get_variant_study(study_id)
         command_ids = self._modify_commands(study, commands, replace_commands=False)
         self.on_variant_advance(study)
-        notify_study_data_edition(self.event_bus, study)
         return command_ids
 
     def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
@@ -262,7 +261,6 @@ class VariantStudyService(AbstractStudyService):
         study = self._get_variant_study(study_id)
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
-        notify_study_data_edition(self.event_bus, study)
         return study_id
 
     def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
