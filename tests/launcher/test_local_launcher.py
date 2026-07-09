@@ -79,9 +79,7 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
     local_launcher.job_id_to_study_id = {job_id: ("study-id", tmp_path / "run", Mock())}
     local_launcher.callbacks.import_output.return_value = "some output"
     launcher_parameters = LauncherParametersDTO(
-        adequacy_patch=None,
         nb_cpu=8,
-        post_processing=False,
         time_limit=3600,
         xpansion=False,
         xpansion_r_version=False,

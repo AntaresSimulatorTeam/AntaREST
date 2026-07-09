@@ -859,6 +859,12 @@ class STStoragesNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
+class SevenZipNotSupportedOnThisMachine(Exception):
+    def __init__(self) -> None:
+        msg = "7z command line is not supported on this machine. Consider installing it if you want to unarchive these files."
+        super().__init__(msg)
+
+
 class ThermalReserveCertificationNotFound(HTTPException):
     def __init__(self, area_id: str, thermal_id: str, reserve_ids: set[str]):
         msg = f"Certifications for reserve(s) '{reserve_ids}' on thermal cluster '{thermal_id}' not found in area '{area_id}'"
