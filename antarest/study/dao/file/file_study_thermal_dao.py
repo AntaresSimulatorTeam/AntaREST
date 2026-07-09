@@ -27,6 +27,7 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster, 
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, ThermalId, ThermalSeriesMapping
 from antarest.study.dao.file.common import check_area_exists
+from antarest.study.model import STUDY_VERSION_10_0
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -118,13 +119,11 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
     @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
-        file_study = self.get_file_study()
-        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
-        try:
-            file_study.tree.get(path.split("/"), depth=1)
-            return True
-        except (KeyError, ChildNotFoundError):
-            return False
+        config = self.get_file_study().config
+        if area_id in config.areas:
+            thermals = config.areas[area_id].thermals
+            return thermal_id.lower() in {th.id.lower() for th in thermals}
+        return False
 
     @override
     def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
@@ -222,6 +221,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
             study_data.tree.delete(path)
 
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
+        self._remove_thermal_reserve_certifications(area_id, cluster_id)
+
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
 
@@ -302,3 +303,25 @@ class FileStudyThermalDao(ThermalDao, ABC):
                     del ruleset[key]
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
+    def _remove_thermal_reserve_certifications(self, area_id: str, thermal_id: str) -> None:
+        """
+        # Cascade: Remove any reserve certification attached to the deleted cluster.
+        # Avoids leaving orphan sections in `input/thermal/clusters/<area>/reserve-participations.yaml`.
+        """
+        if self.get_file_study().config.version < STUDY_VERSION_10_0:
+            # Reserves only exist in version 10.0+
+            return
+
+        thermal_exists = False
+        all_area_certifications = self.get_impl().get_thermal_reserve_certifications(area_id)
+        for reserve_id, thermal_dict in all_area_certifications.items():
+            for cluster_id in thermal_dict:
+                if cluster_id == thermal_id:
+                    del all_area_certifications[reserve_id][thermal_id]
+                    thermal_exists = True
+                    break
+
+        if thermal_exists:
+            # Avoid performing an empty save if there are no certifications to remove
+            self.get_impl().save_thermal_reserve_certifications({area_id: all_area_certifications})

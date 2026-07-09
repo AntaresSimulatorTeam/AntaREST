@@ -110,13 +110,13 @@ function EditReserveDrawer({ open, onClose, reserve, onSubmit }: Props) {
               label={t("study.modeling.reserves.field.powerActivationRatio")}
               name="powerActivationRatio"
               control={control}
-              rules={{ validate: validateNumber({ min: 0 }) }}
+              rules={{ validate: validateNumber({ min: 0, max: 1 }) }}
             />
             <NumberFE
               label={t("study.modeling.reserves.field.energyActivationRatio")}
               name="energyActivationRatio"
               control={control}
-              rules={{ validate: validateNumber({ min: 0 }) }}
+              rules={{ validate: validateNumber({ min: 0, max: 1 }) }}
             />
           </Fieldset>
         </>
