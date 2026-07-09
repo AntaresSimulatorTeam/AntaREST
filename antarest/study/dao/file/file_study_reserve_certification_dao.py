@@ -15,9 +15,7 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from antarest.core.exceptions import ReserveDefinitionsNotFound, ThermalClusterNotFound
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.thermal_reserve_certification_model import (
-    ThermalReserveCertification,
     ThermalReserveCertificationMapping,
 )
 from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
@@ -27,10 +25,10 @@ from antarest.study.dao.file.common import (
     get_thermal_reserve_participations_as_yaml_content,
     get_thermal_reserve_path,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_participations import (
     parse_thermal_reserves_certifications,
-    serialize_thermal_reserve_certifications,
+    parse_thermal_reserves_symmetries,
+    serialize_thermal_reserve_participations,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -82,27 +80,9 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
                     if not self.get_impl().thermal_exists(area_id, thermal_id):
                         raise ThermalClusterNotFound(area_id, thermal_id)
 
-            # Reorganize data as the YAML file is organized by thermals and not by reserves
-            thermal_certifications: dict[str, dict[ReserveDefinitionId, ThermalReserveCertification]] = {}
-            for reserve_id, value in reserves_dict.items():
-                for thermal_id, certification in value.items():
-                    thermal_certifications.setdefault(thermal_id, {})[reserve_id] = certification
-
-            # First, reset certifications for non-given thermals and replace for given ones
             yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
-            for participation in yaml_content["participations"]:
-                thermal_id = transform_name_to_id(participation["cluster"])
-                if thermal_id in thermal_certifications:
-                    new_content = serialize_thermal_reserve_certifications(thermal_certifications.pop(thermal_id))
-                else:
-                    new_content = []
-                participation["certifications"] = new_content
-
-            # Then, add certifications for new thermals
-            for thermal_id, certifications in thermal_certifications.items():
-                yaml_content["participations"].append(
-                    {"cluster": thermal_id, "certifications": serialize_thermal_reserve_certifications(certifications)}
-                )
+            symmetries = parse_thermal_reserves_symmetries(yaml_content)
+            new_content = serialize_thermal_reserve_participations(symmetries, reserves_dict)
 
             # Saves the content into the YAML file
-            file_study.tree.save(yaml_content, get_thermal_reserve_path(area_id))
+            file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
