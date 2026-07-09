@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
 
 import pytest
 
@@ -17,9 +18,9 @@ from antarest.study.business.model.reserve_definition_model import ReserveDefini
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.model import STUDY_VERSION_10_0
-from antarest.study.storage.rawstudy.model.filesystem.config.reserve_symmetries import parse_thermal_reserves_symmetries
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_participations import (
     parse_thermal_reserves_certifications,
+    parse_thermal_reserves_symmetries,
 )
 
 
@@ -62,7 +63,7 @@ def test_parsing_wrongly_formatted_yaml_raises() -> None:
     with pytest.raises(ValueError, match="Some thermals are duplicated"):
         parse_thermal_reserves_certifications(duplicated_content)
 
-    with pytest.raises(ValueError, match="Duplicate thermal cluster id: th1"):
+    with pytest.raises(ValueError, match="Some thermals are duplicated"):
         parse_thermal_reserves_symmetries(duplicated_content)
 
     # Duplicated reserve
@@ -79,5 +80,7 @@ def test_parsing_wrongly_formatted_yaml_raises() -> None:
         "cluster": "th1",
         "symmetries": [{"reserves": [["r1"]]}],
     }
-    with pytest.raises(ValueError, match="One of the thermal clusters table is not filled as it should"):
+    with pytest.raises(
+        ValueError, match=re.escape("Reserve symmetries should have at least 2 elements, and was ['r1']")
+    ):
         parse_thermal_reserves_symmetries({"participations": [content]})

@@ -44,8 +44,8 @@ class Participation(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     cluster: str
-    certifications: list[Certification]
-    symmetries: list[Symmetry]
+    certifications: list[Certification] = []
+    symmetries: list[Symmetry] = []
 
     @model_validator(mode="after")
     def _validate_model(self) -> Self:
