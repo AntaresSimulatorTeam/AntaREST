@@ -37,7 +37,11 @@ from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
+from antarest.study.dao.database.database_reserve_certification_dao import (
+    DatabaseReserveCertificationDao,
+)
 from antarest.study.dao.database.database_reserve_definition_dao import DatabaseReserveDefinitionDao
+from antarest.study.dao.database.database_reserve_symmetries_dao import DatabaseReserveSymmetriesDao
 from antarest.study.dao.database.database_reserves_global_parameters_dao import DatabaseReservesGlobalParametersDao
 from antarest.study.dao.database.database_scenario_builder_dao import DatabaseScenarioBuilderDao
 from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
@@ -79,6 +83,8 @@ class DatabaseStudyDao(
     DatabaseBindingConstraintDao,
     DatabaseReservesGlobalParametersDao,
     DatabaseReserveDefinitionDao,
+    DatabaseReserveCertificationDao,
+    DatabaseReserveSymmetriesDao,
 ):
     """
     Database implementation of StudyDao.

@@ -24,6 +24,7 @@ from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinition,
     ReserveDefinitionId,
 )
+from antarest.study.dao.api.common import remove_reserve_symmetries_by_cascade
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
 from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
 from antarest.study.dao.file.common import check_area_exists
@@ -141,6 +142,26 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         # Remove the matrices
         for reserve_id in reserve_ids:
             file_study.tree.delete(_reserve_need_matrix_path(area_id, reserve_id))
+
+        # Remove the reserve from the certifications
+        certifications = self.get_impl().get_thermal_reserve_certifications(area_id)
+        should_update_certifications = False
+        for reserve_id in reserve_ids:
+            if reserve_id in certifications:
+                del certifications[reserve_id]
+                should_update_certifications = True
+        if should_update_certifications:
+            self.get_impl().save_thermal_reserve_certifications({area_id: certifications})
+
+        # Remove the reserve from the symmetries
+        symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
+        new_symmetries = remove_reserve_symmetries_by_cascade(symmetries_dict, ids_to_remove)
+        if new_symmetries is not None:
+            self.get_impl().save_thermal_reserve_symmetries({area_id: new_symmetries})
+
+        # Remove the reserve from the reserve definition file
+        for reserve_id in reserve_ids:
+            file_study.tree.delete(_reserve_section_path(area_id, reserve_id))
 
         # Keep config in sync — remove deleted reserves from the area's list.
         area_config = file_study.config.areas[area_id]
