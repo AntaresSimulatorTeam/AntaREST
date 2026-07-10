@@ -588,13 +588,14 @@ class VariantStudyService(AbstractStudyService):
         Generates a variant study synchronously.
         The per-study `FileLock` prevents concurrent callers from generating the same snapshot twice.
         """
-        if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
-            # Nothing to do
-            return GenerationResultInfoDTO(success=True, should_invalidate_cache=False, details=[])
-
         with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study.id}.lock")):
             try:
                 self.repository.refresh(study)
+
+                if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
+                    # Nothing to do
+                    return GenerationResultInfoDTO(success=True, should_invalidate_cache=False, details=[])
+
                 generator = SnapshotGenerator(variant_study_service=self)
                 # Build the Dao factory first
                 dao_factory = self._study_dao_factories[study.storage_mode]

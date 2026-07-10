@@ -202,7 +202,7 @@ class TestVariantStudyService:
                     "name": "create_cluster",
                     "status": True,
                 }
-            ],  # Should be empty as we applied commands when appending them.
+            ],
         }
         assert study.snapshot.id == study.id
 
