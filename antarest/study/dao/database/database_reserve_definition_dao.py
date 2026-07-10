@@ -20,8 +20,9 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound
+from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, ReserveDefinitionsNotFound
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
+from antarest.study.dao.api.common import remove_reserve_symmetries_by_cascade
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
 from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
 from antarest.study.dao.database.common import area_exists, get_row_representation_as_dict, validate_area_exists
@@ -81,11 +82,14 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
 
     @override
     def get_all_reserve_definitions_for_area(self, area_id: str) -> Sequence[ReserveDefinition]:
-        stmt = select(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id))
-        rows = self._db_session.execute(stmt).fetchall()
+        rows = self._get_all_reserve_definitions_for_area(area_id)
         if not rows:
             validate_area_exists(self._db_session, self._study_id, area_id)
         return [_convert_row_to_model(row) for row in rows]
+
+    def _get_all_reserve_definitions_for_area(self, area_id: str) -> Sequence[Row[Any]]:
+        stmt = select(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id))
+        return self._db_session.execute(stmt).fetchall()
 
     @override
     def get_reserve_definition(self, area_id: str, reserve_id: str) -> ReserveDefinition:
@@ -130,18 +134,17 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
         )
         assert isinstance(result, CursorResult)
         if result.rowcount < len(reserve_ids):
-            existing = {
-                row.reserve_id
-                for row in self._db_session.execute(
-                    select(_TABLE.c.reserve_id).where(
-                        (_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id)
-                    )
-                ).fetchall()
-            }
-            for rid in reserve_ids:
-                if rid not in existing:
-                    raise ReserveDefinitionNotFound(area_id, rid)
+            existing = {row.reserve_id for row in self._get_all_reserve_definitions_for_area(area_id)}
+            if invalid_ids := set(reserve_ids) - existing:
+                raise ReserveDefinitionsNotFound({area_id: invalid_ids})  # type: ignore
+
         self._db_session.commit()
+
+        # We have to delete the reserve symmetries associated with the reserve as we do not have a foreign key constraint
+        symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
+        new_symmetries = remove_reserve_symmetries_by_cascade(symmetries_dict, set(reserve_ids))
+        if new_symmetries is not None:
+            self.get_impl().save_thermal_reserve_symmetries({area_id: new_symmetries})
 
     @override
     def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:

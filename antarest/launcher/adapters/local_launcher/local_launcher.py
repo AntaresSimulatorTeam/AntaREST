@@ -142,11 +142,6 @@ class LocalLauncher(AbstractLauncher):
                 while process.poll() is None:
                     time.sleep(1)
 
-                if launcher_parameters is not None and (
-                    launcher_parameters.post_processing or launcher_parameters.adequacy_patch is not None
-                ):
-                    subprocess.run(["Rscript", "post-processing.R"], cwd=export_path)
-
                 output_id: str | None = None
                 if process.returncode == 0:
                     # The job succeed we need to import the output

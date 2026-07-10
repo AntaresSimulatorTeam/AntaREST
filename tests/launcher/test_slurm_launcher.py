@@ -323,15 +323,6 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
     ):
         XpansionParametersDTO(adequacy_criterion=True, sensitivity_mode=True)
 
-    launcher_params = apply_params(LauncherParametersDTO(post_processing=False))
-    assert launcher_params.post_processing is False
-
-    launcher_params = apply_params(LauncherParametersDTO(post_processing=True))
-    assert launcher_params.post_processing is True
-
-    launcher_params = apply_params(LauncherParametersDTO(adequacy_patch={}))
-    assert launcher_params.post_processing is True
-
 
 # noinspection PyUnresolvedReferences
 @pytest.mark.parametrize(
