@@ -94,7 +94,7 @@ class SnapshotGenerator:
         variant_study = descendants[-1]
 
         try:
-            if search_result.force_regenerate or not self.variant_study_service.has_snapshot(variant_study):
+            if search_result.force_regenerate:
                 self.variant_study_service.create_snapshot(ref_study, variant_study)
 
             # The snapshot is generated, we also need to de-normalize the matrices.
