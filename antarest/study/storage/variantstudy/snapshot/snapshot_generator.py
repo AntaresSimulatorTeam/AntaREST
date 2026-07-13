@@ -203,9 +203,11 @@ class SnapshotGenerator:
             # We need to retrieve all commands from the descendants of variants in order to apply them
             # on the reference study.
             cmd_blocks = self.repository.get_all_command_blocks_for_variants([v.id for v in descendants])
+            # We need to sort the commands by their variant id and their index to apply them in the right order.
+            sorted_cmd_blocks = sorted(cmd_blocks, key=lambda cb: (cb.study_id, cb.index))
             return RefStudySearchResult(
                 ref_study=root_study,
-                cmd_blocks=cmd_blocks,
+                cmd_blocks=sorted_cmd_blocks,
                 force_regenerate=True,
             )
 
