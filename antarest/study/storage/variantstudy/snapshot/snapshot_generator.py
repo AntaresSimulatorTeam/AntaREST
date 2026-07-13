@@ -47,6 +47,7 @@ class RefStudySearchResult(NamedTuple):
 
     ref_study: Study
     cmd_blocks: Sequence[CommandBlock]
+    version: int
     force_regenerate: bool = False
 
 
@@ -191,11 +192,13 @@ class SnapshotGenerator:
         if from_scratch:
             # In the case of a from scratch generation, the root study will be used as the reference study.
             # We need to retrieve all commands from the descendants of variants to apply them on the reference study.
-            command_blocks = self.repository.get_all_command_blocks_for_variants([v.id for v in descendants])
-            # We need to sort the commands by their variant id and their index to apply them in the right order.
-            sorted_cmd_blocks = sorted(command_blocks, key=lambda cb: (cb.study_id, cb.index))
-
-            return RefStudySearchResult(ref_study=root_study, cmd_blocks=sorted_cmd_blocks, force_regenerate=True)
+            command_blocks = self.repository.get_command_blocks_with_associated_version([v.id for v in descendants])
+            return RefStudySearchResult(
+                ref_study=root_study,
+                cmd_blocks=command_blocks.commands,
+                force_regenerate=True,
+                version=command_blocks.version,
+            )
 
         # 1st case: The variant snapshot is already up to date -> No-op.
         current_variant = descendants[-1]
@@ -207,9 +210,14 @@ class SnapshotGenerator:
         # We can reuse the snapshot if the last executed command is still present in the variant commands list.
         # It's not always the case as the user could have removed a command or replaced them all.
         if self.variant_study_service.has_snapshot(current_variant):
-            cmd_blocks_with_version = self.repository.get_command_blocks_with_associated_version(current_variant.id)
-            if cmd_blocks_with_version:
-                print("todo")
+            last_executed_cmd_id = current_variant.snapshot.last_executed_command
+            if last_executed_cmd_id:
+                cmd_blocks_with_version = self.repository.get_command_blocks_with_associated_version(current_variant.id)
+                for command_block in cmd_blocks_with_version.commands:
+                    if command_block.id == last_executed_cmd_id:
+                        index = command_block.index
+
+                    print("todo")
             last_executed_cmd = current_variant.snapshot.last_executed_command
             command_ids = [c.id for c in current_variant.commands]
             if last_executed_cmd in command_ids:

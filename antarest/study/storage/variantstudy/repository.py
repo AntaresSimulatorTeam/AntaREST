@@ -137,38 +137,38 @@ class VariantStudyRepository(StudyMetadataRepository):
         stmt = select(CommandBlock)
         return list(self.session.execute(stmt).scalars().all())
 
-    def get_all_command_blocks_for_variants(self, variant_ids: Sequence[str]) -> list[CommandBlock]:
-        """
-        Get all command blocks for a list of variants in one single query.
-
-        Args:
-            variant_ids: List of variant IDs.
-
-        Returns:
-            List of `CommandBlock` objects.
-        """
-        stmt = select(CommandBlock).where(CommandBlock.study_id.in_(variant_ids))
-        return list(self.session.execute(stmt).scalars().all())
-
-    def get_command_blocks_with_associated_version(self, variant_id: str) -> CommandBlocksWithVersion | None:
+    def get_command_blocks_with_associated_version(self, variant_ids: Sequence[str]) -> CommandBlocksWithVersion:
         """
         This method performs a single JOIN query to ensure that the 2 separated infos (version and cmd blocks) are synchronized.
+        The `version` corresponds to the last given id as it's the child of the other ids.
         """
+        last_child = variant_ids[-1]
 
         query = (
-            select(CommandBlock, CommandsListVersion.version)
+            select(CommandBlock, CommandsListVersion)
             .join(CommandsListVersion, CommandBlock.study_id == CommandsListVersion.variant_id)
-            .where(CommandsListVersion.variant_id == variant_id)
+            .where(CommandsListVersion.variant_id.in_(variant_ids))
         )
 
         rows = self.session.execute(query).all()
 
         if not rows:
-            return None
+            # Means that no command blocks were found for the given variant IDs
+            # We still have to fetch the version for the last variant id
+            stmt = select(CommandsListVersion.version).where(CommandsListVersion.variant_id == last_child)
+            row = self.session.execute(stmt).one()
+            return CommandBlocksWithVersion(version=row[0], commands=[])
 
-        version = rows[0][1]
-        cmd_blocks = [row[0] for row in rows]
-        return CommandBlocksWithVersion(version=version, commands=cmd_blocks)
+        cmd_blocks = []
+        for row in rows:
+            cmd_blocks.append(row[0])
+            if row[1].variant_id != last_child:
+                version = row[1].version
+
+        # Sort the commands by their variant id and their index to apply them in the right order.
+        sorted_cmds = sorted(cmd_blocks, key=lambda cb: (variant_ids.index(cb.study_id), cb.index))
+
+        return CommandBlocksWithVersion(version=version, commands=sorted_cmds)
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """
