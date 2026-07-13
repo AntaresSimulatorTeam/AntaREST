@@ -155,9 +155,8 @@ class VariantStudyRepository(StudyMetadataRepository):
         if not rows:
             # Means that no command blocks were found for the given variant IDs
             # We still have to fetch the version for the last variant id
-            stmt = select(CommandsListVersion.version).where(CommandsListVersion.variant_id == last_child)
-            row = self.session.execute(stmt).one()
-            return CommandBlocksWithVersion(version=row[0], commands=[])
+            version = self.get_commands_list_version(last_child)
+            return CommandBlocksWithVersion(version=version, commands=[])
 
         cmd_blocks = []
         for row in rows:
@@ -169,6 +168,11 @@ class VariantStudyRepository(StudyMetadataRepository):
         sorted_cmds = sorted(cmd_blocks, key=lambda cb: (variant_ids.index(cb.study_id), cb.index))
 
         return CommandBlocksWithVersion(version=version, commands=sorted_cmds)
+
+    def get_commands_list_version(self, variant_id: str) -> int:
+        stmt = select(CommandsListVersion.version).where(CommandsListVersion.variant_id == variant_id)
+        row = self.session.execute(stmt).one()
+        return row[0]
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """
