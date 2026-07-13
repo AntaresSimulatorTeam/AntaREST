@@ -21,7 +21,6 @@ from typing import TYPE_CHECKING, NamedTuple
 from antarest.core.exceptions import UnsupportedOperationOnArchivedStudy, VariantGenerationError
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
-from antarest.core.utils.utils import current_time
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.model import Study, StudyMetadataUpdate
@@ -107,8 +106,8 @@ class SnapshotGenerator:
             logger.info(f"Saving new snapshot for study {variant_study_id}")
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study_id,
-                created_at=current_time(),
-                last_executed_command=variant_study.commands[-1].id if variant_study.commands else None,
+                version=ref_study.version,
+                last_executed_command=cmd_blocks[-1].id if cmd_blocks else variant_study.snapshot.last_executed_command,
             )
             self.repository.save(variant_study)
 
