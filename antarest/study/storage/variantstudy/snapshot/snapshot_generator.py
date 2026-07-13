@@ -210,19 +210,19 @@ class SnapshotGenerator:
         # We can reuse the snapshot if the last executed command is still present in the variant commands list.
         # It's not always the case as the user could have removed a command or replaced them all.
         if self.variant_study_service.has_snapshot(current_variant):
-            last_executed_cmd_id = current_variant.snapshot.last_executed_command
-            if last_executed_cmd_id:
+            if last_executed_cmd_id := current_variant.snapshot.last_executed_command:
                 cmd_blocks_with_version = self.repository.get_command_blocks_with_associated_version(current_variant.id)
                 for command_block in cmd_blocks_with_version.commands:
                     if command_block.id == last_executed_cmd_id:
-                        index = command_block.index
+                        last_exec_index = command_block.index
+                        return RefStudySearchResult(
+                            ref_study=current_variant,
+                            cmd_blocks=cmd_blocks_with_version.commands[last_exec_index + 1 :],
+                            force_regenerate=False,
+                            version=cmd_blocks_with_version.version,
+                        )
 
-                    print("todo")
-            last_executed_cmd = current_variant.snapshot.last_executed_command
-            command_ids = [c.id for c in current_variant.commands]
-            if last_executed_cmd in command_ids:
-                # We can reuse the snapshot of the current variant
-                print("todo")
+        # todo
 
         # To reuse the snapshot of the current variant, the last executed command
         # must be one of the commands of the current variant.
