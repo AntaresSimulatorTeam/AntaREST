@@ -227,48 +227,13 @@ class SnapshotGenerator:
         # If no such variant is found, we use the root study as a reference study.
         # We go through the list in order, this way we'll find the most recent variant with a valid snapshot.
 
-        for variant in descendants:
+        variant_ids = [v.id for v in descendants]
+        for k, variant in enumerate(descendants[1:]):
             if self.variant_study_service.is_snapshot_up_to_date(variant):
-                return RefStudySearchResult(ref_study=variant, cmd_blocks=[], force_regenerate=False)
+                variant_ids = [v.id for v in descendants[:k]]
+                break
 
-        snapshot_vars = [v for v in descendants if self.variant_study_service.is_snapshot_up_to_date(v)]
-
-        # The reference study is the root study or a variant study with a valid snapshot
-        ref_study: Study
-
-        # The commands to apply on the reference study to generate the current variant
-        cmd_blocks: list[CommandBlock]
-
-        if snapshot_vars:
-            # We use the most recent snapshot as a reference study
-            ref_study = max(snapshot_vars, key=lambda v: v.snapshot.version)
-
-            # This variant's snapshot corresponds to the commands actually generated
-            # at the time of the snapshot. However, we need to retrieve the remaining commands,
-            # because the snapshot generation may be incomplete.
-            last_exec_cmd = ref_study.snapshot.last_executed_command  # ID of the command
-            command_ids = [c.id for c in ref_study.commands]
-            if not last_exec_cmd or last_exec_cmd not in command_ids:
-                # The last executed command may be missing (probably caused by a bug)
-                # or may reference a removed command.
-                # This requires regenerating the snapshot from scratch,
-                # with all commands from the reference study.
-                cmd_blocks = ref_study.commands[:]
-            else:
-                last_exec_index = command_ids.index(last_exec_cmd)
-                cmd_blocks = ref_study.commands[last_exec_index + 1 :]
-
-            # We need to add all commands from the descendants of variants
-            # starting at the first descendant of reference study.
-            index = descendants.index(ref_study)
-            cmd_blocks.extend([c for v in descendants[index + 1 :] for c in v.commands])
-
-        else:
-            # We use the root study as a reference study
-            ref_study = root_study
-            cmd_blocks = [c for v in descendants for c in v.commands]
-
-        command_blocks = self.repository.get_command_blocks_with_associated_version([v.id for v in descendants])
+        command_blocks = self.repository.get_command_blocks_with_associated_version(variant_ids)
         return RefStudySearchResult(
             ref_study=root_study,
             cmd_blocks=command_blocks.commands,
