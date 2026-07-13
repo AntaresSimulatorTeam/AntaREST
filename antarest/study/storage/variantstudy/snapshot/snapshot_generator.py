@@ -222,13 +222,14 @@ class SnapshotGenerator:
                             version=cmd_blocks_with_version.version,
                         )
 
-        # todo
-        # 3rd case: The variant has no snapshot. We
+        # 3rd case: The variant has no snapshot.
+        # We search for a variant with an up-to-date snapshot to use it as a reference study.
+        # If no such variant is found, we use the root study as a reference study.
+        # We go through the list in order, this way we'll find the most recent variant with a valid snapshot.
 
-        # We cannot reuse the snapshot of the current variant
-        # To generate the last variant of a descendant of variants, we must search for
-        # the most recent snapshot in order to use it as a reference study.
-        # If no snapshot is found, we use the root study as a reference study.
+        for variant in descendants:
+            if self.variant_study_service.is_snapshot_up_to_date(variant):
+                return RefStudySearchResult(ref_study=variant, cmd_blocks=[], force_regenerate=False)
 
         snapshot_vars = [v for v in descendants if self.variant_study_service.is_snapshot_up_to_date(v)]
 
@@ -267,4 +268,10 @@ class SnapshotGenerator:
             ref_study = root_study
             cmd_blocks = [c for v in descendants for c in v.commands]
 
-        return RefStudySearchResult(ref_study=ref_study, cmd_blocks=cmd_blocks, force_regenerate=True)
+        command_blocks = self.repository.get_command_blocks_with_associated_version([v.id for v in descendants])
+        return RefStudySearchResult(
+            ref_study=root_study,
+            cmd_blocks=command_blocks.commands,
+            force_regenerate=True,
+            version=command_blocks.version,
+        )
