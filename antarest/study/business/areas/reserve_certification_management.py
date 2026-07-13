@@ -10,10 +10,9 @@
 #
 # This file is part of the Antares project.
 from antarest.study.business.model.thermal_reserve_certification_model import (
-    ReserveCertifications,
+    ThermalReserveCertificationMapping,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_certifications import (
     ReplaceThermalReserveCertifications,
 )
@@ -24,35 +23,23 @@ class ReserveCertificationsManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_certifications(self, study: StudyInterface, area_id: str) -> ReserveCertifications:
-        thermals = study.get_study_dao().get_thermal_reserve_certifications(area_id)
-        return ReserveCertifications(thermals=thermals)
+    def get_thermal_certifications(self, study: StudyInterface, area_id: str) -> ThermalReserveCertificationMapping:
+        return study.get_study_dao().get_thermal_reserve_certifications(area_id)
 
-    def set_certifications(
+    def set_thermal_certifications(
         self,
         study: StudyInterface,
         area_id: str,
-        data: ReserveCertifications,
-    ) -> ReserveCertifications:
-        commands: list[ICommand] = []
+        data: ThermalReserveCertificationMapping,
+    ) -> ThermalReserveCertificationMapping:
 
-        # Thermals part
-        if data.thermals:
-            command = ReplaceThermalReserveCertifications(
-                area_id=area_id,
-                certifications=data.thermals,
-                study_version=study.version,
-                command_context=self._command_context,
-            )
-            commands.append(command)
-
-        # St-Storage part
-        # todo
-
-        # Hydro part
-        # todo
+        command = ReplaceThermalReserveCertifications(
+            area_id=area_id,
+            certifications=data,
+            study_version=study.version,
+            command_context=self._command_context,
+        )
 
         # Apply the modifications
-        if commands:
-            study.add_commands(commands)
+        study.add_commands([command])
         return data
