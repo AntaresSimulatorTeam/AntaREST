@@ -1,0 +1,42 @@
+"""create_commands_list_version_table
+
+Revision ID: e56b1130bc1f
+Revises: 665f7b1d7575
+Create Date: 2026-07-13 15:35:50.408218
+
+"""
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision = 'e56b1130bc1f'
+down_revision = '665f7b1d7575'
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    op.create_table(
+        "commands_list_version",
+        sa.Column("variant_id", sa.String(length=36), primary_key=True, nullable=False),
+        sa.Column("version",  sa.Integer(), nullable=False, server_default="0"),
+        sa.ForeignKeyConstraint(
+            ["variant_id"],
+            ["variantstudy.id"],
+            name=op.f("fk_commmands_list_version_variantstudy_id"),
+            ondelete="CASCADE",
+        ),
+    )
+
+    with op.batch_alter_table('variant_study_snapshot', schema=None) as batch_op:
+        batch_op.add_column(sa.Column("version", sa.Integer(), nullable=False, server_default="0"))
+        batch_op.drop_column('created_at')
+
+
+def downgrade():
+    op.drop_table("commands_list_version")
+
+    with op.batch_alter_table('variant_study_snapshot', schema=None) as batch_op:
+        batch_op.drop_column('version')
+        batch_op.add_column(sa.Column("created_at", sa.DateTime(), nullable=True))
