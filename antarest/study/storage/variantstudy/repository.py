@@ -141,12 +141,7 @@ class VariantStudyRepository(StudyMetadataRepository):
 
         stmt = (
             select(VariantStudy)
-            .options(
-                joinedload(VariantStudy.snapshot),
-                joinedload(VariantStudy.commands),
-                joinedload(VariantStudy.owner),
-                joinedload(VariantStudy.groups),
-            )
+            .options(joinedload(VariantStudy.owner), joinedload(VariantStudy.groups))
             .where(VariantStudy.id.in_(variant_ids))
         )
 
