@@ -43,16 +43,14 @@ class VariantStudySnapshot(Base):
         ForeignKey("variantstudy.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
+    version: Mapped[int] = mapped_column(Integer)
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
 
-    __mapper_args__ = {
-        "polymorphic_identity": "variant_study_snapshot",
-    }
+    __mapper_args__ = {"polymorphic_identity": "variant_study_snapshot"}
 
     @override
     def __str__(self) -> str:
-        return f"[Snapshot] id={self.id}, created_at={self.created_at}"
+        return f"[Snapshot] id={self.id}, version={self.version}"
 
 
 class CommandBlock(Base):
