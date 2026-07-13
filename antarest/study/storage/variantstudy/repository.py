@@ -162,7 +162,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         cmd_blocks = []
         for row in rows:
             cmd_blocks.append(row[0])
-            if row[1].variant_id != last_child:
+            if row[1].variant_id == last_child:
                 version = row[1].version
 
         # Sort the commands by their variant id and their index to apply them in the right order.
