@@ -223,32 +223,7 @@ class SnapshotGenerator:
                         )
 
         # todo
-
-        # To reuse the snapshot of the current variant, the last executed command
-        # must be one of the commands of the current variant.
-        curr_variant = descendants[-1]
-        if self.variant_study_service.has_snapshot(curr_variant):
-            last_exec_cmd = curr_variant.snapshot.last_executed_command
-            command_ids = [c.id for c in curr_variant.commands]
-            # If the variant has no command, we can reuse the snapshot if it is recent
-            if (
-                not last_exec_cmd
-                and not command_ids
-                and self.variant_study_service.is_snapshot_up_to_date(curr_variant)
-            ):
-                return RefStudySearchResult(
-                    ref_study=curr_variant,
-                    cmd_blocks=[],
-                    force_regenerate=False,
-                )
-            elif last_exec_cmd and last_exec_cmd in command_ids:
-                # We can reuse the snapshot of the current variant
-                last_exec_index = command_ids.index(last_exec_cmd)
-                return RefStudySearchResult(
-                    ref_study=curr_variant,
-                    cmd_blocks=curr_variant.commands[last_exec_index + 1 :],
-                    force_regenerate=False,
-                )
+        # 3rd case: The variant has no snapshot. We
 
         # We cannot reuse the snapshot of the current variant
         # To generate the last variant of a descendant of variants, we must search for
