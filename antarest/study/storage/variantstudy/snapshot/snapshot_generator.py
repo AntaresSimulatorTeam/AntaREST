@@ -199,11 +199,21 @@ class SnapshotGenerator:
             command_blocks = self.repository.get_all_command_blocks_for_variants([v.id for v in descendants])
             # We need to sort the commands by their variant id and their index to apply them in the right order.
             sorted_cmd_blocks = sorted(command_blocks, key=lambda cb: (cb.study_id, cb.index))
-            return RefStudySearchResult(
-                ref_study=root_study,
-                cmd_blocks=sorted_cmd_blocks,
-                force_regenerate=True,
-            )
+
+            return RefStudySearchResult(ref_study=root_study, cmd_blocks=sorted_cmd_blocks, force_regenerate=True)
+
+        # First, we try to reuse the snapshot of the current variant to apply the smallest diff.
+        current_variant = descendants[-1]
+        if self.variant_study_service.is_snapshot_up_to_date(current_variant):
+            return RefStudySearchResult(ref_study=current_variant, cmd_blocks=[], force_regenerate=False)
+
+        if self.variant_study_service.has_snapshot(current_variant):
+            self.repository.get_command_blocks_with_associated_version(current_variant.id)
+            last_executed_cmd = current_variant.snapshot.last_executed_command
+            command_ids = [c.id for c in current_variant.commands]
+            if last_executed_cmd in command_ids:
+                # We can reuse the snapshot of the current variant
+                print("todo")
 
         # To reuse the snapshot of the current variant, the last executed command
         # must be one of the commands of the current variant.

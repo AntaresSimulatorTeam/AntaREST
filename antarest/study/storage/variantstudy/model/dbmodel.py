@@ -12,6 +12,7 @@
 
 import datetime
 import uuid
+from dataclasses import dataclass
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -171,3 +172,9 @@ class CommandsListVersion(Base):
 
     variant_id = mapped_column(String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"), primary_key=True)
     version = mapped_column(Integer)
+
+
+@dataclass(frozen=True)
+class CommandBlocksWithVersion:
+    commands: list[CommandBlock]
+    version: int

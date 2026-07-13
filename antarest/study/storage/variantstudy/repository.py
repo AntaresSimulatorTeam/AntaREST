@@ -21,7 +21,12 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import Study
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    CommandBlocksWithVersion,
+    CommandsListVersion,
+    VariantStudy,
+)
 
 
 class VariantStudyRepository(StudyMetadataRepository):
@@ -144,6 +149,26 @@ class VariantStudyRepository(StudyMetadataRepository):
         """
         stmt = select(CommandBlock).where(CommandBlock.study_id.in_(variant_ids))
         return list(self.session.execute(stmt).scalars().all())
+
+    def get_command_blocks_with_associated_version(self, variant_id: str) -> CommandBlocksWithVersion | None:
+        """
+        This method performs a single JOIN query to ensure that the 2 separated infos (version and cmd blocks) are synchronized.
+        """
+
+        query = (
+            select(CommandBlock, CommandsListVersion.version)
+            .join(CommandsListVersion, CommandBlock.study_id == CommandsListVersion.variant_id)
+            .where(CommandsListVersion.variant_id == variant_id)
+        )
+
+        rows = self.session.execute(query).all()
+
+        if not rows:
+            return None
+
+        version = rows[0][1]
+        cmd_blocks = [row[0] for row in rows]
+        return CommandBlocksWithVersion(version=version, commands=cmd_blocks)
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """
