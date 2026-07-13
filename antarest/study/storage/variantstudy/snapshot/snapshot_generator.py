@@ -243,7 +243,7 @@ class SnapshotGenerator:
 
         if snapshot_vars:
             # We use the most recent snapshot as a reference study
-            ref_study = max(snapshot_vars, key=lambda v: v.snapshot.created_at)
+            ref_study = max(snapshot_vars, key=lambda v: v.snapshot.version)
 
             # This variant's snapshot corresponds to the commands actually generated
             # at the time of the snapshot. However, we need to retrieve the remaining commands,
