@@ -132,6 +132,19 @@ class VariantStudyRepository(StudyMetadataRepository):
         stmt = select(CommandBlock)
         return list(self.session.execute(stmt).scalars().all())
 
+    def get_all_command_blocks_for_variants(self, variant_ids: Sequence[str]) -> list[CommandBlock]:
+        """
+        Get all command blocks for a list of variants in one single query.
+
+        Args:
+            variant_ids: List of variant IDs.
+
+        Returns:
+            List of `CommandBlock` objects.
+        """
+        stmt = select(CommandBlock).where(CommandBlock.study_id.in_(variant_ids))
+        return list(self.session.execute(stmt).scalars().all())
+
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """
         Find a list of variants by IDs

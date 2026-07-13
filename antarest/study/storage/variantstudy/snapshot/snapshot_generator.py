@@ -202,9 +202,10 @@ class SnapshotGenerator:
             # In the case of a from scratch generation, the root study will be used as the reference study.
             # We need to retrieve all commands from the descendants of variants in order to apply them
             # on the reference study.
+            cmd_blocks = self.repository.get_all_command_blocks_for_variants([v.id for v in descendants])
             return RefStudySearchResult(
                 ref_study=root_study,
-                cmd_blocks=[c for v in descendants for c in v.commands],
+                cmd_blocks=cmd_blocks,
                 force_regenerate=True,
             )
 
