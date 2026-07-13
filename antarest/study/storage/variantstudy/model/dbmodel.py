@@ -164,3 +164,10 @@ class VariantStudy(Study):
     @override
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
+
+
+class CommandsListVersion(Base):
+    __tablename__ = "commands_list_version"
+
+    variant_id = mapped_column(String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"), primary_key=True)
+    version = mapped_column(Integer)
