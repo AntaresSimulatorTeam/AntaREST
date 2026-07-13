@@ -192,19 +192,13 @@ class SnapshotGenerator:
             # Edge case where the list of studies is empty.
             return RefStudySearchResult(ref_study=root_study, cmd_blocks=[], force_regenerate=True)
 
-        # The reference study is the root study or a variant study with a valid snapshot
-        ref_study: Study
-
-        # The commands to apply on the reference study to generate the current variant
-        cmd_blocks: list[CommandBlock]
-
         if from_scratch:
             # In the case of a from scratch generation, the root study will be used as the reference study.
             # We need to retrieve all commands from the descendants of variants in order to apply them
             # on the reference study.
-            cmd_blocks = self.repository.get_all_command_blocks_for_variants([v.id for v in descendants])
+            command_blocks = self.repository.get_all_command_blocks_for_variants([v.id for v in descendants])
             # We need to sort the commands by their variant id and their index to apply them in the right order.
-            sorted_cmd_blocks = sorted(cmd_blocks, key=lambda cb: (cb.study_id, cb.index))
+            sorted_cmd_blocks = sorted(command_blocks, key=lambda cb: (cb.study_id, cb.index))
             return RefStudySearchResult(
                 ref_study=root_study,
                 cmd_blocks=sorted_cmd_blocks,
@@ -243,6 +237,12 @@ class SnapshotGenerator:
         # If no snapshot is found, we use the root study as a reference study.
 
         snapshot_vars = [v for v in descendants if self.variant_study_service.is_snapshot_up_to_date(v)]
+
+        # The reference study is the root study or a variant study with a valid snapshot
+        ref_study: Study
+
+        # The commands to apply on the reference study to generate the current variant
+        cmd_blocks: list[CommandBlock]
 
         if snapshot_vars:
             # We use the most recent snapshot as a reference study
