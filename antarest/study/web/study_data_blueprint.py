@@ -1685,7 +1685,7 @@ def create_study_data_routes() -> APIRouter:
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/reserves/certifications/thermals",
-        summary="Fetch all reserve certifications for a given area",
+        summary="Fetch all thermal reserve certifications for a given area",
     )
     def get_reserve_certifications(
         study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
@@ -1697,7 +1697,7 @@ def create_study_data_routes() -> APIRouter:
 
     @bp.put(
         path="/studies/{uuid}/areas/{area_id}/reserves/certifications/thermals",
-        summary="Saves new reserve certifications for a given area",
+        summary="Saves new thermal reserve certifications for a given area",
     )
     def save_reserve_certifications(
         study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: ThermalReserveCertificationMapping

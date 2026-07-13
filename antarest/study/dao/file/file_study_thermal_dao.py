@@ -307,7 +307,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
     def _remove_thermal_reserve_certifications(self, area_id: str, thermal_id: str) -> None:
         """
         # Cascade: Remove any reserve certification attached to the deleted cluster.
-        # Avoids leaving orphan sections in `input/thermal/clusters/<area>/reserve-participations.yaml`.
+        # Avoids leaving orphan sections in `input/thermal/clusters/<area>/reserve-participations.yml`.
         """
         if self.get_file_study().config.version < STUDY_VERSION_10_0:
             # Reserves only exist in version 10.0+
