@@ -288,8 +288,7 @@ class VariantStudyService(AbstractStudyService):
 
         # Save the new commands
         new_block = CommandBlocksWithVersion(commands=new_commands, version=current_commands.version + 1)
-        print(new_block)
-        # todo
+        self.repository.save_commands_list_version(study.id, new_block)
 
         # Update the editor
         self._update_editor(study)
