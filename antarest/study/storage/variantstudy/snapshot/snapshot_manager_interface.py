@@ -29,8 +29,8 @@ class ISnapshotManager(ABC):
 
         with db():
             # Commands list version
-            second_query = select(CommandsListVersion).where(CommandsListVersion.variant_id == study.id)
-            commands_list_version: int = db.session.execute(second_query).scalar_one().version
+            query = select(CommandsListVersion).where(CommandsListVersion.variant_id == study.id)
+            commands_list_version: int = db.session.execute(query).scalar_one().version
 
         return commands_list_version == snapshot_version
 
