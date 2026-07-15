@@ -295,11 +295,10 @@ class TestVariantStudyService:
         with current_user_context(jwt_user):
             with DBStatementRecorder(db.session.bind) as db_recorder:
                 variant_study_service.get_commands(variant_study.id)
-                # 3 queries must be executed:
-                # 1. Get the variant study
-                # 2. Ensures the user has read access on the variant study
-                # 3. Retrieves the user's name. Performed only once as the same user added the 5 commands (no N+1 query)
-                assert len(db_recorder.sql_statements) == 3
+                # 2 queries must be executed:
+                # 1. Get the variant study with its owner, groups and commands
+                # 2. Retrieves the user's name. Performed only once as the same user added the 5 commands (no N+1 query)
+                assert len(db_recorder.sql_statements) == 2
 
     @with_admin_user
     @with_db_context

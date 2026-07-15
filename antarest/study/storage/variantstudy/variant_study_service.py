@@ -201,17 +201,26 @@ class VariantStudyService(AbstractStudyService):
             study_id: study id
         Returns: List of commands
         """
-        study = self._get_variant_study(study_id)
+        variant_study = self._get_variant_with_commands(study_id)
 
         id_to_name: dict[int, str] = {}
         command_list = []
 
-        for command in study.commands:
+        for command in variant_study.commands:
             if command.user_id and command.user_id not in id_to_name.keys():
                 user_name: str = get_user_name_from_id(command.user_id)
                 id_to_name[command.user_id] = user_name
             command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
         return command_list
+
+    def _get_variant_with_commands(self, study_id: str) -> VariantStudy:
+        variant_study = self.repository.get_study_with_commands(study_id)
+
+        if not variant_study:
+            raise StudyNotFoundError(study_id)
+
+        assert_permission(variant_study, StudyPermissionType.READ)
+        return variant_study
 
     def convert_commands(self, study_id: str, api_commands: list[CommandDTOAPI]) -> list[CommandDTO]:
         study = self._get_study_by_id(study_id)
@@ -345,10 +354,7 @@ class VariantStudyService(AbstractStudyService):
     def _get_study_commands(self, study_id: str) -> CommandBlocksWithVersion:
         return self.repository.get_command_blocks_with_associated_version([study_id], with_lock=True)
 
-    def _get_variant_study(
-        self,
-        study_id: str,
-    ) -> VariantStudy:
+    def _get_variant_study(self, study_id: str) -> VariantStudy:
         """
         Get variant study, and check READ permissions.
 

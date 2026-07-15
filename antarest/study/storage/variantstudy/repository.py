@@ -139,6 +139,20 @@ class VariantStudyRepository(StudyMetadataRepository):
         stmt = select(CommandBlock)
         return list(self.session.execute(stmt).scalars().all())
 
+    def get_study_with_commands(self, variant_id: str) -> VariantStudy | None:
+        """
+        Use a single JOIN query to retrieve a variant study with its associated command blocks.
+        It returns a `VariantStudy` object with its associated `owner`, `groups` to be able to check user permissions efficiently.
+        """
+        stmt = (
+            select(VariantStudy)
+            .options(joinedload(VariantStudy.owner), joinedload(VariantStudy.groups), joinedload(VariantStudy.commands))
+            .where(VariantStudy.id == variant_id)
+        )
+
+        result: VariantStudy | None = self.session.execute(stmt).unique().scalar_one_or_none()
+        return result
+
     def get_command_blocks_with_associated_version(
         self, variant_ids: Sequence[str], with_lock: bool = False
     ) -> CommandBlocksWithVersion:
