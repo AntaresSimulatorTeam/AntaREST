@@ -12,6 +12,7 @@
 
 import logging
 import re
+import uuid
 from collections.abc import Callable
 from datetime import timedelta
 from pathlib import Path
@@ -271,6 +272,7 @@ class VariantStudyService(AbstractStudyService):
         # Create the new commands
         new_commands = [
             CommandBlock(
+                id=str(uuid.uuid4()),
                 command=command.action,
                 args=to_json_string(command.args),
                 index=(first_index + i),
