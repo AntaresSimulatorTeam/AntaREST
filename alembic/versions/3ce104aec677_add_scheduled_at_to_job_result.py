@@ -1,8 +1,8 @@
 """add scheduled_at to job_result
 
-Revision ID: 22b7814dbb66
-Revises: 80fdf2408ede
-Create Date: 2026-07-01 15:51:09.090025
+Revision ID: 3ce104aec677
+Revises: 665f7b1d7575
+Create Date: 2026-07-15 10:14:01.388332
 
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "22b7814dbb66"
-down_revision = "80fdf2408ede"
+revision = "3ce104aec677"
+down_revision = "665f7b1d7575"
 branch_labels = None
 depends_on = None
 
