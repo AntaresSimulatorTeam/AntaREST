@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.sql_utils import upsert_one
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.model import Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
@@ -166,7 +167,9 @@ class VariantStudyRepository(StudyMetadataRepository):
 
         cmd_blocks = []
         for row in rows:
-            cmd_blocks.append(row[0])
+            row_as_dict = get_row_representation_as_dict(row)
+            # todo; fix
+            cmd_blocks.append(row_as_dict["commandblock"])
             if row[1].variant_id == last_child:
                 version = row[1].version
 
