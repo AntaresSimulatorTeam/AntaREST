@@ -22,10 +22,16 @@ from sqlalchemy.orm import Session
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
 from antarest.study.model import StorageMode
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    COMMANDS_LIST_VERSION_TABLE,
+    CommandBlock,
+    VariantStudy,
+    VariantStudySnapshot,
+)
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import create_raw_study, create_variant_study, with_db_context
 
@@ -234,7 +240,7 @@ class TestVariantStudy:
         assert obj.commands == []
 
 
-def _set_up(session: Session, parent_id: int, path: Path, user_id: int) -> str:
+def _set_up(session: Session, parent_id: int, user_id: int) -> str:
     with session:
         # Given a variant study (referencing the raw study)
         # with optionally a snapshot and a snapshot directory
@@ -244,16 +250,10 @@ def _set_up(session: Session, parent_id: int, path: Path, user_id: int) -> str:
             name="Study 3.0",
             author="Sandrine",
             parent_id=parent_id,
-            path=str(path.joinpath("variant")),
+            path="",
             owner_id=user_id,
             storage_mode=StorageMode.FILESYSTEM,
         )
-
-        # If the snapshot creation date is given, we create a snapshot
-        # and a snapshot directory.
-        snapshot_dir = Path(variant.path) / "snapshot"
-        snapshot_dir.mkdir(parents=True, exist_ok=True)
-        (snapshot_dir / "study.antares").touch()
 
         session.add(variant)
         session.commit()
@@ -262,32 +262,37 @@ def _set_up(session: Session, parent_id: int, path: Path, user_id: int) -> str:
 
 
 @with_db_context
-def test_is_snapshot_up_to_date(
-    variant_study_service: VariantStudyService, tmp_path: Path, raw_study_id: int, user_id: int
-) -> None:
+def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_study_id: int, user_id: int) -> None:
     """
     Check the `is_snapshot_up_to_date()` method
     """
     session = db.session
-    variant_id = _set_up(session, raw_study_id, tmp_path, user_id)
+    variant_id = _set_up(session, raw_study_id, user_id)
     variant_study_service.repository.initialize_commands_list_version_table(variant_id)
 
-    # First case, no snapshot in DB -> Not up to date
+    # 1st case, no snapshot in DB -> Not up to date
     variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
     assert variant_study_service.is_snapshot_up_to_date(variant) is False
 
-    # Second case, add the snapshot in DB but no snapshot in filesystem -> Not up to date
+    # 2nd case: Add the snapshot in DB with a version 0 which matches the command blocks version -> Up to date
     variant.snapshot = VariantStudySnapshot(id=variant_id, version=0, last_executed_command=None)
     session.add(variant)
     session.commit()
-    (Path(variant.path) / "snapshot" / "study.antares").unlink()
+
+    variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
+    assert variant_study_service.is_snapshot_up_to_date(variant) is True
+
+    # 3rd case: Changes the version in `commands_list_version` table -> Not up to date
+    upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": 1})
+    session.commit()
 
     variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
     assert variant_study_service.is_snapshot_up_to_date(variant) is False
 
-    # todo:
-    # 1- No snapshot
-    # 2- Old snapshot
-    # 3 - No study.antares file
-    # 4- Everything is good
-    # 5- Add a command to the variant study -> Old snapshot
+    # 4th case: Adapt the version in the study snapshot to match the commands one -> Up to date
+    variant.snapshot.version = 1
+    session.add(variant)
+    session.commit()
+
+    variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
+    assert variant_study_service.is_snapshot_up_to_date(variant) is True
