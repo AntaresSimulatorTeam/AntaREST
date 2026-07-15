@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Any
+
+from sqlalchemy import Row
 
 from antarest.core.persistence import Base as PersistenceBase
 from antarest.core.tasks.model import TaskJob  # noqa: F401
@@ -16,3 +19,7 @@ from antarest.launcher.model import JobResult  # noqa: F401
 from antarest.login.model import Identity  # noqa: F401
 
 Base = PersistenceBase
+
+
+def get_row_representation_as_dict(row: Row[Any]) -> dict[str, Any]:
+    return row._asdict()

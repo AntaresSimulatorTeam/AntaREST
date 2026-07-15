@@ -34,6 +34,7 @@ from antarest.core.exceptions import (
     XpansionConfigurationDoesNotExist,
     XpansionFileNotFoundError,
 )
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionAdequacyPattern,
@@ -46,7 +47,6 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.dao.common import XpansionCapacitiesMapping, XpansionConstraintsMapping, XpansionWeightsMapping
-from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.xpansion import (
     XPANSION_ADEQUACY_CRITERION_TABLE,
     XPANSION_ADEQUACY_PATTERN_TABLE,

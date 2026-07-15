@@ -20,11 +20,10 @@ from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serde.json import from_json
-from antarest.dbmodel import Base as BasePersistence
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-metadata = BasePersistence.metadata
+metadata = Base.metadata
 
 
 class VariantStudySnapshot(Base):

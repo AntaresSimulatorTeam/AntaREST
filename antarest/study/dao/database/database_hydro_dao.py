@@ -29,6 +29,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.core.utils.polars import create_polars_dataframe
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
 )
@@ -42,7 +43,6 @@ from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.dao.common import AreaId, AreaSeriesMapping, SeriesId
 from antarest.study.dao.database.common import (
     get_all_area_matrices,
-    get_row_representation_as_dict,
     save_area_matrix,
     validate_area_exists,
 )

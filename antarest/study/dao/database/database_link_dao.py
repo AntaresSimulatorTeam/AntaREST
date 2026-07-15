@@ -21,10 +21,10 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, LinksNotFound
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.dao.common import LinkSeriesMapping, SeriesId
-from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.link import (
     LINK_DIRECT_CAPACITY_TABLE,
     LINK_INDIRECT_CAPACITY_TABLE,

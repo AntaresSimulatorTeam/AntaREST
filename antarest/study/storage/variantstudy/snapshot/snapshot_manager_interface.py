@@ -29,7 +29,7 @@ class ISnapshotManager(ABC):
 
         # Commands list version
         query = select(COMMANDS_LIST_VERSION_TABLE).where(COMMANDS_LIST_VERSION_TABLE.c.variant_id == study.id)
-        commands_list_version: int = db.session.execute(query).scalar_one().version
+        commands_list_version: int = db.session.execute(query).one()._asdict()["version"]
 
         return commands_list_version == snapshot_version
 

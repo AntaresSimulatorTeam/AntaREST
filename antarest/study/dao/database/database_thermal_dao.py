@@ -25,6 +25,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ThermalClusterNotFound, ThermalClustersNotFound
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     check_thermal_cluster_complete,
@@ -32,7 +33,7 @@ from antarest.study.business.model.thermal_cluster_model import (
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeriesMapping
-from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
+from antarest.study.dao.database.common import validate_area_exists
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CLUSTER_TABLE,
     THERMAL_CO2_COST_TABLE,

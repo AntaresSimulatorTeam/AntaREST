@@ -28,6 +28,7 @@ from sqlalchemy.sql import outerjoin
 from typing_extensions import override
 
 from antarest.core.exceptions import BindingConstraintNotFound, BindingConstraintsNotFound
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
     BindingConstraint,
@@ -40,7 +41,6 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
 from antarest.study.dao.common import BindingConstraintSeriesMapping, SeriesId
-from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_CLUSTER_TERM_TABLE as CT,
 )
