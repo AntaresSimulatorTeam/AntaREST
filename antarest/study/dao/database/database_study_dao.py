@@ -92,8 +92,8 @@ class DatabaseStudyDao(
         self,
         study_id: str,
         db_session: Session,
-        matrix_service: ISimpleMatrixService,
-        generator_matrix_constants: GeneratorMatrixConstants,
+        matrix_service: "ISimpleMatrixService",
+        generator_matrix_constants: "GeneratorMatrixConstants",
     ) -> None:
         """
         Initialize DatabaseStudyDao.
