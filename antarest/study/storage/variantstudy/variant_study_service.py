@@ -321,7 +321,11 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self._get_variant_study(study_id)
 
-        study.commands = []
+        # Save the new commands
+        current_cmd_version = self.repository.get_commands_list_version(study_id)
+        new_block = CommandBlocksWithVersion(commands=[], version=current_cmd_version + 1)
+        self.repository.save_commands_list_version(study_id, new_block)
+
         self._update_editor(study)
         self.on_variant_rebase(study)
         self.clear_snapshot(study)

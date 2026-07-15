@@ -186,10 +186,11 @@ class VariantStudyRepository(StudyMetadataRepository):
         # Clean commands
         session.execute(delete(CommandBlock).where(CommandBlock.study_id == variant_id))
         # Save the new ones
-        session.add_all(commands.commands)
+        if commands.commands:
+            session.add_all(commands.commands)
         # Save the new command version
         upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": commands.version})
-        # Commit the 3 operations
+        # Commit all the operations
         session.commit()
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
