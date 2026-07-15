@@ -171,11 +171,7 @@ class SnapshotGenerator:
         return results
 
     def search_ref_study(
-        self,
-        root_study: Study,
-        descendants: Sequence[VariantStudy],
-        *,
-        from_scratch: bool = False,
+        self, root_study: Study, descendants: Sequence[VariantStudy], *, from_scratch: bool
     ) -> RefStudySearchResult:
         """
         Search for the reference study and the commands to use for snapshot generation.
