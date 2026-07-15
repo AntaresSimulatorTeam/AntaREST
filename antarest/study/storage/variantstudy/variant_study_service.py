@@ -24,6 +24,7 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
+    CommandNotFoundError,
     CommandNotValid,
     NoParentStudyError,
     StudyNotFoundError,
@@ -242,6 +243,7 @@ class VariantStudyService(AbstractStudyService):
         study = self._get_variant_study(study_id)
         command_ids = self._modify_commands(study, commands, replace_commands=False)
         self.on_variant_advance(study)
+        self.generate(study)
         return command_ids
 
     def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
@@ -304,10 +306,20 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self._get_variant_study(study_id)
 
-        index = [command.id for command in study.commands].index(command_id)
-        study.commands.pop(index)
-        for idx, command in enumerate(study.commands):
-            command.index = idx
+        current_commands = self._get_study_commands(study.id)
+
+        index = next((i for i, cmd in enumerate(current_commands.commands) if cmd.id == command_id), None)
+        if index is None:
+            raise CommandNotFoundError(f"Command {command_id} not found in variant study {study_id}")
+
+        new_commands = current_commands.commands[:index] + current_commands.commands[index + 1 :]
+        for i, command in enumerate(new_commands):
+            command.index = i
+
+        # Save the new commands
+        new_block = CommandBlocksWithVersion(commands=new_commands, version=current_commands.version + 1)
+        self.repository.save_commands_list_version(study.id, new_block)
+
         self._update_editor(study)
         self.on_variant_rebase(study)
         self.generate(study)
