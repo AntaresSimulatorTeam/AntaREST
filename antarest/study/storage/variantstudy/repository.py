@@ -19,7 +19,7 @@ from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.dao.database.sql_utils import upsert_one
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.study.model import Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (

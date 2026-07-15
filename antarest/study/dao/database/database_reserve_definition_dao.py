@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, ReserveDefinitionsNotFound
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
 from antarest.study.dao.api.common import remove_reserve_symmetries_by_cascade
@@ -29,7 +30,6 @@ from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, Reserve
 from antarest.study.dao.database.common import area_exists, validate_area_exists
 from antarest.study.dao.database.models.reserve_definition import RESERVE_DEFINITION_TABLE
 from antarest.study.dao.database.models.reserve_need import RESERVE_NEED_MATRIX_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
 
 if TYPE_CHECKING:

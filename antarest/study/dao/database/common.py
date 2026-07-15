@@ -16,10 +16,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.area_properties_model import FILTER_OPTIONS, FrequencyFilter, sort_filter_options
 from antarest.study.dao.common import AreaSeriesMapping
 from antarest.study.dao.database.models.area import AREA_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao

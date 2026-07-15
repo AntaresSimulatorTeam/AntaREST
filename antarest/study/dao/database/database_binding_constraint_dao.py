@@ -28,6 +28,7 @@ from sqlalchemy.sql import outerjoin
 from typing_extensions import override
 
 from antarest.core.exceptions import BindingConstraintNotFound, BindingConstraintsNotFound
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.binding_constraint_model import (
     OPERATOR_MATRICES_MAP,
@@ -57,7 +58,6 @@ from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_TABLE as BC,
 )
 from antarest.study.dao.database.models.ruleset import SCENARIO_BINDING_CONSTRAINTS_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.variantstudy.business.matrix_constants.binding_constraint.series_after_v87 import (
     default_bc_hourly as default_bc_hourly_87,

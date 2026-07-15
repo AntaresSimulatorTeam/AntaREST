@@ -29,6 +29,7 @@ from antarest.core.exceptions import (
     RenewableClusterNotFound,
     RenewableClustersNotFound,
 )
+from antarest.core.utils.sql_utils import upsert_multiple, upsert_one
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.renewable_cluster_model import (
     RenewableCluster,
@@ -38,7 +39,6 @@ from antarest.study.dao.api.renewable_dao import RenewableDao
 from antarest.study.dao.common import AreaId, RenewableId, RenewableSeriesMapping
 from antarest.study.dao.database.common import validate_area_exists
 from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
 
 if TYPE_CHECKING:

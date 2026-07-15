@@ -19,13 +19,13 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import StudyNotFoundError
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimming,
     check_thematic_trimming_complete,
 )
 from antarest.study.dao.api.thematic_trimming_dao import ThematicTrimmingDao
 from antarest.study.dao.database.models.thematic_trimming import THEMATIC_TRIMMING_TABLE
-from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao

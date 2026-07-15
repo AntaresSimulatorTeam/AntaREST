@@ -34,6 +34,7 @@ from antarest.core.exceptions import (
     XpansionConfigurationDoesNotExist,
     XpansionFileNotFoundError,
 )
+from antarest.core.utils.sql_utils import upsert_multiple, upsert_one
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -57,7 +58,6 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_SETTINGS_TABLE,
     XPANSION_WEIGHT_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao

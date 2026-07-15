@@ -29,6 +29,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
@@ -66,7 +67,6 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_RUN_OF_RIVER_TABLE,
     HYDRO_WATER_VALUES_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.model import STUDY_VERSION_6_5
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_credit_modulation,
