@@ -16,7 +16,7 @@ from sqlalchemy import select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import Study
-from antarest.study.storage.variantstudy.model.dbmodel import CommandsListVersion, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import COMMANDS_LIST_VERSION_TABLE, VariantStudy
 
 
 class ISnapshotManager(ABC):
@@ -27,10 +27,9 @@ class ISnapshotManager(ABC):
             return False
         snapshot_version: int = study.snapshot.version
 
-        with db():
-            # Commands list version
-            query = select(CommandsListVersion).where(CommandsListVersion.variant_id == study.id)
-            commands_list_version: int = db.session.execute(query).scalar_one().version
+        # Commands list version
+        query = select(COMMANDS_LIST_VERSION_TABLE).where(COMMANDS_LIST_VERSION_TABLE.c.variant_id == study.id)
+        commands_list_version: int = db.session.execute(query).scalar_one().version
 
         return commands_list_version == snapshot_version
 

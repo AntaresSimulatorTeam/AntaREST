@@ -12,7 +12,7 @@
 
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
@@ -22,9 +22,9 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
+    COMMANDS_LIST_VERSION_TABLE,
     CommandBlock,
     CommandBlocksWithVersion,
-    CommandsListVersion,
     VariantStudy,
 )
 
@@ -137,7 +137,9 @@ class VariantStudyRepository(StudyMetadataRepository):
         stmt = select(CommandBlock)
         return list(self.session.execute(stmt).scalars().all())
 
-    def get_command_blocks_with_associated_version(self, variant_ids: Sequence[str]) -> CommandBlocksWithVersion:
+    def get_command_blocks_with_associated_version(
+        self, variant_ids: Sequence[str], with_lock: bool = False
+    ) -> CommandBlocksWithVersion:
         """
         This method performs a single JOIN query to ensure that the 2 separated infos (version and cmd blocks) are synchronized.
         The `version` corresponds to the last given id as it's the child of the other ids.
@@ -145,10 +147,13 @@ class VariantStudyRepository(StudyMetadataRepository):
         last_child = variant_ids[-1]
 
         query = (
-            select(CommandBlock, CommandsListVersion)
-            .join(CommandsListVersion, CommandBlock.study_id == CommandsListVersion.variant_id)
-            .where(CommandsListVersion.variant_id.in_(variant_ids))
+            select(CommandBlock, COMMANDS_LIST_VERSION_TABLE)
+            .join(COMMANDS_LIST_VERSION_TABLE, CommandBlock.study_id == COMMANDS_LIST_VERSION_TABLE.c.variant_id)
+            .where(COMMANDS_LIST_VERSION_TABLE.c.variant_id.in_(variant_ids))
         )
+
+        if with_lock:
+            query = query.with_for_update()
 
         rows = self.session.execute(query).all()
 
@@ -170,9 +175,20 @@ class VariantStudyRepository(StudyMetadataRepository):
         return CommandBlocksWithVersion(version=version, commands=sorted_cmds)
 
     def get_commands_list_version(self, variant_id: str) -> int:
-        stmt = select(CommandsListVersion.version).where(CommandsListVersion.variant_id == variant_id)
+        _table = COMMANDS_LIST_VERSION_TABLE
+        stmt = select(_table.c.version).where(_table.c.variant_id == variant_id)
         version: int = self.session.execute(stmt).scalar_one().version
         return version
+
+    def save_commands_list_version(self, variant_id: str, commands: CommandBlocksWithVersion) -> None:
+        session = self.session
+        # Clean commands
+        session.execute(delete(CommandBlock).where(CommandBlock.study_id == variant_id))
+        # Save the new ones
+        session.add_all(commands.commands)
+        # Save the new command version
+        # todo: with upsert_one
+        pass
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """

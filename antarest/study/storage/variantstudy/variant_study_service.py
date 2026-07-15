@@ -76,7 +76,11 @@ from antarest.study.storage.variantstudy.command_blob_usage_provider import Comm
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    CommandBlocksWithVersion,
+    VariantStudy,
+)
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     CommandDTOAPI,
@@ -257,13 +261,15 @@ class VariantStudyService(AbstractStudyService):
     def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
         command_objs = self._check_commands_validity(study.id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
+
+        current_commands = self._get_study_commands(study.id)
+
         if replace_commands:
             first_index = 0
-            study.commands = []
         else:
-            first_index = len(study.commands)
+            first_index = len(current_commands.commands)
 
-        # noinspection PyArgumentList
+        # Create the new commands
         new_commands = [
             CommandBlock(
                 command=command.action,
@@ -276,7 +282,16 @@ class VariantStudyService(AbstractStudyService):
             )
             for i, command in enumerate(validated_commands)
         ]
-        study.commands.extend(new_commands)
+
+        if not replace_commands:
+            new_commands = current_commands.commands + new_commands
+
+        # Save the new commands
+        new_block = CommandBlocksWithVersion(commands=new_commands, version=current_commands.version + 1)
+        print(new_block)
+        # todo
+
+        # Update the editor
         self._update_editor(study)
         return [c.id for c in new_commands]
 
@@ -311,6 +326,9 @@ class VariantStudyService(AbstractStudyService):
         self._update_editor(study)
         self.on_variant_rebase(study)
         self.clear_snapshot(study)
+
+    def _get_study_commands(self, study_id: str) -> CommandBlocksWithVersion:
+        return self.repository.get_command_blocks_with_associated_version([study_id], with_lock=True)
 
     def _get_variant_study(
         self,

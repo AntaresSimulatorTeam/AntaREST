@@ -14,14 +14,17 @@ import datetime
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
 from antarest.core.persistence import Base
 from antarest.core.serde.json import from_json
+from antarest.dbmodel import Base as BasePersistence
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+metadata = BasePersistence.metadata
 
 
 class VariantStudySnapshot(Base):
@@ -167,11 +170,12 @@ class VariantStudy(Study):
         return super().__str__() + f", snapshot={self.snapshot}"
 
 
-class CommandsListVersion(Base):
-    __tablename__ = "commands_list_version"
-
-    variant_id = mapped_column(String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"), primary_key=True)
-    version = mapped_column(Integer)
+COMMANDS_LIST_VERSION_TABLE = Table(
+    "commands_list_version",
+    metadata,
+    Column("variant_id", String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"), primary_key=True),
+    Column("version", Integer, nullable=False),
+)
 
 
 @dataclass(frozen=True)
