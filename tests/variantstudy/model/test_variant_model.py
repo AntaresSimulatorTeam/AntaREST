@@ -34,7 +34,7 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandD
 from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.db_statement_recorder import DBStatementRecorder
-from tests.helpers import AnyUUID, create_raw_study, with_admin_user, with_db_context
+from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 def create_root_study(
@@ -191,19 +191,8 @@ class TestVariantStudyService:
             factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
         # Generate the snapshot
         results = generator.generate_snapshot(saved_id, dao_factory=factory)
-        # Check the results. We should only see the `create_cluster` command as the other ones were generated inside the `remove_command` method
-        assert results.model_dump() == {
-            "success": True,
-            "should_invalidate_cache": False,
-            "details": [
-                {
-                    "id": AnyUUID(),
-                    "msg": "Thermal cluster 'cl1' added to area 'yes'.",
-                    "name": "create_cluster",
-                    "status": True,
-                }
-            ],
-        }
+        # Check the results. `details` should be empty as all commands were applied synchronously
+        assert results.model_dump() == {"success": True, "should_invalidate_cache": False, "details": []}
         assert study.snapshot.id == study.id
 
     @with_db_context
