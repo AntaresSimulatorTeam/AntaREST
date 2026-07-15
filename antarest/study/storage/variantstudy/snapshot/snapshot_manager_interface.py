@@ -16,25 +16,23 @@ from sqlalchemy import select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import Study
-from antarest.study.storage.variantstudy.model.dbmodel import CommandsListVersion, VariantStudy, VariantStudySnapshot
+from antarest.study.storage.variantstudy.model.dbmodel import CommandsListVersion, VariantStudy
 
 
 class ISnapshotManager(ABC):
     @staticmethod
     def is_snapshot_up_to_date(study: VariantStudy) -> bool:
+        # Snapshot version
+        if not study.snapshot:
+            return False
+        snapshot_version: int = study.snapshot.version
+
         with db():
-            # Snapshot version
-            query = select(VariantStudySnapshot).where(VariantStudySnapshot.id == study.id)
-            snapshot = db.session.execute(query).scalar_one_or_none()
-            if not snapshot:
-                # Means there's no snapshot for this variant
-                return False
-            snapshot_version: int = snapshot.version
             # Commands list version
             second_query = select(CommandsListVersion).where(CommandsListVersion.variant_id == study.id)
             commands_list_version: int = db.session.execute(second_query).scalar_one().version
 
-            return commands_list_version == snapshot_version
+        return commands_list_version == snapshot_version
 
     @abstractmethod
     def has_snapshot(self, study: VariantStudy) -> bool:
