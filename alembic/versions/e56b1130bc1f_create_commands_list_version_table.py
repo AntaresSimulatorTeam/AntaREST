@@ -42,6 +42,9 @@ def upgrade():
 
     # Gathers all variant study ids
     result = session.query(table('variantstudy', column('id'))).all()
+    if not result:
+        # Means there are no variant studies in the database
+        return
     data_to_insert = [{"variant_id": variant_id, "version": 0} for variant_id, in result]
 
     # Insert values to fill the newly created table
