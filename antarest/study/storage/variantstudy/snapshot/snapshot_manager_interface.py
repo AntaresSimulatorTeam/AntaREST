@@ -15,6 +15,7 @@ from abc import ABC, abstractmethod
 from sqlalchemy import select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.dbmodel import COMMANDS_LIST_VERSION_TABLE, VariantStudy
 
@@ -29,7 +30,8 @@ class ISnapshotManager(ABC):
 
         # Commands list version
         query = select(COMMANDS_LIST_VERSION_TABLE).where(COMMANDS_LIST_VERSION_TABLE.c.variant_id == study.id)
-        commands_list_version: int = db.session.execute(query).one()._asdict()["version"]
+        row = db.session.execute(query).one()
+        commands_list_version: int = get_row_representation_as_dict(row)["version"]
 
         return commands_list_version == snapshot_version
 
