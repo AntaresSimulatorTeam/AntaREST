@@ -281,6 +281,7 @@ class VariantStudyService(AbstractStudyService):
                 study_version=str(command.study_version),
                 user_id=get_user_impersonator(),
                 updated_at=current_time(),
+                study_id=study.id,
             )
             for i, command in enumerate(validated_commands)
         ]

@@ -19,7 +19,7 @@ from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.sql_utils import upsert_one
+from antarest.core.utils.sql_utils import upsert_multiple, upsert_one
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.model import Study
 from antarest.study.repository import StudyMetadataRepository
@@ -189,7 +189,8 @@ class VariantStudyRepository(StudyMetadataRepository):
         session.execute(delete(CommandBlock).where(CommandBlock.study_id == variant_id))
         # Save the new ones
         if commands.commands:
-            session.add_all(commands.commands)
+            values = [command.to_dict() for command in commands.commands]
+            upsert_multiple(session, CommandBlock.__table__, values)  # type: ignore
         # Save the new command version
         upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": commands.version})
         # Commit all the operations

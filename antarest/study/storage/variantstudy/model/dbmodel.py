@@ -13,6 +13,7 @@
 import datetime
 import uuid
 from dataclasses import dataclass
+from typing import Any
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -107,6 +108,19 @@ class CommandBlock(Base):
             user_id=self.user_id,
             updated_at=self.updated_at,
         )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id or str(uuid.uuid4()),
+            "study_id": self.study_id,
+            "index": self.index,
+            "command": self.command,
+            "version": self.version,
+            "args": self.args,
+            "study_version": self.study_version,
+            "user_id": self.user_id,
+            "updated_at": self.updated_at,
+        }
 
     @override
     def __str__(self) -> str:
