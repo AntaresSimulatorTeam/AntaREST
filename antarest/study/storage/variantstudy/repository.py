@@ -19,6 +19,7 @@ from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.model import Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
@@ -187,8 +188,9 @@ class VariantStudyRepository(StudyMetadataRepository):
         # Save the new ones
         session.add_all(commands.commands)
         # Save the new command version
-        # todo: with upsert_one
-        pass
+        upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": commands.version})
+        # Commit the 3 operations
+        session.commit()
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """
