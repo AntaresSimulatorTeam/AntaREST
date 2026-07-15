@@ -207,7 +207,7 @@ class SnapshotGenerator:
         # We only have to check if we can reuse the snapshot to minimize the generation time.
         # We can reuse the snapshot if the last executed command is still present in the variant commands list.
         # It's not always the case as the user could have removed a command or replaced them all.
-        if self.variant_study_service.has_snapshot(current_variant):
+        if current_variant.snapshot is not None:
             if last_executed_cmd_id := current_variant.snapshot.last_executed_command:
                 cmd_blocks_w_version = self.repository.get_command_blocks_with_associated_version([current_variant.id])
                 for command_block in cmd_blocks_w_version.commands:

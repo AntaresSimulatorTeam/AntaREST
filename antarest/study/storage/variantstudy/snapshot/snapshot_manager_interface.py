@@ -36,10 +36,6 @@ class ISnapshotManager(ABC):
         return commands_list_version == snapshot_version
 
     @abstractmethod
-    def has_snapshot(self, study: VariantStudy) -> bool:
-        raise NotImplementedError()
-
-    @abstractmethod
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         raise NotImplementedError()
 

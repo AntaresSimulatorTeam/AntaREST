@@ -188,9 +188,6 @@ class VariantStudyService(AbstractStudyService):
     def is_snapshot_up_to_date(self, variant_study: VariantStudy) -> bool:
         return self._snapshot_manager_mapping[variant_study.storage_mode].is_snapshot_up_to_date(variant_study)
 
-    def has_snapshot(self, variant_study: VariantStudy) -> bool:
-        return self._snapshot_manager_mapping[variant_study.storage_mode].has_snapshot(variant_study)
-
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = get_current_user_name()
         study.editor = user_name
