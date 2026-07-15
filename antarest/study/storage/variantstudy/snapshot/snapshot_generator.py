@@ -227,6 +227,7 @@ class SnapshotGenerator:
 
         variant_ids = [v.id for v in descendants]
         for k, variant in enumerate(descendants[1:]):
+            # todo: this performs N+1 queries, we should probably introduce a new method to avoid this.
             if self.variant_study_service.is_snapshot_up_to_date(variant):
                 variant_ids = [v.id for v in descendants[:k]]
                 break
