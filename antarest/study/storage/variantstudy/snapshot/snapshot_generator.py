@@ -209,15 +209,15 @@ class SnapshotGenerator:
         # It's not always the case as the user could have removed a command or replaced them all.
         if self.variant_study_service.has_snapshot(current_variant):
             if last_executed_cmd_id := current_variant.snapshot.last_executed_command:
-                cmd_blocks_with_version = self.repository.get_command_blocks_with_associated_version(current_variant.id)
-                for command_block in cmd_blocks_with_version.commands:
+                cmd_blocks_w_version = self.repository.get_command_blocks_with_associated_version([current_variant.id])
+                for command_block in cmd_blocks_w_version.commands:
                     if command_block.id == last_executed_cmd_id:
                         last_exec_index = command_block.index
                         return RefStudySearchResult(
                             ref_study=current_variant,
-                            cmd_blocks=cmd_blocks_with_version.commands[last_exec_index + 1 :],
+                            cmd_blocks=cmd_blocks_w_version.commands[last_exec_index + 1 :],
                             force_regenerate=False,
-                            version=cmd_blocks_with_version.version,
+                            version=cmd_blocks_w_version.version,
                         )
 
         # 3rd case: The variant has no snapshot.
