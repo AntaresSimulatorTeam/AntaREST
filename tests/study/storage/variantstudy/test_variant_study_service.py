@@ -281,7 +281,7 @@ class TestVariantStudyService:
                 variant_study = variant_study_service.create_variant_study(raw_study.id, f"Variant{str(index)}")
                 variant_list.append(variant_study)
                 # Generate a snapshot for each variant
-                variant_study_service.generate_variant_with_task(variant_list[index].id, False)
+                variant_study_service.generate(variant_list[index], False)
 
                 # Modify the `created_at` and `updated_at` attributes in DB.
                 with db():

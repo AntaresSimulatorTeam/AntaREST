@@ -104,10 +104,13 @@ class SnapshotGenerator:
 
             # Finally, we can update the database.
             logger.info(f"Saving new snapshot for study {variant_study_id}")
+            last_executed_command = None
+            if cmd_blocks:
+                last_executed_command = cmd_blocks[-1].id
+            elif variant_study.snapshot:
+                last_executed_command = variant_study.snapshot.last_executed_command
             variant_study.snapshot = VariantStudySnapshot(
-                id=variant_study_id,
-                version=search_result.version,
-                last_executed_command=cmd_blocks[-1].id if cmd_blocks else variant_study.snapshot.last_executed_command,
+                id=variant_study_id, version=search_result.version, last_executed_command=last_executed_command
             )
             self.repository.save(variant_study)
 
