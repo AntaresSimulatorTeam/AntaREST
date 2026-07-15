@@ -550,6 +550,7 @@ class VariantStudyService(AbstractStudyService):
             storage_mode=study.storage_mode,
         )
         self.repository.save(variant_study)
+        self.repository.initialize_commands_list_version_table(new_id)
         notify_study_creation(self.event_bus, variant_study)
         logger.info("variant study %s created by user %s", variant_study.id, get_user_id())
         return variant_study

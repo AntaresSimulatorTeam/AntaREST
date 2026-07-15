@@ -180,7 +180,7 @@ class VariantStudyRepository(StudyMetadataRepository):
     def get_commands_list_version(self, variant_id: str) -> int:
         _table = COMMANDS_LIST_VERSION_TABLE
         stmt = select(_table.c.version).where(_table.c.variant_id == variant_id)
-        version: int = self.session.execute(stmt).scalar_one().version
+        version: int = self.session.execute(stmt).scalar_one()
         return version
 
     def save_commands_list_version(self, variant_id: str, commands: CommandBlocksWithVersion) -> None:
@@ -194,6 +194,11 @@ class VariantStudyRepository(StudyMetadataRepository):
         # Save the new command version
         upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": commands.version})
         # Commit all the operations
+        session.commit()
+
+    def initialize_commands_list_version_table(self, variant_id: str) -> None:
+        session = self.session
+        upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": 0})
         session.commit()
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
