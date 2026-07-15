@@ -55,7 +55,13 @@ def create_launcher_api() -> APIRouter:
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
         solver_presets_id: SanitizedStr | None = None,
         version: SanitizedStr | None = None,
-        run_at: datetime | None = None,
+        run_at: Annotated[
+            datetime | None,
+            Query(
+                description="UTC datetime at which to schedule the run. If omitted, the study runs immediately.",
+                examples=["2026-07-15T14:30:00Z"],
+            ),
+        ] = None,
     ) -> JobCreationDTO:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
         selected_launcher = launcher if launcher is not None else config.launcher.default
