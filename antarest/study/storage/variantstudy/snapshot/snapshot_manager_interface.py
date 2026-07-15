@@ -25,14 +25,16 @@ class ISnapshotManager(ABC):
         with db():
             # Snapshot version
             query = select(VariantStudySnapshot).where(VariantStudySnapshot.id == study.id)
-            res = db.session.execute(query).one_or_none()
-            print(res)
+            snapshot = db.session.execute(query).scalar_one_or_none()
+            if not snapshot:
+                # Means there's no snapshot for this variant
+                return False
+            snapshot_version: int = snapshot.version
             # Commands list version
-            query = select(CommandsListVersion).where(CommandsListVersion.variant_id == study.id)
-            res = db.session.execute(query).one()
-            print(res)
+            second_query = select(CommandsListVersion).where(CommandsListVersion.variant_id == study.id)
+            commands_list_version: int = db.session.execute(second_query).scalar_one().version
 
-        return res is not None
+            return commands_list_version == snapshot_version
 
     @abstractmethod
     def has_snapshot(self, study: VariantStudy) -> bool:

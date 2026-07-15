@@ -171,7 +171,8 @@ class VariantStudyRepository(StudyMetadataRepository):
 
     def get_commands_list_version(self, variant_id: str) -> int:
         stmt = select(CommandsListVersion.version).where(CommandsListVersion.variant_id == variant_id)
-        return self.session.execute(stmt).scalar_one()
+        version: int = self.session.execute(stmt).scalar_one().version
+        return version
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """
