@@ -166,11 +166,17 @@ class VariantStudyRepository(StudyMetadataRepository):
             return CommandBlocksWithVersion(version=version, commands=[])
 
         cmd_blocks = []
+        version_found = False
         for row in rows:
             row_as_dict = get_row_representation_as_dict(row)
             cmd_blocks.append(row_as_dict["CommandBlock"])
             if row_as_dict["variant_id"] == last_child:
+                version_found = True
                 version = row_as_dict["version"]
+
+        if not version_found:
+            # Means the last child has no commands
+            version = self.get_commands_list_version(last_child)
 
         # Sort the commands by their variant id and their index to apply them in the right order.
         sorted_cmds = sorted(cmd_blocks, key=lambda cb: (variant_ids.index(cb.study_id), cb.index))
