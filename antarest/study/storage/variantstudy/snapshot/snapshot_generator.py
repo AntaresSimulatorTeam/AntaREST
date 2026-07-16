@@ -200,7 +200,7 @@ class SnapshotGenerator:
 
         # 1st case: The variant snapshot is already up to date -> No-op.
         current_variant = descendants[-1]
-        if self.variant_study_service.is_snapshot_up_to_date(current_variant):
+        if self.variant_study_service.repository.is_snapshot_up_to_date(current_variant):
             version = self.repository.get_commands_list_version(current_variant.id)
             return RefStudySearchResult(
                 ref_study=current_variant, cmd_blocks=[], force_regenerate=False, version=version
@@ -233,7 +233,7 @@ class SnapshotGenerator:
         # Iterate in reverse order to find the most recent variants first.
         for k, variant in enumerate(descendants[-2::-1]):
             # todo: this performs N+1 queries, we should probably introduce a new method to avoid this.
-            if self.variant_study_service.is_snapshot_up_to_date(variant):
+            if self.variant_study_service.repository.is_snapshot_up_to_date(variant):
                 variant_ids = [v.id for v in descendants[len(descendants) - 1 + k :]]
                 ref_study = variant
                 break

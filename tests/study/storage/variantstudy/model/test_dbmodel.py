@@ -272,7 +272,7 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
 
     # 1st case, no snapshot in DB -> Not up to date
     variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-    assert variant_study_service.is_snapshot_up_to_date(variant) is False
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant) is False
 
     # 2nd case: Add the snapshot in DB with a version 0 which matches the command blocks version -> Up to date
     variant.snapshot = VariantStudySnapshot(id=variant_id, version=0, last_executed_command=None)
@@ -280,14 +280,14 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
     session.commit()
 
     variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-    assert variant_study_service.is_snapshot_up_to_date(variant) is True
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant) is True
 
     # 3rd case: Changes the version in `commands_list_version` table -> Not up to date
     upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": 1})
     session.commit()
 
     variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-    assert variant_study_service.is_snapshot_up_to_date(variant) is False
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant) is False
 
     # 4th case: Adapt the version in the study snapshot to match the commands one -> Up to date
     variant.snapshot.version = 1
@@ -295,4 +295,4 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
     session.commit()
 
     variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-    assert variant_study_service.is_snapshot_up_to_date(variant) is True
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant) is True

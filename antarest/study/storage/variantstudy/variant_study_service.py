@@ -186,9 +186,6 @@ class VariantStudyService(AbstractStudyService):
         self._snapshot_manager_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
         self.invalidate_snapshot(variant_study)
 
-    def is_snapshot_up_to_date(self, variant_study: VariantStudy) -> bool:
-        return self.repository.is_snapshot_up_to_date(variant_study)
-
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = get_current_user_name()
         study.editor = user_name
@@ -635,7 +632,7 @@ class VariantStudyService(AbstractStudyService):
             try:
                 self.repository.refresh(study)
 
-                if self.is_snapshot_up_to_date(study):
+                if self.repository.is_snapshot_up_to_date(study):
                     # Nothing to do
                     return GenerationResultInfoDTO(success=True, should_invalidate_cache=False, details=[])
 
