@@ -693,11 +693,7 @@ class TestSnapshotGenerator:
 
     @with_admin_user
     @with_db_context
-    def test_generate__nominal_case(
-        self,
-        variant_study_id: str,
-        variant_study_service: VariantStudyService,
-    ) -> None:
+    def test_generate__nominal_case(self, variant_study_id: str, variant_study_service: VariantStudyService) -> None:
         """
         Test the generation of a variant study based on a raw study.
 
@@ -1004,9 +1000,7 @@ class TestSnapshotGenerator:
     @with_admin_user
     @with_db_context
     def test_generate__variant_of_variant(
-        self,
-        variant_study_id: str,
-        variant_study_service: VariantStudyService,
+        self, variant_study_id: str, variant_study_service: VariantStudyService
     ) -> None:
         """
         Test the generation of a variant study of a variant study.
