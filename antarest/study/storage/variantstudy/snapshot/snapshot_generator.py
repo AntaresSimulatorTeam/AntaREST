@@ -231,7 +231,7 @@ class SnapshotGenerator:
         ref_study = root_study
 
         # Iterate in reverse order to find the most recent variants first.
-        for k, variant in enumerate(descendants[:-1][::-1]):
+        for k, variant in enumerate(descendants[-2::-1]):
             # todo: this performs N+1 queries, we should probably introduce a new method to avoid this.
             if self.variant_study_service.is_snapshot_up_to_date(variant):
                 variant_ids = [v.id for v in descendants[len(descendants) - 1 + k :]]
