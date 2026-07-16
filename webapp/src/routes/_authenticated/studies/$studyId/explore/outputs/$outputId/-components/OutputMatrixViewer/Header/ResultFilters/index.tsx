@@ -59,10 +59,12 @@ function ResultFilters() {
     setYear(isYearByYearMode ? 1 : -1);
   }, [isYearByYearMode, setYear]);
 
-  // Update dataType when options change
+  // Update dataType when options change if the current dataType is not in the new options
   useEffect(() => {
-    setDataType(dataTypeOptions[0].value);
-  }, [dataTypeOptions, setDataType]);
+    if (!dataTypeOptions.some((option) => option.value === dataType)) {
+      setDataType(dataTypeOptions[0].value);
+    }
+  }, [dataTypeOptions, dataType, setDataType]);
 
   ////////////////////////////////////////////////////////////////
   // JSX
