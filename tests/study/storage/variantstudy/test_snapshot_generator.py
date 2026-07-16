@@ -954,6 +954,9 @@ class TestSnapshotGenerator:
 
         notifier = FailingNotifier()
 
+        # Increment `commands_list_version` table  for the generation to really do something
+        variant_study_service.repository.increment_commands_list_version(variant_study_id)
+
         factory = _get_dao_factory(variant_study_id, variant_study_service)
         with caplog.at_level(logging.WARNING):
             results = generator.generate_snapshot(
