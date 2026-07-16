@@ -255,11 +255,10 @@ class TestSearchRefStudy:
                 study_version="9.3",
             ),
         ]
-        variant2.snapshot.last_executed_command = variant2.commands[0].id
         variant3.commands = [
             CommandBlock(
                 id=str(uuid.uuid4()),
-                study_id=variant2.id,
+                study_id=variant3.id,
                 index=0,
                 command="create_thermal_cluster",
                 version=1,
@@ -282,42 +281,28 @@ class TestSearchRefStudy:
         assert search_result.cmd_blocks == [c for v in [variant1, variant2, variant3] for c in v.commands]
         assert search_result.force_regenerate is True
 
+    @with_db_context
     def test_search_ref_study__old_recent_snapshot(
         self, tmp_path: Path, variant_study_service: VariantStudyService
     ) -> None:
         """
-        Case where the list of studies contains a variant with up-to-date snapshots and
-        where the first is older than the second.
-        The third variant has no snapshot, and must be generated from scratch.
-        We expect to have a reference study corresponding to the second variant
-        and the list of commands of the third variant.
+        Case where we have 3 variants.
+        The 1st and 2nd one are up-to-date. The 3rd one has no snapshot.
+        We expect to have a reference study corresponding to the 2nd variant as it's closer to the 3rd than the 1st.
+        We also expect to have the list of commands of the third variant.
         """
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
-        # Prepare some variants with snapshots:
         # Variant 1 has an up-to-date snapshot.
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=1),
-        )
-        # Variant 2 has an up-to-date snapshot, but is more recent than variant 1.
-        variant2 = _create_variant(
-            tmp_path,
-            "variant2",
-            variant1.id,
-            datetime.datetime(year=2023, month=1, day=2),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=3),
-        )
+        variant1 = _create_variant(tmp_path, "variant1", root_study.id, with_snapshot=True, snapshot_version=0)
+        # Variant 2 is created from Variant 1 and is also up-to-date.
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=True, snapshot_version=0)
         # Variant 3 has no snapshot.
         variant3 = _create_variant(
             tmp_path,
             "variant3",
             variant2.id,
-            datetime.datetime(year=2023, month=1, day=3),
-            snapshot_created_at=None,
+            with_snapshot=False,
         )
 
         # Add some variant commands
@@ -329,9 +314,9 @@ class TestSearchRefStudy:
                 command="create_area",
                 version=1,
                 args='{"area_name": "DE"}',
+                study_version="9.3",
             ),
         ]
-        variant1.snapshot.last_executed_command = variant1.commands[0].id
         variant2.commands = [
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -340,24 +325,31 @@ class TestSearchRefStudy:
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
             ),
         ]
-        variant2.snapshot.last_executed_command = variant2.commands[0].id
         variant3.commands = [
             CommandBlock(
                 id=str(uuid.uuid4()),
-                study_id=variant2.id,
+                study_id=variant3.id,
                 index=0,
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "BE", "cluster_name": "BE", "cluster_type": "oil"}',
+                study_version="9.3",
             ),
         ]
+
+        # Save the variants in DB
+        variant_study_service.raw_study_service.repository.save(root_study)
+        for variant in [variant1, variant2, variant3]:
+            variant_study_service.repository.save(variant)
+            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         # Check the variants
         references = [variant1, variant2, variant3]
         generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
+        search_result = generator.search_ref_study(root_study, references, from_scratch=False)
         assert search_result.ref_study == variant2
         assert search_result.cmd_blocks == variant3.commands
         assert search_result.force_regenerate is True
