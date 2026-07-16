@@ -199,7 +199,7 @@ class SnapshotGenerator:
             )
 
         # 1st case: The variant snapshot is already up to date -> No-op.
-        # This is handled via the `variant_study_service` before calling the SnapshotGenerator.
+        # This is handled via the `variant_study_service` before calling the SnapshotGenerator, so we should not bother.
         # And even if it was the case, the 2nd case will handle it.
         # This way we avoid making unnecessary DB queries.
         current_variant = descendants[-1]
