@@ -326,6 +326,7 @@ class VariantStudyService(AbstractStudyService):
             command.index = index + i
             # All commands after the removed one should have a new id as we rely on this inside the snapshot `last_executed_command` attribute
             command.id = str(uuid.uuid4())
+            new_commands.append(command)
 
         # Save the new commands
         new_block = CommandBlocksWithVersion(commands=new_commands, version=current_commands.version + 1)
