@@ -1030,7 +1030,7 @@ class TestSnapshotGenerator:
         assert cache.get(cache_key) is not None
         # Generates the snapshot
         factory = _get_dao_factory(variant_study_id, variant_study_service)
-        results = generator.generate_snapshot(variant_study_id, dao_factory=factory)
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
         # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
         assert not results.should_invalidate_cache
         generated_cache = cache.get(cache_key)
@@ -1052,7 +1052,7 @@ class TestSnapshotGenerator:
         )
 
         # Generates the snapshot
-        results = generator.generate_snapshot(variant_study_id, dao_factory=factory)
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
         # Ensures we shouldn't have to invalidate the cache as the `create cluster` command updated the config correctly
         assert not results.should_invalidate_cache
         # Ensures the cache was modified accordingly
@@ -1076,7 +1076,7 @@ class TestSnapshotGenerator:
             ],
         )
 
-        results = generator.generate_snapshot(variant_study_id, dao_factory=factory)
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
         # Ensures we have to invalidate the cache as the `update_config` command couldn't (it's too generic)
         assert results.should_invalidate_cache
         assert cache.get(cache_key) is None
