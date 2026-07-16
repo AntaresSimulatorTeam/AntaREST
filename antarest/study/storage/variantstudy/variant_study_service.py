@@ -321,9 +321,11 @@ class VariantStudyService(AbstractStudyService):
         if index is None:
             raise CommandNotFoundError(f"Command {command_id} not found in variant study {study_id}")
 
-        new_commands = current_commands.commands[:index] + current_commands.commands[index + 1 :]
-        for i, command in enumerate(new_commands):
-            command.index = i
+        new_commands = current_commands.commands[:index]
+        for i, command in enumerate(current_commands.commands[index + 1 :]):
+            command.index = index + i
+            # All commands after the removed one should have a new id as we rely on this inside the snapshot `last_executed_command` attribute
+            command.id = str(uuid.uuid4())
 
         # Save the new commands
         new_block = CommandBlocksWithVersion(commands=new_commands, version=current_commands.version + 1)
