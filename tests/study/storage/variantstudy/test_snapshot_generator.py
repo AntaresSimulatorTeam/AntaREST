@@ -485,84 +485,24 @@ class TestSearchRefStudy:
         assert search_result.cmd_blocks == variant1.commands[1:]
         assert search_result.force_regenerate is False
 
-    def test_search_ref_study__missing_last_command(
-        self, tmp_path: Path, variant_study_service: VariantStudyService
-    ) -> None:
-        """
-        Case where the list of studies contains a variant with an up-to-date snapshot,
-        but the last executed command is missing (probably caused by a bug).
-        We expect to have the list of all variant commands, so that the snapshot can be re-generated.
-        """
-        root_study = create_study(id=str(uuid.uuid4()), name="root")
-
-        # Prepare some variants with snapshots:
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
-        )
-
-        # Add some variant commands
-        variant1.commands = [
-            CommandBlock(
-                id=str(uuid.uuid4()),
-                study_id=variant1.id,
-                index=0,
-                command="create_area",
-                version=1,
-                args='{"area_name": "DE"}',
-            ),
-            CommandBlock(
-                id=str(uuid.uuid4()),
-                study_id=variant1.id,
-                index=1,
-                command="create_thermal_cluster",
-                version=1,
-                args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
-            ),
-            CommandBlock(
-                id=str(uuid.uuid4()),
-                study_id=variant1.id,
-                index=2,
-                command="update_thermal_clusters",
-                version=1,
-                args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
-            ),
-        ]
-
-        # The last executed command is missing.
-        variant1.snapshot.last_executed_command = None
-
-        # Check the variants
-        references = [variant1]
-        generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
-        assert search_result.ref_study == variant1
-        assert search_result.cmd_blocks == variant1.commands
-        assert search_result.force_regenerate is True
-
+    @with_db_context
     def test_search_ref_study__deleted_last_command(
         self, tmp_path: Path, variant_study_service: VariantStudyService
     ) -> None:
         """
-        Case where the list of studies contains a variant with an up-to-date snapshot,
-        but the last executed command is missing (removed).
-        We expect to have the list of all variant commands, so that the snapshot can be re-generated.
+        Case where the variant has a snapshot but is not up to date.
+        It points to a command that no longer exists. It is possible, as the user can remove or replace commands.
+
+        We expect the reference study to be the variant and the list of commands to be all of its commands
         """
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
-        # Prepare some variants with snapshots:
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
-        )
+        # Variant 1 has an up-to-date snapshot.
+        variant1 = _create_variant(tmp_path, "variant1", root_study.id, with_snapshot=True, snapshot_version=0)
+        # Variant 2 is created from Variant 1 and has an obsolete snapshot.
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=True, snapshot_version=-1)
 
-        # Add some variant commands
+        # Add some variant commands to the 1st variant just to ensure we won't have them in the final result.
         variant1.commands = [
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -571,34 +511,46 @@ class TestSearchRefStudy:
                 command="create_area",
                 version=1,
                 args='{"area_name": "DE"}',
-            ),
+                study_version="9.3",
+            )
+        ]
+
+        variant2.commands = [
             CommandBlock(
                 id=str(uuid.uuid4()),
-                study_id=variant1.id,
+                study_id=variant2.id,
                 index=1,
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
             ),
             CommandBlock(
                 id=str(uuid.uuid4()),
-                study_id=variant1.id,
+                study_id=variant2.id,
                 index=2,
                 command="update_thermal_clusters",
                 version=1,
                 args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
+                study_version="9.3",
             ),
         ]
 
         # The last executed command is missing.
-        variant1.snapshot.last_executed_command = str(uuid.uuid4())
+        variant1.snapshot.last_executed_command = "missing command"
+
+        # Save the studies in DB
+        variant_study_service.raw_study_service.repository.save(root_study)
+        for variant in [variant1, variant2]:
+            variant_study_service.repository.save(variant)
+            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         # Check the variants
-        references = [variant1]
+        references = [variant1, variant2]
         generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
+        search_result = generator.search_ref_study(root_study, references, from_scratch=False)
         assert search_result.ref_study == variant1
-        assert search_result.cmd_blocks == variant1.commands
+        assert search_result.cmd_blocks == variant2.commands
         assert search_result.force_regenerate is True
 
 

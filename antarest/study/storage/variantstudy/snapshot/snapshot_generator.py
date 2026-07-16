@@ -223,7 +223,7 @@ class SnapshotGenerator:
                             version=cmd_blocks_w_version.version,
                         )
 
-        # 3rd case: The variant has no snapshot.
+        # Final case: The variant has no snapshot, or its `last_executed_command` does not exist anymore.
         # We search for a variant with an up-to-date snapshot to use it as a reference study.
         # If no such variant is found, we use the root study as a reference study.
 
