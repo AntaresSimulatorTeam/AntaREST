@@ -354,6 +354,7 @@ class TestSearchRefStudy:
         assert search_result.cmd_blocks == variant3.commands
         assert search_result.force_regenerate is True
 
+    @with_db_context
     def test_search_ref_study__one_variant_completely_uptodate(
         self, tmp_path: Path, variant_study_service: VariantStudyService
     ) -> None:
@@ -369,13 +370,7 @@ class TestSearchRefStudy:
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
-        )
+        variant1 = _create_variant(tmp_path, "variant1", root_study.id, with_snapshot=True, snapshot_version=0)
 
         # Add some variant commands
         variant1.commands = [
@@ -386,6 +381,7 @@ class TestSearchRefStudy:
                 command="create_area",
                 version=1,
                 args='{"area_name": "DE"}',
+                study_version="9.3",
             ),
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -394,6 +390,7 @@ class TestSearchRefStudy:
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
             ),
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -402,16 +399,20 @@ class TestSearchRefStudy:
                 command="update_thermal_clusters",
                 version=1,
                 args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
+                study_version="9.3",
             ),
         ]
 
-        # The last executed command is the last item of the commands list.
-        variant1.snapshot.last_executed_command = variant1.commands[-1].id
+        # Save the variants in DB
+        variant_study_service.raw_study_service.repository.save(root_study)
+        for variant in [variant1]:
+            variant_study_service.repository.save(variant)
+            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         # Check the variants
         references = [variant1]
         generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
+        search_result = generator.search_ref_study(root_study, references, from_scratch=False)
         assert search_result.ref_study == variant1
         assert search_result.cmd_blocks == []
         assert search_result.force_regenerate is False
