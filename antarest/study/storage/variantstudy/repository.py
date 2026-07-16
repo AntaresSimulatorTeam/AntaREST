@@ -211,9 +211,16 @@ class VariantStudyRepository(StudyMetadataRepository):
         session.commit()
 
     def initialize_commands_list_version_table(self, variant_id: str) -> None:
+        self._save_commands_list_version(variant_id, 0)
+
+    def _save_commands_list_version(self, variant_id: str, version: int) -> None:
         session = self.session
-        upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": 0})
+        upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": version})
         session.commit()
+
+    def increment_commands_list_version(self, variant_id: str) -> None:
+        current_version = self.get_commands_list_version(variant_id)
+        self._save_commands_list_version(variant_id, current_version + 1)
 
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """

@@ -533,10 +533,11 @@ class VariantStudyInterface(StudyInterface):
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
         """
-        We update the last modification date in DB.
+        We increment the `commands_list_version` table.
         This way, the variant snapshot will be re-generated inside future operations.
         """
         self._study.updated_at = current_time()
+        self._variant_service.repository.increment_commands_list_version(self._study.id)
         self._variant_service.repository.save(self._study)
 
 
@@ -545,7 +546,7 @@ class IOutputsAccess(ABC):
     Access to outputs data.
 
     The abstraction is quite leaky: the behaviour for outputs stored in-study is kept
-    unchanched for backward compat, and stays mainly implemented in raw study service.
+    unchanged for backward compat, and stays mainly implemented in raw study service.
 
     Lightweight interface to the output service, with only a few methods that are legitimate to
     use by studies being an aggregate of study input data and output data.
