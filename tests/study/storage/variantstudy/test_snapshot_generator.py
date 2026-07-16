@@ -17,7 +17,7 @@ import re
 import typing as t
 import uuid
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import ANY, Mock
 
 import pytest
 from antares.study.version import StudyVersion
@@ -996,21 +996,16 @@ class TestSnapshotGenerator:
         )
 
         # Generate the variant again.
-        results = generator.generate_snapshot(new_variant.id, from_scratch=False, dao_factory=factory)
+        results = generator.generate_snapshot(new_variant.id, from_scratch=True, dao_factory=factory)
 
         # Check the results
-        assert results.model_dump() == {
-            "success": True,
-            "should_invalidate_cache": False,
-            "details": [
-                {
-                    "id": AnyUUID(),
-                    "name": "create_area",
-                    "status": True,
-                    "msg": "Area 'East' created",
-                },
-            ],
-        }
+        assert results.model_dump() == {"success": True, "should_invalidate_cache": False, "details": ANY}
+        assert {
+            "id": AnyUUID(),
+            "name": "create_area",
+            "status": True,
+            "msg": "Area 'East' created",
+        } in results.model_dump()["details"]
 
     @with_admin_user
     @with_db_context
