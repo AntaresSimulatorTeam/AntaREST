@@ -199,12 +199,10 @@ class SnapshotGenerator:
             )
 
         # 1st case: The variant snapshot is already up to date -> No-op.
+        # This is handled via the `variant_study_service` before calling the SnapshotGenerator.
+        # And even if it was the case, the 2nd case will handle it.
+        # This way we avoid making unnecessary DB queries.
         current_variant = descendants[-1]
-        if self.variant_study_service.repository.is_snapshot_up_to_date(current_variant):
-            version = self.repository.get_commands_list_version(current_variant.id)
-            return RefStudySearchResult(
-                ref_study=current_variant, cmd_blocks=[], force_regenerate=False, version=version
-            )
 
         # 2nd case: The variant has a snapshot, but it is not up to date.
         # We only have to check if we can reuse the snapshot to minimize the generation time.

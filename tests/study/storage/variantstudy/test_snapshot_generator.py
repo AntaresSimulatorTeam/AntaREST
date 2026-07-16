@@ -402,6 +402,7 @@ class TestSearchRefStudy:
                 study_version="9.3",
             ),
         ]
+        variant1.snapshot.last_executed_command = variant1.commands[-1].id
 
         # Save the studies in DB
         variant_study_service.raw_study_service.repository.save(root_study)
