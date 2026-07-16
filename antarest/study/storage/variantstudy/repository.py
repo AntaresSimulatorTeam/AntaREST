@@ -222,6 +222,19 @@ class VariantStudyRepository(StudyMetadataRepository):
         current_version = self.get_commands_list_version(variant_id)
         self._save_commands_list_version(variant_id, current_version + 1)
 
+    def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
+        # Snapshot version
+        if not study.snapshot:
+            return False
+        snapshot_version: int = study.snapshot.version
+
+        # Commands list version
+        query = select(COMMANDS_LIST_VERSION_TABLE).where(COMMANDS_LIST_VERSION_TABLE.c.variant_id == study.id)
+        row = self.session.execute(query).one()
+        commands_list_version: int = get_row_representation_as_dict(row)["version"]
+
+        return commands_list_version == snapshot_version
+
     def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
         """
         Find a list of variants by IDs

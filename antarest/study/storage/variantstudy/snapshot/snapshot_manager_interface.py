@@ -12,29 +12,11 @@
 
 from abc import ABC, abstractmethod
 
-from sqlalchemy import select
-
-from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.model import Study
-from antarest.study.storage.variantstudy.model.dbmodel import COMMANDS_LIST_VERSION_TABLE, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 
 class ISnapshotManager(ABC):
-    @staticmethod
-    def is_snapshot_up_to_date(study: VariantStudy) -> bool:
-        # Snapshot version
-        if not study.snapshot:
-            return False
-        snapshot_version: int = study.snapshot.version
-
-        # Commands list version
-        query = select(COMMANDS_LIST_VERSION_TABLE).where(COMMANDS_LIST_VERSION_TABLE.c.variant_id == study.id)
-        row = db.session.execute(query).one()
-        commands_list_version: int = get_row_representation_as_dict(row)["version"]
-
-        return commands_list_version == snapshot_version
-
     @abstractmethod
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         raise NotImplementedError()
