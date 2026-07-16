@@ -162,7 +162,11 @@ class VariantStudyRepository(StudyMetadataRepository):
         """
         last_child = variant_ids[-1]
 
-        query = select(CommandBlock, COMMANDS_LIST_VERSION_TABLE).where(CommandBlock.study_id.in_(variant_ids))
+        query = (
+            select(CommandBlock, COMMANDS_LIST_VERSION_TABLE)
+            .join(COMMANDS_LIST_VERSION_TABLE, CommandBlock.study_id == COMMANDS_LIST_VERSION_TABLE.c.variant_id)
+            .where(CommandBlock.study_id.in_(variant_ids))
+        )
 
         if with_lock:
             query = query.with_for_update()
