@@ -173,12 +173,6 @@ class VariantStudyRepository(StudyMetadataRepository):
 
         rows = self.session.execute(query).all()
 
-        if not rows:
-            # Means that no command blocks were found for the given variant IDs
-            # We still have to fetch the version for the last variant id
-            version = self.get_commands_list_version(last_child)
-            return CommandBlocksWithVersion(version=version, commands=[])
-
         cmd_blocks = []
         version_found = False
         for row in rows:
