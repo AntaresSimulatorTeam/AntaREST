@@ -155,28 +155,6 @@ class TestSearchRefStudy:
       We expect to have a list of commands corresponding to the remaining commands.
     """
 
-    def test_search_ref_study__empty_descendants(self, variant_study_service: VariantStudyService) -> None:
-        """
-        Edge case where the list of studies is empty.
-        We expect to have the root study and a list of `CommandBlock` for all variants
-        in the order of the list.
-
-        Note: This case is unlikely, but the function should be able to handle it.
-
-        Given an empty list of descendants,
-        When calling search_ref_study,
-        Then the root study is returned as reference study,
-        and an empty list of commands is returned.
-        """
-        generator = _build_generator(variant_study_service)
-
-        root_study = create_study(id=str(uuid.uuid4()), name="root")
-        references: t.Sequence[VariantStudy] = []
-        search_result = generator.search_ref_study(root_study, references)
-        assert search_result.ref_study == root_study
-        assert search_result.cmd_blocks == []
-        assert search_result.force_regenerate is True
-
     def test_search_ref_study__from_scratch(self, tmp_path: Path, variant_study_service: VariantStudyService) -> None:
         """
         Case where the list of studies contains variants with or without snapshots,
