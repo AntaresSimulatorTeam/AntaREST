@@ -155,6 +155,7 @@ class TestSearchRefStudy:
       We expect to have a list of commands corresponding to the remaining commands.
     """
 
+    @with_db_context
     def test_search_ref_study__from_scratch(self, tmp_path: Path, variant_study_service: VariantStudyService) -> None:
         """
         Case where the list of studies contains variants with or without snapshots,
@@ -170,27 +171,9 @@ class TestSearchRefStudy:
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=1),
-        )
-        variant2 = _create_variant(
-            tmp_path,
-            "variant2",
-            variant1.id,
-            datetime.datetime(year=2023, month=1, day=2),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
-        )
-        variant3 = _create_variant(
-            tmp_path,
-            "variant3",
-            variant2.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            None,
-        )
+        variant1 = _create_variant(tmp_path, "variant1", root_study.id, with_snapshot=True, snapshot_version=0)
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=True, snapshot_version=0)
+        variant3 = _create_variant(tmp_path, "variant3", variant2.id, with_snapshot=False)
 
         # Add some variant commands
         variant1.commands = [
@@ -201,6 +184,7 @@ class TestSearchRefStudy:
                 command="create_area",
                 version=1,
                 args='{"area_name": "DE"}',
+                study_version="9.3",
             ),
         ]
         variant1.snapshot.last_executed_command = variant1.commands[0].id
@@ -212,6 +196,7 @@ class TestSearchRefStudy:
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
             ),
         ]
         variant2.snapshot.last_executed_command = variant2.commands[0].id
@@ -223,8 +208,15 @@ class TestSearchRefStudy:
                 command="update_thermal_clusters",
                 version=1,
                 args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
+                study_version="9.3",
             ),
         ]
+
+        # Save the variants in DB
+        variant_study_service.raw_study_service.repository.save(root_study)
+        for variant in [variant1, variant2, variant3]:
+            variant_study_service.repository.save(variant)
+            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         # Check the variants
         generator = _build_generator(variant_study_service)
