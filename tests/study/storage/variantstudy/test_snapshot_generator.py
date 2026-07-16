@@ -915,23 +915,21 @@ class TestSnapshotGenerator:
         assert isinstance(variant_study, VariantStudy)
 
         study_version = StudyVersion.parse(variant_study.version)
-        variant_study_service.append_commands(
-            variant_study_id,
-            [
-                CommandDTO(action="create_area", args={"area_name": "North"}, study_version=study_version),  # duplicate
-            ],
-        )
-
-        generator = _build_generator(variant_study_service)
 
         err_msg = (
             f"Failed to generate variant study {variant_study.id}: "
             f"Unexpected exception occurred when trying to apply command CommandName.CREATE_AREA: "
             f"Area 'North' already exists and could not be created"
         )
-        factory = _get_dao_factory(variant_study.id, variant_study_service)
         with pytest.raises(VariantGenerationError, match=re.escape(err_msg)):
-            generator.generate_snapshot(variant_study.id, from_scratch=False, dao_factory=factory)
+            variant_study_service.append_commands(
+                variant_study_id,
+                [
+                    CommandDTO(
+                        action="create_area", args={"area_name": "North"}, study_version=study_version
+                    ),  # duplicate
+                ],
+            )
 
         # Check: the snapshot directory is removed.
         snapshot_dir = get_snapshot_dir(variant_study)
