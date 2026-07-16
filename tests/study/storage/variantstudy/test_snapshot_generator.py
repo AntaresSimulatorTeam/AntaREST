@@ -59,34 +59,33 @@ logger = logging.getLogger(__name__)
 
 
 def _create_variant(
-    tmp_path: Path,
+    path: Path,
     variant_name: str,
     parent_id: str,
-    updated_at: datetime.datetime,
-    snapshot_created_at: datetime.datetime | None = None,
+    with_snapshot: bool,
+    snapshot_version: int = 0,
     storage_mode: StorageMode = StorageMode.FILESYSTEM,
 ) -> VariantStudy:
     """
     Create a variant study with a snapshot (if snapshot_created_at is provided).
     """
-    variant_dir = tmp_path.joinpath(f"some_place/{variant_name}")
-    variant_dir.mkdir(parents=True, exist_ok=True)
+    variant_dir = path.joinpath(f"some_place/{variant_name}")
+
+    if storage_mode.FILESYSTEM:
+        variant_dir.mkdir(parents=True, exist_ok=True)
+
     variant = create_variant_study(
         id=str(uuid.uuid4()),
         name=variant_name,
-        updated_at=updated_at,
         parent_id=parent_id,
         path=str(variant_dir),
         storage_mode=storage_mode,
     )
 
-    if snapshot_created_at:
-        snapshot_dir = variant_dir.joinpath("snapshot")
-        snapshot_dir.mkdir(parents=True, exist_ok=True)
-        (snapshot_dir / "study.antares").touch()
+    if with_snapshot:
         variant.snapshot = VariantStudySnapshot(
             id=variant.id,
-            created_at=snapshot_created_at,
+            version=snapshot_version,
             last_executed_command=None,
         )
 
