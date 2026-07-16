@@ -62,11 +62,12 @@ from antarest.output.adapters import (
     study_service_as_in_study_file_outputs_provider,
     study_service_as_studies_repository,
 )
+from antarest.output.model import OutputStorageType
 from antarest.output.service import OutputService
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.output.storage.file.out_of_study import OutOfStudyFileOutputStorage
 from antarest.output.storage.file.repository import FileOutputRepository
-from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
+from antarest.output.storage.output_storage import IOutputStorage
 from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.output.variable_view.gc import VariableViewGarbageCollector

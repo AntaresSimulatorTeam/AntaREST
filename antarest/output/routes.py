@@ -35,12 +35,13 @@ from antarest.output.filestudy.utils import (
     MCIndLinksQueryFile,
 )
 from antarest.output.model import (
+    OutputDetails,
+    OutputStorageType,
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
     OutputVariablesViewResponse,
 )
-from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.output.variable_view.model import OutputItemId
 from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI

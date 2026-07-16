@@ -13,9 +13,9 @@ from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
+from antarest.output.model import OutputStorageType
 from antarest.output.storage.file.abstract_storage import AbstractFileOutputStorage, IFileOutputsProvider
 from antarest.output.storage.file.repository import FileOutputRepository
-from antarest.output.storage.output_storage import OutputStorageType
 
 
 class InStudyFileOutputStorage(AbstractFileOutputStorage):

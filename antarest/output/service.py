@@ -65,6 +65,9 @@ from antarest.output.filestudy.utils import (
     split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
+    OutputDetails,
+    OutputMetadata,
+    OutputStorageType,
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesViewResponse,
@@ -72,9 +75,6 @@ from antarest.output.model import (
 )
 from antarest.output.storage.output_storage import (
     IOutputStorage,
-    OutputDetails,
-    OutputMetadata,
-    OutputStorageType,
 )
 from antarest.output.variable_view.db import create_output_view_db_model, get_output_view_inside_db
 from antarest.output.variable_view.matrix_usage_provider import OutputVariablesMatrixUsageProvider

@@ -33,8 +33,7 @@ from antarest.output.filestudy.utils import (
     normalize_df_column_names,
     parse_headers,
 )
-from antarest.output.model import OutputVariablesList
-from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
+from antarest.output.model import OutputDetails, OutputStorageType, OutputVariablesList
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
 

@@ -51,7 +51,7 @@ from antarest.login.model import Group, GroupDTO, Role, User
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
-from antarest.output.storage.output_storage import OutputMetadata
+from antarest.output.model import OutputMetadata
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (

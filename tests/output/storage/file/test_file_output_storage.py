@@ -30,17 +30,19 @@ from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
-from antarest.output.storage.file.in_study import InStudyFileOutputStorage
-from antarest.output.storage.file.out_of_study import OutOfStudyFileOutputStorage
-from antarest.output.storage.output_storage import (
-    IOutputStorage,
+from antarest.output.model import (
     OutputDetails,
     OutputMetadata,
     OutputSettings,
     OutputSettingsGeneral,
     OutputSettingsOptimization,
     OutputStorageType,
+)
+from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
+from antarest.output.storage.file.in_study import InStudyFileOutputStorage
+from antarest.output.storage.file.out_of_study import OutOfStudyFileOutputStorage
+from antarest.output.storage.output_storage import (
+    IOutputStorage,
 )
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode

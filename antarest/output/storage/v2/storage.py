@@ -45,12 +45,9 @@ from antarest.output.filestudy.file_output_utils import (
     find_simulation_log,
 )
 from antarest.output.filestudy.utils import QueryFileType
-from antarest.output.model import OutputVariablesList
+from antarest.output.model import OutputDetails, OutputMetadata, OutputStorageType, OutputVariablesList
 from antarest.output.storage.output_storage import (
     IOutputStorage,
-    OutputDetails,
-    OutputMetadata,
-    OutputStorageType,
 )
 from antarest.output.storage.v2.repository import (
     DbOutputMetadataV2,

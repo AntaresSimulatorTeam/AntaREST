@@ -23,10 +23,11 @@ from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import current_time
+from antarest.output.model import OutputStorageType
 from antarest.output.service import IStudyMetadataProvider, OutputService, StudyMetadata
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
-from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
+from antarest.output.storage.output_storage import IOutputStorage
 from antarest.study.model import (
     RawStudy,
     StorageMode,
