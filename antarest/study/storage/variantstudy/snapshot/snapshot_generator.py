@@ -226,20 +226,21 @@ class SnapshotGenerator:
         # 3rd case: The variant has no snapshot.
         # We search for a variant with an up-to-date snapshot to use it as a reference study.
         # If no such variant is found, we use the root study as a reference study.
-        # We go through the list in order, this way we'll find the most recent variant with a valid snapshot.
 
         variant_ids = [v.id for v in descendants]
-        for k, variant in enumerate(
-            descendants[:-1][::-1]
-        ):  # Iterate in reverse order to find the most recent variants first.
+        ref_study = root_study
+
+        # Iterate in reverse order to find the most recent variants first.
+        for k, variant in enumerate(descendants[:-1][::-1]):
             # todo: this performs N+1 queries, we should probably introduce a new method to avoid this.
             if self.variant_study_service.is_snapshot_up_to_date(variant):
                 variant_ids = [v.id for v in descendants[len(descendants) - 1 + k :]]
+                ref_study = variant
                 break
 
         command_blocks = self.repository.get_command_blocks_with_associated_version(variant_ids)
         return RefStudySearchResult(
-            ref_study=root_study,
+            ref_study=ref_study,
             cmd_blocks=command_blocks.commands,
             force_regenerate=True,
             version=command_blocks.version,
