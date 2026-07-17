@@ -16,7 +16,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
-from antarest.output.model import OutputVariablesList
+from antarest.output.model.variables_metadata import OutputVariablesList
 
 
 class DbOutputVariables(Base):

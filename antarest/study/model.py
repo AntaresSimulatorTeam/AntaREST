@@ -19,7 +19,6 @@ from enum import StrEnum
 from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Any, TypeAlias
 
-import numpy as np
 from antares.study.version import StudyVersion
 from pydantic import (
     BeforeValidator,
@@ -29,7 +28,6 @@ from pydantic import (
     alias_generators,
     computed_field,
     field_validator,
-    model_validator,
 )
 from pydantic.alias_generators import to_camel
 from sqlalchemy import (
@@ -48,7 +46,6 @@ from typing_extensions import override
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.np_array import NpArray
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
 
@@ -638,12 +635,6 @@ class DeleteManyStudies(AntaresBaseModel):
     with_variants: bool = Field(default=False, description="Whether to delete variant studies as well")
 
 
-class StudyDownloadType(StrEnum):
-    LINK = "LINK"
-    DISTRICT = "DISTRICT"
-    AREA = "AREA"
-
-
 class MatrixFrequency(StrEnum):
     """
     An enumeration of matrix frequencies.
@@ -656,54 +647,6 @@ class MatrixFrequency(StrEnum):
     WEEKLY = "weekly"
     DAILY = "daily"
     HOURLY = "hourly"
-
-
-class StudyDownloadDTO(AntaresBaseModel, alias_generator=to_camel):
-    """
-    DTO used to download outputs
-    """
-
-    type: StudyDownloadType
-    years: list[int] = []
-    level: MatrixFrequency
-    filter_in: Annotated[str | None, Field(deprecated=True, default=None)]  # We don't consider it
-    filter_out: Annotated[str | None, Field(deprecated=True, default=None)]  # We don't consider it
-    filter: list[str] = []
-    columns: list[str] = []
-    synthesis: Annotated[bool, Field(deprecated=True, default=False)]  # We always consider it's False
-    include_clusters: bool = False
-
-    @model_validator(mode="after")
-    def check_coherence(self) -> "StudyDownloadDTO":
-        if self.include_clusters and self.type == StudyDownloadType.LINK:
-            raise ValueError("Cannot ask for cluster values for type link")
-        return self
-
-
-class MatrixIndex(AntaresBaseModel):
-    start_date: str = ""
-    steps: int = 8760
-    first_week_size: int = 7
-    level: MatrixFrequency = MatrixFrequency.HOURLY
-
-
-class TimeSerie(AntaresBaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True, ser_json_inf_nan="constants")
-
-    name: str
-    unit: str
-    data: NpArray = np.zeros(shape=(0,))
-
-
-class TimeSeriesData(AntaresBaseModel):
-    type: StudyDownloadType
-    name: str
-    data: dict[str, list[TimeSerie]] = {}
-
-
-class MatrixAggregationResultDTO(AntaresBaseModel):
-    index: MatrixIndex
-    data: list[TimeSeriesData]
 
 
 class DirectoryMetadata(AntaresBaseModel):

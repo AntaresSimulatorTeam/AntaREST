@@ -12,15 +12,18 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, StrEnum
+from io import StringIO
+from itertools import islice
 from pathlib import Path
-from typing import TypeAlias
+from typing import IO, TypeAlias
 
 import numpy as np
 import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError
 
-from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
+from antarest.output.model.output_data import MatrixIndex, OutputTable, TimeSerie, VariableDescription
+from antarest.study.model import MatrixFrequency
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
@@ -110,18 +113,19 @@ def get_start_column(frequency: MatrixFrequency) -> int:
         raise NotImplementedError(f"Unknown frequency {frequency.value}")
 
 
-def parse_headers(content: str, start_col: int) -> MultipleOutputHeaders:
-    lines = content.splitlines()
-    header_lines = []
-    for idx, line in enumerate(lines[4:7]):
-        cols = line.split("\t")[start_col:]
-        if idx == 0:
+def parse_headers(content: IO[str], start_col: int) -> list[VariableDescription]:
+    header_lines: list[list[str]] = []
+    for line in islice(content, 4, 7):  # Note: avoids to go over the whole file, much faster for larger files
+        cols = [s.strip() for s in line.split("\t")[start_col:]]
+        if not header_lines:
             header_lines = [[col] for col in cols]
         else:
             for k, col in enumerate(cols):
                 header_lines[k].append(col)
-
-    return header_lines
+    return [
+        VariableDescription(name=col[0], unit=col[1] if len(col) > 1 else "", stat=col[2] if len(col) > 2 else "")
+        for col in header_lines
+    ]
 
 
 def concatenate_dataframe_multi_indexed_columns(data: OutputDataFrame) -> None:
@@ -146,16 +150,18 @@ def add_time_index_to_dataframe(df: pd.DataFrame, matrix_index: MatrixIndex) -> 
     df.index = time_column
 
 
-def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
+def _parse_output_dataframe(content: str) -> pl.DataFrame:
     try:
-        return pl.read_csv(file_path, skip_lines=7, separator="\t", has_header=False, null_values="N/A", n_threads=1)
+        return pl.read_csv(
+            StringIO(content), skip_lines=7, separator="\t", has_header=False, null_values="N/A", n_threads=1
+        )
     except ComputeError:
         # Happens if polars wrongly inferred the schema.
         # If so, we specify that it should read the entire file to be sure it doesn't infer a false schema.
         # It's significantly slower but it does not fail.
         # As no file is longer than 10.000 rows we use this value.
         return pl.read_csv(
-            file_path,
+            StringIO(content),
             skip_lines=7,
             separator="\t",
             has_header=False,
@@ -165,10 +171,10 @@ def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
         )
 
 
-def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
+def parse_output_file(file_path: Path, first_column: int) -> OutputTable:
     content = file_path.read_text(encoding="utf-8")
-    output_headers = parse_headers(content, first_column)
-    polars_df = _parse_output_dataframe(file_path)
+    output_headers = parse_headers(StringIO(content), first_column)
+    polars_df = _parse_output_dataframe(content)
 
     df = polars_df[polars_df.columns[first_column:]]
 
@@ -176,7 +182,7 @@ def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
     # So we change this to be Float64 to harmonize everything.
     df = df.with_columns(pl.col(pl.Utf8).cast(pl.Float64))
 
-    return OutputDataFrame(data=df, headers=output_headers)
+    return OutputTable(data=df, columns=output_headers)
 
 
 def parse_output_file_as_pandas_dataframe(file_path: Path, first_column: int) -> pd.DataFrame:

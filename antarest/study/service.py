@@ -73,6 +73,7 @@ from antarest.login.service import LoginService, UserNotFoundError
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
 from antarest.output.model import OutputDetails, OutputMetadata
+from antarest.output.model.output_data import MatrixIndex
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
 from antarest.study.business.allocation_management import AllocationManager
@@ -125,7 +126,6 @@ from antarest.study.model import (
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
     MatrixFrequency,
-    MatrixIndex,
     RawStudy,
     StorageMode,
     Study,

@@ -27,10 +27,11 @@ from antarest.launcher.model import LogType
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.lfs.lfs import ILargeFileStorage
 from antarest.output.filestudy.utils import MCAllAreasQueryFile
+from antarest.output.model.output_data import MatrixIndex
 from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.output.storage.v2.variables_storage import parquet_output_dir
-from antarest.study.model import MatrixFrequency, MatrixIndex, Study
+from antarest.study.model import MatrixFrequency, Study
 from antarest.study.repository import StudyMetadataRepository
 from tests.test_helpers.dates import utc_to_local
 
@@ -773,7 +774,7 @@ def test_aggregate_areas_values(
         output_name = storage.import_output(study_id, output_path)
 
         dfs = list(
-            storage.aggregate_output_data(
+            storage.iterate_output_data(
                 study_id,
                 output_name,
                 query_file=MCAllAreasQueryFile.VALUES,
@@ -801,7 +802,7 @@ def test_aggregate_with_area_filter(
         output_name = storage.import_output(study_id, output_path)
 
         dfs = list(
-            storage.aggregate_output_data(
+            storage.iterate_output_data(
                 study_id,
                 output_name,
                 query_file=MCAllAreasQueryFile.VALUES,
@@ -825,7 +826,7 @@ def test_aggregate_with_column_filter(
         output_name = storage.import_output(study_id, output_path)
 
         dfs = list(
-            storage.aggregate_output_data(
+            storage.iterate_output_data(
                 study_id,
                 output_name,
                 query_file=MCAllAreasQueryFile.VALUES,
@@ -850,7 +851,7 @@ def test_aggregate_thermal_clusters(
         output_name = storage.import_output(study_id, output_path)
 
         dfs = list(
-            storage.aggregate_output_data(
+            storage.iterate_output_data(
                 study_id,
                 output_name,
                 query_file=MCAllAreasQueryFile.DETAILS,

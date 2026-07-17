@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 from antarest.core.exceptions import OutputVariablesViewError
 from antarest.core.utils.collection_utils import find_if
 from antarest.output.filestudy.utils import MCIndAreasQueryFile, MCIndLinksQueryFile, QueryFileType
-from antarest.output.model import McIndVar, OutputVariablesList
+from antarest.output.model.variables_metadata import McIndVar, OutputVariablesList
 
 
 class ThermalClusterOutputId(BaseModel, extra="forbid"):

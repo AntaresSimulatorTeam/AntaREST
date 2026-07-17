@@ -20,17 +20,27 @@ import polars as pl
 
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.filestudy.utils import QueryFileType
-from antarest.output.model import OutputDetails, OutputMetadata, OutputStorageType, OutputVariablesList
-from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.output.filestudy.utils import (
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+    QueryFileType,
+)
+from antarest.output.model.output_data import (
+    AreaOutputData,
+    LinkOutputData,
+    MatrixAggregationResultDTO,
+    MatrixIndex,
+    StudyDownloadDTO,
+)
+from antarest.output.model.output_metadata import OutputDetails, OutputMetadata, OutputStorageType
+from antarest.output.model.variables_metadata import OutputVariablesList
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
-
-
-# The following settings class are used by a known client,
-# we keep it here for compatibility reasons, but that could be removed in the future
 
 
 class IOutputStorage(ABC):
@@ -154,7 +164,7 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def aggregate_output_data(
+    def iterate_output_data(
         self,
         study_id: str,
         output_id: str,
@@ -166,7 +176,17 @@ class IOutputStorage(ABC):
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         """
-        Aggregates output data based on several filtering conditions, as a stream of dataframes.
+        Iterates over output data based on several filtering conditions, as a stream of dataframes.
+        """
+
+    # TODO: find better naming ?
+    @abstractmethod
+    def get_matrix_aggregation_result(
+        self, study_id: str, output_id: str, request: StudyDownloadDTO
+    ) -> MatrixAggregationResultDTO:
+        """
+        Deprecated feature: returns some output data as a possibly large in-memory model.
+        Just another view of the underlying output data, still used by some clients.
         """
 
     @abstractmethod

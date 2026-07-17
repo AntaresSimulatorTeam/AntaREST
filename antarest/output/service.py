@@ -73,6 +73,12 @@ from antarest.output.model import (
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
+from antarest.output.model.output_data import (
+    MatrixAggregationResultDTO,
+    MatrixIndex,
+    StudyDownloadDTO,
+    StudyDownloadType,
+)
 from antarest.output.storage.output_storage import (
     IOutputStorage,
 )
@@ -85,12 +91,8 @@ from antarest.output.variable_view.model import (
     get_query_file,
 )
 from antarest.study.model import (
-    MatrixAggregationResultDTO,
     MatrixFrequency,
-    MatrixIndex,
     StorageMode,
-    StudyDownloadDTO,
-    StudyDownloadType,
 )
 from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -496,86 +498,11 @@ class OutputService:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
-        # Fetches time_index
-        time_index = self.get_output_time_index(study_id, output_id, data.level)
+        storage = self._find_output_storage(uuid, output_id)
 
-        # Fetches the data
-        query_files: list[QueryFileType]
-        if data.type == StudyDownloadType.LINK:
-            query_files = [MCIndLinksQueryFile.VALUES]
-        else:
-            query_files = [MCIndAreasQueryFile.VALUES]
-            if data.include_clusters:
-                query_files.append(MCIndAreasQueryFile.DETAILS)
-                query_files.append(MCIndAreasQueryFile.DETAILS_RES)
-
-        file_paths = []
-        try:
-            # TODO: target process is:
-            #       1. get list of all data
-            #       2. identify matching areas and links
-            #       3. for each one, call unitary function get_item_output_data ...
-            # Launch all aggregation tasks
-            for query_file in query_files:
-                file_name = str(uuid.uuid4())
-                file_path = self._tmp_dir / file_name
-                task_id = self.start_aggregate_output_data(
-                    study_id,
-                    output_id,
-                    query_file,
-                    data.level,
-                    TableExportFormat.PARQUET,
-                    data.columns,
-                    data.filter,
-                    file_path,
-                    transform_columns_headers=False,
-                    mc_years=data.years,
-                )
-                # Wait for the aggregation to end
-                self._task_service.await_task(task_id)
-
-                # Aggregation can fail (for instance, when asking renewables values and no cluster exists)
-                # If so, we shouldn't raise to keep backward compatibility
-                task = self._task_service.status_task(task_id)
-                if task.status != TaskStatus.COMPLETED:
-                    file_path.unlink(missing_ok=True)
-                    continue
-
-                file_paths.append(file_path)
-
-            # Once they all ended, build the final response
-            intermediary_dict: dict[str, Any] = {}
-            # We're opening the parquet files chunk by chunk to avoid flooding memory
-            for dataframe in yield_dataframes_from_parquet(file_paths, []):
-                # Convert the dataframe in the right response
-                column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
-                for object_name, object_group in dataframe.groupby(column_type_name):
-                    assert isinstance(object_name, str)
-                    assert isinstance(object_group, pd.DataFrame)
-                    element_name = object_name
-                    if data.type == StudyDownloadType.LINK:
-                        element_name = "^".join(element_name.split(" - "))
-
-                    for year, year_group in object_group.groupby(MCYEAR_COL):
-                        year_group.drop(columns=[column_type_name, MCYEAR_COL], inplace=True)
-                        variables_list = list(split_concatenated_columns_from_dataframe(year_group))
-                        intermediary_dict.setdefault(element_name, {}).setdefault(str(year), []).extend(variables_list)
-
-            response = MatrixAggregationResultDTO.model_validate(
-                {
-                    "index": time_index,
-                    "data": [
-                        {"type": data.type, "name": name, "data": values} for name, values in intermediary_dict.items()
-                    ],
-                }
-            )
-
-            with open(tmp_file, "w", encoding="utf-8") as fh:
-                fh.write(response.model_dump_json())
-
-        finally:
-            for file_path in file_paths:
-                file_path.unlink(missing_ok=True)
+        result = storage.get_matrix_aggregation_result(study_id, output_id, data)
+        with open(tmp_file, "w", encoding="utf-8") as fh:
+            fh.write(result.model_dump_json())
 
         return FileResponse(tmp_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
 
@@ -752,7 +679,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
 
-                results = self._find_output_storage(uuid, output_id).aggregate_output_data(
+                results = self._find_output_storage(uuid, output_id).iterate_output_data(
                     uuid,
                     output_id,
                     query_file,

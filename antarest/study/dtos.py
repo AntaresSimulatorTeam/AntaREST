@@ -15,7 +15,7 @@ from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_camel_case
-from antarest.output.model import OutputDetails, OutputStorageType
+from antarest.output.model.output_metadata import OutputDetails, OutputStorageType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.model import StudyVersionStr

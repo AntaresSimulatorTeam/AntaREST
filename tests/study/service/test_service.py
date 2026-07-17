@@ -52,6 +52,7 @@ from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.output.model import OutputMetadata
+from antarest.output.model.output_data import MatrixIndex
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
@@ -59,7 +60,6 @@ from antarest.study.model import (
     STUDY_VERSION_7_2,
     STUDY_VERSION_8,
     MatrixFrequency,
-    MatrixIndex,
     OwnerInfo,
     RawStudy,
     StorageMode,

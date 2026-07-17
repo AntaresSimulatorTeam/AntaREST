@@ -9,14 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import itertools
 import logging
 import shutil
+import uuid
 import zipfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Iterable
 from uuid import uuid4
 
 import pandas as pd
@@ -46,8 +48,27 @@ from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.output.filestudy.aggregator_management import AggregatorManager
 from antarest.output.filestudy.file_output_utils import extract_variables_list, parse_output_config
-from antarest.output.filestudy.utils import QueryFileType, get_start_column, parse_output_file_as_pandas_dataframe
+from antarest.output.filestudy.iteration import OutputFileData, iterate_output_data
+from antarest.output.filestudy.utils import (
+    MCAllAreasQueryFile,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+    QueryFileType,
+    get_start_column,
+    parse_output_file_as_pandas_dataframe,
+)
 from antarest.output.model import OutputDetails, OutputMetadata, OutputSettings, OutputStorageType, OutputVariablesList
+from antarest.output.model.output_data import (
+    AreaOutputData,
+    LinkOutputData,
+    MatrixAggregationResultDTO,
+    MatrixIndex,
+    StudyDownloadDTO,
+    StudyDownloadType,
+    TimeSerie,
+    TimeSeriesData,
+)
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -56,7 +77,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8,
     MatrixFrequency,
-    MatrixIndex,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     get_playlist,
@@ -437,7 +457,6 @@ class AbstractFileOutputStorage(IOutputStorage):
             ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
         )
 
-    # noinspection SpellCheckingInspection
     @override
     def unarchive_study_output(self, study_id: str, output_id: str) -> None:
         """Un-archive a study output."""
@@ -479,6 +498,7 @@ class AbstractFileOutputStorage(IOutputStorage):
             raise ChildNotFoundError(f"Digest file not found for study {study_id} and output {output_id}")
         return DigestSynthesis.parse_file_for_ui(file_path)
 
+    # noinspection SpellCheckingInspection
     @override
     def get_output_time_index(self, study_id: str, output_id: str, frequency: MatrixFrequency) -> MatrixIndex:
         """
@@ -494,7 +514,7 @@ class AbstractFileOutputStorage(IOutputStorage):
         return get_start_date(None, outputs_path / output_id, frequency)
 
     @override
-    def aggregate_output_data(
+    def iterate_output_data(
         self,
         study_id: str,
         output_id: str,
@@ -603,6 +623,14 @@ class AbstractFileOutputStorage(IOutputStorage):
         matrix_storage_context = MatrixStorageContext(matrix_service=InMemorySimpleMatrixService(), is_managed=True)
         return Output(matrix_storage_context, config)
 
+    def get_matrix_aggregation_result(
+        self, study_id: str, output_id: str, data: StudyDownloadDTO
+    ) -> MatrixAggregationResultDTO:
+
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        output_dir = _output_path(study_outputs.outputs_path, output_id)
+        return build_matrix_aggregation_result(output_dir, data)
+
 
 def _build_matrix_file_path(output_dir: Path, url: list[str]) -> Path:
     """
@@ -622,3 +650,50 @@ def _build_matrix_file_path(output_dir: Path, url: list[str]) -> Path:
 
     except Exception as e:
         raise ValueError(f"Failed to fetch output matrix for path `{url}`") from e
+
+
+def build_matrix_aggregation_result(output_path: Path, data: StudyDownloadDTO) -> MatrixAggregationResultDTO:
+    # TODO: link name handling
+    if data.type == StudyDownloadType.DISTRICT:
+        raise ValueError("DISTRICT donwload type is not supported anymore")
+
+    # Gathering all relevant files data
+    def get_output_data(type: QueryFileType) -> Iterable[OutputFileData]:
+        return iterate_output_data(
+            output_path, file_type=type, frequency=data.level, location_ids=data.filter, mc_years=data.years
+        )
+
+    output_data = get_output_data(
+        MCIndAreasQueryFile.VALUES if data.type == StudyDownloadType.AREA else MCIndLinksQueryFile.VALUES
+    )
+
+    if data.type == StudyDownloadType.AREA and data.include_clusters:
+        output_data = itertools.chain(
+            output_data,
+            get_output_data(MCIndAreasQueryFile.DETAILS),
+            get_output_data(MCIndAreasQueryFile.DETAILS_RES),
+            get_output_data(MCIndAreasQueryFile.DETAILS_ST_STORAGE),
+        )
+
+    # Reshaping to target model
+    element_results: dict[str, TimeSeriesData] = {}
+    for file_data in output_data:
+        element_name = file_data.location
+        # TODO: better handling of the link case, with 2 separate strings instead of that arbitrary formatting
+        if data.type == StudyDownloadType.LINK:
+            element_name = "^".join(element_name.split(" - "))
+        year = file_data.year
+        for var_index, var in enumerate(file_data.data.columns):
+            if data.columns and var.name not in data.columns:
+                continue
+            ts_data = element_results.setdefault(
+                element_name, TimeSeriesData(type=data.type, name=element_name, data={})
+            )
+            numerical_data = file_data.data.data.to_series(var_index).cast(float).to_list()
+            ts_data.data.setdefault(str(year), []).append(TimeSerie(name=var.name, unit=var.unit, data=numerical_data))
+
+    time_index = get_start_date(None, output_path, data.level)
+    return MatrixAggregationResultDTO(
+        index=time_index,
+        data=list(element_results.values()),
+    )

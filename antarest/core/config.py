@@ -25,7 +25,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
-from antarest.output.model import OutputStorageType
+from antarest.output.model.output_metadata import OutputStorageType
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 
 

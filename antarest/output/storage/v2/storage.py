@@ -45,7 +45,15 @@ from antarest.output.filestudy.file_output_utils import (
     find_simulation_log,
 )
 from antarest.output.filestudy.utils import QueryFileType
-from antarest.output.model import OutputDetails, OutputMetadata, OutputStorageType, OutputVariablesList
+from antarest.output.model import (
+    MatrixAggregationResultDTO,
+    OutputDetails,
+    OutputMetadata,
+    OutputStorageType,
+    OutputVariablesList,
+    StudyDownloadDTO,
+)
+from antarest.output.model.output_data import MatrixIndex
 from antarest.output.storage.output_storage import (
     IOutputStorage,
 )
@@ -59,7 +67,7 @@ from antarest.output.storage.v2.variables_storage import (
     read_output_from_parquet,
 )
 from antarest.study.business.model.config.general_model import Mode
-from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import (
@@ -396,7 +404,7 @@ class V2OutputStorage(IOutputStorage):
         return get_matrix_index(simulation_range, is_output=True, level=frequency)
 
     @override
-    def aggregate_output_data(
+    def iterate_output_data(
         self,
         study_id: str,
         output_id: str,
@@ -442,4 +450,10 @@ class V2OutputStorage(IOutputStorage):
     @override
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def get_matrix_aggregation_result(
+        self, study_id: str, output_id: str, request: StudyDownloadDTO
+    ) -> MatrixAggregationResultDTO:
         raise NotImplementedError()

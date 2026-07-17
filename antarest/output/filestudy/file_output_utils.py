@@ -33,7 +33,8 @@ from antarest.output.filestudy.utils import (
     normalize_df_column_names,
     parse_headers,
 )
-from antarest.output.model import OutputDetails, OutputStorageType, OutputVariablesList
+from antarest.output.model import OutputVariablesList
+from antarest.output.model.output_metadata import OutputDetails, OutputStorageType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
 
@@ -139,7 +140,9 @@ def _read_headers_only(
     Returns:
         - A list of ColumnHeader objects
     """
-    output_headers = parse_headers(file_path.read_text(encoding="utf-8"), start_column)
+
+    with open(file_path, encoding="utf-8") as file:
+        output_headers = parse_headers(file, start_column)
 
     if "details" in file_type.value:
         cols_mapping: dict[str, set[str]] = {}

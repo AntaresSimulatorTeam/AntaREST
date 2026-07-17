@@ -16,8 +16,9 @@ import pandas as pd
 from typing_extensions import override
 
 from antarest.output.model import OutputDetails, OutputMetadata
+from antarest.output.model.output_data import MatrixIndex
 from antarest.output.service import OutputService
-from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.study.model import MatrixFrequency
 from antarest.study.service import IOutputsAccess
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 

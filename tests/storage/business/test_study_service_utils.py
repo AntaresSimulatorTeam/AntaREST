@@ -18,9 +18,9 @@ from typing import Any
 import pytest
 
 from antarest.core.serde.ini_writer import write_ini_file
+from antarest.output.model.output_data import MatrixIndex
 from antarest.study.model import (
     MatrixFrequency,
-    MatrixIndex,
 )
 from antarest.study.storage.utils import DAY_NAMES, get_start_date
 

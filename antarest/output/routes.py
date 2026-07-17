@@ -42,8 +42,9 @@ from antarest.output.model import (
     OutputVariablesType,
     OutputVariablesViewResponse,
 )
+from antarest.output.model.output_data import MatrixIndex, StudyDownloadDTO
 from antarest.output.variable_view.model import OutputItemId
-from antarest.study.model import MatrixFrequency, MatrixIndex, StudyDownloadDTO
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
 logger = logging.getLogger(__name__)
