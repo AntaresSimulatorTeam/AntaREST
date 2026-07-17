@@ -624,7 +624,7 @@ class AbstractFileOutputStorage(IOutputStorage):
 
         study_outputs = self._outputs_provider.get_outputs(study_id)
         output_dir = _output_path(study_outputs.outputs_path, output_id)
-        return build_matrix_aggregation_result(output_dir, data)
+        return _build_matrix_aggregation_result(output_dir, data)
 
 
 def _build_matrix_file_path(output_dir: Path, url: list[str]) -> Path:
@@ -647,22 +647,28 @@ def _build_matrix_file_path(output_dir: Path, url: list[str]) -> Path:
         raise ValueError(f"Failed to fetch output matrix for path `{url}`") from e
 
 
-def build_matrix_aggregation_result(output_path: Path, data: StudyDownloadDTO) -> MatrixAggregationResultDTO:
-    # TODO: link name handling
-    if data.type == StudyDownloadType.DISTRICT:
-        raise ValueError("DISTRICT donwload type is not supported anymore")
+def _build_matrix_aggregation_result(output_path: Path, data_selection: StudyDownloadDTO) -> MatrixAggregationResultDTO:
+    """
+    Build a MatrixAggregationResultDTO from the given output path and data.
+    """
+    if data_selection.type == StudyDownloadType.DISTRICT:
+        raise ValueError("DISTRICT download type is not supported anymore")
 
     # Gathering all relevant files data
     def get_output_data(type: QueryFileType) -> Iterable[OutputFileData]:
         return iterate_output_data(
-            output_path, file_type=type, frequency=data.level, location_ids=data.filter, mc_years=data.years
+            output_path,
+            file_type=type,
+            frequency=data_selection.level,
+            location_ids=data_selection.filter,
+            mc_years=data_selection.years,
         )
 
     output_data = get_output_data(
-        MCIndAreasQueryFile.VALUES if data.type == StudyDownloadType.AREA else MCIndLinksQueryFile.VALUES
+        MCIndAreasQueryFile.VALUES if data_selection.type == StudyDownloadType.AREA else MCIndLinksQueryFile.VALUES
     )
 
-    if data.type == StudyDownloadType.AREA and data.include_clusters:
+    if data_selection.type == StudyDownloadType.AREA and data_selection.include_clusters:
         output_data = itertools.chain(
             output_data,
             get_output_data(MCIndAreasQueryFile.DETAILS),
@@ -675,19 +681,19 @@ def build_matrix_aggregation_result(output_path: Path, data: StudyDownloadDTO) -
     for file_data in output_data:
         element_name = file_data.location
         # TODO: better handling of the link case, with 2 separate strings instead of that arbitrary formatting
-        if data.type == StudyDownloadType.LINK:
+        if data_selection.type == StudyDownloadType.LINK:
             element_name = "^".join(element_name.split(" - "))
         year = file_data.year
         for var_index, var in enumerate(file_data.data.columns):
-            if data.columns and var.name not in data.columns:
+            if data_selection.columns and var.name not in data_selection.columns:
                 continue
             ts_data = element_results.setdefault(
-                element_name, TimeSeriesData(type=data.type, name=element_name, data={})
+                element_name, TimeSeriesData(type=data_selection.type, name=element_name, data={})
             )
             numerical_data = file_data.data.data.to_series(var_index).cast(float).to_list()
             ts_data.data.setdefault(str(year), []).append(TimeSerie(name=var.name, unit=var.unit, data=numerical_data))
 
-    time_index = get_start_date(None, output_path, data.level)
+    time_index = get_start_date(None, output_path, data_selection.level)
     return MatrixAggregationResultDTO(
         index=time_index,
         data=list(element_results.values()),

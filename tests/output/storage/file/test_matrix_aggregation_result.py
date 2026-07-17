@@ -15,7 +15,7 @@ from pathlib import Path
 import pytest
 
 from antarest.output.model import StudyDownloadDTO, StudyDownloadType
-from antarest.output.storage.file.abstract_storage import build_matrix_aggregation_result
+from antarest.output.storage.file.abstract_storage import _build_matrix_aggregation_result
 from antarest.study.model import MatrixFrequency
 
 
@@ -201,7 +201,7 @@ def test_file_output_to_matrix_aggregation_result_areas(outputs_path: Path):
     }
 
     data = StudyDownloadDTO(type=StudyDownloadType.AREA, level=MatrixFrequency.ANNUAL)
-    res = build_matrix_aggregation_result(output_path, data)
+    res = _build_matrix_aggregation_result(output_path, data)
     assert res.model_dump() == annual_result
 
 
@@ -285,7 +285,7 @@ def test_file_output_to_matrix_aggregation_result_with_clusters(outputs_path: Pa
     data = StudyDownloadDTO(
         type=StudyDownloadType.AREA, level=MatrixFrequency.ANNUAL, years=[1], filter=["de"], include_clusters=True
     )
-    res = build_matrix_aggregation_result(output_path, data)
+    res = _build_matrix_aggregation_result(output_path, data)
     assert res.model_dump() == annual_result
 
 
@@ -309,5 +309,5 @@ def test_file_output_to_matrix_aggregation_result_links(outputs_path: Path):
     data = StudyDownloadDTO(
         type=StudyDownloadType.LINK, level=MatrixFrequency.ANNUAL, columns=["FLOW LIN.", "UCAP LIN."]
     )
-    res = build_matrix_aggregation_result(output_path, data)
+    res = _build_matrix_aggregation_result(output_path, data)
     assert res.model_dump() == link_result

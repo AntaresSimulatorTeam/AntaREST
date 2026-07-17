@@ -9,6 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+"""
+Functions to iterate over output files.
+"""
+
 import logging
 from dataclasses import dataclass
 from pathlib import Path
