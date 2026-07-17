@@ -933,6 +933,13 @@ class StudyService:
         self.assert_study_unarchived(study)
         return study
 
+    def invalidate_cache(self, uuid: str) -> None:
+        """Drop the study cache so the next read rebuilds its config from disk."""
+        study = self.get_study(uuid)
+        assert_permission(study, StudyPermissionType.WRITE)
+        logger.info(f"Invalidating cache for study {uuid}")
+        remove_from_cache(cache=self.cache_service, root_id=uuid)
+
     def get_study_interface(self, study: Study) -> StudyInterface:
         """
         Creates the business interface to a particular study.
