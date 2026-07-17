@@ -937,8 +937,8 @@ class StudyService:
         """Drop the study cache so the next read rebuilds its config from disk."""
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
-        logger.info(f"Invalidating cache for study {uuid}")
-        remove_from_cache(cache=self.cache_service, root_id=uuid)
+        logger.info(f"Invalidating cache for study {study.id}")
+        remove_from_cache(cache=self.cache_service, root_id=study.id)
 
     def get_study_interface(self, study: Study) -> StudyInterface:
         """

@@ -625,6 +625,7 @@ def create_study_routes() -> APIRouter:
     @bp.put(
         "/studies/{study_id}/cache/_invalidate",
         summary="Invalidate the cached configuration of a study",
+        status_code=HTTPStatus.NO_CONTENT,
     )
     def invalidate_study_cache(study_service: StudyServiceDep, study_id: UuidStr) -> None:
         """
@@ -634,6 +635,6 @@ def create_study_routes() -> APIRouter:
         which would otherwise leave the cache out of sync with the filesystem.
         """
         logger.info(f"Invalidating cache for study {study_id}")
-        return study_service.invalidate_cache(study_id)
+        study_service.invalidate_cache(study_id)
 
     return bp
