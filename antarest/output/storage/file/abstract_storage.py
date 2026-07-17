@@ -12,7 +12,6 @@
 import itertools
 import logging
 import shutil
-import uuid
 import zipfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
@@ -50,8 +49,6 @@ from antarest.output.filestudy.aggregator_management import AggregatorManager
 from antarest.output.filestudy.file_output_utils import extract_variables_list, parse_output_config
 from antarest.output.filestudy.iteration import OutputFileData, iterate_output_data
 from antarest.output.filestudy.utils import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     QueryFileType,
@@ -60,8 +57,6 @@ from antarest.output.filestudy.utils import (
 )
 from antarest.output.model import OutputDetails, OutputMetadata, OutputSettings, OutputStorageType, OutputVariablesList
 from antarest.output.model.output_data import (
-    AreaOutputData,
-    LinkOutputData,
     MatrixAggregationResultDTO,
     MatrixIndex,
     StudyDownloadDTO,

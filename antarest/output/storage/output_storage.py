@@ -21,15 +21,9 @@ import polars as pl
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.output.filestudy.utils import (
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
     QueryFileType,
 )
 from antarest.output.model.output_data import (
-    AreaOutputData,
-    LinkOutputData,
     MatrixAggregationResultDTO,
     MatrixIndex,
     StudyDownloadDTO,

@@ -36,9 +36,6 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.model import StudyPermissionType
 from antarest.core.serde.matrix_export import TableExportFormat
-from antarest.core.serde.parquet_writer import (
-    yield_dataframes_from_parquet,
-)
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
@@ -50,9 +47,7 @@ from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.filestudy.aggregator_management import (
-    AREA_COL,
     CLUSTER_ID_COL,
-    LINK_COL,
 )
 from antarest.output.filestudy.utils import (
     MCYEAR_COL,
@@ -60,9 +55,7 @@ from antarest.output.filestudy.utils import (
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
-    QueryFileType,
     add_time_index_to_dataframe,
-    split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
     OutputDetails,
@@ -74,10 +67,8 @@ from antarest.output.model import (
     OutputVariablesViewStatus,
 )
 from antarest.output.model.output_data import (
-    MatrixAggregationResultDTO,
     MatrixIndex,
     StudyDownloadDTO,
-    StudyDownloadType,
 )
 from antarest.output.storage.output_storage import (
     IOutputStorage,

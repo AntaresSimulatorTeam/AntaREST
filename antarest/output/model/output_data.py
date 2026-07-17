@@ -11,15 +11,13 @@
 # This file is part of the Antares project.
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import Annotated, Protocol, TypeAlias
+from typing import Annotated, TypeAlias
 
-import numpy as np
 import polars as pl
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.np_array import NpArray
 from antarest.study.model import MatrixFrequency
 
 
