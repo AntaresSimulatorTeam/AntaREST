@@ -20,23 +20,42 @@ variables metadata are stored in tables so that we can retrieve for each variabl
 and so that we know for each object of the study what were the output variables for that object.
 """
 
-from dataclasses import dataclass
-from typing import Any, NewType, TypeAlias, overload
+from __future__ import annotations
 
-from sqlalchemy import Column, Enum, ForeignKeyConstraint, Integer, String, Table, UniqueConstraint, select
+import itertools
+from dataclasses import dataclass
+from pathlib import Path
+
+from pydantic import BaseModel
+from sqlalchemy import Column, String, Table, select
 from sqlalchemy.orm import Session
 
-from antarest.core.utils.dict_utils import _group_by, _group_by_2
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
+from antarest.output.filestudy.iteration import identify_mc_ind_files
+from antarest.output.filestudy.utils import (
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+    QueryFileType,
+    get_start_column,
+    parse_headers,
+)
 from antarest.output.model import (
+    AreaMcAllVariables,
+    AreaMcIndVariables,
     ComponentMcAllVariables,
     ComponentMcIndVariables,
+    LinkMcAllVariables,
+    LinkMcIndVariables,
     McAllVar,
     McIndVar,
     OutputVariablesList,
+    SystemMcAllVariables,
+    SystemMcIndVariables,
+    VariableDescription,
 )
-from antarest.output.variable_view.model import OutputItemId
+from antarest.output.utils import find_mode_dir
+from antarest.study.model import MatrixFrequency
 
 metadata = Base.metadata
 
@@ -46,398 +65,266 @@ OUTPUT_VARIABLES_TABLE = Table(
     metadata,
     Column("study_id", String, primary_key=True),
     Column("output_id", String, primary_key=True),
-    Column("id", Integer, primary_key=True),  # an integer ID inside the output
-    Column("type", Enum("mc-ind", "mc-all"), nullable=False),  # enum mc-ind ou mc-all
-    Column("name", String, nullable=False),
-    Column("unit", String, nullable=False),
-    Column("stat", String, nullable=True),  # enum ?
-    Column("column", Integer, nullable=False),
-    ForeignKeyConstraint(
-        columns=("study_id", "output_id"),
-        refcolumns=("output_v2_metadata.study_id", "output_v2_metadata.output_name"),
-        name="fk_output_v2_variable_defs_output_v2_metadata",
-        ondelete="CASCADE",
-    ),
-    UniqueConstraint("study_id", "output_id", "type", "name", "unit", "stat", name="uq_output_v2_variable_defs"),
-)
-
-# 1 to many relation between an area and a variable
-AREA_VARIABLES_TABLE = Table(
-    "area_variables",
-    metadata,
-    Column("study_id", String, primary_key=True),
-    Column("output_id", String, primary_key=True),
-    Column("area_id", String, primary_key=True),
-    Column("variable_id", Integer, primary_key=True),
-    ForeignKeyConstraint(
-        columns=("study_id", "output_id", "variable_id"),
-        refcolumns=(
-            "output_v2_variable_defs.study_id",
-            "output_v2_variable_defs.output_id",
-            "output_v2_variable_defs.id",
-        ),
-        name="fk_area_variables_output_v2_variable_defs",
-        ondelete="CASCADE",
-    ),
-)
-
-# 1 to many relation between a thermal cluster and a variable
-THERMAL_CLUSTER_VARIABLES_TABLE = Table(
-    "th_variables",
-    metadata,
-    Column("study_id", String, primary_key=True),
-    Column("output_id", String, primary_key=True),
-    Column("area_id", String, primary_key=True),
-    Column("cluster_id", String, primary_key=True),
-    Column("variable_id", Integer, primary_key=True),
-    ForeignKeyConstraint(
-        columns=("study_id", "output_id", "variable_id"),
-        refcolumns=(
-            "output_v2_variable_defs.study_id",
-            "output_v2_variable_defs.output_id",
-            "output_v2_variable_defs.id",
-        ),
-        name="fk_th_variables_output_v2_variable_defs",
-        ondelete="CASCADE",
-    ),
-)
-# 1 to many relation between a thermal cluster and a variable
-RENEWABLE_CLUSTER_VARIABLES_TABLE = Table(
-    "re_variables",
-    metadata,
-    Column("study_id", String, primary_key=True),
-    Column("output_id", String, primary_key=True),
-    Column("area_id", String, primary_key=True),
-    Column("cluster_id", String, primary_key=True),
-    Column("variable_id", Integer, primary_key=True),
-    ForeignKeyConstraint(
-        columns=("study_id", "output_id", "variable_id"),
-        refcolumns=(
-            "output_v2_variable_defs.study_id",
-            "output_v2_variable_defs.output_id",
-            "output_v2_variable_defs.id",
-        ),
-        name="fk_re_variables_output_v2_variable_defs",
-        ondelete="CASCADE",
-    ),
-)
-
-# 1 to many relation between a thermal cluster and a variable
-SHORT_TERM_STORAGE_VARIABLES_TABLE = Table(
-    "sts_variables",
-    metadata,
-    Column("study_id", String, primary_key=True),
-    Column("output_id", String, primary_key=True),
-    Column("area_id", String, primary_key=True),
-    Column("cluster_id", String, primary_key=True),
-    Column("variable_id", Integer, primary_key=True),
-    ForeignKeyConstraint(
-        columns=("study_id", "output_id", "variable_id"),
-        refcolumns=(
-            "output_v2_variable_defs.study_id",
-            "output_v2_variable_defs.output_id",
-            "output_v2_variable_defs.id",
-        ),
-        name="fk_sts_variables_output_v2_variable_defs",
-        ondelete="CASCADE",
-    ),
+    Column("variables", String),
 )
 
 
-AreaId = NewType("AreaId", str)
-ClusterId = NewType("ClusterId", str)
-VariableId = NewType("VariableId", int)
+class _BaseModel(BaseModel, extra="forbid", populate_by_name=True, frozen=True):
+    pass
 
 
-@dataclass(frozen=True)
-class VariableColumn:
-    column_index: int
-    variable: McIndVar | McAllVar
-
-
-@dataclass(frozen=True)
-class AreaVariablesColumns:
-    area_name: str
-    variables: list[VariableColumn]
-    thermal_clusters_columns: list[VariableColumn]
-    renewable_clusters_columns: list[VariableColumn]
-    short_term_storages_columns: list[VariableColumn]
-
-
-@dataclass(frozen=True)
-class LinkVariablesColumns:
-    area_1_name: str
-    area_2_name: str
-    variables: list[VariableColumn]
-
-
-@dataclass(frozen=True)
-class SystemVariablesColumns:
-    """
-    Mimics the structure of the storage:
-    for each type of item (area, thermal clusters, ...) we have a list of variables defined.
-    Then for each item of the system (area "DE", thermal cluster "FR-1", ...), we have the list of
-    variables that actually have values (as a list of indices into the aforementioned variables definitions).
-    """
-
-    # The definition of variables for each type of item in the system
-    area_variables: list[VariableColumn]
-    link_variables: list[VariableColumn]
-    thermal_cluster_variables: list[VariableColumn]
-    renewable_cluster_variables: list[VariableColumn]
-    short_term_storage_variables: list[VariableColumn]
-
-    # the list of variables for each item of the system
-    variable_assignments: dict[OutputItemId, list[int]]
-
-
-def _get_variables(study_id: str, output_id: str) -> dict[VariableId, McIndVar | McAllVar]:
-    """
-    Reads all output variables for that output, identified by their id
-
-    # TODO: retrieve column information altogether
-    """
-    session: Session = db.session
-    select_vars = select(OUTPUT_VARIABLES_TABLE).where(
-        OUTPUT_VARIABLES_TABLE.c.study_id == study_id,
-        OUTPUT_VARIABLES_TABLE.c.output_id == output_id,
-    )
-    var_rows = session.execute(select_vars)
-    variables: dict[VariableId, McIndVar | McAllVar] = {}
-    for row in var_rows:
-        variable_id = row.id
-        match row.type:
-            case "mc-ind":
-                variables[variable_id] = McIndVar(name=row.name, unit=row.unit)
-            case "mc-all":
-                variables[variable_id] = McAllVar(name=row.name, unit=row.unit, stat=row.stat)
-    return variables
-
-
-def _get_area_variables(
-    study_id: str, output_id: str, variables: dict[VariableId, McIndVar | McAllVar]
-) -> dict[AreaId, list[McIndVar | McAllVar]]:
-    session: Session = db.session
-    select_areas = select(AREA_VARIABLES_TABLE).where(
-        AREA_VARIABLES_TABLE.c.study_id == study_id,
-        AREA_VARIABLES_TABLE.c.output_id == output_id,
-    )
-    return _group_by(
-        data=session.execute(select_areas), key=lambda row: row.area_id, value=lambda row: variables[row.variable_id]
-    )
-
-
-def _get_cluster_variables(
-    study_id: str,
-    output_id: str,
-    table: Table,
-    variables: dict[VariableId, McIndVar | McAllVar],
-) -> dict[AreaId, dict[ClusterId, list[McIndVar | McAllVar]]]:
-    """Reads all cluster-level variable assignments from the given junction table."""
-    session: Session = db.session
-    query = select(table).where(
-        table.c.study_id == study_id,
-        table.c.output_id == output_id,
-    )
-    return _group_by_2(
-        data=session.execute(query),
-        key1=lambda row: row.area_id,
-        key2=lambda row: row.cluster_id,
-        value=lambda row: variables[row.variable_id],
-    )
-
-
-@overload
-def _build_cluster_variables_list(
-    cluster_map: dict[ClusterId, list[McIndVar]],
-    var_type: type,
-) -> list[ComponentMcIndVariables]: ...
-
-
-@overload
-def _build_cluster_variables_list(
-    cluster_map: dict[ClusterId, list[McAllVar]],
-    var_type: type,
-) -> list[ComponentMcAllVariables]: ...
-
-
-def _build_cluster_variables_list(
-    cluster_map,
-    var_type,
-):
-    """Builds a list of AreaClusterVariables, keeping only variables of the given type."""
-    return [
-        Componen(
-            name=cluster_id,
-            variables=[v for v in cluster_vars if isinstance(v, var_type)],
-        )
-        for cluster_id, cluster_vars in cluster_map.items()
-    ]
-
-
-def _build_area_variables(
-    area_id: AreaId,
-    area_vars: dict[AreaId, list[McIndVar | McAllVar]],
-    th_vars: dict[AreaId, dict[ClusterId, list[McIndVar | McAllVar]]],
-    re_vars: dict[AreaId, dict[ClusterId, list[McIndVar | McAllVar]]],
-    sts_vars: dict[AreaId, dict[ClusterId, list[McIndVar | McAllVar]]],
-    var_type: type,
-) -> AreaVariables[list[McIndVar | McAllVar]]:
-    """Builds an AreaVariables for a single area, filtered to the given variable type."""
-    return AreaVariables(
-        name=area_id,
-        variables=[v for v in area_vars.get(area_id, []) if isinstance(v, var_type)],
-        thermal_clusters=_build_cluster_variables_list(th_vars.get(area_id, {}), var_type),
-        renewable_clusters=_build_cluster_variables_list(re_vars.get(area_id, {}), var_type),
-        short_term_storages=_build_cluster_variables_list(sts_vars.get(area_id, {}), var_type),
-    )
-
-
-@dataclass(frozen=True)
-class VarKey:
-    type: str
+class ParquetMcIndVariableDescription(_BaseModel):
     name: str
-    unit: str | None
-    stat: str | None
+    unit: str
+    column_index: int
 
 
-def _var_key(var: McIndVar | McAllVar) -> VarKey:
-    if isinstance(var, McIndVar):
-        return VarKey(type="mc-ind", name=var.name, unit=var.unit, stat=None)
-    return VarKey(type="mc-all", name=var.name, unit=var.unit, stat=var.stat)
+class ParquetMcAllVariableDescription(_BaseModel):
+    name: str
+    unit: str
+    statistic_type: str
+    column_index: int
 
 
-_Row: TypeAlias = dict[str, Any]
+class ParquetThermalClusterVariables(_BaseModel):
+    area_id: str
+    cluster_id: str
+    variables: list[int]  # index in the global variables list
 
 
-@dataclass(frozen=True)
-class _VariableRows:
-    variable_rows: list[_Row]
-    area_rows: list[_Row]
-    th_rows: list[_Row]
-    re_rows: list[_Row]
-    sts_rows: list[_Row]
+class ParquetRenewableClusterVariables(_BaseModel):
+    area_id: str
+    cluster_id: str
+    variables: list[int]  # index in the global variables list
 
 
-def _variables_list_to_rows(
-    study_id: str,
-    output_id: str,
-    variables_list: OutputVariablesList,
-) -> _VariableRows:
+class ParquetShortTermStorageVariables(_BaseModel):
+    area_id: str
+    storage_id: str
+    variables: list[int]  # index in the global variables list
+
+
+class ParquetLinkVariables(_BaseModel):
+    area1_id: str
+    area2_id: str
+    variables: list[int]
+
+
+class ParquetAreaVariables(_BaseModel):
+    area_id: str
+    variables: list[int]
+
+
+class ParquetVariablesMetadata(_BaseModel):
     """
-    Walks the OutputVariablesList tree and returns the rows to insert into each table.
-
-    Variables are deduplicated by (type, name, unit, stat). A sequential integer ID is
-    assigned to each unique variable and used as the foreign key in all junction tables.
-    Junction rows are also deduplicated so the same (area, variable) pair is not inserted twice.
+    Metadata about all variables present in the output
     """
-    var_id_by_key: dict[VarKey, VariableId] = {}
 
-    def get_or_register_variable(var: McIndVar | McAllVar) -> VariableId:
-        key = _var_key(var)
-        if key not in var_id_by_key:
-            var_id_by_key[key] = VariableId(len(var_id_by_key))
-        return var_id_by_key[key]
+    # All variables, for all objects
+    mc_ind_variables: list[ParquetMcIndVariableDescription]
+    mc_all_variables: list[ParquetMcAllVariableDescription]
 
-    # Use sets of tuples to naturally deduplicate junction rows
-    area_pairs: set[tuple[str, VariableId]] = set()
-    th_triples: set[tuple[str, str, VariableId]] = set()
-    re_triples: set[tuple[str, str, VariableId]] = set()
-    sts_triples: set[tuple[str, str, VariableId]] = set()
+    # Follow the lists of variables for each object in the system..
+    area_variables: list[ParquetAreaVariables]
+    link_variables: list[ParquetLinkVariables]
+    thermal_cluster_variables: list[ParquetThermalClusterVariables]
+    renewable_cluster_variables: list[ParquetRenewableClusterVariables]
+    short_term_storage_variables: list[ParquetShortTermStorageVariables]
 
-    def register_area(area: AreaVariables[Any]) -> None:
-        for var in area.variables:
-            area_pairs.add((area.name, get_or_register_variable(var)))
 
-        for cluster_table, clusters in [
-            (th_triples, area.thermal_clusters),
-            (re_triples, area.renewable_clusters),
-            (sts_triples, area.short_term_storages),
-        ]:
-            for cluster in clusters:
-                for var in cluster.variables:
-                    cluster_table.add((area.name, cluster.name, get_or_register_variable(var)))
+def _convert_parquet_variables_metadata(parquet_variables: ParquetVariablesMetadata) -> OutputVariablesList:
+    """
+    Convert the compact parquet representation to the public variable model.
+    (AI generated boilerplate)
+    """
 
-    all_areas: list[AreaVariables[Any]] = [*variables_list.mc_ind.areas, *variables_list.mc_all.areas]
-    for area in all_areas:
-        register_area(area)
-
-    base = {"study_id": study_id, "output_id": output_id}
-
-    variable_rows = [
-        {
-            **base,
-            "id": var_id,
-            "type": key.type,
-            "name": key.name,
-            "unit": key.unit,
-            "stat": key.stat,
-            "column": var_id,
-        }
-        for key, var_id in var_id_by_key.items()
-    ]
-    area_rows = [{**base, "area_id": area_id, "variable_id": var_id} for area_id, var_id in area_pairs]
-    th_rows = [
-        {**base, "area_id": area_id, "cluster_id": cluster_id, "variable_id": var_id}
-        for area_id, cluster_id, var_id in th_triples
-    ]
-    re_rows = [
-        {**base, "area_id": area_id, "cluster_id": cluster_id, "variable_id": var_id}
-        for area_id, cluster_id, var_id in re_triples
-    ]
-    sts_rows = [
-        {**base, "area_id": area_id, "cluster_id": cluster_id, "variable_id": var_id}
-        for area_id, cluster_id, var_id in sts_triples
+    ind_variables = [McIndVar(name=var.name, unit=var.unit) for var in parquet_variables.mc_ind_variables]
+    all_variables = [
+        McAllVar(name=var.name, unit=var.unit, stat=var.statistic_type) for var in parquet_variables.mc_all_variables
     ]
 
-    return _VariableRows(
-        variable_rows=variable_rows,
-        area_rows=area_rows,
-        th_rows=th_rows,
-        re_rows=re_rows,
-        sts_rows=sts_rows,
+    def components(
+        assignments: list[ParquetThermalClusterVariables]
+        | list[ParquetRenewableClusterVariables]
+        | list[ParquetShortTermStorageVariables],
+    ) -> tuple[list[ComponentMcIndVariables], list[ComponentMcAllVariables]]:
+        ind: list[ComponentMcIndVariables] = []
+        all_: list[ComponentMcAllVariables] = []
+        for assignment in assignments:
+            component_name = getattr(assignment, "cluster_id", None) or assignment.storage_id
+            ind.append(
+                ComponentMcIndVariables(
+                    component_name=component_name, variables=[ind_variables[i] for i in assignment.variables]
+                )
+            )
+            all_.append(
+                ComponentMcAllVariables(
+                    component_name=component_name, variables=[all_variables[i] for i in assignment.variables]
+                )
+            )
+        return ind, all_
+
+    ind_areas: list[AreaMcIndVariables] = []
+    all_areas: list[AreaMcAllVariables] = []
+    for area in parquet_variables.area_variables:
+        thermal_ind, thermal_all = components(
+            [item for item in parquet_variables.thermal_cluster_variables if item.area_id == area.area_id]
+        )
+        renewable_ind, renewable_all = components(
+            [item for item in parquet_variables.renewable_cluster_variables if item.area_id == area.area_id]
+        )
+        storage_ind, storage_all = components(
+            [item for item in parquet_variables.short_term_storage_variables if item.area_id == area.area_id]
+        )
+        ind_areas.append(
+            AreaMcIndVariables(
+                area_name=area.area_id,
+                variables=[ind_variables[i] for i in area.variables],
+                thermal_clusters=thermal_ind,
+                renewable_clusters=renewable_ind,
+                short_term_storages=storage_ind,
+            )
+        )
+        all_areas.append(
+            AreaMcAllVariables(
+                area_name=area.area_id,
+                variables=[all_variables[i] for i in area.variables],
+                thermal_clusters=thermal_all,
+                renewable_clusters=renewable_all,
+                short_term_storages=storage_all,
+            )
+        )
+
+    ind_links = [
+        LinkMcIndVariables(
+            area_1_name=link.area1_id, area_2_name=link.area2_id, variables=[ind_variables[i] for i in link.variables]
+        )
+        for link in parquet_variables.link_variables
+    ]
+    all_links = [
+        LinkMcAllVariables(
+            area_1_name=link.area1_id, area_2_name=link.area2_id, variables=[all_variables[i] for i in link.variables]
+        )
+        for link in parquet_variables.link_variables
+    ]
+    return OutputVariablesList(
+        mc_ind=SystemMcIndVariables(areas=ind_areas, links=ind_links),
+        mc_all=SystemMcAllVariables(areas=all_areas, links=all_links),
     )
 
 
-def save_variables_metadata(study_id: str, output_id: str, variables_list: OutputVariablesList) -> None:
-    """Writes an OutputVariablesList to the database tables.
+def find_first_year_dir(mc_ind_dir: Path) -> Path:
+    for year_dir in mc_ind_dir.iterdir():
+        if year_dir.is_dir() and year_dir.name.isdigit():
+            return year_dir
+    raise ValueError("No valid year directory found in mc-ind")
 
-    Inserts all unique variables into OUTPUT_VARIABLES_TABLE, then populates the four
-    junction tables (areas, thermal clusters, renewable clusters, short-term storages)
-    with the variable assignments for each object in the study.
+
+@dataclass(frozen=True)
+class OutputFileMapping:
+    path: Path
+    mc_year: int | None
+    element_id: str
+    file_type: QueryFileType
+    frequency: MatrixFrequency
+
+
+def find_mc_years(output_dir: Path) -> list[int]:
+    mode_dir = find_mode_dir(output_dir)
+    mc_ind_dir = mode_dir / "mc-ind"
+    if not mc_ind_dir.exists():
+        return []
+    return sorted(int(d.name) for d in mc_ind_dir.iterdir())
+
+
+def build_mc_ind_output_mapping(output_dir: Path) -> list[OutputFileMapping]:
     """
-    session: Session = db.session
+    Retrieves all data file paths together with some metadata.
+    This then allows to inspect data more easily, while being quite fast to execute on a reasonably fast disk.
+    """
+    res = []
 
-    rows = _variables_list_to_rows(study_id, output_id, variables_list)
+    mode_dir = find_mode_dir(output_dir)
+    mc_ind_dir = mode_dir / "mc-ind"
+    if mc_ind_dir.exists():
+        for year_dir in mc_ind_dir.iterdir():
+            year = int(year_dir.name)
+            for area_dir in (year_dir / "areas").iterdir():
+                area_id = area_dir.name
+                for file_type, freq in itertools.product(MCIndAreasQueryFile, MatrixFrequency):
+                    file_name = f"{file_type}-{freq}.txt"
+                    file_path = area_dir / file_name
+                    if (area_dir / file_name).exists():
+                        res.append(
+                            OutputFileMapping(
+                                file_type=file_type, frequency=freq, element_id=area_id, mc_year=year, path=file_path
+                            )
+                        )
 
-    if rows.variable_rows:
-        session.execute(OUTPUT_VARIABLES_TABLE.insert(), rows.variable_rows)
-    if rows.area_rows:
-        session.execute(AREA_VARIABLES_TABLE.insert(), rows.area_rows)
-    if rows.th_rows:
-        session.execute(THERMAL_CLUSTER_VARIABLES_TABLE.insert(), rows.th_rows)
-    if rows.re_rows:
-        session.execute(RENEWABLE_CLUSTER_VARIABLES_TABLE.insert(), rows.re_rows)
-    if rows.sts_rows:
-        session.execute(SHORT_TERM_STORAGE_VARIABLES_TABLE.insert(), rows.sts_rows)
+            for link_dir in (year_dir / "links").iterdir():
+                link_id = link_dir.name
+                for file_type, freq in itertools.product(MCIndLinksQueryFile, MatrixFrequency):
+                    file_name = f"{file_type}-{freq}.txt"
+                    file_path = link_dir / file_name
+                    if (link_dir / file_name).exists():
+                        res.append(
+                            OutputFileMapping(
+                                file_type=file_type, frequency=freq, element_id=link_id, mc_year=year, path=file_path
+                            )
+                        )
+    return res
+
+
+def parse_variables_metadata(output_dir: Path) -> ParquetVariablesMetadata:
+    """
+    Builds parquet storage metadata from the actual file study data.
+    """
+    mode_dir = find_mode_dir(output_dir)
+    mc_ind_dir = mode_dir / "mc-ind"
+
+    # Any year is representative of the variables for all other years
+    first_year_dir = find_first_year_dir(mc_ind_dir)
+
+    # We may have different "frequencies" depending on the areas and links
+    # but for a given area or link, we'll have the same variables for all "frequencies"
+    # Therefore, we only need to identify variables for one of those frequencies
+
+    for area_dir in first_year_dir.iterdir():
+        area_id = area_dir.name
+
+    output_files = identify_mc_ind_files(
+        output_dir, MCIndAreasQueryFile.VALUES, MatrixFrequency.HOURLY, [], mc_years=[]
+    )
+    start_col = get_start_column(MatrixFrequency.HOURLY)
+    var_count: int = 0
+    var_indices: dict[VariableDescription, int] = {}
+
+    area_variables: list[ParquetAreaVariables] = []
+    for f in output_files:
+        with open(f.path, "r", encoding="utf-8") as file:
+            vars_desc = parse_headers(file, start_col)
+
+        # build variables list for that element
+        local_var_indices: list[int] = []
+        for v in vars_desc:
+            if v in var_indices:
+                local_var_indices.append(var_indices[v])
+            else:
+                local_var_indices.append(var_count)
+                var_indices[v] = var_count
+                var_count += 1
+        parquet_vars = ParquetAreaVariables(area_id=f.location, variables=local_var_indices)
+        area_variables.append(parquet_vars)
+
+    return var_indices
 
 
 def get_variables_metadata(study_id: str, output_id: str) -> OutputVariablesList:
-    variables = _get_variables(study_id, output_id)
-
-    area_vars = _get_area_variables(study_id, output_id, variables)
-    th_vars = _get_cluster_variables(study_id, output_id, THERMAL_CLUSTER_VARIABLES_TABLE, variables)
-    re_vars = _get_cluster_variables(study_id, output_id, RENEWABLE_CLUSTER_VARIABLES_TABLE, variables)
-    sts_vars = _get_cluster_variables(study_id, output_id, SHORT_TERM_STORAGE_VARIABLES_TABLE, variables)
-
-    all_area_ids = sorted(set(area_vars) | set(th_vars) | set(re_vars) | set(sts_vars))
-
-    def build_areas_for_type(var_type: type) -> list[AreaVariables[list[McIndVar | McAllVar]]]:
-        return [
-            _build_area_variables(area_id, area_vars, th_vars, re_vars, sts_vars, var_type) for area_id in all_area_ids
-        ]
-
-    return OutputVariablesList(
-        mc_ind=AreaAndLinkVariables(areas=build_areas_for_type(McIndVar), links=[]),
-        mc_all=AreaAndLinkVariables(areas=build_areas_for_type(McAllVar), links=[]),
+    session: Session = db.session
+    select_vars = select(OUTPUT_VARIABLES_TABLE.c.variables).where(
+        OUTPUT_VARIABLES_TABLE.c.study_id == study_id,
+        OUTPUT_VARIABLES_TABLE.c.output_id == output_id,
     )
+    serialized_vars = session.execute(select_vars).scalars().one()
+    parquet_vars = ParquetVariablesMetadata.model_validate_json(serialized_vars)
+    return _convert_parquet_variables_metadata(parquet_vars)

@@ -24,7 +24,7 @@ McIndVars = TypeVar("McIndVars")
 McAllVars = TypeVar("McAllVars")
 
 
-class _BaseModel(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
+class _BaseModel(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel, frozen=True):
     pass
 
 

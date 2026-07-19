@@ -49,6 +49,7 @@ from antarest.output.filestudy.utils import (
     normalize_df_column_names,
     parse_output_file,
 )
+from antarest.output.storage.v2.variables_metadata import ParquetVariablesMetadata
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
 
@@ -283,13 +284,12 @@ def _extract_binding_constraints(
             shutil.rmtree(intermediate_dir, ignore_errors=True)
 
 
-def extract_output_to_parquet(output_dir: Path, target_dir: Path) -> None:
+def extract_output_to_parquet(output_dir: Path, target_dir: Path) -> ParquetVariablesMetadata:
     target_dir.mkdir(parents=True, exist_ok=True)
 
     mode_dir = find_mode_dir(output_dir)
     if mode_dir is None:
-        logger.warning(f"No economy or adequacy directory found in {output_dir}")
-        return
+        raise ValueError("No economy or adequacy directory found")  # TODO: exception type
 
     for mc_root in (MCRoot.MC_IND, MCRoot.MC_ALL):
         mc_root_path = mode_dir / str(mc_root.value)
