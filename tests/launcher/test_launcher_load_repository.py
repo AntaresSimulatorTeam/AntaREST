@@ -11,10 +11,9 @@
 # This file is part of the Antares project.
 from datetime import UTC, datetime
 
-from launcher.repository import LauncherCacheRepository
-
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.model import LauncherCache
+from antarest.launcher.repository import LauncherCacheRepository
 from tests.helpers import with_db_context
 
 launcher_load_1 = LauncherCache(
