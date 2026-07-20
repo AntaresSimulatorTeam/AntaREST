@@ -706,7 +706,6 @@ class TestSnapshotGenerator:
         - `notifier` set to a callback function used to register de notifications,
         Then the variant generation must succeed.
         We must check that:
-        - the number of database queries is kept as low as possible,
         - the variant is correctly generated in the "snapshot" directory and all commands are applied,
         - the matrices are not denormalized (we should have links to matrices),
         - the variant is updated in the database (snapshot and additional_data),
@@ -720,31 +719,9 @@ class TestSnapshotGenerator:
         notifier = RegisterNotification()
 
         factory = _get_dao_factory(variant_study_id, variant_study_service)
-        with DBStatementRecorder(db.session.bind) as db_recorder:
-            results = generator.generate_snapshot(
-                variant_study_id, dao_factory=factory, from_scratch=True, notifier=notifier
-            )
-
-        # Check: the number of database queries is kept as low as possible.
-        # We expect 4 queries:
-        # - 2 queries to fetch the whole tree of studies (with owner and groups for permission check)
-        # - 1 query to fetch the commands and their assciated version for all variant parents
-        # - 1 query to fetch the paths inside the `get_study_dao` method (as we're generating an FS variant)
-        # - 1 query to insert the variant study snapshot
-
-        assert len(db_recorder.sql_statements) == 5, str(db_recorder)
-
-        # todo: Note of what's currently happening when not asking for from_scratch = True.
-        # We currently have 6 database queries
-        # - 1 query to fetch the whole tree of studies (with owner and groups for permission check)
-        # - 1 query to fetch the current variant snapshot
-
-        # - 1 query to fetch the commands and their associated version
-        # - 0 query in this example, but N+1 issue due to `is_snapshot_up_to_date` for deep variant trees
-        # - 1 query to fetch the commands and their assciated version for potential variant parents
-
-        # - 1 query to fetch the paths inside the `get_study_dao` method
-        # - 1 query to insert the variant study snapshot
+        results = generator.generate_snapshot(
+            variant_study_id, dao_factory=factory, from_scratch=True, notifier=notifier
+        )
 
         # Check: the variant generation must succeed.
         assert results.model_dump() == {
@@ -1127,3 +1104,39 @@ class TestSnapshotGenerator:
                 "status": True,
             }
         ]
+
+    @with_admin_user
+    @with_db_context
+    def test_db_connections(self, variant_study_service: VariantStudyService, variant_study_id: str) -> None:
+        """
+        Checks the number of database queries when generating a variant study snapshot.
+        The number should be kept as low as possible.
+        """
+        generator = _build_generator(variant_study_service)
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
+
+        with DBStatementRecorder(db.session.bind) as db_recorder:
+            results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
+            assert results.success is True
+
+            # We expect 5 queries:
+            # - 2 queries to fetch the whole tree of studies (with owner and groups for permission check)
+            # - 1 query to fetch the commands and their assciated version for all variant parents
+            # - 1 query to fetch the paths inside the `get_study_dao` method (as we're generating an FS variant)
+            # - 1 query to insert the variant study snapshot
+
+            assert len(db_recorder.sql_statements) == 5, str(db_recorder)
+
+        # todo: create a new variant of 2nd level to ensure we do not perform
+
+        # todo: Note of what's currently happening when not asking for from_scratch = True.
+        # We currently have 6 database queries
+        # - 1 query to fetch the whole tree of studies (with owner and groups for permission check)
+        # - 1 query to fetch the current variant snapshot
+
+        # - 1 query to fetch the commands and their associated version
+        # - 0 query in this example, but N+1 issue due to `is_snapshot_up_to_date` for deep variant trees
+        # - 1 query to fetch the commands and their assciated version for potential variant parents
+
+        # - 1 query to fetch the paths inside the `get_study_dao` method
+        # - 1 query to insert the variant study snapshot
