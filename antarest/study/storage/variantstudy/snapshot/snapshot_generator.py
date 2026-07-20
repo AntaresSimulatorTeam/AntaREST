@@ -139,7 +139,7 @@ class SnapshotGenerator:
         # The first IDs are variant IDs, the last is the root study ID.
         ancestor_ids = self.repository.get_ancestor_or_self_ids(variant_study_id)
         descendant_ids = ancestor_ids[::-1]
-        return self.repository.find_studies(descendant_ids)
+        return self.repository.get_study_tree(descendant_ids)
 
     def _apply_commands(
         self, study_dao: StudyDao, variant_study: VariantStudy, cmd_blocks: Sequence[CommandBlock]

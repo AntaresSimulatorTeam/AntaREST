@@ -235,9 +235,10 @@ class VariantStudyRepository(StudyMetadataRepository):
 
         return commands_list_version == snapshot_version
 
-    def find_studies(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
+    def get_study_tree(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
         """
-        Find a list of studies by IDs
+        Returns the parent study and the list of its variants based on the given ids.
+        Loads metadata at the same time for permission checks.
         """
         stmt = select(Study).options(joinedload(Study.owner), joinedload(Study.groups)).where(Study.id.in_(study_ids))
 

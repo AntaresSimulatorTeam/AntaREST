@@ -1115,8 +1115,22 @@ class TestSnapshotGenerator:
         generator = _build_generator(variant_study_service)
         factory = _get_dao_factory(variant_study_id, variant_study_service)
 
+        # Generate from scratch
         with DBStatementRecorder(db.session.bind) as db_recorder:
             results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
+            assert results.success is True
+
+            # We expect 5 queries:
+            # - 2 queries to fetch the whole tree of studies (with owner and groups for permission check)
+            # - 1 query to fetch the commands and their assciated version for all variant parents
+            # - 1 query to fetch the paths inside the `get_study_dao` method (as we're generating an FS variant)
+            # - 1 query to insert the variant study snapshot
+
+            assert len(db_recorder.sql_statements) == 5, str(db_recorder)
+
+        # Generate when the last snapshot is up to date
+        with DBStatementRecorder(db.session.bind) as db_recorder:
+            results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=False)
             assert results.success is True
 
             # We expect 5 queries:
