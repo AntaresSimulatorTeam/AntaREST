@@ -722,10 +722,19 @@ class TestSnapshotGenerator:
         factory = _get_dao_factory(variant_study_id, variant_study_service)
         with DBStatementRecorder(db.session.bind) as db_recorder:
             results = generator.generate_snapshot(
-                variant_study_id, dao_factory=factory, from_scratch=False, notifier=notifier
+                variant_study_id, dao_factory=factory, from_scratch=True, notifier=notifier
             )
 
-        # todo: Note of what's currently happening
+        # Check: the number of database queries is kept as low as possible.
+        # We expect 4 queries:
+        # - 1 query to fetch the whole tree of studies (with owner and groups for permission check)
+        # - 1 query to fetch the commands and their assciated version for all variant parents
+        # - 1 query to fetch the paths inside the `get_study_dao` method
+        # - 1 query to insert the variant study snapshot
+
+        assert len(db_recorder.sql_statements) == 4, str(db_recorder)
+
+        # todo: Note of what's currently happening when not asking for from_scratch = True.
         # We currently have 6 database queries
         # - 1 query to fetch the whole tree of studies (with owner and groups for permission check)
         # - 1 query to fetch the current variant snapshot
@@ -736,14 +745,6 @@ class TestSnapshotGenerator:
 
         # - 1 query to fetch the paths inside the `get_study_dao` method
         # - 1 query to insert the variant study snapshot
-
-        # Check: the number of database queries is kept as low as possible.
-        # We expect 4 queries:
-        # - 1 query to fetch the ancestors of a variant study,
-        # - 1 query to fetch the root study (with owner and groups for permission check),
-        # - 1 query to fetch the list of variants with snapshot, commands, etc.,
-        # - 1 query to insert the variant study snapshot.
-        assert len(db_recorder.sql_statements) == 4, str(db_recorder)
 
         # Check: the variant generation must succeed.
         assert results.model_dump() == {
