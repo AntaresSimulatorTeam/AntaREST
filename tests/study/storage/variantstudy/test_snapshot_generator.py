@@ -31,8 +31,9 @@ from antarest.core.roles import RoleType
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
-from antarest.login.utils import current_user_context
+from antarest.login.utils import current_user_context, get_user_impersonator
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -1086,3 +1087,40 @@ class TestSnapshotGenerator:
         # Ensures we have to invalidate the cache as the `update_config` command couldn't (it's too generic)
         assert results.should_invalidate_cache
         assert cache.get(cache_key) is None
+
+    @with_admin_user
+    @with_db_context
+    def test_generation_results_details(
+        self, variant_study_service: VariantStudyService, variant_study_id: str
+    ) -> None:
+        generator = _build_generator(variant_study_service)
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
+
+        # Add a command to the variant study inside DB
+        command_block = CommandBlock(
+            id=str(uuid.uuid4()),
+            command="create_cluster",
+            args='{"area_id": "north", "parameters": {"name": "my_cluster"}}',
+            index=5,
+            version=3,
+            study_version="9.3",
+            user_id=get_user_impersonator(),
+            updated_at=current_time(),
+            study_id=variant_study_id,
+        )
+        db.session.add(command_block)
+        db.session.commit()
+
+        # Generate the variant
+        result = generator.generate_snapshot(variant_study_id, from_scratch=False, dao_factory=factory)
+
+        # We should only see the last command we added in the result
+        details = result.model_dump()["details"]
+        assert details == [
+            {
+                "id": ANY,
+                "msg": "Thermal cluster 'my_cluster' added to area 'north'.",
+                "name": "create_cluster",
+                "status": True,
+            }
+        ]
