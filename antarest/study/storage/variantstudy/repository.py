@@ -21,7 +21,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.sql_utils import upsert_multiple, upsert_one
 from antarest.dbmodel import get_row_representation_as_dict
-from antarest.study.model import Study
+from antarest.study.model import RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
     COMMANDS_LIST_VERSION_TABLE,
@@ -235,20 +235,14 @@ class VariantStudyRepository(StudyMetadataRepository):
 
         return commands_list_version == snapshot_version
 
-    def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
+    def find_studies(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
         """
-        Find a list of variants by IDs
+        Find a list of studies by IDs
         """
-        if not variant_ids:
-            return []
-
-        stmt = (
-            select(VariantStudy)
-            .options(joinedload(VariantStudy.owner), joinedload(VariantStudy.groups))
-            .where(VariantStudy.id.in_(variant_ids))
-        )
+        stmt = select(Study).options(joinedload(Study.owner), joinedload(Study.groups)).where(Study.id.in_(study_ids))
 
         result = self.session.execute(stmt).unique().scalars().all()
 
-        index = {id_: i for i, id_ in enumerate(variant_ids)}
-        return sorted(result, key=lambda v: index[v.id])
+        index = {id_: i for i, id_ in enumerate(study_ids)}
+        result = sorted(result, key=lambda v: index[v.id])
+        return result[0], result[1:]  # type: ignore

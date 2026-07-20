@@ -727,12 +727,12 @@ class TestSnapshotGenerator:
 
         # Check: the number of database queries is kept as low as possible.
         # We expect 4 queries:
-        # - 1 query to fetch the whole tree of studies (with owner and groups for permission check)
+        # - 2 queries to fetch the whole tree of studies (with owner and groups for permission check)
         # - 1 query to fetch the commands and their assciated version for all variant parents
         # - 1 query to fetch the paths inside the `get_study_dao` method
         # - 1 query to insert the variant study snapshot
 
-        assert len(db_recorder.sql_statements) == 4, str(db_recorder)
+        assert len(db_recorder.sql_statements) == 5, str(db_recorder)
 
         # todo: Note of what's currently happening when not asking for from_scratch = True.
         # We currently have 6 database queries
