@@ -23,7 +23,7 @@ import { createStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getGroups, getLatestStudyVersion, getStudyVersions } from "@/redux/selectors";
-import type { StudyMetadata, StudyPublicMode } from "@/types/types";
+import { StorageMode, type StudyMetadata, type StudyPublicMode } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
 import { getSemanticVersionOptions } from "@/utils/versionUtils";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
@@ -39,6 +39,7 @@ interface FieldValues {
   publicMode: StudyPublicMode;
   groups: string[];
   tags: string[];
+  storageMode: StorageMode;
 }
 
 interface Props {
@@ -115,10 +116,11 @@ function CreateStudyDialog({ open, onClose }: Props) {
           publicMode: "NONE",
           groups: [],
           tags: [],
+          storageMode: StorageMode.FILESYSTEM,
         },
       }}
     >
-      {({ control }) => (
+      {({ control, watch }) => (
         <>
           <Fieldset fullFieldWidth>
             <StringFE
@@ -133,6 +135,20 @@ function CreateStudyDialog({ open, onClose }: Props) {
               name="version"
               control={control}
               rules={{ required: t("form.field.required") }}
+            />
+            <SelectFE
+              label={t("studies.storageMode")}
+              options={[
+                { value: StorageMode.FILESYSTEM, label: t("studies.storageMode.filesystem") },
+                { value: StorageMode.DATABASE, label: t("studies.storageMode.database") },
+              ]}
+              name="storageMode"
+              control={control}
+              helperText={
+                watch("storageMode") === StorageMode.DATABASE
+                  ? t("studies.storageMode.gemsCompatible")
+                  : undefined
+              }
             />
           </Fieldset>
           <Fieldset legend={t("global.permission")} fullFieldWidth>
