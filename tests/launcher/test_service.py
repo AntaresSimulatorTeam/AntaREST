@@ -14,7 +14,7 @@ import json
 import math
 import os
 import time
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock, call
@@ -52,7 +52,8 @@ from antarest.launcher.model import (
     JobLogType,
     JobResult,
     JobStatus,
-    LauncherLoadDTO,
+    LauncherCache,
+    LauncherCacheDTO,
     LauncherParametersDTO,
     LogType,
     SolverPresets,
@@ -134,7 +135,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
             file_transfer_manager=Mock(),
@@ -196,7 +197,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -237,7 +238,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -326,7 +327,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -576,7 +577,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             factory_launcher=mock_factory,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -599,7 +600,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -634,7 +635,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -673,7 +674,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -735,7 +736,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -849,7 +850,7 @@ class TestLauncherService:
             file_transfer_manager=Mock(),
             task_service=Mock(),
             cache=Mock(),
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
         )
 
         job_id = "job_id"
@@ -878,7 +879,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -1026,9 +1027,10 @@ class TestLauncherService:
         factory_launcher_mock = Mock()
         factory_launcher_mock.build_launcher.return_value = launchers_dict
 
-        launcher_load_dao_mock = Mock()
-        launcher_load_dao_mock.get_launcher_load.return_value.to_dto.return_value = LauncherLoadDTO.model_validate(
-            expected_result
+        launcher_cache_repository_mock = Mock()
+        launcher_cache_repository_mock.get_launcher_load.return_value.date = datetime.now(UTC)
+        launcher_cache_repository_mock.get_launcher_load.return_value.to_dto.return_value = (
+            LauncherCacheDTO.model_validate(expected_result)
         )
 
         launcher_service = LauncherService(
@@ -1038,7 +1040,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=job_repository,
             solver_presets_repository=Mock(),
-            launcher_load_dao=launcher_load_dao_mock,
+            launcher_cache_repository=launcher_cache_repository_mock,
             event_bus=Mock(),
             factory_launcher=factory_launcher_mock,
             file_transfer_manager=Mock(),
@@ -1048,7 +1050,7 @@ class TestLauncherService:
 
         job_repository.get_running.return_value = running_jobs
 
-        launcher_expected_result = LauncherLoadDTO.model_validate(expected_result)
+        launcher_expected_result = LauncherCacheDTO.model_validate(expected_result)
         actual_result = launcher_service.get_load(default_launcher)
 
         assert launcher_expected_result.launcher_status == actual_result.launcher_status
@@ -1061,6 +1063,111 @@ class TestLauncherService:
             launcher_expected_result.allocated_cpu_rate,
             actual_result.allocated_cpu_rate,
         )
+
+    def test_get_load_is_updated_when_db_data_is_outdated(self, tmp_path: Path) -> None:
+        # An outdated LauncherLoad entry (older than 5 minutes)
+        outdated_cached_data = LauncherCache(
+            launcher_name="local",
+            allocated_cpu_rate=10,
+            cluster_load_rate=0,
+            nb_queued_jobs=0,
+            launcher_status="outdated status",
+            date=datetime.now(UTC) - timedelta(days=1),
+        )
+
+        # The fresh DTO returned by the live launcher
+        fresh_dto = LauncherCacheDTO(
+            allocated_cpu_rate=50,
+            cluster_load_rate=50,
+            nb_queued_jobs=2,
+            launcher_status="new status",
+        )
+
+        # Mock the live launcher adapter
+        launcher_mock = Mock()
+        launcher_mock.get_load.return_value = fresh_dto
+
+        factory_launcher_mock = Mock()
+        factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
+
+        # Mock the DAO to return the outdated DB entry
+        launcher_cache_dao_mock = Mock()
+        launcher_cache_dao_mock.get_launcher_load.return_value = outdated_cached_data
+
+        config = Config(
+            storage=StorageConfig(tmp_dir=tmp_path),
+            launcher=LauncherConfig(default="local", configs=[LocalConfig(id="local", name="name")]),
+        )
+
+        launcher_service = LauncherService(
+            config=config,
+            study_service=Mock(),
+            output_service=Mock(),
+            login_service=Mock(),
+            job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
+            launcher_cache_repository=launcher_cache_dao_mock,
+            event_bus=Mock(),
+            factory_launcher=factory_launcher_mock,
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+
+        load = launcher_service.get_load("local")
+
+        # The live launcher should have been called since the DB data was outdated
+        launcher_mock.get_load.assert_called_once()
+        assert load.launcher_status == "new status"
+        assert load.allocated_cpu_rate == 50
+        assert load.cluster_load_rate == 50
+        assert load.nb_queued_jobs == 2
+
+    def test_use_cached_launcher_data_when_not_outdated(self, tmp_path: Path) -> None:
+        # An outdated LauncherLoad entry (older than 5 minutes)
+        recent_cached_data = LauncherCache(
+            launcher_name="local",
+            allocated_cpu_rate=10,
+            cluster_load_rate=0,
+            nb_queued_jobs=0,
+            launcher_status="fresh status",
+            date=datetime.now(UTC),
+        )
+
+        launcher_mock = Mock()
+        factory_launcher_mock = Mock()
+        factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
+
+        # Mock the DAO to return the outdated DB entry
+        launcher_cache_dao_mock = Mock()
+        launcher_cache_dao_mock.get_launcher_load.return_value = recent_cached_data
+
+        config = Config(
+            storage=StorageConfig(tmp_dir=tmp_path),
+            launcher=LauncherConfig(default="local", configs=[LocalConfig(id="local", name="name")]),
+        )
+
+        launcher_service = LauncherService(
+            config=config,
+            study_service=Mock(),
+            output_service=Mock(),
+            login_service=Mock(),
+            job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
+            launcher_cache_repository=launcher_cache_dao_mock,
+            event_bus=Mock(),
+            factory_launcher=factory_launcher_mock,
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+        launcher_mock.get_load.assert_not_called()
+
+        load = launcher_service.get_load("local")
+        assert load.launcher_status == "fresh status"
+        assert load.allocated_cpu_rate == 10
+        assert load.cluster_load_rate == 0
+        assert load.nb_queued_jobs == 0
 
     def test_import_output_is_called_with_the_right_user(self, tmp_path: Path) -> None:
         # Create user
@@ -1090,7 +1197,7 @@ class TestLauncherService:
             login_service=login_service,
             job_result_repository=job_repository,
             solver_presets_repository=Mock(),
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             event_bus=Mock(),
             factory_launcher=Mock(),
             file_transfer_manager=Mock(),
@@ -1147,7 +1254,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=solver_presets_repository,
-            launcher_load_dao=Mock(),
+            launcher_cache_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
             file_transfer_manager=Mock(),

@@ -13,6 +13,7 @@ import functools
 import logging
 import os
 import shutil
+from datetime import UTC, datetime
 from http import HTTPStatus
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -34,7 +35,6 @@ from antarest.core.utils.archives import ArchiveFormat, archive_dir, is_zip, rea
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
-from antarest.launcher.adapters.database_launcher_load_dao import DataBaseLauncherLoadDao
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
 from antarest.launcher.exceptions import NoValidOutputError
 from antarest.launcher.model import (
@@ -42,9 +42,10 @@ from antarest.launcher.model import (
     JobLogType,
     JobResult,
     JobStatus,
+    LauncherCache,
+    LauncherCacheDTO,
     LauncherInfoDTO,
     LauncherListDTO,
-    LauncherLoadDTO,
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
     LogType,
@@ -56,7 +57,8 @@ from antarest.launcher.model import (
     apply_update_solver_presets,
     is_version_covered_by_config,
 )
-from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
+from antarest.launcher.repository import JobResultRepository, LauncherCacheRepository, SolverPresetsRepository
+from antarest.launcher.ssh_client import SlurmError
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user, require_current_user
 from antarest.output.service import OutputService
@@ -106,7 +108,7 @@ class LauncherService:
         login_service: LoginService,
         job_result_repository: JobResultRepository,
         solver_presets_repository: SolverPresetsRepository,
-        launcher_load_dao: DataBaseLauncherLoadDao,
+        launcher_cache_repository: LauncherCacheRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -119,7 +121,7 @@ class LauncherService:
         self.login_service = login_service
         self.job_result_repository = job_result_repository
         self.solver_presets_repository = solver_presets_repository
-        self.launcher_load_dao = launcher_load_dao
+        self.launcher_cache_repository = launcher_cache_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -590,7 +592,7 @@ class LauncherService:
             return self.output_service.export_output(job_result.study_id, job_result.output_id)
         raise JobNotFound()
 
-    def get_load(self, launcher_id: str | None) -> LauncherLoadDTO:
+    def get_load(self, launcher_id: str | None) -> LauncherCacheDTO:
         """
         Get the load of the specified launcher.
         """
@@ -601,16 +603,25 @@ class LauncherService:
         if launcher is None:
             raise InvalidConfigurationError(launcher_id)
 
-        load = self.launcher_load_dao.get_launcher_load(launcher_id)
-        if load is not None:
+        load = self.launcher_cache_repository.get_launcher_load(launcher_id)
+        if load is not None and not self.is_outdated_load_data(load):
             return load.to_dto()
 
         logger.info("No cached load for launcher '%s', querying live", launcher_id)
         return launcher.get_load()
 
-    def get_all_loads(self) -> dict[str, LauncherLoadDTO]:
-        """Get the load of all configured launchers."""
-        return {launcher_id: launcher.get_load() for launcher_id, launcher in self.launchers.items()}
+    def is_outdated_load_data(self, load: LauncherCache) -> bool:
+        return load.date < datetime.now(UTC) - self.config.launcher.launcher_loads_validity_time
+
+    def get_all_loads(self) -> dict[str, LauncherCacheDTO]:
+        all_loads = {}
+        for launcher_id, launcher in self.launchers.items():
+            try:
+                all_loads[launcher_id] = launcher.get_load()
+            except SlurmError:
+                logger.warning("Failed to query load for launcher '%s'", launcher_id)
+
+        return all_loads
 
     def get_solver_versions(self, launcher_id: str | None) -> list[SolverVersion]:
         """

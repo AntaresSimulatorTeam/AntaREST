@@ -9,47 +9,60 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from unittest.mock import MagicMock
+from datetime import UTC, datetime
 
-from antarest.launcher.adapters.database_launcher_load_dao import DataBaseLauncherLoadDao
-from antarest.launcher.model import LauncherLoad
+from launcher.repository import LauncherCacheRepository
+
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.launcher.model import LauncherCache
 from tests.helpers import with_db_context
 
-launcher_load_1 = LauncherLoad(
+launcher_load_1 = LauncherCache(
     launcher_name="foo",
     allocated_cpu_rate=0.1,
     cluster_load_rate=0.2,
     nb_queued_jobs=3,
     launcher_status="TEST 1",
+    date=datetime.now(UTC),
 )
 
-launcher_load_2 = LauncherLoad(
+launcher_load_2 = LauncherCache(
     launcher_name="bar",
     allocated_cpu_rate=0.4,
     cluster_load_rate=0.5,
     nb_queued_jobs=10,
     launcher_status="TEST 2",
+    date=datetime.now(UTC),
 )
 
-launcher_load_2_updated = LauncherLoad(
+launcher_load_2_updated = LauncherCache(
     launcher_name="bar",
     allocated_cpu_rate=0.1,
     cluster_load_rate=1.0,
     nb_queued_jobs=100,
     launcher_status="TEST 2 BIS",
+    date=datetime.now(UTC),
 )
+
+
+class TestLauncherCacheRepository(LauncherCacheRepository):
+    def __init__(self) -> None:
+        super().__init__()
+
+    def get_launchers_loads(self) -> list[LauncherCache]:
+        return db.session.query(LauncherCache).all()
 
 
 @with_db_context
 def test_database_launcher_loads_is_empty_by_default() -> None:
-    db_launcher_load = DataBaseLauncherLoadDao()
+    db_launcher_load = TestLauncherCacheRepository()
 
     assert db_launcher_load.get_launchers_loads() == []
 
 
 @with_db_context
 def test_should_be_able_to_add_launcher_load_data_to_db() -> None:
-    db_launcher_load = DataBaseLauncherLoadDao()
+    db_launcher_load = TestLauncherCacheRepository()
     db_launcher_load.update_launcher_load(launcher_load_1)
 
     actual_launchers_loads = db_launcher_load.get_launchers_loads()
@@ -60,7 +73,7 @@ def test_should_be_able_to_add_launcher_load_data_to_db() -> None:
 
 @with_db_context
 def test_should_be_able_to_update_launcher_load_data_from_db() -> None:
-    db_launcher_load = DataBaseLauncherLoadDao()
+    db_launcher_load = TestLauncherCacheRepository()
     db_launcher_load.update_launcher_load(launcher_load_2)
 
     actual_launchers_loads = db_launcher_load.get_launchers_loads()
@@ -77,7 +90,7 @@ def test_should_be_able_to_update_launcher_load_data_from_db() -> None:
 
 @with_db_context
 def test_should_be_able_to_update_multiple_launchers_loads_data_from_db() -> None:
-    db_launcher_load = DataBaseLauncherLoadDao()
+    db_launcher_load = TestLauncherCacheRepository()
     db_launcher_load.update_launcher_load(launcher_load_1)
     db_launcher_load.update_launcher_load(launcher_load_2)
 
@@ -94,17 +107,16 @@ def test_should_be_able_to_update_multiple_launchers_loads_data_from_db() -> Non
 
 @with_db_context
 def test_should_update_all_launcher_loads_data_from_db() -> None:
-    db_launcher_load = DataBaseLauncherLoadDao()
-    service_mock = MagicMock()
-    service_mock.get_all_loads.return_value = {"foo": launcher_load_1, "bar": launcher_load_2}
-    db_launcher_load.update_all_launcher_loads(service_mock)
+    db_launcher_load = TestLauncherCacheRepository()
+    db_launcher_load.update_all_launcher_loads({"foo": launcher_load_1.to_dto(), "bar": launcher_load_2.to_dto()})
 
     assert len(db_launcher_load.get_launchers_loads()) == 2
     assert_launcher_load_is_in_db(launcher_load_1, db_launcher_load)
     assert_launcher_load_is_in_db(launcher_load_2, db_launcher_load)
 
-    service_mock.get_all_loads.return_value = {"foo": launcher_load_1, "bar": launcher_load_2_updated}
-    db_launcher_load.update_all_launcher_loads(service_mock)
+    db_launcher_load.update_all_launcher_loads(
+        {"foo": launcher_load_1.to_dto(), "bar": launcher_load_2_updated.to_dto()}
+    )
 
     assert len(db_launcher_load.get_launchers_loads()) == 2
     assert_launcher_load_is_in_db(launcher_load_1, db_launcher_load)
@@ -112,7 +124,7 @@ def test_should_update_all_launcher_loads_data_from_db() -> None:
 
 
 def assert_launcher_load_is_in_db(
-    expected_launcher_load: LauncherLoad, db_launcher_load: DataBaseLauncherLoadDao
+    expected_launcher_load: LauncherCache, db_launcher_load: TestLauncherCacheRepository
 ) -> None:
     actual_launchers_loads = db_launcher_load.get_launchers_loads()
 
@@ -123,7 +135,7 @@ def assert_launcher_load_is_in_db(
     check_launcher_load_equals(actual_load[0], expected_launcher_load)
 
 
-def check_launcher_load_equals(actual_launcher_load: LauncherLoad, expected_launcher_load: LauncherLoad) -> None:
+def check_launcher_load_equals(actual_launcher_load: LauncherCache, expected_launcher_load: LauncherCache) -> None:
     assert actual_launcher_load.launcher_name == expected_launcher_load.launcher_name
     assert actual_launcher_load.allocated_cpu_rate == expected_launcher_load.allocated_cpu_rate
     assert actual_launcher_load.cluster_load_rate == expected_launcher_load.cluster_load_rate

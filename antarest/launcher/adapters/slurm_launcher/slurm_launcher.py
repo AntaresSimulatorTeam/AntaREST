@@ -45,7 +45,7 @@ from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.exceptions import NoValidOutputError
 from antarest.launcher.model import (
     JobStatus,
-    LauncherLoadDTO,
+    LauncherCacheDTO,
     LauncherParametersDTO,
     LogType,
     XpansionParametersDTO,
@@ -625,7 +625,7 @@ class SlurmLauncher(AbstractLauncher):
         return sorted(self.slurm_config.antares_versions_on_remote_server)
 
     @override
-    def get_load(self) -> LauncherLoadDTO:
+    def get_load(self) -> LauncherCacheDTO:
         ssh_config = SSHConfigDTO(
             config_path=Path(),
             username=self.slurm_config.username,
@@ -643,7 +643,7 @@ class SlurmLauncher(AbstractLauncher):
             "nbQueuedJobs": queued_jobs,
             "launcherStatus": "SUCCESS",
         }
-        return LauncherLoadDTO(**args)
+        return LauncherCacheDTO(**args)
 
     def _remove_study_from_workspace_db(self, study_name: str) -> None:
         pk_name = self.data_repo_tinydb.db_primary_key

@@ -24,8 +24,8 @@ from antarest.dependencies import ConfigDep, LauncherServiceDep, auth_required
 from antarest.launcher.model import (
     JobCreationDTO,
     JobResultDTO,
+    LauncherCacheDTO,
     LauncherListDTO,
-    LauncherLoadDTO,
     LauncherParametersDTO,
     LogType,
     SolverPresets,
@@ -150,7 +150,7 @@ def create_launcher_api() -> APIRouter:
         "/load",
         summary="Get the SLURM cluster or local machine load",
     )
-    def get_load(service: LauncherServiceDep, launcher_id: SanitizedStr | None = None) -> LauncherLoadDTO:
+    def get_load(service: LauncherServiceDep, launcher_id: SanitizedStr | None = None) -> LauncherCacheDTO:
         logger.info("Fetching launcher load")
         try:
             return service.get_load(launcher_id)
@@ -162,7 +162,7 @@ def create_launcher_api() -> APIRouter:
                 "nbQueuedJobs": 0,
                 "launcherStatus": f"FAILED: {e}",
             }
-            return LauncherLoadDTO(**args)
+            return LauncherCacheDTO(**args)
 
     @bp.get(
         "/versions",

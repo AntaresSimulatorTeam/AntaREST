@@ -16,7 +16,6 @@ import time
 from pydantic import BaseModel
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.adapters.database_launcher_load_dao import DataBaseLauncherLoadDao
 from antarest.launcher.main import build_launcher
 from antarest.maintenance.app import MaintenanceTask, TaskName, celery_app
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
@@ -24,14 +23,14 @@ from antarest.maintenance.tasks.common import BackGroundTaskStatus
 logger = logging.getLogger(__name__)
 
 
-class LauncherLoadTaskResult(BaseModel):
+class LauncherCacheTaskResult(BaseModel):
     status: BackGroundTaskStatus
     duration_seconds: float
     error: str | None = None
 
 
-@celery_app.task(base=MaintenanceTask, bind=True, name=TaskName.LAUNCHER_LOAD, pydantic=True)
-def save_launcher_load_task(self: MaintenanceTask) -> LauncherLoadTaskResult:
+@celery_app.task(base=MaintenanceTask, bind=True, name=TaskName.LAUNCHER_CACHE, pydantic=True)
+def save_launcher_load_task(self: MaintenanceTask) -> LauncherCacheTaskResult:
     ctx = self.context
     logger.info("Saving launcher load state to database")
     launcher_service = build_launcher(
@@ -46,7 +45,7 @@ def save_launcher_load_task(self: MaintenanceTask) -> LauncherLoadTaskResult:
     )
 
     if launcher_service is None:
-        return LauncherLoadTaskResult(
+        return LauncherCacheTaskResult(
             status=BackGroundTaskStatus.ERROR,
             duration_seconds=0,
             error="Launcher not found",
@@ -54,15 +53,14 @@ def save_launcher_load_task(self: MaintenanceTask) -> LauncherLoadTaskResult:
     start_time = time.time()
     try:
         with db():
-            dao = DataBaseLauncherLoadDao()
-            dao.update_all_launcher_loads(launcher_service)
-        return LauncherLoadTaskResult(
+            launcher_service.launcher_cache_repository.update_all_launcher_loads(launcher_service.get_all_loads())
+        return LauncherCacheTaskResult(
             status=BackGroundTaskStatus.SUCCESS,
             duration_seconds=time.time() - start_time,
         )
     except Exception as e:
         logger.error("Launcher load task failed", exc_info=e)
-        return LauncherLoadTaskResult(
+        return LauncherCacheTaskResult(
             status=BackGroundTaskStatus.ERROR,
             duration_seconds=time.time() - start_time,
             error=str(e),
