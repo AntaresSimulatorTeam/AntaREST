@@ -330,7 +330,7 @@ class VariantStudyService(AbstractStudyService):
         self.repository.save_commands_list_version(study.id, new_block)
 
         self._update_editor(study)
-        self.on_variant_rebase(study)
+        self.on_parent_change(study.id)
         self.generate(study)
 
     def remove_all_commands(self, study_id: str) -> None:

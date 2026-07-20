@@ -532,3 +532,42 @@ def test_variant_concurrent_generation(client: TestClient, admin_access_token: s
         res.raise_for_status()
         task = res.json()
         assert task["result"]["success"] is True
+
+
+def test_delete_command(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # Create a Variant study
+    res = client.post("/v1/studies?name=RawStudy")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    res = client.post(f"/v1/studies/{study_id}/variants?name=VariantStudy")
+    assert res.status_code == 200
+    variant_id = res.json()
+
+    # Add 3 commands.
+    # 1- Create an area
+    # 2- Add a thermal cluster
+    # 3- Add another thermal cluster
+
+    res = client.post(f"/v1/studies/{variant_id}/areas", json={"name": "area1"})
+    res.raise_for_status()
+    res = client.post(f"/v1/studies/{variant_id}/areas/area1/clusters/thermal", json={"name": "thermal1"})
+    res.raise_for_status()
+    res = client.post(f"/v1/studies/{variant_id}/areas/area1/clusters/thermal", json={"name": "thermal2"})
+    res.raise_for_status()
+
+    # Remove the 2nd command.
+    # We shouldn't see `thermal1` anymore, just `thermal2`.
+
+    res = client.get(f"/v1/studies/{variant_id}/commands")
+    commands = res.json()
+    last_command_id = commands[1]["id"]
+    res = client.delete(f"/v1/studies/{variant_id}/commands/{last_command_id}")
+    res.raise_for_status()
+
+    res = client.get(f"/v1/studies/{variant_id}/areas/area1/clusters/thermal")
+    thermals = res.json()
+    assert len(thermals) == 1
+    assert thermals[0]["id"] == "thermal2"
