@@ -729,9 +729,11 @@ class TestSnapshotGenerator:
         # We currently have 6 database queries
         # - 1 query to fetch the whole tree of studies (with owner and groups for permission check)
         # - 1 query to fetch the current variant snapshot
+
         # - 1 query to fetch the commands and their associated version
         # - 0 query in this example, but N+1 issue due to `is_snapshot_up_to_date` for deep variant trees
         # - 1 query to fetch the commands and their assciated version for potential variant parents
+
         # - 1 query to fetch the paths inside the `get_study_dao` method
         # - 1 query to insert the variant study snapshot
 

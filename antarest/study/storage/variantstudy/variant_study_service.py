@@ -632,7 +632,7 @@ class VariantStudyService(AbstractStudyService):
             try:
                 self.repository.refresh(study)
 
-                if self.repository.is_snapshot_up_to_date(study):
+                if not from_scratch and self.repository.is_snapshot_up_to_date(study):
                     # Nothing to do
                     return GenerationResultInfoDTO(success=True, should_invalidate_cache=False, details=[])
 
