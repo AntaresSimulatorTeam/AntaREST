@@ -936,7 +936,6 @@ class StudyService:
     def invalidate_cache(self, uuid: str) -> None:
         """Drop the study cache so the next read rebuilds its config from disk."""
         study = self.get_study(uuid)
-        assert_permission(study, StudyPermissionType.WRITE)
         logger.info(f"Invalidating cache for study {study.id}")
         remove_from_cache(cache=self.cache_service, root_id=study.id)
 
