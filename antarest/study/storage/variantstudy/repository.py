@@ -190,7 +190,11 @@ class VariantStudyRepository(StudyMetadataRepository):
         return CommandBlocksWithVersion(version=version, commands=sorted_cmds)
 
     def get_commands_list_version(self, variant_id: str) -> int:
-        stmt = select(CommandsListVersion.version).where(CommandsListVersion.variant_id == variant_id)
+        """
+        This method should only be used to increment the commands' list version later.
+        That is why it locks the `CommandsListVersion` table using a `with_for_update` clause.
+        """
+        stmt = select(CommandsListVersion.version).where(CommandsListVersion.variant_id == variant_id).with_for_update()
         version: int = self.session.execute(stmt).scalar_one()
         return version
 
