@@ -533,11 +533,14 @@ class VariantStudyInterface(StudyInterface):
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
         """
-        We increment the `commands_list_version` table.
-        This way, the variant snapshot will be re-generated inside future operations.
+        If the study is stored on the filesystem, some of its metadata is duplicated.
+        They are stored in DB and on the disk.
+        When updating the metadata, we store the new data in DB and increment the `commands_list_version` table.
+        This way, the variant snapshot will be re-generated with the metadata stored in DB for future operations.
         """
         self._study.updated_at = current_time()
-        self._variant_service.repository.increment_commands_list_version(self._study.id)
+        if self._study.storage_mode == StorageMode.FILESYSTEM:
+            self._variant_service.repository.increment_commands_list_version(self._study.id)
         self._variant_service.repository.save(self._study)
 
 

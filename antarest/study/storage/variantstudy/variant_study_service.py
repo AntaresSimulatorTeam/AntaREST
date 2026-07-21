@@ -268,7 +268,7 @@ class VariantStudyService(AbstractStudyService):
         command_objs = self._check_commands_validity(study.id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
 
-        current_commands = self._get_study_commands(study.id)
+        current_commands = self._get_study_commands_with_lock(study.id)
 
         if replace_commands:
             first_index = 0
@@ -312,7 +312,7 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self._get_variant_study(study_id)
 
-        current_commands = self._get_study_commands(study.id)
+        current_commands = self._get_study_commands_with_lock(study.id)
 
         index = next((i for i, cmd in enumerate(current_commands.commands) if cmd.id == command_id), None)
         if index is None:
@@ -351,7 +351,11 @@ class VariantStudyService(AbstractStudyService):
         self.on_variant_rebase(study)
         self.clear_snapshot(study)
 
-    def _get_study_commands(self, study_id: str) -> CommandBlocksWithVersion:
+    def _get_study_commands_with_lock(self, study_id: str) -> CommandBlocksWithVersion:
+        """
+        Fetches the list of commands and their associated version for a given study.
+        It locks the `commands_list_version` and `CommandBlock` tables to ensure they are not modified concurrently.
+        """
         return self.repository.get_command_blocks_with_associated_version([study_id], with_lock=True)
 
     def _get_variant_study(self, study_id: str) -> VariantStudy:
