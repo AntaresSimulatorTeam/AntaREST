@@ -15,7 +15,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
@@ -137,6 +137,15 @@ class CommandBlock(Base):
         )
 
 
+class CommandsListVersion(Base):
+    __tablename__ = "commands_list_version"
+
+    variant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"), primary_key=True
+    )
+    version: Mapped[int] = mapped_column(Integer)
+
+
 class VariantStudy(Study):
     """
     Variant study representation.
@@ -177,18 +186,11 @@ class VariantStudy(Study):
         order_by="CommandBlock.index",
         cascade="all, delete, delete-orphan",
     )
+    commands_version = relationship(CommandsListVersion, uselist=False)
 
     @override
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
-
-
-COMMANDS_LIST_VERSION_TABLE = Table(
-    "commands_list_version",
-    metadata,
-    Column("variant_id", String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"), primary_key=True),
-    Column("version", Integer, nullable=False),
-)
 
 
 @dataclass(frozen=True)

@@ -27,8 +27,8 @@ from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
 from antarest.study.model import StorageMode
 from antarest.study.storage.variantstudy.model.dbmodel import (
-    COMMANDS_LIST_VERSION_TABLE,
     CommandBlock,
+    CommandsListVersion,
     VariantStudy,
     VariantStudySnapshot,
 )
@@ -271,28 +271,27 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
     variant_study_service.repository.initialize_commands_list_version_table(variant_id)
 
     # 1st case, no snapshot in DB -> Not up to date
-    variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-    assert variant_study_service.repository.is_snapshot_up_to_date(variant) is False
+    variant = session.get(VariantStudy, variant_id)
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
 
     # 2nd case: Add the snapshot in DB with a version 0 which matches the command blocks version -> Up to date
     variant.snapshot = VariantStudySnapshot(id=variant_id, version=0, last_executed_command=None)
     session.add(variant)
     session.commit()
 
-    variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-    assert variant_study_service.repository.is_snapshot_up_to_date(variant) is True
+    variant = session.get(VariantStudy, variant_id)
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is True
 
     # 3rd case: Changes the version in `commands_list_version` table -> Not up to date
-    upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": 1})
+    upsert_one(session, CommandsListVersion.__table__, {"variant_id": variant_id, "version": 1})
     session.commit()
 
-    variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-    assert variant_study_service.repository.is_snapshot_up_to_date(variant) is False
+    variant = session.get(VariantStudy, variant_id)
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
 
     # 4th case: Adapt the version in the study snapshot to match the commands one -> Up to date
     variant.snapshot.version = 1
     session.add(variant)
     session.commit()
 
-    variant = session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-    assert variant_study_service.repository.is_snapshot_up_to_date(variant) is True
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is True

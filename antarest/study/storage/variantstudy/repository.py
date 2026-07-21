@@ -17,16 +17,17 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
 
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.sql_utils import upsert_multiple, upsert_one
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
-    COMMANDS_LIST_VERSION_TABLE,
     CommandBlock,
     CommandBlocksWithVersion,
+    CommandsListVersion,
     VariantStudy,
 )
 
@@ -163,9 +164,9 @@ class VariantStudyRepository(StudyMetadataRepository):
         last_child = variant_ids[-1]
 
         query = (
-            select(CommandBlock, COMMANDS_LIST_VERSION_TABLE)
-            .join(COMMANDS_LIST_VERSION_TABLE, CommandBlock.study_id == COMMANDS_LIST_VERSION_TABLE.c.variant_id)
-            .where(CommandBlock.study_id.in_(variant_ids))
+            select(CommandsListVersion, CommandBlock)
+            .outerjoin(CommandBlock, CommandBlock.study_id == CommandsListVersion.variant_id)
+            .where(CommandsListVersion.variant_id.in_(variant_ids))
         )
 
         if with_lock:
@@ -174,17 +175,14 @@ class VariantStudyRepository(StudyMetadataRepository):
         rows = self.session.execute(query).all()
 
         cmd_blocks = []
-        version_found = False
         for row in rows:
             row_as_dict = get_row_representation_as_dict(row)
-            cmd_blocks.append(row_as_dict["CommandBlock"])
-            if row_as_dict["variant_id"] == last_child:
-                version_found = True
-                version = row_as_dict["version"]
-
-        if not version_found:
-            # Means the last child has no commands
-            version = self.get_commands_list_version(last_child)
+            command_block = row_as_dict["CommandBlock"]
+            if command_block is not None:
+                cmd_blocks.append(command_block)
+            commands_version = row_as_dict["CommandsListVersion"]
+            if commands_version.variant_id == last_child:
+                version = commands_version.version
 
         # Sort the commands by their variant id and their index to apply them in the right order.
         sorted_cmds = sorted(cmd_blocks, key=lambda cb: (variant_ids.index(cb.study_id), cb.index))
@@ -192,8 +190,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         return CommandBlocksWithVersion(version=version, commands=sorted_cmds)
 
     def get_commands_list_version(self, variant_id: str) -> int:
-        _table = COMMANDS_LIST_VERSION_TABLE
-        stmt = select(_table.c.version).where(_table.c.variant_id == variant_id)
+        stmt = select(CommandsListVersion.version).where(CommandsListVersion.variant_id == variant_id)
         version: int = self.session.execute(stmt).scalar_one()
         return version
 
@@ -206,34 +203,33 @@ class VariantStudyRepository(StudyMetadataRepository):
             values = [command.to_dict() for command in commands.commands]
             upsert_multiple(session, CommandBlock.__table__, values)  # type: ignore
         # Save the new command version
-        upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": commands.version})
-        # Commit all the operations
-        session.commit()
+        self._save_commands_list_version(variant_id, commands.version)  # This performs the `commit`
 
     def initialize_commands_list_version_table(self, variant_id: str) -> None:
         self._save_commands_list_version(variant_id, 0)
 
     def _save_commands_list_version(self, variant_id: str, version: int) -> None:
+        data = CommandsListVersion(variant_id=variant_id, version=version)
         session = self.session
-        upsert_one(session, COMMANDS_LIST_VERSION_TABLE, {"variant_id": variant_id, "version": version})
+        data = session.merge(data)
+        session.add(data)
         session.commit()
 
     def increment_commands_list_version(self, variant_id: str) -> None:
         current_version = self.get_commands_list_version(variant_id)
         self._save_commands_list_version(variant_id, current_version + 1)
 
-    def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
-        # Snapshot version
-        if not study.snapshot:
+    def is_snapshot_up_to_date(self, study_id: str) -> bool:
+        join_query = [joinedload(VariantStudy.snapshot), joinedload(VariantStudy.commands_version)]
+        variant: VariantStudy | None = self.session.get(VariantStudy, study_id, options=join_query)
+
+        if not variant:
+            raise StudyNotFoundError(study_id)
+
+        if not variant.snapshot:
             return False
-        snapshot_version: int = study.snapshot.version
 
-        # Commands list version
-        query = select(COMMANDS_LIST_VERSION_TABLE).where(COMMANDS_LIST_VERSION_TABLE.c.variant_id == study.id)
-        row = self.session.execute(query).one()
-        commands_list_version: int = get_row_representation_as_dict(row)["version"]
-
-        return commands_list_version == snapshot_version
+        return variant.snapshot.version == variant.commands_version.version  # type: ignore
 
     def get_study_tree(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
         """

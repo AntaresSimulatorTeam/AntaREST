@@ -229,7 +229,7 @@ class SnapshotGenerator:
         # Iterate in reverse order to find the most recent variants first.
         for k, variant in enumerate(descendants[-2::-1]):
             # todo: this performs N+1 queries, we should probably introduce a new method to avoid this.
-            if self.repository.is_snapshot_up_to_date(variant):
+            if self.repository.is_snapshot_up_to_date(variant.id):
                 variant_ids = [v.id for v in descendants[len(descendants) - 1 + k :]]
                 ref_study = variant
                 break
