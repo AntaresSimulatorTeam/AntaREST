@@ -13,7 +13,7 @@
 from collections.abc import Sequence
 
 from sqlalchemy import delete, select
-from sqlalchemy.orm import Session, joinedload, selectin_polymorphic
+from sqlalchemy.orm import Session, joinedload, with_polymorphic
 from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
 
@@ -222,15 +222,16 @@ class VariantStudyRepository(StudyMetadataRepository):
         Loads metadata at the same time for permission checks.
         Also loads commands and snapshot at the same time to avoid multiple queries.
         """
+        study_w_p = with_polymorphic(Study, [VariantStudy])
+
         join_query = [
-            selectin_polymorphic(Study, [VariantStudy]),
-            joinedload(Study.owner),
-            joinedload(Study.groups),
-            joinedload(VariantStudy.snapshot),
-            joinedload(VariantStudy.commands_version),
-            joinedload(VariantStudy.commands),
+            joinedload(study_w_p.owner),
+            joinedload(study_w_p.groups),
+            joinedload(study_w_p.VariantStudy.snapshot),
+            joinedload(study_w_p.VariantStudy.commands_version),
+            joinedload(study_w_p.VariantStudy.commands),
         ]
-        stmt = select(Study).options(*join_query).where(Study.id.in_(study_ids))
+        stmt = select(study_w_p).options(*join_query).where(study_w_p.id.in_(study_ids))
 
         result = self.session.execute(stmt).unique().scalars().all()
 
