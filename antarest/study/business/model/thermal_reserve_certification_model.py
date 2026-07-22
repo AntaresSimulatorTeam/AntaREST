@@ -36,14 +36,3 @@ class ThermalReserveCertification(AntaresBaseModel):
 
 ThermalId: TypeAlias = str
 ThermalReserveCertificationMapping = dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]
-
-
-##########################
-# Whole model
-##########################
-
-
-class ReserveCertifications(AntaresBaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
-
-    thermals: ThermalReserveCertificationMapping
