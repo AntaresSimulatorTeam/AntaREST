@@ -135,7 +135,7 @@ class DatabaseStStorageDao(STStorageDao):
             if invalid_sts := set(data[area_id]) - set(all_existing_storages.get(area_id, [])):
                 invalid_sts_dict[area_id] = invalid_sts
 
-        if len(invalid_sts_dict) == 1 and len(list(invalid_sts_dict.values())[0]) == 1:
+        if len(invalid_sts_dict) == 1 and len(next(iter((invalid_sts_dict.values())))) == 1:
             # Only one short-term storage is missing, keep the clearer exception
             area_id = next(iter(invalid_sts_dict))
             raise STStorageNotFound(area_id, next(iter(invalid_sts_dict[area_id]))) from exc
