@@ -43,7 +43,12 @@ from antarest.study.model import StorageMode
 from antarest.study.storage.file_study_utils import get_snapshot_dir
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    CommandsListVersion,
+    VariantStudy,
+    VariantStudySnapshot,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -76,12 +81,14 @@ def _create_variant(
     if storage_mode.FILESYSTEM:
         variant_dir.mkdir(parents=True, exist_ok=True)
 
+    variant_id = str(uuid.uuid4())
     variant = create_variant_study(
-        id=str(uuid.uuid4()),
+        id=variant_id,
         name=variant_name,
         parent_id=parent_id,
         path=str(variant_dir),
         storage_mode=storage_mode,
+        commands_version=CommandsListVersion(version=0, variant_id=variant_id),
     )
 
     if with_snapshot:
@@ -177,7 +184,6 @@ class TestSearchRefStudy:
         variant_study_service.raw_study_service.repository.save(root_study)
         for variant in [variant1, variant2, variant3]:
             variant_study_service.repository.save(variant)
-            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         # Check the variants
         generator = _build_generator(variant_study_service)
@@ -273,7 +279,6 @@ class TestSearchRefStudy:
         variant_study_service.raw_study_service.repository.save(root_study)
         for variant in [variant1, variant2, variant3]:
             variant_study_service.repository.save(variant)
-            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         # Check the variants
         references = [variant1, variant2, variant3]
@@ -346,7 +351,6 @@ class TestSearchRefStudy:
         variant_study_service.raw_study_service.repository.save(root_study)
         for variant in [variant1, variant2, variant3]:
             variant_study_service.repository.save(variant)
-            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         # Check the variants
         references = [variant1, variant2, variant3]
@@ -410,7 +414,6 @@ class TestSearchRefStudy:
         variant_study_service.raw_study_service.repository.save(root_study)
         for variant in [variant1]:
             variant_study_service.repository.save(variant)
-            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         # Check the variants
         references = [variant1]
@@ -478,7 +481,6 @@ class TestSearchRefStudy:
         variant_study_service.raw_study_service.repository.save(root_study)
         for variant in [variant1]:
             variant_study_service.repository.save(variant)
-            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         # Check the variants
         references = [variant1]
@@ -546,7 +548,6 @@ class TestSearchRefStudy:
         variant_study_service.raw_study_service.repository.save(root_study)
         for variant in [variant1, variant2]:
             variant_study_service.repository.save(variant)
-            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         # Check the variants
         references = [variant1, variant2]
@@ -1159,7 +1160,6 @@ class TestSnapshotGenerator:
                 )
             ]
             variant_study_service.repository.save(variant)
-            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
         variant_5_id = variant5.id
         with DBStatementRecorder(db.session.bind) as db_recorder:

@@ -81,6 +81,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     CommandBlocksWithVersion,
+    CommandsListVersion,
     VariantStudy,
 )
 from antarest.study.storage.variantstudy.model.model import (
@@ -557,9 +558,9 @@ class VariantStudyService(AbstractStudyService):
             owner_id=require_current_user().impersonator,
             snapshot=None,
             storage_mode=study.storage_mode,
+            commands_version=CommandsListVersion(version=0, variant_id=new_id),
         )
         self.repository.save(variant_study)
-        self.repository.initialize_commands_list_version_table(new_id)
         notify_study_creation(self.event_bus, variant_study)
         logger.info("variant study %s created by user %s", variant_study.id, get_user_id())
         return variant_study

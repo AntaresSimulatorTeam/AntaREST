@@ -51,11 +51,7 @@ class RefStudySearchResult(NamedTuple):
 
 
 def _get_sorted_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandBlock]:
-    result = []
-    for variant in variants:
-        sorted_commands = sorted(variant.commands, key=lambda cmd: cmd.index)
-        result.extend(sorted_commands)
-    return result
+    return [cmd for variant in variants for cmd in variant.commands]
 
 
 def _find_last_snapshot_up_to_date(
@@ -245,7 +241,7 @@ class SnapshotGenerator:
                         last_exec_index = command_block.index
                         return RefStudySearchResult(
                             ref_study=current_variant,
-                            cmd_blocks=_get_sorted_command_blocks([current_variant])[last_exec_index + 1 :],
+                            cmd_blocks=current_variant.commands[last_exec_index + 1 :],
                             force_regenerate=False,
                             version=current_variant.commands_version.version,
                         )
@@ -262,7 +258,7 @@ class SnapshotGenerator:
 
         return RefStudySearchResult(
             ref_study=ref_study,
-            cmd_blocks=commands + _get_sorted_command_blocks([current_variant]),
+            cmd_blocks=commands + current_variant.commands,
             force_regenerate=True,
             version=current_variant.commands_version.version,
         )

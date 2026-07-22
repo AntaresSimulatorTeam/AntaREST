@@ -190,9 +190,6 @@ class VariantStudyRepository(StudyMetadataRepository):
         # Save the new command version
         self._save_commands_list_version(variant_id, commands.version)  # This performs the `commit`
 
-    def initialize_commands_list_version_table(self, variant_id: str) -> None:
-        self._save_commands_list_version(variant_id, 0)
-
     def _save_commands_list_version(self, variant_id: str, version: int) -> None:
         data = CommandsListVersion(variant_id=variant_id, version=version)
         session = self.session

@@ -253,6 +253,7 @@ def _set_up(session: Session, parent_id: int, user_id: int) -> str:
             path="",
             owner_id=user_id,
             storage_mode=StorageMode.FILESYSTEM,
+            commands_version=CommandsListVersion(version=0, variant_id=variant_id),
         )
 
         session.add(variant)
@@ -268,7 +269,6 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
     """
     session = db.session
     variant_id = _set_up(session, raw_study_id, user_id)
-    variant_study_service.repository.initialize_commands_list_version_table(variant_id)
 
     # 1st case, no snapshot in DB -> Not up to date
     variant = session.get(VariantStudy, variant_id)
