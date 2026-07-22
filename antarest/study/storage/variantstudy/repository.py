@@ -21,7 +21,6 @@ from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.sql_utils import upsert_multiple
-from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
@@ -154,40 +153,22 @@ class VariantStudyRepository(StudyMetadataRepository):
         result: VariantStudy | None = self.session.execute(stmt).unique().scalar_one_or_none()
         return result
 
-    def get_command_blocks_with_associated_version(
-        self, variant_ids: Sequence[str], with_lock: bool = False
-    ) -> CommandBlocksWithVersion:
+    def get_command_blocks_with_associated_version(self, variant_id: str) -> CommandBlocksWithVersion:
         """
         This method performs a single JOIN query to ensure that the 2 separated infos (version and cmd blocks) are synchronized.
-        The `version` corresponds to the last given id as it's the child of the other ids.
         """
-        last_child = variant_ids[-1]
 
-        query = (
-            select(CommandsListVersion, CommandBlock)
-            .outerjoin(CommandBlock, CommandBlock.study_id == CommandsListVersion.variant_id)
-            .where(CommandsListVersion.variant_id.in_(variant_ids))
+        join_query = [joinedload(VariantStudy.commands), joinedload(VariantStudy.commands_version)]
+        variant: VariantStudy | None = self.session.get(
+            VariantStudy, variant_id, options=join_query, with_for_update={"of": [CommandsListVersion]}
         )
 
-        if with_lock:
-            query = query.with_for_update()
+        if not variant:
+            raise StudyNotFoundError(variant_id)
 
-        rows = self.session.execute(query).all()
-
-        cmd_blocks = []
-        for row in rows:
-            row_as_dict = get_row_representation_as_dict(row)
-            command_block = row_as_dict["CommandBlock"]
-            if command_block is not None:
-                cmd_blocks.append(command_block)
-            commands_version = row_as_dict["CommandsListVersion"]
-            if commands_version.variant_id == last_child:
-                version = commands_version.version
-
-        # Sort the commands by their variant id and their index to apply them in the right order.
-        sorted_cmds = sorted(cmd_blocks, key=lambda cb: (variant_ids.index(cb.study_id), cb.index))
-
-        return CommandBlocksWithVersion(version=version, commands=sorted_cmds)
+        version = variant.commands_version.version
+        commands = sorted(variant.commands, key=lambda cmd: cmd.index)
+        return CommandBlocksWithVersion(version=version, commands=commands)
 
     def get_commands_list_version(self, variant_id: str) -> int:
         """
@@ -239,8 +220,16 @@ class VariantStudyRepository(StudyMetadataRepository):
         """
         Returns the parent study and the list of its variants based on the given ids.
         Loads metadata at the same time for permission checks.
+        Also loads commands and snapshot at the same time to avoid multiple queries.
         """
-        stmt = select(Study).options(joinedload(Study.owner), joinedload(Study.groups)).where(Study.id.in_(study_ids))
+        join_query = [
+            joinedload(Study.owner),
+            joinedload(Study.groups),
+            joinedload(VariantStudy.snapshot),
+            joinedload(VariantStudy.commands_version),
+            joinedload(VariantStudy.commands),
+        ]
+        stmt = select(Study).options(*join_query).where(Study.id.in_(study_ids))
 
         result = self.session.execute(stmt).unique().scalars().all()
 

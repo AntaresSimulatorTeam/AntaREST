@@ -45,9 +45,39 @@ class RefStudySearchResult(NamedTuple):
     """
 
     ref_study: Study
-    cmd_blocks: Sequence[CommandBlock]
+    cmd_blocks: list[CommandBlock]
     version: int
     force_regenerate: bool = False
+
+
+def _get_sorted_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandBlock]:
+    result = []
+    for variant in variants:
+        sorted_commands = sorted(variant.commands, key=lambda cmd: cmd.index)
+        result.extend(sorted_commands)
+    return result
+
+
+def _find_last_snapshot_up_to_date(
+    variants: Sequence[VariantStudy],
+) -> tuple[VariantStudy | None, list[CommandBlock]]:
+    """
+    Finds the most recent snapshot that is up to date.
+
+    Assumes the variants are sorted from the most recent to the oldest.
+
+    If no variant is up to date, it returns None.
+
+    It also returns the list of commands to apply in order (from the oldest to the most recent command).
+    """
+    for k, variant in enumerate(variants):
+        if variant.snapshot is None:
+            continue
+        if variant.snapshot.version == variant.commands_version.version:
+            commands = _get_sorted_command_blocks(variants[:k][::-1])
+            return variant, commands
+    commands = _get_sorted_command_blocks(variants[::-1])
+    return None, commands
 
 
 class SnapshotGenerator:
@@ -142,7 +172,7 @@ class SnapshotGenerator:
         return self.repository.get_study_tree(descendant_ids)
 
     def _apply_commands(
-        self, study_dao: StudyDao, variant_study: VariantStudy, cmd_blocks: Sequence[CommandBlock]
+        self, study_dao: StudyDao, variant_study: VariantStudy, cmd_blocks: list[CommandBlock]
     ) -> GenerationResultInfoDTO:
         commands = [self.command_factory.to_command(cb.to_dto()) for cb in cmd_blocks]
         results = apply_commands_to_variant(commands, study=study_dao, metadata=variant_study)
@@ -185,22 +215,24 @@ class SnapshotGenerator:
         Returns:
             The reference study and the commands to use for snapshot generation.
         """
+        current_variant = descendants[-1]
+
         if from_scratch:
             # In the case of a from scratch generation, the root study will be used as the reference study.
             # We need to retrieve all commands from the descendants of variants to apply them on the reference study.
-            command_blocks = self.repository.get_command_blocks_with_associated_version([v.id for v in descendants])
+            commands_version = current_variant.commands_version.version
+            command_blocks = _get_sorted_command_blocks(descendants)
             return RefStudySearchResult(
                 ref_study=root_study,
-                cmd_blocks=command_blocks.commands,
+                cmd_blocks=command_blocks,
                 force_regenerate=True,
-                version=command_blocks.version,
+                version=commands_version,
             )
 
         # 1st case: The variant snapshot is already up to date -> No-op.
         # This is handled via the `variant_study_service` before calling the SnapshotGenerator, so we should not bother.
         # And even if it was the case, the 2nd case will handle it.
         # This way we avoid making unnecessary DB queries.
-        current_variant = descendants[-1]
 
         # 2nd case: The variant has a snapshot, but it is not up to date.
         # We only have to check if we can reuse the snapshot to minimize the generation time.
@@ -208,36 +240,29 @@ class SnapshotGenerator:
         # It's not always the case as the user could have removed a command or replaced them all.
         if current_variant.snapshot is not None:
             if last_executed_cmd_id := current_variant.snapshot.last_executed_command:
-                cmd_blocks_w_version = self.repository.get_command_blocks_with_associated_version([current_variant.id])
-                for command_block in cmd_blocks_w_version.commands:
+                for command_block in current_variant.commands:
                     if command_block.id == last_executed_cmd_id:
                         last_exec_index = command_block.index
                         return RefStudySearchResult(
                             ref_study=current_variant,
-                            cmd_blocks=cmd_blocks_w_version.commands[last_exec_index + 1 :],
+                            cmd_blocks=_get_sorted_command_blocks([current_variant])[last_exec_index + 1 :],
                             force_regenerate=False,
-                            version=cmd_blocks_w_version.version,
+                            version=current_variant.commands_version.version,
                         )
 
         # Final case: The variant has no snapshot, or its `last_executed_command` does not exist anymore.
         # We search for a variant with an up-to-date snapshot to use it as a reference study.
         # If no such variant is found, we use the root study as a reference study.
 
-        variant_ids = [v.id for v in descendants]
         ref_study = root_study
+        # Give the list in reverse order to find the most recent variants first.
+        ref_variant_study, commands = _find_last_snapshot_up_to_date(descendants[-2::-1])
+        if ref_variant_study is not None:
+            ref_study = ref_variant_study
 
-        # Iterate in reverse order to find the most recent variants first.
-        for k, variant in enumerate(descendants[-2::-1]):
-            # todo: this performs N+1 queries, we should probably introduce a new method to avoid this.
-            if self.repository.is_snapshot_up_to_date(variant.id):
-                variant_ids = [v.id for v in descendants[len(descendants) - 1 + k :]]
-                ref_study = variant
-                break
-
-        command_blocks = self.repository.get_command_blocks_with_associated_version(variant_ids)
         return RefStudySearchResult(
             ref_study=ref_study,
-            cmd_blocks=command_blocks.commands,
+            cmd_blocks=commands + _get_sorted_command_blocks([current_variant]),
             force_regenerate=True,
-            version=command_blocks.version,
+            version=current_variant.commands_version.version,
         )

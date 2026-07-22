@@ -354,9 +354,9 @@ class VariantStudyService(AbstractStudyService):
     def _get_study_commands_with_lock(self, study_id: str) -> CommandBlocksWithVersion:
         """
         Fetches the list of commands and their associated version for a given study.
-        It locks the `commands_list_version` and `CommandBlock` tables to ensure they are not modified concurrently.
+        It locks the `commands_list_version` table to ensure it is not modified concurrently.
         """
-        return self.repository.get_command_blocks_with_associated_version([study_id], with_lock=True)
+        return self.repository.get_command_blocks_with_associated_version(study_id)
 
     def _get_variant_study(self, study_id: str) -> VariantStudy:
         """
