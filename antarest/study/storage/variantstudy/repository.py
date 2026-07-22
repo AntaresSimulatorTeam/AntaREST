@@ -157,18 +157,18 @@ class VariantStudyRepository(StudyMetadataRepository):
         """
         This method performs a single JOIN query to ensure that the 2 separated infos (version and cmd blocks) are synchronized.
         """
-
-        join_query = [joinedload(VariantStudy.commands), joinedload(VariantStudy.commands_version)]
-        variant: VariantStudy | None = self.session.get(
-            VariantStudy, variant_id, options=join_query, with_for_update={"of": [CommandsListVersion]}
+        query = (
+            select(CommandsListVersion, CommandBlock)
+            .outerjoin(CommandBlock, CommandBlock.study_id == CommandsListVersion.variant_id)
+            .where(CommandsListVersion.variant_id == variant_id)
+            .order_by(CommandBlock.index)
+            .with_for_update()
         )
+        rows = self.session.execute(query).all()
 
-        if not variant:
-            raise StudyNotFoundError(variant_id)
-
-        version = variant.commands_version.version
-        commands = sorted(variant.commands, key=lambda cmd: cmd.index)
-        return CommandBlocksWithVersion(version=version, commands=commands)
+        version = rows[0].CommandsListVersion.version
+        cmd_blocks = [row.CommandBlock for row in rows if row.CommandBlock is not None]
+        return CommandBlocksWithVersion(version=version, commands=cmd_blocks)
 
     def get_commands_list_version(self, variant_id: str) -> int:
         """
