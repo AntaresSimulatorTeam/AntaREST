@@ -65,7 +65,7 @@ def save_launcher_cache_task(self: MaintenanceTask) -> LauncherCacheTaskResult:
             duration_seconds=time.time() - start_time,
         )
     except Exception as e:
-        logger.error("Launcher load task failed", exc_info=e)
+        logger.error("Launcher cache task failed", exc_info=e)
         return LauncherCacheTaskResult(
             status=BackGroundTaskStatus.ERROR,
             duration_seconds=time.time() - start_time,

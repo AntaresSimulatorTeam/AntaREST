@@ -1065,7 +1065,6 @@ class TestLauncherService:
         )
 
     def test_get_load_is_updated_when_db_data_is_outdated(self, tmp_path: Path) -> None:
-        # An outdated LauncherLoad entry (older than 5 minutes)
         outdated_cached_data = LauncherCache(
             launcher_name="local",
             allocated_cpu_rate=10,
@@ -1124,7 +1123,6 @@ class TestLauncherService:
         assert load.nb_queued_jobs == 2
 
     def test_use_cached_launcher_data_when_not_outdated(self, tmp_path: Path) -> None:
-        # An outdated LauncherLoad entry (older than 5 minutes)
         recent_cached_data = LauncherCache(
             launcher_name="local",
             allocated_cpu_rate=10,
@@ -1138,7 +1136,6 @@ class TestLauncherService:
         factory_launcher_mock = Mock()
         factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
 
-        # Mock the DAO to return the outdated DB entry
         launcher_cache_dao_mock = Mock()
         launcher_cache_dao_mock.get_launcher_load.return_value = recent_cached_data
 

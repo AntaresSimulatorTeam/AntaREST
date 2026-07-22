@@ -357,13 +357,15 @@ class LauncherCacheDTO(AntaresBaseModel, extra="forbid", alias_generator=to_came
 
 class LauncherCache(Base):
     """
-    DTO representing the load of the SLURM cluster or local machine.
+    SQLAlchemy model storing cached load information for a launcher.
 
     Attributes:
+        launcher_name: ID/name of the launcher.
         allocated_cpu_rate: The rate of allocated CPU, in range (0, 100).
         cluster_load_rate: The rate of cluster load, in range (0, 100).
         nb_queued_jobs: The number of queued jobs.
-        launcher_status: The status of the launcher: "SUCCESS" or "FAILED".
+        launcher_status: The status of the launcher.
+        date: Timestamp when the load was recorded.
     """
 
     __tablename__ = "launchers_cache"
