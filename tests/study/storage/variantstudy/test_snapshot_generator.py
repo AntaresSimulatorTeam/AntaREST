@@ -1162,13 +1162,11 @@ class TestSnapshotGenerator:
             variant_study_service.repository.save(variant)
             variant_study_service.repository.initialize_commands_list_version_table(variant.id)
 
+        variant_5_id = variant5.id
         with DBStatementRecorder(db.session.bind) as db_recorder:
-            results = generator.generate_snapshot(variant5.id, dao_factory=factory, from_scratch=False)
-            # assert results.success is True
+            results = generator.generate_snapshot(variant_5_id, dao_factory=factory, from_scratch=False)
+            assert results.success is True
 
-            # We expect 4 queries:
-            # - 2 queries to fetch the whole tree of studies (with join query on owner, groups, commands, snapshot and command_version)
-            # - 1 query to fetch the paths inside the `get_study_dao` method (as we're generating an FS variant)
-            # - 1 query to insert the variant study snapshot
+            # We expect the same amount of queries than the previous generation from scratch.
 
             assert len(db_recorder.sql_statements) == 4, str(db_recorder)
