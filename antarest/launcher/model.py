@@ -366,14 +366,14 @@ class LauncherCache(Base):
         launcher_status: The status of the launcher: "SUCCESS" or "FAILED".
     """
 
-    __tablename__ = "launchers_loads"
+    __tablename__ = "launchers_cache"
 
     launcher_name: Mapped[str] = mapped_column(String(20), primary_key=True)
     allocated_cpu_rate: Mapped[float] = mapped_column(Float)
     cluster_load_rate: Mapped[float] = mapped_column(Float())
     nb_queued_jobs: Mapped[int] = mapped_column(Integer())
     launcher_status: Mapped[str] = mapped_column(String(100))
-    date: Mapped[datetime] = mapped_column(DateTime())
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
     @classmethod
     def from_dto(cls, dto: LauncherCacheDTO, name: str) -> "LauncherCache":

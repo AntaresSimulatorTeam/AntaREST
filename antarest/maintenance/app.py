@@ -111,7 +111,7 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
     from antarest.maintenance.tasks.gc_tasks_task import gc_tasks_task
     from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
-    from antarest.maintenance.tasks.launcher_cache_task import save_launcher_load_task
+    from antarest.maintenance.tasks.launcher_cache_task import save_launcher_cache_task
     from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
 
     storage = get_config().storage
@@ -128,7 +128,7 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     setup_disk_space_analyzer_task(sender, storage)
 
     sender.add_periodic_task(
-        get_config().launcher.launcher_loads_sleeping_time, save_launcher_load_task.s(), name=TaskName.LAUNCHER_CACHE
+        get_config().launcher.launcher_cache_sleeping_time, save_launcher_cache_task.s(), name=TaskName.LAUNCHER_CACHE
     )
 
     logger.info(

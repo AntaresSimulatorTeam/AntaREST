@@ -15,7 +15,7 @@ import logging
 from sqlalchemy import delete, select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult, LauncherCache, LauncherCacheDTO, SolverPresetsDB
+from antarest.launcher.model import JobResult, LauncherCache, SolverPresetsDB
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
@@ -122,15 +122,11 @@ class SolverPresetsRepository:
 
 
 class LauncherCacheRepository:
-    def update_launcher_load(self, launcher_load: LauncherCache) -> None:
-        db.session.merge(launcher_load)
-        db.session.commit()
-
     def get_launcher_load(self, launcher_name: str) -> LauncherCache | None:
         return db.session.get(LauncherCache, launcher_name)
 
-    def update_all_launcher_loads(self, existing_loads: dict[str, LauncherCacheDTO]) -> None:
-        for launcher_id, dto in existing_loads.items():
-            db.session.merge(LauncherCache.from_dto(dto, launcher_id))
+    def update_all_launcher_loads(self, existing_loads: list[LauncherCache]) -> None:
+        for launcher_cache in existing_loads:
+            db.session.merge(launcher_cache)
 
         db.session.commit()

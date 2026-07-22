@@ -1161,9 +1161,10 @@ class TestLauncherService:
             task_service=Mock(),
             cache=Mock(),
         )
-        launcher_mock.get_load.assert_not_called()
 
         load = launcher_service.get_load("local")
+
+        launcher_mock.get_load.assert_not_called()
         assert load.launcher_status == "fresh status"
         assert load.allocated_cpu_rate == 10
         assert load.cluster_load_rate == 0

@@ -604,14 +604,14 @@ class LauncherService:
             raise InvalidConfigurationError(launcher_id)
 
         load = self.launcher_cache_repository.get_launcher_load(launcher_id)
-        if load is not None and not self.is_outdated_load_data(load):
+        if load is not None and not self._is_outdated_load_data(load):
             return load.to_dto()
 
         logger.info("No cached load for launcher '%s', querying live", launcher_id)
         return launcher.get_load()
 
-    def is_outdated_load_data(self, load: LauncherCache) -> bool:
-        return load.date < datetime.now(UTC) - self.config.launcher.launcher_loads_validity_time
+    def _is_outdated_load_data(self, load: LauncherCache) -> bool:
+        return load.date < datetime.now(UTC) - self.config.launcher.launcher_cache_validity_time
 
     def get_all_loads(self) -> dict[str, LauncherCacheDTO]:
         all_loads = {}

@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.launcher.main import build_launcher
+from antarest.launcher.model import LauncherCache
 from antarest.maintenance.app import MaintenanceTask, TaskName, celery_app
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 
@@ -30,9 +31,9 @@ class LauncherCacheTaskResult(BaseModel):
 
 
 @celery_app.task(base=MaintenanceTask, bind=True, name=TaskName.LAUNCHER_CACHE, pydantic=True)
-def save_launcher_load_task(self: MaintenanceTask) -> LauncherCacheTaskResult:
+def save_launcher_cache_task(self: MaintenanceTask) -> LauncherCacheTaskResult:
     ctx = self.context
-    logger.info("Saving launcher load state to database")
+    logger.info("Saving launcher cache to database")
     launcher_service = build_launcher(
         ctx.config,
         study_service=ctx.core_services.study_service,
@@ -53,7 +54,12 @@ def save_launcher_load_task(self: MaintenanceTask) -> LauncherCacheTaskResult:
     start_time = time.time()
     try:
         with db():
-            launcher_service.launcher_cache_repository.update_all_launcher_loads(launcher_service.get_all_loads())
+            all_launchers_cache_dto_by_id = launcher_service.get_all_loads()
+            launchers_cache = [
+                LauncherCache.from_dto(load_cache, load_name)
+                for load_name, load_cache in all_launchers_cache_dto_by_id.items()
+            ]
+            launcher_service.launcher_cache_repository.update_all_launcher_loads(launchers_cache)
         return LauncherCacheTaskResult(
             status=BackGroundTaskStatus.SUCCESS,
             duration_seconds=time.time() - start_time,
