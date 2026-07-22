@@ -1123,12 +1123,11 @@ class TestSnapshotGenerator:
             results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
             assert results.success is True
 
-            # We expect 4 queries:
+            # We expect 3 queries:
             # - 2 queries to fetch the whole tree of studies (with join query on owner, groups, commands, snapshot and command_version)
-            # - 1 query to fetch the paths inside the `get_study_dao` method (as we're generating an FS variant)
             # - 1 query to insert the variant study snapshot
 
-            assert len(db_recorder.sql_statements) == 4, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 3, str(db_recorder)
 
         # `is_snapshot_up_to_date` method
         with DBStatementRecorder(db.session.bind) as db_recorder:
@@ -1167,6 +1166,6 @@ class TestSnapshotGenerator:
             results = generator.generate_snapshot(variant_5_id, dao_factory=factory, from_scratch=False)
             assert results.success is True
 
-            # We expect the same amount of queries than the previous generation from scratch.
+            # We expect the same amount of queries as the previous generation from scratch.
 
-            assert len(db_recorder.sql_statements) == 4, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 3, str(db_recorder)
