@@ -13,7 +13,7 @@
 from collections.abc import Sequence
 
 from sqlalchemy import delete, select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectin_polymorphic
 from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
 
@@ -223,6 +223,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         Also loads commands and snapshot at the same time to avoid multiple queries.
         """
         join_query = [
+            selectin_polymorphic(Study, [VariantStudy]),
             joinedload(Study.owner),
             joinedload(Study.groups),
             joinedload(VariantStudy.snapshot),
