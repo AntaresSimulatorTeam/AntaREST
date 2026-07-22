@@ -1139,11 +1139,11 @@ class TestSnapshotGenerator:
             assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
         # Create a big variant tree to ensure we do not perform N+1 requests
-        variant1 = _create_variant(tmp_path, "variant1", variant_study_id, with_snapshot=False, snapshot_version=-1)
-        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=False, snapshot_version=-1)
-        variant3 = _create_variant(tmp_path, "variant3", variant2.id, with_snapshot=False, snapshot_version=-1)
-        variant4 = _create_variant(tmp_path, "variant4", variant3.id, with_snapshot=False, snapshot_version=-1)
-        variant5 = _create_variant(tmp_path, "variant5", variant4.id, with_snapshot=False, snapshot_version=-1)
+        variant1 = _create_variant(tmp_path, "variant1", variant_study_id, with_snapshot=False)
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=False)
+        variant3 = _create_variant(tmp_path, "variant3", variant2.id, with_snapshot=False)
+        variant4 = _create_variant(tmp_path, "variant4", variant3.id, with_snapshot=False)
+        variant5 = _create_variant(tmp_path, "variant5", variant4.id, with_snapshot=False)
 
         for k, variant in enumerate([variant1, variant2, variant3, variant4, variant5]):
             args = to_json_string(dict(area_name=f"fr_{variant.id}"))
@@ -1163,6 +1163,10 @@ class TestSnapshotGenerator:
 
         variant_5_id = variant5.id
         with DBStatementRecorder(db.session.bind) as db_recorder:
+            # Variants {1...5} do not have a snapshot.
+            # So, we have to go back to the first variant that was generated at the start of the test to find an up-to-date snapshot.
+            # This should not generate N+1 queries even if we have to go back far in the variant tree.
+
             results = generator.generate_snapshot(variant_5_id, dao_factory=factory, from_scratch=False)
             assert results.success is True
 
