@@ -28,8 +28,9 @@ from dataclasses import dataclass
 from functools import cached_property
 from itertools import groupby
 from pathlib import Path
-from typing import Callable, Iterable, TypeVar
+from typing import Callable, Iterable, NewType, Type, TypeAlias, TypeVar
 
+from mypyc.ir.ops import Generic
 from pydantic import BaseModel
 from sqlalchemy import Column, String, Table, select
 from sqlalchemy.orm import Session
@@ -456,18 +457,78 @@ def get_file_type_mappings(
     return res
 
 
-T = TypeVar("T")
+
+AreaId = NewType("AreaId", str)
+
+
+@dataclass(frozen=True, slots=True)
+class LinkId:
+    area1_id: str
+    area2_id: str
+
+@dataclass(frozen=True, slots=True)
+class ThermalClusterId:
+    area_id: str
+    cluster_id: str
+
+@dataclass(frozen=True, slots=True)
+class RenewableClusterId:
+    area_id: str
+    cluster_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ShortTermStorageId:
+    area_id: str
+    storage_id: str
+
+ItemId: TypeAlias = AreaId | LinkId | ThermalClusterId | RenewableClusterId | ShortTermStorageId
+
+ID = TypeVar("ID", AreaId, LinkId, ThermalClusterId, RenewableClusterId, ShortTermStorageId)
+
+@dataclass(frozen=True, slots=True)
+class SystemVariables:
+    area_variables: ItemsVariables[AreaId]
+    link_variables: ItemsVariables[LinkId]
+    thermal_cluster_variables: ItemsVariables[ThermalClusterId]
+    renewable_cluster_variables: ItemsVariables[RenewableClusterId]
+    short_term_storage_variables: ItemsVariables[ShortTermStorageId]
+
+@dataclass(frozen=True, slots=True)
+class VariableRefs(Generic[ID]):
+    """
+    list of variable indices for a given item (area or link or cluster or ...)
+    """
+    item_id: ID
+    variables_refs: list[int]
+
+
+@dataclass(frozen=True, slots=True)
+class ItemsVariables(Generic[ID]):
+    """
+    The list of variables for a given item type, together with references for each item.
+
+    The indices in "refs" are the indices of the variables in "variables".
+    """
+    variables: list[VariableDescription]
+    refs: list[VariableRefs[ID]]
+
+
+
+T = TypeVar("T", ParquetAreaVariables, ParquetLinkVariables)
+
+
 
 
 def file_mapping_to_parquet_vars(
     mapping: dict[str, list[FileVariable]],
     var_indices: dict[VariableDescription, int],
-    factory: Callable[[str, list[int]], T],
+    cls: Type[T],
 ) -> list[T]:
     """
-    Transforms the input mapping into a list of "parquet variables", populating the list of variables and
-    their indices along the way.
-    """
+        Transforms the input mapping into a list of "parquet variables", populating the list of variables and
+        their indices along the way.
+        """
     res: list[T] = []
     for area, vars in mapping.items():
         local_var_indices: list[int] = []
@@ -479,21 +540,23 @@ def file_mapping_to_parquet_vars(
                 var_count = len(var_indices)
                 local_var_indices.append(len(var_indices))
                 var_indices[var_desc] = var_count
-        parquet_vars = factory(area, local_var_indices)
+        parquet_vars = cls(area, local_var_indices)
         res.append(parquet_vars)
     return res
 
+U = TypeVar("U", ParquetThermalClusterVariables, ParquetRenewableClusterVariables, ParquetShortTermStorageVariables)
+
 
 def file_mapping_to_parquet_cluster_vars(
-    mapping: dict[str, list[FileVariable]],
-    var_indices: dict[VariableDescription, int],
-    factory: Callable[[str, str, list[int]], T],
-) -> dict[str, list[T]]:
+        mapping: dict[str, list[FileVariable]],
+        var_indices: dict[VariableDescription, int],
+        cls: Type[U],
+) -> list[],  list[U]:
     """
     Transforms the input mapping into a list of "parquet variables", populating the list of variables and
     their indices along the way.
     """
-    res: dict[str, list[T]] = {}
+    res: list[U] = []
     for element_id, vars in mapping.items():
         # more complex here, we need to group by cluster, which is the variable name
         for cluster_id, cluster_variables in groupby(vars, lambda v: v.name):
@@ -507,7 +570,7 @@ def file_mapping_to_parquet_cluster_vars(
                     var_count = len(var_indices)
                     local_var_indices.append(var_count)
                     var_indices[var_desc] = var_count
-            parquet_vars = factory(element_id, cluster_id, local_var_indices)
+            parquet_vars = cls(element_id, cluster_id, local_var_indices)
             res.append(parquet_vars)
     return res
 
@@ -519,46 +582,39 @@ def parse_variables_metadata(output_dir: Path) -> tuple[FileMappings, ParquetVar
     output = McIndFileOutput(output_dir)
     variable_mappings = get_mappings(output)
 
-    var_count = 0
     var_indices: dict[VariableDescription, int] = {}
 
     area_variables = file_mapping_to_parquet_vars(
         variable_mappings.area_values_mappings,
         var_indices,
-        lambda area, vars: ParquetAreaVariables(area_id=area, variables=vars),
+        ParquetAreaVariables,
     )
 
     # TODO: link "name" handling
     link_variables = file_mapping_to_parquet_vars(
-        variable_mappings.area_values_mappings,
+        variable_mappings.link_values_mappings,
         var_indices,
-        lambda link, vars: ParquetLinkVariables(area1_id=area, area2_id=area, variables=vars),
+        ParquetLinkVariables,
     )
 
-    thermal_cluster_variables: list[ParquetThermalClusterVariables] = []
+    thermal_cluster_variables = file_mapping_to_parquet_cluster_vars(
+        variable_mappings.area_details_mappings, var_indices, ParquetThermalClusterVariables
+    )
+    renewable_cluster_variables = file_mapping_to_parquet_cluster_vars(
+        variable_mappings.area_details_res_mappings, var_indices, ParquetRenewableClusterVariables
+    )
+    sts_variables = file_mapping_to_parquet_cluster_vars(
+        variable_mappings.area_details_mappings, var_indices, ParquetShortTermStorageVariables
+    )
 
-    for area, vars in variable_mappings.area_details_mappings.items():
-        # more complex here, we need to group by cluster, which is the variable name
-        for cluster_id, cluster_variables in groupby(vars, lambda v: v.name):
-            local_var_indices: list[int] = []
-            for v in vars:
-                original_var_desc = v.variable
-                var_desc = VariableDescription(name=original_var_desc.unit, unit="", stat=original_var_desc.stat)
-                if var_desc in var_indices:
-                    local_var_indices.append(var_indices[var_desc])
-                else:
-                    local_var_indices.append(var_count)
-                    var_indices[var_desc] = var_count
-                    var_count += 1
-            parquet_vars = ParquetThermalClusterVariables(
-                area_id=area, cluster_id=cluster_id, variables=local_var_indices
-            )
-            thermal_cluster_variables.append(parquet_vars)
-
-    return ParquetVariablesMetadata(
-        variables=var_indices,
+    return variable_mappings, ParquetVariablesMetadata(
+        mc_ind_variables=var_indices,
+        mc_all_variables=var_indices,  # TODO
         area_variables=area_variables,
+        link_variables=link_variables,
         thermal_cluster_variables=thermal_cluster_variables,
+        renewable_cluster_variables=renewable_cluster_variables,
+        short_term_storage_variables=sts_variables,
     )
 
 
