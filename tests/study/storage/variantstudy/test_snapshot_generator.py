@@ -29,6 +29,7 @@ from antarest.core.interfaces.cache import CacheConstants, update_cache
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
@@ -1107,7 +1108,9 @@ class TestSnapshotGenerator:
 
     @with_admin_user
     @with_db_context
-    def test_db_connections(self, variant_study_service: VariantStudyService, variant_study_id: str) -> None:
+    def test_db_connections(
+        self, variant_study_service: VariantStudyService, variant_study_id: str, tmp_path: Path
+    ) -> None:
         """
         Checks the number of database queries when generating a variant study snapshot.
         The number should be kept as low as possible.
@@ -1120,13 +1123,52 @@ class TestSnapshotGenerator:
             results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
             assert results.success is True
 
-            # We expect 5 queries:
+            # We expect 4 queries:
             # - 2 queries to fetch the whole tree of studies (with join query on owner, groups, commands, snapshot and command_version)
             # - 1 query to fetch the paths inside the `get_study_dao` method (as we're generating an FS variant)
             # - 1 query to insert the variant study snapshot
 
             assert len(db_recorder.sql_statements) == 4, str(db_recorder)
 
-        # todo: enrich the test with other cases:
-        # - Not from scratch
-        # - Variant that has multiple parents
+        # `is_snapshot_up_to_date` method
+        with DBStatementRecorder(db.session.bind) as db_recorder:
+            variant_study_service.repository.is_snapshot_up_to_date(variant_study_id)
+
+            # We expect 1 query:
+            # - 1 query to fetch the variant study snapshot and its associated command versions in the same query
+
+            assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+
+        # Create a big variant tree to ensure we do not perform N+1 requests
+        variant1 = _create_variant(tmp_path, "variant1", variant_study_id, with_snapshot=False, snapshot_version=-1)
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=False, snapshot_version=-1)
+        variant3 = _create_variant(tmp_path, "variant3", variant2.id, with_snapshot=False, snapshot_version=-1)
+        variant4 = _create_variant(tmp_path, "variant4", variant3.id, with_snapshot=False, snapshot_version=-1)
+        variant5 = _create_variant(tmp_path, "variant5", variant4.id, with_snapshot=False, snapshot_version=-1)
+
+        for k, variant in enumerate([variant1, variant2, variant3, variant4, variant5]):
+            args = to_json_string(dict(area_name=f"fr_{variant.id}"))
+            variant.commands = [
+                CommandBlock(
+                    id=str(uuid.uuid4()),
+                    study_id=variant.id,
+                    index=0,
+                    command="create_area",
+                    version=1,
+                    args=args,
+                    study_version="9.3",
+                )
+            ]
+            variant_study_service.repository.save(variant)
+            variant_study_service.repository.initialize_commands_list_version_table(variant.id)
+
+        with DBStatementRecorder(db.session.bind) as db_recorder:
+            results = generator.generate_snapshot(variant5.id, dao_factory=factory, from_scratch=False)
+            # assert results.success is True
+
+            # We expect 4 queries:
+            # - 2 queries to fetch the whole tree of studies (with join query on owner, groups, commands, snapshot and command_version)
+            # - 1 query to fetch the paths inside the `get_study_dao` method (as we're generating an FS variant)
+            # - 1 query to insert the variant study snapshot
+
+            assert len(db_recorder.sql_statements) == 4, str(db_recorder)
