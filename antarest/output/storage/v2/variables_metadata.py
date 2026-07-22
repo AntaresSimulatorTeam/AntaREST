@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from functools import cached_property
 from itertools import groupby
 from pathlib import Path
-from typing import Callable, Iterable, NewType, Type, TypeAlias, TypeVar
+from typing import Callable, Iterable, NewType, Type, TypeAlias, TypeVar, Literal, overload
 
 from mypyc.ir.ops import Generic
 from pydantic import BaseModel
@@ -457,6 +457,21 @@ def get_file_type_mappings(
     return res
 
 
+# Keys for uniquely identifying files.
+# In particular, thermal clusters etc don't map to a whole file, their data is a sub-part of an area file
+
+AreaFileKey = NewType("AreaFileKey", str)
+
+@dataclass(frozen=True, slots=True)
+class LinkFileKey:
+    area1_id: str
+    area2_id: str
+
+FileKey: TypeAlias = AreaFileKey | LinkFileKey
+FK = TypeVar("FK", AreaFileKey, LinkFileKey)
+
+# Follow definitions of proper system items, which don't necessarily map to a whole file
+# In our target parquet format, each item will have a corresponding row in the corresponding parquet file
 
 AreaId = NewType("AreaId", str)
 
@@ -514,10 +529,44 @@ class ItemsVariables(Generic[ID]):
     refs: list[VariableRefs[ID]]
 
 
+@overload
+def file_mapping_to_items_variables(
+    item_type: Literal["area"],
+    mapping: dict[FK, list[FileVariable]],
+    var_indices: dict[VariableDescription, int],
+) -> ItemsVariables[ID]:
+    pass
+
+def file_mapping_to_items_variables(
+    item_type: Literal["area", "link", "thermal_cluster", "renewable_cluster", "short_term_storage"],
+    mapping: dict[FK, list[FileVariable]],
+    var_indices: dict[VariableDescription, int],
+) -> ItemsVariables[ID]:
+    """
+        Transforms the input mapping into a list of "parquet variables", populating the list of variables and
+        their indices along the way.
+        """
+    variables: list[VariableDescription] = []
+    variables_indices: dict[VariableDescription, int] = {}
+    variables_refs: dict[ID, list[int]] = {}
+
+    for item_id, vars in mapping.items():
+        local_var_indices: list[int] = []
+        for v in vars:
+            var_desc = v.variable
+            if var_desc in var_indices:
+                local_var_indices.append(var_indices[var_desc])
+            else:
+                var_count = len(var_indices)
+                local_var_indices.append(len(var_indices))
+                var_indices[var_desc] = var_count
+        parquet_vars = cls(area, local_var_indices)
+        res.append(parquet_vars)
+    return res
+
+
 
 T = TypeVar("T", ParquetAreaVariables, ParquetLinkVariables)
-
-
 
 
 def file_mapping_to_parquet_vars(
