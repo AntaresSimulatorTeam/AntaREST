@@ -25,6 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
@@ -95,6 +96,7 @@ class DatabaseStudyDao(
         study_id: str,
         db_session: Session,
         matrix_service: ISimpleMatrixService,
+        blob_service: IBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
     ) -> None:
         """
@@ -104,6 +106,7 @@ class DatabaseStudyDao(
             study_id: The study ID for database queries
             db_session: SQLAlchemy session for database operations
             matrix_service: Matrix storage service
+            blob_service: Blobs storage service
             generator_matrix_constants: Predefined matrix constants generator
         """
         DatabaseAreaDao.__init__(self, study_id, db_session)
@@ -115,7 +118,7 @@ class DatabaseStudyDao(
         DatabaseThermalDao.__init__(self, study_id, db_session)
         DatabaseStudySettingsDao.__init__(self, study_id, db_session)
         DatabaseRenewableDao.__init__(self, study_id, db_session)
-        DatabaseUserResourcesDao.__init__(self, study_id, db_session)
+        DatabaseUserResourcesDao.__init__(self, study_id, db_session, blob_service)
         DatabaseStStorageDao.__init__(self, study_id, db_session)
         DatabaseThematicTrimmingDao.__init__(self, study_id, db_session)
         DatabaseScenarioBuilderDao.__init__(self, study_id, db_session)

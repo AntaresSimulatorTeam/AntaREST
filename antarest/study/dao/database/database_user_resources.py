@@ -15,13 +15,15 @@ Database implementation of UserResourcesDao.
 """
 
 from pathlib import PurePosixPath
+from typing import Any, Sequence
 
-from sqlalchemy import CursorResult, delete, select
+from sqlalchemy import CursorResult, Row, delete, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.exceptions import UserResourcesNotFound
-from antarest.study.business.model.user_model import UserResourceDataCreation
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
 from antarest.study.dao.database.sql_utils import upsert_multiple
@@ -30,7 +32,7 @@ from antarest.study.dao.database.sql_utils import upsert_multiple
 class DatabaseUserResourcesDao(UserResourcesDao):
     """Database implementation of UserResourcesDao"""
 
-    def __init__(self, study_id: str, db_session: Session) -> None:
+    def __init__(self, study_id: str, db_session: Session, blob_service: IBlobService) -> None:
         """
         Initialize DatabaseUserResourcesDao with dependencies.
 
@@ -40,6 +42,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
         """
         self._study_id = study_id
         self._db_session = db_session
+        self._blob_service = blob_service
 
     @override
     def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
@@ -73,11 +76,26 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
     @override
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
-        stmt = select(USER_RESOURCES_TABLE).where(USER_RESOURCES_TABLE.c.study_id == self._study_id)
-
-        rows = self._db_session.execute(stmt).fetchall()
+        rows = self._get_all_user_resources_rows()
 
         return [
             UserResourceDataCreation(path=PurePosixPath(row.path), resource_type=row.resource_type, blob_id=row.blob_id)
             for row in rows
         ]
+
+    @override
+    def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
+        path_as_posix = resource_path.as_posix()
+
+        rows = self._get_all_user_resources_rows()
+        for row in rows:
+            if row.path == path_as_posix:
+                if row.resource_type == ResourceType.FOLDER:
+                    raise ValueError(f"Resource {path_as_posix} is a folder. You should provide a file.")
+                return self._blob_service.get(row.blob_id)
+
+        raise UserResourcesNotFound(path_as_posix)
+
+    def _get_all_user_resources_rows(self) -> Sequence[Row[Any]]:
+        stmt = select(USER_RESOURCES_TABLE).where(USER_RESOURCES_TABLE.c.study_id == self._study_id)
+        return self._db_session.execute(stmt).fetchall()

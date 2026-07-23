@@ -13,6 +13,7 @@ from antares.study.version import StudyVersion
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.exceptions import UnsupportedStudyVersion
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -101,10 +102,12 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
     def __init__(
         self,
         matrix_service: ISimpleMatrixService,
+        blob_service: IBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
         session: Session | None = None,
     ) -> None:
         self._matrix_service = matrix_service
+        self._blob_service = blob_service
         self._generator_matrix_constants = generator_matrix_constants
         self._session = session
 
@@ -147,4 +150,6 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
 
     @override
     def get_study_dao(self, study_id: str, is_study_managed: bool) -> DatabaseStudyDao:
-        return DatabaseStudyDao(study_id, self.session, self._matrix_service, self._generator_matrix_constants)
+        return DatabaseStudyDao(
+            study_id, self.session, self._matrix_service, self._blob_service, self._generator_matrix_constants
+        )

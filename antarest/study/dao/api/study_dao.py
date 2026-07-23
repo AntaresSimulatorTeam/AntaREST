@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from abc import abstractmethod
 from collections.abc import Sequence
+from pathlib import PurePosixPath
 from typing import TYPE_CHECKING
 
 import polars as pl
@@ -763,6 +764,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
         return self._adaptee.get_all_user_resources()
+
+    @override
+    def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
+        return self._adaptee.get_user_resource(resource_path)
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:

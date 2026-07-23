@@ -28,7 +28,7 @@ class UserResourcesManager:
         return [res.path for res in sorted_resources]
 
     def get_user_resource(self, study: StudyInterface, path: PurePosixPath) -> bytes:
-        raise NotImplementedError()
+        return study.get_study_dao().get_user_resource(path)
 
     def delete_user_resource(self, study: StudyInterface, path: PurePosixPath) -> None:
         command = RemoveUserResource(
