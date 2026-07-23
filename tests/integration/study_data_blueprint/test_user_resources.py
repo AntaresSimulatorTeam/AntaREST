@@ -68,6 +68,14 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     assert res.status_code == 200
     assert res.json() == ["my/folder"]
 
+    # Create a file "my/folder".
+    res = client.put(f"/v1/studies/{study_id}/user-resources", params={"path": "my/folder", "resource_type": "file"}, files={"file": b"a"},)
+    assert res.status_code == 200
+
+    # Create a folder "my".
+    res = client.put(f"/v1/studies/{study_id}/user-resources", params={"path": "my", "resource_type": "folder"})
+    assert res.status_code == 200
+
     # Delete the folder
     res = client.delete(f"/v1/studies/{study_id}/user-resources?path=my/folder")
     assert res.status_code == 200
