@@ -12,7 +12,7 @@
 
 from collections.abc import Sequence
 
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload, with_polymorphic
 from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
@@ -20,7 +20,6 @@ from typing_extensions import override
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
@@ -179,27 +178,13 @@ class VariantStudyRepository(StudyMetadataRepository):
         version: int = self.session.execute(stmt).scalar_one()
         return version
 
-    def save_commands_list_version(self, variant_id: str, commands: CommandBlocksWithVersion) -> None:
-        session = self.session
-        # Clean commands
-        session.execute(delete(CommandBlock).where(CommandBlock.study_id == variant_id))
-        # Save the new ones
-        if commands.commands:
-            values = [command.to_dict() for command in commands.commands]
-            upsert_multiple(session, CommandBlock.__table__, values)  # type: ignore
-        # Save the new command version
-        self._save_commands_list_version(variant_id, commands.version)  # This performs the `commit`
-
-    def _save_commands_list_version(self, variant_id: str, version: int) -> None:
-        data = CommandsListVersion(variant_id=variant_id, version=version)
+    def increment_commands_list_version(self, variant_id: str) -> None:
+        current_version = self.get_commands_list_version(variant_id)
+        data = CommandsListVersion(variant_id=variant_id, version=current_version + 1)
         session = self.session
         data = session.merge(data)
         session.add(data)
         session.commit()
-
-    def increment_commands_list_version(self, variant_id: str) -> None:
-        current_version = self.get_commands_list_version(variant_id)
-        self._save_commands_list_version(variant_id, current_version + 1)
 
     def is_snapshot_up_to_date(self, study_id: str) -> bool:
         join_query = [joinedload(VariantStudy.snapshot), joinedload(VariantStudy.commands_version)]

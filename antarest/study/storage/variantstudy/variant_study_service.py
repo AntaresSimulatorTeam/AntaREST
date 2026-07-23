@@ -296,8 +296,8 @@ class VariantStudyService(AbstractStudyService):
             new_commands = current_commands.commands + new_commands
 
         # Save the new commands
-        new_block = CommandBlocksWithVersion(commands=new_commands, version=current_commands.version + 1)
-        self.repository.save_commands_list_version(study.id, new_block)
+        study.commands = new_commands
+        study.commands_version.version = current_commands.version + 1
 
         # Update the editor
         self._update_editor(study)
@@ -327,8 +327,8 @@ class VariantStudyService(AbstractStudyService):
             new_commands.append(command)
 
         # Save the new commands
-        new_block = CommandBlocksWithVersion(commands=new_commands, version=current_commands.version + 1)
-        self.repository.save_commands_list_version(study.id, new_block)
+        study.commands = new_commands
+        study.commands_version.version = current_commands.version + 1
 
         self._update_editor(study)
         self.on_parent_change(study.id)
@@ -345,8 +345,8 @@ class VariantStudyService(AbstractStudyService):
 
         # Save the new commands
         current_cmd_version = self.repository.get_commands_list_version(study_id)
-        new_block = CommandBlocksWithVersion(commands=[], version=current_cmd_version + 1)
-        self.repository.save_commands_list_version(study_id, new_block)
+        study.commands = []
+        study.commands_version.version = current_cmd_version + 1
 
         self._update_editor(study)
         self.on_variant_rebase(study)
