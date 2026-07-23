@@ -59,7 +59,23 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     assert res.status_code == 200
     assert res.content == content
 
-    # todo: delete a file and delete a folder
+    # Delete the file
+    res = client.delete(f"/v1/studies/{study_id}/user-resources?path=my/file")
+    assert res.status_code == 200
+
+    # Fetch all resources. Should contain the folder only
+    res = client.get(f"/v1/studies/{study_id}/user-resources")
+    assert res.status_code == 200
+    assert res.json() == ["my/folder"]
+
+    # Delete the folder
+    res = client.delete(f"/v1/studies/{study_id}/user-resources?path=my/folder")
+    assert res.status_code == 200
+
+    # Fetch all resources. Should be empty
+    res = client.get(f"/v1/studies/{study_id}/user-resources")
+    assert res.status_code == 200
+    assert res.json() == []
 
     ##########################
     # Error cases
