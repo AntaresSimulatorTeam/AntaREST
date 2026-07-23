@@ -2332,10 +2332,7 @@ def create_study_data_routes() -> APIRouter:
         study_interface = study_service.get_study_interface(study)
         return study_service.user_resources_manager.get_user_resource(study_interface, PurePosixPath(path))
 
-    @bp.put(
-        "/studies/{uuid}/user-resources",
-        summary="Replace or create an user resource for a given study",
-    )
+    @bp.put("/studies/{uuid}/user-resources", summary="Replace or create an user resource for a given study")
     def replace_user_resource(
         study_service: StudyServiceDep,
         uuid: UuidStr,
