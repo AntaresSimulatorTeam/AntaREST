@@ -340,21 +340,6 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 thermal_outage_details=self.thermal_outage_details,
             )
             self.study_interface_supplier(study).add_commands([command], listener)
-
-            if isinstance(study, VariantStudy):
-                # In this case we only added the command to the list.
-                # It means the generation will really be executed in the next snapshot generation.
-                # We don't want this, we want this task to generate the matrices no matter the study.
-                # Therefore, we have to launch a variant generation task inside the timeseries generation one.
-                variant_service = self.storage_service.variant_study_service
-                task_service = variant_service.task_service
-                generation_task_id = variant_service.generate_task(study, False, listener)
-                task_service.await_task(generation_task_id)
-                result = task_service.status_task(generation_task_id)
-                assert result.result is not None
-                if not result.result.success:
-                    raise ValueError(result.result.message)
-
             notify_study_edition(self.event_bus, study)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
@@ -547,10 +532,14 @@ class VariantStudyInterface(StudyInterface):
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
         """
-        We update the last modification date in DB.
-        This way, the variant snapshot will be re-generated inside future operations.
+        If the study is stored on the filesystem, some of its metadata is duplicated.
+        They are stored in DB and on the disk.
+        When updating the metadata, we store the new data in DB and increment the `commands_list_version` table.
+        This way, the variant snapshot will be re-generated with the metadata stored in DB for future operations.
         """
         self._study.updated_at = current_time()
+        if self._study.storage_mode == StorageMode.FILESYSTEM:
+            self._variant_service.repository.increment_commands_list_version(self._study.id)
         self._variant_service.repository.save(self._study)
 
 
@@ -559,7 +548,7 @@ class IOutputsAccess(ABC):
     Access to outputs data.
 
     The abstraction is quite leaky: the behaviour for outputs stored in-study is kept
-    unchanched for backward compat, and stays mainly implemented in raw study service.
+    unchanged for backward compat, and stays mainly implemented in raw study service.
 
     Lightweight interface to the output service, with only a few methods that are legitimate to
     use by studies being an aggregate of study input data and output data.

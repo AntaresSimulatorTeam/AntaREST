@@ -84,11 +84,7 @@ def command_matrix_usage_provider(
     command_factory: CommandFactory,
     storage_mapping: dict[StorageMode, IStudyStorage],
 ) -> CommandMatrixUsageProvider:
-    command_matrix_usage_provider = CommandMatrixUsageProvider(
-        variant_study_repository, command_factory, storage_mapping
-    )
-
-    return command_matrix_usage_provider
+    return CommandMatrixUsageProvider(variant_study_repository, command_factory, storage_mapping)
 
 
 @pytest.fixture
@@ -272,7 +268,7 @@ def test_command_matrix_usage_provider_with_snapshot(
     variant_study_service.append_commands(variant_study.id, [command.to_dto()])
 
     # Generate the snapshot
-    variant_study_service.safe_generation(variant_study)
+    variant_study_service.generate(variant_study)
 
     # Ensures the provider sees matrices in the snapshot as the variant contains the command `GenerateThermalClusterTimeSeries`.
     # This way it won't be cleaned by the garbage collector.
@@ -297,7 +293,7 @@ def test_command_matrix_usage_provider_with_snapshot(
     assert command.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=False)
     variant_study_service.append_commands(variant_study.id, [command.to_dto()])
     # Generate its snapshot
-    variant_study_service.safe_generation(variant_study)
+    variant_study_service.generate(variant_study)
     # Ensures no matrix is used even if the snapshot exists
     used_matrices = list(provider.get_matrix_usage())
     assert len(used_matrices) == 0
@@ -323,7 +319,8 @@ def test_constants_matrix_usage_provider(constants_matrix_usage_provider: Consta
     assert constants_id == matrix_ref_ids
 
 
-def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user: Any) -> None:
+def test_dataset_matrix_usage_provider(matrix_service_on_disk: MatrixService, admin_user: Any) -> None:
+    matrix_service = matrix_service_on_disk
     with db():
         group_repo = GroupRepository()
         group = group_repo.save(Group(name="groupA", id="groupA"))
@@ -358,7 +355,8 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
 
 
 @with_db_context
-def test_output_variables_matrix_usage_provider(matrix_service: MatrixService) -> None:
+def test_output_variables_matrix_usage_provider(matrix_service_on_disk: MatrixService) -> None:
+    matrix_service = matrix_service_on_disk
     # Create a matrix to avoid ForeignKey issue
     matrix_id = matrix_service.create(pl.DataFrame([0]))
 

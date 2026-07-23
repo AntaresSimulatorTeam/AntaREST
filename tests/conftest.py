@@ -20,10 +20,12 @@ from antares.study.version.create_app import CreateApp
 from sqlalchemy.orm import Session
 
 from antarest.blobstore.in_memory import InMemoryBlobService
+from antarest.core.config import InternalMatrixFormat
 from antarest.core.interfaces.cache import ICache
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
+from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -75,9 +77,32 @@ def ini_cleaner() -> Callable[[str], str]:
     return cleaner
 
 
-@pytest.fixture(name="matrix_service")
+@pytest.fixture(name="matrix_service", scope="session")
 def matrix_service_fixture() -> InMemorySimpleMatrixService:
     return InMemorySimpleMatrixService()
+
+
+@pytest.fixture(name="real_matrix_service")
+def real_matrix_service_fixture(tmp_path: Path) -> MatrixService:
+    repo = MatrixRepository()
+    bucket_dir = tmp_path / "bucket_dir"
+    content = MatrixContentRepository(bucket_dir, InternalMatrixFormat.FEATHER)
+    dataset_repo = MatrixDataSetRepository()
+
+    config = Mock()
+    config.storage = Mock()
+    config.storage.tmp_dir = bucket_dir
+
+    service = MatrixService(
+        repo=repo,
+        repo_dataset=dataset_repo,
+        matrix_content_repository=content,
+        user_service=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+        config=config,
+    )
+    return service
 
 
 @pytest.fixture(name="blob_service")
