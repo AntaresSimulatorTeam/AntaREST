@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.blobstore.service import IBlobService
-from antarest.core.exceptions import UserResourcesIsAFolder, UserResourcesNotFound
+from antarest.core.exceptions import UserResourceIsAFolder, UserResourceNotFound
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
@@ -70,7 +70,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
-            raise UserResourcesNotFound(str(resource_path))
+            raise UserResourceNotFound(str(resource_path))
 
         self._db_session.commit()
 
@@ -91,10 +91,10 @@ class DatabaseUserResourcesDao(UserResourcesDao):
         for row in rows:
             if row.path == path_as_posix:
                 if row.resource_type == ResourceType.FOLDER:
-                    raise UserResourcesIsAFolder(path_as_posix)
+                    raise UserResourceIsAFolder(path_as_posix)
                 return self._blob_service.get(row.blob_id)
 
-        raise UserResourcesNotFound(path_as_posix)
+        raise UserResourceNotFound(path_as_posix)
 
     def _get_all_user_resources_rows(self) -> Sequence[Row[Any]]:
         stmt = select(USER_RESOURCES_TABLE).where(USER_RESOURCES_TABLE.c.study_id == self._study_id)

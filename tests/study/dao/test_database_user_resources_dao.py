@@ -14,7 +14,7 @@ from pathlib import PurePosixPath
 import pytest
 
 from antarest.blobstore.in_memory import InMemoryBlobService
-from antarest.core.exceptions import UserResourcesNotFound
+from antarest.core.exceptions import UserResourceNotFound
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -67,7 +67,7 @@ def test_update_blob_id(dao: StudyDao, blob_service: InMemoryBlobService) -> Non
 
 
 def test_user_resources_not_exists(db_dao: DatabaseStudyDao) -> None:
-    with pytest.raises(UserResourcesNotFound):
+    with pytest.raises(UserResourceNotFound):
         db_dao.delete_user_resource(PurePosixPath("file_path"))
 
 

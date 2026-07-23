@@ -19,8 +19,8 @@ from antarest.core.exceptions import (
     ChildNotFoundError,
     ResourceCreationNotAllowed,
     ResourceDeletionNotAllowed,
-    UserResourcesIsAFolder,
-    UserResourcesNotFound,
+    UserResourceIsAFolder,
+    UserResourceNotFound,
 )
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
@@ -70,9 +70,9 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
     def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
         fs_path = self.get_file_study().config.study_path.joinpath(resource_path)
         if not fs_path.exists():
-            raise UserResourcesNotFound(resource_path.as_posix())
+            raise UserResourceNotFound(resource_path.as_posix())
         if fs_path.is_dir():
-            raise UserResourcesIsAFolder(resource_path.as_posix())
+            raise UserResourceIsAFolder(resource_path.as_posix())
         return fs_path.read_bytes()
 
     @override
