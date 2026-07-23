@@ -11,13 +11,8 @@
 # This file is part of the Antares project.
 from pathlib import PurePosixPath
 
-from antarest.study.business.model.config.compatibility_parameters_model import (
-    CompatibilityParameters,
-    CompatibilityParametersUpdate,
-)
-from antarest.study.business.model.user_model import UserResourceDataRemoval, UserResourceDataCreation, ResourceType
+from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.replace_user_resource import ReplaceUserResource
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -43,7 +38,9 @@ class UserResourcesManager:
         )
         study.add_commands([command])
 
-    def create_user_resource(self, study: StudyInterface, resource_type: ResourceType, path: PurePosixPath, content: bytes | None) -> None:
+    def create_user_resource(
+        self, study: StudyInterface, resource_type: ResourceType, path: PurePosixPath, content: bytes | None
+    ) -> None:
         if content is None:
             blob_id = None
         else:
