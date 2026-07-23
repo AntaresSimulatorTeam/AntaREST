@@ -606,7 +606,7 @@ class LauncherService:
         if load is not None and not self._is_outdated_load_data(load):
             return load.to_dto()
 
-        logger.info("No cached load for launcher '%s', querying live", launcher_id)
+        logger.info("No valid cached load for launcher '%s', querying live", launcher_id)
         return launcher.get_load()
 
     def _is_outdated_load_data(self, load: LauncherCache) -> bool:
