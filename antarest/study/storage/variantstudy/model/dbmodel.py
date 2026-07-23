@@ -12,7 +12,6 @@
 
 import datetime
 import uuid
-from dataclasses import dataclass
 from typing import Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
@@ -191,9 +190,3 @@ class VariantStudy(Study):
     @override
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
-
-
-@dataclass(frozen=True)
-class CommandBlocksWithVersion:
-    commands: list[CommandBlock]
-    version: int

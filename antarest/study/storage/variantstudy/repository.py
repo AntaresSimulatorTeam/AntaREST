@@ -24,7 +24,6 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
-    CommandBlocksWithVersion,
     CommandsListVersion,
     VariantStudy,
 )
@@ -138,36 +137,28 @@ class VariantStudyRepository(StudyMetadataRepository):
         stmt = select(CommandBlock)
         return list(self.session.execute(stmt).scalars().all())
 
-    def get_study_with_commands(self, variant_id: str) -> VariantStudy | None:
+    def get_study_with_commands(self, variant_id: str, with_lock: bool = False) -> VariantStudy:
         """
-        Use a single JOIN query to retrieve a variant study with its associated command blocks.
+        Use a single JOIN query to retrieve a variant study with its associated command blocks and their version.
         It returns a `VariantStudy` object with its associated `owner`, `groups` to be able to check user permissions efficiently.
         """
-        stmt = (
-            select(VariantStudy)
-            .options(joinedload(VariantStudy.owner), joinedload(VariantStudy.groups), joinedload(VariantStudy.commands))
-            .where(VariantStudy.id == variant_id)
-        )
+        join_query = [
+            joinedload(VariantStudy.owner),
+            joinedload(VariantStudy.groups),
+            joinedload(VariantStudy.commands),
+            joinedload(VariantStudy.commands_version),
+        ]
+        stmt = select(VariantStudy).options(*join_query).where(VariantStudy.id == variant_id)
 
-        result: VariantStudy | None = self.session.execute(stmt).unique().scalar_one_or_none()
-        return result
+        if with_lock:
+            stmt = stmt.with_for_update(of=CommandsListVersion)
 
-    def get_command_blocks_with_associated_version(self, variant_id: str) -> CommandBlocksWithVersion:
-        """
-        This method performs a single JOIN query to ensure that the 2 separated infos (version and cmd blocks) are synchronized.
-        """
-        query = (
-            select(CommandsListVersion, CommandBlock)
-            .outerjoin(CommandBlock, CommandBlock.study_id == CommandsListVersion.variant_id)
-            .where(CommandsListVersion.variant_id == variant_id)
-            .order_by(CommandBlock.index)
-            .with_for_update()
-        )
-        rows = self.session.execute(query).all()
+        variant_study: VariantStudy | None = self.session.execute(stmt).unique().scalar_one_or_none()
 
-        version = rows[0].CommandsListVersion.version
-        cmd_blocks = [row.CommandBlock for row in rows if row.CommandBlock is not None]
-        return CommandBlocksWithVersion(version=version, commands=cmd_blocks)
+        if not variant_study:
+            raise StudyNotFoundError(variant_id)
+
+        return variant_study
 
     def get_commands_list_version(self, variant_id: str) -> int:
         """

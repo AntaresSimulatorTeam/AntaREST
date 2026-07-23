@@ -80,7 +80,6 @@ from antarest.study.storage.variantstudy.command_matrix_usage_provider import Co
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
-    CommandBlocksWithVersion,
     CommandsListVersion,
     VariantStudy,
 )
@@ -213,10 +212,6 @@ class VariantStudyService(AbstractStudyService):
 
     def _get_variant_with_commands(self, study_id: str) -> VariantStudy:
         variant_study = self.repository.get_study_with_commands(study_id)
-
-        if not variant_study:
-            raise StudyNotFoundError(study_id)
-
         assert_permission(variant_study, StudyPermissionType.READ)
         return variant_study
 
@@ -245,7 +240,7 @@ class VariantStudyService(AbstractStudyService):
             commands: list of new command
         Returns: The added command ids as a list of str
         """
-        study = self._get_variant_study(study_id)
+        study = self.repository.get_study_with_commands(study_id, with_lock=True)
         command_ids = self._modify_commands(study, commands, replace_commands=False)
         self.on_variant_advance(study)
         self.generate(study)
@@ -259,7 +254,7 @@ class VariantStudyService(AbstractStudyService):
             commands: list of new command
         Returns: Study's id
         """
-        study = self._get_variant_study(study_id)
+        study = self.repository.get_study_with_commands(study_id, with_lock=True)
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
         self.generate(study)
@@ -269,12 +264,12 @@ class VariantStudyService(AbstractStudyService):
         command_objs = self._check_commands_validity(study.id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
 
-        current_commands = self._get_study_commands_with_lock(study.id)
+        current_commands = study.commands
 
         if replace_commands:
             first_index = 0
         else:
-            first_index = len(current_commands.commands)
+            first_index = len(current_commands)
 
         # Create the new commands
         new_commands = [
@@ -293,11 +288,11 @@ class VariantStudyService(AbstractStudyService):
         ]
 
         if not replace_commands:
-            new_commands = current_commands.commands + new_commands
+            new_commands = current_commands + new_commands
 
         # Save the new commands
         study.commands = new_commands
-        study.commands_version.version = current_commands.version + 1
+        study.commands_version.version += 1
 
         # Update the editor
         self._update_editor(study)
@@ -311,16 +306,16 @@ class VariantStudyService(AbstractStudyService):
             command_id: command_id
         Returns: None
         """
-        study = self._get_variant_study(study_id)
+        study = self.repository.get_study_with_commands(study_id, with_lock=True)
 
-        current_commands = self._get_study_commands_with_lock(study.id)
+        current_commands = study.commands
 
-        index = next((i for i, cmd in enumerate(current_commands.commands) if cmd.id == command_id), None)
+        index = next((i for i, cmd in enumerate(current_commands) if cmd.id == command_id), None)
         if index is None:
             raise CommandNotFoundError(f"Command {command_id} not found in variant study {study_id}")
 
-        new_commands = current_commands.commands[:index]
-        for i, command in enumerate(current_commands.commands[index + 1 :]):
+        new_commands = current_commands[:index]
+        for i, command in enumerate(current_commands[index + 1 :]):
             command.index = index + i
             # All commands after the removed one should have a new id as we rely on this inside the snapshot `last_executed_command` attribute
             command.id = str(uuid.uuid4())
@@ -328,7 +323,7 @@ class VariantStudyService(AbstractStudyService):
 
         # Save the new commands
         study.commands = new_commands
-        study.commands_version.version = current_commands.version + 1
+        study.commands_version.version += 1
 
         self._update_editor(study)
         self.on_parent_change(study.id)
@@ -351,13 +346,6 @@ class VariantStudyService(AbstractStudyService):
         self._update_editor(study)
         self.on_variant_rebase(study)
         self.clear_snapshot(study)
-
-    def _get_study_commands_with_lock(self, study_id: str) -> CommandBlocksWithVersion:
-        """
-        Fetches the list of commands and their associated version for a given study.
-        It locks the `commands_list_version` table to ensure it is not modified concurrently.
-        """
-        return self.repository.get_command_blocks_with_associated_version(study_id)
 
     def _get_variant_study(self, study_id: str) -> VariantStudy:
         """
