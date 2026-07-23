@@ -45,7 +45,7 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     res = client.put(
         f"/v1/studies/{study_id}/user-resources",
         params={"path": "my/file", "resource_type": "file"},
-        files={"file": content}
+        files={"file": content},
     )
     assert res.status_code == 200
 
