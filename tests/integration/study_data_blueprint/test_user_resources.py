@@ -80,8 +80,8 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     )
 
     # Create a folder while giving a content. Should fail
-    body = {"path": "my/folder", "resource_type": "folder", "content": b"any"}
-    res = client.put(f"/v1/studies/{study_id}/user-resources", params=body)
+    params = {"path": "my/folder", "resource_type": "folder"}
+    res = client.put(f"/v1/studies/{study_id}/user-resources", params=params, files={"file": b"any"})
     assert res.status_code == 422
     assert res.json()["exception"] == "ValidationError"
     assert "You cannot provide a blob_id for a folder" in res.json()["description"]
