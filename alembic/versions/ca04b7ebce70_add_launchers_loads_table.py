@@ -24,7 +24,7 @@ def upgrade():
         sa.Column("cluster_load_rate", sa.Float(), nullable=False),
         sa.Column("nb_queued_jobs", sa.Integer(), nullable=False),
         sa.Column("launcher_status", sa.String(100), nullable=False),
-        sa.Column("date", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("date", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("launcher_name", name="pk_launchers_cache"),
     )
 

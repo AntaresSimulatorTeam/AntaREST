@@ -15,7 +15,7 @@ import json
 import re
 import typing
 from collections.abc import MutableMapping
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Annotated, Any, TypeAlias
 from uuid import uuid4
 
@@ -375,17 +375,19 @@ class LauncherCache(Base):
     cluster_load_rate: Mapped[float] = mapped_column(Float())
     nb_queued_jobs: Mapped[int] = mapped_column(Integer())
     launcher_status: Mapped[str] = mapped_column(String(100))
-    date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    date: Mapped[datetime] = mapped_column(DateTime())
 
     @classmethod
     def from_dto(cls, dto: LauncherCacheDTO, name: str) -> "LauncherCache":
+        from antarest.core.utils.utils import current_time
+
         return cls(
             launcher_name=name,
             allocated_cpu_rate=dto.allocated_cpu_rate,
             cluster_load_rate=dto.cluster_load_rate,
             nb_queued_jobs=dto.nb_queued_jobs,
             launcher_status=dto.launcher_status,
-            date=datetime.now(UTC),
+            date=current_time(),
         )
 
     def to_dto(self) -> LauncherCacheDTO:

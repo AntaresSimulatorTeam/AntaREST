@@ -16,7 +16,6 @@ import time
 from pydantic import BaseModel
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.main import build_launcher
 from antarest.launcher.model import LauncherCache
 from antarest.maintenance.app import MaintenanceTask, TaskName, celery_app
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
@@ -32,18 +31,8 @@ class LauncherCacheTaskResult(BaseModel):
 
 @celery_app.task(base=MaintenanceTask, bind=True, name=TaskName.LAUNCHER_CACHE, pydantic=True)
 def save_launcher_cache_task(self: MaintenanceTask) -> LauncherCacheTaskResult:
-    ctx = self.context
     logger.info("Saving launcher cache to database")
-    launcher_service = build_launcher(
-        ctx.config,
-        study_service=ctx.core_services.study_service,
-        output_service=ctx.core_services.output_service,
-        login_service=ctx.core_services.login_service,
-        event_bus=ctx.core_services.event_bus,
-        task_service=ctx.core_services.task_service,
-        file_transfer_manager=ctx.core_services.file_transfer_manager,
-        cache=ctx.core_services.cache,
-    )
+    launcher_service = self.context.services.launcher
 
     if launcher_service is None:
         return LauncherCacheTaskResult(
@@ -60,8 +49,14 @@ def save_launcher_cache_task(self: MaintenanceTask) -> LauncherCacheTaskResult:
                 for load_name, load_cache in all_launchers_cache_dto_by_id.items()
             ]
             launcher_service.launcher_cache_repository.update_all_launcher_loads(launchers_cache)
+        expected_launcher_ids = launcher_service.launchers.keys()
+        status = (
+            BackGroundTaskStatus.SUCCESS
+            if all_launchers_cache_dto_by_id.keys() >= expected_launcher_ids
+            else BackGroundTaskStatus.PARTIAL_SUCCESS
+        )
         return LauncherCacheTaskResult(
-            status=BackGroundTaskStatus.SUCCESS,
+            status=status,
             duration_seconds=time.time() - start_time,
         )
     except Exception as e:

@@ -14,7 +14,7 @@ import json
 import math
 import os
 import time
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock, call
@@ -1028,7 +1028,7 @@ class TestLauncherService:
         factory_launcher_mock.build_launcher.return_value = launchers_dict
 
         launcher_cache_repository_mock = Mock()
-        launcher_cache_repository_mock.get_launcher_load.return_value.date = datetime.now(UTC)
+        launcher_cache_repository_mock.get_launcher_load.return_value.date = current_time()
         launcher_cache_repository_mock.get_launcher_load.return_value.to_dto.return_value = (
             LauncherCacheDTO.model_validate(expected_result)
         )
@@ -1071,7 +1071,7 @@ class TestLauncherService:
             cluster_load_rate=0,
             nb_queued_jobs=0,
             launcher_status="outdated status",
-            date=datetime.now(UTC) - timedelta(days=1),
+            date=current_time() - timedelta(days=1),
         )
 
         # The fresh DTO returned by the live launcher
@@ -1129,7 +1129,7 @@ class TestLauncherService:
             cluster_load_rate=0,
             nb_queued_jobs=0,
             launcher_status="fresh status",
-            date=datetime.now(UTC),
+            date=current_time(),
         )
 
         launcher_mock = Mock()

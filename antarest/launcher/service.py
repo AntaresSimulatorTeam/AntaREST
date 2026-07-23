@@ -13,7 +13,6 @@ import functools
 import logging
 import os
 import shutil
-from datetime import UTC, datetime
 from http import HTTPStatus
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -611,7 +610,7 @@ class LauncherService:
         return launcher.get_load()
 
     def _is_outdated_load_data(self, load: LauncherCache) -> bool:
-        return load.date < datetime.now(UTC) - self.config.launcher.launcher_cache_validity_time
+        return load.date < current_time() - self.config.launcher.launcher_cache_validity_time
 
     def get_all_loads(self) -> dict[str, LauncherCacheDTO]:
         all_loads = {}
