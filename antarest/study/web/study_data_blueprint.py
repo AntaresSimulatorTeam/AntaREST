@@ -2317,44 +2317,44 @@ def create_study_data_routes() -> APIRouter:
         """
         return study_service.get_study_data(study_id)
 
-    @bp.get("/studies/{study_id}/user-resources", summary="Fetches paths of all user resources for a given study")
-    def get_all_user_resources(study_service: StudyServiceDep, study_id: UuidStr) -> list[str]:
-        study = study_service.check_study_access(study_id, StudyPermissionType.READ)
+    @bp.get("/studies/{uuid}/user-resources", summary="Fetches paths of all user resources for a given study")
+    def get_all_user_resources(study_service: StudyServiceDep, uuid: UuidStr) -> list[str]:
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.user_resources_manager.get_all_user_resources_paths(study_interface)
 
     @bp.get(
-        "/studies/{study_id}/user-resources/content",
+        "/studies/{uuid}/user-resources/content",
         summary="Fetches an user resource content for a given study and a given path",
     )
-    def get_user_resource_content(study_service: StudyServiceDep, study_id: UuidStr, path: str) -> bytes:
-        study = study_service.check_study_access(study_id, StudyPermissionType.READ)
+    def get_user_resource_content(study_service: StudyServiceDep, uuid: UuidStr, path: str) -> bytes:
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.user_resources_manager.get_user_resource(study_interface, PurePosixPath(path))
 
     @bp.put(
-        "/studies/{study_id}/user-resources",
+        "/studies/{uuid}/user-resources",
         summary="Replace or create an user resource for a given study",
     )
     def replace_user_resource(
         study_service: StudyServiceDep,
-        study_id: UuidStr,
+        uuid: UuidStr,
         path: str,
         resource_type: ResourceType,
         content: bytes | None = None,
     ) -> None:
-        study = study_service.check_study_access(study_id, StudyPermissionType.WRITE)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.user_resources_manager.replace_user_resource(
             study_interface, resource_type, PurePosixPath(path), content
         )
 
     @bp.delete(
-        "/studies/{study_id}/user-resources",
+        "/studies/{uuid}/user-resources",
         summary="Deletes an user resource for a given study",
     )
-    def delete_user_resource(study_service: StudyServiceDep, study_id: UuidStr, path: str) -> None:
-        study = study_service.check_study_access(study_id, StudyPermissionType.WRITE)
+    def delete_user_resource(study_service: StudyServiceDep, uuid: UuidStr, path: str) -> None:
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.user_resources_manager.delete_user_resource(study_interface, PurePosixPath(path))
 
