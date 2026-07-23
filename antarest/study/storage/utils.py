@@ -672,11 +672,15 @@ def update_study_from_raw_metadata(study: Study, file_study: "FileStudy") -> Non
         logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         study_antares = file_study.tree.get(url=["study", "antares"])
+
         author = study_antares.get("author")
         editor = study_antares.get("editor", author)
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
+        if not isinstance(author, str):
+            raise TypeError(f"Invalid author type: {type(author)!r}")
+        if not isinstance(editor, str):
+            raise TypeError(f"Invalid editor type: {type(editor)!r}")
+        if not isinstance(horizon, (str, int)):
+            raise TypeError(f"Invalid horizon type: {type(horizon)!r}")
         study.horizon = horizon
         study.author = author
         study.editor = editor

@@ -207,3 +207,13 @@ class TestCreateLink:
             study_version=study_version,
         ).apply(dao)
         assert not output.status
+
+        with pytest.raises(ValidationError):
+            CreateLink(
+                area1=area1,
+                area2=area1,
+                parameters={},
+                command_context=command_context,
+                series=[[0]],
+                study_version=STUDY_VERSION_8_8,
+            )
