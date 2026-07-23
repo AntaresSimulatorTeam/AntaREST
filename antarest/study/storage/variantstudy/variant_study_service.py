@@ -234,7 +234,8 @@ class VariantStudyService(AbstractStudyService):
 
     def append_commands(self, study_id: str, commands: list[CommandDTO]) -> list[str]:
         """
-        Add commands to the list of existing ones
+        Add commands to the list of existing ones, and generates the snapshot.
+
         Args:
             study_id: study id
             commands: list of new command
@@ -250,7 +251,8 @@ class VariantStudyService(AbstractStudyService):
 
     def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
         """
-        Replace existing commands by new ones
+        Replace existing commands by new ones, and generates the snapshot.
+
         Args:
             study_id: study id
             commands: list of new command
@@ -304,7 +306,8 @@ class VariantStudyService(AbstractStudyService):
 
     def remove_command(self, study_id: str, command_id: str) -> None:
         """
-        Remove command
+        Remove command and generate the snapshot.
+
         Args:
             study_id: study id
             command_id: command_id
@@ -337,6 +340,7 @@ class VariantStudyService(AbstractStudyService):
     def remove_all_commands(self, study_id: str) -> None:
         """
         Remove all commands
+
         Args:
             study_id: study id
         Returns: None
