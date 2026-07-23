@@ -1362,6 +1362,14 @@ class InMemoryStudyDao(StudyDao):
         return result
 
     @override
+    def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
+        blob_id = self._user_resources[resource_path]
+        if not blob_id:
+            raise ValueError(f"Resource {resource_path} is a folder, we only read files")
+        return self.blob_manager.get_blob(blob_id)
+
+
+    @override
     def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
         for resource in resource_data:
             self._user_resources[resource.path] = resource.blob_id
