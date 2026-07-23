@@ -12,6 +12,7 @@
 
 from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, String, Table
 
+from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.config.adequacy_patch_model import PriceTakingOrder
 from antarest.study.business.model.config.advanced_parameters_model import (
@@ -31,7 +32,6 @@ from antarest.study.business.model.config.optimization_config_model import (
     SimplexOptimizationRange,
     UnfeasibleProblemBehavior,
 )
-from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 

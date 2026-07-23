@@ -13,20 +13,37 @@
 from collections.abc import Sequence
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, with_polymorphic
 from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
 
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.model import Study
+from antarest.study.model import RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    CommandsListVersion,
+    VariantStudy,
+)
 
 
 class VariantStudyRepository(StudyMetadataRepository):
     """
     Variant study repository
+
+    Notes:
+        Important design notes for handling concurrency :
+         - we want to ensure that the list of commands defining a study is not modified concurrently by multiple
+           requests
+         - we also want to ensure that a snapshot correctly identifies to which list of commands it corresponds
+
+         Therefore, we use a "version" for the list of commands, which MUST be locked with a "FOR UPDATE" prior to any
+         modification. The version MUST be incremented after any modification, and committed together with the new
+         list of commands.
+         Also, we MUST always read the version and the list of commands together in a single query (not transaction),
+         so that we are sure they are consistent, even in READ COMMITTED isolation level.
     """
 
     def __init__(self, cache_service: ICache, session: Session | None = None):
@@ -132,25 +149,80 @@ class VariantStudyRepository(StudyMetadataRepository):
         stmt = select(CommandBlock)
         return list(self.session.execute(stmt).scalars().all())
 
-    def find_variants(self, variant_ids: Sequence[str]) -> Sequence[VariantStudy]:
+    def get_study_with_commands(self, variant_id: str, with_lock: bool = False) -> VariantStudy:
         """
-        Find a list of variants by IDs
+        Use a single JOIN query to retrieve a variant study with its associated command blocks and their version.
+        It returns a `VariantStudy` object with its associated `owner`, `groups` to be able to check user permissions efficiently.
         """
-        if not variant_ids:
-            return []
-
-        stmt = (
-            select(VariantStudy)
-            .options(
-                joinedload(VariantStudy.snapshot),
-                joinedload(VariantStudy.commands),
-                joinedload(VariantStudy.owner),
-                joinedload(VariantStudy.groups),
+        # postgresql does not allow to lock the version row in the main query which uses outer joins,
+        # therefore we need to first lock the row with a separate query
+        if with_lock:
+            self.session.execute(
+                select(CommandsListVersion).where(CommandsListVersion.variant_id == variant_id).with_for_update()
             )
-            .where(VariantStudy.id.in_(variant_ids))
-        )
+        join_query = [
+            joinedload(VariantStudy.owner),
+            joinedload(VariantStudy.groups),
+            joinedload(VariantStudy.commands),
+            joinedload(VariantStudy.commands_version),
+        ]
+        stmt = select(VariantStudy).options(*join_query).where(VariantStudy.id == variant_id)
+
+        variant_study: VariantStudy | None = self.session.execute(stmt).unique().scalar_one_or_none()
+
+        if not variant_study:
+            raise StudyNotFoundError(variant_id)
+
+        return variant_study
+
+    def get_commands_list_version(self, variant_id: str) -> int:
+        """
+        This method should only be used to increment the commands' list version later.
+        That is why it locks the `CommandsListVersion` table using a `with_for_update` clause.
+        """
+        stmt = select(CommandsListVersion.version).where(CommandsListVersion.variant_id == variant_id).with_for_update()
+        version: int = self.session.execute(stmt).scalar_one()
+        return version
+
+    def increment_commands_list_version(self, variant_id: str) -> None:
+        current_version = self.get_commands_list_version(variant_id)
+        data = CommandsListVersion(variant_id=variant_id, version=current_version + 1)
+        session = self.session
+        data = session.merge(data)
+        session.add(data)
+        session.commit()
+
+    def is_snapshot_up_to_date(self, study_id: str) -> bool:
+        join_query = [joinedload(VariantStudy.snapshot), joinedload(VariantStudy.commands_version)]
+        variant: VariantStudy | None = self.session.get(VariantStudy, study_id, options=join_query)
+
+        if not variant:
+            raise StudyNotFoundError(study_id)
+
+        if not variant.snapshot:
+            return False
+
+        return variant.snapshot.version == variant.commands_version.version  # type: ignore
+
+    def get_study_tree(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
+        """
+        Returns the parent study and the list of its variants based on the given ids.
+        Loads metadata at the same time for permission checks.
+        Also loads commands and snapshot at the same time to avoid multiple queries.
+        """
+        study_w_p = with_polymorphic(Study, [VariantStudy])
+
+        join_query = [
+            joinedload(study_w_p.owner),
+            joinedload(study_w_p.groups),
+            joinedload(study_w_p.VariantStudy.snapshot),
+            joinedload(study_w_p.VariantStudy.commands_version),
+            joinedload(study_w_p.VariantStudy.commands),
+        ]
+        stmt = select(study_w_p).options(*join_query).where(study_w_p.id.in_(study_ids))
 
         result = self.session.execute(stmt).unique().scalars().all()
 
-        index = {id_: i for i, id_ in enumerate(variant_ids)}
-        return sorted(result, key=lambda v: index[v.id])
+        index = {id_: i for i, id_ in enumerate(study_ids)}
+        result = sorted(result, key=lambda v: index[v.id])
+        return result[0], result[1:]  # type: ignore

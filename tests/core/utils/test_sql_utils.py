@@ -16,7 +16,7 @@ from sqlalchemy import Column, Engine, Integer, MetaData, String, Table, create_
 from sqlalchemy.exc import CompileError
 from sqlalchemy.orm import Session, sessionmaker
 
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
+from antarest.core.utils.sql_utils import upsert_multiple, upsert_one
 from tests.db_statement_recorder import DBStatementRecorder
 
 METADATA = MetaData()

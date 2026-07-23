@@ -19,6 +19,8 @@ from typing_extensions import override
 
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.serde.json import from_json, to_json_string
+from antarest.core.utils.sql_utils import upsert_one
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.compatibility_parameters_model import (
@@ -35,7 +37,6 @@ from antarest.study.dao.api.general_config_dao import GeneralConfigDao
 from antarest.study.dao.api.optimization_preferences_dao import OptimizationPreferencesDao
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao
 from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
-from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.settings import (
     ADEQUACY_PATCH_PARAMETERS_TABLE,
     ADVANCED_PARAMETERS_TABLE,
@@ -45,7 +46,6 @@ from antarest.study.dao.database.models.settings import (
     PLAYLIST_TABLE,
     TIMESERIES_CONFIG_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao

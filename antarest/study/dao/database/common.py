@@ -9,17 +9,17 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, cast
 
-from sqlalchemy import Row, Table, select
+from sqlalchemy import Table, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.area_properties_model import FILTER_OPTIONS, FrequencyFilter, sort_filter_options
 from antarest.study.dao.common import AreaSeriesMapping
 from antarest.study.dao.database.models.area import AREA_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -33,10 +33,6 @@ def validate_area_exists(session: Session, study_id: str, area_id: str) -> None:
 def area_exists(session: Session, study_id: str, area_id: str) -> bool:
     stmt = select(AREA_TABLE.c.area_id).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
     return session.execute(stmt).fetchone() is not None
-
-
-def get_row_representation_as_dict(row: Row[Any]) -> dict[str, Any]:
-    return row._asdict()
 
 
 def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: Table) -> None:

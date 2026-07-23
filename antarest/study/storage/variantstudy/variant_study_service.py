@@ -12,6 +12,7 @@
 
 import logging
 import re
+import uuid
 from collections.abc import Callable
 from datetime import timedelta
 from pathlib import Path
@@ -24,6 +25,7 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
+    CommandNotFoundError,
     CommandNotValid,
     NoParentStudyError,
     StudyNotFoundError,
@@ -76,7 +78,11 @@ from antarest.study.storage.variantstudy.command_blob_usage_provider import Comm
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    CommandsListVersion,
+    VariantStudy,
+)
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     CommandDTOAPI,
@@ -180,12 +186,6 @@ class VariantStudyService(AbstractStudyService):
         self._snapshot_manager_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
         self.invalidate_snapshot(variant_study)
 
-    def is_snapshot_up_to_date(self, variant_study: VariantStudy) -> bool:
-        return self._snapshot_manager_mapping[variant_study.storage_mode].is_snapshot_up_to_date(variant_study)
-
-    def has_snapshot(self, variant_study: VariantStudy) -> bool:
-        return self._snapshot_manager_mapping[variant_study.storage_mode].has_snapshot(variant_study)
-
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = get_current_user_name()
         study.editor = user_name
@@ -198,17 +198,22 @@ class VariantStudyService(AbstractStudyService):
             study_id: study id
         Returns: List of commands
         """
-        study = self._get_variant_study(study_id)
+        variant_study = self._get_variant_with_commands(study_id)
 
         id_to_name: dict[int, str] = {}
         command_list = []
 
-        for command in study.commands:
+        for command in variant_study.commands:
             if command.user_id and command.user_id not in id_to_name.keys():
                 user_name: str = get_user_name_from_id(command.user_id)
                 id_to_name[command.user_id] = user_name
             command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
         return command_list
+
+    def _get_variant_with_commands(self, study_id: str) -> VariantStudy:
+        variant_study = self.repository.get_study_with_commands(study_id)
+        assert_permission(variant_study, StudyPermissionType.READ)
+        return variant_study
 
     def convert_commands(self, study_id: str, api_commands: list[CommandDTOAPI]) -> list[CommandDTO]:
         study = self._get_study_by_id(study_id)
@@ -235,9 +240,10 @@ class VariantStudyService(AbstractStudyService):
             commands: list of new command
         Returns: The added command ids as a list of str
         """
-        study = self._get_variant_study(study_id)
+        study = self.repository.get_study_with_commands(study_id, with_lock=True)
         command_ids = self._modify_commands(study, commands, replace_commands=False)
         self.on_variant_advance(study)
+        self.generate(study)
         return command_ids
 
     def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
@@ -248,7 +254,7 @@ class VariantStudyService(AbstractStudyService):
             commands: list of new command
         Returns: Study's id
         """
-        study = self._get_variant_study(study_id)
+        study = self.repository.get_study_with_commands(study_id, with_lock=True)
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
         self.generate(study)
@@ -257,15 +263,18 @@ class VariantStudyService(AbstractStudyService):
     def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
         command_objs = self._check_commands_validity(study.id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
+
+        current_commands = study.commands
+
         if replace_commands:
             first_index = 0
-            study.commands = []
         else:
-            first_index = len(study.commands)
+            first_index = len(current_commands)
 
-        # noinspection PyArgumentList
+        # Create the new commands
         new_commands = [
             CommandBlock(
+                id=str(uuid.uuid4()),
                 command=command.action,
                 args=to_json_string(command.args),
                 index=(first_index + i),
@@ -273,10 +282,19 @@ class VariantStudyService(AbstractStudyService):
                 study_version=str(command.study_version),
                 user_id=get_user_impersonator(),
                 updated_at=current_time(),
+                study_id=study.id,
             )
             for i, command in enumerate(validated_commands)
         ]
-        study.commands.extend(new_commands)
+
+        if not replace_commands:
+            new_commands = current_commands + new_commands
+
+        # Save the new commands
+        study.commands = new_commands
+        study.commands_version.version += 1
+
+        # Update the editor
         self._update_editor(study)
         return [c.id for c in new_commands]
 
@@ -288,14 +306,27 @@ class VariantStudyService(AbstractStudyService):
             command_id: command_id
         Returns: None
         """
-        study = self._get_variant_study(study_id)
+        study = self.repository.get_study_with_commands(study_id, with_lock=True)
 
-        index = [command.id for command in study.commands].index(command_id)
-        study.commands.pop(index)
-        for idx, command in enumerate(study.commands):
-            command.index = idx
+        current_commands = study.commands
+
+        index = next((i for i, cmd in enumerate(current_commands) if cmd.id == command_id), None)
+        if index is None:
+            raise CommandNotFoundError(f"Command {command_id} not found in variant study {study_id}")
+
+        new_commands = current_commands[:index]
+        for i, command in enumerate(current_commands[index + 1 :]):
+            command.index = index + i
+            # All commands after the removed one should have a new id as we rely on this inside the snapshot `last_executed_command` attribute
+            command.id = str(uuid.uuid4())
+            new_commands.append(command)
+
+        # Save the new commands
+        study.commands = new_commands
+        study.commands_version.version += 1
+
         self._update_editor(study)
-        self.on_variant_rebase(study)
+        self.on_parent_change(study.id)
         self.generate(study)
 
     def remove_all_commands(self, study_id: str) -> None:
@@ -307,15 +338,16 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self._get_variant_study(study_id)
 
+        # Save the new commands
+        current_cmd_version = self.repository.get_commands_list_version(study_id)
         study.commands = []
+        study.commands_version.version = current_cmd_version + 1
+
         self._update_editor(study)
         self.on_variant_rebase(study)
         self.clear_snapshot(study)
 
-    def _get_variant_study(
-        self,
-        study_id: str,
-    ) -> VariantStudy:
+    def _get_variant_study(self, study_id: str) -> VariantStudy:
         """
         Get variant study, and check READ permissions.
 
@@ -514,6 +546,7 @@ class VariantStudyService(AbstractStudyService):
             owner_id=require_current_user().impersonator,
             snapshot=None,
             storage_mode=study.storage_mode,
+            commands_version=CommandsListVersion(version=0, variant_id=new_id),
         )
         self.repository.save(variant_study)
         notify_study_creation(self.event_bus, variant_study)
@@ -592,7 +625,7 @@ class VariantStudyService(AbstractStudyService):
             try:
                 self.repository.refresh(study)
 
-                if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
+                if not from_scratch and self.repository.is_snapshot_up_to_date(study.id):
                     # Nothing to do
                     return GenerationResultInfoDTO(success=True, should_invalidate_cache=False, details=[])
 
