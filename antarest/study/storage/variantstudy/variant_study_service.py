@@ -151,6 +151,9 @@ class VariantStudyService(AbstractStudyService):
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
+        """
+        Ensures a snapshot is generated and returns the corresponding DAO.
+        """
         variant_study = _cast_study_to_variant(study)
         self.generate(variant_study)
         return self._study_dao_factories[study.storage_mode].get_study_dao(study.id, True)
