@@ -31,8 +31,8 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     assert res.json() == []
 
     # Create a folder
-    body = {"path": "my/folder", "resource_type": "folder"}
-    res = client.put(f"/v1/studies/{study_id}/user-resources", params=body)
+    params = {"path": "my/folder", "resource_type": "folder"}
+    res = client.put(f"/v1/studies/{study_id}/user-resources", params=params)
     assert res.status_code == 200
 
     # Fetch all resources. Should contain the folder
@@ -40,10 +40,22 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     assert res.status_code == 200
     assert res.json() == ["my/folder"]
 
-    # todo:
-    # create a file
-    # fetch the content of a file
-    # delete a file
+    # Create a file with a specific content
+    content = b"specific content"
+    res = client.put(f"/v1/studies/{study_id}/user-resources", params={"path": "my/file", "resource_type": "file"}, json={"content": content})
+    assert res.status_code == 200
+
+    # Fetch all resources. Should contain the file
+    res = client.get(f"/v1/studies/{study_id}/user-resources")
+    assert res.status_code == 200
+    assert res.json() == ["my/file", "my/folder"]
+
+    # Fetch the content of the created file
+    res = client.get(f"/v1/studies/{study_id}/user-resources/content?path=my/file")
+    assert res.status_code == 200
+    assert res.content == content
+
+    # todo: delete a file and delete a folder
 
     ##########################
     # Error cases
