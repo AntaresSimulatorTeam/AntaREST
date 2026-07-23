@@ -113,6 +113,7 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
+from antarest.study.business.user_resources_management import UserResourcesManager
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
@@ -678,6 +679,7 @@ class StudyService:
             self.st_storage_manager,
             self.binding_constraint_manager,
         )
+        self.user_resources_manager = UserResourcesManager(command_context)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: list[Callable[[str], None]] = []

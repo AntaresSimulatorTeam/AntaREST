@@ -22,10 +22,10 @@ class UserResourcesManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_all_user_resources(self, study: StudyInterface) -> list[PurePosixPath]:
+    def get_all_user_resources_paths(self, study: StudyInterface) -> list[str]:
         user_resources = study.get_study_dao().get_all_user_resources()
         sorted_resources = sorted(user_resources, key=lambda res: res.path)
-        return [res.path for res in sorted_resources]
+        return [res.path.as_posix() for res in sorted_resources]
 
     def get_user_resource(self, study: StudyInterface, path: PurePosixPath) -> bytes:
         return study.get_study_dao().get_user_resource(path)
@@ -38,7 +38,7 @@ class UserResourcesManager:
         )
         study.add_commands([command])
 
-    def create_user_resource(
+    def replace_user_resource(
         self, study: StudyInterface, resource_type: ResourceType, path: PurePosixPath, content: bytes | None
     ) -> None:
         if content is None:
