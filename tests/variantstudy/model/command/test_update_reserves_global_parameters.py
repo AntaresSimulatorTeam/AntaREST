@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from unittest.mock import Mock
 
 import pytest
 from antares.study.version import StudyVersion
@@ -18,7 +17,7 @@ from pydantic import ValidationError
 from antarest.study.business.model.reserves_global_parameters_model import (
     ReservesGlobalParametersUpdate,
 )
-from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_10_0
 from antarest.study.storage.variantstudy.model.command.update_reserves_global_parameters import (
     UpdateReservesGlobalParameters,
@@ -27,12 +26,8 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from tests.study.dao.utils import save_area
 
 
-def _make_dao(version: StudyVersion = STUDY_VERSION_10_0) -> InMemoryStudyDao:
-    return InMemoryStudyDao(version=version, matrix_service=Mock())
-
-
-def test_apply_command(command_context: CommandContext) -> None:
-    dao = _make_dao()
+def test_apply_command(command_context: CommandContext, dao_10_0: StudyDao) -> None:
+    dao = dao_10_0
     area_id = "paris"
     save_area(dao, area_id)
 
@@ -55,8 +50,8 @@ def test_apply_command(command_context: CommandContext) -> None:
     assert result.energy_activation_ratio_down == 1.0
 
 
-def test_apply_multiple_areas(command_context: CommandContext) -> None:
-    dao = _make_dao()
+def test_apply_multiple_areas(command_context: CommandContext, dao_10_0: StudyDao) -> None:
+    dao = dao_10_0
     save_area(dao, "paris")
     save_area(dao, "lyon")
 
@@ -80,8 +75,8 @@ def test_apply_multiple_areas(command_context: CommandContext) -> None:
     assert lyon.reference_activation_duration_down == 1
 
 
-def test_area_not_found(command_context: CommandContext) -> None:
-    dao = _make_dao()
+def test_area_not_found(command_context: CommandContext, dao_10_0: StudyDao) -> None:
+    dao = dao_10_0
 
     command = UpdateReservesGlobalParameters(
         properties={"nonexistent": ReservesGlobalParametersUpdate(reference_activation_duration_up=5)},
