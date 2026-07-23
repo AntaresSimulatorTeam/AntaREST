@@ -34,7 +34,7 @@ from antarest.core.jwt import JWTUser
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.exceptions import NoValidOutputError
-from antarest.launcher.model import JobStatus, LauncherCacheDTO, LauncherParametersDTO, LogType
+from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 from antarest.login.utils import current_user_context, require_current_user
 from antarest.study.model import STUDY_VERSION_9_2
 
@@ -277,7 +277,7 @@ class LocalLauncher(AbstractLauncher):
         return sorted(self.local_config.binaries)
 
     @override
-    def get_load(self) -> LauncherCacheDTO:
+    def get_load(self) -> LauncherLoadDTO:
         local_used_cpus = sum(params.nb_cpu or 1 for params in self.submitted_jobs.values())
 
         # The cluster load is approximated by the percentage of used CPUs.
@@ -289,4 +289,4 @@ class LocalLauncher(AbstractLauncher):
             "nbQueuedJobs": 0,
             "launcherStatus": "SUCCESS",
         }
-        return LauncherCacheDTO(**args)
+        return LauncherLoadDTO(**args)

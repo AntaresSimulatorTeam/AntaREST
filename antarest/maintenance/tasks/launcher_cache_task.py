@@ -16,7 +16,7 @@ import time
 from pydantic import BaseModel
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import LauncherCache
+from antarest.launcher.model import LauncherLoad
 from antarest.maintenance.app import MaintenanceTask, TaskName, celery_app
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 
@@ -29,7 +29,7 @@ class LauncherCacheTaskResult(BaseModel):
     error: str | None = None
 
 
-@celery_app.task(base=MaintenanceTask, bind=True, name=TaskName.LAUNCHER_CACHE, pydantic=True)
+@celery_app.task(base=MaintenanceTask, bind=True, name=TaskName.CACHE_LAUNCHER_LOAD, pydantic=True)
 def save_launcher_cache_task(self: MaintenanceTask) -> LauncherCacheTaskResult:
     logger.info("Saving launcher cache to database")
     launcher_service = self.context.services.launcher
@@ -45,7 +45,7 @@ def save_launcher_cache_task(self: MaintenanceTask) -> LauncherCacheTaskResult:
         with db():
             all_launchers_cache_dto_by_id = launcher_service.get_all_loads()
             launchers_cache = [
-                LauncherCache.from_dto(load_cache, load_name)
+                LauncherLoad.from_dto(load_cache, load_name)
                 for load_name, load_cache in all_launchers_cache_dto_by_id.items()
             ]
             launcher_service.launcher_cache_repository.update_all_launcher_loads(launchers_cache)

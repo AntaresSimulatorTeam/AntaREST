@@ -53,7 +53,7 @@ class TaskName(StrEnum):
     TASKS_CLEANER = "tasks_cleaner"
     DISK_SPACE_ANALYZER = "disk_space_analyzer"
     DISK_USAGE = "disk_usage"
-    LAUNCHER_CACHE = "launcher_cache"
+    CACHE_LAUNCHER_LOAD = "cache_launcher_load"
 
 
 def _mask_url_credentials(url: str) -> str:
@@ -128,7 +128,9 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     setup_disk_space_analyzer_task(sender, storage)
 
     sender.add_periodic_task(
-        get_config().launcher.launcher_cache_sleeping_time, save_launcher_cache_task.s(), name=TaskName.LAUNCHER_CACHE
+        get_config().launcher.launcher_cache_sleeping_time,
+        save_launcher_cache_task.s(),
+        name=TaskName.CACHE_LAUNCHER_LOAD,
     )
 
     logger.info(

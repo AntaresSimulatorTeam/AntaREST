@@ -22,7 +22,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
-from antarest.launcher.model import JobStatus, LauncherCacheDTO, LauncherParametersDTO, LogType
+from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 
 
 @dataclass(frozen=True)
@@ -85,7 +85,7 @@ class AbstractLauncher(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_load(self) -> LauncherCacheDTO:
+    def get_load(self) -> LauncherLoadDTO:
         raise NotImplementedError()
 
     @abstractmethod

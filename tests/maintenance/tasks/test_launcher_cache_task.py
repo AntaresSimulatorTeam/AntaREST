@@ -19,7 +19,7 @@ from antarest.core.config import Config, LauncherConfig, LocalConfig, StorageCon
 from antarest.core.utils.utils import current_time
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.model import LauncherParametersDTO
-from antarest.launcher.repository import LauncherCacheRepository
+from antarest.launcher.repository import LauncherLoadRepository
 from antarest.launcher.service import LauncherService
 from antarest.launcher.ssh_client import SlurmError
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
@@ -52,7 +52,7 @@ def _build_launcher_service_with_real_local_launcher(tmp_path: Path) -> tuple[La
         login_service=Mock(),
         job_result_repository=Mock(),
         solver_presets_repository=Mock(),
-        launcher_cache_repository=LauncherCacheRepository(),
+        launcher_load_repository=LauncherLoadRepository(),
         event_bus=Mock(),
         factory_launcher=factory_launcher_mock,
         file_transfer_manager=Mock(),
@@ -82,9 +82,9 @@ class TestSaveLauncherCacheTask:
     def test_stale_naive_date_is_correctly_reported_as_outdated(self, tmp_path: Path) -> None:
         service, _ = _build_launcher_service_with_real_local_launcher(tmp_path)
 
-        from antarest.launcher.model import LauncherCache
+        from antarest.launcher.model import LauncherLoad
 
-        stale_naive_load = LauncherCache(
+        stale_naive_load = LauncherLoad(
             launcher_name="local",
             allocated_cpu_rate=0,
             cluster_load_rate=0,
@@ -141,7 +141,7 @@ class TestSaveLauncherCacheTask:
             login_service=Mock(),
             job_result_repository=Mock(),
             solver_presets_repository=Mock(),
-            launcher_cache_repository=LauncherCacheRepository(),
+            launcher_load_repository=LauncherLoadRepository(),
             event_bus=Mock(),
             factory_launcher=factory_launcher_mock,
             file_transfer_manager=Mock(),

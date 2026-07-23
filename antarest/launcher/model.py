@@ -321,7 +321,7 @@ class LauncherListDTO(AntaresBaseModel):
     default_launcher: str
 
 
-class LauncherCacheDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
+class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     """
     DTO representing the load of the SLURM cluster or local machine.
 
@@ -355,7 +355,7 @@ class LauncherCacheDTO(AntaresBaseModel, extra="forbid", alias_generator=to_came
     )
 
 
-class LauncherCache(Base):
+class LauncherLoad(Base):
     """
     SQLAlchemy model storing cached load information for a launcher.
 
@@ -368,7 +368,7 @@ class LauncherCache(Base):
         date: Timestamp when the load was recorded.
     """
 
-    __tablename__ = "launchers_cache"
+    __tablename__ = "launchers_loads"
 
     launcher_name: Mapped[str] = mapped_column(String(20), primary_key=True)
     allocated_cpu_rate: Mapped[float] = mapped_column(Float)
@@ -378,7 +378,7 @@ class LauncherCache(Base):
     date: Mapped[datetime] = mapped_column(DateTime())
 
     @classmethod
-    def from_dto(cls, dto: LauncherCacheDTO, name: str) -> "LauncherCache":
+    def from_dto(cls, dto: LauncherLoadDTO, name: str) -> "LauncherLoad":
         from antarest.core.utils.utils import current_time
 
         return cls(
@@ -390,8 +390,8 @@ class LauncherCache(Base):
             date=current_time(),
         )
 
-    def to_dto(self) -> LauncherCacheDTO:
-        return LauncherCacheDTO(
+    def to_dto(self) -> LauncherLoadDTO:
+        return LauncherLoadDTO(
             allocated_cpu_rate=self.allocated_cpu_rate,
             cluster_load_rate=self.cluster_load_rate,
             nb_queued_jobs=self.nb_queued_jobs,

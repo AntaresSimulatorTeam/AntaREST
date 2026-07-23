@@ -1,4 +1,4 @@
-"""add_launchers_cache_table
+"""add_launchers_loads_table
 
 Revision ID: ca04b7ebce70
 Revises: 665f7b1d7575
@@ -18,7 +18,7 @@ depends_on = None
 
 def upgrade():
     op.create_table(
-        "launchers_cache",
+        "launchers_loads",
         sa.Column("launcher_name", sa.String(20), nullable=False),
         sa.Column("allocated_cpu_rate", sa.Float(), nullable=False),
         sa.Column("cluster_load_rate", sa.Float(), nullable=False),
@@ -30,4 +30,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table("launchers_cache")
+    op.drop_table("launchers_loads")
