@@ -68,7 +68,7 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
 
     @override
     def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
-        fs_path = self.get_file_study().config.study_path.joinpath(resource_path)
+        fs_path = (self.get_file_study().config.study_path / "user").joinpath(resource_path)
         if not fs_path.exists():
             raise UserResourceNotFound(resource_path.as_posix())
         if fs_path.is_dir():

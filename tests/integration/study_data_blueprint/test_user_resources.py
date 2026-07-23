@@ -72,6 +72,6 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
 
     # Ask for the content of a folder
     res = client.get(f"/v1/studies/{study_id}/user-resources/content?path=my/folder")
-    assert res.status_code == 422
+    assert res.status_code == 400
     assert res.json()["exception"] == "UserResourceIsAFolder"
     assert res.json()["description"] == "User resources 'my/folder' is a folder. Please provide a file."
