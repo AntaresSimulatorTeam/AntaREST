@@ -11,11 +11,12 @@
 # This file is part of the Antares project.
 
 
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.config import Config, LauncherConfig, LocalConfig, StorageConfig
+from antarest.core.utils.utils import current_time
 from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.model import LauncherParametersDTO
 from antarest.launcher.repository import LauncherCacheRepository
@@ -64,9 +65,6 @@ def _build_launcher_service_with_real_local_launcher(tmp_path: Path) -> tuple[La
 class TestSaveLauncherCacheTask:
     @with_db_context
     def test_load_read_back_from_db_is_naive_and_still_comparable(self, tmp_path: Path) -> None:
-        """Regression test for the timezone bug: writing a load with an aware `datetime.now(UTC)`
-        and reading it back from the DB (as SQLite does, without tzinfo) must not raise a
-        TypeError when checked for staleness."""
         service, local_launcher = _build_launcher_service_with_real_local_launcher(tmp_path)
         local_launcher.submitted_jobs["job-1"] = LauncherParametersDTO(nb_cpu=1)
 
@@ -75,8 +73,6 @@ class TestSaveLauncherCacheTask:
 
         stored_load = service.launcher_cache_repository.get_launcher_load("local")
         assert stored_load is not None
-        # SQLite does not persist tzinfo: this must be naive, not aware, and this must not
-        # be an issue for the caller.
         assert stored_load.date.tzinfo is None
 
         # Must not raise TypeError("can't compare offset-naive and offset-aware datetimes").
@@ -94,7 +90,7 @@ class TestSaveLauncherCacheTask:
             cluster_load_rate=0,
             nb_queued_jobs=0,
             launcher_status="SUCCESS",
-            date=datetime.now(UTC) - timedelta(days=1),
+            date=current_time() - timedelta(days=1),
         )
         service.launcher_cache_repository.update_all_launcher_loads([stale_naive_load])
 
@@ -105,12 +101,6 @@ class TestSaveLauncherCacheTask:
 
     @with_db_context
     def test_local_launcher_load_is_still_stale_across_separate_service_instances(self, tmp_path: Path) -> None:
-        """This is the regression test for the bug that reusing a single LauncherService
-        instance per worker process does NOT fix: in production, the celery worker process
-        builds its own `Services.launcher` in `worker_init`, entirely separate from the
-        `Services.launcher` living in the web/API process where jobs are actually submitted.
-        `LocalLauncher.submitted_jobs` is in-memory, per-process state, so the worker's view
-        of the local launcher's load remains 0 regardless of real activity elsewhere."""
         web_process_service, web_process_local_launcher = _build_launcher_service_with_real_local_launcher(tmp_path)
         worker_process_service, _ = _build_launcher_service_with_real_local_launcher(tmp_path)
 
@@ -119,14 +109,10 @@ class TestSaveLauncherCacheTask:
         live_load_in_web_process = web_process_service.get_load("local")
         assert live_load_in_web_process.allocated_cpu_rate > 0
 
-        # The celery task, running with the "worker process" instance, has no visibility
-        # into that in-memory state.
         save_launcher_cache_task.run.__wrapped__(_FakeBoundTask(worker_process_service))
 
         cached_load = worker_process_service.launcher_cache_repository.get_launcher_load("local")
         assert cached_load is not None
-        # Bug still present: the persisted cache does not reflect the real load from the
-        # web process, and a client reading through this cache (once fresh) would get 0.
         assert cached_load.allocated_cpu_rate == 0
 
     @with_db_context

@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from datetime import UTC, datetime
 
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.launcher.model import LauncherCache
 from antarest.launcher.repository import LauncherCacheRepository
 from tests.helpers import with_db_context
@@ -22,7 +22,7 @@ launcher_cache_1 = LauncherCache(
     cluster_load_rate=0.2,
     nb_queued_jobs=3,
     launcher_status="TEST 1",
-    date=datetime.now(UTC),
+    date=current_time(),
 )
 
 
@@ -32,7 +32,7 @@ launcher_cache_2 = LauncherCache(
     cluster_load_rate=0.5,
     nb_queued_jobs=10,
     launcher_status="TEST 2",
-    date=datetime.now(UTC),
+    date=current_time(),
 )
 
 
@@ -42,7 +42,7 @@ launcher_cache_2_updated = LauncherCache(
     cluster_load_rate=1.0,
     nb_queued_jobs=100,
     launcher_status="TEST 2 BIS",
-    date=datetime.now(UTC),
+    date=current_time(),
 )
 
 
