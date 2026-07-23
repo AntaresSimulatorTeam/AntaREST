@@ -32,6 +32,18 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
 class VariantStudyRepository(StudyMetadataRepository):
     """
     Variant study repository
+
+    Notes:
+        Important design notes for handling concurrency :
+         - we want to ensure that the list of commands defining a study is not modified concurrently by multiple
+           requests
+         - we also want to ensure that a snapshot correctly identifies to which list of commands it corresponds
+
+         Therefore, we use a "version" for the list of commands, which MUST be locked with a "FOR UPDATE" prior to any
+         modification. The version MUST be incremented after any modification, and committed together with the new
+         list of commands.
+         Also, we MUST always read the version and the list of commands together in a single query (not transaction),
+         so that we are sure they are consistent, even in READ COMMITTED isolation level.
     """
 
     def __init__(self, cache_service: ICache, session: Session | None = None):
@@ -142,6 +154,12 @@ class VariantStudyRepository(StudyMetadataRepository):
         Use a single JOIN query to retrieve a variant study with its associated command blocks and their version.
         It returns a `VariantStudy` object with its associated `owner`, `groups` to be able to check user permissions efficiently.
         """
+        # postgresql does not allow to lock the version row in the main query which uses outer joins,
+        # therefore we need to first lock the row with a separate query
+        if with_lock:
+            self.session.execute(
+                select(CommandsListVersion).where(CommandsListVersion.variant_id == variant_id).with_for_update()
+            )
         join_query = [
             joinedload(VariantStudy.owner),
             joinedload(VariantStudy.groups),
@@ -149,9 +167,6 @@ class VariantStudyRepository(StudyMetadataRepository):
             joinedload(VariantStudy.commands_version),
         ]
         stmt = select(VariantStudy).options(*join_query).where(VariantStudy.id == variant_id)
-
-        if with_lock:
-            stmt = stmt.with_for_update(of=CommandsListVersion)
 
         variant_study: VariantStudy | None = self.session.execute(stmt).unique().scalar_one_or_none()
 
