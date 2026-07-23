@@ -170,7 +170,7 @@ class TestVariantStudyService:
                 variant_study_service.get_study_paths,
             )
         else:
-            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.blob_service, ctx.generator_matrix_constants)
         # Generate the snapshot
         results = generator.generate_snapshot(saved_id, dao_factory=factory)
         # Check the results
