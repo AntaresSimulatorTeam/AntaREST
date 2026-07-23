@@ -2349,10 +2349,7 @@ def create_study_data_routes() -> APIRouter:
             study_interface, resource_type, PurePosixPath(path), content
         )
 
-    @bp.delete(
-        "/studies/{uuid}/user-resources",
-        summary="Deletes an user resource for a given study",
-    )
+    @bp.delete("/studies/{uuid}/user-resources", summary="Deletes an user resource for a given study")
     def delete_user_resource(study_service: StudyServiceDep, uuid: UuidStr, path: str) -> None:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
