@@ -241,6 +241,8 @@ class VariantStudyService(AbstractStudyService):
         Returns: The added command ids as a list of str
         """
         study = self.repository.get_study_with_commands(study_id, with_lock=True)
+        assert_permission(study, StudyPermissionType.WRITE)
+
         command_ids = self._modify_commands(study, commands, replace_commands=False)
         self.on_variant_advance(study)
         self.generate(study)
@@ -255,6 +257,8 @@ class VariantStudyService(AbstractStudyService):
         Returns: Study's id
         """
         study = self.repository.get_study_with_commands(study_id, with_lock=True)
+        assert_permission(study, StudyPermissionType.WRITE)
+
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
         self.generate(study)
@@ -307,6 +311,7 @@ class VariantStudyService(AbstractStudyService):
         Returns: None
         """
         study = self.repository.get_study_with_commands(study_id, with_lock=True)
+        assert_permission(study, StudyPermissionType.WRITE)
 
         current_commands = study.commands
 
@@ -337,6 +342,7 @@ class VariantStudyService(AbstractStudyService):
         Returns: None
         """
         study = self._get_variant_study(study_id)
+        assert_permission(study, StudyPermissionType.WRITE)
 
         # Save the new commands
         current_cmd_version = self.repository.get_commands_list_version(study_id)
