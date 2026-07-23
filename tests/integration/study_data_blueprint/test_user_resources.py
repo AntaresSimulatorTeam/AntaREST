@@ -102,6 +102,10 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     assert res.json()["exception"] == "ValidationError"
     assert "You cannot provide a blob_id for a folder" in res.json()["description"]
 
+    # Recreate a folder to be able to ask for its content
+    res = client.put(f"/v1/studies/{study_id}/user-resources", params={"path": "my/folder", "resource_type": "folder"})
+    assert res.status_code == 200
+
     # Ask for the content of a folder
     res = client.get(f"/v1/studies/{study_id}/user-resources/content?path=my/folder")
     assert res.status_code == 400
