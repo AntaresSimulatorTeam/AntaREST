@@ -15,7 +15,13 @@ from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, ResourceCreationNotAllowed, ResourceDeletionNotAllowed
+from antarest.core.exceptions import (
+    ChildNotFoundError,
+    ResourceCreationNotAllowed,
+    ResourceDeletionNotAllowed,
+    UserResourcesIsAFolder,
+    UserResourcesNotFound,
+)
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -59,6 +65,15 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
                         UserResourceDataCreation(path=rel_path, resource_type=ResourceType.FOLDER, blob_id=None)
                     )
         return result
+
+    @override
+    def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
+        fs_path = self.get_file_study().config.study_path.joinpath(resource_path)
+        if not fs_path.exists():
+            raise UserResourcesNotFound(resource_path.as_posix())
+        if fs_path.is_dir():
+            raise UserResourcesIsAFolder(resource_path.as_posix())
+        return fs_path.read_bytes()
 
     @override
     def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
