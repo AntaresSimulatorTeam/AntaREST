@@ -18,7 +18,7 @@ from pathlib import PurePosixPath
 from typing import Annotated, Literal
 
 import typing_extensions as te
-from fastapi import APIRouter, Body, Depends, Query
+from fastapi import APIRouter, Body, Depends, File, Query
 from pydantic import Field
 from starlette.responses import RedirectResponse
 
@@ -2338,12 +2338,12 @@ def create_study_data_routes() -> APIRouter:
         uuid: UuidStr,
         path: str,
         resource_type: ResourceType,
-        content: bytes | None = None,
+        file: Annotated[bytes | None, File()] = None,
     ) -> None:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.user_resources_manager.replace_user_resource(
-            study_interface, resource_type, PurePosixPath(path), content
+            study_interface, resource_type, PurePosixPath(path), file
         )
 
     @bp.delete("/studies/{uuid}/user-resources", summary="Deletes an user resource for a given study")
