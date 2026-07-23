@@ -5,27 +5,31 @@ Revises: 665f7b1d7575
 Create Date: 2026-07-13 15:35:50.408218
 
 """
-from alembic import op
+
 import sqlalchemy as sa
 
+from alembic import op
+
 # revision identifiers, used by Alembic.
-revision = 'e56b1130bc1f'
-down_revision = '665f7b1d7575'
+revision = "e56b1130bc1f"
+down_revision = "665f7b1d7575"
 branch_labels = None
 depends_on = None
 
 
 def upgrade():
     # First, perform the operation with the least amount of risk
-    with op.batch_alter_table('variant_study_snapshot', schema=None) as batch_op:
-        batch_op.add_column(sa.Column("version", sa.Integer(), nullable=False, server_default="0"))
-        batch_op.drop_column('created_at')
+    op.get_bind().execute(sa.text("DELETE FROM variant_study_snapshot"))
+
+    with op.batch_alter_table("variant_study_snapshot", schema=None) as batch_op:
+        batch_op.add_column(sa.Column("version", sa.Integer(), nullable=False))
+        batch_op.drop_column("created_at")
 
     # Create a new table linking variant commands to a "version" to avoid concurrent modification
     op.create_table(
         "commands_list_version",
         sa.Column("variant_id", sa.String(length=36), primary_key=True, nullable=False),
-        sa.Column("version",  sa.Integer(), nullable=False),
+        sa.Column("version", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(
             ["variant_id"],
             ["variantstudy.id"],
@@ -44,8 +48,9 @@ def upgrade():
 
 
 def downgrade():
+    op.get_bind().execute(sa.text("DELETE FROM variant_study_snapshot"))
     op.drop_table("commands_list_version")
 
-    with op.batch_alter_table('variant_study_snapshot', schema=None) as batch_op:
-        batch_op.drop_column('version')
+    with op.batch_alter_table("variant_study_snapshot", schema=None) as batch_op:
+        batch_op.drop_column("version")
         batch_op.add_column(sa.Column("created_at", sa.DateTime(), nullable=True))
