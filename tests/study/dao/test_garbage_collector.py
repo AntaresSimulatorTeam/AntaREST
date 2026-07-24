@@ -275,7 +275,7 @@ def test_garbage_collection(dao_93: StudyDao, tmp_path: Path, db_session: Sessio
 def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao) -> None:
     # TODO: adapt this test once v10.0 is fully supported
     dao = dao_10_0
-    matrix_service = dao._matrix_service
+    matrix_service = dao.matrix_service
 
     save_area(dao, "paris")
     dao.save_reserve_definitions({"paris": [build_reserve_definition("R1")]})
