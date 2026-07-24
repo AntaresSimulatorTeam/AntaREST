@@ -29,7 +29,6 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage_constra
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import REQUIRED_VERSION, RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from tests.helpers import build_dao_from_file_study
 
 
 @pytest.fixture(name="recent_study")
@@ -196,13 +195,10 @@ class TestRemoveSTStorage:
             with pytest.raises(KeyError):
                 config.get_sts_constraint_ids("fr", "sts")
 
-    def test_apply__storage_without_constraints(
-        self, empty_study_920: FileStudy, command_context: CommandContext
-    ) -> None:
+    def test_apply__storage_without_constraints(self, dao_92: StudyDao, command_context: CommandContext) -> None:
         """Test removing a storage that has no additional constraints."""
-        study = empty_study_920
-        dao = build_dao_from_file_study(study, command_context)
-        version = study.config.version
+        dao = dao_92
+        version = dao.get_version()
 
         # Create an area and a short-term storage WITHOUT constraints
         cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
@@ -216,11 +212,17 @@ class TestRemoveSTStorage:
         )
         cmd.apply(study_dao=dao)
 
-        assert "sts" in study.config.get_st_storage_ids("fr")
-        assert study.config.get_sts_constraint_ids("fr", "sts") == []
+        # Checks the config for FS Dao
+        if isinstance(dao, FileStudyTreeDao):
+            config = dao.get_file_study().config
+            assert "sts" in config.get_st_storage_ids("fr")
+            assert config.get_sts_constraint_ids("fr", "sts") == []
 
         cmd = RemoveSTStorage(command_context=command_context, area_id="fr", storage_id="sts", study_version=version)
         output = cmd.apply(dao)
         assert output.status
 
-        assert "sts" not in study.config.get_st_storage_ids("fr")
+        # Checks the config for FS Dao
+        if isinstance(dao, FileStudyTreeDao):
+            config = dao.get_file_study().config
+            assert "sts" not in config.get_st_storage_ids("fr")
