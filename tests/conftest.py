@@ -273,23 +273,46 @@ def build_filesystem_dao(
 
 @pytest.fixture
 def fs_dao(
-    db_session: Session, command_context: CommandContext, tmp_path: Path, study_factory: StudyFactory
+    db_session: Session, command_context: CommandContext, tmp_path: Path, core_cache: ICache
 ) -> FileStudyTreeDao:
+    study_factory = StudyFactory(matrix_service=command_context.matrix_service, cache=core_cache)
     return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao(
+def dao_builder(
     request,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
-    command_context: CommandContext,
+    command_context: "CommandContext",
     tmp_path: Path,
-    core_cache: ICache,
-) -> StudyDao:
-    """A DAO parameterized over both backends (v8.8+)."""
-    if request.param == "db":
-        return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-    else:
-        study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
-        return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
+    study_factory: StudyFactory,
+) -> Callable[[StudyVersion], StudyDao]:
+    """A DAO factory parameterized over both backends, accepting the study version as argument."""
+
+    def _build(version: StudyVersion) -> StudyDao:
+        if request.param == "db":
+            return build_db_dao(db_session, matrix_service, version)
+        return build_filesystem_dao(db_session, version, command_context, study_factory, tmp_path)
+
+    return _build
+
+
+@pytest.fixture
+def dao(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_8_8)
+
+
+@pytest.fixture
+def dao_86(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_8_6)
+
+
+@pytest.fixture
+def dao_92(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_9_2)
+
+
+@pytest.fixture
+def dao_93(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_9_3)
