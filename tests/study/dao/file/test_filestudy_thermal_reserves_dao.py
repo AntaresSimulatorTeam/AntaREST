@@ -25,9 +25,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_par
 )
 
 
-def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930: FileStudyTreeDao) -> None:
+def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao: FileStudyTreeDao) -> None:
     # Build a v10.0 FS DAO.
-    dao = fs_dao_930
+    dao = fs_dao
     dao.get_file_study().config.version = STUDY_VERSION_10_0
     # Create 1 area with 2 thermal clusters and 4 reserves
     dao.save_areas_with_properties({"fr": AreaProperties()})

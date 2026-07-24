@@ -38,7 +38,6 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import (
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
@@ -66,13 +65,6 @@ def db_dao_920(db_session: Session, matrix_service: ISimpleMatrixService) -> Dat
 @pytest.fixture
 def db_dao_930(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
     return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
-
-
-@pytest.fixture
-def fs_dao_930(
-    db_session: Session, command_context: CommandContext, tmp_path: Path, study_factory: StudyFactory
-) -> FileStudyTreeDao:
-    return build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
 
 
 @pytest.fixture(scope="session")
