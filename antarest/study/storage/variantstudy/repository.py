@@ -239,6 +239,17 @@ class VariantStudyRepository(StudyMetadataRepository):
         stored_lineage = tuple((entry.variant_id, entry.commands_version) for entry in snapshot.lineage)
         return stored_lineage == self.get_current_lineage(variant_id)
 
+    def has_snapshot_generation_id(self, study_id: str, generation_id: str) -> bool:
+        """
+        Return whether a snapshot with this exact publication ID still exists.
+        """
+        stmt = (
+            select(VariantStudySnapshot.generation_id)
+            .where(VariantStudySnapshot.id == study_id)
+            .execution_options(populate_existing=True)
+        )
+        return self.session.execute(stmt).scalar_one_or_none() == generation_id
+
     def get_study_tree(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
         """
         Returns the parent study and the list of its variants based on the given ids.

@@ -134,10 +134,12 @@ class TestVariantStudySnapshot:
         assert obj.last_executed_command == command_id
 
     def test_init__with_lineage(self, db_session: Session, variant_study_id: str) -> None:
+        generation_id = str(uuid.uuid4())
         with db_session:
             snapshot = VariantStudySnapshot(
                 id=variant_study_id,
                 version=2,
+                generation_id=generation_id,
                 lineage=[
                     VariantStudySnapshotLineage(
                         snapshot_id=variant_study_id,
@@ -152,6 +154,7 @@ class TestVariantStudySnapshot:
 
         snapshot = db_session.get(VariantStudySnapshot, variant_study_id)
         assert snapshot is not None
+        assert snapshot.generation_id == generation_id
         assert [(entry.variant_id, entry.commands_version) for entry in snapshot.lineage] == [(variant_study_id, 2)]
 
         with db_session:
@@ -310,6 +313,8 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
 
     # 3rd case: A matching lineage is up to date.
+    generation_id = str(uuid.uuid4())
+    variant.snapshot.generation_id = generation_id
     variant.snapshot.lineage = [
         VariantStudySnapshotLineage(
             snapshot_id=variant_id,
@@ -321,6 +326,8 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
     session.add(variant)
     session.commit()
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is True
+    assert variant_study_service.repository.has_snapshot_generation_id(variant_id, generation_id) is True
+    assert variant_study_service.repository.has_snapshot_generation_id(variant_id, str(uuid.uuid4())) is False
 
     # 4th case: Changes the version in `commands_list_version` table -> Not up to date
     upsert_one(session, CommandsListVersion.__table__, {"variant_id": variant_id, "version": 1})

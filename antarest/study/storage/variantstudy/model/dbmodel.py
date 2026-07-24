@@ -47,6 +47,7 @@ class VariantStudySnapshot(Base):
         primary_key=True,
     )
     version: Mapped[int] = mapped_column(Integer)
+    generation_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
     lineage: Mapped[list["VariantStudySnapshotLineage"]] = relationship(
         cascade="all, delete, delete-orphan",

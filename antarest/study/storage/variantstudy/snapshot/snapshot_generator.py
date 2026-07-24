@@ -15,6 +15,7 @@ This module dedicated to variant snapshot generation.
 """
 
 import logging
+import uuid
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, NamedTuple
 
@@ -53,12 +54,25 @@ class RefStudySearchResult(NamedTuple):
     cmd_blocks: list[CommandBlock]
     version: int
     lineage: tuple["LineageVersion", ...]
+    source_snapshot: "SourceSnapshotToken | None" = None
     force_regenerate: bool = False
 
 
 class LineageVersion(NamedTuple):
     variant_id: str
     commands_version: int
+
+
+class SourceSnapshotToken(NamedTuple):
+    study_id: str
+    generation_id: str
+
+
+class SourceSnapshotChanged(Exception):
+    pass
+
+
+MAX_SOURCE_SNAPSHOT_RETRIES = 2
 
 
 def _get_aggregated_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandBlock]:
@@ -99,6 +113,36 @@ class SnapshotGenerator:
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
     ) -> GenerationResultInfoDTO:
+        for attempt in range(MAX_SOURCE_SNAPSHOT_RETRIES + 1):
+            try:
+                return self._generate_snapshot(
+                    variant_study_id,
+                    dao_factory=dao_factory,
+                    from_scratch=from_scratch,
+                    notifier=notifier,
+                )
+            except SourceSnapshotChanged:
+                if attempt == MAX_SOURCE_SNAPSHOT_RETRIES:
+                    raise VariantGenerationError(
+                        f"Source snapshot changed repeatedly while generating variant {variant_study_id}"
+                    ) from None
+                logger.info(
+                    "Source snapshot changed while generating variant '%s'; retrying (%s/%s)",
+                    variant_study_id,
+                    attempt + 1,
+                    MAX_SOURCE_SNAPSHOT_RETRIES,
+                )
+
+        raise AssertionError("Unreachable")
+
+    def _generate_snapshot(
+        self,
+        variant_study_id: str,
+        *,
+        dao_factory: StudyFactoryDao,
+        from_scratch: bool = False,
+        notifier: ITaskNotifier = NoopNotifier(),
+    ) -> GenerationResultInfoDTO:
         # ATTENTION: since we are making changes to disk, a file lock is needed.
         # The locking is currently done in the `VariantStudyService.generate_task` function
         # when starting the task. However, it is not enough, because the snapshot generation
@@ -130,7 +174,11 @@ class SnapshotGenerator:
         if root_study.archived:
             raise UnsupportedOperationOnArchivedStudy(root_study.id)
 
-        ref_study = root_study if root_study.id == ref_study_id else descendants[-1]
+        ref_study = (
+            root_study
+            if root_study.id == ref_study_id
+            else next(variant for variant in descendants if variant.id == ref_study_id)
+        )
         variant_study = descendants[-1]
 
         try:
@@ -145,6 +193,12 @@ class SnapshotGenerator:
 
             # Finally, we can update the database.
             logger.info(f"Saving new snapshot for study {variant_study_id}")
+            if search_result.source_snapshot and not self.repository.has_snapshot_generation_id(
+                search_result.source_snapshot.study_id,
+                search_result.source_snapshot.generation_id,
+            ):
+                raise SourceSnapshotChanged()
+
             last_executed_command = None
             if cmd_blocks:
                 last_executed_command = cmd_blocks[-1].id
@@ -153,6 +207,7 @@ class SnapshotGenerator:
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study_id,
                 version=search_result.version,
+                generation_id=str(uuid.uuid4()),
                 last_executed_command=last_executed_command,
                 lineage=[
                     VariantStudySnapshotLineage(
@@ -275,9 +330,24 @@ class SnapshotGenerator:
                             lineage=lineage,
                         )
 
-        # Final case: The variant has no snapshot, or its `last_executed_command` does not exist anymore.
-        # we perform a generation "from scratch". We don't try to re-use intermediate snapshots, which
-        # might be modified concurrently.
+        for index in range(len(descendants) - 2, -1, -1):
+            candidate = descendants[index]
+            candidate_lineage = _get_lineage_versions(descendants[: index + 1])
+            if (
+                candidate.snapshot is not None
+                and candidate.snapshot.generation_id is not None
+                and _snapshot_matches_lineage(candidate.snapshot, candidate_lineage)
+            ):
+                return RefStudySearchResult(
+                    ref_study=candidate,
+                    cmd_blocks=_get_aggregated_command_blocks(descendants[index + 1 :]),
+                    force_regenerate=True,
+                    version=current_variant.commands_version.version,
+                    lineage=lineage,
+                    source_snapshot=SourceSnapshotToken(candidate.id, candidate.snapshot.generation_id),
+                )
+
+        # Final case: no usable snapshot is available in the lineage.
         commands_version = current_variant.commands_version.version
         command_blocks = _get_aggregated_command_blocks(descendants)
         return RefStudySearchResult(

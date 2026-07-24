@@ -51,7 +51,10 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudySnapshotLineage,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
+from antarest.study.storage.variantstudy.snapshot.snapshot_generator import (
+    SnapshotGenerator,
+    SourceSnapshotChanged,
+)
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import (
@@ -116,6 +119,10 @@ def _set_snapshot_lineage(snapshot: VariantStudySnapshot, variants: list[Variant
         )
         for position, variant in enumerate(variants)
     ]
+
+
+def _set_snapshot_generation_id(snapshot: VariantStudySnapshot) -> None:
+    snapshot.generation_id = str(uuid.uuid4())
 
 
 def _get_dao_factory(variant_id: str, variant_study_service: VariantStudyService) -> StudyFactoryDao:
@@ -373,6 +380,48 @@ class TestSearchRefStudy:
         assert search_result.ref_study == root_study
         assert search_result.cmd_blocks == variant1.commands + variant2.commands + variant3.commands
         assert search_result.force_regenerate is True
+
+    @with_db_context
+    def test_search_ref_study__uses_nearest_intermediate_snapshot(
+        self, tmp_path: Path, variant_study_service: VariantStudyService
+    ) -> None:
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
+        variant1 = _create_variant(tmp_path, "variant1", root_study.id, with_snapshot=True)
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=False)
+        variant1.commands = [
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant1.id,
+                index=0,
+                command="create_area",
+                version=1,
+                args='{"area_name": "DE"}',
+                study_version="9.3",
+            )
+        ]
+        variant2.commands = [
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant2.id,
+                index=0,
+                command="create_thermal_cluster",
+                version=1,
+                args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
+            )
+        ]
+        _set_snapshot_lineage(variant1.snapshot, [variant1])
+        _set_snapshot_generation_id(variant1.snapshot)
+
+        generator = _build_generator(variant_study_service)
+        search_result = generator.search_ref_study(root_study, [variant1, variant2], from_scratch=False)
+
+        assert search_result.ref_study == variant1
+        assert search_result.cmd_blocks == variant2.commands
+        assert search_result.force_regenerate is True
+        assert search_result.source_snapshot is not None
+        assert search_result.source_snapshot.study_id == variant1.id
+        assert search_result.source_snapshot.generation_id == variant1.snapshot.generation_id
 
     @with_db_context
     def test_search_ref_study__one_variant_completely_uptodate(
@@ -755,6 +804,24 @@ class TestSnapshotGenerator:
         assert generator.study_factory == variant_study_service.study_factory
         assert generator.repository == variant_study_service.repository
 
+    def test_generate__retries_changed_source(
+        self, variant_study_service: VariantStudyService, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        generator = _build_generator(variant_study_service)
+        attempt_count = 0
+
+        def source_changed(*args: object, **kwargs: object) -> t.NoReturn:
+            nonlocal attempt_count
+            attempt_count += 1
+            raise SourceSnapshotChanged()
+
+        monkeypatch.setattr(generator, "_generate_snapshot", source_changed)
+
+        with pytest.raises(VariantGenerationError, match="Source snapshot changed repeatedly"):
+            generator.generate_snapshot("target-study", dao_factory=Mock())
+
+        assert attempt_count == 3
+
     @with_admin_user
     @with_db_context
     def test_generate__nominal_case(self, variant_study_id: str, variant_study_service: VariantStudyService) -> None:
@@ -878,6 +945,7 @@ class TestSnapshotGenerator:
             study = variant_study_service.repository.get(variant_study.id)
             assert study is not None
             assert study.snapshot is not None
+            assert study.snapshot.generation_id is not None
             assert study.snapshot.last_executed_command == study.commands[-1].id
             assert [(entry.variant_id, entry.commands_version) for entry in study.snapshot.lineage] == [
                 (study.id, study.commands_version.version)
@@ -1264,4 +1332,4 @@ class TestSnapshotGenerator:
 
             # We expect a constant number of queries regardless of tree depth.
 
-            assert len(db_recorder.sql_statements) == 6, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 7, str(db_recorder)
