@@ -1,8 +1,8 @@
 """add_launchers_loads_table
 
-Revision ID: ca04b7ebce70
-Revises: 665f7b1d7575
-Create Date: 2026-07-20 10:34:04.421275
+Revision ID: d84134f661a9
+Revises: e56b1130bc1f
+Create Date: 2026-07-24 09:58:45.722848
 
 """
 import sqlalchemy as sa
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = 'ca04b7ebce70'
-down_revision = '665f7b1d7575'
+revision = 'd84134f661a9'
+down_revision = 'e56b1130bc1f'
 branch_labels = None
 depends_on = None
 
@@ -25,7 +25,7 @@ def upgrade():
         sa.Column("nb_queued_jobs", sa.Integer(), nullable=False),
         sa.Column("launcher_status", sa.String(100), nullable=False),
         sa.Column("date", sa.DateTime(), nullable=False),
-        sa.PrimaryKeyConstraint("launcher_name", name="pk_launchers_cache"),
+        sa.PrimaryKeyConstraint("launcher_name", name="pk_launchers_loads"),
     )
 
 
