@@ -287,9 +287,26 @@ def dao(
     tmp_path: Path,
     core_cache: ICache,
 ) -> StudyDao:
-    """A DAO parameterized over both backends (v8.8+)."""
+    """A DAO parameterized over both backends (v8.8)."""
     if request.param == "db":
         return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
     else:
         study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
         return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def dao_92(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: CommandContext,
+    tmp_path: Path,
+    core_cache: ICache,
+) -> StudyDao:
+    """A DAO parameterized over both backends (v9.2)."""
+    if request.param == "db":
+        return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
+    else:
+        study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
+        return build_filesystem_dao(db_session, STUDY_VERSION_9_2, command_context, study_factory, tmp_path)
