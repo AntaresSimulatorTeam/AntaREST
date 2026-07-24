@@ -12,7 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import type { Reserve } from "@/services/api/studies/areas/reserves/types";
+import type {
+  CertificationProductionType,
+  Reserve,
+} from "@/services/api/studies/areas/reserves/types";
 import type { AreaWithId } from "@/types/types";
 import { areaKeys } from "../areas/keys";
 import type { Study } from "@/services/api/studies/types";
@@ -42,5 +45,22 @@ export const reserveKeys = {
   },
   updateGlobalParameters: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.globalParameters(studyId, areaId), "updateReserveGlobalParameters"];
+  },
+  certifications: (
+    studyId: Study["id"],
+    areaId: AreaWithId["id"],
+    productionType: CertificationProductionType,
+  ) => {
+    return [...reserveKeys.all(), "certifications", { studyId, areaId, productionType }];
+  },
+  updateCertifications: (
+    studyId: Study["id"],
+    areaId: AreaWithId["id"],
+    productionType: CertificationProductionType,
+  ) => {
+    return [
+      ...reserveKeys.certifications(studyId, areaId, productionType),
+      "updateReserveCertifications",
+    ];
   },
 };
