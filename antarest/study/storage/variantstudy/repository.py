@@ -257,14 +257,11 @@ class VariantStudyRepository(StudyMetadataRepository):
     def get_study_tree(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
         """
         Returns the parent study and the list of its variants based on the given ids.
-        Loads metadata at the same time for permission checks.
         Also loads commands and snapshot at the same time to avoid multiple queries.
         """
         study_w_p = with_polymorphic(Study, [VariantStudy])
 
         join_query = [
-            joinedload(study_w_p.owner),
-            joinedload(study_w_p.groups),
             joinedload(study_w_p.VariantStudy.snapshot).joinedload(VariantStudySnapshot.lineage),
             joinedload(study_w_p.VariantStudy.commands_version),
             joinedload(study_w_p.VariantStudy.commands),

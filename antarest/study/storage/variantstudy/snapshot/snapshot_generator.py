@@ -20,16 +20,11 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, NamedTuple
 
 from antarest.core.exceptions import StudyNotFoundError, UnsupportedOperationOnArchivedStudy, VariantGenerationError
-from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.model import Study, StudyMetadataUpdate
-from antarest.study.storage.utils import (
-    assert_permission_on_studies,
-    format_timestamp,
-    remove_from_cache,
-)
+from antarest.study.storage.utils import format_timestamp, remove_from_cache
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     VariantStudy,
@@ -154,7 +149,6 @@ class SnapshotGenerator:
         logger.info(f"Generating variant study snapshot for '{variant_study_id}'")
 
         root_study, descendants = self._retrieve_descendants(variant_study_id)
-        assert_permission_on_studies([root_study, *descendants], StudyPermissionType.READ)
         if root_study.archived:
             raise UnsupportedOperationOnArchivedStudy(root_study.id)
         search_result = self.search_ref_study(root_study, descendants, from_scratch=from_scratch)
