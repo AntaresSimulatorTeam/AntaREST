@@ -17,6 +17,7 @@ from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_10_0
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_participations import (
     parse_thermal_reserves_certifications,
@@ -24,9 +25,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_par
 )
 
 
-def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930_and_matrix_service) -> None:
+def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao_930: FileStudyTreeDao) -> None:
     # Build a v10.0 FS DAO.
-    dao, _ = fs_dao_930_and_matrix_service
+    dao = fs_dao_930
     dao.get_file_study().config.version = STUDY_VERSION_10_0
     # Create 1 area with 2 thermal clusters and 4 reserves
     dao.save_areas_with_properties({"fr": AreaProperties()})

@@ -136,13 +136,12 @@ class RealCaseStudy:
     dataframes: list[pl.DataFrame]
 
 
-def build_real_case_study(
-    dao: StudyDao, matrix_service: ISimpleMatrixService, null_matrices: bool = False
-) -> RealCaseStudy:
+def build_real_case_study(dao: StudyDao, null_matrices: bool = False) -> RealCaseStudy:
     """
     If `null_matrices` is True, the created matrices will all be the same empty matrix.
     Otherwise, the matrices will be created with different contents to diversify tests.
     """
+    matrix_service = dao.matrix_service
     if null_matrices:
         dataframes = [pl.DataFrame(orient="row")] * 43
     else:

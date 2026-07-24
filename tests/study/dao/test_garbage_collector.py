@@ -65,7 +65,7 @@ def test_garbage_collection(dao_93: StudyDao, tmp_path: Path, db_session: Sessio
     )
     dao = dao_93
 
-    result = build_real_case_study(dao, matrix_service)
+    result = build_real_case_study(dao)
     (
         load_df,
         solar_df,
