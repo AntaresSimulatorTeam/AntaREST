@@ -407,6 +407,9 @@ class VariantStudyService(AbstractStudyService):
     def on_parent_change(self, study_id: str) -> None:
         """
         Takes all necessary actions on children when a study history has changed.
+
+        TODO: still needed when changing the root study of a study tree, but we should handle that
+              through versioning of the root study, like we do now for the list of commands, instead.
         """
         # TODO: optimize to not perform one request per child
         for child in self.get_children(parent_id=study_id):
