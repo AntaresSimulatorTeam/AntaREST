@@ -15,6 +15,7 @@ from pydantic import ValidationError
 
 from antarest.core.exceptions import STStorageNotFound
 from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, STStorageCreation
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
@@ -74,7 +75,7 @@ class TestRemoveSTStorage:
         assert cmd.area_id == "area_fr"
         assert cmd.storage_id == "storage_1"
 
-    def test_init__invalid_storage_id(self, recent_study: FileStudy, command_context: CommandContext) -> None:
+    def test_init__invalid_storage_id(self, command_context: CommandContext) -> None:
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
             RemoveSTStorage(
@@ -118,11 +119,10 @@ class TestRemoveSTStorage:
         actual = cmd.get_inner_matrices()
         assert actual == InnerMatrices()
 
-    def test_error_cases(self, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+    def test_error_cases(self, dao_92: StudyDao, command_context: CommandContext) -> None:
         # Create an area and a short-term storage inside it
-        study = empty_study_920
-        dao = build_dao_from_file_study(study, command_context)
-        version = study.config.version
+        dao = dao_92
+        version = dao.get_version()
         cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
         cmd.apply(study_dao=dao)
         cmd = CreateSTStorage(
