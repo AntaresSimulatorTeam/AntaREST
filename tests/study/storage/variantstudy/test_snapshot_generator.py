@@ -48,6 +48,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandsListVersion,
     VariantStudy,
     VariantStudySnapshot,
+    VariantStudySnapshotLineage,
 )
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
@@ -103,6 +104,18 @@ def _create_variant(
 
 def _build_generator(variant_study_service: VariantStudyService) -> SnapshotGenerator:
     return SnapshotGenerator(variant_study_service)
+
+
+def _set_snapshot_lineage(snapshot: VariantStudySnapshot, variants: list[VariantStudy]) -> None:
+    snapshot.lineage = [
+        VariantStudySnapshotLineage(
+            snapshot_id=snapshot.id,
+            position=position,
+            variant_id=variant.id,
+            commands_version=variant.commands_version.version,
+        )
+        for position, variant in enumerate(variants)
+    ]
 
 
 def _get_dao_factory(variant_id: str, variant_study_service: VariantStudyService) -> StudyFactoryDao:
@@ -410,6 +423,7 @@ class TestSearchRefStudy:
             ),
         ]
         variant1.snapshot.last_executed_command = variant1.commands[-1].id
+        _set_snapshot_lineage(variant1.snapshot, [variant1])
 
         # Save the studies in DB
         variant_study_service.raw_study_service.repository.save(root_study)
@@ -477,6 +491,7 @@ class TestSearchRefStudy:
 
         # The last executed command is the penultimate command.
         variant1.snapshot.last_executed_command = variant1.commands[0].id
+        _set_snapshot_lineage(variant1.snapshot, [variant1])
 
         # Save the studies in DB
         variant_study_service.raw_study_service.repository.save(root_study)
@@ -554,6 +569,46 @@ class TestSearchRefStudy:
         references = [variant1, variant2]
         generator = _build_generator(variant_study_service)
         search_result = generator.search_ref_study(root_study, references, from_scratch=False)
+        assert search_result.ref_study == root_study
+        assert search_result.cmd_blocks == variant1.commands + variant2.commands
+        assert search_result.force_regenerate is True
+
+    @with_db_context
+    def test_search_ref_study__stale_parent_lineage(
+        self, tmp_path: Path, variant_study_service: VariantStudyService
+    ) -> None:
+        root_study = create_study(id=str(uuid.uuid4()), name="root")
+        variant1 = _create_variant(tmp_path, "variant1", root_study.id, with_snapshot=False)
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=True)
+        variant1.commands = [
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant1.id,
+                index=0,
+                command="create_area",
+                version=1,
+                args='{"area_name": "DE"}',
+                study_version="9.3",
+            )
+        ]
+        variant2.commands = [
+            CommandBlock(
+                id=str(uuid.uuid4()),
+                study_id=variant2.id,
+                index=0,
+                command="create_thermal_cluster",
+                version=1,
+                args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
+            )
+        ]
+        variant2.snapshot.last_executed_command = variant2.commands[-1].id
+        _set_snapshot_lineage(variant2.snapshot, [variant1, variant2])
+        variant2.snapshot.lineage[0].commands_version = -1
+
+        generator = _build_generator(variant_study_service)
+        search_result = generator.search_ref_study(root_study, [variant1, variant2], from_scratch=False)
+
         assert search_result.ref_study == root_study
         assert search_result.cmd_blocks == variant1.commands + variant2.commands
         assert search_result.force_regenerate is True
@@ -820,6 +875,9 @@ class TestSnapshotGenerator:
             assert study is not None
             assert study.snapshot is not None
             assert study.snapshot.last_executed_command == study.commands[-1].id
+            assert [(entry.variant_id, entry.commands_version) for entry in study.snapshot.lineage] == [
+                (study.id, study.commands_version.version)
+            ]
             assert study.author == "john.doe"
 
         # Check: the cache is updated with the new variant configuration.
@@ -1125,20 +1183,22 @@ class TestSnapshotGenerator:
             results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
             assert results.success is True
 
-            # We expect 3 queries:
+            # We expect 4 queries:
             # - 2 queries to fetch the whole tree of studies (with join query on owner, groups, commands, snapshot and command_version)
-            # - 1 query to insert the variant study snapshot
+            # - 1 query to update the variant study snapshot
+            # - 1 query to update its lineage metadata
 
-            assert len(db_recorder.sql_statements) == 3, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 4, str(db_recorder)
 
         # `is_snapshot_up_to_date` method
         with DBStatementRecorder(db.session.bind) as db_recorder:
             variant_study_service.repository.is_snapshot_up_to_date(variant_study_id)
 
-            # We expect 1 query:
-            # - 1 query to fetch the variant study snapshot and its associated command versions in the same query
+            # We expect 2 queries:
+            # - 1 query to fetch the variant study snapshot and its saved lineage
+            # - 1 recursive query to fetch command versions for the current lineage
 
-            assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 2, str(db_recorder)
 
         # Create a big variant tree to ensure we do not perform N+1 requests
         variant1 = _create_variant(tmp_path, "variant1", variant_study_id, with_snapshot=False)
@@ -1173,4 +1233,4 @@ class TestSnapshotGenerator:
 
             # We expect the same amount of queries as the previous generation from scratch.
 
-            assert len(db_recorder.sql_statements) == 3, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 4, str(db_recorder)

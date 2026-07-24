@@ -12,7 +12,7 @@
 
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import literal, select
 from sqlalchemy.orm import Session, joinedload, with_polymorphic
 from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
@@ -26,6 +26,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     CommandsListVersion,
     VariantStudy,
+    VariantStudySnapshot,
 )
 
 
@@ -89,11 +90,17 @@ class VariantStudyRepository(StudyMetadataRepository):
 
     def _ancestor_or_self_cte(self, variant_id: str) -> CTE:
         """
-        Build a recursive CTE yielding (id, parent_id) for `variant_id` and every ancestor.
+        Build a recursive CTE yielding (id, parent_id, depth) for `variant_id` and every ancestor.
         See: https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-RECURSIVE
         """
-        top_q = select(Study.id, Study.parent_id).where(Study.id == variant_id).cte("study_cte", recursive=True)
-        bot_q = select(Study.id, Study.parent_id).join(top_q, Study.id == top_q.c.parent_id)
+        top_q = (
+            select(Study.id, Study.parent_id, literal(0).label("depth"))
+            .where(Study.id == variant_id)
+            .cte("study_cte", recursive=True)
+        )
+        bot_q = select(Study.id, Study.parent_id, (top_q.c.depth + 1).label("depth")).join(
+            top_q, Study.id == top_q.c.parent_id
+        )
         return top_q.union_all(bot_q)
 
     def get_ancestor_or_self_ids(self, variant_id: str) -> Sequence[str]:
@@ -109,7 +116,7 @@ class VariantStudyRepository(StudyMetadataRepository):
             Ordered list of study identifiers.
         """
         cte = self._ancestor_or_self_cte(variant_id)
-        result = self.session.execute(select(cte.c.id))
+        result = self.session.execute(select(cte.c.id).order_by(cte.c.depth))
         return [r[0] for r in result]
 
     def get_root_ancestor_id(self, variant_id: str) -> str | None:
@@ -193,7 +200,10 @@ class VariantStudyRepository(StudyMetadataRepository):
         session.commit()
 
     def is_snapshot_up_to_date(self, study_id: str) -> bool:
-        join_query = [joinedload(VariantStudy.snapshot), joinedload(VariantStudy.commands_version)]
+        join_query = [
+            joinedload(VariantStudy.snapshot).joinedload(VariantStudySnapshot.lineage),
+            joinedload(VariantStudy.commands_version),
+        ]
         variant: VariantStudy | None = self.session.get(VariantStudy, study_id, options=join_query)
 
         if not variant:
@@ -202,7 +212,32 @@ class VariantStudyRepository(StudyMetadataRepository):
         if not variant.snapshot:
             return False
 
-        return variant.snapshot.version == variant.commands_version.version  # type: ignore
+        return self.snapshot_matches_current_lineage(variant.snapshot, study_id)
+
+    def get_current_lineage(self, variant_id: str) -> tuple[tuple[str, int], ...]:
+        """
+        Return the current root-to-target variant lineage and command-list versions.
+        """
+        cte = self._ancestor_or_self_cte(variant_id)
+        stmt = (
+            select(CommandsListVersion.variant_id, CommandsListVersion.version)
+            .join(cte, CommandsListVersion.variant_id == cte.c.id)
+            .order_by(cte.c.depth.desc())
+        )
+        return tuple((variant_id, version) for variant_id, version in self.session.execute(stmt).tuples())
+
+    def snapshot_matches_current_lineage(self, snapshot: VariantStudySnapshot, variant_id: str) -> bool:
+        """
+        Return whether a snapshot was generated from the current variant lineage.
+
+        Snapshots created before lineage metadata was introduced have no lineage
+        rows and are deliberately treated as stale.
+        """
+        if not snapshot.lineage:
+            return False
+
+        stored_lineage = tuple((entry.variant_id, entry.commands_version) for entry in snapshot.lineage)
+        return stored_lineage == self.get_current_lineage(variant_id)
 
     def get_study_tree(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
         """
@@ -215,7 +250,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         join_query = [
             joinedload(study_w_p.owner),
             joinedload(study_w_p.groups),
-            joinedload(study_w_p.VariantStudy.snapshot),
+            joinedload(study_w_p.VariantStudy.snapshot).joinedload(VariantStudySnapshot.lineage),
             joinedload(study_w_p.VariantStudy.commands_version),
             joinedload(study_w_p.VariantStudy.commands),
         ]

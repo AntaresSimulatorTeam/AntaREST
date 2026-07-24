@@ -14,7 +14,7 @@ import datetime
 import uuid
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
@@ -48,12 +48,36 @@ class VariantStudySnapshot(Base):
     )
     version: Mapped[int] = mapped_column(Integer)
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
+    lineage: Mapped[list["VariantStudySnapshotLineage"]] = relationship(
+        cascade="all, delete, delete-orphan",
+        order_by="VariantStudySnapshotLineage.position",
+    )
 
     __mapper_args__ = {"polymorphic_identity": "variant_study_snapshot"}
 
     @override
     def __str__(self) -> str:
         return f"[Snapshot] id={self.id}, version={self.version}"
+
+
+class VariantStudySnapshotLineage(Base):
+    """
+    A variant command-list version captured while generating a snapshot.
+
+    Rows are ordered from the root-most variant to the snapshot's own variant.
+    """
+
+    __tablename__ = "variant_study_snapshot_lineage"
+    __table_args__ = (UniqueConstraint("snapshot_id", "variant_id"),)
+
+    snapshot_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("variant_study_snapshot.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    position: Mapped[int] = mapped_column(Integer, primary_key=True)
+    variant_id: Mapped[str] = mapped_column(String(36))
+    commands_version: Mapped[int] = mapped_column(Integer)
 
 
 class CommandBlock(Base):

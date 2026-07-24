@@ -29,7 +29,12 @@ from antarest.study.storage.utils import (
     format_timestamp,
     remove_from_cache,
 )
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    VariantStudy,
+    VariantStudySnapshot,
+    VariantStudySnapshotLineage,
+)
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.variant_command_generator import apply_commands_to_variant
 
@@ -47,11 +52,27 @@ class RefStudySearchResult(NamedTuple):
     ref_study: Study
     cmd_blocks: list[CommandBlock]
     version: int
+    lineage: tuple["LineageVersion", ...]
     force_regenerate: bool = False
+
+
+class LineageVersion(NamedTuple):
+    variant_id: str
+    commands_version: int
 
 
 def _get_aggregated_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandBlock]:
     return [cmd for variant in variants for cmd in variant.commands]
+
+
+def _get_lineage_versions(variants: Sequence[VariantStudy]) -> tuple[LineageVersion, ...]:
+    return tuple(
+        LineageVersion(variant_id=variant.id, commands_version=variant.commands_version.version) for variant in variants
+    )
+
+
+def _snapshot_matches_lineage(snapshot: VariantStudySnapshot, lineage: tuple[LineageVersion, ...]) -> bool:
+    return tuple((entry.variant_id, entry.commands_version) for entry in snapshot.lineage) == lineage
 
 
 class SnapshotGenerator:
@@ -114,7 +135,18 @@ class SnapshotGenerator:
             elif variant_study.snapshot:
                 last_executed_command = variant_study.snapshot.last_executed_command
             variant_study.snapshot = VariantStudySnapshot(
-                id=variant_study_id, version=search_result.version, last_executed_command=last_executed_command
+                id=variant_study_id,
+                version=search_result.version,
+                last_executed_command=last_executed_command,
+                lineage=[
+                    VariantStudySnapshotLineage(
+                        snapshot_id=variant_study_id,
+                        position=position,
+                        variant_id=lineage_version.variant_id,
+                        commands_version=lineage_version.commands_version,
+                    )
+                    for position, lineage_version in enumerate(search_result.lineage)
+                ],
             )
             self.repository.save(variant_study)
 
@@ -190,6 +222,7 @@ class SnapshotGenerator:
             The reference study and the commands to use for snapshot generation.
         """
         current_variant = descendants[-1]
+        lineage = _get_lineage_versions(descendants)
 
         if from_scratch:
             # In the case of a from scratch generation, the root study will be used as the reference study.
@@ -201,6 +234,7 @@ class SnapshotGenerator:
                 cmd_blocks=command_blocks,
                 force_regenerate=True,
                 version=commands_version,
+                lineage=lineage,
             )
 
         # 1st case: The variant snapshot is already up to date -> No-op.
@@ -212,7 +246,7 @@ class SnapshotGenerator:
         # We only have to check if we can reuse the snapshot to minimize the generation time.
         # We can reuse the snapshot if the last executed command is still present in the variant commands list.
         # It's not always the case as the user could have removed a command or replaced them all.
-        if current_variant.snapshot is not None:
+        if current_variant.snapshot is not None and _snapshot_matches_lineage(current_variant.snapshot, lineage):
             if last_executed_cmd_id := current_variant.snapshot.last_executed_command:
                 for command_block in current_variant.commands:
                     if command_block.id == last_executed_cmd_id:
@@ -222,6 +256,7 @@ class SnapshotGenerator:
                             cmd_blocks=current_variant.commands[last_exec_index + 1 :],
                             force_regenerate=False,
                             version=current_variant.commands_version.version,
+                            lineage=lineage,
                         )
 
         # Final case: The variant has no snapshot, or its `last_executed_command` does not exist anymore.
@@ -234,4 +269,5 @@ class SnapshotGenerator:
             cmd_blocks=command_blocks,
             force_regenerate=True,
             version=commands_version,
+            lineage=lineage,
         )

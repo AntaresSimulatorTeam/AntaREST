@@ -31,6 +31,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandsListVersion,
     VariantStudy,
     VariantStudySnapshot,
+    VariantStudySnapshotLineage,
 )
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import create_raw_study, create_variant_study, with_db_context
@@ -131,6 +132,33 @@ class TestVariantStudySnapshot:
         assert obj.id == variant_study_id
         assert obj.version == 2
         assert obj.last_executed_command == command_id
+
+    def test_init__with_lineage(self, db_session: Session, variant_study_id: str) -> None:
+        with db_session:
+            snapshot = VariantStudySnapshot(
+                id=variant_study_id,
+                version=2,
+                lineage=[
+                    VariantStudySnapshotLineage(
+                        snapshot_id=variant_study_id,
+                        position=0,
+                        variant_id=variant_study_id,
+                        commands_version=2,
+                    )
+                ],
+            )
+            db_session.add(snapshot)
+            db_session.commit()
+
+        snapshot = db_session.get(VariantStudySnapshot, variant_study_id)
+        assert snapshot is not None
+        assert [(entry.variant_id, entry.commands_version) for entry in snapshot.lineage] == [(variant_study_id, 2)]
+
+        with db_session:
+            db_session.delete(snapshot)
+            db_session.commit()
+
+        assert db_session.query(VariantStudySnapshotLineage).count() == 0
 
 
 class TestCommandBlock:
@@ -274,24 +302,73 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
     variant = session.get(VariantStudy, variant_id)
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
 
-    # 2nd case: Add the snapshot in DB with a version 0 which matches the command blocks version -> Up to date
+    # 2nd case: A legacy snapshot with no lineage must be regenerated.
     variant.snapshot = VariantStudySnapshot(id=variant_id, version=0, last_executed_command=None)
     session.add(variant)
     session.commit()
 
-    variant = session.get(VariantStudy, variant_id)
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
+
+    # 3rd case: A matching lineage is up to date.
+    variant.snapshot.lineage = [
+        VariantStudySnapshotLineage(
+            snapshot_id=variant_id,
+            position=0,
+            variant_id=variant_id,
+            commands_version=0,
+        )
+    ]
+    session.add(variant)
+    session.commit()
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is True
 
-    # 3rd case: Changes the version in `commands_list_version` table -> Not up to date
+    # 4th case: Changes the version in `commands_list_version` table -> Not up to date
     upsert_one(session, CommandsListVersion.__table__, {"variant_id": variant_id, "version": 1})
     session.commit()
 
-    variant = session.get(VariantStudy, variant_id)
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
 
-    # 4th case: Adapt the version in the study snapshot to match the commands one -> Up to date
-    variant.snapshot.version = 1
+    # 5th case: Adapt the captured lineage to match the command list -> Up to date
+    variant.snapshot.lineage[0].commands_version = 1
     session.add(variant)
     session.commit()
 
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is True
+
+
+@with_db_context
+def test_snapshot_with_stale_parent_lineage_is_not_up_to_date(
+    variant_study_service: VariantStudyService, raw_study_id: int, user_id: int
+) -> None:
+    session = db.session
+    parent_id = _set_up(session, raw_study_id, user_id)
+    child_id = _set_up(session, parent_id, user_id)
+    child = session.get(VariantStudy, child_id)
+    assert child is not None
+    child.snapshot = VariantStudySnapshot(
+        id=child_id,
+        version=0,
+        lineage=[
+            VariantStudySnapshotLineage(
+                snapshot_id=child_id,
+                position=0,
+                variant_id=parent_id,
+                commands_version=0,
+            ),
+            VariantStudySnapshotLineage(
+                snapshot_id=child_id,
+                position=1,
+                variant_id=child_id,
+                commands_version=0,
+            ),
+        ],
+    )
+    session.add(child)
+    session.commit()
+
+    assert variant_study_service.repository.is_snapshot_up_to_date(child_id) is True
+
+    upsert_one(session, CommandsListVersion.__table__, {"variant_id": parent_id, "version": 1})
+    session.commit()
+
+    assert variant_study_service.repository.is_snapshot_up_to_date(child_id) is False
