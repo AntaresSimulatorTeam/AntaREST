@@ -295,8 +295,9 @@ class TestSearchRefStudy:
         """
         Case where we have 3 variants.
         The 1st and 2nd one are up-to-date. The 3rd one has no snapshot.
-        We expect to have a reference study corresponding to the 2nd variant as it's closer to the 3rd than the 1st.
-        We also expect to have the list of commands of the third variant.
+
+        We don't try anymore to restart from intermediate snapshots, to avoid concurrency issues:
+        we expect to restart from the root study, and have all commands applied.
         """
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
@@ -356,8 +357,8 @@ class TestSearchRefStudy:
         references = [variant1, variant2, variant3]
         generator = _build_generator(variant_study_service)
         search_result = generator.search_ref_study(root_study, references, from_scratch=False)
-        assert search_result.ref_study == variant2
-        assert search_result.cmd_blocks == variant3.commands
+        assert search_result.ref_study == root_study
+        assert search_result.cmd_blocks == variant1.commands + variant2.commands + variant3.commands
         assert search_result.force_regenerate is True
 
     @with_db_context
@@ -498,7 +499,7 @@ class TestSearchRefStudy:
         Case where the variant has a snapshot but is not up to date.
         It points to a command that no longer exists. It is possible, as the user can remove or replace commands.
 
-        We expect the reference study to be the variant and the list of commands to be all of its commands
+        We expect a generation from the root study.
         """
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
@@ -553,8 +554,8 @@ class TestSearchRefStudy:
         references = [variant1, variant2]
         generator = _build_generator(variant_study_service)
         search_result = generator.search_ref_study(root_study, references, from_scratch=False)
-        assert search_result.ref_study == variant1
-        assert search_result.cmd_blocks == variant2.commands
+        assert search_result.ref_study == root_study
+        assert search_result.cmd_blocks == variant1.commands + variant2.commands
         assert search_result.force_regenerate is True
 
 
