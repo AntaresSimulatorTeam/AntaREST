@@ -15,7 +15,7 @@ import logging
 from sqlalchemy import delete, select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult, SolverPresetsDB
+from antarest.launcher.model import JobResult, LauncherLoad, SolverPresetsDB
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
@@ -118,4 +118,15 @@ class SolverPresetsRepository:
         logger.debug(f"Deleting SolverPresetsModel {id}")
         stmt = delete(SolverPresetsDB).where(SolverPresetsDB.id == id)
         db.session.execute(stmt)
+        db.session.commit()
+
+
+class LauncherLoadRepository:
+    def get_launcher_load(self, launcher_name: str) -> LauncherLoad | None:
+        return db.session.get(LauncherLoad, launcher_name)
+
+    def update_all_launcher_loads(self, existing_loads: list[LauncherLoad]) -> None:
+        for launcher_cache in existing_loads:
+            db.session.merge(launcher_cache)
+
         db.session.commit()

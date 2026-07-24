@@ -22,8 +22,9 @@ class TestMaintenanceContext:
         """Test that constructor properly stores config and core_services."""
         mock_config = Mock()
         mock_core_services = Mock()
+        mock_services = Mock()
 
-        ctx = MaintenanceContext(config=mock_config, core_services=mock_core_services)
+        ctx = MaintenanceContext(config=mock_config, core_services=mock_core_services, services=mock_services)
 
         assert ctx.config is mock_config
         assert ctx.core_services is mock_core_services
@@ -32,10 +33,11 @@ class TestMaintenanceContext:
         """Test that matrix_service property returns the service from core_services."""
         mock_matrix_service = Mock()
         mock_core_services = Mock()
+        mock_services = Mock()
         mock_core_services.matrix_service = mock_matrix_service
         mock_config = Mock()
 
-        ctx = MaintenanceContext(config=mock_config, core_services=mock_core_services)
+        ctx = MaintenanceContext(config=mock_config, core_services=mock_core_services, services=mock_services)
 
         assert ctx.matrix_service is mock_matrix_service
 
@@ -43,10 +45,11 @@ class TestMaintenanceContext:
         """Test that blob_service property returns the service from core_services."""
         mock_blob_service = Mock()
         mock_core_services = Mock()
+        mock_services = Mock()
         mock_core_services.blob_service = mock_blob_service
         mock_config = Mock()
 
-        ctx = MaintenanceContext(config=mock_config, core_services=mock_core_services)
+        ctx = MaintenanceContext(config=mock_config, core_services=mock_core_services, services=mock_services)
 
         assert ctx.blob_service is mock_blob_service
 
@@ -56,9 +59,11 @@ class TestMaintenanceContext:
         mock_config_2 = Mock()
         mock_core_services_1 = Mock()
         mock_core_services_2 = Mock()
+        mock_services_1 = Mock()
+        mock_services_2 = Mock()
 
-        ctx1 = MaintenanceContext(config=mock_config_1, core_services=mock_core_services_1)
-        ctx2 = MaintenanceContext(config=mock_config_2, core_services=mock_core_services_2)
+        ctx1 = MaintenanceContext(config=mock_config_1, core_services=mock_core_services_1, services=mock_services_1)
+        ctx2 = MaintenanceContext(config=mock_config_2, core_services=mock_core_services_2, services=mock_services_2)
 
         assert ctx1 is not ctx2
         assert ctx1.config is mock_config_1
