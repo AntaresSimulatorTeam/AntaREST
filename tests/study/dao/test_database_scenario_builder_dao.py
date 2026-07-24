@@ -496,11 +496,8 @@ def test_scenario_builder_area_deleted_cascades_load(dao: StudyDao) -> None:
     assert dao.get_scenario_by_type(ScenarioType.LOAD) == {}
 
 
-def test_get_scenario_by_type_raises_for_version_incompatible_type(
-    dao_860_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_get_scenario_by_type_raises_for_version_incompatible_type(dao_86: StudyDao) -> None:
     """v8.6 has no binding-constraint scenarios → query must raise InvalidFieldForVersionError."""
-    dao, _ = dao_860_and_matrix_service
 
     with pytest.raises(InvalidFieldForVersionError):
-        dao.get_scenario_by_type(ScenarioType.BINDING_CONSTRAINTS)
+        dao_86.get_scenario_by_type(ScenarioType.BINDING_CONSTRAINTS)

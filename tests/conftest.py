@@ -21,7 +21,6 @@ from sqlalchemy.orm import Session
 
 from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.core.config import InternalMatrixFormat
-from antarest.core.interfaces.cache import ICache
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
@@ -279,34 +278,39 @@ def fs_dao(
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao(
+def dao_builder(
     request,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
-    command_context: CommandContext,
+    command_context: "CommandContext",
     tmp_path: Path,
-    core_cache: ICache,
-) -> StudyDao:
-    """A DAO parameterized over both backends (v8.8)."""
-    if request.param == "db":
-        return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-    else:
-        study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
-        return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
+    study_factory: StudyFactory,
+) -> Callable[[StudyVersion], StudyDao]:
+    """A DAO factory parameterized over both backends, accepting the study version as argument."""
+
+    def _build(version: StudyVersion) -> StudyDao:
+        if request.param == "db":
+            return build_db_dao(db_session, matrix_service, version)
+        return build_filesystem_dao(db_session, version, command_context, study_factory, tmp_path)
+
+    return _build
 
 
-@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao_92(
-    request,
-    db_session: Session,
-    matrix_service: ISimpleMatrixService,
-    command_context: CommandContext,
-    tmp_path: Path,
-    core_cache: ICache,
-) -> StudyDao:
-    """A DAO parameterized over both backends (v9.2)."""
-    if request.param == "db":
-        return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
-    else:
-        study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
-        return build_filesystem_dao(db_session, STUDY_VERSION_9_2, command_context, study_factory, tmp_path)
+@pytest.fixture
+def dao(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_8_8)
+
+
+@pytest.fixture
+def dao_86(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_8_6)
+
+
+@pytest.fixture
+def dao_92(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_9_2)
+
+
+@pytest.fixture
+def dao_93(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_9_3)
