@@ -72,7 +72,12 @@ class AbstractLauncher(ABC):
 
     @abstractmethod
     def run_study(
-        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
+        self,
+        study_uuid: str,
+        job_id: str,
+        version: SolverVersion,
+        launcher_parameters: LauncherParametersDTO,
+        oversubscribe_core_threshold: int | None = None,
     ) -> None:
         raise NotImplementedError()
 

@@ -15,7 +15,7 @@ import logging
 from sqlalchemy import delete, select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult, SolverPresetsDB
+from antarest.launcher.model import JobResult, LauncherRuntimeConfigDB, SolverPresetsDB
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
@@ -119,3 +119,24 @@ class SolverPresetsRepository:
         stmt = delete(SolverPresetsDB).where(SolverPresetsDB.id == id)
         db.session.execute(stmt)
         db.session.commit()
+
+
+class LauncherRuntimeConfigRepository:
+    def get(self, launcher_id: str) -> LauncherRuntimeConfigDB | None:
+        logger.debug(f"Retrieving LauncherRuntimeConfig {launcher_id}")
+        return db.session.get(LauncherRuntimeConfigDB, launcher_id)
+
+    def save(self, config_db: LauncherRuntimeConfigDB) -> LauncherRuntimeConfigDB:
+        logger.debug(f"Saving LauncherRuntimeConfig {config_db.launcher_id}")
+
+        stmt = select(LauncherRuntimeConfigDB).where(LauncherRuntimeConfigDB.launcher_id == config_db.launcher_id)
+        existing_config = db.session.scalar(stmt)
+
+        if existing_config:
+            merged_config = db.session.merge(config_db)
+        else:
+            db.session.add(config_db)
+            merged_config = config_db
+
+        db.session.commit()
+        return merged_config

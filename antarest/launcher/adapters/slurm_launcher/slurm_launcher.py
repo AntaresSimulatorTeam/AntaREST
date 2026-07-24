@@ -468,6 +468,7 @@ class SlurmLauncher(AbstractLauncher):
         launcher_params: LauncherParametersDTO,
         version: SolverVersion,
         jwt_user: JWTUser,
+        oversubscribe_core_threshold: int | None = None,
     ) -> None:
         with current_user_context(jwt_user):
             study_path = Path(self.launcher_args.studies_in) / launch_uuid
@@ -492,7 +493,7 @@ class SlurmLauncher(AbstractLauncher):
                     _override_solver_version(study_path, version)
 
                     append_log(launch_uuid, "Submitting study to slurm launcher")
-                    launcher_args = self._apply_params(launcher_params)
+                    launcher_args = self._apply_params(launcher_params, oversubscribe_core_threshold)
                     self._call_launcher(launcher_args, self.launcher_params)
 
                     launch_success = self._check_if_study_is_in_launcher_db(launch_uuid)
@@ -535,7 +536,9 @@ class SlurmLauncher(AbstractLauncher):
         studies = self.data_repo_tinydb.get_list_of_studies()
         return any(s.name == job_id for s in studies)
 
-    def _apply_params(self, launcher_params: LauncherParametersDTO) -> argparse.Namespace:
+    def _apply_params(
+        self, launcher_params: LauncherParametersDTO, oversubscribe_core_threshold: int | None = None
+    ) -> argparse.Namespace:
         """
         Populate a `argparse.Namespace` object with the user parameters.
 
@@ -556,6 +559,11 @@ class SlurmLauncher(AbstractLauncher):
             launcher_args.apply_time_limit(launcher_params, self.slurm_config.time_limit)
             launcher_args.apply_nb_cpu(launcher_params, self.slurm_config.nb_cores)
 
+            # Enable SLURM oversubscribe (job may share a compute node) when the effective number of
+            # cores (after default/clamping in `apply_nb_cpu`) is at or below the admin-set threshold.
+            if oversubscribe_core_threshold is not None and launcher_args.n_cpu <= oversubscribe_core_threshold:
+                launcher_args.oversubscribe = True
+
             if "'" in launcher_args.other_options:
                 # The launcher will wrongly interpret single quotes, which will cause Simulation fails and
                 # could even lead to security breaches
@@ -567,12 +575,17 @@ class SlurmLauncher(AbstractLauncher):
 
     @override
     def run_study(
-        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
+        self,
+        study_uuid: str,
+        job_id: str,
+        version: SolverVersion,
+        launcher_parameters: LauncherParametersDTO,
+        oversubscribe_core_threshold: int | None = None,
     ) -> None:
         user = require_current_user()
         thread = threading.Thread(
             target=self._run_study,
-            args=(study_uuid, job_id, launcher_parameters, version, user),
+            args=(study_uuid, job_id, launcher_parameters, version, user, oversubscribe_core_threshold),
             name=f"{self.__class__.__name__}-JobRunner",
         )
         thread.start()

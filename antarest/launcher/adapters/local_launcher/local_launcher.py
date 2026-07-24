@@ -82,7 +82,12 @@ class LocalLauncher(AbstractLauncher):
 
     @override
     def run_study(
-        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
+        self,
+        study_uuid: str,
+        job_id: str,
+        version: SolverVersion,
+        launcher_parameters: LauncherParametersDTO,
+        oversubscribe_core_threshold: int | None = None,  # SLURM-only, ignored by the local launcher
     ) -> None:
         antares_solver_path = self._select_best_binary(version)
         self.submitted_jobs[job_id] = launcher_parameters

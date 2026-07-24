@@ -46,6 +46,8 @@ from antarest.launcher.model import (
     LauncherLoadDTO,
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
+    LauncherRuntimeConfig,
+    LauncherRuntimeConfigDB,
     LogType,
     SolverPresets,
     SolverPresetsCreation,
@@ -55,7 +57,11 @@ from antarest.launcher.model import (
     apply_update_solver_presets,
     is_version_covered_by_config,
 )
-from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
+from antarest.launcher.repository import (
+    JobResultRepository,
+    LauncherRuntimeConfigRepository,
+    SolverPresetsRepository,
+)
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user, require_current_user
 from antarest.output.service import OutputService
@@ -109,6 +115,7 @@ class LauncherService:
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
         cache: ICache,
+        launcher_runtime_config_repository: LauncherRuntimeConfigRepository = LauncherRuntimeConfigRepository(),
         factory_launcher: FactoryLauncher = FactoryLauncher(),
     ) -> None:
         self.config = config
@@ -117,6 +124,7 @@ class LauncherService:
         self.login_service = login_service
         self.job_result_repository = job_result_repository
         self.solver_presets_repository = solver_presets_repository
+        self.launcher_runtime_config_repository = launcher_runtime_config_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -251,7 +259,20 @@ class LauncherService:
         )
         self.job_result_repository.save(job_status)
 
-        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_parameters)
+        # Read the admin-set oversubscribe threshold here (request context, DB session valid) and pass it
+        # down: the launch itself runs in a detached thread where the DB session is not available.
+        oversubscribe_core_threshold: int | None = None
+        runtime_config_db = self.launcher_runtime_config_repository.get(launcher)
+        if runtime_config_db is not None:
+            oversubscribe_core_threshold = runtime_config_db.oversubscribe_core_threshold
+
+        self.launchers[launcher].run_study(
+            study_uuid,
+            job_uuid,
+            solver_version,
+            launcher_parameters,
+            oversubscribe_core_threshold=oversubscribe_core_threshold,
+        )
 
         self.event_bus.push(
             Event(
@@ -639,6 +660,39 @@ class LauncherService:
             raise ValueError(f"Job {job_id} has no launcher")
         launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0.0}
         return float(launch_progress_json.get("progress", 0.0))
+
+    def get_runtime_config(self, launcher_id: str) -> LauncherRuntimeConfig:
+        """
+        Retrieve the runtime (DB-backed) configuration of a launcher.
+
+        Returns an empty configuration (all fields unset) when nothing has been stored yet.
+        """
+        self._assert_launcher_is_initialized(launcher_id)
+        config_db = self.launcher_runtime_config_repository.get(launcher_id)
+        if config_db is None:
+            return LauncherRuntimeConfig()
+        return config_db.to_model()
+
+    def update_runtime_config(self, launcher_id: str, config: LauncherRuntimeConfig) -> LauncherRuntimeConfig:
+        """
+        Replace the whole runtime configuration of a launcher (admin only).
+        """
+        user = require_current_user()
+        if not user.is_site_admin():
+            raise UserHasNotPermissionError("Only administrators can update the launcher configuration")
+
+        self._assert_launcher_is_initialized(launcher_id)
+
+        if config.slurm is not None:
+            slurm_ids = {cfg.id for cfg in self.config.launcher.get_slurm_configs()}
+            if launcher_id not in slurm_ids:
+                raise HTTPException(
+                    status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                    detail=f"Cannot set a SLURM configuration on non-SLURM launcher '{launcher_id}'",
+                )
+
+        saved = self.launcher_runtime_config_repository.save(LauncherRuntimeConfigDB.from_model(launcher_id, config))
+        return saved.to_model()
 
     def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
         """

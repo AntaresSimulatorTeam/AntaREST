@@ -322,6 +322,41 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
         XpansionParametersDTO(adequacy_criterion=True, sensitivity_mode=True)
 
 
+def test_oversubscribe(launcher_config: SlurmConfig) -> None:
+    """
+    `--oversubscribe` is added when the effective number of cores requested is at or below the
+    admin-set threshold, and left off otherwise (or when no threshold is configured).
+    """
+    slurm_launcher = SlurmLauncher(
+        config=launcher_config,
+        callbacks=Mock(),
+        event_bus=Mock(),
+        cache=Mock(),
+    )
+    apply_params = slurm_launcher._apply_params
+    default_cores = launcher_config.nb_cores.default
+
+    # No threshold configured -> never oversubscribe
+    assert apply_params(LauncherParametersDTO(nb_cpu=1)).oversubscribe is False
+
+    # Requested cores below / equal to the threshold -> oversubscribe (inclusive)
+    assert apply_params(LauncherParametersDTO(nb_cpu=1), oversubscribe_core_threshold=12).oversubscribe is True
+    assert apply_params(LauncherParametersDTO(nb_cpu=12), oversubscribe_core_threshold=12).oversubscribe is True
+
+    # Requested cores above the threshold -> no oversubscribe
+    assert apply_params(LauncherParametersDTO(nb_cpu=12), oversubscribe_core_threshold=11).oversubscribe is False
+
+    # Comparison uses the *effective* core count: unset nb_cpu resolves to the config default
+    assert apply_params(LauncherParametersDTO(), oversubscribe_core_threshold=default_cores).oversubscribe is True
+    assert apply_params(LauncherParametersDTO(), oversubscribe_core_threshold=default_cores - 1).oversubscribe is False
+
+    # Out-of-range nb_cpu is clamped to the default before the comparison
+    assert (
+        apply_params(LauncherParametersDTO(nb_cpu=999), oversubscribe_core_threshold=default_cores).oversubscribe
+        is True
+    )
+
+
 # noinspection PyUnresolvedReferences
 @pytest.mark.parametrize(
     "version, launcher_called, job_status",

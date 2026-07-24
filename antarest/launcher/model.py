@@ -649,6 +649,65 @@ def apply_update_solver_presets(
     return SolverPresetsDB.from_model(updated_dto)
 
 
+class SlurmRuntimeConfig(AntaresBaseModel):
+    """
+    Runtime (DB-backed, admin-editable) configuration specific to a SLURM launcher.
+
+    Attributes:
+        oversubscribe_core_threshold: If the effective number of cores requested for a launch is
+            lower than or equal to this value, the SLURM ``--oversubscribe`` option is added, allowing
+            the job to share a compute node with others. ``None`` disables oversubscribe entirely.
+    """
+
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
+
+    oversubscribe_core_threshold: int | None = Field(default=None, ge=1)
+
+
+class LauncherRuntimeConfig(AntaresBaseModel):
+    """
+    Runtime (DB-backed, admin-editable) configuration for a launcher.
+
+    This is distinct from the static ``LauncherConfig``/``SlurmConfig`` loaded from ``application.yml``.
+    The generic wrapper leaves room for future common fields (e.g. ``enabled``) and other launcher types.
+    """
+
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
+
+    slurm: SlurmRuntimeConfig | None = None
+
+
+class LauncherRuntimeConfigDB(Base):
+    __tablename__ = "launcher_runtime_config"
+
+    launcher_id = mapped_column(String(36), primary_key=True)
+    oversubscribe_core_threshold = mapped_column(Integer, nullable=True)
+
+    def to_model(self) -> LauncherRuntimeConfig:
+        return LauncherRuntimeConfig(
+            slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=self.oversubscribe_core_threshold)
+        )
+
+    @classmethod
+    def from_model(cls, launcher_id: str, config: LauncherRuntimeConfig) -> "LauncherRuntimeConfigDB":
+        threshold = config.slurm.oversubscribe_core_threshold if config.slurm else None
+        return cls(launcher_id=launcher_id, oversubscribe_core_threshold=threshold)
+
+    @override
+    def __str__(self) -> str:
+        return (
+            f"Launcher runtime config '{self.launcher_id}'"
+            f" (oversubscribe_core_threshold={self.oversubscribe_core_threshold})"
+        )
+
+    @override
+    def __repr__(self) -> str:
+        return (
+            f"<LauncherRuntimeConfigDB(launcher_id={self.launcher_id!r},"
+            f" oversubscribe_core_threshold={self.oversubscribe_core_threshold!r})>"
+        )
+
+
 def is_version_covered_by_config(
     solver_presets: SolverPresets,
     solver_version: SolverVersion,
