@@ -644,6 +644,10 @@ class FailingNotifier(ITaskNotifier):
         return
 
 
+class SnapshotGenerationInterrupted(BaseException):
+    pass
+
+
 class TestSnapshotGenerator:
     """
     Test the `SnapshotGenerator` class.
@@ -955,6 +959,32 @@ class TestSnapshotGenerator:
 
     @with_admin_user
     @with_db_context
+    def test_generate__interruption_invalidates_snapshot(
+        self,
+        variant_study_id: str,
+        variant_study_service: VariantStudyService,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        generator = _build_generator(variant_study_service)
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
+        existing_study = variant_study_service.repository.get(variant_study_id)
+        assert isinstance(existing_study, VariantStudy)
+        assert existing_study.snapshot is not None
+
+        def interrupt_generation(*args: object, **kwargs: object) -> t.NoReturn:
+            raise SnapshotGenerationInterrupted()
+
+        monkeypatch.setattr(generator, "_apply_commands", interrupt_generation)
+
+        with pytest.raises(SnapshotGenerationInterrupted):
+            generator.generate_snapshot(variant_study_id, from_scratch=True, dao_factory=factory)
+
+        interrupted_study = variant_study_service.repository.get(variant_study_id)
+        assert isinstance(interrupted_study, VariantStudy)
+        assert interrupted_study.snapshot is None
+
+    @with_admin_user
+    @with_db_context
     def test_generate__with_invalid_command(
         self, variant_study_id: str, variant_study_service: VariantStudyService
     ) -> None:
@@ -1183,12 +1213,13 @@ class TestSnapshotGenerator:
             results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
             assert results.success is True
 
-            # We expect 4 queries:
-            # - 2 queries to fetch the whole tree of studies (with join query on owner, groups, commands, snapshot and command_version)
-            # - 1 query to update the variant study snapshot
-            # - 1 query to update its lineage metadata
+            # We expect 8 queries:
+            # - 2 queries to fetch the tree before invalidating the snapshot
+            # - 2 queries to remove the snapshot and its lineage metadata
+            # - 2 queries to reload the tree after the invalidation commit
+            # - 2 queries to publish the new snapshot and lineage
 
-            assert len(db_recorder.sql_statements) == 4, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 8, str(db_recorder)
 
         # `is_snapshot_up_to_date` method
         with DBStatementRecorder(db.session.bind) as db_recorder:
@@ -1231,6 +1262,6 @@ class TestSnapshotGenerator:
             results = generator.generate_snapshot(variant_5_id, dao_factory=factory, from_scratch=False)
             assert results.success is True
 
-            # We expect the same amount of queries as the previous generation from scratch.
+            # We expect a constant number of queries regardless of tree depth.
 
-            assert len(db_recorder.sql_statements) == 4, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 6, str(db_recorder)

@@ -65,6 +65,10 @@ def _get_aggregated_command_blocks(variants: Sequence[VariantStudy]) -> list[Com
     return [cmd for variant in variants for cmd in variant.commands]
 
 
+def _copy_command_blocks(command_blocks: Sequence[CommandBlock]) -> list[CommandBlock]:
+    return [CommandBlock(**command_block.to_dict()) for command_block in command_blocks]
+
+
 def _get_lineage_versions(variants: Sequence[VariantStudy]) -> tuple[LineageVersion, ...]:
     return tuple(
         LineageVersion(variant_id=variant.id, commands_version=variant.commands_version.version) for variant in variants
@@ -111,10 +115,22 @@ class SnapshotGenerator:
             raise UnsupportedOperationOnArchivedStudy(root_study.id)
         search_result = self.search_ref_study(root_study, descendants, from_scratch=from_scratch)
 
-        ref_study = search_result.ref_study
-        cmd_blocks = search_result.cmd_blocks
+        variant_study = descendants[-1]
+        previous_last_executed_command = (
+            variant_study.snapshot.last_executed_command if variant_study.snapshot is not None else None
+        )
+        cmd_blocks = _copy_command_blocks(search_result.cmd_blocks)
+        ref_study_id = search_result.ref_study.id
 
-        # Get snapshot directory
+        # Persist this before modifying snapshot data. Commands are copied
+        # above so the invalidation commit cannot reload different inputs.
+        self.variant_study_service.invalidate_snapshot(variant_study)
+        root_study, descendants = self._retrieve_descendants(variant_study_id)
+        assert_permission_on_studies([root_study, *descendants], StudyPermissionType.READ)
+        if root_study.archived:
+            raise UnsupportedOperationOnArchivedStudy(root_study.id)
+
+        ref_study = root_study if root_study.id == ref_study_id else descendants[-1]
         variant_study = descendants[-1]
 
         try:
@@ -132,8 +148,8 @@ class SnapshotGenerator:
             last_executed_command = None
             if cmd_blocks:
                 last_executed_command = cmd_blocks[-1].id
-            elif variant_study.snapshot:
-                last_executed_command = variant_study.snapshot.last_executed_command
+            else:
+                last_executed_command = previous_last_executed_command
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study_id,
                 version=search_result.version,
