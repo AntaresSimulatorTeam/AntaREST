@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.core.config import InternalMatrixFormat
+from antarest.core.interfaces.cache import ICache
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
@@ -272,8 +273,9 @@ def build_filesystem_dao(
 
 @pytest.fixture
 def fs_dao(
-    db_session: Session, command_context: CommandContext, tmp_path: Path, study_factory: StudyFactory
+    db_session: Session, command_context: CommandContext, tmp_path: Path, core_cache: ICache
 ) -> FileStudyTreeDao:
+    study_factory = StudyFactory(matrix_service=command_context.matrix_service, cache=core_cache)
     return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
 
 
