@@ -47,11 +47,12 @@ from tests.study.dao.conftest import build_real_case_study, build_reserve_defini
 from tests.study.dao.utils import save_area
 
 
-def test_empty_matrices(dao: StudyDao) -> None:
+def test_empty_matrices(dao_93: StudyDao) -> None:
     """
     Parametrized test for both FS and DB DAOs.
     Ensures DAO methods return the default matrices when the null_matrix is saved.
     """
+    dao = dao_93
     result = build_real_case_study(dao, null_matrices=True)
 
     area_id, area2 = result.area1, result.area2
