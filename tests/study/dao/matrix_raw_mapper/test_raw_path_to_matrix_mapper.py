@@ -232,7 +232,7 @@ def test_get_matrix_from_path(dao_93: StudyDao) -> None:
     pl.testing.assert_frame_equal(bc_eq, bc_eq_df, check_dtypes=False)
 
 
-def test_save_matrix_from_path(dao_930: StudyDao) -> None:
+def test_save_matrix_from_path(dao_93: StudyDao) -> None:
     ##########################
     # Set Up
     ##########################
@@ -244,7 +244,7 @@ def test_save_matrix_from_path(dao_930: StudyDao) -> None:
         matrix_id = dao.matrix_service.create(matrix)
         return matrix_id, matrix
 
-    dao = dao_930
+    dao = dao_93
     result = build_real_case_study(dao)
     area_id, area2 = result.area1, result.area2
     thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
