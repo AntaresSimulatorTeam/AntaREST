@@ -1293,7 +1293,7 @@ class TestSnapshotGenerator:
             # We expect 8 queries:
             # - 2 queries to fetch the tree before invalidating the snapshot
             # - 2 queries to remove the snapshot and its lineage metadata
-            # - 2 queries to reload the tree after the invalidation commit
+            # - 2 queries to reload the captured reference and target studies
             # - 2 queries to publish the new snapshot and lineage
 
             assert len(db_recorder.sql_statements) == 8, str(db_recorder)
@@ -1339,6 +1339,11 @@ class TestSnapshotGenerator:
             results = generator.generate_snapshot(variant_5_id, dao_factory=factory, from_scratch=False)
             assert results.success is True
 
-            # We expect a constant number of queries regardless of tree depth.
+            # We expect 9 queries regardless of tree depth:
+            # - 2 queries to fetch the tree before invalidating the snapshot
+            # - 2 queries to remove the snapshot and its lineage metadata
+            # - 2 queries to reload the captured reference and target studies
+            # - 1 query to verify that the reference snapshot was not republished
+            # - 2 queries to publish the new snapshot and lineage
 
-            assert len(db_recorder.sql_statements) == 7, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 9, str(db_recorder)

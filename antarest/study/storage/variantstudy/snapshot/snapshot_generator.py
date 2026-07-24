@@ -166,7 +166,7 @@ class SnapshotGenerator:
         ref_study = self.repository.get(ref_study_id)
         if ref_study is None:
             raise StudyNotFoundError(ref_study_id)
-        variant_study = self.repository.get_study_with_commands(variant_study_id, with_snapshot=True)
+        variant_study = self.repository.get_study_with_commands(variant_study_id, with_permissions=False)
 
         try:
             if search_result.force_regenerate:
@@ -191,7 +191,7 @@ class SnapshotGenerator:
                 last_executed_command = cmd_blocks[-1].id
             else:
                 last_executed_command = previous_last_executed_command
-            variant_study.snapshot = VariantStudySnapshot(
+            snapshot = VariantStudySnapshot(
                 id=variant_study_id,
                 version=search_result.version,
                 generation_id=str(uuid.uuid4()),
@@ -206,7 +206,7 @@ class SnapshotGenerator:
                     for position, lineage_version in enumerate(search_result.lineage)
                 ],
             )
-            self.repository.save(variant_study)
+            self.repository.save_snapshot(snapshot)
 
             if results.should_invalidate_cache:
                 # We need to remove the cache

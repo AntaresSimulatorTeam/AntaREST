@@ -12,7 +12,7 @@
 
 from collections.abc import Sequence
 
-from sqlalchemy import literal, select
+from sqlalchemy import delete, insert, literal, select, update
 from sqlalchemy.orm import Session, joinedload, with_polymorphic
 from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
@@ -20,6 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
@@ -27,6 +28,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandsListVersion,
     VariantStudy,
     VariantStudySnapshot,
+    VariantStudySnapshotLineage,
 )
 
 
@@ -157,7 +159,11 @@ class VariantStudyRepository(StudyMetadataRepository):
         return list(self.session.execute(stmt).scalars().all())
 
     def get_study_with_commands(
-        self, variant_id: str, with_lock: bool = False, with_snapshot: bool = False
+        self,
+        variant_id: str,
+        with_lock: bool = False,
+        with_snapshot: bool = False,
+        with_permissions: bool = True,
     ) -> VariantStudy:
         """
         Use a single JOIN query to retrieve a variant study with its associated command blocks and their version.
@@ -169,12 +175,9 @@ class VariantStudyRepository(StudyMetadataRepository):
             self.session.execute(
                 select(CommandsListVersion).where(CommandsListVersion.variant_id == variant_id).with_for_update()
             )
-        join_query = [
-            joinedload(VariantStudy.owner),
-            joinedload(VariantStudy.groups),
-            joinedload(VariantStudy.commands),
-            joinedload(VariantStudy.commands_version),
-        ]
+        join_query = [joinedload(VariantStudy.commands), joinedload(VariantStudy.commands_version)]
+        if with_permissions:
+            join_query.extend([joinedload(VariantStudy.owner), joinedload(VariantStudy.groups)])
         if with_snapshot:
             join_query.append(joinedload(VariantStudy.snapshot).joinedload(VariantStudySnapshot.lineage))
         stmt = select(VariantStudy).options(*join_query).where(VariantStudy.id == variant_id)
@@ -253,6 +256,44 @@ class VariantStudyRepository(StudyMetadataRepository):
             .execution_options(populate_existing=True)
         )
         return self.session.execute(stmt).scalar_one_or_none() == generation_id
+
+    def invalidate_snapshot(self, study_id: str) -> None:
+        """
+        Remove snapshot metadata without loading authorization relationships.
+        """
+        session = self.session
+        session.execute(delete(VariantStudySnapshot).where(VariantStudySnapshot.id == study_id))
+        session.execute(update(Study).where(Study.id == study_id).values(updated_at=current_time()))
+        session.commit()
+
+    def save_snapshot(self, snapshot: VariantStudySnapshot) -> None:
+        """
+        Persist snapshot metadata without loading study authorization relationships.
+        """
+        session = self.session
+        session.execute(
+            insert(VariantStudySnapshot).values(
+                id=snapshot.id,
+                version=snapshot.version,
+                generation_id=snapshot.generation_id,
+                last_executed_command=snapshot.last_executed_command,
+            )
+        )
+        if snapshot.lineage:
+            session.execute(
+                insert(VariantStudySnapshotLineage),
+                [
+                    {
+                        "snapshot_id": entry.snapshot_id,
+                        "position": entry.position,
+                        "variant_id": entry.variant_id,
+                        "commands_version": entry.commands_version,
+                    }
+                    for entry in snapshot.lineage
+                ],
+            )
+        session.commit()
+        session.expire_all()
 
     def get_study_tree(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
         """

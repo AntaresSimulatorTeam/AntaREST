@@ -181,8 +181,7 @@ class VariantStudyService(AbstractStudyService):
         Invalidates snapshot so that it is regenerated from scratch
         next time the study is accessed.
         """
-        variant_study.snapshot = None
-        self.repository.save(metadata=variant_study)
+        self.repository.invalidate_snapshot(variant_study.id)
 
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
         self._snapshot_manager_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
