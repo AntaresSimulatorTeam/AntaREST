@@ -50,30 +50,8 @@ class RefStudySearchResult(NamedTuple):
     force_regenerate: bool = False
 
 
-def _get_sorted_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandBlock]:
+def _get_aggregated_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandBlock]:
     return [cmd for variant in variants for cmd in variant.commands]
-
-
-def _find_last_snapshot_up_to_date(
-    variants: Sequence[VariantStudy],
-) -> tuple[VariantStudy | None, list[CommandBlock]]:
-    """
-    Finds the most recent snapshot that is up to date.
-
-    Assumes the variants are sorted from the most recent to the oldest.
-
-    If no variant is up to date, it returns None.
-
-    It also returns the list of commands to apply in order (from the oldest to the most recent command).
-    """
-    for k, variant in enumerate(variants):
-        if variant.snapshot is None:
-            continue
-        if variant.snapshot.version == variant.commands_version.version:
-            commands = _get_sorted_command_blocks(variants[:k][::-1])
-            return variant, commands
-    commands = _get_sorted_command_blocks(variants[::-1])
-    return None, commands
 
 
 class SnapshotGenerator:
@@ -217,7 +195,7 @@ class SnapshotGenerator:
             # In the case of a from scratch generation, the root study will be used as the reference study.
             # We need to retrieve all commands from the descendants of variants to apply them on the reference study.
             commands_version = current_variant.commands_version.version
-            command_blocks = _get_sorted_command_blocks(descendants)
+            command_blocks = _get_aggregated_command_blocks(descendants)
             return RefStudySearchResult(
                 ref_study=root_study,
                 cmd_blocks=command_blocks,
@@ -247,18 +225,13 @@ class SnapshotGenerator:
                         )
 
         # Final case: The variant has no snapshot, or its `last_executed_command` does not exist anymore.
-        # We search for a variant with an up-to-date snapshot to use it as a reference study.
-        # If no such variant is found, we use the root study as a reference study.
-
-        ref_study = root_study
-        # Give the list in reverse order to find the most recent variants first.
-        ref_variant_study, commands = _find_last_snapshot_up_to_date(descendants[-2::-1])
-        if ref_variant_study is not None:
-            ref_study = ref_variant_study
-
+        # we perform a generation "from scratch". We don't try to re-use intermediate snapshots, which
+        # might be modified concurrently.
+        commands_version = current_variant.commands_version.version
+        command_blocks = _get_aggregated_command_blocks(descendants)
         return RefStudySearchResult(
-            ref_study=ref_study,
-            cmd_blocks=commands + current_variant.commands,
+            ref_study=root_study,
+            cmd_blocks=command_blocks,
             force_regenerate=True,
-            version=current_variant.commands_version.version,
+            version=commands_version,
         )
