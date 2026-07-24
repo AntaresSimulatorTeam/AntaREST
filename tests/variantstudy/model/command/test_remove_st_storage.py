@@ -16,6 +16,7 @@ from pydantic import ValidationError
 from antarest.core.exceptions import STStorageNotFound
 from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, STStorageCreation
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.study_upgrader import StudyUpgrader
@@ -146,11 +147,10 @@ class TestRemoveSTStorage:
         assert not output.status
         assert output.message == "Short-term storage 'fake_storage' in area 'fr' does not exist"
 
-    def test_apply(self, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+    def test_apply(self, dao_92: StudyDao, command_context: CommandContext) -> None:
         # Create an area and a short-term storage inside it
-        study = empty_study_920
-        dao = build_dao_from_file_study(study, command_context)
-        version = study.config.version
+        dao = dao_92
+        version = dao.get_version()
         cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
         cmd.apply(study_dao=dao)
 
@@ -174,8 +174,11 @@ class TestRemoveSTStorage:
         output = cmd.apply(dao)
         assert output.status
 
-        assert "sts" in study.config.get_st_storage_ids("fr")
-        assert "constraint" in study.config.get_sts_constraint_ids("fr", "sts")
+        # Checks the config for FS Dao
+        if isinstance(dao, FileStudyTreeDao):
+            config = dao.get_file_study().config
+            assert "sts" in config.get_st_storage_ids("fr")
+            assert "constraint" in config.get_sts_constraint_ids("fr", "sts")
 
         assert dao.get_st_storage("fr", "sts") is not None
 
@@ -186,9 +189,12 @@ class TestRemoveSTStorage:
         with pytest.raises(STStorageNotFound):
             dao.get_st_storage("fr", "sts")
 
-        assert "sts" not in study.config.get_st_storage_ids("fr")
-        with pytest.raises(KeyError):
-            study.config.get_sts_constraint_ids("fr", "sts")
+        # Checks the config for FS Dao
+        if isinstance(dao, FileStudyTreeDao):
+            config = dao.get_file_study().config
+            assert "sts" not in config.get_st_storage_ids("fr")
+            with pytest.raises(KeyError):
+                config.get_sts_constraint_ids("fr", "sts")
 
     def test_apply__storage_without_constraints(
         self, empty_study_920: FileStudy, command_context: CommandContext
