@@ -19,7 +19,7 @@ import uuid
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, NamedTuple
 
-from antarest.core.exceptions import UnsupportedOperationOnArchivedStudy, VariantGenerationError
+from antarest.core.exceptions import StudyNotFoundError, UnsupportedOperationOnArchivedStudy, VariantGenerationError
 from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.dao.api.study_dao import StudyDao
@@ -169,17 +169,10 @@ class SnapshotGenerator:
         # Persist this before modifying snapshot data. Commands are copied
         # above so the invalidation commit cannot reload different inputs.
         self.variant_study_service.invalidate_snapshot(variant_study)
-        root_study, descendants = self._retrieve_descendants(variant_study_id)
-        assert_permission_on_studies([root_study, *descendants], StudyPermissionType.READ)
-        if root_study.archived:
-            raise UnsupportedOperationOnArchivedStudy(root_study.id)
-
-        ref_study = (
-            root_study
-            if root_study.id == ref_study_id
-            else next(variant for variant in descendants if variant.id == ref_study_id)
-        )
-        variant_study = descendants[-1]
+        ref_study = self.repository.get(ref_study_id)
+        if ref_study is None:
+            raise StudyNotFoundError(ref_study_id)
+        variant_study = self.repository.get_study_with_commands(variant_study_id, with_snapshot=True)
 
         try:
             if search_result.force_regenerate:

@@ -1038,10 +1038,18 @@ class TestSnapshotGenerator:
         existing_study = variant_study_service.repository.get(variant_study_id)
         assert isinstance(existing_study, VariantStudy)
         assert existing_study.snapshot is not None
+        retrieve_descendants = generator._retrieve_descendants
+        retrieval_count = 0
+
+        def count_retrievals(study_id: str) -> t.Any:
+            nonlocal retrieval_count
+            retrieval_count += 1
+            return retrieve_descendants(study_id)
 
         def interrupt_generation(*args: object, **kwargs: object) -> t.NoReturn:
             raise SnapshotGenerationInterrupted()
 
+        monkeypatch.setattr(generator, "_retrieve_descendants", count_retrievals)
         monkeypatch.setattr(generator, "_apply_commands", interrupt_generation)
 
         with pytest.raises(SnapshotGenerationInterrupted):
@@ -1050,6 +1058,7 @@ class TestSnapshotGenerator:
         interrupted_study = variant_study_service.repository.get(variant_study_id)
         assert isinstance(interrupted_study, VariantStudy)
         assert interrupted_study.snapshot is None
+        assert retrieval_count == 1
 
     @with_admin_user
     @with_db_context

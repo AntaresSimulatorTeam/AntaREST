@@ -156,7 +156,9 @@ class VariantStudyRepository(StudyMetadataRepository):
         stmt = select(CommandBlock)
         return list(self.session.execute(stmt).scalars().all())
 
-    def get_study_with_commands(self, variant_id: str, with_lock: bool = False) -> VariantStudy:
+    def get_study_with_commands(
+        self, variant_id: str, with_lock: bool = False, with_snapshot: bool = False
+    ) -> VariantStudy:
         """
         Use a single JOIN query to retrieve a variant study with its associated command blocks and their version.
         It returns a `VariantStudy` object with its associated `owner`, `groups` to be able to check user permissions efficiently.
@@ -173,6 +175,8 @@ class VariantStudyRepository(StudyMetadataRepository):
             joinedload(VariantStudy.commands),
             joinedload(VariantStudy.commands_version),
         ]
+        if with_snapshot:
+            join_query.append(joinedload(VariantStudy.snapshot).joinedload(VariantStudySnapshot.lineage))
         stmt = select(VariantStudy).options(*join_query).where(VariantStudy.id == variant_id)
 
         variant_study: VariantStudy | None = self.session.execute(stmt).unique().scalar_one_or_none()
