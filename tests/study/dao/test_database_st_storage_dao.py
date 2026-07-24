@@ -245,12 +245,12 @@ def test_get_all_additional_constraints(dao_builder: Callable[[StudyVersion], St
     assert dao.get_st_storage_additional_constraints("area_1", "st_storage_id_2") == []
 
 
-def test_st_storage_matrices_lifecycle(db_session: Session, dao_builder: Callable[[StudyVersion], StudyDao]) -> None:
-    dao = dao_builder(STUDY_VERSION_9_3)
+def test_st_storage_matrices_lifecycle(dao_93: StudyDao) -> None:
+    dao = dao_93
     save_area(dao, "area_1")
     dao.save_st_storages({"area_1": [_make_storage(dao, id="battery", name="Battery")]})
 
-    matrix_service = dao._matrix_service
+    matrix_service = dao.matrix_service
     pmax_injection_df = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     pmax_withdrawal_df = pl.DataFrame(data=[[5, 6.1], [7, 8.3]], orient="row")
     lower_rule_curve_df = pl.DataFrame(data=[[9, 10.2], [11, 12.4]], orient="row")
