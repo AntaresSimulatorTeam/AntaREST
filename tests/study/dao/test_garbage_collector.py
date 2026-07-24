@@ -27,6 +27,7 @@ from antarest.study.business.model.reserve_definition_model import ReserveDefini
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_3, StorageMode, Study
+from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_storage import FileStudyStorage
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
@@ -68,10 +69,16 @@ def test_garbage_collection(command_context: CommandContext, tmp_path: Path, db_
     )
 
     command_context.matrix_service = matrix_service
-    study_factory = StudyFactory(matrix_service=matrix_service, cache=LocalCache())
+    cache = LocalCache()
+    study_factory = StudyFactory(matrix_service=matrix_service, cache=cache)
     fs_dao = build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
     db_dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
 
+    # Register the providers. 1 for the DB and 1 for the FS
+    _register_provider(db_dao, db_session, matrix_service)
+    RawStudyMatrixUsageProvider(StudyMetadataRepository(cache), matrix_service, _build_storage_mapping(matrix_service))
+
+    # Test the garbage collection
     for dao in [fs_dao, db_dao]:
         result = build_real_case_study(dao)
         (
