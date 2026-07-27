@@ -89,3 +89,29 @@ def test_save_user_resources_folder_with_file(dao: StudyDao, blob_service: InMem
     assert result[1].path == PurePosixPath("folder_path/inside.txt")
     assert result[1].resource_type == ResourceType.FILE
     assert result[1].blob_id == blob_id
+
+
+def test_deletion_advanced_cases(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
+    blob_id_a = blob_service.save(b"Nice content A !")
+    blob_id_b = blob_service.save(b"Nice content B !")
+    dao.save_user_resources(
+        [
+            UserResourceDataCreation(
+                path=PurePosixPath("folderA/subfolderA/file.txt"), resource_type=ResourceType.FILE, blob_id=blob_id_a
+            ),
+            UserResourceDataCreation(
+                path=PurePosixPath("folderB/subfolderB/file.txt"), resource_type=ResourceType.FILE, blob_id=blob_id_b
+            ),
+        ]
+    )
+
+    # Delete the folderA. Should delete the subfolderA and the file.txt
+    dao.delete_user_resource(PurePosixPath("folderA"))
+    assert len(list(dao.get_all_user_resources())) == 1
+    assert list(dao.get_all_user_resources())[0].path == PurePosixPath("folderB/subfolderB/file.txt")
+
+    # Delete the file inside folderB. Should delete the file.txt but keep the folder subfolderB
+    dao.delete_user_resource(PurePosixPath("folderB/subfolderB/file.txt"))
+    user_resources = dao.get_all_user_resources()
+    assert len(user_resources) == 1
+    assert user_resources[0].path == PurePosixPath("folderB/subfolderB")
