@@ -27,9 +27,12 @@ _RESOURCE_TYPE_ENUM = enum_col(ResourceType, name="resourcetype")
 USER_RESOURCES_TABLE = Table(
     "user_resources",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
-    Column("path", String(255), nullable=False, primary_key=True),
+    Column("study_id", String(36), nullable=False),
+    Column("id", String(36), nullable=False, primary_key=True),
+    Column("name", String(255), nullable=False),
+    Column("parent_id", String(36), nullable=True),
     Column("resource_type", _RESOURCE_TYPE_ENUM, nullable=False),
     Column("blob_id", String(64), nullable=True),
     ForeignKeyConstraint(["study_id"], ["study_data.study_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["parent_id"], ["user_resources.id"], ondelete="CASCADE"),
 )
