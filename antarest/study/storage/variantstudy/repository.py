@@ -209,7 +209,7 @@ class VariantStudyRepository(StudyMetadataRepository):
 
         return variant.snapshot.version == variant.commands_version.version  # type: ignore
 
-    def get_study_lineage(self, variant_id: str) -> tuple[Study, list[VariantStudy]]:
+    def get_study_lineage(self, variant_id: str) -> tuple[RawStudy, list[VariantStudy]]:
         """
         Returns the lineage of parents of the study, including the study itself.
 
@@ -235,4 +235,6 @@ class VariantStudyRepository(StudyMetadataRepository):
             joinedload(study_w_p.VariantStudy.commands_version),
         )
         lineage = list(self.session.execute(stmt).unique().scalars().all())
+        if not lineage:
+            raise StudyNotFoundError(variant_id)
         return cast(RawStudy, lineage[0]), [cast(VariantStudy, v) for v in lineage[1:]]
