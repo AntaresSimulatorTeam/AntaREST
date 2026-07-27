@@ -17,7 +17,7 @@ Database implementation of UserResourcesDao.
 import uuid
 from pathlib import PurePosixPath
 
-from sqlalchemy import CursorResult, delete, select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
@@ -27,6 +27,8 @@ from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
+
+_TABLE = USER_RESOURCES_TABLE
 
 
 class DatabaseUserResourcesDao(UserResourcesDao):
@@ -87,7 +89,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 values.append(value)
 
         try:
-            upsert_multiple(self._db_session, USER_RESOURCES_TABLE, values)
+            upsert_multiple(self._db_session, _TABLE, values)
         except IntegrityError as e:
             raise ValueError(f"Could not save user resources {resource_data}") from e
 
@@ -96,28 +98,24 @@ class DatabaseUserResourcesDao(UserResourcesDao):
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
         tree = self._build_resources_tree()
-        for resource in tree:
-            if resource_path.is_relative_to(PurePosixPath(resource)):
-                print("todo")
+        for resource, ids in tree.items():
+            if resource.is_relative_to(resource_path):
+                relative_path_parts_length = len(resource.relative_to(resource_path).parts)
+                id_to_remove = ids[-1 - relative_path_parts_length]
 
-        stmt = delete(USER_RESOURCES_TABLE).where(
-            (USER_RESOURCES_TABLE.c.study_id == self._study_id) & (USER_RESOURCES_TABLE.c.path == str(resource_path))
-        )
+                stmt = delete(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.id == id_to_remove))
+                self._db_session.execute(stmt)
+                self._db_session.commit()
+                return
 
-        result = self._db_session.execute(stmt)
-
-        assert isinstance(result, CursorResult)
-        if result.rowcount == 0:
-            raise UserResourcesNotFound(str(resource_path))
-
-        self._db_session.commit()
+        raise UserResourcesNotFound(str(resource_path))
 
     @override
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
         raise NotImplementedError()
 
     def _build_resources_tree(self) -> dict[PurePosixPath, list[str]]:
-        stmt = select(USER_RESOURCES_TABLE).where(USER_RESOURCES_TABLE.c.study_id == self._study_id)
+        stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
 
         rows = self._db_session.execute(stmt).fetchall()
 
