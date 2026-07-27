@@ -60,7 +60,7 @@ dev = [
     {include-group = "test"},
     "celery-types~=0.26.0",
     "ruff~=0.15.2",
-    "mypy~=1.19.1",
+    "mypy~=2.3.0",
     "pre-commit~=4.5.1",
     "pyinstaller==6.19.0",
     "pyinstaller-hooks-contrib==2026.3",
