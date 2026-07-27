@@ -120,14 +120,11 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
     @override
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
-        """
-            class UserResourceDataCreation(AntaresBaseModel):
-        path: PurePosixPath
-        resource_type: ResourceType
-        blob_id: str | None = None
-
-        """
-        raise NotImplementedError()
+        tree = self._build_resources_tree()
+        return [
+            UserResourceDataCreation(path=path, resource_type=data.resource_type, blob_id=data.blob_id)
+            for path, data in tree.items()
+        ]
 
     def _build_resources_tree(self) -> dict[PurePosixPath, UserResourcesDatabaseData]:
         stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
