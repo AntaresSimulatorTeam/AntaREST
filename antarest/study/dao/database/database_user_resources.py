@@ -95,6 +95,11 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
+        tree = self._build_resources_tree()
+        for resource in tree:
+            if resource_path.is_relative_to(PurePosixPath(resource)):
+                print("todo")
+
         stmt = delete(USER_RESOURCES_TABLE).where(
             (USER_RESOURCES_TABLE.c.study_id == self._study_id) & (USER_RESOURCES_TABLE.c.path == str(resource_path))
         )
@@ -111,7 +116,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
         raise NotImplementedError()
 
-    def _build_resources_tree(self) -> dict[str, list[str]]:
+    def _build_resources_tree(self) -> dict[PurePosixPath, list[str]]:
         stmt = select(USER_RESOURCES_TABLE).where(USER_RESOURCES_TABLE.c.study_id == self._study_id)
 
         rows = self._db_session.execute(stmt).fetchall()
@@ -122,12 +127,13 @@ class DatabaseUserResourcesDao(UserResourcesDao):
         # Determine which nodes are leaves
         parent_ids = {row.parent_id for row in rows if row.parent_id}
 
-        cache: dict[str, tuple[str, list[str]]] = {}
+        cache: dict[PurePosixPath, tuple[PurePosixPath, list[str]]] = {}
 
-        def get_path(node_id: str) -> tuple[str, list[str]]:
+        def get_path(node_id: str) -> tuple[PurePosixPath, list[str]]:
             """Returns (path, id_chain) for a node."""
-            if node_id in cache:
-                return cache[node_id]
+            node_id_as_path = PurePosixPath(node_id)
+            if node_id_as_path in cache:
+                return cache[node_id_as_path]
 
             node = nodes[node_id]
 
@@ -135,9 +141,9 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 result = (node.name, [node_id])
             else:
                 parent_path, parent_ids = get_path(node.parent_id)
-                result = (f"{parent_path}/{node.name}", [*parent_ids, node_id])
+                result = (parent_path.joinpath(node.name), [*parent_ids, node_id])
 
-            cache[node_id] = result
+            cache[node_id_as_path] = result
             return result
 
         return {path: ids for node_id in nodes if node_id not in parent_ids for path, ids in [get_path(node_id)]}
