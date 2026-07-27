@@ -68,9 +68,7 @@ def raw_studies_matrix_usage_provider(
     matrix_service: ISimpleMatrixService,
     storage_mapping: dict[StorageMode, IStudyStorage],
 ) -> RawStudyMatrixUsageProvider:
-    return RawStudyMatrixUsageProvider(
-        StudyMetadataRepository(raw_study_service.cache), matrix_service, storage_mapping
-    )
+    return RawStudyMatrixUsageProvider(StudyMetadataRepository(), matrix_service, storage_mapping)
 
 
 @pytest.fixture

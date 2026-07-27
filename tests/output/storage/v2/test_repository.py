@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from unittest.mock import Mock
 
 import pytest
 from sqlalchemy import Engine
@@ -29,7 +28,7 @@ def init_db(db_engine: Engine) -> None:
 
 @pytest.fixture
 def study_repo(init_db) -> StudyMetadataRepository:
-    return StudyMetadataRepository(cache_service=Mock())
+    return StudyMetadataRepository()
 
 
 @pytest.fixture

@@ -344,7 +344,7 @@ def raw_study_service_fixture(
         study_factory=study_factory,
         cache=core_cache,
         command_context=command_factory.command_context,
-        repository=StudyMetadataRepository(cache_service=core_cache),
+        repository=StudyMetadataRepository(),
     )
 
 
