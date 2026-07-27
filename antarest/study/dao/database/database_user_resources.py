@@ -15,6 +15,7 @@ Database implementation of UserResourcesDao.
 """
 
 import uuid
+from dataclasses import dataclass
 from pathlib import PurePosixPath
 
 from sqlalchemy import delete, select
@@ -29,6 +30,13 @@ from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
 
 _TABLE = USER_RESOURCES_TABLE
+
+
+@dataclass(frozen=True)
+class UserResourcesDatabaseData:
+    ids: list[str]
+    blob_id: str | None
+    resource_type: ResourceType
 
 
 class DatabaseUserResourcesDao(UserResourcesDao):
@@ -98,10 +106,10 @@ class DatabaseUserResourcesDao(UserResourcesDao):
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:
         tree = self._build_resources_tree()
-        for resource, ids in tree.items():
+        for resource, data in tree.items():
             if resource.is_relative_to(resource_path):
                 relative_path_parts_length = len(resource.relative_to(resource_path).parts)
-                id_to_remove = ids[-1 - relative_path_parts_length]
+                id_to_remove = data.ids[-1 - relative_path_parts_length]
 
                 stmt = delete(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.id == id_to_remove))
                 self._db_session.execute(stmt)
@@ -112,9 +120,16 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
     @override
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
+        """
+            class UserResourceDataCreation(AntaresBaseModel):
+        path: PurePosixPath
+        resource_type: ResourceType
+        blob_id: str | None = None
+
+        """
         raise NotImplementedError()
 
-    def _build_resources_tree(self) -> dict[PurePosixPath, list[str]]:
+    def _build_resources_tree(self) -> dict[PurePosixPath, UserResourcesDatabaseData]:
         stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
 
         rows = self._db_session.execute(stmt).fetchall()
@@ -125,9 +140,9 @@ class DatabaseUserResourcesDao(UserResourcesDao):
         # Determine which nodes are leaves
         parent_ids = {row.parent_id for row in rows if row.parent_id}
 
-        cache: dict[PurePosixPath, tuple[PurePosixPath, list[str]]] = {}
+        cache: dict[PurePosixPath, tuple[PurePosixPath, UserResourcesDatabaseData]] = {}
 
-        def get_path(node_id: str) -> tuple[PurePosixPath, list[str]]:
+        def get_path(node_id: str) -> tuple[PurePosixPath, UserResourcesDatabaseData]:
             """Returns (path, id_chain) for a node."""
             node_id_as_path = PurePosixPath(node_id)
             if node_id_as_path in cache:
@@ -136,10 +151,14 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             node = nodes[node_id]
 
             if node.parent_id is None:
-                result = (node.name, [node_id])
+                data = UserResourcesDatabaseData(ids=[node_id], blob_id=node.blob_id, resource_type=node.resource_type)
+                result = (node.name, data)
             else:
-                parent_path, parent_ids = get_path(node.parent_id)
-                result = (parent_path.joinpath(node.name), [*parent_ids, node_id])
+                parent_path, parent_data = get_path(node.parent_id)
+                data = UserResourcesDatabaseData(
+                    ids=[*parent_data.ids, node_id], blob_id=node.blob_id, resource_type=node.resource_type
+                )
+                result = (parent_path.joinpath(node.name), data)
 
             cache[node_id_as_path] = result
             return result
