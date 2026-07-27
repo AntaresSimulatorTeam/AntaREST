@@ -160,7 +160,7 @@ class SnapshotGenerator:
     def _retrieve_descendants(self, variant_study_id: str) -> tuple[Study, Sequence[VariantStudy]]:
         # Get all ancestors of the current study from bottom to top
         # The first IDs are variant IDs, the last is the root study ID.
-        return self.repository.get_study_tree(variant_study_id)
+        return self.repository.get_study_lineage(variant_study_id)
 
     def _apply_commands(
         self, study_dao: StudyDao, variant_study: VariantStudy, cmd_blocks: list[CommandBlock]

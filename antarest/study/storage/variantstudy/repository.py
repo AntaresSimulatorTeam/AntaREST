@@ -203,11 +203,13 @@ class VariantStudyRepository(StudyMetadataRepository):
 
         return variant.snapshot.version == variant.commands_version.version  # type: ignore
 
-    def get_study_tree(self, variant_id: str) -> tuple[Study, list[VariantStudy]]:
+    def get_study_lineage(self, variant_id: str) -> tuple[Study, list[VariantStudy]]:
         """
-        Returns the parent study and the list of its variants based on the given ids.
-        Loads metadata at the same time for permission checks.
-        Also loads commands and snapshot at the same time to avoid multiple queries.
+        Returns the lineage of parents of the study, including the study itself.
+
+        The root study is returned first, then the ordered list of its children, until and including
+        the specified variant.
+        Also loads metadata, commands and snapshot at the same time to avoid multiple queries.
         """
         base_q = select(Study.id, Study.parent_id, literal(0).label("depth")).where(Study.id == variant_id)
         cte = base_q.cte("ancestor_cte", recursive=True)

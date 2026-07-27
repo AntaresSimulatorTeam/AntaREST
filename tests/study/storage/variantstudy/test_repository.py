@@ -27,7 +27,7 @@ def test_variant_study_repository_get_study_tree(db_session: Session):
 
     variant1 = variant_repo.save(VariantStudy(name="variant 1", version="8.6", path="/tutu", parent_id=root_study.id))
     variant2 = variant_repo.save(VariantStudy(name="variant 2", version="8.6", path="/tutu", parent_id=variant1.id))
-    tree_root, tree_studies = variant_repo.get_study_tree(variant2.id)
+    tree_root, tree_studies = variant_repo.get_study_lineage(variant2.id)
 
     assert tree_root.id == root_study.id
     assert tuple(s.id for s in tree_studies) == (variant1.id, variant2.id)
