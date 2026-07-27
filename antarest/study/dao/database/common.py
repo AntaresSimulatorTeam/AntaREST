@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Table, select
 from sqlalchemy.exc import IntegrityError
@@ -77,7 +77,7 @@ def parse_frequency_filters(value: str) -> set[FrequencyFilter]:
 def _validate_filter(value: str) -> FrequencyFilter:
     if value not in FILTER_OPTIONS:
         raise ValueError(f"Invalid filter {value}, expected one of {','.join(FILTER_OPTIONS)}.")
-    return cast(FrequencyFilter, value)
+    return value
 
 
 def serialize_frequency_filters(encoded_value: set[FrequencyFilter]) -> str:
