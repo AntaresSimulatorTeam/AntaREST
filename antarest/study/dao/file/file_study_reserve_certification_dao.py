@@ -15,7 +15,8 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from antarest.core.exceptions import ReserveDefinitionsNotFound, ThermalClusterNotFound
-from antarest.study.business.model.thermal_reserve_certification_model import (
+from antarest.study.business.model.reserve_certification_model import (
+    StorageReserveCertificationMapping,
     ThermalReserveCertificationMapping,
 )
 from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
@@ -86,3 +87,15 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
 
             # Saves the content into the YAML file
             file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
+
+    def save_storage_reserve_certifications(self, data: dict[AreaId, StorageReserveCertificationMapping]) -> None:
+        # TODO: Implement this method
+        pass
+
+    def get_all_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
+        # TODO: Implement this method
+        pass
+
+    def get_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
+        # TODO: Implement this method
+        pass

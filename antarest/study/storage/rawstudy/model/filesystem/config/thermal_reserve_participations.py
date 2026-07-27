@@ -15,13 +15,13 @@ from pydantic import ConfigDict, model_validator
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
+from antarest.study.business.model.reserve_certification_model import ThermalReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries, ReserveSymmetry
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
-class Certification(AntaresBaseModel):
+class _Certification(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
 
     reserve: str
@@ -44,7 +44,7 @@ class Participation(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     cluster: str
-    certifications: list[Certification] = []
+    certifications: list[_Certification] = []
     symmetries: list[Symmetry] = []
 
     @model_validator(mode="after")

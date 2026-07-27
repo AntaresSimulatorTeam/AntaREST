@@ -20,19 +20,45 @@ from antarest.study.business.model.reserve_definition_model import ReserveDefini
 Cost = Annotated[float, Field(ge=0)]
 Power = Annotated[float, Field(ge=0)]
 
+
+class ReserveCertification(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+
+    participation_cost: Cost = 0.0
+
+
 ##########################
 # Thermal part
 ##########################
 
 
-class ThermalReserveCertification(AntaresBaseModel):
+class ThermalReserveCertification(
+    ReserveCertification,
+):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     max_power: Power = 0.0
     max_power_off: Power = 0.0
-    participation_cost: Cost = 0.0
     participation_cost_off: Cost = 0.0
 
 
 ThermalId: TypeAlias = str
 ThermalReserveCertificationMapping = dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]
+
+
+##########################
+# Storage part
+##########################
+
+
+class StorageReserveCertification(
+    ReserveCertification,
+):
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+
+    max_release: Power = 0.0
+    max_store: Power = 0.0
+
+
+StorageId: TypeAlias = str
+StorageReserveCertificationMapping = dict[ReserveDefinitionId, dict[StorageId, StorageReserveCertification]]

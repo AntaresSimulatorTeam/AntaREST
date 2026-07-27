@@ -21,16 +21,19 @@ from antarest.core.exceptions import (
     ThermalClustersNotFound,
 )
 from antarest.dbmodel import get_row_representation_as_dict
-from antarest.study.business.model.thermal_reserve_certification_model import (
+from antarest.study.business.model.reserve_certification_model import (
+    StorageReserveCertificationMapping,
     ThermalReserveCertification,
     ThermalReserveCertificationMapping,
 )
 from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
 from antarest.study.dao.common import AreaId
+from antarest.study.dao.database.models.st_storage_reserve_certification import ST_STORAGE_RESERVE_CERTIFICATION_TABLE
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
 
 _THERMAL_TABLE = THERMAL_RESERVE_CERTIFICATION_TABLE
+_ST_STORAGE_TABLE = ST_STORAGE_RESERVE_CERTIFICATION_TABLE
 
 
 def _convert_row_to_model(row: Row[Any]) -> ThermalReserveCertification:
@@ -142,3 +145,15 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
         # All objects exist. It means that the DB table does not contain the information.
         raise ValueError("One of the thermal reserve certification table is not filled as it should") from exc
+
+    def save_storage_reserve_certifications(self, data: dict[AreaId, StorageReserveCertificationMapping]) -> None:
+        # TODO: Implement this method
+        pass
+
+    def get_all_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
+        # TODO: Implement this method
+        pass
+
+    def get_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
+        # TODO: Implement this method
+        pass

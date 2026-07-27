@@ -17,7 +17,7 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import InvalidFieldForVersionError
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertificationMapping
+from antarest.study.business.model.reserve_certification_model import ThermalReserveCertificationMapping
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.common import AreaId
 from antarest.study.model import (
