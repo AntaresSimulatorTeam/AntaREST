@@ -18,7 +18,6 @@ from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
 
 from antarest.core.exceptions import StudyNotFoundError
-from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import StudyMetadataRepository
@@ -46,15 +45,14 @@ class VariantStudyRepository(StudyMetadataRepository):
          so that we are sure they are consistent, even in READ COMMITTED isolation level.
     """
 
-    def __init__(self, cache_service: ICache, session: Session | None = None):
+    def __init__(self, session: Session | None = None):
         """
         Initialize the variant study repository.
 
         Args:
-            cache_service: Cache service for the repository.
             session: Optional SQLAlchemy session to be used.
         """
-        super().__init__(cache_service)
+        super().__init__(session)
         self._session = session
 
     @override

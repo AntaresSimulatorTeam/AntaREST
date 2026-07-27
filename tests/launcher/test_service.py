@@ -35,7 +35,6 @@ from antarest.core.config import (
 )
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, FileDownloadTaskDTO
-from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
@@ -306,7 +305,7 @@ class TestLauncherService:
         config_repository = Mock()
 
         study_service = Mock(spec=StudyService)
-        study_service.repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
+        study_service.repository = StudyMetadataRepository(session=db_session)
         db_session.add_all(fake_execution_result)
         db_session.add_all(all_faked_execution_results)
         db_session.commit()

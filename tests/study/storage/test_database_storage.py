@@ -41,7 +41,7 @@ def test_upgrade_fails(tmp_path: Path) -> None:
 
     database_storage = DatabaseStudyStorage(
         config=config,
-        repository=StudyMetadataRepository(Mock()),
+        repository=StudyMetadataRepository(),
         matrix_service=InMemorySimpleMatrixService(),
         db_dao_factory=db_dao_factory,
         fs_dao_factory=Mock(),
@@ -94,7 +94,7 @@ def test_upgrade_does_not_use_cache(tmp_path: Path, study_factory) -> None:
 
     database_storage = DatabaseStudyStorage(
         config=config,
-        repository=StudyMetadataRepository(cache),
+        repository=StudyMetadataRepository(),
         matrix_service=matrix_service,
         db_dao_factory=db_dao_factory,
         fs_dao_factory=fs_dao_factory,

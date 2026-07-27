@@ -305,20 +305,18 @@ def command_factory_fixture(
 # noinspection PyUnusedLocal
 @pytest.fixture(name="variant_study_repository")
 def variant_study_repository_fixture(
-    core_cache: ICache,
     db_middleware: DBSessionMiddleware,  # required
 ) -> VariantStudyRepository:
     """
     Fixture that creates a VariantStudyRepository instance.
 
     Args:
-        core_cache: An instance of the ICache class.
         db_middleware: An instance of the DBSessionMiddleware class.
 
     Returns:
-        An instance of the VariantStudyRepository class with the provided cache service.
+        An instance of the VariantStudyRepository class.
     """
-    return VariantStudyRepository(cache_service=core_cache)
+    return VariantStudyRepository()
 
 
 @pytest.fixture(name="raw_study_service")
@@ -344,7 +342,7 @@ def raw_study_service_fixture(
         study_factory=study_factory,
         cache=core_cache,
         command_context=command_factory.command_context,
-        repository=StudyMetadataRepository(cache_service=core_cache),
+        repository=StudyMetadataRepository(),
     )
 
 

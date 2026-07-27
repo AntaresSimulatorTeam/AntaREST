@@ -76,7 +76,7 @@ def test_garbage_collection(command_context: CommandContext, tmp_path: Path, db_
 
     # Register the providers. 1 for the DB and 1 for the FS
     _register_provider(db_dao, db_session, matrix_service)
-    RawStudyMatrixUsageProvider(StudyMetadataRepository(cache), matrix_service, _build_storage_mapping(matrix_service))
+    RawStudyMatrixUsageProvider(StudyMetadataRepository(), matrix_service, _build_storage_mapping(matrix_service))
 
     # Test the garbage collection
     for dao in [fs_dao, db_dao]:
