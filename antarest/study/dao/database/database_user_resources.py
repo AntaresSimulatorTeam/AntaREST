@@ -69,43 +69,22 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
             # Otherwise, create the resource.
             parts = resource_path.parts
-            # First part
-            first_part = parts[0]
-            resource_id = str(uuid.uuid4())
-            value = {
-                "study_id": self._study_id,
-                "id": resource_id,
-                "name": first_part,
-                "parent_id": None,
-                "resource_type": ResourceType.FOLDER if len(parts) > 1 else resource.resource_type,
-                "blob_id": None if len(parts) > 1 else resource.blob_id,
-            }
-            values.append(value)
-            # Other parts except the last one
-            for part in parts[1 : len(parts) - 1]:
-                parent_id = resource_id
+            parent_id = None
+
+            for i, part in enumerate(parts):
                 resource_id = str(uuid.uuid4())
+                is_last_part = i == len(parts) - 1
+
                 value = {
                     "study_id": self._study_id,
                     "id": resource_id,
                     "name": part,
                     "parent_id": parent_id,
-                    "resource_type": ResourceType.FOLDER,
-                    "blob_id": None,
+                    "resource_type": ResourceType.FOLDER if not is_last_part else resource.resource_type,
+                    "blob_id": None if not is_last_part else resource.blob_id,
                 }
                 values.append(value)
-            # Last part
-            if len(parts) > 1:
-                last_part = parts[len(parts) - 1]
-                value = {
-                    "study_id": self._study_id,
-                    "id": str(uuid.uuid4()),
-                    "name": last_part,
-                    "parent_id": resource_id,
-                    "resource_type": resource.resource_type,
-                    "blob_id": resource.blob_id,
-                }
-                values.append(value)
+                parent_id = resource_id
 
         try:
             upsert_multiple(self._db_session, _TABLE, values)
