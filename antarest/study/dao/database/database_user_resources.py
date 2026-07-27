@@ -66,7 +66,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 "id": resource_id,
                 "name": first_part,
                 "parent_id": None,
-                "resource_type": ResourceType.FOLDER,
+                "resource_type": ResourceType.FOLDER if len(parts) > 1 else resource.resource_type,
                 "blob_id": None if len(parts) > 1 else resource.blob_id,
             }
             values.append(value)
@@ -149,7 +149,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
             if node.parent_id is None:
                 data = UserResourcesDatabaseData(ids=[node_id], blob_id=node.blob_id, resource_type=node.resource_type)
-                result = (node.name, data)
+                result = (PurePosixPath(node.name), data)
             else:
                 parent_path, parent_data = get_path(node.parent_id)
                 data = UserResourcesDatabaseData(
