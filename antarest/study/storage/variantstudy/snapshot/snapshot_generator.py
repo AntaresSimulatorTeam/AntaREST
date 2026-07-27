@@ -19,13 +19,11 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, NamedTuple
 
 from antarest.core.exceptions import UnsupportedOperationOnArchivedStudy, VariantGenerationError
-from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.model import Study, StudyMetadataUpdate
 from antarest.study.storage.utils import (
-    assert_permission_on_studies,
     format_timestamp,
     remove_from_cache,
 )
@@ -107,7 +105,6 @@ class SnapshotGenerator:
         logger.info(f"Generating variant study snapshot for '{variant_study_id}'")
 
         root_study, descendants = self._retrieve_descendants(variant_study_id)
-        assert_permission_on_studies([root_study, *descendants], StudyPermissionType.READ)
         if root_study.archived:
             raise UnsupportedOperationOnArchivedStudy(root_study.id)
         search_result = self.search_ref_study(root_study, descendants, from_scratch=from_scratch)
@@ -163,9 +160,7 @@ class SnapshotGenerator:
     def _retrieve_descendants(self, variant_study_id: str) -> tuple[Study, Sequence[VariantStudy]]:
         # Get all ancestors of the current study from bottom to top
         # The first IDs are variant IDs, the last is the root study ID.
-        ancestor_ids = self.repository.get_ancestor_or_self_ids(variant_study_id)
-        descendant_ids = ancestor_ids[::-1]
-        return self.repository.get_study_tree(descendant_ids)
+        return self.repository.get_study_tree(variant_study_id)
 
     def _apply_commands(
         self, study_dao: StudyDao, variant_study: VariantStudy, cmd_blocks: list[CommandBlock]

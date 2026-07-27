@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 
 from collections.abc import Sequence
+from typing import cast
 
-from sqlalchemy import select
+from sqlalchemy import literal, select
 from sqlalchemy.orm import Session, joinedload, with_polymorphic
 from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
@@ -202,25 +203,28 @@ class VariantStudyRepository(StudyMetadataRepository):
 
         return variant.snapshot.version == variant.commands_version.version  # type: ignore
 
-    def get_study_tree(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
+    def get_study_tree(self, variant_id: str) -> tuple[Study, list[VariantStudy]]:
         """
         Returns the parent study and the list of its variants based on the given ids.
         Loads metadata at the same time for permission checks.
         Also loads commands and snapshot at the same time to avoid multiple queries.
         """
-        study_w_p = with_polymorphic(Study, [VariantStudy])
+        base_q = select(Study.id, Study.parent_id, literal(0).label("depth")).where(Study.id == variant_id)
+        cte = base_q.cte("ancestor_cte", recursive=True)
+        recursive_q = select(Study.id, Study.parent_id, (cte.c.depth + 1).label("depth")).join(
+            cte, Study.id == cte.c.parent_id
+        )
+        cte = cte.union_all(recursive_q)
 
-        join_query = [
+        study_w_p = with_polymorphic(Study, "*")
+
+        stmt = select(study_w_p).join(cte, study_w_p.id == cte.c.id).order_by(cte.c.depth.desc())
+        stmt = stmt.options(
             joinedload(study_w_p.owner),
             joinedload(study_w_p.groups),
             joinedload(study_w_p.VariantStudy.snapshot),
-            joinedload(study_w_p.VariantStudy.commands_version),
             joinedload(study_w_p.VariantStudy.commands),
-        ]
-        stmt = select(study_w_p).options(*join_query).where(study_w_p.id.in_(study_ids))
-
-        result = self.session.execute(stmt).unique().scalars().all()
-
-        index = {id_: i for i, id_ in enumerate(study_ids)}
-        result = sorted(result, key=lambda v: index[v.id])
-        return result[0], result[1:]  # type: ignore
+            joinedload(study_w_p.VariantStudy.commands_version),
+        )
+        lineage = list(self.session.execute(stmt).unique().scalars().all())
+        return cast(RawStudy, lineage[0]), [cast(VariantStudy, v) for v in lineage[1:]]
