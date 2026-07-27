@@ -109,11 +109,35 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
     @override
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
+        raise NotImplementedError()
+
+    def _build_resources_tree(self) -> dict[str, list[str]]:
         stmt = select(USER_RESOURCES_TABLE).where(USER_RESOURCES_TABLE.c.study_id == self._study_id)
 
         rows = self._db_session.execute(stmt).fetchall()
 
-        return [
-            UserResourceDataCreation(path=PurePosixPath(row.path), resource_type=row.resource_type, blob_id=row.blob_id)
-            for row in rows
-        ]
+        # Index by id
+        nodes = {row.id: row for row in rows}
+
+        # Determine which nodes are leaves
+        parent_ids = {row.parent_id for row in rows if row.parent_id}
+
+        cache: dict[str, tuple[str, list[str]]] = {}
+
+        def get_path(node_id: str) -> tuple[str, list[str]]:
+            """Returns (path, id_chain) for a node."""
+            if node_id in cache:
+                return cache[node_id]
+
+            node = nodes[node_id]
+
+            if node.parent_id is None:
+                result = (node.name, [node_id])
+            else:
+                parent_path, parent_ids = get_path(node.parent_id)
+                result = (f"{parent_path}/{node.name}", [*parent_ids, node_id])
+
+            cache[node_id] = result
+            return result
+
+        return {path: ids for node_id in nodes if node_id not in parent_ids for path, ids in [get_path(node_id)]}
