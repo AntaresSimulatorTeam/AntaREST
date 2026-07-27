@@ -55,9 +55,20 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
     @override
     def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
+        tree = self._build_resources_tree()
+
         values = []
         for resource in resource_data:
-            parts = resource.path.parts
+            resource_path = resource.path
+
+            # First, find folders that want to be created but already exist.
+            # If so, this is a no-op, so we can skip them.
+            if resource.resource_type == ResourceType.FOLDER:
+                if any(res.is_relative_to(resource_path) for res in tree):
+                    continue
+
+            # Otherwise, create the resource.
+            parts = resource_path.parts
             # First part
             first_part = parts[0]
             resource_id = str(uuid.uuid4())
