@@ -1124,7 +1124,7 @@ class TestSnapshotGenerator:
             results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
             assert results.success is True
 
-            # We expect 3 queries:
+            # We expect 2 queries:
             # - 1 query to fetch the whole tree of studies (with join query on owner, groups, commands,
             # snapshot and command_version)
             # - 1 query to insert the variant study snapshot

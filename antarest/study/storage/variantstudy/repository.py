@@ -185,7 +185,7 @@ class VariantStudyRepository(StudyMetadataRepository):
 
     def increment_commands_list_version(self, variant_id: str) -> None:
         """
-        Locks and increment the commands' list version of that variant.
+        Locks and increments the commands' list version of that variant.
 
         The lock is necessary to ensure no other operation increments the value at the same time
         (new command addition, ...).
