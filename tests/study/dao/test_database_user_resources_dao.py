@@ -115,3 +115,24 @@ def test_deletion_advanced_cases(dao: StudyDao, blob_service: InMemoryBlobServic
     user_resources = dao.get_all_user_resources()
     assert len(user_resources) == 1
     assert user_resources[0].path == PurePosixPath("folderB/subfolderB")
+
+
+def test_save_advance_case(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
+    blob_id = blob_service.save(b"content")
+    dao.save_user_resources(
+        [
+            UserResourceDataCreation(
+                path=PurePosixPath("folderA/subfolderA/file.txt"), resource_type=ResourceType.FILE, blob_id=blob_id
+            ),
+        ]
+    )
+
+    # Saves the folder `folderA/subfolderA`.
+    # Should work and be a no-op.
+    dao.save_user_resources(
+        [UserResourceDataCreation(path=PurePosixPath("folderA/subfolderA"), resource_type=ResourceType.FOLDER)]
+    )
+
+    resources = dao.get_all_user_resources()
+    assert len(resources) == 1
+    assert resources[0].path == PurePosixPath("folderA/subfolderA/file.txt")
