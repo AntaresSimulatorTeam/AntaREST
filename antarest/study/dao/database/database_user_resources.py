@@ -18,6 +18,7 @@ import uuid
 from pathlib import PurePosixPath
 
 from sqlalchemy import CursorResult, delete, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -85,7 +86,10 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 }
                 values.append(value)
 
-        upsert_multiple(self._db_session, USER_RESOURCES_TABLE, values)
+        try:
+            upsert_multiple(self._db_session, USER_RESOURCES_TABLE, values)
+        except IntegrityError as e:
+            raise ValueError(f"Could not save user resources {resource_data}") from e
 
         self._db_session.commit()
 
