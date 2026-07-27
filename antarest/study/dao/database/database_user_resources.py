@@ -83,6 +83,15 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                     "resource_type": ResourceType.FOLDER if not is_last_part else resource.resource_type,
                     "blob_id": None if not is_last_part else resource.blob_id,
                 }
+                if is_last_part and resource.resource_type == ResourceType.FILE:
+                    # Checks if the user wants to replace the content of an already existing resource.
+                    # If so, we should use the current resource's id, not create a new one.
+                    for res, data in tree.items():
+                        if res == resource_path:
+                            id_to_use = data.ids[-1]
+                            value["id"] = id_to_use
+                            break
+
                 values.append(value)
                 parent_id = resource_id
 
@@ -129,8 +138,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
         cache: dict[PurePosixPath, tuple[PurePosixPath, UserResourcesDatabaseData]] = {}
 
-        def get_path(node_id: str) -> tuple[PurePosixPath, UserResourcesDatabaseData]:
-            """Returns (path, id_chain) for a node."""
+        def get_path_and_data(node_id: str) -> tuple[PurePosixPath, UserResourcesDatabaseData]:
             node_id_as_path = PurePosixPath(node_id)
             if node_id_as_path in cache:
                 return cache[node_id_as_path]
@@ -141,7 +149,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 data = UserResourcesDatabaseData(ids=[node_id], blob_id=node.blob_id, resource_type=node.resource_type)
                 result = (PurePosixPath(node.name), data)
             else:
-                parent_path, parent_data = get_path(node.parent_id)
+                parent_path, parent_data = get_path_and_data(node.parent_id)
                 data = UserResourcesDatabaseData(
                     ids=[*parent_data.ids, node_id], blob_id=node.blob_id, resource_type=node.resource_type
                 )
@@ -150,4 +158,6 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             cache[node_id_as_path] = result
             return result
 
-        return {path: ids for node_id in nodes if node_id not in parent_ids for path, ids in [get_path(node_id)]}
+        return {
+            path: data for node_id in nodes if node_id not in parent_ids for path, data in [get_path_and_data(node_id)]
+        }

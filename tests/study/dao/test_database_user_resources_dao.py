@@ -12,12 +12,14 @@
 from pathlib import PurePosixPath
 
 import pytest
+from sqlalchemy import select
 
 from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.core.exceptions import UserResourcesNotFound
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
 
 
 def test_save_user_resources_file(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
@@ -60,6 +62,10 @@ def test_update_blob_id(dao: StudyDao, blob_service: InMemoryBlobService) -> Non
         path=PurePosixPath("file_path"), resource_type=ResourceType.FILE, blob_id=updated_blob_id
     )
     dao.save_user_resources([updated_resource])
+
+    # Specific DB test. Ensure we only have one entry in DB, as we updated the existing one rather than creating a new.
+    if isinstance(dao, DatabaseStudyDao):
+        assert len(dao.get_session().execute(select(USER_RESOURCES_TABLE)).all()) == 1
 
     result = list(dao.get_all_user_resources())
     assert len(result) == 1
