@@ -184,6 +184,12 @@ class VariantStudyRepository(StudyMetadataRepository):
         return version
 
     def increment_commands_list_version(self, variant_id: str) -> None:
+        """
+        Locks and increment the commands' list version of that variant.
+
+        The lock is necessary to ensure no other operation increments the value at the same time
+        (new command addition, ...).
+        """
         current_version = self.get_commands_list_version(variant_id)
         data = CommandsListVersion(variant_id=variant_id, version=current_version + 1)
         session = self.session
