@@ -258,11 +258,6 @@ class CommandApplicationError(HTTPException):
         super().__init__(HTTPStatus.INTERNAL_SERVER_ERROR, message)
 
 
-class CommandUpdateAuthorizationError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.LOCKED, message)
-
-
 class StudyValidationError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)

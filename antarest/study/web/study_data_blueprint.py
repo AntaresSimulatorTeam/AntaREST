@@ -336,10 +336,7 @@ def create_study_data_routes() -> APIRouter:
         logger.info(f"Updating layer {layer_id} for study {uuid} with name {name}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
-        if name:
-            study_service.layer_manager.update_layer_name(study_interface, layer_id, name)
-        if areas:
-            study_service.area_manager.update_layer_areas(study_interface, layer_id, areas)
+        study_service.layer_manager.update_layer(study_interface, layer_id, name, areas or [])
 
     @bp.delete(
         "/studies/{uuid}/layers/{layer_id}",

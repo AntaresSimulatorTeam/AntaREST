@@ -29,7 +29,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.alias_generators import to_camel
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
@@ -321,7 +321,7 @@ class LauncherListDTO(AntaresBaseModel):
     default_launcher: str
 
 
-class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel):
+class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     """
     DTO representing the load of the SLURM cluster or local machine.
 
@@ -353,6 +353,50 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
         description="The status of the launcher: 'SUCCESS' or 'FAILED'",
         title="Launcher Status",
     )
+
+
+class LauncherLoad(Base):
+    """
+    SQLAlchemy model storing cached load information for a launcher.
+
+    Attributes:
+        launcher_name: ID/name of the launcher.
+        allocated_cpu_rate: The rate of allocated CPU, in range (0, 100).
+        cluster_load_rate: The rate of cluster load, in range (0, 100).
+        nb_queued_jobs: The number of queued jobs.
+        launcher_status: The status of the launcher.
+        date: Timestamp when the load was recorded.
+    """
+
+    __tablename__ = "launchers_loads"
+
+    launcher_name: Mapped[str] = mapped_column(String(20), primary_key=True)
+    allocated_cpu_rate: Mapped[float] = mapped_column(Float)
+    cluster_load_rate: Mapped[float] = mapped_column(Float())
+    nb_queued_jobs: Mapped[int] = mapped_column(Integer())
+    launcher_status: Mapped[str] = mapped_column(String(100))
+    date: Mapped[datetime] = mapped_column(DateTime())
+
+    @classmethod
+    def from_dto(cls, dto: LauncherLoadDTO, name: str) -> "LauncherLoad":
+        from antarest.core.utils.utils import current_time
+
+        return cls(
+            launcher_name=name,
+            allocated_cpu_rate=dto.allocated_cpu_rate,
+            cluster_load_rate=dto.cluster_load_rate,
+            nb_queued_jobs=dto.nb_queued_jobs,
+            launcher_status=dto.launcher_status,
+            date=current_time(),
+        )
+
+    def to_dto(self) -> LauncherLoadDTO:
+        return LauncherLoadDTO(
+            allocated_cpu_rate=self.allocated_cpu_rate,
+            cluster_load_rate=self.cluster_load_rate,
+            nb_queued_jobs=self.nb_queued_jobs,
+            launcher_status=self.launcher_status,
+        )
 
 
 class SolverPresets(AntaresBaseModel):

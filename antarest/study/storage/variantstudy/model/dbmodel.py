@@ -12,6 +12,7 @@
 
 import datetime
 import uuid
+from typing import Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -21,6 +22,8 @@ from antarest.core.persistence import Base
 from antarest.core.serde.json import from_json
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+metadata = Base.metadata
 
 
 class VariantStudySnapshot(Base):
@@ -43,16 +46,14 @@ class VariantStudySnapshot(Base):
         ForeignKey("variantstudy.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
+    version: Mapped[int] = mapped_column(Integer)
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
 
-    __mapper_args__ = {
-        "polymorphic_identity": "variant_study_snapshot",
-    }
+    __mapper_args__ = {"polymorphic_identity": "variant_study_snapshot"}
 
     @override
     def __str__(self) -> str:
-        return f"[Snapshot] id={self.id}, created_at={self.created_at}"
+        return f"[Snapshot] id={self.id}, version={self.version}"
 
 
 class CommandBlock(Base):
@@ -107,6 +108,19 @@ class CommandBlock(Base):
             updated_at=self.updated_at,
         )
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id or str(uuid.uuid4()),
+            "study_id": self.study_id,
+            "index": self.index,
+            "command": self.command,
+            "version": self.version,
+            "args": self.args,
+            "study_version": self.study_version,
+            "user_id": self.user_id,
+            "updated_at": self.updated_at,
+        }
+
     @override
     def __str__(self) -> str:
         return (
@@ -120,6 +134,15 @@ class CommandBlock(Base):
             f" user_id={self.user_id!r}"
             f" updated_at={self.updated_at!r}"
         )
+
+
+class CommandsListVersion(Base):
+    __tablename__ = "commands_list_version"
+
+    variant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"), primary_key=True
+    )
+    version: Mapped[int] = mapped_column(Integer)
 
 
 class VariantStudy(Study):
@@ -162,6 +185,7 @@ class VariantStudy(Study):
         order_by="CommandBlock.index",
         cascade="all, delete, delete-orphan",
     )
+    commands_version = relationship(CommandsListVersion, uselist=False)
 
     @override
     def __str__(self) -> str:

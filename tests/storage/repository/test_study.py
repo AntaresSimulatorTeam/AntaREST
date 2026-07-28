@@ -13,7 +13,6 @@
 
 from sqlalchemy.orm import Session
 
-from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.model import PublicMode
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, User
@@ -23,7 +22,7 @@ from tests.helpers import create_raw_study, create_study, create_variant_study
 
 
 def test_lifecycle(db_session: Session) -> None:
-    repo = StudyMetadataRepository(LocalCache(), session=db_session)
+    repo = StudyMetadataRepository(session=db_session)
 
     user = User(id=1, name="admin")
     group = Group(id="my-group", name="group")
@@ -90,7 +89,7 @@ def test_lifecycle(db_session: Session) -> None:
 
 
 def test_study_inheritance(db_session: Session) -> None:
-    repo = StudyMetadataRepository(LocalCache(), session=db_session)
+    repo = StudyMetadataRepository(session=db_session)
 
     user = User(id=0, name="admin")
     group = Group(id="my-group", name="group")

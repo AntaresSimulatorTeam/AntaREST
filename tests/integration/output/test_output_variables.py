@@ -290,31 +290,31 @@ def test_export_output_variables_view(client: TestClient, user_access_token: str
     # Default format is CSV
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
-    assert content == [",1,2", "2018-01-07,46452000,46452000", "2018-01-14,46452000,46452000"]
+    assert content == [",1,2", "2018-01-07,46452000.0,46452000.0", "2018-01-14,46452000.0,46452000.0"]
 
     # Without index
     query_params["index"] = "false"
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
-    assert content == ["1,2", "46452000,46452000", "46452000,46452000"]
+    assert content == ["1,2", "46452000.0,46452000.0", "46452000.0,46452000.0"]
 
     # Without headers
     query_params["header"] = "false"
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
-    assert content == ["46452000,46452000", "46452000,46452000"]
+    assert content == ["46452000.0,46452000.0", "46452000.0,46452000.0"]
 
     # Change format to TSV
     query_params["export_format"] = "tsv"
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
-    assert content == ["46452000\t46452000", "46452000\t46452000"]
+    assert content == ["46452000.0\t46452000.0", "46452000.0\t46452000.0"]
 
     # Use Csv semicolon
     query_params["export_format"] = "csv (semicolon)"
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
-    assert content == ["46452000;46452000", "46452000;46452000"]
+    assert content == ["46452000,0;46452000,0", "46452000,0;46452000,0"]
 
     # Format to Excel
     query_params["export_format"] = "xlsx"

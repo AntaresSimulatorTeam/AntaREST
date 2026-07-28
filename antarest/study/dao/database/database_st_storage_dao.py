@@ -30,6 +30,8 @@ from antarest.core.exceptions import (
     STStorageNotFound,
     STStoragesNotFound,
 )
+from antarest.core.utils.sql_utils import upsert_multiple
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -45,7 +47,7 @@ from antarest.study.dao.common import (
     StStorageId,
     StStorageSeriesMapping,
 )
-from antarest.study.dao.database.common import get_row_representation_as_dict, validate_area_exists
+from antarest.study.dao.database.common import validate_area_exists
 from antarest.study.dao.database.models.st_storage import (
     COST_INJECTION_TABLE,
     COST_LEVEL_TABLE,
@@ -61,7 +63,6 @@ from antarest.study.dao.database.models.st_storage import (
     ST_STORAGE_TABLE,
     UPPER_RULE_CURVE_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_cost_level,
     default_scenario_hourly,
