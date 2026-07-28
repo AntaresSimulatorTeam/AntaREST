@@ -570,8 +570,9 @@ class SlurmLauncher(AbstractLauncher):
             The `argparse.Namespace` object which is then passed to `antarestlauncher.main.run_with`,
             to launch a simulation using Antares Launcher.
         """
+        launcher_args = LauncherArgs(self.launcher_args)
+
         if launcher_params:
-            launcher_args = LauncherArgs(self.launcher_args)
             launcher_args.other_options = launcher_params.other_options or ""
             launcher_args.apply_xpansion_mode(launcher_params)
             launcher_args.apply_time_limit(launcher_params, self.slurm_config.time_limit)
@@ -582,12 +583,8 @@ class SlurmLauncher(AbstractLauncher):
                 # could even lead to security breaches
                 raise ValueError("Other options cannot contain a single quote, you should use double quotes instead")
 
-            launcher_args.run_at = run_at
-            return launcher_args
-
-        arguments = self.launcher_args
-        arguments.run_at = run_at
-        return arguments
+        launcher_args.run_at = run_at
+        return launcher_args
 
     @override
     def run_study(
