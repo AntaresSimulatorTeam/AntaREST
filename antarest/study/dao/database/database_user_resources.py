@@ -75,15 +75,18 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             # Build the resource tree.
             parts = resource_path.parts
             parent_id = None
-
             ids = []
+
             for i, part in enumerate(parts):
+                # Skip parts covered by parent IDs.
                 if i < len(parent_ids):
                     continue
+
                 resource_id = str(uuid.uuid4())
                 ids.append(resource_id)
                 is_last_part = i == len(parts) - 1
 
+                # Set parent ID if applicable
                 if i - len(parent_ids) < len(parent_ids):
                     parent_id = parent_ids[i - len(parent_ids)]
 
@@ -95,9 +98,9 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                     "resource_type": ResourceType.FOLDER if not is_last_part else resource.resource_type,
                     "blob_id": None if not is_last_part else resource.blob_id,
                 }
+
+                # Handle resource replacement for files.
                 if is_last_part and resource.resource_type == ResourceType.FILE:
-                    # Checks if the user wants to replace the content of an already existing resource.
-                    # If so, we should use the current resource's id, not create a new one.
                     existing = tree.get(resource_path)
                     if existing is not None:
                         value["id"] = existing.ids[-1]
