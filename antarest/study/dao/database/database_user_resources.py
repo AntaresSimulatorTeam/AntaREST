@@ -61,6 +61,12 @@ class DatabaseUserResourcesDao(UserResourcesDao):
         for resource in resource_data:
             resource_path = resource.path
 
+            # Raise an error if we try to create 2 resources with different type at the same path.
+            # This mimics the behavior of the filesystem.
+            if resource_path in tree:
+                if resource.resource_type != tree[resource_path].resource_type:
+                    raise ValueError(f"Cannot create 2 resources of different type at the same path '{resource_path}'")
+
             # Skip folders that already exist.
             if resource.resource_type == ResourceType.FOLDER and any(res.is_relative_to(resource_path) for res in tree):
                 continue

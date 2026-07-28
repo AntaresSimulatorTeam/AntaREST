@@ -144,7 +144,7 @@ def test_save_existing_folder(dao: StudyDao, blob_service: InMemoryBlobService) 
     assert resources[0].path == PurePosixPath("folderA/subfolderA/file.txt")
 
 
-def test_save_same_resource_twice(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
+def test_save_same_resource_twice(dao: StudyDao) -> None:
     dao.save_user_resources(
         [
             UserResourceDataCreation(path=PurePosixPath("folderB/subfolderB"), resource_type=ResourceType.FOLDER),
@@ -160,7 +160,7 @@ def test_save_same_resource_twice(dao: StudyDao, blob_service: InMemoryBlobServi
         assert len(dao.get_session().execute(select(USER_RESOURCES_TABLE)).all()) == 2
 
 
-def test_save_folder_inside_an_existing_one(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
+def test_save_folder_inside_an_existing_one(dao: StudyDao) -> None:
     dao.save_user_resources([UserResourceDataCreation(path=PurePosixPath("a"), resource_type=ResourceType.FOLDER)])
     dao.save_user_resources([UserResourceDataCreation(path=PurePosixPath("a/b"), resource_type=ResourceType.FOLDER)])
 
@@ -177,3 +177,22 @@ def test_save_folder_inside_an_existing_one(dao: StudyDao, blob_service: InMemor
 
     resources = dao.get_all_user_resources()
     assert len(resources) == 2
+
+
+def test_save_a_file_with_the_same_name_as_an_existing_folder(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
+    blob_id = blob_service.save(b"content")
+
+    if isinstance(dao, DatabaseStudyDao):
+        expected_error = ValueError
+        expected_msg = "Cannot create 2 resources of different type at the same path"
+    else:
+        expected_error = IsADirectoryError
+        expected_msg = "user/a"
+
+    with pytest.raises(expected_error, match=expected_msg):
+        dao.save_user_resources(
+            [
+                UserResourceDataCreation(path=PurePosixPath("a"), resource_type=ResourceType.FOLDER),
+                UserResourceDataCreation(path=PurePosixPath("a"), resource_type=ResourceType.FILE, blob_id=blob_id),
+            ]
+        )
