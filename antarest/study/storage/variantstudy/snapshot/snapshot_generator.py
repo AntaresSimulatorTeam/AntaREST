@@ -103,6 +103,9 @@ class SnapshotGenerator:
 
         logger.info(f"Generating variant study snapshot for '{variant_study_id}'")
 
+        # Note: we don't check any more for READ permissions on the lineage here.
+        #       Permissions are only considered at variant creation time, not every time
+        #       the snapshot is generated.
         root_study, descendants = self.repository.get_study_lineage(variant_study_id)
         if root_study.archived:
             raise UnsupportedOperationOnArchivedStudy(root_study.id)
