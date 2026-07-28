@@ -36,11 +36,11 @@ class ReadOnlyReserveCertificationDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_all_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
+    def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
         raise NotImplementedError()
 
     @abstractmethod
-    def get_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
+    def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
         raise NotImplementedError()
 
 
@@ -58,5 +58,5 @@ class ReserveCertificationDao(ReadOnlyReserveCertificationDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_storage_reserve_certifications(self, data: dict[AreaId, StorageReserveCertificationMapping]) -> None:
+    def save_st_storage_reserve_certifications(self, data: dict[AreaId, StorageReserveCertificationMapping]) -> None:
         raise NotImplementedError()

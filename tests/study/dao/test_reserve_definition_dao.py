@@ -15,13 +15,17 @@ import pytest
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, ReserveDefinitionsNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_properties_model import AreaProperties
-from antarest.study.business.model.reserve_certification_model import ThermalReserveCertification
+from antarest.study.business.model.reserve_certification_model import (
+    StorageReserveCertification,
+    ThermalReserveCertification,
+)
 from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinition,
     ReserveDefinitionId,
     ReserveType,
 )
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
+from antarest.study.business.model.sts_model import STStorage, initialize_st_storage
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
@@ -167,7 +171,7 @@ def test_cascade_delete_on_area_removal(dao_10_0: StudyDao) -> None:
     assert dao_10_0.get_all_reserve_definitions() == {}
 
 
-def test_removing_a_reserve_cascades_on_symmetries_and_certifications(dao_10_0: StudyDao) -> None:
+def test_removing_a_thermal_reserve_cascades_on_symmetries_and_certifications(dao_10_0: StudyDao) -> None:
     # Create 1 area with 2 thermal clusters and 4 reserves
     dao = dao_10_0
     dao.save_areas_with_properties({"fr": AreaProperties()})
@@ -193,6 +197,32 @@ def test_removing_a_reserve_cascades_on_symmetries_and_certifications(dao_10_0: 
 
     assert dao.get_thermal_reserve_symmetries("fr") == {}
     assert dao.get_thermal_reserve_certifications("fr") == {"r2": {"th1": certification}}
+
+
+def test_removing_an_st_storage_reserve_cascades_on_symmetries_and_certifications(dao_10_0: StudyDao) -> None:
+    # Create 1 area with 2 short-term storages and 4 reserves
+    dao = dao_10_0
+    dao.save_areas_with_properties({"fr": AreaProperties()})
+    sts1 = STStorage(name="sts1", id="sts1")
+    sts2 = STStorage(name="sts2", id="sts2")
+    initialize_st_storage(sts1, dao.get_version())
+    initialize_st_storage(sts2, dao.get_version())
+    dao.save_st_storages({"fr": [sts1, sts2]})
+    reserves = []
+    for reserve_name in ["r1", "r2", "r3", "r4"]:
+        reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN, id=reserve_name))
+    dao.save_reserve_definitions({"fr": reserves})
+
+    # Save 1 symmetry and 1 certitification.
+    # dao.save_thermal_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]]}})
+    certification = StorageReserveCertification()
+    dao.save_st_storage_reserve_certifications({"fr": {"r1": {"sts2": certification}, "r2": {"sts1": certification}}})
+
+    # Remove the reserve `r1`. We should no longer see `r1` in the symmetries and certifications.
+    dao.delete_reserve_definitions("fr", ["r1"])
+
+    # assert dao.get_thermal_reserve_symmetries("fr") == {}
+    assert dao.get_st_storage_reserve_certifications("fr") == {"r2": {"sts1": certification}}
 
 
 class TestCoexistenceWithGlobalParameters:

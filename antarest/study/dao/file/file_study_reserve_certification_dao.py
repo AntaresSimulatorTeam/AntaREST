@@ -88,14 +88,17 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
             # Saves the content into the YAML file
             file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
 
-    def save_storage_reserve_certifications(self, data: dict[AreaId, StorageReserveCertificationMapping]) -> None:
+    @override
+    def save_st_storage_reserve_certifications(self, data: dict[AreaId, StorageReserveCertificationMapping]) -> None:
         # TODO: Implement this method
         pass
 
-    def get_all_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
+    @override
+    def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
         # TODO: Implement this method
         pass
 
-    def get_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
+    @override
+    def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
         # TODO: Implement this method
         pass

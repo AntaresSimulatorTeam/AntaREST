@@ -37,10 +37,9 @@ from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_certification_model import (
     StorageReserveCertificationMapping,
-    ThermalReserveCertification,
     ThermalReserveCertificationMapping,
 )
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Ruleset, ScenarioType
@@ -256,14 +255,6 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     """
     Adapts a full DAO as a read only DAO without modification methods.
     """
-
-    def get_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
-        # TODO
-        pass
-
-    def get_all_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
-        # TODO
-        pass
 
     def __init__(self, adaptee: StudyDao):
         self._adaptee = adaptee
@@ -923,9 +914,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_thermal_reserve_certifications()
 
     @override
-    def get_thermal_reserve_certifications(
-        self, area_id: AreaId
-    ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
+    def get_thermal_reserve_certifications(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
         return self._adaptee.get_thermal_reserve_certifications(area_id)
 
     @override
@@ -935,3 +924,11 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
         return self._adaptee.get_thermal_reserve_symmetries(area_id)
+
+    @override
+    def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
+        return self._adaptee.get_st_storage_reserve_certifications(area_id)
+
+    @override
+    def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
+        return self._adaptee.get_all_st_storage_reserve_certifications()
