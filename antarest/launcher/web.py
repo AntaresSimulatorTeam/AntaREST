@@ -58,8 +58,12 @@ def create_launcher_api() -> APIRouter:
         run_at: Annotated[
             datetime | None,
             Query(
-                description="UTC datetime at which to schedule the run. If omitted, the study runs immediately.",
-                examples=["2026-07-15T14:30:00Z"],
+                description=(
+                    "ISO-8601 datetime at which to schedule the run. A timezone-aware value is converted"
+                    " to UTC, a naive value (no offset) is assumed to already be UTC."
+                    " If omitted, the study runs immediately."
+                ),
+                examples=["2026-07-15T14:30:00Z", "2026-07-15T16:30:00+02:00"],
             ),
         ] = None,
     ) -> JobCreationDTO:
