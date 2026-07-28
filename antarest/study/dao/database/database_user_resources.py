@@ -63,9 +63,8 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
             # First, find folders that want to be created but already exist.
             # If so, this is a no-op, so we can skip them.
-            if resource.resource_type == ResourceType.FOLDER:
-                if any(res.is_relative_to(resource_path) for res in tree):
-                    continue
+            if resource.resource_type == ResourceType.FOLDER and any(res.is_relative_to(resource_path) for res in tree):
+                continue
 
             # Otherwise, create the resource.
             parts = resource_path.parts
