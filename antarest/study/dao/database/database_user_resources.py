@@ -97,11 +97,12 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
             # Skip parts covered by parent IDs.
             start_index = len(parent_ids)
-            for i, part in enumerate(parts := resource_path.parts[start_index:], start=start_index):
+            parts = resource_path.parts[start_index:]
+            for k, part in enumerate(parts):
                 resource_id = str(uuid.uuid4())
                 ids.append(resource_id)
 
-                is_last_part = part == parts[-1]
+                is_last_part = k == len(parts) - 1
 
                 value = {
                     "study_id": self._study_id,
