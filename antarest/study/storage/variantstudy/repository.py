@@ -224,7 +224,7 @@ class VariantStudyRepository(StudyMetadataRepository):
         )
         cte = cte.union_all(recursive_q)
 
-        study_w_p = with_polymorphic(Study, "*")
+        study_w_p = with_polymorphic(Study, [VariantStudy])
 
         stmt = select(study_w_p).join(cte, study_w_p.id == cte.c.id).order_by(cte.c.depth.desc())
         stmt = stmt.options(
