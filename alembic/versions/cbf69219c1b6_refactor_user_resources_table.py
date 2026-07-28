@@ -41,11 +41,6 @@ def upgrade():
         ),
     )
 
-    # Create indexes
-    op.create_index("ix_user_resources_parent_id", "user_resources", ["parent_id"])
-    # Create unique constraint to prevent duplicate user resources names under the same parent
-    op.create_index("idx_user_resources_name_parent_unique", "user_resources",["name", "parent_id"], unique=True)
-
 
 def downgrade() -> None:
     op.drop_table("user_resources")
