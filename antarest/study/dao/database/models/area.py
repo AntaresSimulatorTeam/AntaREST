@@ -19,9 +19,9 @@ These tables store study data (areas, UI positions, etc.) in the database instea
 
 from sqlalchemy import Boolean, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Table
 
+from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.area_properties_model import AdequacyPatchMode
-from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 

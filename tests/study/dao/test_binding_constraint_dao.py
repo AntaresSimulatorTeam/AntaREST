@@ -20,7 +20,6 @@ from sqlalchemy import Table, select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import BindingConstraintNotFound, ChildNotFoundError
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
@@ -275,9 +274,9 @@ def test_version_specific_fields(dao: StudyDao) -> None:
     assert r.group == "my_group"
 
 
-def test_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
+def test_matrices(dao: StudyDao) -> None:
     """All four matrix types round-trip; upsert overwrites; each constraint has its own matrices."""
-    dao, matrix_service = dao_and_matrix_service
+    matrix_service = dao.matrix_service
     bc_a: ConstraintId = ConstraintId("bc_a")
     bc_b: ConstraintId = ConstraintId("bc_b")
 
@@ -316,17 +315,14 @@ def test_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService])
     assert dao.get_constraint_less_term_matrix(bc_b).equals(df_b)
 
 
-def test_metadata_change_preserves_matrices(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_metadata_change_preserves_matrices(dao: StudyDao) -> None:
     """Changing only name, comments, or enabled must leave matrices untouched."""
-    dao, matrix_service = dao_and_matrix_service
     df_lt = pl.DataFrame({"v": [42.0]})
 
     dao.save_constraints(
         [_bc(BC1, operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY)]
     )
-    dao.save_constraint_less_term_matrix({BC1: matrix_service.create(df_lt)})
+    dao.save_constraint_less_term_matrix({BC1: dao.matrix_service.create(df_lt)})
 
     # Change comments and enabled — operator and time_step stay the same
     dao.save_constraints(
@@ -403,7 +399,7 @@ def test_metadata_change_preserves_matrices(
     ],
 )
 def test_operator_change_renames_matrix(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+    dao: StudyDao,
     existing_op: BindingConstraintOperator,
     new_op: BindingConstraintOperator,
     initial_terms: list[str],
@@ -412,7 +408,6 @@ def test_operator_change_renames_matrix(
     seed: float,
 ) -> None:
     """Operator change moves matrix data to the correct typed table, mirroring update_matrices_names."""
-    dao, matrix_service = dao_and_matrix_service
     error_cls = _missing_matrix_error(dao)
 
     term_df = {
@@ -434,7 +429,7 @@ def test_operator_change_renames_matrix(
     # Setup: save constraint with initial operator and seed matrices
     dao.save_constraints([_bc(BC1, operator=existing_op)])
     for term in initial_terms:
-        save[term]({BC1: matrix_service.create(term_df[term])})
+        save[term]({BC1: dao.matrix_service.create(term_df[term])})
 
     # Act: change the operator
     dao.save_constraints([_bc(BC1, operator=new_op)])
@@ -461,12 +456,11 @@ def test_operator_change_renames_matrix(
     ],
 )
 def test_time_step_change_regenerates_matrix(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+    dao: StudyDao,
     old_ts: BindingConstraintFrequency,
     new_ts: BindingConstraintFrequency,
     operator: BindingConstraintOperator,
 ) -> None:
-    dao, matrix_service = dao_and_matrix_service
     df_custom = pl.DataFrame({"v": [99.0, 99.0, 99.0]})
 
     savers = {
@@ -491,7 +485,7 @@ def test_time_step_change_regenerates_matrix(
     # Setup: save constraint with initial time step and non-zero matrices
     dao.save_constraints([_bc(BC1, operator=operator, time_step=old_ts)])
     for saver in savers[operator]:
-        saver({BC1: matrix_service.create(df_custom)})
+        saver({BC1: dao.matrix_service.create(df_custom)})
 
     # Act: change the time step
     dao.save_constraints([_bc(BC1, operator=operator, time_step=new_ts)])
@@ -513,15 +507,15 @@ def test_time_step_change_regenerates_matrix(
     ],
 )
 def test_time_step_change_regenerates_matrix_pre_v87(
-    dao_860_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
+    dao_86: StudyDao,
     old_ts: BindingConstraintFrequency,
     new_ts: BindingConstraintFrequency,
 ) -> None:
-    dao, matrix_service = dao_860_and_matrix_service
+    dao = dao_86
 
     # Setup: save constraint with initial time step and a non-zero values matrix
     dao.save_constraints([_bc(BC1, time_step=old_ts)])
-    dao.save_constraint_values_matrix({BC1: matrix_service.create(pl.DataFrame({"v": [99.0, 99.0, 99.0]}))})
+    dao.save_constraint_values_matrix({BC1: dao.matrix_service.create(pl.DataFrame({"v": [99.0, 99.0, 99.0]}))})
 
     # Act: change the time step
     dao.save_constraints([_bc(BC1, time_step=new_ts)])
@@ -532,11 +526,9 @@ def test_time_step_change_regenerates_matrix_pre_v87(
     _assert_reset_matrix(result)
 
 
-def test_time_step_and_operator_change_drops_old_matrices(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_time_step_and_operator_change_drops_old_matrices(dao: StudyDao) -> None:
     """When both time_step and operator change simultaneously, old operator's extra matrices must be deleted."""
-    dao, matrix_service = dao_and_matrix_service
+    matrix_service = dao.matrix_service
     error_cls = _missing_matrix_error(dao)
     df_custom = pl.DataFrame({"v": [99.0]})
 
@@ -559,21 +551,18 @@ def test_time_step_and_operator_change_drops_old_matrices(
         dao.get_constraint_greater_term_matrix(BC1)
 
 
-def test_time_step_and_operator_change_single_to_both(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_time_step_and_operator_change_single_to_both(dao: StudyDao) -> None:
     """When both time_step and operator change from single→BOTH, both lt and gt must be zeroed
     to the new time step's row count. Regression: time_step_changed takes precedence over
     operator_changed in _compute_matrix_changes — this test ensures the BOTH expansion is
     handled correctly when combined with a time step reset."""
-    dao, matrix_service = dao_and_matrix_service
     df_custom = pl.DataFrame({"v": [99.0]})
 
     # Setup: LESS + HOURLY (only lt matrix)
     dao.save_constraints(
         [_bc(BC1, operator=BindingConstraintOperator.LESS, time_step=BindingConstraintFrequency.HOURLY)]
     )
-    dao.save_constraint_less_term_matrix({BC1: matrix_service.create(df_custom)})
+    dao.save_constraint_less_term_matrix({BC1: dao.matrix_service.create(df_custom)})
 
     # Act: change to BOTH + DAILY — both lt and gt must be zeroed to 366 rows
     dao.save_constraints(
@@ -685,12 +674,10 @@ def test_scenario_builder_cleanup_on_constraint_removal(dao: StudyDao) -> None:
     assert dao.get_ruleset().binding_constraints == {}
 
 
-def test_mixed_matrix_changes_in_one_call(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_mixed_matrix_changes_in_one_call(dao: StudyDao) -> None:
     """A single save_constraints call with multiple constraints undergoing different changes
     must process each independently without cross-contamination."""
-    dao, matrix_service = dao_and_matrix_service
+    matrix_service = dao.matrix_service
     error_cls = _missing_matrix_error(dao)
 
     df_nonzero_1 = pl.DataFrame({"v": [11.0]})
@@ -753,14 +740,11 @@ def test_constraint_crud_study_isolation(db_session: Session, db_dao: DatabaseSt
     assert dao2.get_all_constraints() == {}
 
 
-def test_cascade_deletes(
-    db_session: Session,
-    db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService],
-) -> None:
+def test_cascade_deletes(db_session: Session, db_dao_930: DatabaseStudyDao) -> None:
     """Deleting a constraint or its study cascades to all child tables."""
-    db_dao, matrix_service = db_dao_930_and_matrix_service
+    db_dao = db_dao_930
     study_id = db_dao.get_study_id()
-    series_id = matrix_service.create(pl.DataFrame({"v": [1.0]}))
+    series_id = db_dao.matrix_service.create(pl.DataFrame({"v": [1.0]}))
 
     constraint = _bc(
         BC1,
@@ -812,10 +796,8 @@ def test_cascade_deletes(
         )
 
 
-def test_errors_inside_save_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
-    dao, matrix_service = dao_and_matrix_service
-
-    series_id = matrix_service.create(pl.DataFrame([[4]]))
+def test_errors_inside_save_matrices(dao: StudyDao) -> None:
+    series_id = dao.matrix_service.create(pl.DataFrame([[4]]))
 
     save_methods = [
         dao.save_constraint_less_term_matrix,

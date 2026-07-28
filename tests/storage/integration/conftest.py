@@ -26,15 +26,13 @@ from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import (
     CacheConfig,
     Config,
-    InternalMatrixFormat,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
 )
 from antarest.core.tasks.service import ITaskService
 from antarest.login.model import User
-from antarest.matrixstore.repository import MatrixContentRepository
-from antarest.matrixstore.service import SimpleMatrixService
+from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.output.service import OutputService
 from antarest.service_creator import build_output_service
 from antarest.study.main import build_study_service
@@ -119,10 +117,7 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
     job_result_repository.find_by_study.return_value = []
 
     # Matrices
-    matrix_path = tmp_path / "matrices"
-    matrix_path.mkdir()
-    matrix_content_repository = MatrixContentRepository(bucket_dir=matrix_path, format=InternalMatrixFormat.TSV)
-    matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
+    matrix_service = InMemorySimpleMatrixService()
 
     # Blob
     blob_path = tmp_path / "blob"

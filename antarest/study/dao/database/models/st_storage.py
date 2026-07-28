@@ -16,12 +16,12 @@ SQLAlchemy Core table definitions for short-term storage.
 
 from sqlalchemy import JSON, Boolean, Column, Float, ForeignKeyConstraint, String, Table
 
+from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
 )
-from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 

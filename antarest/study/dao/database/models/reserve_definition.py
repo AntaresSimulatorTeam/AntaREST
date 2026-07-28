@@ -12,9 +12,9 @@
 
 from sqlalchemy import Column, Float, ForeignKeyConstraint, Integer, String, Table
 
+from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.reserve_definition_model import ReserveType
-from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 

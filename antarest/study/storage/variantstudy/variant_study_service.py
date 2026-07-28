@@ -12,6 +12,7 @@
 
 import logging
 import re
+import uuid
 from collections.abc import Callable
 from datetime import timedelta
 from pathlib import Path
@@ -24,14 +25,13 @@ from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.exceptions import (
+    CommandNotFoundError,
     CommandNotValid,
-    CommandUpdateAuthorizationError,
     NoParentStudyError,
     StudyNotFoundError,
     StudyValidationError,
     UnsupportedOperationOnArchivedStudy,
     VariantGenerationError,
-    VariantGenerationTimeoutError,
     VariantStudyParentNotValid,
 )
 from antarest.core.interfaces.cache import ICache
@@ -40,7 +40,12 @@ from antarest.core.model import StudyPermissionType
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskResult, TaskType
-from antarest.core.tasks.service import DEFAULT_AWAIT_MAX_TIMEOUT, ITaskNotifier, ITaskService, TaskNotFoundError
+from antarest.core.tasks.service import (
+    ITaskNotifier,
+    ITaskService,
+    NoopNotifier,
+    TaskNotFoundError,
+)
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
@@ -73,11 +78,15 @@ from antarest.study.storage.variantstudy.command_blob_usage_provider import Comm
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.command_matrix_usage_provider import CommandMatrixUsageProvider
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    CommandsListVersion,
+    VariantStudy,
+)
 from antarest.study.storage.variantstudy.model.model import (
     CommandDTO,
     CommandDTOAPI,
+    GenerationResultInfoDTO,
     VariantTreeDTO,
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
@@ -137,19 +146,22 @@ class VariantStudyService(AbstractStudyService):
     @override
     def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
         variant_study = _cast_study_to_variant(src_study)
-        self.safe_generation(variant_study, 600)
+        self.generate(variant_study)
         return self.raw_study_service.copy(src_study, metadata)
 
     @override
     def get_study_dao(self, study: Study) -> StudyDao:
+        """
+        Ensures a snapshot is generated and returns the corresponding DAO.
+        """
         variant_study = _cast_study_to_variant(study)
-        self.safe_generation(variant_study, 600)
+        self.generate(variant_study)
         return self._study_dao_factories[study.storage_mode].get_study_dao(study.id, True)
 
     @override
     def export_study_flat(self, study: Study, dst_path: Path) -> None:
         variant = _cast_study_to_variant(study)
-        self.safe_generation(variant)
+        self.generate(variant)
         self.raw_study_service.export_study_flat(study, dst_path)
 
     ##########################
@@ -177,12 +189,6 @@ class VariantStudyService(AbstractStudyService):
         self._snapshot_manager_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
         self.invalidate_snapshot(variant_study)
 
-    def is_snapshot_up_to_date(self, variant_study: VariantStudy) -> bool:
-        return self._snapshot_manager_mapping[variant_study.storage_mode].is_snapshot_up_to_date(variant_study)
-
-    def has_snapshot(self, variant_study: VariantStudy) -> bool:
-        return self._snapshot_manager_mapping[variant_study.storage_mode].has_snapshot(variant_study)
-
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = get_current_user_name()
         study.editor = user_name
@@ -195,17 +201,22 @@ class VariantStudyService(AbstractStudyService):
             study_id: study id
         Returns: List of commands
         """
-        study = self._get_variant_study(study_id)
+        variant_study = self._get_variant_with_commands(study_id)
 
         id_to_name: dict[int, str] = {}
         command_list = []
 
-        for command in study.commands:
+        for command in variant_study.commands:
             if command.user_id and command.user_id not in id_to_name.keys():
                 user_name: str = get_user_name_from_id(command.user_id)
                 id_to_name[command.user_id] = user_name
             command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
         return command_list
+
+    def _get_variant_with_commands(self, study_id: str) -> VariantStudy:
+        variant_study = self.repository.get_study_with_commands(study_id)
+        assert_permission(variant_study, StudyPermissionType.READ)
+        return variant_study
 
     def convert_commands(self, study_id: str, api_commands: list[CommandDTOAPI]) -> list[CommandDTO]:
         study = self._get_study_by_id(study_id)
@@ -224,58 +235,55 @@ class VariantStudyService(AbstractStudyService):
                 raise CommandNotValid(f"Command at index {i} for study {study_id}") from None
         return command_objects
 
-    def _check_update_authorization(self, metadata: VariantStudy) -> None:
-        if metadata.generation_task:
-            try:
-                previous_task = self.task_service.status_task(metadata.generation_task)
-                if not previous_task.status.is_final():
-                    logger.error(f"{metadata.id} generation in progress")
-                    raise CommandUpdateAuthorizationError(metadata.id)
-            except TaskNotFoundError as e:
-                logger.warning(
-                    f"Failed to retrieve generation task for study {metadata.id}",
-                    exc_info=e,
-                )
-
     def append_commands(self, study_id: str, commands: list[CommandDTO]) -> list[str]:
         """
-        Add commands to the list of existing ones
+        Add commands to the list of existing ones, and generates the snapshot.
+
         Args:
             study_id: study id
             commands: list of new command
         Returns: The added command ids as a list of str
         """
-        study = self._get_variant_study(study_id)
+        study = self.repository.get_study_with_commands(study_id, with_lock=True)
+        assert_permission(study, StudyPermissionType.WRITE)
+
         command_ids = self._modify_commands(study, commands, replace_commands=False)
         self.on_variant_advance(study)
+        self.generate(study)
         return command_ids
 
     def replace_commands(self, study_id: str, commands: list[CommandDTO]) -> str:
         """
-        Replace existing commands by new ones
+        Replace existing commands by new ones, and generates the snapshot.
+
         Args:
             study_id: study id
             commands: list of new command
         Returns: Study's id
         """
-        study = self._get_variant_study(study_id)
+        study = self.repository.get_study_with_commands(study_id, with_lock=True)
+        assert_permission(study, StudyPermissionType.WRITE)
+
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
+        self.generate(study)
         return study_id
 
     def _modify_commands(self, study: VariantStudy, commands: list[CommandDTO], replace_commands: bool) -> list[str]:
-        self._check_update_authorization(study)
         command_objs = self._check_commands_validity(study.id, commands)
         validated_commands = transform_command_to_dto(command_objs, commands)
+
+        current_commands = study.commands
+
         if replace_commands:
             first_index = 0
-            study.commands = []
         else:
-            first_index = len(study.commands)
+            first_index = len(current_commands)
 
-        # noinspection PyArgumentList
+        # Create the new commands
         new_commands = [
             CommandBlock(
+                id=str(uuid.uuid4()),
                 command=command.action,
                 args=to_json_string(command.args),
                 index=(first_index + i),
@@ -283,50 +291,76 @@ class VariantStudyService(AbstractStudyService):
                 study_version=str(command.study_version),
                 user_id=get_user_impersonator(),
                 updated_at=current_time(),
+                study_id=study.id,
             )
             for i, command in enumerate(validated_commands)
         ]
-        study.commands.extend(new_commands)
+
+        if not replace_commands:
+            new_commands = current_commands + new_commands
+
+        # Save the new commands
+        study.commands = new_commands
+        study.commands_version.version += 1
+
+        # Update the editor
         self._update_editor(study)
         return [c.id for c in new_commands]
 
     def remove_command(self, study_id: str, command_id: str) -> None:
         """
-        Remove command
+        Remove command and generate the snapshot.
+
         Args:
             study_id: study id
             command_id: command_id
         Returns: None
         """
-        study = self._get_variant_study(study_id)
-        self._check_update_authorization(study)
+        study = self.repository.get_study_with_commands(study_id, with_lock=True)
+        assert_permission(study, StudyPermissionType.WRITE)
 
-        index = [command.id for command in study.commands].index(command_id)
-        if index >= 0:
-            study.commands.pop(index)
-            for idx, command in enumerate(study.commands):
-                command.index = idx
-            self._update_editor(study)
-            self.on_variant_rebase(study)
+        current_commands = study.commands
+
+        index = next((i for i, cmd in enumerate(current_commands) if cmd.id == command_id), None)
+        if index is None:
+            raise CommandNotFoundError(f"Command {command_id} not found in variant study {study_id}")
+
+        new_commands = current_commands[:index]
+        for i, command in enumerate(current_commands[index + 1 :]):
+            command.index = index + i
+            # All commands after the removed one should have a new id as we rely on this inside the snapshot `last_executed_command` attribute
+            command.id = str(uuid.uuid4())
+            new_commands.append(command)
+
+        # Save the new commands
+        study.commands = new_commands
+        study.commands_version.version += 1
+
+        self._update_editor(study)
+        self.on_parent_change(study.id)
+        self.generate(study)
 
     def remove_all_commands(self, study_id: str) -> None:
         """
         Remove all commands
+
         Args:
             study_id: study id
         Returns: None
         """
         study = self._get_variant_study(study_id)
-        self._check_update_authorization(study)
+        assert_permission(study, StudyPermissionType.WRITE)
 
+        # Save the new commands
+        current_cmd_version = self.repository.get_commands_list_version(study_id)
         study.commands = []
+        study.commands_version.version = current_cmd_version + 1
+
         self._update_editor(study)
         self.on_variant_rebase(study)
+        self.clear_snapshot(study)
 
-    def _get_variant_study(
-        self,
-        study_id: str,
-    ) -> VariantStudy:
+    def _get_variant_study(self, study_id: str) -> VariantStudy:
         """
         Get variant study, and check READ permissions.
 
@@ -525,88 +559,65 @@ class VariantStudyService(AbstractStudyService):
             owner_id=require_current_user().impersonator,
             snapshot=None,
             storage_mode=study.storage_mode,
+            commands_version=CommandsListVersion(version=0, variant_id=new_id),
         )
         self.repository.save(variant_study)
         notify_study_creation(self.event_bus, variant_study)
         logger.info("variant study %s created by user %s", variant_study.id, get_user_id())
         return variant_study
 
-    def generate_task(
-        self,
-        metadata: VariantStudy,
-        from_scratch: bool = False,
-        listener: ICommandListener | None = None,
-    ) -> str:
+    def launch_generation_task(self, metadata: VariantStudy, from_scratch: bool = False) -> str:
         """
         Schedule a snapshot generation task for the given variant study.
-
-        A variant is a parent reference + commands, not a file tree. Replaying
-        commands to materialize a snapshot can be slow, so it runs as an async
-        task. The per-study `FileLock` and `generation_task` reuse prevent
-        concurrent callers from generating the same snapshot twice.
 
         Args:
             metadata: The variant study to generate.
             from_scratch: If True, regenerate from the root study, ignoring cached
                 ancestor snapshots.
-            listener: Optional listener notified as commands are applied.
 
         Returns:
             The ID of the (new or in-progress) generation task.
         """
-        study_id = metadata.id
-        with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock")):
-            logger.info(f"Starting variant study {study_id} generation")
-            self.repository.refresh(metadata)
-            if metadata.generation_task:
-                try:
-                    previous_task = self.task_service.status_task(metadata.generation_task)
-                    if not previous_task.status.is_final():
-                        logger.info(f"Returning already existing variant study {study_id} generation")
-                        return str(metadata.generation_task)
-                except TaskNotFoundError as e:
-                    logger.warning(
-                        f"Failed to retrieve generation task for study {study_id}",
-                        exc_info=e,
-                    )
-
-            # this is important because the callback will be called outside the current
-            # db context, so we need to fetch the id attribute before
+        # First, check if there's an ongoing generation task.
+        # If so, simply return its ID.
+        if metadata.generation_task:
             study_id = metadata.id
+            try:
+                previous_task = self.task_service.status_task(metadata.generation_task)
+                if not previous_task.status.is_final():
+                    logger.info(f"Returning already existing variant study {study_id} generation")
+                    return str(metadata.generation_task)
+            except TaskNotFoundError as e:
+                logger.warning(f"Failed to retrieve generation task for study {study_id}", exc_info=e)
 
-            def callback(notifier: ITaskNotifier) -> TaskResult:
-                generator = SnapshotGenerator(variant_study_service=self)
+        # Store the study.id in a variable. It is important because the callback will be called outside the current
+        # db context, so we need to fetch the id attribute before
+        study_id = metadata.id
+        logger.info(f"Starting variant study {study_id} generation")
 
-                # Build the Dao factory first
-                dao_factory = self._study_dao_factories[metadata.storage_mode]
-                # Then launch the generation
-                generate_result = generator.generate_snapshot(
-                    study_id,
-                    dao_factory=dao_factory,
-                    from_scratch=from_scratch,
-                    notifier=notifier,
-                    listener=listener,
-                )
-                return TaskResult(
-                    success=generate_result.success,
-                    message=(
-                        f"{study_id} generated successfully" if generate_result.success else f"{study_id} not generated"
-                    ),
-                    return_value=generate_result.model_dump_json(),
-                )
-
-            metadata.generation_task = self.task_service.add_task(
-                action=callback,
-                name=f"Generation of {metadata.id} study",
-                task_type=TaskType.VARIANT_GENERATION,
-                ref_id=study_id,
-                progress=None,
-                custom_event_messages=CustomTaskEventMessages(start=metadata.id, running=metadata.id, end=metadata.id),
+        def callback(notifier: ITaskNotifier) -> TaskResult:
+            study = self._get_variant_study(study_id)
+            generate_result = self.generate(study, from_scratch, notifier)
+            return TaskResult(
+                success=generate_result.success,
+                message=(
+                    f"{study_id} generated successfully" if generate_result.success else f"{study_id} not generated"
+                ),
+                return_value=generate_result.model_dump_json(),
             )
-            self.repository.save(metadata)
-            return str(metadata.generation_task)
 
-    def generate(self, variant_study_id: str, from_scratch: bool) -> str:
+        metadata.generation_task = self.task_service.add_task(
+            action=callback,
+            name=f"Generation of {metadata.id} study",
+            task_type=TaskType.VARIANT_GENERATION,
+            ref_id=study_id,
+            progress=None,
+            custom_event_messages=CustomTaskEventMessages(start=metadata.id, running=metadata.id, end=metadata.id),
+        )
+        self.repository.save(metadata)
+        return str(metadata.generation_task)
+
+    def generate_variant_with_task(self, variant_study_id: str, from_scratch: bool) -> str:
         # Get variant study
         variant_study = self._get_variant_study(variant_study_id)
 
@@ -614,7 +625,34 @@ class VariantStudyService(AbstractStudyService):
         if variant_study.parent_id is None:
             raise NoParentStudyError(variant_study_id)
 
-        return self.generate_task(variant_study, from_scratch=from_scratch)
+        return self.launch_generation_task(variant_study, from_scratch=from_scratch)
+
+    def generate(
+        self, study: VariantStudy, from_scratch: bool = False, notifier: ITaskNotifier = NoopNotifier()
+    ) -> GenerationResultInfoDTO:
+        """
+        Generates a variant study synchronously.
+        The per-study `FileLock` prevents concurrent callers from generating the same snapshot twice.
+        """
+        with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study.id}.lock")):
+            try:
+                self.repository.refresh(study)
+
+                if not from_scratch and self.repository.is_snapshot_up_to_date(study.id):
+                    # Nothing to do
+                    return GenerationResultInfoDTO(success=True, should_invalidate_cache=False, details=[])
+
+                generator = SnapshotGenerator(variant_study_service=self)
+                # Build the Dao factory first
+                dao_factory = self._study_dao_factories[study.storage_mode]
+                # Then launch the generation
+                return generator.generate_snapshot(
+                    study.id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
+                )
+            except Exception as e:
+                # raise a EXPECTATION_FAILED error (417)
+                logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
+                raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
 
     def get_study_task(self, study_id: str) -> TaskDTO:
         """
@@ -670,45 +708,9 @@ class VariantStudyService(AbstractStudyService):
             custom_event_messages=None,
         )
 
-    def safe_generation(self, study: VariantStudy, timeout: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        try:
-            if self._snapshot_manager_mapping[study.storage_mode].is_snapshot_up_to_date(study):
-                # Nothing to do
-                return
-
-            logger.info("🔹 Starting variant study generation...")
-            # Create and run the generation task in a thread pool.
-            task_id = self.generate_task(study)
-            self.task_service.await_task(task_id, timeout)
-            result = self.task_service.status_task(task_id)
-            if not result.result:
-                raise ValueError("No task result")
-            if result.result.success:
-                # OK, the study has been generated
-                return
-            # The variant generation failed, we have to raise a clear exception.
-            error_msg = result.result.message
-            stripped_msg = error_msg.removeprefix(f"417: Failed to generate variant study {study.id}")
-            raise ValueError(stripped_msg)
-
-        except TimeoutError as e:
-            # Raise a REQUEST_TIMEOUT error (408)
-            msg = f"⚡ Timeout while waiting for generation of variant study {study.id}"
-            logger.error(msg, exc_info=e)
-            raise VariantGenerationTimeoutError(msg) from None
-
-        except Exception as e:
-            # raise a EXPECTATION_FAILED error (417)
-            logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
-            raise VariantGenerationError(f"Error while generating variant {study.id} {e}") from None
-
 
 class SnapshotCleanerTask:
-    def __init__(
-        self,
-        variant_study_service: VariantStudyService,
-        retention_time: timedelta,
-    ) -> None:
+    def __init__(self, variant_study_service: VariantStudyService, retention_time: timedelta) -> None:
         self._variant_study_service = variant_study_service
         self._retention_time = retention_time
 

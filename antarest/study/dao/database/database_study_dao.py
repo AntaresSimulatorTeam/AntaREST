@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
@@ -51,13 +51,11 @@ from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
 from antarest.study.dao.database.models.comments import COMMENTS_TABLE
-from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import Study, StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import MatrixSupplier
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 if TYPE_CHECKING:
     from antarest.matrixstore.service import ISimpleMatrixService
@@ -94,8 +92,8 @@ class DatabaseStudyDao(
         self,
         study_id: str,
         db_session: Session,
-        matrix_service: ISimpleMatrixService,
-        generator_matrix_constants: GeneratorMatrixConstants,
+        matrix_service: "ISimpleMatrixService",
+        generator_matrix_constants: "GeneratorMatrixConstants",
     ) -> None:
         """
         Initialize DatabaseStudyDao.

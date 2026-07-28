@@ -129,4 +129,5 @@ class TestSetupPeriodicTasks:
             "tasks_cleaner",
             "disk_usage",
             "disk_space_analyzer",
+            "cache_launcher_load",
         ]
