@@ -23,7 +23,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import UserResourcesNotFound
+from antarest.blobstore.service import IBlobService
+from antarest.core.exceptions import UserResourceIsAFolder, UserResourceNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
@@ -42,7 +43,7 @@ class UserResourcesDatabaseData:
 class DatabaseUserResourcesDao(UserResourcesDao):
     """Database implementation of UserResourcesDao"""
 
-    def __init__(self, study_id: str, db_session: Session) -> None:
+    def __init__(self, study_id: str, db_session: Session, blob_service: IBlobService) -> None:
         """
         Initialize DatabaseUserResourcesDao with dependencies.
 
@@ -52,6 +53,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
         """
         self._study_id = study_id
         self._db_session = db_session
+        self._blob_service = blob_service
 
     @override
     def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
@@ -136,7 +138,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 self._db_session.commit()
                 return
 
-        raise UserResourcesNotFound(str(resource_path))
+        raise UserResourceNotFound(str(resource_path))
 
     @override
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
@@ -145,6 +147,20 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             UserResourceDataCreation(path=path, resource_type=data.resource_type, blob_id=data.blob_id)
             for path, data in tree.items()
         ]
+
+    @override
+    def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
+        tree = self._build_resources_tree()
+
+        if resource_path not in tree:
+            raise UserResourceNotFound(resource_path.as_posix())
+
+        data = tree[resource_path]
+        if data.resource_type == ResourceType.FOLDER:
+            raise UserResourceIsAFolder(resource_path.as_posix())
+
+        assert data.blob_id is not None
+        return self._blob_service.get(data.blob_id)
 
     def _build_resources_tree(self) -> dict[PurePosixPath, UserResourcesDatabaseData]:
         stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
