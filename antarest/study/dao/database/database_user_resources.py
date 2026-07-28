@@ -76,27 +76,26 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             # Find potential existing parent IDs for the new resource.
             parent_ids = []
             for res, data in tree.items():
-                if res != resource_path:
-                    existing_parts = res.parts
-                    new_parts = resource_path.parts
+                if res == resource_path:
+                    continue
 
-                    common_parts_count = 0
-                    for p1, p2 in zip(existing_parts, new_parts):
-                        if p1 == p2:
-                            common_parts_count += 1
-                        else:
-                            break
-
-                    if common_parts_count > 0:
-                        parent_ids = data.ids[:common_parts_count]
+                common_parts_count = 0
+                for p1, p2 in zip(res.parts, resource_path.parts):
+                    if p1 == p2:
+                        common_parts_count += 1
+                    else:
                         break
+
+                if common_parts_count > 0:
+                    parent_ids = data.ids[:common_parts_count]
+                    break
 
             # Build the resource tree.
             parent_id = parent_ids[-1] if parent_ids else None
             ids = []
 
             # Skip parts covered by parent IDs.
-            parts = resource_path.parts[len(parent_ids):]
+            parts = resource_path.parts[len(parent_ids) :]
             for k, part in enumerate(parts):
                 resource_id = str(uuid.uuid4())
                 ids.append(resource_id)
