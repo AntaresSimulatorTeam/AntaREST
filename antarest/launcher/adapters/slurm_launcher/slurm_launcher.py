@@ -12,7 +12,6 @@
 
 import argparse
 import logging
-import math
 import os
 import re
 import shutil
@@ -40,7 +39,7 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.archives import unzip
-from antarest.core.utils.utils import assert_this, current_time
+from antarest.core.utils.utils import assert_this
 from antarest.globals import ANTAREST_WORKER_ID
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
@@ -281,7 +280,7 @@ class SlurmLauncher(AbstractLauncher):
         arguments.version = False
         arguments.post_processing = False
         arguments.other_options = None
-        arguments.begin = None
+        arguments.run_at = None
 
         return arguments
 
@@ -578,11 +577,11 @@ class SlurmLauncher(AbstractLauncher):
                 # could even lead to security breaches
                 raise ValueError("Other options cannot contain a single quote, you should use double quotes instead")
 
-            launcher_args.begin = _format_slurm_begin(run_at)
+            launcher_args.run_at = run_at
             return launcher_args
 
         arguments = self.launcher_args
-        arguments.begin = _format_slurm_begin(run_at)
+        arguments.run_at = run_at
         return arguments
 
     @override
@@ -674,17 +673,6 @@ class SlurmLauncher(AbstractLauncher):
         pk_name = self.data_repo_tinydb.db_primary_key
         logger.info(f"Removing study '{study_name}' from database")
         self.data_repo_tinydb.db.remove(tinydb.where(pk_name) == study_name)
-
-
-def _format_slurm_begin(run_at: datetime | None) -> str | None:
-    """
-    Format a scheduled start time for the SLURM `sbatch --begin` option.
-    """
-    if run_at is None:
-        return None
-    # Round up: a partial minute must never schedule the job *before* `run_at` (e.g. +30s => 1 min).
-    minutes = math.ceil((run_at - current_time()).total_seconds() / 60)
-    return f"now+{max(0, minutes)}minutes"
 
 
 def _override_solver_version(study_path: Path, version: SolverVersion) -> None:

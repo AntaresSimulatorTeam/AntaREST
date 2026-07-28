@@ -14,7 +14,6 @@ import random
 import textwrap
 import uuid
 from argparse import Namespace
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from unittest.mock import ANY, Mock, patch
@@ -36,7 +35,6 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     LOG_DIR_NAME,
     SlurmLauncher,
     VersionNotSupportedError,
-    _format_slurm_begin,
 )
 from antarest.launcher.model import JobStatus, LauncherParametersDTO, XpansionParametersDTO
 
@@ -525,7 +523,7 @@ def test_kill_job(
         xpansion_mode=None,
         other_options=None,
         oversubscribe=False,
-        begin=None,
+        run_at=None,
     )
     launcher_parameters = MainParameters(
         json_dir=Path(tmp_path),
@@ -578,30 +576,3 @@ def test_launcher_workspace_init(run_with_mock: Any, tmp_path: Path, launcher_co
     workspaces = [p for p in tmp_path.iterdir() if p.is_dir() and p.name != LOG_DIR_NAME]
     assert len(workspaces) == 1
     assert workspaces[0] == tmp_path / "workspace-12"
-
-
-class TestFormatSlurmBegin:
-    def test_none_returns_none(self) -> None:
-        assert _format_slurm_begin(None) is None
-
-    def test_future_returns_positive_offset(self) -> None:
-        run_at = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=2)
-        result = _format_slurm_begin(run_at)
-        assert result is not None and result.startswith("now+") and result.endswith("minutes")
-        minutes = int(result.removeprefix("now+").removesuffix("minutes"))
-        # ~2h ahead; allow a minute of clock drift during the test
-        assert minutes == pytest.approx(120, abs=1)
-
-    def test_past_is_clamped_to_zero(self) -> None:
-        run_at = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(hours=1)
-        assert _format_slurm_begin(run_at) == "now+0minutes"
-
-    def test_offset_is_computed_against_utc_now(self) -> None:
-        frozen_now = datetime(2026, 7, 7, 14, 0, 0)
-        run_at = datetime(2026, 7, 7, 19, 0, 0)
-        with patch(
-            "antarest.launcher.adapters.slurm_launcher.slurm_launcher.current_time",
-            return_value=frozen_now,
-        ):
-            result = _format_slurm_begin(run_at)
-        assert result == f"now+{5 * 60}minutes"
