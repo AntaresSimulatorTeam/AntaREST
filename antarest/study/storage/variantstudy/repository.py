@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from collections.abc import Sequence
+from typing import cast
 
-from sqlalchemy import select
+from sqlalchemy import literal, select
 from sqlalchemy.orm import Session, joinedload, with_polymorphic
 from sqlalchemy.sql.selectable import CTE
 from typing_extensions import override
@@ -94,22 +94,6 @@ class VariantStudyRepository(StudyMetadataRepository):
         bot_q = select(Study.id, Study.parent_id).join(top_q, Study.id == top_q.c.parent_id)
         return top_q.union_all(bot_q)
 
-    def get_ancestor_or_self_ids(self, variant_id: str) -> Sequence[str]:
-        """
-        Retrieve the list of ancestor variant identifiers, including the `variant_id`,
-        its parent, and all predecessors of the parent, up to and including the ID
-        of the root study (`RawStudy`).
-
-        Args:
-            variant_id: Unique identifier of the child variant.
-
-        Returns:
-            Ordered list of study identifiers.
-        """
-        cte = self._ancestor_or_self_cte(variant_id)
-        result = self.session.execute(select(cte.c.id))
-        return [r[0] for r in result]
-
     def get_root_ancestor_id(self, variant_id: str) -> str | None:
         """
         Return the id of the topmost ancestor of `variant_id`, or `variant_id` itself if
@@ -183,6 +167,12 @@ class VariantStudyRepository(StudyMetadataRepository):
         return version
 
     def increment_commands_list_version(self, variant_id: str) -> None:
+        """
+        Locks and increments the commands' list version of that variant.
+
+        The lock is necessary to ensure no other operation increments the value at the same time
+        (new command addition, ...).
+        """
         current_version = self.get_commands_list_version(variant_id)
         data = CommandsListVersion(variant_id=variant_id, version=current_version + 1)
         session = self.session
@@ -202,25 +192,34 @@ class VariantStudyRepository(StudyMetadataRepository):
 
         return variant.snapshot.version == variant.commands_version.version  # type: ignore
 
-    def get_study_tree(self, study_ids: Sequence[str]) -> tuple[RawStudy, list[VariantStudy]]:
+    def get_study_lineage(self, variant_id: str) -> tuple[RawStudy, list[VariantStudy]]:
         """
-        Returns the parent study and the list of its variants based on the given ids.
-        Loads metadata at the same time for permission checks.
-        Also loads commands and snapshot at the same time to avoid multiple queries.
+        Returns the lineage of parents of the study, including the study itself.
+
+        The root study is returned first, then the ordered list of its children, until and including
+        the specified variant.
+        Also loads metadata, commands and snapshot at the same time to avoid multiple queries.
         """
+        base_q = select(Study.id, Study.parent_id, literal(0).label("depth")).where(Study.id == variant_id)
+        cte = base_q.cte("ancestor_cte", recursive=True)
+        recursive_q = select(Study.id, Study.parent_id, (cte.c.depth + 1).label("depth")).join(
+            cte, Study.id == cte.c.parent_id
+        )
+        cte = cte.union_all(recursive_q)
+
         study_w_p = with_polymorphic(Study, [VariantStudy])
 
-        join_query = [
+        stmt = select(study_w_p).join(cte, study_w_p.id == cte.c.id).order_by(cte.c.depth.desc())
+        # TODO: the joinedload of groups and owner should not be necessary here, but repository.save(study)
+        #       will fetch groups anyway. Maybe something we want to change.
+        stmt = stmt.options(
             joinedload(study_w_p.owner),
             joinedload(study_w_p.groups),
             joinedload(study_w_p.VariantStudy.snapshot),
-            joinedload(study_w_p.VariantStudy.commands_version),
             joinedload(study_w_p.VariantStudy.commands),
-        ]
-        stmt = select(study_w_p).options(*join_query).where(study_w_p.id.in_(study_ids))
-
-        result = self.session.execute(stmt).unique().scalars().all()
-
-        index = {id_: i for i, id_ in enumerate(study_ids)}
-        result = sorted(result, key=lambda v: index[v.id])
-        return result[0], result[1:]  # type: ignore
+            joinedload(study_w_p.VariantStudy.commands_version),
+        )
+        lineage = list(self.session.execute(stmt).unique().scalars().all())
+        if not lineage:
+            raise StudyNotFoundError(variant_id)
+        return cast(RawStudy, lineage[0]), [cast(VariantStudy, v) for v in lineage[1:]]
