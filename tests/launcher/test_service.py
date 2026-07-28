@@ -45,7 +45,7 @@ from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
-from antarest.launcher.exceptions import NoValidOutputError
+from antarest.launcher.exceptions import InvalidScheduleTime, NoValidOutputError
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
@@ -63,7 +63,6 @@ from antarest.launcher.service import (
     LAUNCHER_PARAM_NAME_SUFFIX,
     MAX_SCHEDULE_HORIZON,
     IncompatibleSolverPresets,
-    InvalidScheduleTime,
     JobNotFound,
     LauncherService,
     SolverPresetsNotFound,

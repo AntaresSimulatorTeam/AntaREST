@@ -36,7 +36,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
-from antarest.launcher.exceptions import NoValidOutputError
+from antarest.launcher.exceptions import InvalidScheduleTime, NoValidOutputError
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
@@ -99,11 +99,6 @@ LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
 EXECUTION_INFO_FILE = "execution_info.ini"
 
 MAX_SCHEDULE_HORIZON = timedelta(days=15)
-
-
-class InvalidScheduleTime(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
 class LauncherService:
