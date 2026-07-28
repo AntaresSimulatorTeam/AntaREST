@@ -86,11 +86,9 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 if is_last_part and resource.resource_type == ResourceType.FILE:
                     # Checks if the user wants to replace the content of an already existing resource.
                     # If so, we should use the current resource's id, not create a new one.
-                    for res, data in tree.items():
-                        if res == resource_path:
-                            id_to_use = data.ids[-1]
-                            value["id"] = id_to_use
-                            break
+                    existing = tree.get(resource_path)
+                    if existing is not None:
+                        value["id"] = existing.ids[-1]
 
                 values.append(value)
                 parent_id = resource_id
