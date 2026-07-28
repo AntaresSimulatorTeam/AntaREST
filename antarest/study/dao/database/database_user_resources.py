@@ -65,17 +65,16 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             if resource.resource_type == ResourceType.FOLDER and any(res.is_relative_to(resource_path) for res in tree):
                 continue
 
-            # Otherwise, create the resource.
-            parts = resource_path.parts
-            parent_id = None
-
-            # Check if the user wants to create a resource relative to an already existing one.
-            # If so, we should use the parent's id, not create a new one.
+            # Find parent IDs if the resource is relative to an existing one.
             parent_ids = []
             for res, data in tree.items():
                 if resource_path.is_relative_to(res) and res != resource_path:
                     parent_ids = data.ids
                     break
+
+            # Build the resource tree.
+            parts = resource_path.parts
+            parent_id = None
 
             ids = []
             for i, part in enumerate(parts):
