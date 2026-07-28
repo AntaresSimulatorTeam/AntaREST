@@ -126,7 +126,13 @@ class TestStudy:
             assert {tag.label for tag in tags} == {"test-tag-1"}
             assert len(studies) == 2
             assert {study.id for study in studies} == {study_id_1, study_id_3}
-            studies = db_session.query(Study).filter(Study.id == study_id_1).options(joinedload(Study.tags)).all()
+            studies = (
+                db_session.query(Study)
+                .filter(Study.id == study_id_1)
+                .options(joinedload(Study.tags))
+                .execution_options(populate_existing=True)  # since expire_on_commit=False, needed to force refreshing
+                .all()
+            )
             assert len(studies) == 1
             assert {study.id for study in studies} == {study_id_1}
             assert {tag.label for tag in studies[0].tags} == {"test-tag-1"}
