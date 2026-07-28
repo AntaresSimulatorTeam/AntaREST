@@ -196,3 +196,14 @@ def test_save_a_file_with_the_same_name_as_an_existing_folder(dao: StudyDao, blo
                 UserResourceDataCreation(path=PurePosixPath("a"), resource_type=ResourceType.FILE, blob_id=blob_id),
             ]
         )
+
+
+def test_save_folders_which_share_the_same_parent(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
+    dao.save_user_resources([UserResourceDataCreation(path=PurePosixPath("a/b"), resource_type=ResourceType.FOLDER)])
+    dao.save_user_resources([UserResourceDataCreation(path=PurePosixPath("a/c"), resource_type=ResourceType.FOLDER)])
+    res = dao.get_all_user_resources()
+    assert len(res) == 2
+
+    # Specific DB test. Ensure we only have 3 entries in DB: `a`, `b` and `c`. Not `a` twice.
+    if isinstance(dao, DatabaseStudyDao):
+        assert len(dao.get_session().execute(select(USER_RESOURCES_TABLE)).all()) == 3
