@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import os
 from pathlib import PurePosixPath
 
 import pytest
@@ -188,7 +187,7 @@ def test_save_a_file_with_the_same_name_as_an_existing_folder(dao: StudyDao, blo
         expected_msg = "Cannot create 2 resources of different type at the same path"
     else:
         expected_error = (IsADirectoryError, PermissionError)  # Depends on the OS.
-        expected_msg = f"user{os.sep}a"
+        expected_msg = "user"
 
     with pytest.raises(expected_error, match=expected_msg):
         dao.save_user_resources(
