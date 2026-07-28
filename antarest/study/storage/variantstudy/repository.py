@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from collections.abc import Sequence
 from typing import cast
 
 from sqlalchemy import literal, select
@@ -94,22 +93,6 @@ class VariantStudyRepository(StudyMetadataRepository):
         top_q = select(Study.id, Study.parent_id).where(Study.id == variant_id).cte("study_cte", recursive=True)
         bot_q = select(Study.id, Study.parent_id).join(top_q, Study.id == top_q.c.parent_id)
         return top_q.union_all(bot_q)
-
-    def get_ancestor_or_self_ids(self, variant_id: str) -> Sequence[str]:
-        """
-        Retrieve the list of ancestor variant identifiers, including the `variant_id`,
-        its parent, and all predecessors of the parent, up to and including the ID
-        of the root study (`RawStudy`).
-
-        Args:
-            variant_id: Unique identifier of the child variant.
-
-        Returns:
-            Ordered list of study identifiers.
-        """
-        cte = self._ancestor_or_self_cte(variant_id)
-        result = self.session.execute(select(cte.c.id))
-        return [r[0] for r in result]
 
     def get_root_ancestor_id(self, variant_id: str) -> str | None:
         """
