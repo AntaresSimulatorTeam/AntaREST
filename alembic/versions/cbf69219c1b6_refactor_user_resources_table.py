@@ -29,7 +29,7 @@ def upgrade():
         sa.Column("blob_id", sa.String(length=64), nullable=True),
         sa.ForeignKeyConstraint(
             ["study_id"],
-            ["study_data.id"],
+            ["study_data.study_id"],
             name=op.f("fk_user_resource_study_id"),
             ondelete="CASCADE",
         ),
@@ -53,7 +53,7 @@ def downgrade() -> None:
         sa.Column("blob_id", sa.String(length=64), nullable=True),
         sa.ForeignKeyConstraint(
             ["study_id"],
-            ["study_data.id"],
+            ["study_data.study_id"],
             name=op.f("fk_user_resource_study_id"),
             ondelete="CASCADE",
         ),
