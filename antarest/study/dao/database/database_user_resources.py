@@ -73,12 +73,23 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             if resource.resource_type == ResourceType.FOLDER and any(res.is_relative_to(resource_path) for res in tree):
                 continue
 
-            # Find parent IDs if the resource is relative to an existing one.
+            # Find potential existing parent IDs for the new resource.
             parent_ids = []
             for res, data in tree.items():
-                if resource_path.is_relative_to(res) and res != resource_path:
-                    parent_ids = data.ids
-                    break
+                if res != resource_path:
+                    existing_parts = res.parts
+                    new_parts = resource_path.parts
+
+                    common_parts_count = 0
+                    for p1, p2 in zip(existing_parts, new_parts):
+                        if p1 == p2:
+                            common_parts_count += 1
+                        else:
+                            break
+
+                    if common_parts_count > 0:
+                        parent_ids = data.ids[:common_parts_count]
+                        break
 
             # Build the resource tree.
             parent_id = parent_ids[-1] if parent_ids else None
