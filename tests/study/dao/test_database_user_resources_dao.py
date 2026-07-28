@@ -167,3 +167,13 @@ def test_save_folder_inside_an_existing_one(dao: StudyDao, blob_service: InMemor
     resources = dao.get_all_user_resources()
     assert len(resources) == 1
     assert resources[0].path == PurePosixPath("a/b")
+
+    dao.save_user_resources(
+        [
+            UserResourceDataCreation(path=PurePosixPath("c"), resource_type=ResourceType.FOLDER),
+            UserResourceDataCreation(path=PurePosixPath("c/d"), resource_type=ResourceType.FOLDER),
+        ]
+    )
+
+    resources = dao.get_all_user_resources()
+    assert len(resources) == 2
