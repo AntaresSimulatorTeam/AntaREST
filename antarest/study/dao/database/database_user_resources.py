@@ -96,8 +96,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             ids = []
 
             # Skip parts covered by parent IDs.
-            start_index = len(parent_ids)
-            parts = resource_path.parts[start_index:]
+            parts = resource_path.parts[len(parent_ids):]
             for k, part in enumerate(parts):
                 resource_id = str(uuid.uuid4())
                 ids.append(resource_id)
