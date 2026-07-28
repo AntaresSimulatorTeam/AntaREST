@@ -1133,7 +1133,7 @@ def test_update_tags(
     # 3- deleting orphan tags requires 1 query
     with DBStatementRecorder(db_session.bind) as db_recorder:
         repository.update_tags(study, ["Tag1", "Tag2"])
-    assert len(db_recorder.sql_statements) == 6, str(db_recorder)
+    assert len(db_recorder.sql_statements) == 4, str(db_recorder)
 
     # Check that when we change the tags to ["TAG1", "Tag3"],
     # "Tag1" is preserved, "Tag2" is deleted and "Tag3" is created

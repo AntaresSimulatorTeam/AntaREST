@@ -1129,7 +1129,7 @@ class TestSnapshotGenerator:
             # snapshot and command_version)
             # - 1 query to insert the variant study snapshot
 
-            assert len(db_recorder.sql_statements) == 2, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 3, str(db_recorder)
 
         # `is_snapshot_up_to_date` method
         with DBStatementRecorder(db.session.bind) as db_recorder:

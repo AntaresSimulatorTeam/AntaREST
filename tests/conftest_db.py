@@ -22,6 +22,7 @@ import antarest.output.model  # noqa
 import antarest.study.model  # noqa
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.dbmodel import Base
+from antarest.service_creator import SESSION_ARGS
 
 
 @pytest.fixture(name="db_engine")
@@ -57,7 +58,7 @@ def db_session_fixture(db_engine: Engine) -> t.Generator[Session, None, None]:
     Yields:
         A new SQLAlchemy session object for database operations.
     """
-    make_session = sessionmaker(bind=db_engine)
+    make_session = sessionmaker(bind=db_engine, **SESSION_ARGS)
     with contextlib.closing(make_session()) as session:
         yield session
 
@@ -77,5 +78,5 @@ def db_middleware_fixture(
     """
     init_db_singleton(
         custom_engine=db_engine,
-        session_args={"autocommit": False, "autoflush": False},
+        session_args=SESSION_ARGS,
     )
