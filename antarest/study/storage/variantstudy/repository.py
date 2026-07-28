@@ -210,6 +210,8 @@ class VariantStudyRepository(StudyMetadataRepository):
         study_w_p = with_polymorphic(Study, [VariantStudy])
 
         stmt = select(study_w_p).join(cte, study_w_p.id == cte.c.id).order_by(cte.c.depth.desc())
+        # TODO: the joinedload of groups and owner should not be necessary here, but repository.save(study)
+        #       will fetch groups anyway. Maybe something we want to change.
         stmt = stmt.options(
             joinedload(study_w_p.owner),
             joinedload(study_w_p.groups),
