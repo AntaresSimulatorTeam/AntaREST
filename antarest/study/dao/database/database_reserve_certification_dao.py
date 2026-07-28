@@ -22,13 +22,13 @@ from antarest.core.exceptions import (
     ReserveDefinitionsNotFound,
     ThermalClustersNotFound,
 )
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.thermal_reserve_certification_model import (
     ThermalReserveCertification,
     ThermalReserveCertificationMapping,
 )
 from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
 from antarest.study.dao.common import AreaId
-from antarest.study.dao.database.common import get_row_representation_as_dict
 from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
 
 if TYPE_CHECKING:

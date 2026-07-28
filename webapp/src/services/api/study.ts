@@ -17,17 +17,18 @@ import { compactSemanticVersion } from "@/utils/versionUtils";
 import type { AxiosRequestConfig } from "axios";
 import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
-import type {
-  AreasConfig,
-  DistrictApplyFilter,
-  MatrixAggregationResult,
-  StudyLayer,
-  StudyMetadata,
-  StudyMetadataDTO,
-  StudyMetadataPatchDTO,
-  StudyOutputDownloadDTO,
-  StudyPublicMode,
-  StudySynthesis,
+import {
+  StorageMode,
+  type AreasConfig,
+  type DistrictApplyFilter,
+  type MatrixAggregationResult,
+  type StudyLayer,
+  type StudyMetadata,
+  type StudyMetadataDTO,
+  type StudyMetadataPatchDTO,
+  type StudyOutputDownloadDTO,
+  type StudyPublicMode,
+  type StudySynthesis,
 } from "../../types/types";
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
@@ -139,10 +140,11 @@ export const createStudy = async (
   name: string,
   version: string,
   groups?: string[],
+  storageMode: StorageMode = StorageMode.FILESYSTEM,
 ): Promise<string> => {
   const groupIds = groups && groups.length > 0 ? `&groups=${groups.join(",")}` : "";
   const res = await client.post(
-    `/v1/studies?name=${encodeURIComponent(name)}&version=${compactSemanticVersion(version)}${groupIds}`,
+    `/v1/studies?name=${encodeURIComponent(name)}&version=${compactSemanticVersion(version)}${groupIds}&storage_mode=${storageMode}`,
   );
   return res.data;
 };
@@ -226,6 +228,7 @@ export const importStudy = async (
   file: File,
   onProgress?: (progress: number) => void,
   directory?: string,
+  storageMode: StorageMode = StorageMode.FILESYSTEM,
 ): Promise<StudyMetadata["id"]> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
@@ -243,7 +246,7 @@ export const importStudy = async (
     headers: {
       "content-type": "multipart/form-data",
     },
-    params: directory ? { directory } : undefined,
+    params: { storage_mode: storageMode, ...(directory ? { directory } : {}) },
   };
   const res = await client.post("/v1/studies/_import", formData, restconfig);
   return res.data;

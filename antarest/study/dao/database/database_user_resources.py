@@ -21,10 +21,10 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import UserResourcesNotFound
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple
 
 
 class DatabaseUserResourcesDao(UserResourcesDao):

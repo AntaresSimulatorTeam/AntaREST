@@ -29,6 +29,8 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.sql_utils import upsert_multiple
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
 )
@@ -42,7 +44,6 @@ from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.dao.common import AreaId, AreaSeriesMapping, SeriesId
 from antarest.study.dao.database.common import (
     get_all_area_matrices,
-    get_row_representation_as_dict,
     save_area_matrix,
     validate_area_exists,
 )
@@ -66,7 +67,6 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_RUN_OF_RIVER_TABLE,
     HYDRO_WATER_VALUES_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
 from antarest.study.model import STUDY_VERSION_6_5
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_credit_modulation,
@@ -515,17 +515,6 @@ class DatabaseHydroDao(HydroDao):
             validate_area_exists(session, study_id, area_id)
             raise ValueError(f"Hydro matrix not found for area '{area_id}' in table '{table.name}'")
         return str(row.matrix_id)
-
-    def _save_hydro_matrix(self, area_id: str, table: Table, matrix_id: str) -> None:
-        session = self.get_session()
-        study_id = self.get_study_id()
-        values = {"study_id": study_id, "area_id": area_id, "matrix_id": matrix_id}
-        try:
-            upsert_one(session, table, values)
-            session.commit()
-        except IntegrityError as e:
-            session.rollback()
-            raise AreaNotFound(area_id) from e
 
     @override
     def get_hydro_maxpower(self, area_id: str) -> pl.DataFrame:

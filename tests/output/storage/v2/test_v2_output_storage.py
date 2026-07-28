@@ -13,7 +13,6 @@ import shutil
 import uuid
 import zipfile
 from pathlib import Path
-from unittest.mock import Mock
 
 import polars as pl
 import pytest
@@ -44,7 +43,7 @@ def init_db(db_engine: Engine) -> None:
 
 @pytest.fixture
 def study_repo(init_db) -> StudyMetadataRepository:
-    return StudyMetadataRepository(cache_service=Mock())
+    return StudyMetadataRepository()
 
 
 @pytest.fixture

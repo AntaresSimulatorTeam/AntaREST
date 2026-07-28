@@ -44,6 +44,7 @@ from antarest.launcher.model import (
     JobStatus,
     LauncherInfoDTO,
     LauncherListDTO,
+    LauncherLoad,
     LauncherLoadDTO,
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
@@ -56,7 +57,8 @@ from antarest.launcher.model import (
     apply_update_solver_presets,
     is_version_covered_by_config,
 )
-from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
+from antarest.launcher.repository import JobResultRepository, LauncherLoadRepository, SolverPresetsRepository
+from antarest.launcher.ssh_client import SlurmError
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user, require_current_user
 from antarest.output.service import OutputService
@@ -113,6 +115,7 @@ class LauncherService:
         login_service: LoginService,
         job_result_repository: JobResultRepository,
         solver_presets_repository: SolverPresetsRepository,
+        launcher_load_repository: LauncherLoadRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -125,6 +128,7 @@ class LauncherService:
         self.login_service = login_service
         self.job_result_repository = job_result_repository
         self.solver_presets_repository = solver_presets_repository
+        self.launcher_cache_repository = launcher_load_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -631,7 +635,25 @@ class LauncherService:
         if launcher is None:
             raise InvalidConfigurationError(launcher_id)
 
+        load = self.launcher_cache_repository.get_launcher_load(launcher_id)
+        if load is not None and not self._is_outdated_load_data(load):
+            return load.to_dto()
+
+        logger.info("No valid cached load for launcher '%s', querying live", launcher_id)
         return launcher.get_load()
+
+    def _is_outdated_load_data(self, load: LauncherLoad) -> bool:
+        return load.date < current_time() - self.config.launcher.launcher_cache_validity_time
+
+    def get_all_loads(self) -> dict[str, LauncherLoadDTO]:
+        all_loads = {}
+        for launcher_id, launcher in self.launchers.items():
+            try:
+                all_loads[launcher_id] = launcher.get_load()
+            except SlurmError:
+                logger.warning("Failed to query load for launcher '%s'", launcher_id)
+
+        return all_loads
 
     def get_solver_versions(self, launcher_id: str | None) -> list[SolverVersion]:
         """

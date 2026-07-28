@@ -30,14 +30,6 @@ class FileSnapshotManager(ISnapshotManager):
         self._cache = cache
 
     @override
-    def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
-        return self.has_snapshot(study) and (study.snapshot.created_at >= study.updated_at)
-
-    @override
-    def has_snapshot(self, study: VariantStudy) -> bool:
-        return (study.snapshot is not None) and (get_snapshot_dir(study) / "study.antares").is_file()
-
-    @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         remove_from_cache(self._cache, variant_study.id)
         snapshot_dir = get_snapshot_dir(variant_study)

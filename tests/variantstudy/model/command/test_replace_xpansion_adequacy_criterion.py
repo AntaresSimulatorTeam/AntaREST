@@ -15,6 +15,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionAdequacyPattern,
 )
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -127,10 +128,7 @@ stopping_threshold: 3.0
 """
         )
 
-    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
-        empty_study = empty_study_870
-        dao = self.set_up(empty_study, command_context)
-
+    def test_error_cases(self, dao: StudyDao, command_context: CommandContext) -> None:
         # Try to update with a non-existing area
         cmd = ReplaceXpansionAdequacyCriterion(
             criterion=XpansionAdequacyCriterion(patterns=[XpansionAdequacyPattern(area="fake", criterion=6.1)]),
