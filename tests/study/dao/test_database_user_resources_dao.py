@@ -123,7 +123,7 @@ def test_deletion_advanced_cases(dao: StudyDao, blob_service: InMemoryBlobServic
     assert user_resources[0].path == PurePosixPath("folderB/subfolderB")
 
 
-def test_save_advance_case(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
+def test_save_existing_folder(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
     blob_id = blob_service.save(b"content")
     dao.save_user_resources(
         [
@@ -142,3 +142,28 @@ def test_save_advance_case(dao: StudyDao, blob_service: InMemoryBlobService) -> 
     resources = dao.get_all_user_resources()
     assert len(resources) == 1
     assert resources[0].path == PurePosixPath("folderA/subfolderA/file.txt")
+
+
+def test_save_same_resource_twice(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
+    dao.save_user_resources(
+        [
+            UserResourceDataCreation(path=PurePosixPath("folderB/subfolderB"), resource_type=ResourceType.FOLDER),
+            UserResourceDataCreation(path=PurePosixPath("folderB/subfolderB"), resource_type=ResourceType.FOLDER),
+        ]
+    )
+    resources = dao.get_all_user_resources()
+    assert len(resources) == 1
+    assert resources[0].path == PurePosixPath("folderB/subfolderB")
+
+    # Specific DB test. Ensure we only have 2 entries in DB: `folderB` and `subfolderB`
+    if isinstance(dao, DatabaseStudyDao):
+        assert len(dao.get_session().execute(select(USER_RESOURCES_TABLE)).all()) == 2
+
+
+def test_save_folder_inside_an_existing_one(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
+    dao.save_user_resources([UserResourceDataCreation(path=PurePosixPath("a"), resource_type=ResourceType.FOLDER)])
+    dao.save_user_resources([UserResourceDataCreation(path=PurePosixPath("a/b"), resource_type=ResourceType.FOLDER)])
+
+    resources = dao.get_all_user_resources()
+    assert len(resources) == 1
+    assert resources[0].path == PurePosixPath("a/b")

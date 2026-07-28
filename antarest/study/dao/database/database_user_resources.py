@@ -71,9 +71,22 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             parts = resource_path.parts
             parent_id = None
 
+            # Check if the user wants to create a resource relative to an already existing one.
+            # If so, we should use the parent's id, not create a new one.
+            parent_ids = []
+            for res, data in tree.items():
+                if resource_path.is_relative_to(res) and res != resource_path:
+                    parent_ids = data.ids
+                    break
+
             for i, part in enumerate(parts):
+                if i < len(parent_ids):
+                    continue
                 resource_id = str(uuid.uuid4())
                 is_last_part = i == len(parts) - 1
+
+                if i - len(parent_ids) < len(parent_ids):
+                    parent_id = parent_ids[i - len(parent_ids)]
 
                 value = {
                     "study_id": self._study_id,
@@ -92,6 +105,9 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
                 values.append(value)
                 parent_id = resource_id
+
+        if not values:
+            return
 
         try:
             upsert_multiple(self._db_session, _TABLE, values)
