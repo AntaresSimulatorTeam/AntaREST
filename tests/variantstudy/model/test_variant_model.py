@@ -68,7 +68,7 @@ def create_root_study(
         if storage_mode == StorageMode.DATABASE:
             # Initialize the study data
             ctx = variant_study_service.command_factory.command_context
-            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.blob_service, ctx.generator_matrix_constants)
             metadata = StudyMetadataCreation(id=root_study_id, name="my_study", version=STUDY_VERSION_8_6, managed=True)
             factory.create_study_dao(metadata)
     return root_study_id
