@@ -68,26 +68,21 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     assert res.status_code == 200
     assert res.json() == ["my/folder"]
 
-    # Create a file "my/folder".
-    res = client.put(
-        f"/v1/studies/{study_id}/user-resources",
-        params={"path": "my/folder", "resource_type": "file"},
-        files={"file": b"a"},
-    )
-    assert res.status_code == 200
-
-    # Create a folder "my".
+    # Create a folder "my". Should be a no-op as it already exists.
     res = client.put(f"/v1/studies/{study_id}/user-resources", params={"path": "my", "resource_type": "folder"})
     assert res.status_code == 200
+    res = client.get(f"/v1/studies/{study_id}/user-resources")
+    assert res.status_code == 200
+    assert res.json() == ["my/folder"]
 
     # Delete the folder
     res = client.delete(f"/v1/studies/{study_id}/user-resources?path=my/folder")
     assert res.status_code == 200
 
-    # Fetch all resources. Should be empty
+    # Fetch all resources. Should still contain the parent folder "my"
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == []
+    assert res.json() == ["my"]
 
     ##########################
     # Error cases
@@ -123,3 +118,12 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     assert res.status_code == 400
     assert res.json()["exception"] == "UserResourceIsAFolder"
     assert res.json()["description"] == "User resources 'my/folder' is a folder. Please provide a file."
+
+    # Create a file with the same path as an existing folder. Should fail
+    res = client.put(
+        f"/v1/studies/{study_id}/user-resources",
+        params={"path": "my/folder", "resource_type": "file"},
+        files={"file": b"a"},
+    )
+    assert res.status_code == 500
+    assert res.json()["exception"] == "CommandApplicationError"
