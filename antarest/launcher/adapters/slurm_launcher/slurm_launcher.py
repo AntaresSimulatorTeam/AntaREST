@@ -26,6 +26,7 @@ from typing import cast
 import tinydb
 from antares.study.version import SolverVersion
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
+from antareslauncher.enums import XpansionMode
 from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import MainOptionParser, ParserParameters
 from antareslauncher.study_dto import StudyDTO
@@ -83,7 +84,7 @@ class LauncherArgs(argparse.Namespace):
 
         # known arguments
         self.other_options: str = ""
-        self.xpansion_mode: str | None = None
+        self.xpansion_mode: XpansionMode | None = None
         self.time_limit: int = 0
         self.n_cpu: int = 0
         self.post_processing: bool = False
@@ -102,7 +103,7 @@ class LauncherArgs(argparse.Namespace):
             should_run_xpansion = launcher_params.xpansion is True
 
         if should_run_xpansion:
-            self.xpansion_mode = {True: "r", False: "cpp"}[launcher_params.xpansion_r_version]
+            self.xpansion_mode = XpansionMode.R if launcher_params.xpansion_r_version else XpansionMode.CPP
             if isinstance(launcher_params.xpansion, XpansionParametersDTO):
                 if launcher_params.xpansion.sensitivity_mode:
                     self._append_other_option("xpansion_sensitivity")
@@ -313,7 +314,7 @@ class SlurmLauncher(AbstractLauncher):
     def _import_study_output(
         self,
         job_id: str,
-        xpansion_mode: str | None,
+        xpansion_mode: XpansionMode | None,
         log_dir: str | None,
     ) -> str | None:
         if xpansion_mode:
@@ -332,7 +333,7 @@ class SlurmLauncher(AbstractLauncher):
             additional_logs=launcher_logs,
         )
 
-    def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
+    def _import_xpansion_result(self, job_id: str, xpansion_mode: XpansionMode) -> None:
         output_path = self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output"
         if output_path.exists() and len(os.listdir(output_path)) == 1:
             output_path = output_path / os.listdir(output_path)[0]
@@ -344,7 +345,7 @@ class SlurmLauncher(AbstractLauncher):
                 unzip(unzipped_output_path, output_path)
                 output_path = unzipped_output_path
 
-            if xpansion_mode == "r":
+            if xpansion_mode == XpansionMode.R:
                 shutil.copytree(
                     self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "user" / "expansion",
                     output_path / "results",
