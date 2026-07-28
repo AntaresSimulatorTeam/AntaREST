@@ -19,13 +19,11 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, NamedTuple
 
 from antarest.core.exceptions import UnsupportedOperationOnArchivedStudy, VariantGenerationError
-from antarest.core.model import StudyPermissionType
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.model import Study, StudyMetadataUpdate
 from antarest.study.storage.utils import (
-    assert_permission_on_studies,
     format_timestamp,
     remove_from_cache,
 )
@@ -50,7 +48,7 @@ class RefStudySearchResult(NamedTuple):
     force_regenerate: bool = False
 
 
-def _get_sorted_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandBlock]:
+def _aggregate_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandBlock]:
     return [cmd for variant in variants for cmd in variant.commands]
 
 
@@ -60,20 +58,19 @@ def _find_last_snapshot_up_to_date(
     """
     Finds the most recent snapshot that is up to date.
 
-    Assumes the variants are sorted from the most recent to the oldest.
+    Assumes the variants are sorted from the oldest to most recent.
 
     If no variant is up to date, it returns None.
 
     It also returns the list of commands to apply in order (from the oldest to the most recent command).
     """
-    for k, variant in enumerate(variants):
+    for k, variant in enumerate(reversed(variants)):
         if variant.snapshot is None:
             continue
         if variant.snapshot.version == variant.commands_version.version:
-            commands = _get_sorted_command_blocks(variants[:k][::-1])
+            commands = _aggregate_command_blocks(variants[len(variants) - k :])
             return variant, commands
-    commands = _get_sorted_command_blocks(variants[::-1])
-    return None, commands
+    return None, _aggregate_command_blocks(variants)
 
 
 class SnapshotGenerator:
@@ -106,8 +103,10 @@ class SnapshotGenerator:
 
         logger.info(f"Generating variant study snapshot for '{variant_study_id}'")
 
-        root_study, descendants = self._retrieve_descendants(variant_study_id)
-        assert_permission_on_studies([root_study, *descendants], StudyPermissionType.READ)
+        # Note: we don't check any more for READ permissions on the lineage here.
+        #       Permissions are only considered at variant creation time, not every time
+        #       the snapshot is generated.
+        root_study, descendants = self.repository.get_study_lineage(variant_study_id)
         if root_study.archived:
             raise UnsupportedOperationOnArchivedStudy(root_study.id)
         search_result = self.search_ref_study(root_study, descendants, from_scratch=from_scratch)
@@ -160,13 +159,6 @@ class SnapshotGenerator:
 
         return results
 
-    def _retrieve_descendants(self, variant_study_id: str) -> tuple[Study, Sequence[VariantStudy]]:
-        # Get all ancestors of the current study from bottom to top
-        # The first IDs are variant IDs, the last is the root study ID.
-        ancestor_ids = self.repository.get_ancestor_or_self_ids(variant_study_id)
-        descendant_ids = ancestor_ids[::-1]
-        return self.repository.get_study_tree(descendant_ids)
-
     def _apply_commands(
         self, study_dao: StudyDao, variant_study: VariantStudy, cmd_blocks: list[CommandBlock]
     ) -> GenerationResultInfoDTO:
@@ -217,7 +209,7 @@ class SnapshotGenerator:
             # In the case of a from scratch generation, the root study will be used as the reference study.
             # We need to retrieve all commands from the descendants of variants to apply them on the reference study.
             commands_version = current_variant.commands_version.version
-            command_blocks = _get_sorted_command_blocks(descendants)
+            command_blocks = _aggregate_command_blocks(descendants)
             return RefStudySearchResult(
                 ref_study=root_study,
                 cmd_blocks=command_blocks,
@@ -251,8 +243,7 @@ class SnapshotGenerator:
         # If no such variant is found, we use the root study as a reference study.
 
         ref_study = root_study
-        # Give the list in reverse order to find the most recent variants first.
-        ref_variant_study, commands = _find_last_snapshot_up_to_date(descendants[-2::-1])
+        ref_variant_study, commands = _find_last_snapshot_up_to_date(descendants[:-1])
         if ref_variant_study is not None:
             ref_study = ref_variant_study
 
