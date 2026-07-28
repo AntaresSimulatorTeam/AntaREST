@@ -101,7 +101,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 resource_id = str(uuid.uuid4())
                 ids.append(resource_id)
 
-                is_last_part = i == len(parts) - 1
+                is_last_part = part == parts[-1]
 
                 value = {
                     "study_id": self._study_id,
