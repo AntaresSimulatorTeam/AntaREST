@@ -73,22 +73,16 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                     break
 
             # Build the resource tree.
-            parts = resource_path.parts
-            parent_id = None
+            parent_id = parent_ids[-1] if parent_ids else None
             ids = []
 
-            for i, part in enumerate(parts):
-                # Skip parts covered by parent IDs.
-                if i < len(parent_ids):
-                    continue
-
+            # Skip parts covered by parent IDs.
+            start_index = len(parent_ids)
+            for i, part in enumerate(parts := resource_path.parts[start_index:], start=start_index):
                 resource_id = str(uuid.uuid4())
                 ids.append(resource_id)
-                is_last_part = i == len(parts) - 1
 
-                # Set parent ID if applicable
-                if i - len(parent_ids) < len(parent_ids):
-                    parent_id = parent_ids[i - len(parent_ids)]
+                is_last_part = i == len(parts) - 1
 
                 value = {
                     "study_id": self._study_id,
