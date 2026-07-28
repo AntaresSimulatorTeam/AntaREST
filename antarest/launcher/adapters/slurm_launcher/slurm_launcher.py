@@ -19,7 +19,7 @@ import threading
 import time
 import traceback
 from collections.abc import Awaitable, Callable
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import cast
 
@@ -502,7 +502,12 @@ class SlurmLauncher(AbstractLauncher):
                     _override_solver_version(study_path, version)
 
                     if run_at is not None:
-                        append_log(launch_uuid, f"Study scheduled to start at {run_at} UTC")
+                        server_time = run_at.replace(tzinfo=timezone.utc).astimezone()
+                        append_log(
+                            launch_uuid,
+                            f"Study scheduled to start at {run_at} UTC"
+                            f" ({server_time:%Y-%m-%d %H:%M:%S %Z} server time)",
+                        )
                     append_log(launch_uuid, "Submitting study to slurm launcher")
                     launcher_args = self._apply_params(launcher_params, run_at)
                     self._call_launcher(launcher_args, self.launcher_params)
