@@ -79,10 +79,12 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                     parent_ids = data.ids
                     break
 
+            ids = []
             for i, part in enumerate(parts):
                 if i < len(parent_ids):
                     continue
                 resource_id = str(uuid.uuid4())
+                ids.append(resource_id)
                 is_last_part = i == len(parts) - 1
 
                 if i - len(parent_ids) < len(parent_ids):
@@ -105,6 +107,11 @@ class DatabaseUserResourcesDao(UserResourcesDao):
 
                 values.append(value)
                 parent_id = resource_id
+
+            # Add the created resource to the tree to perform checks on the next iteration
+            tree[resource_path] = UserResourcesDatabaseData(
+                ids=ids, blob_id=resource.blob_id, resource_type=resource.resource_type
+            )
 
         if not values:
             return
