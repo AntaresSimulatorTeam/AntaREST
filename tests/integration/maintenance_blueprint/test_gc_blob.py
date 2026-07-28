@@ -126,7 +126,9 @@ class TestCleanBlobsIntegration:
             db.session.execute(
                 USER_RESOURCES_TABLE.insert().values(
                     study_id=study_id,
-                    path="my_file.txt",
+                    id=str(uuid.uuid4()),
+                    parent_id=None,
+                    name="my_file.txt",
                     resource_type=ResourceType.FILE,
                     blob_id=used_blob_id,
                 )
