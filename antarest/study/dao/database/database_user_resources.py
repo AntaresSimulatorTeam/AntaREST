@@ -108,7 +108,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 values.append(value)
                 parent_id = resource_id
 
-            # Add the created resource to the tree to perform checks on the next iteration
+            # Update the tree with the new resource to perform checks on the next iteration
             tree[resource_path] = UserResourcesDatabaseData(
                 ids=ids, blob_id=resource.blob_id, resource_type=resource.resource_type
             )
