@@ -120,8 +120,7 @@ class SnapshotGenerator:
         try:
             # we need to invalidate the current snapshot, since we start to modify the underlying data.
             # if the process crashes during generation, the snapshot will be invalid and will be regenerated on the next request.
-            variant_study.snapshot = None
-            self.repository.save(variant_study)
+            self.variant_study_service.invalidate_snapshot(variant_study)
 
             if search_result.force_regenerate:
                 self.variant_study_service.create_snapshot(ref_study, variant_study)
