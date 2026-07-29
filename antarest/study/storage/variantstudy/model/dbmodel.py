@@ -11,10 +11,12 @@
 # This file is part of the Antares project.
 
 import datetime
+import json
 import uuid
+from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Dialect, ForeignKey, Integer, String, TypeDecorator
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
@@ -24,6 +26,37 @@ from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 metadata = Base.metadata
+
+
+@dataclass(frozen=True)
+class StudyDataVersion:
+    study_id: str
+    study_version: int
+
+
+@dataclass(frozen=True)
+class StudyLineageVersions:
+    parents_versions: list[StudyDataVersion]
+
+    def to_json(self) -> str:
+        data = {s.study_id: s.study_version for s in self.parents_versions}
+        return json.dumps(data)
+
+    @classmethod
+    def from_json(cls, json_repr: str) -> "StudyLineageVersions":
+        data = json.loads(json_repr)
+        return cls(parents_versions=[StudyDataVersion(study_id=k, study_version=v) for k, v in data.items()])
+
+
+class StudyLineageVersionsType(TypeDecorator):
+    impl = String
+    cache_ok = True
+
+    def process_bind_param(self, value: StudyLineageVersions, dialect: Dialect) -> str:
+        return value.to_json()
+
+    def process_result_value(self, value: str, dialect: Dialect) -> StudyLineageVersions:
+        return StudyLineageVersions.from_json(value)
 
 
 class VariantStudySnapshot(Base):
@@ -48,7 +81,7 @@ class VariantStudySnapshot(Base):
     )
     version: Mapped[int] = mapped_column(Integer)
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
-
+    lineage_versions: Mapped[StudyLineageVersions] = mapped_column(StudyLineageVersionsType(), nullable=True)
     __mapper_args__ = {"polymorphic_identity": "variant_study_snapshot"}
 
     @override
