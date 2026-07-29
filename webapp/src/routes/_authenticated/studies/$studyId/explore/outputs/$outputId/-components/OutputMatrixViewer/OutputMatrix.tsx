@@ -32,29 +32,21 @@ import { sanitizeJsonResponse } from "@/utils/apiUtils";
 import { toError } from "@/utils/fnUtils";
 import { isSearchMatching } from "@/utils/stringUtils";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useUnmount } from "react-use";
 import useOutput from "../../-hooks/useOutput";
-import useOutputFilters from "../../-hooks/useOutputFilters";
-import { createOutputDataPath, DATE_GRID_COLUMN } from "./utils";
+import useOutputContext from "../../-hooks/useOutputFilters";
+import { createOutputDataPath, DATE_GRID_COLUMN, isValidColumnStatistic } from "./utils";
 
 function OutputMatrix() {
   const { t } = useTranslation();
   const study = useStudy();
   const output = useOutput();
   const { isDarkMode } = useThemeColorScheme();
-  const {
-    item,
-    dataType,
-    frequency,
-    year,
-    columnsSearch,
-    setColumnsData,
-    setIsMatrixDataLoaded,
-    matrixGridRef,
-  } = useOutputFilters();
+
+  const { item, dataType, frequency, year, columnsFilters, setIsMatrixDataLoaded, matrixGridRef } =
+    useOutputContext();
 
   const path = createOutputDataPath({
     output,
@@ -75,14 +67,6 @@ function OutputMatrix() {
     },
     {
       onDataChange: (data) => {
-        const columns = data?.columns || [];
-
-        setColumnsData({
-          variables: R.uniq(columns.map((col) => col[0])),
-          units: R.uniq(columns.map((col) => col[1])),
-          stats: R.uniq(columns.map((col) => col[2].toLowerCase())),
-        });
-
         setIsMatrixDataLoaded(!!data && isNonEmptyMatrix(data.data));
       },
       resetDataOnReload: true,
@@ -108,31 +92,51 @@ function OutputMatrix() {
   // Columns
   ////////////////////////////////////////////////////////////////
 
-  const filteredColumns = useMemo(() => {
-    if (!matrixResultResponse.data) {
-      return [];
-    }
-
-    return matrixResultResponse.data.columns.filter(([variable, unit, stat]) => {
-      return (
-        (columnsSearch.variables.length === 0 ||
-          isSearchMatching(columnsSearch.variables, variable)) &&
-        (columnsSearch.units.length === 0 || isSearchMatching(columnsSearch.units, unit)) &&
-        (columnsSearch.stats.length === 0 || isSearchMatching(columnsSearch.stats, stat))
-      );
-    });
-  }, [matrixResultResponse.data, columnsSearch]);
-
   const gridColumns = useMemo(() => {
-    if (filteredColumns.length === 0) {
+    if (!matrixResultResponse.data || matrixResultResponse.data.columns.length === 0) {
       return [];
     }
 
     return groupResultColumns(
-      [DATE_GRID_COLUMN, ...generateResultColumns({ titles: filteredColumns })],
+      [DATE_GRID_COLUMN, ...generateResultColumns({ titles: matrixResultResponse.data.columns })],
       isDarkMode,
     );
-  }, [filteredColumns, isDarkMode]);
+  }, [matrixResultResponse.data, isDarkMode]);
+
+  const filteredGridColumns = useMemo(() => {
+    if (gridColumns.length === 0) {
+      return [];
+    }
+
+    const hasStatFilter = Object.values(columnsFilters.stats).some((value) => value);
+
+    return gridColumns.map((column) => {
+      const { id, group, title } = column;
+
+      if (id === DATE_GRID_COLUMN.id) {
+        return column;
+      }
+
+      const [variableUnitLabel, statistic] = group ? [group, title] : [title];
+
+      const isVariableUnitLabelMatch =
+        columnsFilters.searches.length === 0 ||
+        isSearchMatching(columnsFilters.searches, variableUnitLabel);
+
+      const isStatisticMatch =
+        !statistic ||
+        // Empty stats filter means all stats are included
+        !hasStatFilter ||
+        (isValidColumnStatistic(statistic) && columnsFilters.stats[statistic]);
+
+      return isVariableUnitLabelMatch && isStatisticMatch
+        ? column
+        : {
+            ...column,
+            width: 0,
+          };
+    });
+  }, [columnsFilters, gridColumns]);
 
   ////////////////////////////////////////////////////////////////
   // DateTime
@@ -161,7 +165,7 @@ function OutputMatrix() {
             ref={matrixGridRef}
             data={matrixResult.data}
             rows={matrixResult.data.length}
-            columns={gridColumns}
+            columns={filteredGridColumns}
             dateTime={dateTime}
             timeFrequency={matrixIndex.level}
             readOnly

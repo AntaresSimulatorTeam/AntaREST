@@ -20,17 +20,11 @@ import Header from "./Header";
 import OutputContext, { type OutputContextValue } from "./OutputContext";
 import OutputMatrix from "./OutputMatrix";
 import OutputVariableMatrix from "./OutputVariableMatrix";
-import type { ColumnsInfo } from "./utils";
+import { DEFAULT_COLUMNS_FILTERS, type ColumnsFiltersData } from "./utils";
 
 interface Props {
   item: Item;
 }
-
-const DEFAULT_COLUMNS_INFO = {
-  variables: [],
-  units: [],
-  stats: [],
-} as const satisfies ColumnsInfo;
 
 function OutputMatrixViewer({ item }: Props) {
   const [monteCarloMode, setMonteCarloMode] = useState<MonteCarloMode>("mc-all");
@@ -39,8 +33,7 @@ function OutputMatrixViewer({ item }: Props) {
   const [year, setYear] = useState(-1);
   const [variable, setVariable] = useState("");
   const [clusterId, setClusterId] = useState<string>("");
-  const [columnsData, setColumnsData] = useState<ColumnsInfo>(DEFAULT_COLUMNS_INFO);
-  const [columnsSearch, setColumnsSearch] = useState<ColumnsInfo>(DEFAULT_COLUMNS_INFO);
+  const [columnsFilters, setColumnsFilters] = useState<ColumnsFiltersData>(DEFAULT_COLUMNS_FILTERS);
   const [isMatrixDataLoaded, setIsMatrixDataLoaded] = useState(false);
   const matrixGridRef = useRef<MatrixFilterHandle>(null);
 
@@ -62,10 +55,8 @@ function OutputMatrixViewer({ item }: Props) {
         setVariable,
         clusterId,
         setClusterId,
-        columnsSearch,
-        setColumnsSearch,
-        columnsData,
-        setColumnsData,
+        columnsFilters,
+        setColumnsFilters,
         matrixGridRef,
       }) satisfies OutputContextValue,
     [
@@ -84,10 +75,8 @@ function OutputMatrixViewer({ item }: Props) {
       setVariable,
       clusterId,
       setClusterId,
-      columnsSearch,
-      setColumnsSearch,
-      columnsData,
-      setColumnsData,
+      columnsFilters,
+      setColumnsFilters,
     ],
   );
 

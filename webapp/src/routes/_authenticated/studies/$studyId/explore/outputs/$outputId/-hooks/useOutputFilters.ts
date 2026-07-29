@@ -15,14 +15,14 @@
 import { useContext } from "react";
 import OutputContext from "../-components/OutputMatrixViewer/OutputContext";
 
-function useOutputFilters() {
-  const filters = useContext(OutputContext);
+function useOutputContext() {
+  const context = useContext(OutputContext);
 
-  if (!filters) {
-    throw new Error("useOutputFilters() must be used within a <FiltersContext>");
+  if (!context) {
+    throw new Error("useOutputContext() must be used within a <OutputContext>");
   }
 
-  return filters;
+  return context;
 }
 
-export default useOutputFilters;
+export default useOutputContext;

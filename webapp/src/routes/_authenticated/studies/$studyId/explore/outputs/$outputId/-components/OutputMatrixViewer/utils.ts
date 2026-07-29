@@ -16,16 +16,26 @@ import { Column } from "@/components/Matrix/shared/constants";
 import type { EnhancedGridColumn } from "@/components/Matrix/shared/types";
 import type { Output } from "@/services/api/studies/outputs/types";
 import type { VariableViewParams } from "@/services/api/studies/outputs/variableViews/types";
-import { isAreaOrDistrict, isLink, type DataType, type Frequency, type Item } from "../../-utils";
+import {
+  isAreaOrDistrict,
+  isLink,
+  type DataType,
+  type Frequency,
+  type Item,
+  type MonteCarloMode,
+} from "../../-utils";
 
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
-export interface ColumnsInfo {
-  variables: string[];
-  units: string[];
-  stats: string[];
+export type ColumnStatistics = "exp" | "min" | "max" | "std" | "values";
+
+export type ColumnStatisticsFilter = Record<ColumnStatistics, boolean>;
+
+export interface ColumnsFiltersData {
+  searches: string[];
+  stats: ColumnStatisticsFilter;
 }
 
 interface CreateOutputDataPathParams {
@@ -54,6 +64,25 @@ export const DATE_GRID_COLUMN = {
   type: Column.DateTime,
   editable: false,
 } as const satisfies EnhancedGridColumn;
+
+export const COLUMN_STATISTICS = [
+  "exp",
+  "min",
+  "max",
+  "std",
+  "values",
+] satisfies ColumnStatistics[];
+
+export const DEFAULT_COLUMNS_FILTERS = {
+  searches: [],
+  stats: {
+    exp: true,
+    min: true,
+    max: true,
+    std: true,
+    values: true,
+  },
+} as const satisfies ColumnsFiltersData;
 
 ////////////////////////////////////////////////////////////////
 // Functions
@@ -150,4 +179,12 @@ export function buildVariableViewParams({
     areaFromId: item.area1,
     areaToId: item.area2,
   };
+}
+
+export function isValidColumnStatistic(stat: string): stat is ColumnStatistics {
+  return COLUMN_STATISTICS.includes(stat);
+}
+
+export function isMonteCarloModeHasStats(monteCarloMode: MonteCarloMode) {
+  return monteCarloMode !== "mc-ind";
 }

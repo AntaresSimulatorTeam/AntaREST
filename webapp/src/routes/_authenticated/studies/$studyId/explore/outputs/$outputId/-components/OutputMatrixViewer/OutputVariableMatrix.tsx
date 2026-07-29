@@ -32,7 +32,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useUnmount } from "react-use";
 import useOutput from "../../-hooks/useOutput";
-import useOutputFilters from "../../-hooks/useOutputFilters";
+import useOutputContext from "../../-hooks/useOutputFilters";
 import { buildVariableViewParams, DATE_GRID_COLUMN, isClusterDataType } from "./utils";
 
 function OutputVariableMatrix() {
@@ -40,7 +40,7 @@ function OutputVariableMatrix() {
   const study = useStudy();
   const output = useOutput();
   const { item, dataType, frequency, variable, clusterId, setIsMatrixDataLoaded, matrixGridRef } =
-    useOutputFilters();
+    useOutputContext();
 
   ////////////////////////////////////////////////////////////////
   // Promises
@@ -139,8 +139,6 @@ function OutputVariableMatrix() {
 
         // NOT_FOUND status with no task ID means data not materialized yet
         if (status === "NOT_FOUND" && taskId === null) {
-          // TODO: update the status to "NOT_MATERIALIZED" + handle the ongoing materialization
-          // state using the taskId and the "IN_PROGRESS" status
           return (
             <EmptyView
               title={t("study.outputs.scanRequired")}

@@ -15,7 +15,7 @@
 import type { MatrixFilterHandle } from "@/components/Matrix/components/MatrixFilter/types";
 import { createContext } from "react";
 import type { DataType, Frequency, Item, MonteCarloMode } from "../../-utils";
-import type { ColumnsInfo } from "./utils";
+import type { ColumnsFiltersData } from "./utils";
 
 export interface OutputContextValue {
   item: Item;
@@ -35,10 +35,8 @@ export interface OutputContextValue {
   clusterId: string;
   setClusterId: React.Dispatch<React.SetStateAction<string>>;
   // Columns filters
-  columnsSearch: ColumnsInfo;
-  setColumnsSearch: React.Dispatch<React.SetStateAction<ColumnsInfo>>;
-  columnsData: ColumnsInfo;
-  setColumnsData: React.Dispatch<React.SetStateAction<ColumnsInfo>>;
+  columnsFilters: ColumnsFiltersData;
+  setColumnsFilters: React.Dispatch<React.SetStateAction<ColumnsFiltersData>>;
   matrixGridRef: React.RefObject<MatrixFilterHandle | null>;
 }
 

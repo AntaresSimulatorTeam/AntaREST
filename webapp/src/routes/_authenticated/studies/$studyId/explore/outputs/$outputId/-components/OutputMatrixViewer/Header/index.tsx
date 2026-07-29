@@ -18,11 +18,17 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import { Box, IconButton, Stack, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { shallowEqual } from "react-redux";
 import { useToggle } from "react-use";
 import useOutput from "../../../-hooks/useOutput";
-import useOutputFilters from "../../../-hooks/useOutputFilters";
-import { buildVariableViewParams, createOutputDataPath } from "../utils";
-import ColumnsFilter from "./ColumnsFIlter";
+import useOutputContext from "../../../-hooks/useOutputFilters";
+import {
+  buildVariableViewParams,
+  createOutputDataPath,
+  DEFAULT_COLUMNS_FILTERS,
+  isMonteCarloModeHasStats,
+} from "../utils";
+import ColumnsFilters from "./ColumnsFilters";
 import DownloadVariableViewButton from "./DownloadVariableViewButton";
 import ResultFilters from "./ResultFilters";
 
@@ -36,18 +42,18 @@ function Header() {
     year,
     clusterId,
     variable,
-    columnsSearch,
+    columnsFilters,
     isMatrixDataLoaded,
     matrixGridRef,
-  } = useOutputFilters();
+  } = useOutputContext();
   const [openColumnsFilter, toggleColumnsFilter] = useToggle(false);
   const study = useStudy();
   const output = useOutput();
 
   const isColumnsFilterActive =
-    columnsSearch.variables.length > 0 ||
-    columnsSearch.units.length > 0 ||
-    columnsSearch.stats.length > 0;
+    columnsFilters.searches.length > 0 ||
+    (isMonteCarloModeHasStats(monteCarloMode) &&
+      !shallowEqual(columnsFilters.stats, DEFAULT_COLUMNS_FILTERS.stats));
 
   const isVariablePerVariable = monteCarloMode === "variable-per-variable";
 
@@ -55,7 +61,7 @@ function Header() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleToggleColumnsFilter = () => {
+  const handleToggleDataFilter = () => {
     matrixGridRef.current?.toggleFilter();
   };
 
@@ -81,7 +87,7 @@ function Header() {
               </Tooltip>
             )}
             <Tooltip title={t("matrix.filter.filterData")}>
-              <IconButton onClick={handleToggleColumnsFilter} disabled={!isMatrixDataLoaded}>
+              <IconButton onClick={handleToggleDataFilter} disabled={!isMatrixDataLoaded}>
                 <FilterListIcon />
               </IconButton>
             </Tooltip>
@@ -106,7 +112,7 @@ function Header() {
           </Stack>
         </Stack>
       </Box>
-      <ColumnsFilter open={openColumnsFilter} onClose={toggleColumnsFilter} />
+      <ColumnsFilters open={openColumnsFilter} onClose={toggleColumnsFilter} />
     </>
   );
 }

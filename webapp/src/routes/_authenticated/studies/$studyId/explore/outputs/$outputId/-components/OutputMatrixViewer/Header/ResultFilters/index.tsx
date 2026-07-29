@@ -21,7 +21,7 @@ import * as R from "ramda";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import useOutput from "../../../../-hooks/useOutput";
-import useOutputFilters from "../../../../-hooks/useOutputFilters";
+import useOutputContext from "../../../../-hooks/useOutputFilters";
 import VariablesFilters from "./VariablesFilters";
 import { FREQUENCY_OPTIONS, getDataTypeOptions, MONTE_CARLO_MODE_OPTIONS } from "./utils";
 
@@ -38,7 +38,7 @@ function ResultFilters() {
     setDataType,
     frequency,
     setFrequency,
-  } = useOutputFilters();
+  } = useOutputContext();
 
   const isYearByYearMode = monteCarloMode === "mc-ind";
 

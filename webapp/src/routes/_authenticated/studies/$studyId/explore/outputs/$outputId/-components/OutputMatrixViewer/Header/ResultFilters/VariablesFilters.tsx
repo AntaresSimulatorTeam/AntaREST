@@ -21,7 +21,7 @@ import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useUnmount } from "react-use";
 import useOutput from "../../../../-hooks/useOutput";
-import useOutputFilters from "../../../../-hooks/useOutputFilters";
+import useOutputContext from "../../../../-hooks/useOutputFilters";
 import { isAreaOrDistrict } from "../../../../-utils";
 import { isClusterDataType } from "../../utils";
 import { getClusters, getVariables } from "./utils";
@@ -30,7 +30,7 @@ function VariablesFilters() {
   const study = useStudy();
   const output = useOutput();
   const { t } = useTranslation();
-  const { item, dataType, variable, setVariable, clusterId, setClusterId } = useOutputFilters();
+  const { item, dataType, variable, setVariable, clusterId, setClusterId } = useOutputContext();
   const showClusterField = isAreaOrDistrict(item) && isClusterDataType(dataType);
 
   const { data: variablesList } = usePromise(
