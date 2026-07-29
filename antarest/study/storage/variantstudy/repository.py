@@ -24,7 +24,10 @@ from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     CommandsListVersion,
+    StudyDataVersion,
+    StudyLineageVersions,
     VariantStudy,
+    VariantStudySnapshot,
 )
 
 
@@ -180,18 +183,6 @@ class VariantStudyRepository(StudyMetadataRepository):
         session.add(data)
         session.commit()
 
-    def is_snapshot_up_to_date(self, study_id: str) -> bool:
-        join_query = [joinedload(VariantStudy.snapshot), joinedload(VariantStudy.commands_version)]
-        variant: VariantStudy | None = self.session.get(VariantStudy, study_id, options=join_query)
-
-        if not variant:
-            raise StudyNotFoundError(study_id)
-
-        if not variant.snapshot:
-            return False
-
-        return variant.snapshot.version == variant.commands_version.version  # type: ignore
-
     def get_study_lineage(self, variant_id: str) -> tuple[RawStudy, list[VariantStudy]]:
         """
         Returns the lineage of parents of the study, including the study itself.
@@ -223,3 +214,41 @@ class VariantStudyRepository(StudyMetadataRepository):
         if not lineage:
             raise StudyNotFoundError(variant_id)
         return cast(RawStudy, lineage[0]), [cast(VariantStudy, v) for v in lineage[1:]]
+
+    def get_refreshed_snapshot(self, variant_id: str) -> VariantStudySnapshot | None:
+        return self.session.execute(
+            select(VariantStudySnapshot)
+            .where(VariantStudySnapshot.id == variant_id)
+            .execution_options(populate_existing=True)
+        ).scalar_one_or_none()
+
+    def is_snapshot_up_to_date(self, variant_id: str) -> bool:
+        snapshot_versions = self.session.execute(
+            select(VariantStudySnapshot.lineage_versions).where(VariantStudySnapshot.id == variant_id)
+        ).scalar_one_or_none()
+        if snapshot_versions is None:
+            return False
+        lineage_versions = self.get_lineage_version(variant_id)
+        return lineage_versions == snapshot_versions
+
+    def get_lineage_version(self, variant_id: str) -> StudyLineageVersions:
+        # get lineage versions
+        base_q = select(Study.id, Study.parent_id, literal(0).label("depth")).where(Study.id == variant_id)
+        cte = base_q.cte("ancestor_cte", recursive=True)
+        recursive_q = select(Study.id, Study.parent_id, (cte.c.depth + 1).label("depth")).join(
+            cte, Study.id == cte.c.parent_id
+        )
+        cte = cte.union_all(recursive_q)
+
+        study_w_p = with_polymorphic(Study, [VariantStudy])
+
+        stmt = (
+            select(study_w_p.id, study_w_p.VariantStudy.commands_version.version)
+            .join(cte, study_w_p.id == cte.c.id)
+            .order_by(cte.c.depth.desc())
+        )
+        lineage_data = self.session.execute(stmt).scalars().all()
+
+        return StudyLineageVersions(
+            parents_versions=[StudyDataVersion(study_id=row[0], study_versions=row[1]) for row in lineage_data]
+        )

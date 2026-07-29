@@ -48,7 +48,7 @@ class StudyLineageVersions:
         return cls(parents_versions=[StudyDataVersion(study_id=k, study_version=v) for k, v in data.items()])
 
 
-class StudyLineageVersionsType(TypeDecorator):
+class StudyLineageVersionsType(TypeDecorator[StudyLineageVersions]):
     """
     Defines a type to store lineage versions as a JSON string {"study-id": 3, ...}
     """
@@ -56,11 +56,13 @@ class StudyLineageVersionsType(TypeDecorator):
     impl = String
     cache_ok = True
 
-    def process_bind_param(self, value: StudyLineageVersions, dialect: Dialect) -> str:
-        return value.to_json()
+    @override
+    def process_result_value(self, value: str | None, dialect: Dialect) -> StudyLineageVersions | None:
+        return StudyLineageVersions.from_json(value) if value is not None else None
 
-    def process_result_value(self, value: str, dialect: Dialect) -> StudyLineageVersions:
-        return StudyLineageVersions.from_json(value)
+    @override
+    def process_bind_param(self, value: StudyLineageVersions | None, dialect: Dialect) -> str | None:
+        return value.to_json() if value is not None else None
 
 
 class VariantStudySnapshot(Base):
@@ -86,7 +88,7 @@ class VariantStudySnapshot(Base):
     )
     version: Mapped[int] = mapped_column(Integer)
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
-    lineage_versions: Mapped[StudyLineageVersions] = mapped_column(StudyLineageVersionsType())
+    lineage_versions: Mapped[StudyLineageVersions | None] = mapped_column(StudyLineageVersionsType())
 
     @override
     def __str__(self) -> str:

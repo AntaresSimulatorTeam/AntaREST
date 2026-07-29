@@ -22,7 +22,7 @@ from antarest.core.exceptions import UnsupportedOperationOnArchivedStudy, Varian
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
-from antarest.study.model import Study, StudyMetadataUpdate
+from antarest.study.model import RawStudy, Study, StudyMetadataUpdate
 from antarest.study.storage.utils import (
     format_timestamp,
     remove_from_cache,
@@ -85,6 +85,21 @@ def get_lineage_versions(lineage: list[VariantStudy]) -> StudyLineageVersions:
     )
 
 
+def get_ref_study_snapshot_id(ref_study: Study) -> StudyLineageVersions:
+    match ref_study:
+        case VariantStudy():
+            return ref_study.snapshot.lineage_versions
+        case RawStudy():
+            # TODO: for now raw study data is not versioned
+            return StudyLineageVersions([])
+        case _:
+            raise ValueError(f"Unsupported study type: {type(ref_study)}")
+
+
+class RefStudyChanged(Exception):
+    pass
+
+
 class SnapshotGenerator:
     """
     Helper class used to generate snapshots for variant studies.
@@ -135,7 +150,17 @@ class SnapshotGenerator:
             self.variant_study_service.invalidate_snapshot(variant_study)
 
             if search_result.force_regenerate:
+                initial_ref_versions = get_ref_study_snapshot_id(ref_study)
                 self.variant_study_service.create_snapshot(ref_study, variant_study)
+                # we need to make sure the ref_study has not changed in the meantime, otherwise we may have copied
+                # data that do not correspond to the lineage used for generation
+                final_ref_versions = (
+                    self.repository.get_refreshed_snapshot(ref_study.id)
+                    if isinstance(ref_study, VariantStudy)
+                    else StudyLineageVersions([])
+                )
+                if final_ref_versions != initial_ref_versions:
+                    raise RefStudyChanged()
 
             # The snapshot is generated, we also need to de-normalize the matrices.
             study_dao = dao_factory.get_study_dao(variant_study.id, True)

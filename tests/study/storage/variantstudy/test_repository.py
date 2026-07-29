@@ -18,7 +18,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 
 
-def test_variant_study_repository_get_study_lineage(db_session: Session):
+def test_get_study_lineage(db_session: Session):
     study_repo = StudyMetadataRepository(db_session)
     variant_repo = VariantStudyRepository(db_session)
 
@@ -37,3 +37,7 @@ def test_variant_study_repository_get_study_lineage(db_session: Session):
 
     with pytest.raises(StudyNotFoundError):
         variant_repo.get_study_lineage("non-existent-variant-id")
+
+
+def test_get_lineage_versions(db_session: Session):
+    pass
