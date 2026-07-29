@@ -110,7 +110,7 @@ function ColumnsFilters({ open, onClose }: Props) {
     >
       <Toolbar>
         <ViewColumnIcon sx={{ mr: 1 }} />
-        <Typography variant="h6">Filter Columns</Typography>
+        <Typography variant="h6">{t("study.outputs.filterColumns")}</Typography>
       </Toolbar>
 
       <Box component="form" sx={{ px: 2, height: 1, overflow: "auto" }}>
@@ -123,7 +123,7 @@ function ColumnsFilters({ open, onClose }: Props) {
           />
           {isStatsEnabled && (
             <SelectFE
-              label="Statistics"
+              label={t("study.outputs.statistics")}
               value={stats}
               options={COLUMN_STATISTICS}
               onChange={(event) => setStats(event.target.value)}
