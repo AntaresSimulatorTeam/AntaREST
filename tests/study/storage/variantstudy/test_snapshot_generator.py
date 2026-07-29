@@ -1172,5 +1172,5 @@ class TestSnapshotGenerator:
             results = generator.generate_snapshot(variant_5_id, dao_factory=factory, from_scratch=False)
             assert results.success is True
 
-            # Only 3 queries since snapshot did not exist, so no need to delete it
-            assert len(db_recorder.sql_statements) == 3, str(db_recorder)
+            # Only 2 queries since snapshot did not exist, so no need to delete it
+            assert len(db_recorder.sql_statements) == 2, str(db_recorder)
