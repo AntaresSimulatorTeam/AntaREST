@@ -73,6 +73,7 @@ class VariantStudySnapshot(Base):
     """
 
     __tablename__ = "variant_study_snapshot"
+    __mapper_args__ = {"polymorphic_identity": "variant_study_snapshot"}
 
     id: Mapped[str] = mapped_column(
         String(36),
@@ -81,8 +82,7 @@ class VariantStudySnapshot(Base):
     )
     version: Mapped[int] = mapped_column(Integer)
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
-    lineage_versions: Mapped[StudyLineageVersions] = mapped_column(StudyLineageVersionsType(), nullable=True)
-    __mapper_args__ = {"polymorphic_identity": "variant_study_snapshot"}
+    lineage_versions: Mapped[StudyLineageVersions] = mapped_column(StudyLineageVersionsType())
 
     @override
     def __str__(self) -> str:
