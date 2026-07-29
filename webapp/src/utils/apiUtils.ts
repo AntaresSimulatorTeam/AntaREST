@@ -12,28 +12,72 @@
  * This file is part of the Antares project.
  */
 
+const NAN_LITERAL = "NaN";
+const INFINITY_LITERAL = "Infinity";
+const NEGATIVE_INFINITY_LITERAL = "-Infinity";
+
 /**
- * Sanitizes JSON response containing invalid "NaN" and "Infinity" literals.
+ * Sanitizes JSON responses containing invalid NaN/Infinity literals.
  *
- * The backend serializes "NaN" and "Infinity" as literal tokens (e.g., {"value": "NaN"})
- * using Pydantic's ser_json_inf_nan="constants" configuration.
- * This is invalid JSON and causes JSON.parse() to fail.
+ * The backend can serialize NaN/Infinity as bare tokens (e.g. {"value": NaN}) when using
+ * Pydantic's ser_json_inf_nan="constants" configuration.
+ * These tokens are not valid JSON and cause JSON.parse() to fail.
  *
- * This function converts these literals to valid JSON strings before parsing.
+ * This function rewrites only occurrences that are outside JSON strings.
  *
  * @param response - Raw response data from API (string or already parsed object).
- *
- * @returns Properly parsed JSON object with "NaN" and "Infinity" as strings,
- * or the original response if already parsed.
+ * @returns Parsed JSON with NaN/Infinity represented as strings ("NaN", "Infinity", "-Infinity").
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function sanitizeJsonResponse<T = unknown>(response: any): T {
+export function sanitizeJsonResponse<T = unknown>(response: unknown): T {
   if (typeof response !== "string") {
-    return response;
+    return response as T;
   }
 
-  // Replace invalid JSON literals with valid JSON strings
-  const sanitized = response.replace(/NaN/g, '"NaN"').replace(/Infinity/g, '"Infinity"');
+  let inString = false;
+  let escaped = false;
+  let sanitized = "";
 
-  return JSON.parse(sanitized);
+  for (let i = 0; i < response.length; i += 1) {
+    const char = response[i];
+
+    if (inString) {
+      sanitized += char;
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      sanitized += char;
+      continue;
+    }
+
+    if (response.startsWith(NEGATIVE_INFINITY_LITERAL, i)) {
+      sanitized += `"${NEGATIVE_INFINITY_LITERAL}"`;
+      i += NEGATIVE_INFINITY_LITERAL.length - 1;
+      continue;
+    }
+
+    if (response.startsWith(INFINITY_LITERAL, i)) {
+      sanitized += `"${INFINITY_LITERAL}"`;
+      i += INFINITY_LITERAL.length - 1;
+      continue;
+    }
+
+    if (response.startsWith(NAN_LITERAL, i)) {
+      sanitized += `"${NAN_LITERAL}"`;
+      i += NAN_LITERAL.length - 1;
+      continue;
+    }
+
+    sanitized += char;
+  }
+
+  return JSON.parse(sanitized) as T;
 }
