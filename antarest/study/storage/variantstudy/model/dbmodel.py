@@ -49,6 +49,10 @@ class StudyLineageVersions:
 
 
 class StudyLineageVersionsType(TypeDecorator):
+    """
+    Defines a type to store lineage versions as a JSON string {"study-id": 3, ...}
+    """
+
     impl = String
     cache_ok = True
 

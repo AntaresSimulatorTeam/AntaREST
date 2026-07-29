@@ -27,7 +27,13 @@ from antarest.study.storage.utils import (
     format_timestamp,
     remove_from_cache,
 )
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    StudyDataVersion,
+    StudyLineageVersions,
+    VariantStudy,
+    VariantStudySnapshot,
+)
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
 from antarest.study.storage.variantstudy.variant_command_generator import apply_commands_to_variant
 
@@ -71,6 +77,12 @@ def _find_last_snapshot_up_to_date(
             commands = _aggregate_command_blocks(variants[len(variants) - k :])
             return variant, commands
     return None, _aggregate_command_blocks(variants)
+
+
+def get_lineage_versions(lineage: list[VariantStudy]) -> StudyLineageVersions:
+    return StudyLineageVersions(
+        parents_versions=[StudyDataVersion(study_id=v.id, study_version=v.commands_version.version) for v in lineage]
+    )
 
 
 class SnapshotGenerator:
