@@ -87,11 +87,11 @@ class VariantStudySnapshot(Base):
         primary_key=True,
     )
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
-    lineage_versions: Mapped[StudyLineageVersions | None] = mapped_column(StudyLineageVersionsType())
+    lineage_versions: Mapped[StudyLineageVersions] = mapped_column(StudyLineageVersionsType())
 
     @override
     def __str__(self) -> str:
-        return f"[Snapshot] id={self.id}, version={self.version}"
+        return f"[Snapshot] id={self.id}, lineag_versions={self.lineage_versions}"
 
 
 class CommandBlock(Base):
@@ -212,7 +212,7 @@ class VariantStudy(Study):
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
     }
-    snapshot = relationship(
+    snapshot: Mapped[VariantStudySnapshot | None] = relationship(
         VariantStudySnapshot,
         uselist=False,
         cascade="all, delete, delete-orphan",

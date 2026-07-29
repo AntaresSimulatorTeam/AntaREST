@@ -18,7 +18,11 @@ import logging
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, NamedTuple
 
-from antarest.core.exceptions import UnsupportedOperationOnArchivedStudy, VariantGenerationError
+from antarest.core.exceptions import (
+    ShouldNotHappenException,
+    UnsupportedOperationOnArchivedStudy,
+    VariantGenerationError,
+)
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
@@ -70,13 +74,13 @@ def _find_last_snapshot_up_to_date(
 
     It also returns the list of commands to apply in order (from the oldest to the most recent command).
     """
-    for var_index in reversed(range(len(variants)):
-        variant = variants[ind]
+    for var_index in reversed(range(len(variants))):
+        variant = variants[var_index]
         if variant.snapshot is None:
             continue
-        current_lineage_versions = get_lineage_versions(variants[:variant_index])
-        if variant.snapshot.lineage_versions == variant.commands_version.version:
-            commands = _aggregate_command_blocks(variants[variant_index + 1 :])
+        current_lineage_versions = get_lineage_versions(variants[: var_index + 1])
+        if variant.snapshot.lineage_versions == current_lineage_versions:
+            commands = _aggregate_command_blocks(variants[var_index:])
             return variant, commands
     return None, _aggregate_command_blocks(variants)
 
@@ -90,7 +94,9 @@ def get_lineage_versions(lineage: Sequence[VariantStudy]) -> StudyLineageVersion
 def get_ref_study_snapshot_id(ref_study: Study) -> StudyLineageVersions:
     match ref_study:
         case VariantStudy():
-            return ref_study.snapshot.lineage_versions
+            if snapshot := ref_study.snapshot:
+                return snapshot.lineage_versions
+            raise ShouldNotHappenException("Snapshot of reference study does not exist.")
         case RawStudy():
             # TODO: for now raw study data is not versioned
             return StudyLineageVersions([])

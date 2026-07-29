@@ -14,7 +14,6 @@ from sqlalchemy.orm import Session
 
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.variantstudy import snapshot
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandsListVersion,
     StudyDataVersion,
@@ -23,7 +22,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import (
     VariantStudySnapshot,
 )
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
-from tests.conftest_db import db_session_fixture
 
 
 def test_get_study_lineage(db_session: Session):
