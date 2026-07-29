@@ -292,11 +292,14 @@ class TestVariantStudyService:
         with current_user_context(jwt_user):
             variant_study_service.append_commands(variant_study.id, commands)
 
-        with current_user_context(jwt_user):
+        variant_id = variant_study.id
+        # Isolate it in a new DB session to make sure we mimic an independent request
+        with db(), current_user_context(jwt_user):
             with DBStatementRecorder(db.session.bind) as db_recorder:
-                variant_study_service.get_commands(variant_study.id)
+                variant_study_service.get_commands(variant_id)
                 # Only 1 query must be executed:
                 # 1. Get the variant study with its owner, groups and commands
+                #    No N+1 query to get user information
                 assert len(db_recorder.sql_statements) == 1
 
     @with_admin_user
