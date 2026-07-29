@@ -95,7 +95,7 @@ def _create_variant(
 
 def _set_snapshot(variant: VariantStudy, *lineage_versions: tuple[str, int]) -> None:
     variant.snapshot = VariantStudySnapshot(
-        id=variant.id, lineage_versions=StudyLineageVersions.from_tuples(*lineage_versions), last_executed_command=None
+        id=variant.id, lineage_versions=StudyLineageVersions.from_tuples(lineage_versions), last_executed_command=None
     )
 
 
@@ -486,7 +486,7 @@ class TestSearchRefStudy:
         _set_snapshot(variant1, (variant1.id, 0))
         # Variant 2 is created from Variant 1 and has an obsolete snapshot.
         variant2 = _create_variant(tmp_path, "variant2", variant1.id)
-        _set_snapshot(variant1, (variant1.id, 0), (variant2.id, -1))
+        _set_snapshot(variant2, (variant1.id, 0), (variant2.id, -1))
 
         # Add some variant commands to the 1st variant just to ensure we won't have them in the final result.
         variant1.commands = [
