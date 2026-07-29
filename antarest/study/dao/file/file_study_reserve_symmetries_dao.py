@@ -20,6 +20,8 @@ from antarest.study.dao.api.common import check_thermal_symmetries_are_certified
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
+    StStorageId,
+    STStorageReserveSymmetriesMapping,
     ThermalId,
     ThermalReserveSymmetriesMapping,
 )
@@ -91,3 +93,16 @@ class FileStudyThermalReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
 
         # Saves the content into the YAML file
         file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
+
+    @override
+    def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[StStorageId, ReserveSymmetries]:
+        # TODO: Implement this method
+        raise NotImplementedError()
+
+    @override
+    def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
+        raise NotImplementedError()
+
+    @override
+    def save_st_storage_reserve_symmetries(self, data: STStorageReserveSymmetriesMapping) -> None:
+        raise NotImplementedError()

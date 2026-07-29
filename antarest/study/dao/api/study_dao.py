@@ -113,6 +113,8 @@ from antarest.study.dao.common import (
     ReserveDefinitionsMapping,
     ReserveNeedsMapping,
     StStorageConstraintSeriesMapping,
+    StStorageId,
+    STStorageReserveSymmetriesMapping,
     StStorageSeriesMapping,
     ThermalId,
     ThermalReserveSymmetriesMapping,
@@ -448,6 +450,14 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_st_storages_for_area(self, area_id: str) -> Sequence[STStorage]:
         return self._adaptee.get_all_st_storages_for_area(area_id)
+
+    @override
+    def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
+        return self._adaptee.get_all_st_storage_reserve_symmetries()
+
+    @override
+    def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[StStorageId, ReserveSymmetries]:
+        return self._adaptee.get_st_storage_reserve_symmetries(area_id)
 
     @override
     def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:

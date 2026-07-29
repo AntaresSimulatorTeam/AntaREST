@@ -121,8 +121,8 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                         _convert_thermal_model_to_row(self._study_data_id, area_id, thermal_id, reserve_id, certification)
                     )
         try:
-            self._clean_db(_THERMAL_TABLE, data)
-            self._insert_data_to_db(_THERMAL_TABLE, values)
+            self.__clean_db(_THERMAL_TABLE, data)
+            self.__insert_data_to_table(_THERMAL_TABLE, values)
         except IntegrityError as e:
             self._db_session.rollback()
             self._raise_the_right_thermal_reserve_exception(data, exc=e)
@@ -177,8 +177,8 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             return
         values = self._convert_st_storages_models_to_rows(data)
         try:
-            self._clean_db(_ST_STORAGE_TABLE, data)
-            self._insert_data_to_db(_ST_STORAGE_TABLE, values)
+            self.__clean_db(_ST_STORAGE_TABLE, data)
+            self.__insert_data_to_table(_ST_STORAGE_TABLE, values)
         except IntegrityError as e:
             self._raise_the_right_st_storage_reserve_exception(data, exc=e)
         self._db_session.commit()
@@ -195,12 +195,14 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                     )
         return values
 
-    def _clean_db(self, table: Table, data: dict[str, dict[ReserveDefinitionId, dict[str, ReserveCertification]]]):
+    def __clean_db(
+        self, table: Table, data: dict[str, dict[ReserveDefinitionId, dict[str, ReserveCertification]]]
+    ) -> None:
         area_ids = set(data)
         stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
         self._db_session.execute(stmt)
 
-    def _insert_data_to_db(self, table: Table, values: list[Any]):
+    def __insert_data_to_table(self, table: Table, values: list[Any]):
         if values:
             self._db_session.execute(insert(table), values)
 
@@ -227,14 +229,14 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
     def _raise_exception_if_missing_area(
         self, data: dict[str, dict[ReserveDefinitionId, dict[str, ReserveCertification]]]
-    ):
+    ) -> None:
         existing_ids = set(self.get_impl().get_all_area_ids())
         if invalid_areas := set(data) - existing_ids:
             raise AreaNotFound(*invalid_areas)
 
     def _raise_exception_if_missing_reserve(
         self, data: dict[str, dict[ReserveDefinitionId, dict[str, ReserveCertification]]]
-    ):
+    ) -> None:
         all_existing_reserves = self.get_impl().get_all_reserve_definitions()
         invalid_reserves_dict = {}
         for area_id, reserves_dict in data.items():
