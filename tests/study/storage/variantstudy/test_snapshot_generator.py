@@ -1127,10 +1127,10 @@ class TestSnapshotGenerator:
             # We expect 2 queries:
             # - 1 query to fetch the whole tree of studies (with join query on owner, groups, commands,
             # snapshot and command_version)
-            # - 2 queries to invalidate the snapshot (deletion + update time)
+            # - 1 query to delete the snapshot
             # - 1 query to insert the variant study snapshot
 
-            assert len(db_recorder.sql_statements) == 4, str(db_recorder)
+            assert len(db_recorder.sql_statements) == 3, str(db_recorder)
 
         # `is_snapshot_up_to_date` method
         with DBStatementRecorder(db.session.bind) as db_recorder:
