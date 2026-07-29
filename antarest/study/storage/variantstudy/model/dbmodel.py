@@ -14,7 +14,7 @@ import datetime
 import json
 import uuid
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Sequence
 
 from sqlalchemy import DateTime, Dialect, ForeignKey, Integer, String, TypeDecorator
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -39,13 +39,17 @@ class StudyLineageVersions:
     parents_versions: list[StudyDataVersion]
 
     def to_json(self) -> str:
-        data = {s.study_id: s.study_version for s in self.parents_versions}
+        data = [(s.study_id, s.study_version) for s in self.parents_versions]
         return json.dumps(data)
 
     @classmethod
     def from_json(cls, json_repr: str) -> "StudyLineageVersions":
         data = json.loads(json_repr)
-        return cls(parents_versions=[StudyDataVersion(study_id=k, study_version=v) for k, v in data.items()])
+        return cls.from_tuples(data)
+
+    @classmethod
+    def from_tuples(cls, data: Sequence[tuple[str, int]]) -> "StudyLineageVersions":
+        return cls(parents_versions=[StudyDataVersion(study_id, version) for study_id, version in data])
 
 
 class StudyLineageVersionsType(TypeDecorator[StudyLineageVersions]):

@@ -80,7 +80,7 @@ def _find_last_snapshot_up_to_date(
             continue
         current_lineage_versions = get_lineage_versions(variants[: var_index + 1])
         if variant.snapshot.lineage_versions == current_lineage_versions:
-            commands = _aggregate_command_blocks(variants[var_index:])
+            commands = _aggregate_command_blocks(variants[var_index + 1 :])
             return variant, commands
     return None, _aggregate_command_blocks(variants)
 
@@ -163,11 +163,11 @@ class SnapshotGenerator:
                 self.variant_study_service.create_snapshot(ref_study, variant_study)
                 # we need to make sure the ref_study has not changed in the meantime, otherwise we may have copied
                 # data that do not correspond to the lineage used for generation
-                final_ref_versions = (
-                    self.repository.get_refreshed_snapshot(ref_study.id)
-                    if isinstance(ref_study, VariantStudy)
-                    else StudyLineageVersions([])
-                )
+                if isinstance(ref_study, VariantStudy):
+                    refreshed_snaphot = self.repository.get_refreshed_snapshot(ref_study.id)
+                    final_ref_versions = refreshed_snaphot.lineage_versions if refreshed_snaphot else None
+                else:
+                    final_ref_versions = StudyLineageVersions([])
                 if final_ref_versions != initial_ref_versions:
                     raise RefStudyChanged()
 
