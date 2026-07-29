@@ -86,7 +86,6 @@ class VariantStudySnapshot(Base):
         ForeignKey("variantstudy.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    version: Mapped[int] = mapped_column(Integer)
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
     lineage_versions: Mapped[StudyLineageVersions | None] = mapped_column(StudyLineageVersionsType())
 

@@ -70,16 +70,18 @@ def _find_last_snapshot_up_to_date(
 
     It also returns the list of commands to apply in order (from the oldest to the most recent command).
     """
-    for k, variant in enumerate(reversed(variants)):
+    for var_index in reversed(range(len(variants)):
+        variant = variants[ind]
         if variant.snapshot is None:
             continue
-        if variant.snapshot.version == variant.commands_version.version:
-            commands = _aggregate_command_blocks(variants[len(variants) - k :])
+        current_lineage_versions = get_lineage_versions(variants[:variant_index])
+        if variant.snapshot.lineage_versions == variant.commands_version.version:
+            commands = _aggregate_command_blocks(variants[variant_index + 1 :])
             return variant, commands
     return None, _aggregate_command_blocks(variants)
 
 
-def get_lineage_versions(lineage: list[VariantStudy]) -> StudyLineageVersions:
+def get_lineage_versions(lineage: Sequence[VariantStudy]) -> StudyLineageVersions:
     return StudyLineageVersions(
         parents_versions=[StudyDataVersion(study_id=v.id, study_version=v.commands_version.version) for v in lineage]
     )
@@ -144,6 +146,7 @@ class SnapshotGenerator:
         # Get snapshot directory
         variant_study = descendants[-1]
 
+        new_snapshot_version = get_lineage_versions(descendants)
         try:
             # we need to invalidate the current snapshot, since we start to modify the underlying data.
             # if the process crashes during generation, the snapshot will be invalid and will be regenerated on the next request.
@@ -176,7 +179,7 @@ class SnapshotGenerator:
             elif variant_study.snapshot:
                 last_executed_command = variant_study.snapshot.last_executed_command
             variant_study.snapshot = VariantStudySnapshot(
-                id=variant_study_id, version=search_result.version, last_executed_command=last_executed_command
+                id=variant_study_id, last_executed_command=last_executed_command, lineage_versions=new_snapshot_version
             )
             self.repository.save(variant_study)
 

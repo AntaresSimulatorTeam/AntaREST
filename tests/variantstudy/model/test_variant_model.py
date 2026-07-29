@@ -297,6 +297,7 @@ class TestVariantStudyService:
                 variant_study_service.get_commands(variant_study.id)
                 # Only 1 query must be executed:
                 # 1. Get the variant study with its owner, groups and commands
+                # 2. Retrieves the user's name. Performed only once as the same user added the 5 commands (no N+1 query)
                 assert len(db_recorder.sql_statements) == 1
 
     @with_admin_user

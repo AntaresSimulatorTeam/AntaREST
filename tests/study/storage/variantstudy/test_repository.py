@@ -14,8 +14,16 @@ from sqlalchemy.orm import Session
 
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from antarest.study.storage.variantstudy import snapshot
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandsListVersion,
+    StudyDataVersion,
+    StudyLineageVersions,
+    VariantStudy,
+    VariantStudySnapshot,
+)
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
+from tests.conftest_db import db_session_fixture
 
 
 def test_get_study_lineage(db_session: Session):
@@ -40,4 +48,75 @@ def test_get_study_lineage(db_session: Session):
 
 
 def test_get_lineage_versions(db_session: Session):
-    pass
+    variant_repo = VariantStudyRepository(db_session)
+
+    # Build a tree of root > variant1 (data version 1) > variant2 (data version 0)
+    root_study = RawStudy(name="root study", workspace=DEFAULT_WORKSPACE_NAME, version="8.6", path="/my-dir")
+    db_session.add(root_study)
+    db_session.flush()
+
+    variant1 = VariantStudy(name="variant 1", version="8.6", path="/tutu", parent_id=root_study.id)
+    variant1.commands_version = CommandsListVersion(version=1)
+    db_session.add(variant1)
+    db_session.flush()
+
+    variant2 = VariantStudy(name="variant 2", version="8.6", path="/tutu", parent_id=variant1.id)
+    variant2.commands_version = CommandsListVersion(version=0)
+
+    db_session.add(variant2)
+    db_session.commit()
+
+    # Checks we find the correct lineage data versions
+    assert variant_repo.get_lineage_version(variant2.id) == StudyLineageVersions(
+        [StudyDataVersion(variant1.id, 1), StudyDataVersion(variant2.id, 0)]
+    )
+
+
+def test_snapshot_is_up_to_date(db_session: Session):
+    variant_repo = VariantStudyRepository(db_session)
+
+    # Build a tree of root > variant1 (data version 1) > variant2 (data version 0)
+    root_study = RawStudy(name="root study", workspace=DEFAULT_WORKSPACE_NAME, version="8.6", path="/my-dir")
+    db_session.add(root_study)
+    db_session.flush()
+
+    variant1 = VariantStudy(name="variant 1", version="8.6", path="/tutu", parent_id=root_study.id)
+    variant1.commands_version = CommandsListVersion(version=1)
+    db_session.add(variant1)
+    db_session.flush()
+
+    variant2 = VariantStudy(name="variant 2", version="8.6", path="/tutu", parent_id=variant1.id)
+    variant2.commands_version = CommandsListVersion(version=0)
+    db_session.add(variant2)
+    db_session.flush()
+
+    variant2.snapshot = VariantStudySnapshot(
+        last_executed_command=None,
+        lineage_versions=StudyLineageVersions([StudyDataVersion(variant1.id, 1), StudyDataVersion(variant2.id, 0)]),
+    )
+
+    db_session.commit()
+
+    # Checks we find the correct lineage data versions
+    assert variant_repo.is_snapshot_up_to_date(variant2.id)
+
+    # If snapshot does not exist, we consider it is not up to date
+    variant2.snapshot = None
+    db_session.commit()
+    assert not variant_repo.is_snapshot_up_to_date(variant2.id)
+
+    # If a parent has an older version, we consider it is not up to date
+    variant2.snapshot = VariantStudySnapshot(
+        last_executed_command=None,
+        lineage_versions=StudyLineageVersions([StudyDataVersion(variant1.id, 0), StudyDataVersion(variant2.id, 0)]),
+    )
+    db_session.commit()
+    assert not variant_repo.is_snapshot_up_to_date(variant2.id)
+
+    # If lineage has changed, we consider it is not up to date
+    variant2.snapshot = VariantStudySnapshot(
+        last_executed_command=None,
+        lineage_versions=StudyLineageVersions([StudyDataVersion(variant2.id, 0)]),
+    )
+    db_session.commit()
+    assert not variant_repo.is_snapshot_up_to_date(variant2.id)

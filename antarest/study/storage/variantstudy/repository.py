@@ -232,7 +232,6 @@ class VariantStudyRepository(StudyMetadataRepository):
         return lineage_versions == snapshot_versions
 
     def get_lineage_version(self, variant_id: str) -> StudyLineageVersions:
-        # get lineage versions
         base_q = select(Study.id, Study.parent_id, literal(0).label("depth")).where(Study.id == variant_id)
         cte = base_q.cte("ancestor_cte", recursive=True)
         recursive_q = select(Study.id, Study.parent_id, (cte.c.depth + 1).label("depth")).join(
@@ -243,12 +242,11 @@ class VariantStudyRepository(StudyMetadataRepository):
         study_w_p = with_polymorphic(Study, [VariantStudy])
 
         stmt = (
-            select(study_w_p.id, study_w_p.VariantStudy.commands_version.version)
+            select(study_w_p.id, CommandsListVersion.version)
+            .join(study_w_p.VariantStudy.commands_version)
             .join(cte, study_w_p.id == cte.c.id)
             .order_by(cte.c.depth.desc())
         )
-        lineage_data = self.session.execute(stmt).scalars().all()
+        lineage_data = self.session.execute(stmt).all()
 
-        return StudyLineageVersions(
-            parents_versions=[StudyDataVersion(study_id=row[0], study_versions=row[1]) for row in lineage_data]
-        )
+        return StudyLineageVersions(parents_versions=[StudyDataVersion(row[0], row[1]) for row in lineage_data])
