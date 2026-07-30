@@ -25,7 +25,6 @@ from antarest.core.exceptions import (
     VariantGenerationError,
 )
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
-from antarest.core.utils.collection_utils import index_or_none
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.model import RawStudy, Study, StudyMetadataUpdate
@@ -323,8 +322,7 @@ class SnapshotGenerator:
         Search for the reference study and the commands to use for snapshot generation.
 
         Args:
-            root_study: The root study from which the descendants of variants are derived.
-            descendants: The list of descendants of variants from top to bottom.
+            lineage: lineage of the variant study
             from_scratch: Whether to generate the snapshot from scratch or not.
 
         Returns:
@@ -340,40 +338,27 @@ class SnapshotGenerator:
                 force_regenerate=True,
             )
 
-        # 1st case: The variant snapshot is already up to date -> No-op.
-        # This is handled via the `variant_study_service` before calling the SnapshotGenerator, so we should not bother.
-        # And even if it was the case, the 2nd case will handle it.
-        # This way we avoid making unnecessary DB queries.
-
-        # 2nd case: The variant has a snapshot, but it is not up to date.
-        # We only have to check if we can reuse the snapshot to minimize the generation time.
-        # We can reuse the snapshot if the last executed command is still present in the variant commands list.
-        # It's not always the case as the user could have removed a command or replaced them all.
         snapshot_status = lineage.get_leaf_snapshot_status()
         match snapshot_status:
-            case "absent", "parents_changed":  # we need to re-create the snapshot from parent studies in either case
+            case "absent" | "parents_changed":  # we need to re-create the snapshot from parent studies in either case
                 ref_study, commands = _find_last_snapshot_up_to_date(lineage)
                 return RefStudySearchResult(ref_study=ref_study, cmd_blocks=commands, force_regenerate=True)
 
-            case "leaf_changed", "unchanged":
+            case "leaf_changed" | "unchanged":
+                # we try to re-use the existing snapshot
+                # should never get "unchanged", but it won't hurt
                 study = lineage.leaf_study
                 assert isinstance(study, VariantStudy) and study.snapshot is not None
 
-                if study.snapshot.last_executed_command is None:  # Snapshot was generated for empty list of commands
-                    return RefStudySearchResult(ref_study=study, cmd_blocks=study.commands, force_regenerate=False)
-
                 command_ids = [c.id for c in study.commands]
-                last_cmd_idx = index_or_none(command_ids, study.snapshot.last_executed_command)
-                if last_cmd_idx is None:
+                if study.snapshot.last_executed_command is None:  # Snapshot was generated for empty list of commands
+                    new_commands = study.commands
+                elif study.snapshot.last_executed_command in command_ids:
+                    idx = command_ids.index(study.snapshot.last_executed_command)
+                    new_commands = study.commands[idx + 1 :]
+                else:
                     # Fall back to regeneration from ancestors
                     ref_study, commands = _find_last_snapshot_up_to_date(lineage)
                     return RefStudySearchResult(ref_study=ref_study, cmd_blocks=commands, force_regenerate=True)
-                else:
-                    return RefStudySearchResult(
-                        ref_study=study, cmd_blocks=study.commands[last_cmd_idx + 1 :], force_regenerate=False
-                    )
 
-        raise ShouldNotHappenException()
-        # Final case: The variant has no snapshot, or its `last_executed_command` does not exist anymore.
-        # We search for a variant with an up-to-date snapshot to use it as a reference study.
-        # If no such variant is found, we use the root study as a reference study.
+                return RefStudySearchResult(ref_study=study, cmd_blocks=new_commands, force_regenerate=False)
