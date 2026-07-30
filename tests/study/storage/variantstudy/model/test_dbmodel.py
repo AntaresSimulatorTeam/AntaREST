@@ -29,7 +29,7 @@ from antarest.study.model import StorageMode
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     CommandsListVersion,
-    StudyLineageVersions,
+    LineageVersions,
     VariantStudy,
     VariantStudySnapshot,
 )
@@ -100,7 +100,7 @@ class TestVariantStudySnapshot:
         """
         with db_session:
             snap = VariantStudySnapshot(
-                id=variant_study_id, lineage_versions=StudyLineageVersions.from_tuples([(variant_study_id, 13)])
+                id=variant_study_id, lineage_versions=LineageVersions.from_tuples([(variant_study_id, 13)])
             )
             db_session.add(snap)
             db_session.commit()
@@ -114,7 +114,7 @@ class TestVariantStudySnapshot:
 
         # check Study fields
         assert obj.id == variant_study_id
-        assert obj.lineage_versions == StudyLineageVersions.from_tuples([(variant_study_id, 13)])
+        assert obj.lineage_versions == LineageVersions.from_tuples([(variant_study_id, 13)])
         assert obj.last_executed_command is None
 
     def test_init__with_command(self, db_session: Session, variant_study_id: str) -> None:
@@ -126,7 +126,7 @@ class TestVariantStudySnapshot:
         with db_session:
             snap = VariantStudySnapshot(
                 id=variant_study_id,
-                lineage_versions=StudyLineageVersions.from_tuples([(variant_study_id, 2)]),
+                lineage_versions=LineageVersions.from_tuples([(variant_study_id, 2)]),
                 last_executed_command=command_id,
             )
             db_session.add(snap)
@@ -136,7 +136,7 @@ class TestVariantStudySnapshot:
             db_session.query(VariantStudySnapshot).filter(VariantStudySnapshot.id == variant_study_id).one()
         )
         assert obj.id == variant_study_id
-        assert obj.lineage_versions == StudyLineageVersions.from_tuples([(variant_study_id, 2)])
+        assert obj.lineage_versions == LineageVersions.from_tuples([(variant_study_id, 2)])
         assert obj.last_executed_command == command_id
 
 
@@ -283,7 +283,7 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
 
     # 2nd case: Add the snapshot in DB with a version 0 which matches the command blocks version -> Up to date
     variant.snapshot = VariantStudySnapshot(
-        id=variant_id, lineage_versions=StudyLineageVersions.from_tuples([(variant_id, 0)]), last_executed_command=None
+        id=variant_id, lineage_versions=LineageVersions.from_tuples([(variant_id, 0)]), last_executed_command=None
     )
     session.add(variant)
     session.commit()
@@ -300,7 +300,7 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
 
     # 4th case: Adapt the version in the study snapshot to match the commands one -> Up to date
-    variant.snapshot.lineage_versions = StudyLineageVersions.from_tuples([(variant_id, 1)])
+    variant.snapshot.lineage_versions = LineageVersions.from_tuples([(variant_id, 1)])
     session.add(variant)
     session.commit()
 

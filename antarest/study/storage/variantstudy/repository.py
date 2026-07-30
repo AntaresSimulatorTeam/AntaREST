@@ -24,8 +24,7 @@ from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     CommandsListVersion,
-    StudyDataVersion,
-    StudyLineageVersions,
+    LineageVersions,
     VariantStudy,
     VariantStudySnapshot,
 )
@@ -228,10 +227,10 @@ class VariantStudyRepository(StudyMetadataRepository):
         ).scalar_one_or_none()
         if snapshot_versions is None:
             return False
-        lineage_versions = self.get_lineage_version(variant_id)
-        return lineage_versions == snapshot_versions
+        current_versions = self.get_lineage_versions(variant_id)
+        return snapshot_versions.is_up_to_date_with(current_versions)
 
-    def get_lineage_version(self, variant_id: str) -> StudyLineageVersions:
+    def get_lineage_versions(self, variant_id: str) -> LineageVersions:
         base_q = select(Study.id, Study.parent_id, literal(0).label("depth")).where(Study.id == variant_id)
         cte = base_q.cte("ancestor_cte", recursive=True)
         recursive_q = select(Study.id, Study.parent_id, (cte.c.depth + 1).label("depth")).join(
@@ -249,4 +248,4 @@ class VariantStudyRepository(StudyMetadataRepository):
         )
         lineage_data = self.session.execute(stmt).all()
 
-        return StudyLineageVersions(parents_versions=[StudyDataVersion(row[0], row[1]) for row in lineage_data])
+        return LineageVersions([(row[0], row[1]) for row in lineage_data])

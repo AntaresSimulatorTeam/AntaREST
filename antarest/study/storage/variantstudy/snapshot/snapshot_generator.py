@@ -33,8 +33,7 @@ from antarest.study.storage.utils import (
 )
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
-    StudyDataVersion,
-    StudyLineageVersions,
+    LineageVersions,
     VariantStudy,
     VariantStudySnapshot,
 )
@@ -79,19 +78,17 @@ def _find_last_snapshot_up_to_date(
         if variant.snapshot is None:
             continue
         current_lineage_versions = get_lineage_versions(variants[: var_index + 1])
-        if variant.snapshot.lineage_versions == current_lineage_versions:
+        if variant.snapshot.lineage_versions.is_up_to_date_with(current_lineage_versions):
             commands = _aggregate_command_blocks(variants[var_index + 1 :])
             return variant, commands
     return None, _aggregate_command_blocks(variants)
 
 
-def get_lineage_versions(lineage: Sequence[VariantStudy]) -> StudyLineageVersions:
-    return StudyLineageVersions(
-        parents_versions=[StudyDataVersion(study_id=v.id, study_version=v.commands_version.version) for v in lineage]
-    )
+def get_lineage_versions(lineage: Sequence[VariantStudy]) -> LineageVersions:
+    return LineageVersions(versions=[(v.id, v.commands_version.version) for v in lineage])
 
 
-def get_ref_study_snapshot_id(ref_study: Study) -> StudyLineageVersions:
+def get_ref_study_snapshot_id(ref_study: Study) -> LineageVersions:
     match ref_study:
         case VariantStudy():
             if snapshot := ref_study.snapshot:
@@ -99,7 +96,7 @@ def get_ref_study_snapshot_id(ref_study: Study) -> StudyLineageVersions:
             raise ShouldNotHappenException("Snapshot of reference study does not exist.")
         case RawStudy():
             # TODO: for now raw study data is not versioned
-            return StudyLineageVersions([])
+            return LineageVersions([])
         case _:
             raise ValueError(f"Unsupported study type: {type(ref_study)}")
 
@@ -167,7 +164,7 @@ class SnapshotGenerator:
                     refreshed_snaphot = self.repository.get_refreshed_snapshot(ref_study.id)
                     final_ref_versions = refreshed_snaphot.lineage_versions if refreshed_snaphot else None
                 else:
-                    final_ref_versions = StudyLineageVersions([])
+                    final_ref_versions = LineageVersions([])
                 if final_ref_versions != initial_ref_versions:
                     raise RefStudyChanged()
 

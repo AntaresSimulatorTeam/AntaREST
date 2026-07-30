@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import datetime
+import itertools
 import json
 import uuid
 from dataclasses import dataclass
@@ -29,43 +30,58 @@ metadata = Base.metadata
 
 
 @dataclass(frozen=True)
-class StudyDataVersion:
-    study_id: str
-    study_version: int
+class LineageVersions:
+    """
+    Carries the versioning information of all variant ancestors of a study.
 
+    Attributes:
+        versions: one tuple (study id, data version) for each ancestor excluding root and including self
+    """
 
-@dataclass(frozen=True)
-class StudyLineageVersions:
-    parents_versions: list[StudyDataVersion]
+    versions: list[tuple[str, int]]
+
+    def is_up_to_date_with(self, current_versions: "LineageVersions") -> bool:
+        """
+        Up to date if lineage has not changed and all versions are equal or greater than current versions
+        """
+        for self_study, current_study in itertools.zip_longest(self.versions, current_versions.versions):
+            if self_study is None or current_study is None:
+                return False
+            self_study_id, self_study_version = self_study
+            current_study_id, current_study_version = current_study
+            if self_study_id != current_study_id:
+                return False
+            if self_study_version < current_study_version:
+                return False
+        return True
 
     def to_json(self) -> str:
-        data = [(s.study_id, s.study_version) for s in self.parents_versions]
-        return json.dumps(data)
+        return json.dumps(self.versions)
 
     @classmethod
-    def from_json(cls, json_repr: str) -> "StudyLineageVersions":
+    def from_json(cls, json_repr: str) -> "LineageVersions":
         data = json.loads(json_repr)
         return cls.from_tuples(data)
 
     @classmethod
-    def from_tuples(cls, data: Sequence[tuple[str, int]]) -> "StudyLineageVersions":
-        return cls(parents_versions=[StudyDataVersion(study_id, version) for study_id, version in data])
+    def from_tuples(cls, data: Sequence[tuple[str, int]]) -> "LineageVersions":
+        return cls(versions=list(data))
 
 
-class StudyLineageVersionsType(TypeDecorator[StudyLineageVersions]):
+class LineageVersionsType(TypeDecorator[LineageVersions]):
     """
-    Defines a type to store lineage versions as a JSON string {"study-id": 3, ...}
+    Defines a type to store lineage versions as a JSON string [["study-id", 3], ...]
     """
 
     impl = String
     cache_ok = True
 
     @override
-    def process_result_value(self, value: str | None, dialect: Dialect) -> StudyLineageVersions | None:
-        return StudyLineageVersions.from_json(value) if value is not None else None
+    def process_result_value(self, value: str | None, dialect: Dialect) -> LineageVersions | None:
+        return LineageVersions.from_json(value) if value is not None else None
 
     @override
-    def process_bind_param(self, value: StudyLineageVersions | None, dialect: Dialect) -> str | None:
+    def process_bind_param(self, value: LineageVersions | None, dialect: Dialect) -> str | None:
         return value.to_json() if value is not None else None
 
 
@@ -91,7 +107,7 @@ class VariantStudySnapshot(Base):
         primary_key=True,
     )
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
-    lineage_versions: Mapped[StudyLineageVersions] = mapped_column(StudyLineageVersionsType())
+    lineage_versions: Mapped[LineageVersions] = mapped_column(LineageVersionsType())
 
     @override
     def __str__(self) -> str:

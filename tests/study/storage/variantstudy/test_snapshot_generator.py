@@ -46,7 +46,7 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
     CommandsListVersion,
-    StudyLineageVersions,
+    LineageVersions,
     VariantStudy,
     VariantStudySnapshot,
 )
@@ -95,7 +95,7 @@ def _create_variant(
 
 def _set_snapshot(variant: VariantStudy, *lineage_versions: tuple[str, int]) -> None:
     variant.snapshot = VariantStudySnapshot(
-        id=variant.id, lineage_versions=StudyLineageVersions.from_tuples(lineage_versions), last_executed_command=None
+        id=variant.id, lineage_versions=LineageVersions.from_tuples(lineage_versions), last_executed_command=None
     )
 
 
