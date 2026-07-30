@@ -90,11 +90,12 @@ class VariantStudySnapshot(Base):
 
     Attributes:
         id: the variant study ID.
-        created_at: the timestamp at which the snapshot was generated.
         last_executed_command: the ID of the last command applied when the snapshot has been generated.
                                This information can be useful to not re-generate the snapshot from scratch
                                (starting from the parent study), when some commands are simply appended
                                to the list of commands.
+        lineage_versions: tracks the command list versions of all parent studies at time of generation, to be able to
+                          correctly identify when the snapshot needs to be updated.
     """
 
     __tablename__ = "variant_study_snapshot"
@@ -194,6 +195,16 @@ class CommandBlock(Base):
 
 
 class CommandsListVersion(Base):
+    """
+    Versions the list of commands of a variant study with an incremental counter.
+
+    The version also serves as a lock to prevent concurrent modifications of the commands list,
+    through "SELECT version FOR UPDATE".
+
+    This is an important piece to guarantee the consistency of variant snapshots with the lists of commands defined
+    in their parents.
+    """
+
     __tablename__ = "commands_list_version"
 
     variant_id: Mapped[str] = mapped_column(

@@ -107,7 +107,7 @@ class RefStudyChanged(Exception):
 
 class SnapshotGenerator:
     """
-    Helper class used to generate snapshots for variant studies.
+    Generates snapshots for variant studies.
     """
 
     def __init__(self, variant_study_service: "VariantStudyService"):
@@ -125,14 +125,31 @@ class SnapshotGenerator:
         from_scratch: bool = False,
         notifier: ITaskNotifier = NoopNotifier(),
     ) -> GenerationResultInfoDTO:
-        # ATTENTION: since we are making changes to disk, a file lock is needed.
-        # The locking is currently done in the `VariantStudyService.generate_task` function
-        # when starting the task. However, it is not enough, because the snapshot generation
-        # need to read the root study or a snapshot of a variant study which may be modified
-        # during the task. Ideally, we should lock the root study and all its descendants,
-        # but it is not currently possible to lock studies.
-        # The locking done at the task level nevertheless makes it possible to limit the risks.
+        """
+        Important notes about concurrent modifications management:
 
+         - since we are making changes to the underlying study, a lock is needed.
+           The locking is currently done in the `VariantStudyService.generate` function
+           when starting the generation, through a file lock.
+
+        Implementation guarantees safety against concurrent modifications of variant parents by:
+
+        - tagging the generated snapshot with the versions of parent studies, so that we know exactly for what
+          commands that snapshot has been generated. If some commands are modified during that generation, they will
+          be taken into account in the next one.
+        - reading all parents commands and their versions in **one** query, so that we are sure we get a consistent
+          view accross all parents.
+        - checking, after copy of the reference study, that its version has not changed during the copy
+        - invalidating the snapshot at the start of the generation: in case of crash during the generation,
+          this ensures we don't keep an incomplete snapshot as valid.
+
+        BUT, the implementation still does not handle correctly concurrent modifications of the root study:
+        Because raw studies are not versioned, their version is not tracked in the snapshot versioning.
+        A concurrent modification of the root study can lead to a snapshot identified as up-to-date but not
+        consistent with that data.
+
+        TODO: In order to fix this, root studies should either be made immutable or versioned.
+        """
         logger.info(f"Generating variant study snapshot for '{variant_study_id}'")
 
         # Note: we don't check any more for READ permissions on the lineage here.
