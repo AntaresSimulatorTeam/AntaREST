@@ -207,3 +207,9 @@ def test_save_folders_which_share_the_same_parent(dao: StudyDao, blob_service: I
     # Specific DB test. Ensure we only have 3 entries in DB: `a`, `b` and `c`. Not `a` twice.
     if isinstance(dao, DatabaseStudyDao):
         assert len(dao.get_session().execute(select(USER_RESOURCES_TABLE)).all()) == 3
+
+
+def test_get_resource_out_of_user_folder(dao: StudyDao) -> None:
+    with pytest.raises(UserResourceNotFound):
+        # Point towards a real resource outside the user folder. Should not be allowed.
+        dao.get_user_resource(PurePosixPath("../settings/generaldata.ini"))
