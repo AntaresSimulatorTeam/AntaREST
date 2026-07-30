@@ -44,7 +44,6 @@ from antarest.login.utils import require_current_user
 from antarest.matrixstore.exceptions import MatrixDataSetNotFound, MatrixNotFound, MatrixNotSupported
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import (
-    NEW_MATRIX_VERSION,
     Matrix,
     MatrixContent,
     MatrixDataSet,
@@ -145,69 +144,6 @@ class ISimpleMatrixService(ABC):
     @abstractmethod
     def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
         raise NotImplementedError
-
-
-class SimpleMatrixService(ISimpleMatrixService):
-    def __init__(self, matrix_content_repository: MatrixContentRepository):
-        self.matrix_content_repository = matrix_content_repository
-        self.usage_providers: list[IMatrixUsageProvider] = []
-        self._predefined_matrices: dict[str, Callable[[], pl.DataFrame]] = {}
-
-    @override
-    def add_predefined_matrix(self, matrix_factory: Callable[[], pl.DataFrame]) -> str:
-        matrix_id = compute_hash(matrix_factory())
-        self._predefined_matrices[matrix_id] = matrix_factory
-        return matrix_id
-
-    @override
-    def create(self, data: pl.DataFrame) -> str:
-        return self.matrix_content_repository.save(data).hash
-
-    @override
-    def create_batch(self, data: Iterator[pl.DataFrame]) -> list[str]:
-        return [self.matrix_content_repository.save(df).hash for df in data]
-
-    @override
-    def get(self, matrix_id: str) -> pl.DataFrame:
-        if matrix_id in self._predefined_matrices:
-            return self._predefined_matrices[matrix_id]()
-        return self.matrix_content_repository.get(matrix_id, matrix_version=NEW_MATRIX_VERSION)
-
-    @override
-    def get_matrices(self) -> list[MatrixMetadataDTO]:
-        raise NotImplementedError()
-
-    @override
-    def yield_matrices(self, matrix_ids: Sequence[str]) -> Iterator[MatrixContent]:
-        for matrix_id in matrix_ids:
-            yield MatrixContent(id=matrix_id, data=self.get(matrix_id))
-
-    @override
-    def exists(self, matrix_id: str) -> bool:
-        return self.all_exist([matrix_id])
-
-    @override
-    def all_exist(self, matrix_ids: Sequence[str]) -> bool:
-        for matrix_id in matrix_ids:
-            if matrix_id not in self._predefined_matrices and not self.matrix_content_repository.exists(matrix_id):
-                return False
-        return True
-
-    @override
-    def delete(self, matrix_id: str) -> None:
-        self.matrix_content_repository.delete(matrix_id)
-
-    @override
-    def register_usage_provider(self, usage_provider: "IMatrixUsageProvider") -> None:
-        self.usage_providers.append(usage_provider)
-
-    @override
-    def get_matrices_references(self, disk_usage: bool) -> dict[str, MatrixReferencesDTO]:
-        raise NotImplementedError
-
-    @override
-    def synchronize_matrix_store(self, dry_run: bool) -> dict[str, MatrixMismatchDTO]:
-        return {}
 
 
 def check_dataframe_compliance(df: pl.DataFrame) -> None:

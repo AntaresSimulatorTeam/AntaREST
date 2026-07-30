@@ -16,7 +16,6 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.exceptions import TaskAlreadyRunning
-from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
@@ -34,7 +33,7 @@ def test_auto_archival() -> None:
 
     now = current_time()
 
-    repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
+    repository = StudyMetadataRepository()
 
     # Add some studies in the database
     db_session = repository.session

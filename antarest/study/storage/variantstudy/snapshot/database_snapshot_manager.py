@@ -22,14 +22,6 @@ class DatabaseSnapshotManager(ISnapshotManager):
         self._database_study_storage = database_study_storage
 
     @override
-    def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
-        return self.has_snapshot(study) and (study.snapshot.created_at >= study.updated_at)
-
-    @override
-    def has_snapshot(self, study: VariantStudy) -> bool:
-        return study.snapshot is not None
-
-    @override
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         self.clear_snapshot(variant_study)
         self._database_study_storage.copy_study_data(ref_study, variant_study.id)

@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -55,6 +56,17 @@ def create_launcher_api() -> APIRouter:
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
         solver_presets_id: SanitizedStr | None = None,
         version: SanitizedStr | None = None,
+        run_at: Annotated[
+            datetime | None,
+            Query(
+                description=(
+                    "ISO-8601 datetime at which to schedule the run. A timezone-aware value is converted"
+                    " to UTC, a naive value (no offset) is assumed to already be UTC."
+                    " If omitted, the study runs immediately."
+                ),
+                examples=["2026-07-15T14:30:00Z", "2026-07-15T16:30:00+02:00"],
+            ),
+        ] = None,
     ) -> JobCreationDTO:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
         selected_launcher = launcher if launcher is not None else config.launcher.default
@@ -66,6 +78,7 @@ def create_launcher_api() -> APIRouter:
                 launcher_parameters,
                 solver_presets_id,
                 version,
+                run_at,
             )
         )
 

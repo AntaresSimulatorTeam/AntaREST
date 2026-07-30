@@ -19,12 +19,14 @@ import threading
 import time
 import traceback
 from collections.abc import Awaitable, Callable
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import cast
 
 import tinydb
 from antares.study.version import SolverVersion
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
+from antareslauncher.enums import XpansionMode
 from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import MainOptionParser, ParserParameters
 from antareslauncher.study_dto import StudyDTO
@@ -82,7 +84,7 @@ class LauncherArgs(argparse.Namespace):
 
         # known arguments
         self.other_options: str = ""
-        self.xpansion_mode: str | None = None
+        self.xpansion_mode: XpansionMode | None = None
         self.time_limit: int = 0
         self.n_cpu: int = 0
         self.post_processing: bool = False
@@ -101,7 +103,7 @@ class LauncherArgs(argparse.Namespace):
             should_run_xpansion = launcher_params.xpansion is True
 
         if should_run_xpansion:
-            self.xpansion_mode = {True: "r", False: "cpp"}[launcher_params.xpansion_r_version]
+            self.xpansion_mode = XpansionMode.R if launcher_params.xpansion_r_version else XpansionMode.CPP
             if isinstance(launcher_params.xpansion, XpansionParametersDTO):
                 if launcher_params.xpansion.sensitivity_mode:
                     self._append_other_option("xpansion_sensitivity")
@@ -176,6 +178,7 @@ class SlurmLauncher(AbstractLauncher):
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])
         self.thread: threading.Thread | None = None
         self.job_list: list[str] = []
+        self._running_notified: set[str] = set()
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
 
@@ -278,6 +281,7 @@ class SlurmLauncher(AbstractLauncher):
         arguments.version = False
         arguments.post_processing = False
         arguments.other_options = None
+        arguments.run_at = None
 
         return arguments
 
@@ -310,7 +314,7 @@ class SlurmLauncher(AbstractLauncher):
     def _import_study_output(
         self,
         job_id: str,
-        xpansion_mode: str | None,
+        xpansion_mode: XpansionMode | None,
         log_dir: str | None,
     ) -> str | None:
         if xpansion_mode:
@@ -329,7 +333,7 @@ class SlurmLauncher(AbstractLauncher):
             additional_logs=launcher_logs,
         )
 
-    def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
+    def _import_xpansion_result(self, job_id: str, xpansion_mode: XpansionMode) -> None:
         output_path = self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output"
         if output_path.exists() and len(os.listdir(output_path)) == 1:
             output_path = output_path / os.listdir(output_path)[0]
@@ -341,7 +345,7 @@ class SlurmLauncher(AbstractLauncher):
                 unzip(unzipped_output_path, output_path)
                 output_path = unzipped_output_path
 
-            if xpansion_mode == "r":
+            if xpansion_mode == XpansionMode.R:
                 shutil.copytree(
                     self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "user" / "expansion",
                     output_path / "results",
@@ -371,6 +375,11 @@ class SlurmLauncher(AbstractLauncher):
                 else:
                     # study.started => still running
                     # study.finished => waiting for ZIP + logs retrieval (or failure)
+                    if study.started and study.name not in self._running_notified:
+                        # The job left the SLURM queue (it was PENDING, possibly held by `--begin`) and
+                        # actually started computing, so flip it to RUNNING (only once).
+                        self._running_notified.add(study.name)
+                        self.callbacks.update_status(study.name, JobStatus.RUNNING, None, None)
                     self.log_tail_manager.track(log_path, self.create_update_log(study.name))
 
             # Re-fetching the study list is necessary as new studies may have been added
@@ -453,6 +462,7 @@ class SlurmLauncher(AbstractLauncher):
 
     def _clean_up_study(self, launch_id: str) -> None:
         logger.info(f"Cleaning up study with launch_id {launch_id}")
+        self._running_notified.discard(launch_id)
         self._remove_study_from_workspace_db(launch_id)
         self._delete_workspace_file(self.local_workspace / STUDIES_OUTPUT_DIR_NAME / launch_id)
         self._delete_workspace_file(self.local_workspace / STUDIES_INPUT_DIR_NAME / launch_id)
@@ -469,6 +479,7 @@ class SlurmLauncher(AbstractLauncher):
         version: SolverVersion,
         jwt_user: JWTUser,
         oversubscribe_core_threshold: int | None = None,
+        run_at: datetime | None = None,
     ) -> None:
         with current_user_context(jwt_user):
             study_path = Path(self.launcher_args.studies_in) / launch_uuid
@@ -492,8 +503,15 @@ class SlurmLauncher(AbstractLauncher):
                         )
                     _override_solver_version(study_path, version)
 
+                    if run_at is not None:
+                        server_time = run_at.replace(tzinfo=timezone.utc).astimezone()
+                        append_log(
+                            launch_uuid,
+                            f"Study scheduled to start at {run_at} UTC"
+                            f" ({server_time:%Y-%m-%d %H:%M:%S %Z} server time)",
+                        )
                     append_log(launch_uuid, "Submitting study to slurm launcher")
-                    launcher_args = self._apply_params(launcher_params, oversubscribe_core_threshold)
+                    launcher_args = self._apply_params(launcher_params, oversubscribe_core_threshold, run_at)
                     self._call_launcher(launcher_args, self.launcher_params)
 
                     launch_success = self._check_if_study_is_in_launcher_db(launch_uuid)
@@ -508,13 +526,13 @@ class SlurmLauncher(AbstractLauncher):
                         logger.warning(
                             f"Study {study_uuid} with job id {launch_uuid} does not seem to have been launched"
                         )
+                        self.callbacks.update_status(
+                            launch_uuid,
+                            JobStatus.FAILED,
+                            None,
+                            None,
+                        )
 
-                    self.callbacks.update_status(
-                        launch_uuid,
-                        JobStatus.RUNNING if launch_success else JobStatus.FAILED,
-                        None,
-                        None,
-                    )
                 except Exception as e:
                     stack_trace = traceback.format_exc()
                     msg = f"Failed to launch study {study_uuid}: see stack trace below:\n{stack_trace}"
@@ -537,7 +555,10 @@ class SlurmLauncher(AbstractLauncher):
         return any(s.name == job_id for s in studies)
 
     def _apply_params(
-        self, launcher_params: LauncherParametersDTO, oversubscribe_core_threshold: int | None = None
+        self,
+        launcher_params: LauncherParametersDTO,
+        oversubscribe_core_threshold: int | None = None,
+        run_at: datetime | None = None,
     ) -> argparse.Namespace:
         """
         Populate a `argparse.Namespace` object with the user parameters.
@@ -547,13 +568,16 @@ class SlurmLauncher(AbstractLauncher):
                 Contains the launcher parameters selected by the user.
                 If a parameter is not provided (`None`), the default value should be retrieved
                 from the configuration.
+            run_at:
+                If set, the launch is scheduled to start at that (naive UTC) time using SLURM `--begin`.
 
         Returns:
             The `argparse.Namespace` object which is then passed to `antarestlauncher.main.run_with`,
             to launch a simulation using Antares Launcher.
         """
+        launcher_args = LauncherArgs(self.launcher_args)
+
         if launcher_params:
-            launcher_args = LauncherArgs(self.launcher_args)
             launcher_args.other_options = launcher_params.other_options or ""
             launcher_args.apply_xpansion_mode(launcher_params)
             launcher_args.apply_time_limit(launcher_params, self.slurm_config.time_limit)
@@ -569,9 +593,8 @@ class SlurmLauncher(AbstractLauncher):
                 # could even lead to security breaches
                 raise ValueError("Other options cannot contain a single quote, you should use double quotes instead")
 
-            return launcher_args
-
-        return self.launcher_args
+        launcher_args.run_at = run_at
+        return launcher_args
 
     @override
     def run_study(
@@ -581,11 +604,12 @@ class SlurmLauncher(AbstractLauncher):
         version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
         oversubscribe_core_threshold: int | None = None,
+        run_at: datetime | None = None,
     ) -> None:
         user = require_current_user()
         thread = threading.Thread(
             target=self._run_study,
-            args=(study_uuid, job_id, launcher_parameters, version, user, oversubscribe_core_threshold),
+            args=(study_uuid, job_id, launcher_parameters, version, user, oversubscribe_core_threshold, run_at),
             name=f"{self.__class__.__name__}-JobRunner",
         )
         thread.start()

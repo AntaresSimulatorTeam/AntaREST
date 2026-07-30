@@ -29,7 +29,7 @@ from pydantic import (
     model_validator,
 )
 from pydantic.alias_generators import to_camel
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
@@ -140,6 +140,7 @@ class JobResultDTO(AntaresBaseModel):
     - launcher_params: Parameters related to the launcher.
     - status: The status of the task. It can be one of the following: "pending", "failed", "success", or "running".
     - creation_date: The date of creation of the task.
+    - scheduled_at: The requested start time.
     - completion_date: The date of completion of the task, if available.
     - msg: A message associated with the task, either for the user or for error description.
     - output_id: The identifier of the simulation results.
@@ -155,6 +156,7 @@ class JobResultDTO(AntaresBaseModel):
     launcher_params: str | None
     status: JobStatus
     creation_date: str
+    scheduled_at: str | None = None
     completion_date: str | None
     msg: str | None
     output_id: str | None
@@ -215,6 +217,7 @@ class JobResult(Base):
     launcher_params: Mapped[str | None] = mapped_column(String, nullable=True)
     job_status: Mapped[JobStatus | None] = mapped_column(Enum(JobStatus), nullable=True)
     creation_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     completion_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     msg: Mapped[str | None] = mapped_column(String())
     output_id: Mapped[str | None] = mapped_column(String())
@@ -238,6 +241,7 @@ class JobResult(Base):
             launcher_params=self.launcher_params,
             status=self.job_status,
             creation_date=str(self.creation_date),
+            scheduled_at=str(self.scheduled_at) if self.scheduled_at else None,
             completion_date=str(self.completion_date) if self.completion_date else None,
             msg=self.msg,
             output_id=self.output_id,
@@ -321,7 +325,7 @@ class LauncherListDTO(AntaresBaseModel):
     default_launcher: str
 
 
-class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel):
+class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     """
     DTO representing the load of the SLURM cluster or local machine.
 
@@ -353,6 +357,50 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
         description="The status of the launcher: 'SUCCESS' or 'FAILED'",
         title="Launcher Status",
     )
+
+
+class LauncherLoad(Base):
+    """
+    SQLAlchemy model storing cached load information for a launcher.
+
+    Attributes:
+        launcher_name: ID/name of the launcher.
+        allocated_cpu_rate: The rate of allocated CPU, in range (0, 100).
+        cluster_load_rate: The rate of cluster load, in range (0, 100).
+        nb_queued_jobs: The number of queued jobs.
+        launcher_status: The status of the launcher.
+        date: Timestamp when the load was recorded.
+    """
+
+    __tablename__ = "launchers_loads"
+
+    launcher_name: Mapped[str] = mapped_column(String(20), primary_key=True)
+    allocated_cpu_rate: Mapped[float] = mapped_column(Float)
+    cluster_load_rate: Mapped[float] = mapped_column(Float())
+    nb_queued_jobs: Mapped[int] = mapped_column(Integer())
+    launcher_status: Mapped[str] = mapped_column(String(100))
+    date: Mapped[datetime] = mapped_column(DateTime())
+
+    @classmethod
+    def from_dto(cls, dto: LauncherLoadDTO, name: str) -> "LauncherLoad":
+        from antarest.core.utils.utils import current_time
+
+        return cls(
+            launcher_name=name,
+            allocated_cpu_rate=dto.allocated_cpu_rate,
+            cluster_load_rate=dto.cluster_load_rate,
+            nb_queued_jobs=dto.nb_queued_jobs,
+            launcher_status=dto.launcher_status,
+            date=current_time(),
+        )
+
+    def to_dto(self) -> LauncherLoadDTO:
+        return LauncherLoadDTO(
+            allocated_cpu_rate=self.allocated_cpu_rate,
+            cluster_load_rate=self.cluster_load_rate,
+            nb_queued_jobs=self.nb_queued_jobs,
+            launcher_status=self.launcher_status,
+        )
 
 
 class SolverPresets(AntaresBaseModel):

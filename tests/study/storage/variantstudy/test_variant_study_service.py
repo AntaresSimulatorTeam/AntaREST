@@ -27,7 +27,6 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
-from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import Study
@@ -118,7 +117,6 @@ class TestVariantStudyService:
         tmp_path: Path,
         variant_study_service: VariantStudyService,
         raw_study_service: RawStudyService,
-        simple_matrix_service: SimpleMatrixService,
         simple_blob_service: IBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
         study_service: StudyService,
@@ -126,6 +124,7 @@ class TestVariantStudyService:
         # pytest parameter
         from_scratch: bool,
     ) -> None:
+        matrix_service = generator_matrix_constants.matrix_service
         ## Prepare database objects
         # noinspection PyArgumentList
         user = User(id=1, name="admin")
@@ -167,7 +166,7 @@ class TestVariantStudyService:
 
         command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
-            matrix_service=simple_matrix_service,
+            matrix_service=matrix_service,
             blob_service=simple_blob_service,
         )
 
@@ -199,10 +198,7 @@ class TestVariantStudyService:
         with current_user_context(jwt_user):
             study_service.get_study_interface(variant_study).add_commands([create_area_fr, create_st_storage])
             ## Run the "generate" task
-            actual_uui = variant_study_service.generate_task(
-                variant_study,
-                from_scratch=from_scratch,
-            )
+            actual_uui = variant_study_service.launch_generation_task(variant_study, from_scratch=from_scratch)
         assert re.fullmatch(
             r"[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}",
             actual_uui,
@@ -285,7 +281,7 @@ class TestVariantStudyService:
                 variant_study = variant_study_service.create_variant_study(raw_study.id, f"Variant{str(index)}")
                 variant_list.append(variant_study)
                 # Generate a snapshot for each variant
-                variant_study_service.generate(variant_list[index].id, False)
+                variant_study_service.generate(variant_list[index], False)
 
                 # Modify the `created_at` and `updated_at` attributes in DB.
                 with db():

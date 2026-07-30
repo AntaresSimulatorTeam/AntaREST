@@ -13,6 +13,7 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintCreation,
 )
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -86,10 +87,9 @@ class TestRemoveSTStorageAdditionalConstraint:
             }
         }
 
-    def test_error_cases(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
-        study = empty_study_920
-        dao = build_dao_from_file_study(study, command_context)
-        version = study.config.version
+    def test_error_cases(self, command_context: CommandContext, dao_92: StudyDao) -> None:
+        dao = dao_92
+        version = dao.get_version()
 
         # Removes a constraint in a fake area
         cmd = RemoveMultipleSTStorageConstraints(
@@ -104,7 +104,7 @@ class TestRemoveSTStorageAdditionalConstraint:
         assert output.message == "Short-term storage constraint 'constraint' not found."
 
         # Create the area `fr`
-        CreateArea(area_name="fr", command_context=command_context, study_version=study.config.version).apply(dao)
+        CreateArea(area_name="fr", command_context=command_context, study_version=version).apply(dao)
 
         # Removes a fake constraint
         output = cmd.apply(dao)

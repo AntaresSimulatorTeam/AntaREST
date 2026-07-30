@@ -15,6 +15,7 @@ import os
 import platform
 import string
 import tempfile
+from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, ClassVar
@@ -445,6 +446,8 @@ class LauncherConfig(ConfigBaseModel):
     default: str = Field(default="local")
     configs: list[LocalConfig | SlurmConfig] | None = None
     batch_size: int = 9999
+    launcher_cache_sleeping_time: int = 30
+    launcher_cache_validity_time: timedelta = timedelta(minutes=10)
 
     @model_validator(mode="before")
     @classmethod

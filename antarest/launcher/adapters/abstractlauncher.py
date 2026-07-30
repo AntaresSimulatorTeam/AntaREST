@@ -13,6 +13,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple, Protocol
 
@@ -78,6 +79,7 @@ class AbstractLauncher(ABC):
         version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
         oversubscribe_core_threshold: int | None = None,
+        run_at: datetime | None = None,
     ) -> None:
         raise NotImplementedError()
 

@@ -20,6 +20,7 @@ import sys
 import threading
 import time
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -33,7 +34,7 @@ from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.exceptions import NoValidOutputError
+from antarest.launcher.exceptions import InvalidScheduleTime, NoValidOutputError
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
 from antarest.login.utils import current_user_context, require_current_user
 from antarest.study.model import STUDY_VERSION_9_2
@@ -88,7 +89,25 @@ class LocalLauncher(AbstractLauncher):
         version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
         oversubscribe_core_threshold: int | None = None,  # SLURM-only, ignored by the local launcher
+        run_at: datetime | None = None,
     ) -> None:
+        if run_at is not None:
+            self.callbacks.update_status(
+                job_id,
+                JobStatus.FAILED,
+                None,
+                None,
+            )
+            raise InvalidScheduleTime("Scheduling a launch at a given time is only supported on SLURM launchers")
+        if oversubscribe_core_threshold is not None:
+            self.callbacks.update_status(
+                job_id,
+                JobStatus.FAILED,
+                None,
+                None,
+            )
+            raise ValueError("local launcher doesn't support oversubscribe")
+
         antares_solver_path = self._select_best_binary(version)
         self.submitted_jobs[job_id] = launcher_parameters
 

@@ -12,20 +12,15 @@
 import itertools
 import logging
 import uuid
-from collections.abc import Callable
-from typing import Any
 
 from antarest.core.utils.utils import StopWatch
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.variantstudy.model.command.common import CommandOutput, command_failed
+from antarest.study.storage.variantstudy.model.command.common import command_failed
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO, NewDetailsDTO
 
 logger = logging.getLogger(__name__)
-
-APPLY_CALLBACK = Callable[[ICommand, StudyDao, ICommandListener | None], CommandOutput[Any]]
 
 
 class CmdNotifier:
@@ -38,12 +33,8 @@ class CmdNotifier:
         logger.info(f"Command {self.index}/{self.total_count} [{self.study_id}] applied in {elapsed}s")
 
 
-def _generate(
-    commands: list[list[ICommand]],
-    data: StudyDao,
-    applier: APPLY_CALLBACK,
-    metadata: VariantStudy,
-    listener: ICommandListener | None = None,
+def apply_commands_to_variant(
+    commands: list[list[ICommand]], metadata: VariantStudy, study: StudyDao
 ) -> GenerationResultInfoDTO:
     stopwatch = StopWatch()
     # Apply commands
@@ -59,7 +50,7 @@ def _generate(
     # Store all the outputs
     for index, cmd in enumerate(all_commands, 1):
         try:
-            output = applier(cmd, data, listener)
+            output = cmd.apply(study)
         except Exception as e:
             # Unhandled exception
             output = command_failed(message=f"Error while applying command {cmd.command_name}")
@@ -90,21 +81,3 @@ def _generate(
 
     logger.info(f"Variant generation done in {stopwatch.since_start}s")
     return results
-
-
-def apply_commands_to_variant(
-    commands: list[list[ICommand]],
-    metadata: VariantStudy,
-    study: StudyDao,
-    listener: ICommandListener | None = None,
-) -> GenerationResultInfoDTO:
-    # Build file study
-    logger.info("Building study tree")
-
-    return _generate(
-        commands,
-        study,
-        lambda command, data, _listener: command.apply(study, _listener),
-        metadata,
-        listener,
-    )
