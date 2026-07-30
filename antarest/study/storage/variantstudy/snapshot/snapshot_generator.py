@@ -61,6 +61,25 @@ def _aggregate_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandB
     return [cmd for variant in variants for cmd in variant.commands]
 
 
+def _is_snapshot_up_to_date(lineage: Sequence[VariantStudy]) -> bool:
+    """
+    Checks if the snapshot of the given variant is up to date with the given variants.
+    """
+    variant = lineage[-1]
+    if variant.snapshot is None:
+        return False
+    current_lineage_versions = get_lineage_versions(lineage)
+    return variant.snapshot.lineage_versions.is_up_to_date_with(current_lineage_versions)
+
+
+def _has_snapshot_up_to_date_with_parents(lineage: Sequence[VariantStudy]) -> bool:
+    current_variant = lineage[-1]
+    if current_variant.snapshot is None:
+        return False
+    current_lineage_versions = get_lineage_versions(lineage)
+    return current_variant.snapshot.lineage_versions.versions[:-1] == current_lineage_versions.versions[:-1]
+
+
 def _find_last_snapshot_up_to_date(
     variants: Sequence[VariantStudy],
 ) -> tuple[VariantStudy | None, list[CommandBlock]]:
@@ -74,13 +93,9 @@ def _find_last_snapshot_up_to_date(
     It also returns the list of commands to apply in order (from the oldest to the most recent command).
     """
     for var_index in reversed(range(len(variants))):
-        variant = variants[var_index]
-        if variant.snapshot is None:
-            continue
-        current_lineage_versions = get_lineage_versions(variants[: var_index + 1])
-        if variant.snapshot.lineage_versions.is_up_to_date_with(current_lineage_versions):
+        if _is_snapshot_up_to_date(variants[: var_index + 1]):
             commands = _aggregate_command_blocks(variants[var_index + 1 :])
-            return variant, commands
+            return variants[var_index], commands
     return None, _aggregate_command_blocks(variants)
 
 
@@ -290,7 +305,8 @@ class SnapshotGenerator:
         # We only have to check if we can reuse the snapshot to minimize the generation time.
         # We can reuse the snapshot if the last executed command is still present in the variant commands list.
         # It's not always the case as the user could have removed a command or replaced them all.
-        if current_variant.snapshot is not None:
+        if _has_snapshot_up_to_date_with_parents(descendants):
+            assert current_variant.snapshot is not None
             if last_executed_cmd_id := current_variant.snapshot.last_executed_command:
                 for command_block in current_variant.commands:
                     if command_block.id == last_executed_cmd_id:
