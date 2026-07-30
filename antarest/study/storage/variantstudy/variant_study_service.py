@@ -189,9 +189,10 @@ class VariantStudyService(AbstractStudyService):
         self._snapshot_manager_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
         self.invalidate_snapshot(variant_study)
 
-    def _update_editor(self, study: VariantStudy) -> None:
+    def _update_edition_metadata(self, study: VariantStudy) -> None:
         user_name = get_current_user_name()
         study.editor = user_name
+        study.updated_at = current_time()
         self.repository.save(study)
 
     def get_commands(self, study_id: str) -> list[CommandDTOAPI]:
@@ -248,7 +249,6 @@ class VariantStudyService(AbstractStudyService):
         assert_permission(study, StudyPermissionType.WRITE)
 
         command_ids = self._modify_commands(study, commands, replace_commands=False)
-        self.on_variant_advance(study)
         self.generate(study)
         return command_ids
 
@@ -265,7 +265,6 @@ class VariantStudyService(AbstractStudyService):
         assert_permission(study, StudyPermissionType.WRITE)
 
         self._modify_commands(study, commands, replace_commands=True)
-        self.on_variant_rebase(study)
         self.generate(study)
         return study_id
 
@@ -304,7 +303,7 @@ class VariantStudyService(AbstractStudyService):
         study.commands_version.version += 1
 
         # Update the editor
-        self._update_editor(study)
+        self._update_edition_metadata(study)
         return [c.id for c in new_commands]
 
     def remove_command(self, study_id: str, command_id: str) -> None:
@@ -336,7 +335,7 @@ class VariantStudyService(AbstractStudyService):
         study.commands = new_commands
         study.commands_version.version += 1
 
-        self._update_editor(study)
+        self._update_edition_metadata(study)
         self.on_parent_change(study.id)
         self.generate(study)
 
@@ -356,8 +355,7 @@ class VariantStudyService(AbstractStudyService):
         study.commands = []
         study.commands_version.version = current_cmd_version + 1
 
-        self._update_editor(study)
-        self.on_variant_rebase(study)
+        self._update_edition_metadata(study)
         self.clear_snapshot(study)
 
     def _get_variant_study(self, study_id: str) -> VariantStudy:
@@ -402,38 +400,23 @@ class VariantStudyService(AbstractStudyService):
         assert_permission(study, StudyPermissionType.READ)
         return study
 
-    def on_variant_advance(self, study: VariantStudy) -> None:
-        """
-        Takes necessary actions when some study commands have been appended to this study.
-        It will need a snapshot generation (NOT from scratch),
-        and children need to be notified of their parent change.
-        """
-        study.updated_at = current_time()
-        self.repository.save(metadata=study)
-        self.on_parent_change(study.id)
-
     def get_children(self, parent_id: str) -> list[VariantStudy]:
         """
         Get the direct children of the specified study (in chronological creation order).
         """
         return self.repository.get_children(parent_id=parent_id)
 
-    def on_variant_rebase(self, study: VariantStudy) -> None:
-        """
-        This variant has been "rebased" in the sense of git (history changed):
-        it will need a generation from scratch, and children need
-        to be rebased too.
-        """
-        self.invalidate_snapshot(study)
-        self.on_parent_change(study.id)
-
     def on_parent_change(self, study_id: str) -> None:
         """
         Takes all necessary actions on children when a study history has changed.
+
+        We still need this when a raw study is updated, because their data are not versioned and we
+        cannot track their changes correctly in snapshots versioning.
         """
         # TODO: optimize to not perform one request per child
         for child in self.get_children(parent_id=study_id):
-            self.on_variant_rebase(child)
+            self.invalidate_snapshot(child)
+            self.on_parent_change(child.id)
 
     def has_children(self, study: Study) -> bool:
         return self.repository.has_children(study.id)
