@@ -97,7 +97,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             # Skip parts covered by parent IDs.
             parts = resource_path.parts[len(parent_ids) :]
 
-            if not parts and resource.resource_type == ResourceType.FILE:
+            if not parts:
                 raise ValueError(f"Cannot create 2 resources of different type at the same path '{resource_path}'")
 
             for k, part in enumerate(parts):
