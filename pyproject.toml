@@ -17,7 +17,7 @@ classifiers=[
         "Operating System :: OS Independent",
     ]
 dependencies = [
-    "antares-launcher==1.4.9",
+    "antares-launcher==1.6.0",
     "antares-study-version==1.0.20",
     "antares-timeseries-generation==0.1.9",
     "fastapi==0.135.1",
