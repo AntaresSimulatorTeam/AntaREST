@@ -12,11 +12,11 @@
 
 import datetime
 import itertools
-import json
 import uuid
 from dataclasses import dataclass
-from typing import Any, Sequence
+from typing import Any
 
+from pydantic import TypeAdapter
 from sqlalchemy import DateTime, Dialect, ForeignKey, Integer, String, TypeDecorator
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
@@ -27,6 +27,9 @@ from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 metadata = Base.metadata
+
+
+VERSIONS_ADAPTER = TypeAdapter(list[tuple[str, int]])
 
 
 @dataclass(frozen=True)
@@ -56,16 +59,12 @@ class LineageVersions:
         return True
 
     def to_json(self) -> str:
-        return json.dumps(self.versions)
+        return VERSIONS_ADAPTER.dump_json(self.versions).decode("utf-8")
 
     @classmethod
     def from_json(cls, json_repr: str) -> "LineageVersions":
-        data = json.loads(json_repr)
-        return cls.from_tuples(data)
-
-    @classmethod
-    def from_tuples(cls, data: Sequence[tuple[str, int]]) -> "LineageVersions":
-        return cls(versions=list(data))
+        data = VERSIONS_ADAPTER.validate_json(json_repr)
+        return cls(data)
 
 
 class LineageVersionsType(TypeDecorator[LineageVersions]):
