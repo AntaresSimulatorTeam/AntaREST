@@ -222,3 +222,18 @@ def test_get_resource_out_of_user_folder(dao: StudyDao) -> None:
     with pytest.raises(UserResourceNotFound):
         # Point towards a real resource outside the user folder. Should not be allowed.
         dao.get_user_resource(PurePosixPath("../settings/generaldata.ini"))
+
+
+def test_save_relative_folder_use_the_longest_parent(db_dao: DatabaseStudyDao) -> None:
+    db_dao.save_user_resources(
+        [
+            UserResourceDataCreation(path=PurePosixPath("a/b"), resource_type=ResourceType.FOLDER),
+            UserResourceDataCreation(path=PurePosixPath("a/c"), resource_type=ResourceType.FOLDER),
+            UserResourceDataCreation(path=PurePosixPath("a/c/d"), resource_type=ResourceType.FOLDER),
+        ]
+    )
+    res = db_dao.get_all_user_resources()
+    assert len(res) == 2  # Should only be 'a/b' and 'a/c/d'
+
+    rows = db_dao.get_session().execute(select(USER_RESOURCES_TABLE)).fetchall()
+    assert len(rows) == 4  # Should only be 'a', 'b', 'c' and 'd'

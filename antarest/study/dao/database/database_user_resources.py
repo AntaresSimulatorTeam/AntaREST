@@ -74,7 +74,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 continue
 
             # Find potential existing parent IDs for the new resource.
-            parent_ids = []
+            parent_ids: list[str] = []
             for res, data in tree.items():
                 if res == resource_path:
                     continue
@@ -86,13 +86,13 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                     else:
                         break
 
-                if common_parts_count > 0:
+                if common_parts_count > len(parent_ids):
+                    # We want to find the longest common path between all existing resources and the new one.
                     parent_ids = data.ids[:common_parts_count]
-                    break
 
             # Build the resource tree.
             parent_id = parent_ids[-1] if parent_ids else None
-            ids = []
+            ids = parent_ids
 
             # Skip parts covered by parent IDs.
             parts = resource_path.parts[len(parent_ids) :]
