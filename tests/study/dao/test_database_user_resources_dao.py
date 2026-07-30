@@ -197,6 +197,15 @@ def test_save_a_file_with_the_same_name_as_an_existing_folder(dao: StudyDao, blo
             ]
         )
 
+    # Another case that wasn't handled at first
+    with pytest.raises(expected_error, match=expected_msg):
+        dao.save_user_resources(
+            [
+                UserResourceDataCreation(path=PurePosixPath("b/c"), resource_type=ResourceType.FOLDER),
+                UserResourceDataCreation(path=PurePosixPath("b"), resource_type=ResourceType.FILE, blob_id=blob_id),
+            ]
+        )
+
 
 def test_save_folders_which_share_the_same_parent(dao: StudyDao, blob_service: InMemoryBlobService) -> None:
     dao.save_user_resources([UserResourceDataCreation(path=PurePosixPath("a/b"), resource_type=ResourceType.FOLDER)])
