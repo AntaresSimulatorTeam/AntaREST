@@ -14,7 +14,7 @@ import json
 import math
 import os
 import time
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock, call
@@ -45,7 +45,7 @@ from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
-from antarest.launcher.exceptions import NoValidOutputError
+from antarest.launcher.exceptions import InvalidScheduleTime, NoValidOutputError
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
@@ -61,6 +61,7 @@ from antarest.launcher.model import (
 from antarest.launcher.service import (
     EXECUTION_INFO_FILE,
     LAUNCHER_PARAM_NAME_SUFFIX,
+    MAX_SCHEDULE_HORIZON,
     IncompatibleSolverPresets,
     JobNotFound,
     LauncherService,
@@ -1304,3 +1305,34 @@ class TestLauncherService:
         params_with_other_options = LauncherParametersDTO(other_options="--some-option")
         with pytest.raises(IncompatibleSolverPresets):
             launcher_service.run_study("study_uuid", "local", params_with_other_options, "config-1", "8.0")
+
+
+class TestNormalizeScheduledAt:
+    NOW = datetime(2026, 7, 7, 12, 0, 0)
+
+    @pytest.fixture(autouse=True)
+    def _freeze_now(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("antarest.launcher.service.current_time", lambda: self.NOW)
+
+    def test_naive_future_is_returned_unchanged(self) -> None:
+        run_at = self.NOW + timedelta(hours=6)
+        assert LauncherService._normalize_scheduled_at(run_at) == run_at
+
+    def test_aware_input_is_converted_to_naive_utc(self) -> None:
+        run_at = datetime(2026, 7, 7, 20, 0, 0, tzinfo=timezone(timedelta(hours=2)))
+        result = LauncherService._normalize_scheduled_at(run_at)
+        assert result == datetime(2026, 7, 7, 18, 0, 0)
+        assert result.tzinfo is None
+
+    def test_past_time_raises(self) -> None:
+        with pytest.raises(InvalidScheduleTime):
+            LauncherService._normalize_scheduled_at(self.NOW - timedelta(seconds=1))
+
+    def test_now_raises(self) -> None:
+        # Must be strictly in the future.
+        with pytest.raises(InvalidScheduleTime):
+            LauncherService._normalize_scheduled_at(self.NOW)
+
+    def test_beyond_horizon_raises(self) -> None:
+        with pytest.raises(InvalidScheduleTime):
+            LauncherService._normalize_scheduled_at(self.NOW + MAX_SCHEDULE_HORIZON + timedelta(seconds=1))

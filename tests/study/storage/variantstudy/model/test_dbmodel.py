@@ -287,6 +287,7 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
     session.commit()
 
     variant = session.get(VariantStudy, variant_id)
+    session.refresh(variant)
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
 
     # 4th case: Adapt the version in the study snapshot to match the commands one -> Up to date

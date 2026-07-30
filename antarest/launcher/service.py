@@ -13,6 +13,7 @@ import functools
 import logging
 import os
 import shutil
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -35,7 +36,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
-from antarest.launcher.exceptions import NoValidOutputError
+from antarest.launcher.exceptions import InvalidScheduleTime, NoValidOutputError
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
@@ -96,6 +97,8 @@ class LauncherServiceNotAvailableException(HTTPException):
 
 LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
 EXECUTION_INFO_FILE = "execution_info.ini"
+
+MAX_SCHEDULE_HORIZON = timedelta(days=15)
 
 
 class LauncherService:
@@ -216,6 +219,27 @@ class LauncherService:
     def _generate_new_id() -> str:
         return str(uuid4())
 
+    @staticmethod
+    def _normalize_scheduled_at(run_at: datetime) -> datetime:
+        """
+        Validate a requested scheduled start time and convert it to a naive UTC datetime.
+
+        A naive `run_at` is assumed to already be UTC; an aware one is converted to UTC.
+
+        Raises:
+            InvalidScheduleTime: if the time is not in the future or beyond the allowed horizon.
+        """
+        if run_at.tzinfo is not None:
+            run_at = run_at.astimezone(timezone.utc).replace(tzinfo=None)
+        now = current_time()
+        if run_at <= now:
+            raise InvalidScheduleTime("The scheduled start time must be in the future")
+        if run_at > now + MAX_SCHEDULE_HORIZON:
+            raise InvalidScheduleTime(
+                f"The scheduled start time cannot be more than {MAX_SCHEDULE_HORIZON.days} days in the future"
+            )
+        return run_at
+
     def run_study(
         self,
         study_uuid: str,
@@ -223,11 +247,14 @@ class LauncherService:
         launcher_parameters: LauncherParametersDTO,
         solver_presets_id: str | None = None,
         version: str | None = None,
+        run_at: datetime | None = None,
     ) -> str:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
         study_info = self.study_service.get_study_information(uuid=study_uuid)
         solver_version = SolverVersion.parse(version or study_info.version)
+
+        scheduled_at = self._normalize_scheduled_at(run_at) if run_at is not None else None
 
         if solver_presets_id is not None:
             solver_presets = self.get_solver_presets(solver_presets_id)
@@ -252,10 +279,11 @@ class LauncherService:
             launcher=launcher,
             launcher_params=launcher_parameters.model_dump_json() if launcher_parameters else None,
             owner_id=(owner_id or None),
+            scheduled_at=scheduled_at,
         )
         self.job_result_repository.save(job_status)
 
-        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_parameters)
+        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_parameters, scheduled_at)
 
         self.event_bus.push(
             Event(
