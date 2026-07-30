@@ -95,7 +95,7 @@ def _create_variant(
 
 def _set_snapshot(variant: VariantStudy, *lineage_versions: tuple[str, int]) -> None:
     variant.snapshot = VariantStudySnapshot(
-        id=variant.id, lineage_versions=LineageVersions.from_tuples(lineage_versions), last_executed_command=None
+        id=variant.id, lineage_versions=LineageVersions(lineage_versions), last_executed_command=None
     )
 
 
