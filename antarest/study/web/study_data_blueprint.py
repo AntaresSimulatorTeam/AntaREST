@@ -20,7 +20,7 @@ from typing import Annotated, Literal
 import typing_extensions as te
 from fastapi import APIRouter, Body, Depends, File, Query
 from pydantic import Field
-from starlette.responses import PlainTextResponse, RedirectResponse, Response
+from starlette.responses import RedirectResponse, Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.model import JSON, StudyPermissionType
@@ -2330,9 +2330,7 @@ def create_study_data_routes() -> APIRouter:
 
         content = study_service.user_resources_manager.get_user_resource(study_interface, PurePosixPath(path))
 
-        response = PlainTextResponse(content, media_type="text/plain")
-        response.charset = "utf-8"
-        return response
+        return Response(content=content, media_type="application/octet-stream")
 
     @bp.put("/studies/{uuid}/user-resources", summary="Replace or create an user resource for a given study")
     def replace_user_resource(
