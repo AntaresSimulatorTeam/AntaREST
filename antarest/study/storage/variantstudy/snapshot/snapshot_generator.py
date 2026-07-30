@@ -16,7 +16,8 @@ This module dedicated to variant snapshot generation.
 
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, NamedTuple
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Literal, NamedTuple
 
 from antarest.core.exceptions import (
     ShouldNotHappenException,
@@ -24,6 +25,7 @@ from antarest.core.exceptions import (
     VariantGenerationError,
 )
 from antarest.core.tasks.service import ITaskNotifier, NoopNotifier
+from antarest.core.utils.collection_utils import index_or_none
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.model import RawStudy, Study, StudyMetadataUpdate
@@ -46,6 +48,57 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+@dataclass(frozen=True)
+class VariantLineage:
+    root_study: RawStudy
+    descendants: list[VariantStudy]
+
+    @property
+    def leaf_study(self) -> RawStudy | VariantStudy:
+        return self.descendants[-1] if self.descendants else self.root_study
+
+    def get_parent_lineage(self) -> "VariantLineage | None":
+        if not self.descendants:
+            return None
+        return VariantLineage(root_study=self.root_study, descendants=self.descendants[:-1])
+
+    def get_lineage_versions(self) -> LineageVersions:
+        return LineageVersions(versions=[(v.id, v.commands_version.version) for v in self.descendants])
+
+    def get_leaf_snapshot_status(self) -> Literal["absent", "unchanged", "parents_changed", "leaf_changed"]:
+        """
+        The snapshot of the leaf can be in either of 4 status:
+         - it does not exist
+         - it exists and is consistent with the current versions of studies
+         - it exists but some of the parents have changed since its generation
+         - it exists and only the leaf itself has changed since its generation
+        """
+        leaf = self.leaf_study
+        if isinstance(leaf, RawStudy):
+            return "unchanged"
+        snapshot = leaf.snapshot
+        if snapshot is None:
+            return "absent"
+        snapshot_versions = snapshot.lineage_versions
+        current_versions = self.get_lineage_versions()
+        if snapshot_versions.is_up_to_date_with(current_versions):
+            return "unchanged"
+        elif snapshot_versions.get_parent_lineage_versions().is_up_to_date_with(
+            current_versions.get_parent_lineage_versions()
+        ):
+            return "leaf_changed"
+        else:
+            return "parents_changed"
+
+    def get_commands_from(self, study: RawStudy | VariantStudy) -> list[CommandBlock]:
+        if study is self.root_study:
+            return _aggregate_command_blocks(self.descendants)
+        elif isinstance(study, VariantStudy):
+            idx = self.descendants.index(study)
+            return _aggregate_command_blocks(self.descendants[idx + 1 :])
+        raise ValueError(f"Study {study.id} is not part of this lineage")
+
+
 class RefStudySearchResult(NamedTuple):
     """
     Result of the search for the reference study.
@@ -53,7 +106,6 @@ class RefStudySearchResult(NamedTuple):
 
     ref_study: Study
     cmd_blocks: list[CommandBlock]
-    version: int
     force_regenerate: bool = False
 
 
@@ -81,22 +133,19 @@ def _has_snapshot_up_to_date_with_parents(lineage: Sequence[VariantStudy]) -> bo
 
 
 def _find_last_snapshot_up_to_date(
-    variants: Sequence[VariantStudy],
-) -> tuple[VariantStudy | None, list[CommandBlock]]:
+    lineage: VariantLineage,
+) -> tuple[Study, list[CommandBlock]]:
     """
-    Finds the most recent snapshot that is up to date.
-
-    Assumes the variants are sorted from the oldest to most recent.
-
-    If no variant is up to date, it returns None.
+    Finds the most recent study up to date.
 
     It also returns the list of commands to apply in order (from the oldest to the most recent command).
     """
-    for var_index in reversed(range(len(variants))):
-        if _is_snapshot_up_to_date(variants[: var_index + 1]):
-            commands = _aggregate_command_blocks(variants[var_index + 1 :])
-            return variants[var_index], commands
-    return None, _aggregate_command_blocks(variants)
+    current_lineage = lineage
+    while parent_lineage := current_lineage.get_parent_lineage():
+        current_lineage = parent_lineage
+        if current_lineage.get_leaf_snapshot_status() == "unchanged":
+            return current_lineage.leaf_study, lineage.get_commands_from(current_lineage.leaf_study)
+    return lineage.root_study, lineage.get_commands_from(lineage.root_study)
 
 
 def get_lineage_versions(lineage: Sequence[VariantStudy]) -> LineageVersions:
@@ -171,9 +220,10 @@ class SnapshotGenerator:
         #       Permissions are only considered at variant creation time, not every time
         #       the snapshot is generated.
         root_study, descendants = self.repository.get_study_lineage(variant_study_id)
+        lineage = VariantLineage(root_study, descendants)
         if root_study.archived:
             raise UnsupportedOperationOnArchivedStudy(root_study.id)
-        search_result = self.search_ref_study(root_study, descendants, from_scratch=from_scratch)
+        search_result = self.search_ref_study(lineage, from_scratch=from_scratch)
 
         ref_study = search_result.ref_study
         cmd_blocks = search_result.cmd_blocks
@@ -268,9 +318,7 @@ class SnapshotGenerator:
         study_dao.update_antares_file(metadata)
         return results
 
-    def search_ref_study(
-        self, root_study: Study, descendants: Sequence[VariantStudy], *, from_scratch: bool
-    ) -> RefStudySearchResult:
+    def search_ref_study(self, lineage: VariantLineage, *, from_scratch: bool) -> RefStudySearchResult:
         """
         Search for the reference study and the commands to use for snapshot generation.
 
@@ -282,18 +330,14 @@ class SnapshotGenerator:
         Returns:
             The reference study and the commands to use for snapshot generation.
         """
-        current_variant = descendants[-1]
 
         if from_scratch:
             # In the case of a from scratch generation, the root study will be used as the reference study.
             # We need to retrieve all commands from the descendants of variants to apply them on the reference study.
-            commands_version = current_variant.commands_version.version
-            command_blocks = _aggregate_command_blocks(descendants)
             return RefStudySearchResult(
-                ref_study=root_study,
-                cmd_blocks=command_blocks,
+                ref_study=lineage.root_study,
+                cmd_blocks=lineage.get_commands_from(lineage.root_study),
                 force_regenerate=True,
-                version=commands_version,
             )
 
         # 1st case: The variant snapshot is already up to date -> No-op.
@@ -305,31 +349,31 @@ class SnapshotGenerator:
         # We only have to check if we can reuse the snapshot to minimize the generation time.
         # We can reuse the snapshot if the last executed command is still present in the variant commands list.
         # It's not always the case as the user could have removed a command or replaced them all.
-        if _has_snapshot_up_to_date_with_parents(descendants):
-            assert current_variant.snapshot is not None
-            if last_executed_cmd_id := current_variant.snapshot.last_executed_command:
-                for command_block in current_variant.commands:
-                    if command_block.id == last_executed_cmd_id:
-                        last_exec_index = command_block.index
-                        return RefStudySearchResult(
-                            ref_study=current_variant,
-                            cmd_blocks=current_variant.commands[last_exec_index + 1 :],
-                            force_regenerate=False,
-                            version=current_variant.commands_version.version,
-                        )
+        snapshot_status = lineage.get_leaf_snapshot_status()
+        match snapshot_status:
+            case "absent", "parents_changed":  # we need to re-create the snapshot from parent studies in either case
+                ref_study, commands = _find_last_snapshot_up_to_date(lineage)
+                return RefStudySearchResult(ref_study=ref_study, cmd_blocks=commands, force_regenerate=True)
 
+            case "leaf_changed", "unchanged":
+                study = lineage.leaf_study
+                assert isinstance(study, VariantStudy) and study.snapshot is not None
+
+                if study.snapshot.last_executed_command is None:  # Snapshot was generated for empty list of commands
+                    return RefStudySearchResult(ref_study=study, cmd_blocks=study.commands, force_regenerate=False)
+
+                command_ids = [c.id for c in study.commands]
+                last_cmd_idx = index_or_none(command_ids, study.snapshot.last_executed_command)
+                if last_cmd_idx is None:
+                    # Fall back to regeneration from ancestors
+                    ref_study, commands = _find_last_snapshot_up_to_date(lineage)
+                    return RefStudySearchResult(ref_study=ref_study, cmd_blocks=commands, force_regenerate=True)
+                else:
+                    return RefStudySearchResult(
+                        ref_study=study, cmd_blocks=study.commands[last_cmd_idx + 1 :], force_regenerate=False
+                    )
+
+        raise ShouldNotHappenException()
         # Final case: The variant has no snapshot, or its `last_executed_command` does not exist anymore.
         # We search for a variant with an up-to-date snapshot to use it as a reference study.
         # If no such variant is found, we use the root study as a reference study.
-
-        ref_study = root_study
-        ref_variant_study, commands = _find_last_snapshot_up_to_date(descendants[:-1])
-        if ref_variant_study is not None:
-            ref_study = ref_variant_study
-
-        return RefStudySearchResult(
-            ref_study=ref_study,
-            cmd_blocks=commands + current_variant.commands,
-            force_regenerate=True,
-            version=current_variant.commands_version.version,
-        )

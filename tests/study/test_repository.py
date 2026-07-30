@@ -1129,7 +1129,7 @@ def test_update_tags(
 
     # use the db recorder to check that:
     # 1- finding existing tags requires 1 query
-    # 2- updating the study tags requires 4 queries (2 selects, 2 inserts)
+    # 2- updating the study tags requires 2 queries (2 inserts)
     # 3- deleting orphan tags requires 1 query
     with DBStatementRecorder(db_session.bind) as db_recorder:
         repository.update_tags(study, ["Tag1", "Tag2"])
@@ -1138,7 +1138,7 @@ def test_update_tags(
     # Check that when we change the tags to ["TAG1", "Tag3"],
     # "Tag1" is preserved, "Tag2" is deleted and "Tag3" is created
     # 1- finding existing tags requires 1 query
-    # 2- updating the study tags requires 2 queries (2 inserts, 1 delete)
+    # 2- updating the study tags requires 3 queries (2 inserts, 1 delete)
     # 3- deleting orphan tags requires 1 query
     with DBStatementRecorder(db_session.bind) as db_recorder:
         repository.update_tags(study, ["TAG1", "Tag3"])

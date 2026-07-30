@@ -13,6 +13,7 @@
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple, Protocol
 
@@ -72,7 +73,12 @@ class AbstractLauncher(ABC):
 
     @abstractmethod
     def run_study(
-        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
+        self,
+        study_uuid: str,
+        job_id: str,
+        version: SolverVersion,
+        launcher_parameters: LauncherParametersDTO,
+        run_at: datetime | None = None,
     ) -> None:
         raise NotImplementedError()
 

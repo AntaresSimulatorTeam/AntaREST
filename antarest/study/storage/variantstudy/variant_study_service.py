@@ -182,7 +182,6 @@ class VariantStudyService(AbstractStudyService):
         next time the study is accessed.
         """
         variant_study.snapshot = None
-        variant_study.updated_at = current_time()
         self.repository.save(metadata=variant_study)
 
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
@@ -209,9 +208,9 @@ class VariantStudyService(AbstractStudyService):
 
         for command in variant_study.commands:
             if command.user_id and command.user_id not in id_to_name.keys():
-                user_name: str = get_user_name_from_id(command.user_id)
-                id_to_name[command.user_id] = user_name
-            command_list.append(command.to_dto().to_api(id_to_name.get(command.user_id)))
+                id_to_name[command.user_id] = get_user_name_from_id(command.user_id)
+            user_name = id_to_name.get(command.user_id) if command.user_id else None
+            command_list.append(command.to_dto().to_api(user_name))
         return command_list
 
     def _get_variant_with_commands(self, study_id: str) -> VariantStudy:

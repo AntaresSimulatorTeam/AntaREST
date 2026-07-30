@@ -66,6 +66,9 @@ class LineageVersions:
         data = VERSIONS_ADAPTER.validate_json(json_repr)
         return cls(data)
 
+    def get_parent_lineage_versions(self) -> "LineageVersions":
+        return LineageVersions(self.versions[:-1])
+
 
 class LineageVersionsType(TypeDecorator[LineageVersions]):
     """
@@ -247,13 +250,13 @@ class VariantStudy(Study):
         uselist=False,
         cascade="all, delete, delete-orphan",
     )
-    commands = relationship(
+    commands: Mapped[list[CommandBlock]] = relationship(
         CommandBlock,
         uselist=True,
         order_by="CommandBlock.index",
         cascade="all, delete, delete-orphan",
     )
-    commands_version = relationship(CommandsListVersion, uselist=False)
+    commands_version: Mapped[CommandsListVersion] = relationship(CommandsListVersion, uselist=False)
 
     @override
     def __str__(self) -> str:
