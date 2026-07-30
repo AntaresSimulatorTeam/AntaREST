@@ -182,7 +182,6 @@ class VariantStudyService(AbstractStudyService):
         next time the study is accessed.
         """
         variant_study.snapshot = None
-        variant_study.updated_at = current_time()
         self.repository.save(metadata=variant_study)
 
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
