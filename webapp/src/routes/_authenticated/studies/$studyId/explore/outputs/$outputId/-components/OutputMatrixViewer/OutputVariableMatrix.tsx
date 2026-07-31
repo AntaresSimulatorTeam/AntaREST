@@ -23,12 +23,19 @@ import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
   getOutputMatrixIndex,
   getVariableViewData,
+  materializeVariableView,
 } from "@/services/api/studies/outputs/variableViews";
 import GridOffIcon from "@mui/icons-material/GridOff";
 // import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import { Button } from "@mui/material";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useTasksMonitor from "@/hooks/useTasksMonitor";
+import { outputVariablesViewResponseSchema } from "@/services/api/studies/outputs/variableViews/schemas";
+import type { TaskEventPayload } from "@/services/webSocket/types";
+import { toError } from "@/utils/fnUtils";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import { Button, CircularProgress } from "@mui/material";
 import { isAxiosError } from "axios";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUnmount } from "react-use";
 import useOutput from "../../-hooks/useOutput";
@@ -41,6 +48,15 @@ function OutputVariableMatrix() {
   const output = useOutput();
   const { item, dataType, frequency, variable, clusterId, setIsMatrixDataLoaded, matrixGridRef } =
     useOutputContext();
+  const [isMaterializing, setIsMaterializing] = useState(false);
+  const [materializeTaskId, setMaterializeTaskId] = useState<string | undefined>(undefined);
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+
+  useTasksMonitor({
+    taskIds: materializeTaskId,
+    onCompleted: handleMaterializeTaskCompleted,
+    onFailed: handleMaterializeTaskFailed,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Promises
@@ -49,7 +65,8 @@ function OutputVariableMatrix() {
   const variableViewDataResponse = usePromise(
     () => {
       if (!variable || (isClusterDataType(dataType) && !clusterId)) {
-        return Promise.resolve(undefined);
+        // `undefined` is not safely narrowed by `mergeResponses()`
+        return Promise.resolve(null);
       }
 
       return getVariableViewData({
@@ -108,6 +125,42 @@ function OutputVariableMatrix() {
   );
 
   ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleMaterialize = async () => {
+    setIsMaterializing(true);
+
+    const params = buildVariableViewParams({ dataType, clusterId, item, variable, frequency });
+
+    try {
+      const taskId = await materializeVariableView({
+        studyId: study.id,
+        outputId: output.id,
+        params,
+      });
+
+      setMaterializeTaskId(taskId);
+    } catch (err) {
+      setIsMaterializing(false);
+      enqueueErrorSnackbar(t("study.outputs.materializationFailed"), toError(err));
+      return;
+    }
+  };
+
+  function handleMaterializeTaskCompleted() {
+    setIsMaterializing(false);
+    setMaterializeTaskId(undefined);
+    variableViewDataResponse.reload();
+  }
+
+  function handleMaterializeTaskFailed({ message }: TaskEventPayload) {
+    setIsMaterializing(false);
+    setMaterializeTaskId(undefined);
+    enqueueErrorSnackbar(t("study.outputs.materializationFailed"), toError(message));
+  }
+
+  ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
 
@@ -133,12 +186,18 @@ function OutputVariableMatrix() {
         );
       }}
       ifRejected={(err) => {
-        const error = isAxiosError(err) ? err.response?.data : undefined;
-        const status = error?.status;
-        const taskId = error?.task_id;
+        const result = isAxiosError(err)
+          ? outputVariablesViewResponseSchema.safeParse(err.response?.data)
+          : undefined;
 
-        // NOT_FOUND status with no task ID means data not materialized yet
-        if (status === "NOT_FOUND" && taskId === null) {
+        if (result?.success) {
+          const { status, taskId } = result.data;
+          const isInProgress = status === "IN_PROGRESS" || isMaterializing;
+
+          if (!materializeTaskId && taskId) {
+            setMaterializeTaskId(taskId);
+          }
+
           return (
             <EmptyView
               title={t("study.outputs.scanRequired")}
@@ -147,11 +206,11 @@ function OutputVariableMatrix() {
                 <Button
                   variant="contained"
                   color="primary"
-                  //   onClick={onMaterializeVariable}
-                  //   disabled={isMaterializing}
-                  //   startIcon={isMaterializing ? <CircularProgress size={16} /> : <PlayArrowIcon />}
+                  onClick={handleMaterialize}
+                  disabled={isInProgress}
+                  startIcon={isInProgress ? <CircularProgress size={16} /> : <PlayArrowIcon />}
                 >
-                  {t("study.outputs.process")}
+                  {isInProgress ? t("study.outputs.processInProgress") : t("study.outputs.process")}
                 </Button>
               }
             />

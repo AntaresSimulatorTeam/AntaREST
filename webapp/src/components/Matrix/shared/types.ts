@@ -109,7 +109,7 @@ export interface MatrixDataDTO {
   index: number[];
 }
 
-export interface MatrixResultDTO {
+export interface ResultMatrixDTO {
   data: number[][];
   // Each column is represented as a tuple of [variable, unit, statistic]
   columns: Array<[string, string, string]>;

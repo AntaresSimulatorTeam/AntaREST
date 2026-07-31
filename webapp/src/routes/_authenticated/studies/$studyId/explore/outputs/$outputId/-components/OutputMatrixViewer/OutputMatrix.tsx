@@ -14,7 +14,7 @@
 
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import FilterableMatrixGrid from "@/components/Matrix/components/FilterableMatrixGrid";
-import { isNonEmptyMatrix, type MatrixResultDTO } from "@/components/Matrix/shared/types";
+import { isNonEmptyMatrix, type ResultMatrixDTO } from "@/components/Matrix/shared/types";
 import {
   generateDateTime,
   generateResultColumns,
@@ -62,8 +62,8 @@ function OutputMatrix() {
 
   const matrixResultResponse = usePromise(
     async () => {
-      const data = await getStudyData<MatrixResultDTO | string>(study.id, path);
-      return sanitizeJsonResponse<MatrixResultDTO>(data);
+      const data = await getStudyData<ResultMatrixDTO | string>(study.id, path);
+      return sanitizeJsonResponse<ResultMatrixDTO>(data);
     },
     {
       onDataChange: (data) => {
@@ -133,7 +133,7 @@ function OutputMatrix() {
         ? column
         : {
             ...column,
-            width: 0,
+            width: 0, // Hide the column
           };
     });
   }, [columnsFilters, gridColumns]);

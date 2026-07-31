@@ -24,7 +24,7 @@ import * as RA from "ramda-adjunct";
 import { useEffect } from "react";
 import { useLatest } from "react-use";
 
-interface UseTaskMonitorOptions {
+interface UseTasksMonitorOptions {
   taskIds?: string | string[];
   onCompleted: (payload: TaskEventPayload) => void;
   onFailed: (payload: TaskEventPayload) => void;
@@ -34,7 +34,7 @@ function getChannel(taskId: string) {
   return WsChannel.Task + taskId;
 }
 
-function useTasksMonitor({ taskIds, onCompleted, onFailed }: UseTaskMonitorOptions) {
+function useTasksMonitor({ taskIds, onCompleted, onFailed }: UseTasksMonitorOptions) {
   const callbacksRef = useLatest({ onCompleted, onFailed });
 
   useEffect(() => {

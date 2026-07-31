@@ -76,7 +76,7 @@ function Header() {
           <ResultFilters />
           <Stack spacing={0.5}>
             {!isVariablePerVariable && (
-              <Tooltip title="Filter columns">
+              <Tooltip title={t("study.outputs.filterColumns")}>
                 <IconButton
                   onClick={toggleColumnsFilter}
                   color={isColumnsFilterActive ? "secondary" : "default"}
