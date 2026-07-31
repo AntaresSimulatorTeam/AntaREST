@@ -19,7 +19,7 @@ depends_on = None
 def upgrade():
     op.drop_table("user_resources")
 
-    # Drop the Enum as recreating the table always recreate it
+    # Drop the Enum as recreating the table always recreates it
     if op.get_context().dialect.name == "postgresql":
         sa.Enum(name="resourcetype").drop(op.get_bind(), checkfirst=True)
 
@@ -51,7 +51,7 @@ def upgrade():
 def downgrade() -> None:
     op.drop_table("user_resources")
 
-    # Drop the Enum as recreating the table always recreate it
+    # Drop the Enum as recreating the table always recreates it
     if op.get_context().dialect.name == "postgresql":
         sa.Enum(name="resourcetype").drop(op.get_bind(), checkfirst=True)
 
