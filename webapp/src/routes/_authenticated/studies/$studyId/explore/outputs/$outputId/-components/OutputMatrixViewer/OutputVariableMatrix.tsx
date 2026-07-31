@@ -18,20 +18,19 @@ import { isNonEmptyMatrix } from "@/components/Matrix/shared/types";
 import { generateCustomColumns, generateDateTime } from "@/components/Matrix/shared/utils";
 import EmptyView from "@/components/page/EmptyView";
 import UsePromiseCond, { mergeResponses } from "@/components/utils/UsePromiseCond";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import usePromise from "@/hooks/usePromise";
+import useTasksMonitor from "@/hooks/useTasksMonitor";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
   getOutputMatrixIndex,
   getVariableViewData,
   materializeVariableView,
 } from "@/services/api/studies/outputs/variableViews";
-import GridOffIcon from "@mui/icons-material/GridOff";
-// import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useTasksMonitor from "@/hooks/useTasksMonitor";
 import { outputVariablesViewResponseSchema } from "@/services/api/studies/outputs/variableViews/schemas";
 import type { TaskEventPayload } from "@/services/webSocket/types";
 import { toError } from "@/utils/fnUtils";
+import GridOffIcon from "@mui/icons-material/GridOff";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { Button, CircularProgress } from "@mui/material";
 import { isAxiosError } from "axios";
