@@ -7,7 +7,7 @@ Create Date: 2026-07-27 10:32:49.507698
 """
 from alembic import op
 import sqlalchemy as sa
-
+from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = 'cbf69219c1b6'
@@ -19,11 +19,12 @@ depends_on = None
 def upgrade():
     op.drop_table("user_resources")
 
-    # Drop the Enum as recreating the table always recreates it
     if op.get_context().dialect.name == "postgresql":
-        sa.Enum(name="resourcetype").drop(op.get_bind(), checkfirst=True)
-
-    resource_type_enum = sa.Enum("file", "folder", name="resourcetype")
+        # This enum was introduced in a previous migration, so we should not recreate it.
+        # PostgreSQL does not handle this easily, so we have to use its own ENUM type to make it work.
+        resource_type_enum = postgresql.ENUM(name="resourcetype",create_type=False)
+    else:
+        resource_type_enum = sa.Enum("file", "folder", name="resourcetype")
 
     op.create_table(
         "user_resources",
@@ -51,11 +52,10 @@ def upgrade():
 def downgrade() -> None:
     op.drop_table("user_resources")
 
-    # Drop the Enum as recreating the table always recreates it
     if op.get_context().dialect.name == "postgresql":
-        sa.Enum(name="resourcetype").drop(op.get_bind(), checkfirst=True)
-
-    resource_type_enum = sa.Enum("file", "folder", name="resourcetype")
+        resource_type_enum = postgresql.ENUM(name="resourcetype", create_type=False)
+    else:
+        resource_type_enum = sa.Enum("file", "folder", name="resourcetype")
 
     op.create_table(
         "user_resources",
