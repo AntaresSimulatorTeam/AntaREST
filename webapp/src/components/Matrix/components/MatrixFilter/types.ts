@@ -48,11 +48,16 @@ export interface FilterCriteria {
   rowsIndices: number[];
 }
 
+export interface MatrixFilterHandle {
+  toggleFilter: () => void;
+}
+
 export interface MatrixFilterProps {
   dateTime?: DateTimes;
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   readOnly?: boolean;
+  ref?: React.Ref<MatrixFilterHandle>;
 }
 
 export interface FilterSectionProps {
