@@ -19,13 +19,19 @@ depends_on = None
 def upgrade():
     op.drop_table("user_resources")
 
+    # Drop the Enum as recreating the table always recreate it
+    if op.get_context().dialect.name == "postgresql":
+        sa.Enum(name="resourcetype").drop(op.get_bind(), checkfirst=True)
+
+    resource_type_enum = sa.Enum("file", "folder", name="resourcetype")
+
     op.create_table(
         "user_resources",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("id", sa.String(length=36), nullable=False, primary_key=True),
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("parent_id", sa.String(length=36), nullable=True),
-        sa.Column("resource_type", sa.Enum(name="resourcetype"), nullable=False),
+        sa.Column("resource_type", resource_type_enum, nullable=False),
         sa.Column("blob_id", sa.String(length=64), nullable=True),
         sa.ForeignKeyConstraint(
             ["study_id"],
@@ -45,11 +51,17 @@ def upgrade():
 def downgrade() -> None:
     op.drop_table("user_resources")
 
+    # Drop the Enum as recreating the table always recreate it
+    if op.get_context().dialect.name == "postgresql":
+        sa.Enum(name="resourcetype").drop(op.get_bind(), checkfirst=True)
+
+    resource_type_enum = sa.Enum("file", "folder", name="resourcetype")
+
     op.create_table(
         "user_resources",
         sa.Column("study_id", sa.String(length=36), nullable=False),
         sa.Column("path", sa.String(length=255), nullable=False),
-        sa.Column("resource_type", sa.Enum(name="resourcetype"), nullable=False),
+        sa.Column("resource_type", resource_type_enum, nullable=False),
         sa.Column("blob_id", sa.String(length=64), nullable=True),
         sa.ForeignKeyConstraint(
             ["study_id"],
