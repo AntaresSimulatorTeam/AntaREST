@@ -105,30 +105,10 @@ class RefStudySearchResult(NamedTuple):
 
     ref_study: Study
     cmd_blocks: list[CommandBlock]
-    force_regenerate: bool = False
 
 
 def _aggregate_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandBlock]:
     return [cmd for variant in variants for cmd in variant.commands]
-
-
-def _is_snapshot_up_to_date(lineage: Sequence[VariantStudy]) -> bool:
-    """
-    Checks if the snapshot of the given variant is up to date with the given variants.
-    """
-    variant = lineage[-1]
-    if variant.snapshot is None:
-        return False
-    current_lineage_versions = get_lineage_versions(lineage)
-    return variant.snapshot.lineage_versions.is_up_to_date_with(current_lineage_versions)
-
-
-def _has_snapshot_up_to_date_with_parents(lineage: Sequence[VariantStudy]) -> bool:
-    current_variant = lineage[-1]
-    if current_variant.snapshot is None:
-        return False
-    current_lineage_versions = get_lineage_versions(lineage)
-    return current_variant.snapshot.lineage_versions.versions[:-1] == current_lineage_versions.versions[:-1]
 
 
 def _find_last_snapshot_up_to_date(
@@ -236,7 +216,7 @@ class SnapshotGenerator:
             # if the process crashes during generation, the snapshot will be invalid and will be regenerated on the next request.
             self.variant_study_service.invalidate_snapshot(variant_study)
 
-            if search_result.force_regenerate:
+            if ref_study != variant_study:
                 initial_ref_versions = get_ref_study_snapshot_id(ref_study)
                 self.variant_study_service.create_snapshot(ref_study, variant_study)
                 # we need to make sure the ref_study has not changed in the meantime, otherwise we may have copied
@@ -333,16 +313,14 @@ class SnapshotGenerator:
             # In the case of a from scratch generation, the root study will be used as the reference study.
             # We need to retrieve all commands from the descendants of variants to apply them on the reference study.
             return RefStudySearchResult(
-                ref_study=lineage.root_study,
-                cmd_blocks=lineage.get_commands_from(lineage.root_study),
-                force_regenerate=True,
+                ref_study=lineage.root_study, cmd_blocks=lineage.get_commands_from(lineage.root_study)
             )
 
         snapshot_status = lineage.get_leaf_snapshot_status()
         match snapshot_status:
             case "absent" | "parents_changed":  # we need to re-create the snapshot from parent studies in either case
                 ref_study, commands = _find_last_snapshot_up_to_date(lineage)
-                return RefStudySearchResult(ref_study=ref_study, cmd_blocks=commands, force_regenerate=True)
+                return RefStudySearchResult(ref_study=ref_study, cmd_blocks=commands)
 
             case "leaf_changed" | "unchanged":
                 # we try to re-use the existing snapshot
@@ -359,6 +337,6 @@ class SnapshotGenerator:
                 else:
                     # Fall back to regeneration from ancestors
                     ref_study, commands = _find_last_snapshot_up_to_date(lineage)
-                    return RefStudySearchResult(ref_study=ref_study, cmd_blocks=commands, force_regenerate=True)
+                    return RefStudySearchResult(ref_study=ref_study, cmd_blocks=commands)
 
-                return RefStudySearchResult(ref_study=study, cmd_blocks=new_commands, force_regenerate=False)
+                return RefStudySearchResult(ref_study=study, cmd_blocks=new_commands)
