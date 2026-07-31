@@ -13,45 +13,68 @@
  */
 
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
-import type { WsEvent } from "@/services/webSocket/types";
+import type { TaskEventPayload, WsEvent } from "@/services/webSocket/types";
 import {
   addWsEventListener,
   removeWsEventListener,
   subscribeWsChannels,
   unsubscribeWsChannels,
 } from "@/services/webSocket/ws";
+import * as RA from "ramda-adjunct";
 import { useEffect } from "react";
+import { useLatest } from "react-use";
 
 interface UseTaskMonitorOptions {
-  taskId: string | null;
-  onComplete: () => void;
-  onFailed: (message: string) => void;
+  taskIds?: string | string[];
+  onCompleted: (payload: TaskEventPayload) => void;
+  onFailed: (payload: TaskEventPayload) => void;
 }
 
-export function useTaskMonitor({ taskId, onComplete, onFailed }: UseTaskMonitorOptions) {
+function getChannel(taskId: string) {
+  return WsChannel.Task + taskId;
+}
+
+function useTasksMonitor({ taskIds, onCompleted, onFailed }: UseTaskMonitorOptions) {
+  const callbacksRef = useLatest({ onCompleted, onFailed });
+
   useEffect(() => {
-    if (!taskId) {
+    if (!taskIds) {
       return;
     }
 
-    const channel = WsChannel.Task + taskId;
-    subscribeWsChannels([channel]);
+    const ids = RA.ensureArray(taskIds);
+    const channels = ids.map(getChannel);
 
-    const handleTaskEvent = (event: WsEvent) => {
-      if (event.type === WsEventType.TaskCompleted && event.payload.id === taskId) {
-        onComplete();
-        unsubscribeWsChannels([channel]);
-      } else if (event.type === WsEventType.TaskFailed && event.payload.id === taskId) {
-        onFailed(event.payload.message);
-        unsubscribeWsChannels([channel]);
+    subscribeWsChannels(channels);
+
+    const listener = (event: WsEvent) => {
+      switch (event.type) {
+        case WsEventType.TaskCompleted:
+        case WsEventType.TaskFailed: {
+          const { id } = event.payload;
+
+          if (ids.includes(id)) {
+            unsubscribeWsChannels(getChannel(id));
+
+            if (event.type === WsEventType.TaskCompleted) {
+              callbacksRef.current.onCompleted(event.payload);
+            } else {
+              callbacksRef.current.onFailed(event.payload);
+            }
+          }
+
+          break;
+        }
       }
     };
 
-    addWsEventListener(handleTaskEvent);
+    addWsEventListener(listener);
 
     return () => {
-      removeWsEventListener(handleTaskEvent);
-      unsubscribeWsChannels([channel]);
+      removeWsEventListener(listener);
+      unsubscribeWsChannels(channels);
     };
-  }, [taskId, onComplete, onFailed]);
+  }, [taskIds, callbacksRef]);
 }
+
+export default useTasksMonitor;
