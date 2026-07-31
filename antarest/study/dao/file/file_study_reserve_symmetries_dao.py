@@ -30,7 +30,7 @@ from antarest.study.dao.file.common import (
     get_thermal_reserve_participations_as_yaml_content,
     get_thermal_reserve_path,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_participations import (
+from antarest.study.storage.rawstudy.model.filesystem.config.reserve_participations import (
     parse_thermal_reserves_certifications,
     parse_thermal_reserves_symmetries,
     serialize_thermal_reserve_participations,
