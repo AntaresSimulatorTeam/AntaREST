@@ -23,7 +23,7 @@ import pytest
 
 from antarest.core.config import Config
 from antarest.core.exceptions import ConfigurationError
-from antarest.maintenance.app import _mask_url_credentials, _setup_periodic_tasks, celery_app
+from antarest.maintenance.app import _init_worker, _mask_url_credentials, _setup_periodic_tasks, celery_app
 from antarest.maintenance.config import get_config, load_config
 
 
@@ -131,3 +131,21 @@ class TestSetupPeriodicTasks:
             "disk_space_analyzer",
             "cache_launcher_load",
         ]
+
+
+class TestInitWorker:
+    def test_sets_maintenance_ctx_on_success(self, with_no_maintenance_ctx):
+        fake_ctx = Mock()
+        with mock.patch("antarest.maintenance.app.MaintenanceContext.create", return_value=fake_ctx):
+            _init_worker()
+
+        assert celery_app.conf.maintenance_ctx is fake_ctx
+
+    def test_aborts_worker_startup_when_context_creation_fails(self, with_no_maintenance_ctx):
+        with (
+            mock.patch("antarest.maintenance.app.MaintenanceContext.create", side_effect=ValueError("boom")),
+            pytest.raises(SystemExit),
+        ):
+            _init_worker()
+
+        assert celery_app.conf.get("maintenance_ctx") is None
