@@ -22,6 +22,7 @@ from antarest.core.exceptions import (
     UserResourceIsAFolder,
     UserResourceNotFound,
 )
+from antarest.core.utils.utils import is_path_safe
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -69,10 +70,11 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
     @override
     def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
         # Ensures the given path is relative to the `user` folder
-        if resource_path.is_absolute() or any(p in (".", "..") for p in resource_path.parts):
+        user_folder = self.get_file_study().config.study_path / "user"
+        if not is_path_safe(user_folder, resource_path.as_posix()):
             raise UserResourceNotFound(resource_path.as_posix())
 
-        fs_path = (self.get_file_study().config.study_path / "user").joinpath(resource_path)
+        fs_path = user_folder.joinpath(resource_path)
         if not fs_path.exists():
             raise UserResourceNotFound(resource_path.as_posix())
         if fs_path.is_dir():
