@@ -14,12 +14,13 @@ import enum
 import logging
 from collections.abc import Mapping, Sequence
 from http import HTTPStatus
+from pathlib import PurePosixPath
 from typing import Annotated, Literal
 
 import typing_extensions as te
-from fastapi import APIRouter, Body, Depends, Query
+from fastapi import APIRouter, Body, Depends, File, Query
 from pydantic import Field
-from starlette.responses import RedirectResponse
+from starlette.responses import RedirectResponse, Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.model import JSON, StudyPermissionType
@@ -125,6 +126,7 @@ from antarest.study.business.model.thermal_reserve_certification_model import (
     ThermalId,
     ThermalReserveCertificationMapping,
 )
+from antarest.study.business.model.user_model import ResourceType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.model import CommentsDto
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -2311,5 +2313,43 @@ def create_study_data_routes() -> APIRouter:
         NOTE: This endpoint is used by antares-craft to read a study.
         """
         return study_service.get_study_data(study_id)
+
+    @bp.get("/studies/{uuid}/user-resources", summary="Fetches paths of all user resources for a given study")
+    def get_all_user_resources(study_service: StudyServiceDep, uuid: UuidStr) -> list[str]:
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.user_resources_manager.get_all_user_resources_paths(study_interface)
+
+    @bp.get(
+        "/studies/{uuid}/user-resources/content",
+        summary="Fetches an user resource content for a given study and a given path",
+    )
+    def get_user_resource_content(study_service: StudyServiceDep, uuid: UuidStr, path: str) -> Response:
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+
+        content = study_service.user_resources_manager.get_user_resource(study_interface, PurePosixPath(path))
+
+        return Response(content=content, media_type="application/octet-stream")
+
+    @bp.put("/studies/{uuid}/user-resources", summary="Replace or create an user resource for a given study")
+    def replace_user_resource(
+        study_service: StudyServiceDep,
+        uuid: UuidStr,
+        path: str,
+        resource_type: ResourceType,
+        file: Annotated[bytes | None, File()] = None,
+    ) -> None:
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.user_resources_manager.replace_user_resource(
+            study_interface, resource_type, PurePosixPath(path), file
+        )
+
+    @bp.delete("/studies/{uuid}/user-resources", summary="Deletes an user resource for a given study")
+    def delete_user_resource(study_service: StudyServiceDep, uuid: UuidStr, path: str) -> None:
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.user_resources_manager.delete_user_resource(study_interface, PurePosixPath(path))
 
     return bp

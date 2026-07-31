@@ -68,7 +68,7 @@ def create_root_study(
         if storage_mode == StorageMode.DATABASE:
             # Initialize the study data
             ctx = variant_study_service.command_factory.command_context
-            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.blob_service, ctx.generator_matrix_constants)
             metadata = StudyMetadataCreation(id=root_study_id, name="my_study", version=STUDY_VERSION_8_6, managed=True)
             factory.create_study_dao(metadata)
     return root_study_id
@@ -188,7 +188,7 @@ class TestVariantStudyService:
                 variant_study_service.get_study_paths,
             )
         else:
-            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.blob_service, ctx.generator_matrix_constants)
         # Generate the snapshot
         results = generator.generate_snapshot(saved_id, dao_factory=factory)
         # Check the results. `details` should be empty as all commands were applied synchronously

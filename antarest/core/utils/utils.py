@@ -226,3 +226,21 @@ def remove_first_match(elements: list[T], predicate: Callable[[T], bool]) -> Non
     elt = next((elt for elt in elements if predicate(elt)), None)
     if elt:
         elements.remove(elt)
+
+
+def is_path_safe(parent_path: Path, sub_path: str) -> bool:
+    """
+    Check if the provided sub path is safe to prevent path traversal attack.
+
+    Args:
+        parent_path: The parent path.
+        sub_path: string representation of a path that should be relative to the parent path
+
+    Returns:
+        `True` if `sub_path` is safe, `False` otherwise.
+    """
+    requested_path = parent_path / sub_path
+    requested_path = requested_path.resolve()
+    safe_dir = parent_path.resolve()
+    # check whether the requested path is a subdirectory of the parent path
+    return requested_path.is_relative_to(safe_dir)

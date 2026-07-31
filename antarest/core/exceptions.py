@@ -601,13 +601,14 @@ class LayerNotAllowedToBeDeleted(HTTPException):
         )
 
 
-class UserResourcesNotFound(HTTPException):
+class UserResourceNotFound(HTTPException):
     def __init__(self, path: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, f"User resources not found: '{path}'")
 
 
-class StudyOutputNotFoundError(Exception):
-    pass
+class UserResourceIsAFolder(HTTPException):
+    def __init__(self, path: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, f"User resources '{path}' is a folder. Please provide a file.")
 
 
 class AreaNotFound(HTTPException):

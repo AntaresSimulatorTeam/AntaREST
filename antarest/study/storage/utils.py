@@ -53,7 +53,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import extract_archive_from_path, extract_archive_from_stream
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
+from antarest.core.utils.utils import current_time, is_path_safe
 from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_impersonator, require_current_user
 from antarest.output.filestudy.file_output_utils import parse_output_config
@@ -443,24 +443,6 @@ def get_start_date(
     return get_matrix_index(simulation_range, is_output=output_path is not None, level=level)
 
 
-def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
-    """
-    Check if the provided folder path is safe to prevent path traversal attack.
-
-    Args:
-        workspace: The workspace name.
-        folder: The folder path.
-
-    Returns:
-        `True` if the folder path is safe, `False` otherwise.
-    """
-    requested_path = workspace.path / folder
-    requested_path = requested_path.resolve()
-    safe_dir = workspace.path.resolve()
-    # check whether the requested path is a subdirectory of the workspace
-    return requested_path.is_relative_to(safe_dir)
-
-
 def is_study_folder(path: Path) -> bool:
     return path.is_dir() and (path / "study.antares").exists()
 
@@ -480,7 +462,7 @@ def get_workspace_from_config(config: Config, workspace_name: str, default_allow
 
 
 def get_folder_from_workspace(workspace: WorkspaceConfig, folder: str) -> Path:
-    if not is_folder_safe(workspace, folder):
+    if not is_path_safe(workspace.path, folder):
         raise FolderNotFoundInWorkspace(f"Invalid path for folder: {folder} in workspace {workspace}")
     folder_path = workspace.path / folder
     if not folder_path.is_dir():
