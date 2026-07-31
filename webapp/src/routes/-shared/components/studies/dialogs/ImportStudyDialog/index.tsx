@@ -57,7 +57,9 @@ function ImportStudyDialog({ open, onClose }: Props) {
     await dispatch(
       createStudy({ file, onUploadProgress, directory: directoryPath, storageMode }),
     ).unwrap();
+  };
 
+  const handleImportComplete: UploadDialogProps["onImportComplete"] = async () => {
     const updatedDirectories = await refreshDirectoriesIfNeeded(
       queryClient,
       destination,
@@ -78,8 +80,10 @@ function ImportStudyDialog({ open, onClose }: Props) {
       open={open}
       title={t("studies.importNewStudy")}
       dropzoneText={t("studies.importHint")}
+      multiple
       onCancel={onClose}
       onImport={handleImport}
+      onImportComplete={handleImportComplete}
       maxWidth="md"
       fullWidth
       PaperProps={{ sx: { height: "100%" } }}
