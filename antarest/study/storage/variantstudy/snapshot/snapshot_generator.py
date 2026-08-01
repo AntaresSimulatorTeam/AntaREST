@@ -49,6 +49,11 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class VariantLineage:
+    """
+    Represents the lineage of a variant study:
+    a root study and all its descendant until that variant study (the "leaf" study)
+    """
+
     root_study: RawStudy
     descendants: list[VariantStudy]
 
@@ -97,6 +102,22 @@ class VariantLineage:
             return _aggregate_command_blocks(self.descendants[idx + 1 :])
         raise ValueError(f"Study {study.id} is not part of this lineage")
 
+    def get_commands_from_root(self) -> list[CommandBlock]:
+        return self.get_commands_from(self.root_study)
+
+    def find_last_snapshot_up_to_date(self) -> tuple[Study, list[CommandBlock]]:
+        """
+        Finds the most recent study up to date.
+
+        It also returns the list of commands to apply in order (from the oldest to the most recent command).
+        """
+        current_lineage = self
+        while parent_lineage := current_lineage.get_parent_lineage():
+            current_lineage = parent_lineage
+            if current_lineage.get_leaf_snapshot_status() == "unchanged":
+                return current_lineage.leaf_study, self.get_commands_from(current_lineage.leaf_study)
+        return self.root_study, self.get_commands_from_root()
+
 
 class RefStudySearchResult(NamedTuple):
     """
@@ -109,22 +130,6 @@ class RefStudySearchResult(NamedTuple):
 
 def _aggregate_command_blocks(variants: Sequence[VariantStudy]) -> list[CommandBlock]:
     return [cmd for variant in variants for cmd in variant.commands]
-
-
-def _find_last_snapshot_up_to_date(
-    lineage: VariantLineage,
-) -> tuple[Study, list[CommandBlock]]:
-    """
-    Finds the most recent study up to date.
-
-    It also returns the list of commands to apply in order (from the oldest to the most recent command).
-    """
-    current_lineage = lineage
-    while parent_lineage := current_lineage.get_parent_lineage():
-        current_lineage = parent_lineage
-        if current_lineage.get_leaf_snapshot_status() == "unchanged":
-            return current_lineage.leaf_study, lineage.get_commands_from(current_lineage.leaf_study)
-    return lineage.root_study, lineage.get_commands_from(lineage.root_study)
 
 
 def get_lineage_versions(lineage: Sequence[VariantStudy]) -> LineageVersions:
@@ -214,6 +219,9 @@ class SnapshotGenerator:
         try:
             # we need to invalidate the current snapshot, since we start to modify the underlying data.
             # if the process crashes during generation, the snapshot will be invalid and will be regenerated on the next request.
+            # It's important to take a reference of the current snapshot before, since it will be removed from the
+            # current object
+            initial_snapshot = variant_study.snapshot
             self.variant_study_service.invalidate_snapshot(variant_study)
 
             if ref_study != variant_study:
@@ -236,12 +244,13 @@ class SnapshotGenerator:
             results = self._apply_commands(study_dao, variant_study, cmd_blocks)
 
             # Finally, we can update the database.
+
             logger.info(f"Saving new snapshot for study {variant_study_id}")
             last_executed_command = None
             if cmd_blocks:
                 last_executed_command = cmd_blocks[-1].id
-            elif variant_study.snapshot:
-                last_executed_command = variant_study.snapshot.last_executed_command
+            elif initial_snapshot:
+                last_executed_command = initial_snapshot.last_executed_command
             variant_study.snapshot = VariantStudySnapshot(
                 id=variant_study_id, last_executed_command=last_executed_command, lineage_versions=new_snapshot_version
             )
@@ -319,7 +328,7 @@ class SnapshotGenerator:
         snapshot_status = lineage.get_leaf_snapshot_status()
         match snapshot_status:
             case "absent" | "parents_changed":  # we need to re-create the snapshot from parent studies in either case
-                ref_study, commands = _find_last_snapshot_up_to_date(lineage)
+                ref_study, commands = lineage.find_last_snapshot_up_to_date()
                 return RefStudySearchResult(ref_study=ref_study, cmd_blocks=commands)
 
             case "leaf_changed" | "unchanged":
@@ -336,7 +345,7 @@ class SnapshotGenerator:
                     new_commands = study.commands[idx + 1 :]
                 else:
                     # Fall back to regeneration from ancestors
-                    ref_study, commands = _find_last_snapshot_up_to_date(lineage)
+                    ref_study, commands = lineage.find_last_snapshot_up_to_date()
                     return RefStudySearchResult(ref_study=ref_study, cmd_blocks=commands)
 
                 return RefStudySearchResult(ref_study=study, cmd_blocks=new_commands)

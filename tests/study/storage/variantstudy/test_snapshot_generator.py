@@ -469,8 +469,7 @@ class TestSearchRefStudy:
     ) -> None:
         """
         Case where the variant has a snapshot but is not up to date.
-        It points to a command that no longer exists. It is possible, as the user can remove or replace commands.
-
+        It points to a command that no longer exists. It is possible, as the user can remove or replace commands
         We expect the reference study to be the variant and the list of commands to be all of its commands
         """
         root_study = create_raw_study(id=str(uuid.uuid4()), name="root")
