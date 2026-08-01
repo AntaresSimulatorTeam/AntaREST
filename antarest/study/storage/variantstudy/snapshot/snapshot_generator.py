@@ -20,7 +20,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Literal, NamedTuple
 
 from antarest.core.exceptions import (
-    ShouldNotHappenException,
     UnsupportedOperationOnArchivedStudy,
     VariantGenerationError,
 )
@@ -136,12 +135,12 @@ def get_lineage_versions(lineage: Sequence[VariantStudy]) -> LineageVersions:
     return LineageVersions(versions=[(v.id, v.commands_version.version) for v in lineage])
 
 
-def get_ref_study_snapshot_versions(ref_study: Study) -> LineageVersions | Literal["unknown"]:
+def get_ref_study_snapshot_versions(ref_study: Study) -> LineageVersions | Literal["unknown"] | None:
     match ref_study:
         case VariantStudy():
             if snapshot := ref_study.snapshot:
                 return snapshot.lineage_versions
-            raise ShouldNotHappenException("Snapshot of reference study does not exist.")
+            return None
         case RawStudy():
             # TODO: for now raw study data is not versioned
             return "unknown"
