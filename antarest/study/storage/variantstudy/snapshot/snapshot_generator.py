@@ -135,17 +135,17 @@ def get_lineage_versions(lineage: Sequence[VariantStudy]) -> LineageVersions:
     return LineageVersions(versions=[(v.id, v.commands_version.version) for v in lineage])
 
 
-def get_ref_study_snapshot_versions(ref_study: Study) -> LineageVersions | Literal["unknown"] | None:
-    match ref_study:
+def get_snapshot_versions(study: Study) -> LineageVersions | Literal["unknown"] | None:
+    match study:
         case VariantStudy():
-            if snapshot := ref_study.snapshot:
+            if snapshot := study.snapshot:
                 return snapshot.lineage_versions
             return None
         case RawStudy():
             # TODO: for now raw study data is not versioned
             return "unknown"
         case _:
-            raise ValueError(f"Unsupported study type: {type(ref_study)}")
+            raise ValueError(f"Unsupported study type: {type(study)}")
 
 
 class RefStudyChanged(Exception):
@@ -224,12 +224,12 @@ class SnapshotGenerator:
             self.variant_study_service.invalidate_snapshot(variant_study)
 
             if ref_study != variant_study:
-                initial_ref_versions = get_ref_study_snapshot_versions(ref_study)
+                initial_ref_versions = get_snapshot_versions(ref_study)
                 self.variant_study_service.create_snapshot(ref_study, variant_study)
                 # we need to make sure the ref_study has not changed in the meantime, otherwise we may have copied
                 # data that do not correspond to the lineage used for generation
                 self.repository.refresh(ref_study)
-                final_ref_versions = get_ref_study_snapshot_versions(ref_study)
+                final_ref_versions = get_snapshot_versions(ref_study)
                 if final_ref_versions != initial_ref_versions:
                     raise RefStudyChanged()
 
