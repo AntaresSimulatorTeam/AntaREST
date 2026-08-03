@@ -99,14 +99,6 @@ class LocalLauncher(AbstractLauncher):
                 None,
             )
             raise InvalidScheduleTime("Scheduling a launch at a given time is only supported on SLURM launchers")
-        if oversubscribe_core_threshold is not None:
-            self.callbacks.update_status(
-                job_id,
-                JobStatus.FAILED,
-                None,
-                None,
-            )
-            raise ValueError("local launcher doesn't support oversubscribe")
 
         antares_solver_path = self._select_best_binary(version)
         self.submitted_jobs[job_id] = launcher_parameters

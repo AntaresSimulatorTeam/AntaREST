@@ -1,8 +1,8 @@
-"""Add launcher_runtime_config table
+"""add launcher_runtime_config
 
-Revision ID: ant5114a1b2c3
-Revises: 665f7b1d7575
-Create Date: 2026-07-23 00:00:00.000000
+Revision ID: 06697016d057
+Revises: 3855b61c3232
+Create Date: 2026-08-03 11:24:03.839320
 
 """
 
@@ -11,8 +11,8 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "ant5114a1b2c3"
-down_revision = "665f7b1d7575"
+revision = "06697016d057"
+down_revision = "3855b61c3232"
 branch_labels = None
 depends_on = None
 

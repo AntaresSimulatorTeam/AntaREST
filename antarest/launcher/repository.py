@@ -128,16 +128,7 @@ class LauncherRuntimeConfigRepository:
 
     def save(self, config_db: LauncherRuntimeConfigDB) -> LauncherRuntimeConfigDB:
         logger.debug(f"Saving LauncherRuntimeConfig {config_db.launcher_id}")
-
-        stmt = select(LauncherRuntimeConfigDB).where(LauncherRuntimeConfigDB.launcher_id == config_db.launcher_id)
-        existing_config = db.session.scalar(stmt)
-
-        if existing_config:
-            merged_config = db.session.merge(config_db)
-        else:
-            db.session.add(config_db)
-            merged_config = config_db
-
+        merged_config = db.session.merge(config_db)
         db.session.commit()
         return merged_config
 
