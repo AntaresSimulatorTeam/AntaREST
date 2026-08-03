@@ -143,8 +143,12 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
 @worker_init.connect
 def _init_worker(**_: Any) -> None:
     """Create MaintenanceContext (Worker only, not Beat)."""
-    ctx = MaintenanceContext.create(get_config())
-    celery_app.conf.maintenance_ctx = ctx
+    try:
+        ctx = MaintenanceContext.create(get_config())
+        celery_app.conf.maintenance_ctx = ctx
+    except Exception:
+        logger.critical("Failed to initialize MaintenanceContext, aborting worker startup", exc_info=True)
+        raise SystemExit(1)
     logger.info("Worker ready")
 
 

@@ -51,7 +51,7 @@ class MaintenanceContext:
         engine = init_db_engine(config, auto_upgrade_db=False)
         init_db_singleton(custom_engine=engine, session_args=SESSION_ARGS)
         core_services = create_core_services(config=config)
-        services = create_services(config=config, create_all=True)
+        services = create_services(config=config)
 
         return cls(config, core_services, services)
 
