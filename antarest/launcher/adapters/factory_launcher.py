@@ -28,7 +28,6 @@ class FactoryLauncher:
         config: Config,
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
-        cache: ICache,
     ) -> dict[str, AbstractLauncher]:
         dict_launchers: dict[str, AbstractLauncher] = {}
         for cfg in config.launcher.configs or []:

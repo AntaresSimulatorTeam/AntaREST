@@ -1045,6 +1045,72 @@ class TestSnapshotGenerator:
 
     @with_admin_user
     @with_db_context
+    def test_ref_snapshot_has_changed_during_copy(
+        self, variant_study_service: VariantStudyService, variant_study_id: str
+    ) -> None:
+        generator = _build_generator(variant_study_service)
+
+        # Generates the snapshot
+        factory = Mock(spec=StudyFactoryDao)
+
+
+        def append_ref_command():
+
+        factory.create_study_dao.side_effect = append_ref_command
+
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
+        # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
+        assert not results.should_invalidate_cache
+        generated_cache = cache.get(cache_key)
+        # We should see the created areas in the generated cache
+        assert sorted(generated_cache["areas"].keys()) == ["north", "south"]
+
+        # Add a `create_cluster` command
+        variant_study = variant_study_service.repository.get(variant_study_id)
+        version = StudyVersion.parse(variant_study.version)
+        variant_study_service.append_commands(
+            variant_study_id,
+            [
+                CommandDTO(
+                    action="create_cluster",
+                    args={"area_id": "north", "cluster_name": "my_cluster", "parameters": {}},
+                    study_version=version,
+                )
+            ],
+        )
+
+        # Generates the snapshot
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
+        # Ensures we shouldn't have to invalidate the cache as the `create cluster` command updated the config correctly
+        assert not results.should_invalidate_cache
+        # Ensures the cache was modified accordingly
+        new_cache = cache.get(cache_key)
+        thermals = new_cache["areas"]["north"]["thermals"]
+        assert len(thermals) == 1
+        assert thermals[0]["name"] == "my_cluster"
+
+        # Add an `update_config` command
+        variant_study_service.append_commands(
+            variant_study_id,
+            [
+                CommandDTO(
+                    action="update_config",
+                    args={
+                        "target": "input/areas/north/optimization/filtering/filter_synthesis",
+                        "data": "annual",
+                    },
+                    study_version=version,
+                )
+            ],
+        )
+
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
+        # Ensures we have to invalidate the cache as the `update_config` command couldn't (it's too generic)
+        assert results.should_invalidate_cache
+        assert cache.get(cache_key) is None
+
+    @with_admin_user
+    @with_db_context
     def test_generation_results_details(
         self, variant_study_service: VariantStudyService, variant_study_id: str
     ) -> None:
