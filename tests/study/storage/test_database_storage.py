@@ -15,6 +15,7 @@ from unittest.mock import Mock
 
 import pytest
 
+from antarest.blobstore.in_memory import InMemoryBlobService
 from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -78,7 +79,7 @@ def test_upgrade_does_not_use_cache(tmp_path: Path, study_factory) -> None:
     generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
     study_factory = StudyFactory(matrix_service=matrix_service, cache=cache)
 
-    db_dao_factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants)
+    db_dao_factory = DatabaseStudyDaoFactory(matrix_service, InMemoryBlobService(), generator_matrix_constants)
 
     def path_getter(study_id: str) -> ResourcePaths:
         return ResourcePaths(tmp_path, tmp_path)

@@ -67,11 +67,12 @@ class RawStudyService(AbstractStudyService):
         self.study_factory = study_factory
         self.repository = repository
         self._matrix_service = command_context.matrix_service
+        blob_service = command_context.blob_service
         generator_matrix_constants = command_context.generator_matrix_constants
-        db_dao_factory = DatabaseStudyDaoFactory(self._matrix_service, generator_matrix_constants)
+        db_dao_factory = DatabaseStudyDaoFactory(self._matrix_service, blob_service, generator_matrix_constants)
         fs_dao_factory = FileStudyDaoFactory(
             self._matrix_service,
-            command_context.blob_service,
+            blob_service,
             generator_matrix_constants,
             study_factory,
             cache,

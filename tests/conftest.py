@@ -215,7 +215,7 @@ def build_db_dao(db_session: Session, matrix_service: ISimpleMatrixService, vers
         study.storage_mode = StorageMode.DATABASE
         db_session.add(study)
         db_session.commit()
-        factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants, db_session)
+        factory = DatabaseStudyDaoFactory(matrix_service, InMemoryBlobService(), generator_matrix_constants, db_session)
         metadata = StudyMetadataCreation(id=study_id, version=version, managed=True)
         dao = factory.create_study_dao(metadata)
     return dao

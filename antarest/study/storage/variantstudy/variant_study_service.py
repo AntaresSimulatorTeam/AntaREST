@@ -130,7 +130,7 @@ class VariantStudyService(AbstractStudyService):
         CommandBlobUsageProvider(variant_study_repo=repository, command_factory=command_factory)
         ctx = command_factory.command_context
         generator_matrix_constants = ctx.generator_matrix_constants
-        db_dao_factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants)
+        db_dao_factory = DatabaseStudyDaoFactory(matrix_service, ctx.blob_service, generator_matrix_constants)
         fs_dao_factory = FileStudyDaoFactory(
             matrix_service, ctx.blob_service, generator_matrix_constants, study_factory, cache, self.get_study_paths
         )

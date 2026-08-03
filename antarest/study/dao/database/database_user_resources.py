@@ -23,7 +23,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
-from antarest.core.exceptions import UserResourcesNotFound
+from antarest.blobstore.service import IBlobService
+from antarest.core.exceptions import UserResourceIsAFolder, UserResourceNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
@@ -42,7 +43,7 @@ class UserResourcesDatabaseData:
 class DatabaseUserResourcesDao(UserResourcesDao):
     """Database implementation of UserResourcesDao"""
 
-    def __init__(self, study_id: str, db_session: Session) -> None:
+    def __init__(self, study_id: str, db_session: Session, blob_service: IBlobService) -> None:
         """
         Initialize DatabaseUserResourcesDao with dependencies.
 
@@ -52,6 +53,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
         """
         self._study_id = study_id
         self._db_session = db_session
+        self._blob_service = blob_service
 
     @override
     def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
@@ -71,24 +73,38 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             if resource.resource_type == ResourceType.FOLDER and any(res.is_relative_to(resource_path) for res in tree):
                 continue
 
-            # Find parent IDs if the resource is relative to an existing one.
-            parent_ids = []
+            # Find potential existing parent IDs for the new resource.
+            parent_ids: list[str] = []
             for res, data in tree.items():
-                if resource_path.is_relative_to(res) and res != resource_path:
-                    parent_ids = data.ids
-                    break
+                if res == resource_path:
+                    continue
+
+                common_parts_count = 0
+                for p1, p2 in zip(res.parts, resource_path.parts):
+                    if p1 == p2:
+                        common_parts_count += 1
+                    else:
+                        break
+
+                if common_parts_count > len(parent_ids):
+                    # We want to find the longest common path between all existing resources and the new one.
+                    parent_ids = data.ids[:common_parts_count]
 
             # Build the resource tree.
             parent_id = parent_ids[-1] if parent_ids else None
-            ids = []
+            ids = parent_ids
 
             # Skip parts covered by parent IDs.
-            start_index = len(parent_ids)
-            for i, part in enumerate(parts := resource_path.parts[start_index:], start=start_index):
+            parts = resource_path.parts[len(parent_ids) :]
+
+            if not parts:
+                raise ValueError(f"Cannot create 2 resources of different type at the same path '{resource_path}'")
+
+            for k, part in enumerate(parts):
                 resource_id = str(uuid.uuid4())
                 ids.append(resource_id)
 
-                is_last_part = i == len(parts) - 1
+                is_last_part = k == len(parts) - 1
 
                 value = {
                     "study_id": self._study_id,
@@ -136,7 +152,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
                 self._db_session.commit()
                 return
 
-        raise UserResourcesNotFound(str(resource_path))
+        raise UserResourceNotFound(str(resource_path))
 
     @override
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
@@ -145,6 +161,20 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             UserResourceDataCreation(path=path, resource_type=data.resource_type, blob_id=data.blob_id)
             for path, data in tree.items()
         ]
+
+    @override
+    def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
+        tree = self._build_resources_tree()
+
+        if resource_path not in tree:
+            raise UserResourceNotFound(resource_path.as_posix())
+
+        data = tree[resource_path]
+        if data.resource_type == ResourceType.FOLDER:
+            raise UserResourceIsAFolder(resource_path.as_posix())
+
+        assert data.blob_id is not None
+        return self._blob_service.get(data.blob_id)
 
     def _build_resources_tree(self) -> dict[PurePosixPath, UserResourcesDatabaseData]:
         stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
