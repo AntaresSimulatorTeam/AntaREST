@@ -120,7 +120,7 @@ def get_file_transfer_manager(request: Request) -> FileTransferManager:
 
 
 def get_output_service(request: Request) -> OutputService:
-    return get_app_state(request).services.output_service
+    return get_app_state(request).services.output
 
 
 def get_favorite_study_service(request: Request) -> FavoriteStudyService:
@@ -136,15 +136,15 @@ def get_favorite_external_directory_service(request: Request) -> FavoriteExterna
 
 
 def get_favorite_aggregate_service(request: Request) -> FavoriteAggregateService:
-    return get_app_state(request).services.favorite_aggregate_service
+    return get_app_state(request).services.favorite_aggregate
 
 
 def get_tablemode_service(request: Request) -> TableModeService:
-    return get_app_state(request).services.tablemode_service
+    return get_app_state(request).services.tablemode
 
 
 def get_task_service(request: Request) -> ITaskService:
-    return get_app_state(request).services.task_service
+    return get_app_state(request).services.task
 
 
 def get_maintenance_service(request: Request) -> MaintenanceService:

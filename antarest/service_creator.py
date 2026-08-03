@@ -425,22 +425,25 @@ class Services:
     study: StudyService
     directory: DirectoryService
     matrix: MatrixService
+    blob: BlobService
     favorite_study: FavoriteStudyService
     favorite_directory: FavoriteDirectoryService
     favorite_external_directory: FavoriteExternalDirectoryService
-    favorite_aggregate_service: FavoriteAggregateService
-    tablemode_service: TableModeService
+    favorite_aggregate: FavoriteAggregateService
+    tablemode: TableModeService
     user: LoginService
     cache: ICache
     maintenance: MaintenanceService
-    task_service: ITaskService
+    task: ITaskService
     file_transfer_manager: FileTransferManager
-    output_service: OutputService
-    launcher: LauncherService | None = None
-    matrix_gc: MatrixGarbageCollector | None = None
-    auto_archiver: AutoArchiveService | None = None
-    blob_gc: BlobGarbageCollector | None = None
-    variable_view_gc: VariableViewGarbageCollector | None = None
+    output: OutputService
+    launcher: LauncherService | None
+    matrix_gc: MatrixGarbageCollector | None
+    auto_archiver: AutoArchiveService | None
+    blob_gc: BlobGarbageCollector | None
+    variable_view_gc: VariableViewGarbageCollector | None
+
+    study_disk_space_repository: StudyDiskSpaceRepository  # TODO: does not belong here
 
 
 def create_services(config: Config, create_all: bool = False) -> Services:
@@ -487,20 +490,22 @@ def create_services(config: Config, create_all: bool = False) -> Services:
         study=core_services.study_service,
         directory=core_services.directory_service,
         matrix=core_services.matrix_service,
+        blob=core_services.blob_service,
         favorite_study=core_services.favorite_study_service,
         favorite_directory=core_services.favorite_directory_service,
         favorite_external_directory=core_services.favorite_external_directory_service,
-        favorite_aggregate_service=core_services.favorite_aggregate_service,
-        tablemode_service=core_services.tablemode_service,
+        favorite_aggregate=core_services.favorite_aggregate_service,
+        tablemode=core_services.tablemode_service,
         user=core_services.login_service,
         cache=core_services.cache,
         maintenance=maintenance_service,
-        task_service=core_services.task_service,
+        task=core_services.task_service,
         file_transfer_manager=core_services.file_transfer_manager,
-        output_service=core_services.output_service,
+        output=core_services.output_service,
         launcher=launcher,
         matrix_gc=matrix_garbage_collector,
         auto_archiver=auto_archiver,
         blob_gc=blob_garbage_collector,
         variable_view_gc=variable_view_gc,
+        study_disk_space_repository=core_services.study_disk_space_repository,
     )
