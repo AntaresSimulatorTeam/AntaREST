@@ -5,13 +5,14 @@ Revises: 80fdf2408ede
 Create Date: 2026-07-08 13:51:13.329059
 
 """
-from alembic import op
+
 import sqlalchemy as sa
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = '6012b0407e38'
-down_revision = '80fdf2408ede'
+revision = "6012b0407e38"
+down_revision = "3855b61c3232"
 branch_labels = None
 depends_on = None
 
@@ -23,7 +24,7 @@ def upgrade():
         sa.Column("study_id", sa.String(), nullable=False),
         sa.Column("disk_space_bytes", sa.BigInteger(), nullable=True),
         sa.PrimaryKeyConstraint("output_id", "study_id", name="pk_output"),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_output_study_id", ondelete="CASCADE")
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_output_study_id", ondelete="CASCADE"),
     )
 
 
