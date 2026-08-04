@@ -49,7 +49,6 @@ from antarest.launcher.model import (
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
     LauncherRuntimeConfig,
-    LauncherRuntimeConfigDB,
     LogType,
     SolverPresets,
     SolverPresetsCreation,
@@ -295,9 +294,9 @@ class LauncherService:
         # Read the admin-set oversubscribe threshold here (request context, DB session valid) and pass it
         # down: the launch itself runs in a detached thread where the DB session is not available.
         oversubscribe_core_threshold: int | None = None
-        runtime_config_db = self.launcher_runtime_config_repository.get(launcher)
-        if runtime_config_db is not None:
-            oversubscribe_core_threshold = runtime_config_db.oversubscribe_core_threshold
+        runtime_config = self.launcher_runtime_config_repository.get(launcher)
+        if runtime_config.slurm is not None:
+            oversubscribe_core_threshold = runtime_config.slurm.oversubscribe_core_threshold
 
         self.launchers[launcher].run_study(
             study_uuid, job_uuid, solver_version, launcher_parameters, oversubscribe_core_threshold, scheduled_at
@@ -715,10 +714,7 @@ class LauncherService:
         Returns an empty configuration (all fields unset) when nothing has been stored yet.
         """
         self._assert_launcher_is_initialized(launcher_id)
-        config_db = self.launcher_runtime_config_repository.get(launcher_id)
-        if config_db is None:
-            return LauncherRuntimeConfig()
-        return config_db.to_model()
+        return self.launcher_runtime_config_repository.get(launcher_id)
 
     def update_runtime_config(self, launcher_id: str, config: LauncherRuntimeConfig) -> LauncherRuntimeConfig:
         """
@@ -738,8 +734,7 @@ class LauncherService:
                     detail=f"Cannot set a SLURM configuration on non-SLURM launcher '{launcher_id}'",
                 )
 
-        saved = self.launcher_runtime_config_repository.save(LauncherRuntimeConfigDB.from_model(launcher_id, config))
-        return saved.to_model()
+        return self.launcher_runtime_config_repository.save(launcher_id, config)
 
     def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
         """

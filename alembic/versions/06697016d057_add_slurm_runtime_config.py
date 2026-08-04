@@ -1,4 +1,4 @@
-"""add launcher_runtime_config
+"""add slurm_runtime_config
 
 Revision ID: 06697016d057
 Revises: 3855b61c3232
@@ -19,7 +19,7 @@ depends_on = None
 
 def upgrade():
     op.create_table(
-        "launcher_runtime_config",
+        "slurm_runtime_config",
         sa.Column("launcher_id", sa.String(length=36), nullable=False),
         sa.Column("oversubscribe_core_threshold", sa.Integer(), nullable=True),
         sa.PrimaryKeyConstraint("launcher_id"),
@@ -27,4 +27,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_table("launcher_runtime_config")
+    op.drop_table("slurm_runtime_config")

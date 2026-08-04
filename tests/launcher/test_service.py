@@ -56,7 +56,6 @@ from antarest.launcher.model import (
     LauncherLoadDTO,
     LauncherParametersDTO,
     LauncherRuntimeConfig,
-    LauncherRuntimeConfigDB,
     LogType,
     SlurmRuntimeConfig,
     SolverPresets,
@@ -139,7 +138,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
-            launcher_runtime_config_repository=Mock(**{"get.return_value": None}),
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             launcher_load_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
@@ -181,8 +180,8 @@ class TestLauncherService:
             ),
         )
         runtime_repo = Mock()
-        runtime_repo.get.return_value = None
-        runtime_repo.save.side_effect = lambda db_obj: db_obj
+        runtime_repo.get.return_value = LauncherRuntimeConfig()
+        runtime_repo.save.side_effect = lambda launcher_id, config: config
 
         factory_launcher_mock = Mock()
         factory_launcher_mock.build_launcher.return_value = {"slurm": Mock(), "local": Mock()}
@@ -207,7 +206,7 @@ class TestLauncherService:
         assert launcher_service.get_runtime_config("slurm") == LauncherRuntimeConfig()
 
         # GET reflects the stored value
-        runtime_repo.get.return_value = LauncherRuntimeConfigDB(launcher_id="slurm", oversubscribe_core_threshold=12)
+        runtime_repo.get.return_value = LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=12))
         stored = launcher_service.get_runtime_config("slurm")
         assert stored.slurm is not None
         assert stored.slurm.oversubscribe_core_threshold == 12
@@ -262,7 +261,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
-            launcher_runtime_config_repository=Mock(**{"get.return_value": None}),
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             launcher_load_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -304,7 +303,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
-            launcher_runtime_config_repository=Mock(**{"get.return_value": None}),
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             launcher_load_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -394,7 +393,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
-            launcher_runtime_config_repository=Mock(**{"get.return_value": None}),
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             launcher_load_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -1320,7 +1319,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=solver_presets_repository,
-            launcher_runtime_config_repository=Mock(**{"get.return_value": None}),
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             launcher_load_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,

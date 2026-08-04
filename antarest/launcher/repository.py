@@ -15,7 +15,13 @@ import logging
 from sqlalchemy import delete, select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult, LauncherLoad, LauncherRuntimeConfigDB, SolverPresetsDB
+from antarest.launcher.model import (
+    JobResult,
+    LauncherLoad,
+    LauncherRuntimeConfig,
+    SlurmRuntimeConfigDB,
+    SolverPresetsDB,
+)
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
@@ -122,15 +128,32 @@ class SolverPresetsRepository:
 
 
 class LauncherRuntimeConfigRepository:
-    def get(self, launcher_id: str) -> LauncherRuntimeConfigDB | None:
-        logger.debug(f"Retrieving LauncherRuntimeConfig {launcher_id}")
-        return db.session.get(LauncherRuntimeConfigDB, launcher_id)
+    """
+    Aggregate repository for a launcher's runtime configuration.
 
-    def save(self, config_db: LauncherRuntimeConfigDB) -> LauncherRuntimeConfigDB:
-        logger.debug(f"Saving LauncherRuntimeConfig {config_db.launcher_id}")
-        merged_config = db.session.merge(config_db)
+    It speaks the ``LauncherRuntimeConfig`` wrapper and owns the per-scope tables it is composed of
+    (only ``slurm_runtime_config`` today; a launcher-level *common* table can be added here later
+    without changing the service).
+    """
+
+    def get(self, launcher_id: str) -> LauncherRuntimeConfig:
+        logger.debug(f"Retrieving LauncherRuntimeConfig {launcher_id}")
+        slurm_db = db.session.get(SlurmRuntimeConfigDB, launcher_id)
+        slurm = slurm_db.to_model() if slurm_db is not None else None
+        return LauncherRuntimeConfig(slurm=slurm)
+
+    def save(self, launcher_id: str, config: LauncherRuntimeConfig) -> LauncherRuntimeConfig:
+        logger.debug(f"Saving LauncherRuntimeConfig {launcher_id}")
+        if config.slurm is None:
+            existing = db.session.get(SlurmRuntimeConfigDB, launcher_id)
+            if existing is not None:
+                db.session.delete(existing)
+            db.session.commit()
+            return LauncherRuntimeConfig(slurm=None)
+
+        merged_slurm = db.session.merge(SlurmRuntimeConfigDB.from_model(launcher_id, config.slurm))
         db.session.commit()
-        return merged_config
+        return LauncherRuntimeConfig(slurm=merged_slurm.to_model())
 
 
 class LauncherLoadRepository:
