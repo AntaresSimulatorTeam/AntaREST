@@ -36,7 +36,13 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
     VersionNotSupportedError,
 )
-from antarest.launcher.model import JobStatus, LauncherParametersDTO, XpansionParametersDTO
+from antarest.launcher.model import (
+    JobStatus,
+    LauncherParametersDTO,
+    LauncherRuntimeConfig,
+    SlurmRuntimeConfig,
+    XpansionParametersDTO,
+)
 
 
 @pytest.fixture
@@ -336,25 +342,26 @@ def test_oversubscribe(launcher_config: SlurmConfig) -> None:
     apply_params = slurm_launcher._apply_params
     default_cores = launcher_config.nb_cores.default
 
-    # No threshold configured -> never oversubscribe
+    def runtime_config(threshold: int) -> LauncherRuntimeConfig:
+        return LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=threshold))
+
+    # No runtime config (or no threshold) -> never oversubscribe
     assert apply_params(LauncherParametersDTO(nb_cpu=1)).oversubscribe is False
+    assert apply_params(LauncherParametersDTO(nb_cpu=1), LauncherRuntimeConfig()).oversubscribe is False
 
     # Requested cores below / equal to the threshold -> oversubscribe (inclusive)
-    assert apply_params(LauncherParametersDTO(nb_cpu=1), oversubscribe_core_threshold=12).oversubscribe is True
-    assert apply_params(LauncherParametersDTO(nb_cpu=12), oversubscribe_core_threshold=12).oversubscribe is True
+    assert apply_params(LauncherParametersDTO(nb_cpu=1), runtime_config(12)).oversubscribe is True
+    assert apply_params(LauncherParametersDTO(nb_cpu=12), runtime_config(12)).oversubscribe is True
 
     # Requested cores above the threshold -> no oversubscribe
-    assert apply_params(LauncherParametersDTO(nb_cpu=12), oversubscribe_core_threshold=11).oversubscribe is False
+    assert apply_params(LauncherParametersDTO(nb_cpu=12), runtime_config(11)).oversubscribe is False
 
     # Comparison uses the *effective* core count: unset nb_cpu resolves to the config default
-    assert apply_params(LauncherParametersDTO(), oversubscribe_core_threshold=default_cores).oversubscribe is True
-    assert apply_params(LauncherParametersDTO(), oversubscribe_core_threshold=default_cores - 1).oversubscribe is False
+    assert apply_params(LauncherParametersDTO(), runtime_config(default_cores)).oversubscribe is True
+    assert apply_params(LauncherParametersDTO(), runtime_config(default_cores - 1)).oversubscribe is False
 
     # Out-of-range nb_cpu is clamped to the default before the comparison
-    assert (
-        apply_params(LauncherParametersDTO(nb_cpu=999), oversubscribe_core_threshold=default_cores).oversubscribe
-        is True
-    )
+    assert apply_params(LauncherParametersDTO(nb_cpu=999), runtime_config(default_cores)).oversubscribe is True
 
 
 # noinspection PyUnresolvedReferences

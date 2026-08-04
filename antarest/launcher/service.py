@@ -291,15 +291,12 @@ class LauncherService:
         )
         self.job_result_repository.save(job_status)
 
-        # Read the admin-set oversubscribe threshold here (request context, DB session valid) and pass it
-        # down: the launch itself runs in a detached thread where the DB session is not available.
-        oversubscribe_core_threshold: int | None = None
+        # Read the admin-set runtime config here (request context, DB session valid) and pass it down:
+        # the launch itself runs in a detached thread where the DB session is not available.
         runtime_config = self.launcher_runtime_config_repository.get(launcher)
-        if runtime_config.slurm is not None:
-            oversubscribe_core_threshold = runtime_config.slurm.oversubscribe_core_threshold
 
         self.launchers[launcher].run_study(
-            study_uuid, job_uuid, solver_version, launcher_parameters, oversubscribe_core_threshold, scheduled_at
+            study_uuid, job_uuid, solver_version, launcher_parameters, runtime_config, scheduled_at
         )
 
         self.event_bus.push(

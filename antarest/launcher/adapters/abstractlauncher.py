@@ -23,7 +23,7 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
-from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
+from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LauncherRuntimeConfig, LogType
 
 
 @dataclass(frozen=True)
@@ -78,7 +78,7 @@ class AbstractLauncher(ABC):
         job_id: str,
         version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
-        oversubscribe_core_threshold: int | None = None,
+        runtime_config: LauncherRuntimeConfig | None = None,
         run_at: datetime | None = None,
     ) -> None:
         raise NotImplementedError()
