@@ -73,7 +73,7 @@ export interface TaskProgressEventPayload {
 // Events
 ////////////////////////////////////////////////////////////////
 
-interface StudyJobEvent {
+export interface StudyJobEvent {
   type:
     | typeof WsEventType.StudyJobStarted
     | typeof WsEventType.StudyJobCompleted
