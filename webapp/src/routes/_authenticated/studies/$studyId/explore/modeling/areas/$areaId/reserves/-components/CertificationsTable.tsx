@@ -20,10 +20,11 @@ import type {
   ReserveCertification,
 } from "@/services/api/studies/areas/reserves/types";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { Box, Chip, Stack, Tooltip } from "@mui/material";
+import { Box, Stack, Tooltip } from "@mui/material";
 import {
   createMRTColumnHelper,
   MaterialReactTable,
+  MRT_ExpandButton,
   MRT_ToggleFiltersButton,
   MRT_ToggleGlobalFilterButton,
   useMaterialReactTable,
@@ -82,50 +83,29 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
       columnHelper.accessor("name", {
         header: t("global.name"),
         size: 120,
-        Cell: ({ renderedCellValue, row }) => {
-          if (readOnly) {
-            return renderedCellValue;
-          }
-
-          return (
-            <Box
-              sx={clickableNameStyles}
-              onClick={() =>
-                row.original.kind === "reserve"
-                  ? onReserveClick(row.original)
-                  : onClusterClick(row.original)
-              }
-            >
-              {renderedCellValue}
-            </Box>
-          );
-        },
+        Cell: ({ renderedCellValue, row, staticRowIndex, table }) => (
+          <Stack direction="row" alignItems="center" gap={0.5}>
+            {/* The default expand column is hidden (see `columnVisibility`):
+                the button is rendered here so its depth-based margin indents
+                sub-rows and content stays flush with the table's left edge. */}
+            <MRT_ExpandButton row={row} staticRowIndex={staticRowIndex} table={table} />
+            {readOnly ? (
+              renderedCellValue
+            ) : (
+              <Box
+                sx={clickableNameStyles}
+                onClick={() =>
+                  row.original.kind === "reserve"
+                    ? onReserveClick(row.original)
+                    : onClusterClick(row.original)
+                }
+              >
+                {renderedCellValue}
+              </Box>
+            )}
+          </Stack>
+        ),
         ...getTableOptionsForAlign("left"),
-      }),
-      columnHelper.accessor((row) => (row.kind === "reserve" ? row.reserve.type : null), {
-        id: "type",
-        header: t("global.type"),
-        size: 60,
-        Cell: ({ cell }) => {
-          const type = cell.getValue();
-
-          return (
-            type && (
-              <Chip
-                label={type}
-                size="small"
-                color={type === "up" ? "success" : "warning"}
-                variant="outlined"
-                sx={{ borderRadius: 1, textTransform: "uppercase" }}
-              />
-            )
-          );
-        },
-      }),
-      columnHelper.accessor((row) => (row.kind === "reserve" ? row.subRows.length : null), {
-        id: "certifiedClusters",
-        header: t("study.modeling.reserves.certifications.certifiedClusters"),
-        size: 60,
       }),
       columnHelper.accessor(
         (row) => (row.kind === "cluster" ? row.certification.participationCost : null),
@@ -157,7 +137,7 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
           // A max power of 0 means the certification has no effect: prompt the
           // user to fill in the parameters of a newly selected cluster.
           return (
-            <Stack direction="row" gap={0.5} alignItems="center" justifyContent="flex-end">
+            <Stack gap={0.5} justifyContent="flex-end">
               {value === 0 && (
                 <Tooltip title={t("study.modeling.reserves.certifications.incomplete")}>
                   <WarningAmberIcon color="warning" sx={{ fontSize: 16 }} />
@@ -190,6 +170,7 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
     initialState: {
       density: "compact",
       expanded: true,
+      columnVisibility: { "mrt-row-expand": false },
     },
     state: { isLoading },
     enableStickyHeader: true,

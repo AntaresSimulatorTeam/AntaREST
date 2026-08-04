@@ -25,8 +25,8 @@ import { createMRTColumnHelper } from "material-react-table";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import CreateReserveDialog from "./-components/CreateReserveDialog";
-import EditGlobalParametersDrawer from "./-components/EditGlobalParametersDrawer";
-import EditReserveDrawer from "./-components/EditReserveDrawer";
+import UpdateGlobalParametersDrawer from "./-components/UpdateGlobalParametersDrawer";
+import UpdateReserveDrawer from "./-components/UpdateReserveDrawer";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general",
@@ -63,7 +63,7 @@ function ReservesGeneral() {
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
   const [editingReserve, setEditingReserve] = useState<Reserve | null>(null);
-  const [isEditReserveOpen, setIsEditReserveOpen] = useState(false);
+  const [isUpdateReserveOpen, setIsUpdateReserveOpen] = useState(false);
   const [isGlobalParametersOpen, setIsGlobalParametersOpen] = useState(false);
 
   const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
@@ -105,7 +105,7 @@ function ReservesGeneral() {
 
   const handleNameClick = (row: Reserve) => {
     setEditingReserve(row);
-    setIsEditReserveOpen(true);
+    setIsUpdateReserveOpen(true);
   };
 
   const handleCreate = ({ name, type }: RowData & Partial<Reserve>) => {
@@ -196,14 +196,14 @@ function ReservesGeneral() {
         }
       />
       {editingReserve && (
-        <EditReserveDrawer
-          open={isEditReserveOpen}
+        <UpdateReserveDrawer
+          open={isUpdateReserveOpen}
           reserve={editingReserve}
-          onClose={() => setIsEditReserveOpen(false)}
+          onClose={() => setIsUpdateReserveOpen(false)}
           onSubmit={handleUpdate}
         />
       )}
-      <EditGlobalParametersDrawer
+      <UpdateGlobalParametersDrawer
         open={isGlobalParametersOpen}
         onClose={() => setIsGlobalParametersOpen(false)}
       />

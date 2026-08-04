@@ -26,12 +26,12 @@ interface Props {
   clusterName: string;
   certification: ReserveCertification;
   onClose: VoidFunction;
-  onSubmit: (values: ReserveCertification) => Promise<void>;
+  onSubmit: (values: ReserveCertification) => Promise<ReserveCertification>;
 }
 
-// Edits the certification parameters of a cluster for a reserve. Adding or
-// removing the certification itself is handled by `ReserveClustersDrawer`.
-function EditCertificationDrawer({ open, clusterName, certification, onClose, onSubmit }: Props) {
+// Updates the certification parameters of a cluster for a reserve. Adding or
+// removing the certification itself is handled by `UpdateReserveClustersDrawer`.
+function UpdateCertificationDrawer({ open, clusterName, certification, onClose, onSubmit }: Props) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -107,4 +107,4 @@ function EditCertificationDrawer({ open, clusterName, certification, onClose, on
   );
 }
 
-export default EditCertificationDrawer;
+export default UpdateCertificationDrawer;

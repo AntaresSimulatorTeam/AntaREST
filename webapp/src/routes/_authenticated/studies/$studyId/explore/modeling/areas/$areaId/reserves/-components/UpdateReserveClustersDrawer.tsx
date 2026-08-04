@@ -41,12 +41,12 @@ interface Props {
   title: string;
   sections: ClustersSection[];
   onClose: VoidFunction;
-  onSubmit: (values: ClustersFormValues) => Promise<void>;
+  onSubmit: (values: ClustersFormValues) => Promise<ClustersFormValues>;
 }
 
 // Multi-select of the clusters certified for a reserve, one field per production
 // type. Deselecting a cluster removes its certification and deletes its parameters.
-function ReserveClustersDrawer({ open, title, sections, onClose, onSubmit }: Props) {
+function UpdateReserveClustersDrawer({ open, title, sections, onClose, onSubmit }: Props) {
   const { t } = useTranslation();
 
   const defaultValues = Object.fromEntries(
@@ -120,4 +120,4 @@ function ReserveClustersDrawer({ open, title, sections, onClose, onSubmit }: Pro
   );
 }
 
-export default ReserveClustersDrawer;
+export default UpdateReserveClustersDrawer;

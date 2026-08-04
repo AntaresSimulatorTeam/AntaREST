@@ -27,7 +27,7 @@ import { validateNumber } from "@/utils/validation/number";
 import EditIcon from "@mui/icons-material/Edit";
 import { useTranslation } from "react-i18next";
 
-interface EditReserveValues {
+interface UpdateReserveValues {
   type: ReserveType;
   failureCost: number;
   spillageCost: number;
@@ -45,14 +45,14 @@ interface Props {
 
 const RESERVE_TYPES = reserveTypeSchema.options;
 
-function EditReserveDrawer({ open, onClose, reserve, onSubmit }: Props) {
+function UpdateReserveDrawer({ open, onClose, reserve, onSubmit }: Props) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<EditReserveValues>) => {
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<UpdateReserveValues>) => {
     return onSubmit(dirtyValues);
   };
 
@@ -125,4 +125,4 @@ function EditReserveDrawer({ open, onClose, reserve, onSubmit }: Props) {
   );
 }
 
-export default EditReserveDrawer;
+export default UpdateReserveDrawer;

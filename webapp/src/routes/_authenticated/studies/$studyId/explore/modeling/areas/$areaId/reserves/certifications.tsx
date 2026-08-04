@@ -33,11 +33,11 @@ import CertificationsTable, {
   type ClusterRow,
   type ReserveRow,
 } from "./-components/CertificationsTable";
-import EditCertificationDrawer from "./-components/EditCertificationDrawer";
-import ReserveClustersDrawer, {
+import UpdateCertificationDrawer from "./-components/UpdateCertificationDrawer";
+import UpdateReserveClustersDrawer, {
   type ClustersFormValues,
   type ClustersSection,
-} from "./-components/ReserveClustersDrawer";
+} from "./-components/UpdateReserveClustersDrawer";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications",
@@ -72,7 +72,7 @@ function ReservesCertifications() {
   const [selectedReserve, setSelectedReserve] = useState<Reserve | null>(null);
   const [isClustersDrawerOpen, setIsClustersDrawerOpen] = useState(false);
   const [editingCluster, setEditingCluster] = useState<ClusterRow | null>(null);
-  const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
+  const [isUpdateDrawerOpen, setIsUpdateDrawerOpen] = useState(false);
 
   const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
 
@@ -137,7 +137,7 @@ function ReservesCertifications() {
 
   const handleClusterClick = (row: ClusterRow) => {
     setEditingCluster(row);
-    setIsEditDrawerOpen(true);
+    setIsUpdateDrawerOpen(true);
   };
 
   // Rebuilds each production type's mapping from the selection: kept clusters
@@ -223,7 +223,7 @@ function ReservesCertifications() {
         onClusterClick={handleClusterClick}
       />
       {selectedReserve && (
-        <ReserveClustersDrawer
+        <UpdateReserveClustersDrawer
           key={selectedReserve.id}
           open={isClustersDrawerOpen}
           title={selectedReserve.name}
@@ -233,12 +233,12 @@ function ReservesCertifications() {
         />
       )}
       {editingCluster && (
-        <EditCertificationDrawer
+        <UpdateCertificationDrawer
           key={editingCluster.id}
-          open={isEditDrawerOpen}
+          open={isUpdateDrawerOpen}
           clusterName={editingCluster.name}
           certification={editingCluster.certification}
-          onClose={() => setIsEditDrawerOpen(false)}
+          onClose={() => setIsUpdateDrawerOpen(false)}
           onSubmit={handleCertificationSubmit}
         />
       )}
