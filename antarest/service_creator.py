@@ -57,6 +57,7 @@ from antarest.output.adapters import (
     study_service_as_in_study_file_outputs_provider,
     study_service_as_studies_repository,
 )
+from antarest.output.repository import OutputRepository
 from antarest.output.service import OutputService
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.output.storage.file.out_of_study import OutOfStudyFileOutputStorage
@@ -259,6 +260,8 @@ def build_output_service(
 
     storages = build_output_storage_list(config, in_study_file_output_storage, out_of_study_file_output_storage)
 
+    output_repo = OutputRepository()
+
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),
         storages=storages,
@@ -266,6 +269,7 @@ def build_output_service(
         file_transfer_manager=filetransfer_service,
         matrix_service=matrix_service,
         tmp_dir=config.storage.tmp_dir,
+        output_repository=output_repo,
     )
 
     study_service.register_output_access(adapt_output_service_to_study_service(output_service))

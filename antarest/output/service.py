@@ -65,11 +65,13 @@ from antarest.output.filestudy.utils import (
     split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
+    Output,
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
+from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
@@ -229,6 +231,7 @@ class OutputService:
         matrix_service: ISimpleMatrixService,
         tmp_dir: Path,
         studies_repository: IStudyMetadataProvider,
+        output_repository: OutputRepository,
     ) -> None:
         self._storages = tuple(storages)
         self._task_service = task_service
@@ -236,6 +239,7 @@ class OutputService:
         self._matrix_service = matrix_service
         self._tmp_dir = tmp_dir
         self._studies_repository = studies_repository
+        self._output_repository = output_repository
 
         OutputVariablesMatrixUsageProvider(self._matrix_service)
 
@@ -334,6 +338,8 @@ class OutputService:
             progress=None,
             custom_event_messages=None,
         )
+
+        self._output_repository.delete(study_id, output_id)
 
         return task_id
 
@@ -648,6 +654,8 @@ class OutputService:
                 )
                 raise e
 
+        self._output_repository.delete(study_id, output_id)
+
         task_id = self._task_service.add_task(
             archive_output_task,
             task_name,
@@ -912,7 +920,13 @@ class OutputService:
         return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, log_type)
 
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
-        return self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
+        output = self._output_repository.get(study_id, output_id)
+        if output and output.disk_space_bytes is not None:
+            return output.disk_space_bytes
+        else:
+            disk_usage = self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
+            self._output_repository.save(Output(study_id=study_id, output_id=output_id, disk_space_bytes=disk_usage))
+            return disk_usage
 
     def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
         """
