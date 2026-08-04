@@ -46,7 +46,9 @@ class ReadOnlyReserveCertificationDao(ABC):
 
 class ReserveCertificationDao(ReadOnlyReserveCertificationDao):
     @abstractmethod
-    def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
+    def save_thermal_reserve_certifications(
+        self, new_certifications: dict[AreaId, ThermalReserveCertificationMapping]
+    ) -> None:
         """
         Replace the thermal reserve certifications with the given one.
 
@@ -58,5 +60,7 @@ class ReserveCertificationDao(ReadOnlyReserveCertificationDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_st_storage_reserve_certifications(self, data: dict[AreaId, StorageReserveCertificationMapping]) -> None:
+    def save_st_storage_reserve_certifications(
+        self, new_certifications: dict[AreaId, StorageReserveCertificationMapping]
+    ) -> None:
         raise NotImplementedError()

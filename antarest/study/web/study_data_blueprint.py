@@ -126,6 +126,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterUpdate,
 )
+from antarest.study.business.model.user_model import ResourceType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.model import CommentsDto
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id

@@ -40,7 +40,7 @@ def test_parsing_errors() -> None:
         "symmetries": [{"reserves": ["r1", "r2"]}],
         "certifications": [{"reserve": "r1"}, {"reserve": "r1"}],
     }
-    with pytest.raises(ValueError, match="Some reserves are duplicated for cluster th1"):
+    with pytest.raises(ValueError, match="Some reserves are duplicated for th1"):
         parse_thermal_reserves_certifications({"participations": [content]})
 
     # One symmetry only

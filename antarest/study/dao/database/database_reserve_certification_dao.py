@@ -110,22 +110,23 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         return result
 
     @override
-    def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
-        if not data:
+    def save_thermal_reserve_certifications(
+        self, new_certifications: dict[AreaId, ThermalReserveCertificationMapping]
+    ) -> None:
+        if not new_certifications:
             return
         values = []
-        for area_id, reserves_dict in data.items():
+        for area_id, reserves_dict in new_certifications.items():
             for reserve_id, thermal_dict in reserves_dict.items():
                 for thermal_id, certification in thermal_dict.items():
                     values.append(
                         _convert_thermal_model_to_row(self._study_data_id, area_id, thermal_id, reserve_id, certification)
                     )
         try:
-            self.__clean_db(_THERMAL_TABLE, data)
+            self.__clean_db(_THERMAL_TABLE, new_certifications)
             self.__insert_data_to_table(_THERMAL_TABLE, values)
         except IntegrityError as e:
-            self._db_session.rollback()
-            self._raise_the_right_thermal_reserve_exception(data, exc=e)
+            self._raise_the_right_thermal_reserve_exception(new_certifications, exc=e)
         self._db_session.commit()
 
     def _raise_the_right_thermal_reserve_exception(
@@ -172,15 +173,17 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         return result
 
     @override
-    def save_st_storage_reserve_certifications(self, data: dict[AreaId, StorageReserveCertificationMapping]) -> None:
-        if not data:
+    def save_st_storage_reserve_certifications(
+        self, new_certifications: dict[AreaId, StorageReserveCertificationMapping]
+    ) -> None:
+        if not new_certifications:
             return
-        values = self._convert_st_storages_models_to_rows(data)
+        values = self._convert_st_storages_models_to_rows(new_certifications)
         try:
-            self.__clean_db(_ST_STORAGE_TABLE, data)
+            self.__clean_db(_ST_STORAGE_TABLE, new_certifications)
             self.__insert_data_to_table(_ST_STORAGE_TABLE, values)
         except IntegrityError as e:
-            self._raise_the_right_st_storage_reserve_exception(data, exc=e)
+            self._raise_the_right_st_storage_reserve_exception(new_certifications, exc=e)
         self._db_session.commit()
 
     def _convert_st_storages_models_to_rows(
