@@ -44,17 +44,15 @@ from antarest.core.utils.utils import assert_this
 from antarest.globals import ANTAREST_WORKER_ID
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
+from antarest.launcher.adapters.slurm_launcher.slurm_load import SlurmLoad
 from antarest.launcher.exceptions import NoValidOutputError
 from antarest.launcher.model import (
     JobStatus,
-    LauncherLoadDTO,
     LauncherParametersDTO,
     LauncherRuntimeConfig,
     LogType,
     XpansionParametersDTO,
 )
-from antarest.launcher.ssh_client import calculates_slurm_load
-from antarest.launcher.ssh_config import SSHConfigDTO
 from antarest.login.utils import current_user_context, require_current_user
 
 logger = logging.getLogger(__name__)
@@ -161,7 +159,7 @@ def _get_logs(job_log_dir: Path) -> SimulationLogs:
     return SimulationLogs(out_log_path, err_log_path)
 
 
-class SlurmLauncher(AbstractLauncher):
+class SlurmLauncher(AbstractLauncher, SlurmLoad):
     def __init__(
         self,
         config: SlurmConfig,
@@ -235,7 +233,7 @@ class SlurmLauncher(AbstractLauncher):
                 except Exception:
                     # To keep the SLURM processing monitoring loop active, exceptions
                     # are caught and a message is simply displayed in the logs.
-                    logger.error(
+                    logger.exception(
                         "An uncaught exception occurred in slurm_launcher loop",
                         exc_info=True,
                     )
@@ -665,27 +663,6 @@ class SlurmLauncher(AbstractLauncher):
     @override
     def get_solver_versions(self) -> list[SolverVersion]:
         return sorted(self.slurm_config.antares_versions_on_remote_server)
-
-    @override
-    def get_load(self) -> LauncherLoadDTO:
-        ssh_config = SSHConfigDTO(
-            config_path=Path(),
-            username=self.slurm_config.username,
-            hostname=self.slurm_config.hostname,
-            port=self.slurm_config.port,
-            private_key_file=self.slurm_config.private_key_file,
-            key_password=self.slurm_config.key_password,
-            password=self.slurm_config.password,
-        )
-        partition = self.slurm_config.partition
-        allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
-        args = {
-            "allocatedCpuRate": allocated_cpus,
-            "clusterLoadRate": cluster_load,
-            "nbQueuedJobs": queued_jobs,
-            "launcherStatus": "SUCCESS",
-        }
-        return LauncherLoadDTO(**args)
 
     def _remove_study_from_workspace_db(self, study_name: str) -> None:
         pk_name = self.data_repo_tinydb.db_primary_key

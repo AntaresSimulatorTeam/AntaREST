@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
@@ -22,6 +22,7 @@ from antares.study.version import SolverVersion
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode
+from antarest.launcher.adapters.abstract_load import AbstractLoad
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
 from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LauncherRuntimeConfig, LogType
 
@@ -60,7 +61,7 @@ class LauncherCallbacks(NamedTuple):
     import_output: ImportCallBack
 
 
-class AbstractLauncher(ABC):
+class AbstractLauncher(AbstractLoad):
     def __init__(
         self,
         callbacks: LauncherCallbacks,
@@ -89,10 +90,6 @@ class AbstractLauncher(ABC):
 
     @abstractmethod
     def kill_job(self, job_id: str) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_load(self) -> LauncherLoadDTO:
         raise NotImplementedError()
 
     @abstractmethod

@@ -11,12 +11,10 @@
 # This file is part of the Antares project.
 
 import json
-import math
 import os
 import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
 from unittest.mock import Mock, call
 from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -52,8 +50,6 @@ from antarest.launcher.model import (
     JobLogType,
     JobResult,
     JobStatus,
-    LauncherLoad,
-    LauncherLoadDTO,
     LauncherParametersDTO,
     LauncherRuntimeConfig,
     LogType,
@@ -1017,222 +1013,6 @@ class TestLauncherService:
             owner_id=1,
         )
         assert actual_obj.to_dto().model_dump() == expected_obj.to_dto().model_dump()
-
-    @pytest.mark.parametrize(
-        ["running_jobs", "expected_result", "default_launcher"],
-        [
-            pytest.param(
-                [],
-                {
-                    "allocatedCpuRate": 0.0,
-                    "clusterLoadRate": 0.0,
-                    "nbQueuedJobs": 0,
-                    "launcherStatus": "SUCCESS",
-                },
-                "local",
-                id="local_no_running_job",
-            ),
-            pytest.param(
-                [
-                    Mock(
-                        spec=JobResult,
-                        launcher="local",
-                        launcher_params=None,
-                    ),
-                    Mock(
-                        spec=JobResult,
-                        launcher="local",
-                        launcher_params='{"nb_cpu": 7}',
-                    ),
-                ],
-                {
-                    "allocatedCpuRate": min(100.0, 800 / (os.cpu_count() or 1)),
-                    "clusterLoadRate": min(100.0, 800 / (os.cpu_count() or 1)),
-                    "nbQueuedJobs": 0,
-                    "launcherStatus": "SUCCESS",
-                },
-                "local",
-                id="local_with_running_jobs",
-            ),
-            pytest.param(
-                [],
-                {
-                    "allocatedCpuRate": 0.0,
-                    "clusterLoadRate": 0.0,
-                    "nbQueuedJobs": 0,
-                    "launcherStatus": "SUCCESS",
-                },
-                "slurm",
-                id="slurm launcher with no config",
-                marks=pytest.mark.xfail(
-                    reason="Configuration is not available for the slurm launcher",
-                    raises=ValidationError,
-                    strict=True,
-                ),
-            ),
-        ],
-    )
-    def test_get_load(
-        self,
-        tmp_path: Path,
-        running_jobs: list[JobResult],
-        expected_result: dict[str, Any],
-        default_launcher: str,
-    ) -> None:
-        study_service = Mock()
-        job_repository = Mock()
-
-        config = Config(
-            storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(default=default_launcher, configs=[LocalConfig(id="local", name="name")]),
-        )
-
-        launchers_dict = {}
-        if default_launcher == "local":
-            launchers_dict[default_launcher] = Mock()
-
-        factory_launcher_mock = Mock()
-        factory_launcher_mock.build_launcher.return_value = launchers_dict
-
-        launcher_load_repository_mock = Mock()
-        launcher_load_repository_mock.get_launcher_load.return_value.date = current_time()
-        launcher_load_repository_mock.get_launcher_load.return_value.to_dto.return_value = (
-            LauncherLoadDTO.model_validate(expected_result)
-        )
-
-        launcher_service = LauncherService(
-            config=config,
-            study_service=study_service,
-            output_service=Mock(),
-            login_service=Mock(),
-            job_result_repository=job_repository,
-            solver_presets_repository=Mock(),
-            launcher_load_repository=launcher_load_repository_mock,
-            event_bus=Mock(),
-            factory_launcher=factory_launcher_mock,
-            file_transfer_manager=Mock(),
-            task_service=Mock(),
-            cache=Mock(),
-        )
-
-        job_repository.get_running.return_value = running_jobs
-
-        launcher_expected_result = LauncherLoadDTO.model_validate(expected_result)
-        actual_result = launcher_service.get_load(default_launcher)
-
-        assert launcher_expected_result.launcher_status == actual_result.launcher_status
-        assert launcher_expected_result.nb_queued_jobs == actual_result.nb_queued_jobs
-        assert math.isclose(
-            launcher_expected_result.cluster_load_rate,
-            actual_result.cluster_load_rate,
-        )
-        assert math.isclose(
-            launcher_expected_result.allocated_cpu_rate,
-            actual_result.allocated_cpu_rate,
-        )
-
-    def test_get_load_is_updated_when_db_data_is_outdated(self, tmp_path: Path) -> None:
-        outdated_cached_data = LauncherLoad(
-            launcher_name="local",
-            allocated_cpu_rate=10,
-            cluster_load_rate=0,
-            nb_queued_jobs=0,
-            launcher_status="outdated status",
-            date=current_time() - timedelta(days=1),
-        )
-
-        # The fresh DTO returned by the live launcher
-        fresh_dto = LauncherLoadDTO(
-            allocated_cpu_rate=50,
-            cluster_load_rate=50,
-            nb_queued_jobs=2,
-            launcher_status="new status",
-        )
-
-        # Mock the live launcher adapter
-        launcher_mock = Mock()
-        launcher_mock.get_load.return_value = fresh_dto
-
-        factory_launcher_mock = Mock()
-        factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
-
-        # Mock the DAO to return the outdated DB entry
-        launcher_load_dao_mock = Mock()
-        launcher_load_dao_mock.get_launcher_load.return_value = outdated_cached_data
-
-        config = Config(
-            storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(default="local", configs=[LocalConfig(id="local", name="name")]),
-        )
-
-        launcher_service = LauncherService(
-            config=config,
-            study_service=Mock(),
-            output_service=Mock(),
-            login_service=Mock(),
-            job_result_repository=Mock(),
-            solver_presets_repository=Mock(),
-            launcher_load_repository=launcher_load_dao_mock,
-            event_bus=Mock(),
-            factory_launcher=factory_launcher_mock,
-            file_transfer_manager=Mock(),
-            task_service=Mock(),
-            cache=Mock(),
-        )
-
-        load = launcher_service.get_load("local")
-
-        # The live launcher should have been called since the DB data was outdated
-        launcher_mock.get_load.assert_called_once()
-        assert load.launcher_status == "new status"
-        assert load.allocated_cpu_rate == 50
-        assert load.cluster_load_rate == 50
-        assert load.nb_queued_jobs == 2
-
-    def test_use_cached_launcher_data_when_not_outdated(self, tmp_path: Path) -> None:
-        recent_cached_data = LauncherLoad(
-            launcher_name="local",
-            allocated_cpu_rate=10,
-            cluster_load_rate=0,
-            nb_queued_jobs=0,
-            launcher_status="fresh status",
-            date=current_time(),
-        )
-
-        launcher_mock = Mock()
-        factory_launcher_mock = Mock()
-        factory_launcher_mock.build_launcher.return_value = {"local": launcher_mock}
-
-        launcher_load_dao_mock = Mock()
-        launcher_load_dao_mock.get_launcher_load.return_value = recent_cached_data
-
-        config = Config(
-            storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(default="local", configs=[LocalConfig(id="local", name="name")]),
-        )
-
-        launcher_service = LauncherService(
-            config=config,
-            study_service=Mock(),
-            output_service=Mock(),
-            login_service=Mock(),
-            job_result_repository=Mock(),
-            solver_presets_repository=Mock(),
-            launcher_load_repository=launcher_load_dao_mock,
-            event_bus=Mock(),
-            factory_launcher=factory_launcher_mock,
-            file_transfer_manager=Mock(),
-            task_service=Mock(),
-            cache=Mock(),
-        )
-
-        load = launcher_service.get_load("local")
-
-        launcher_mock.get_load.assert_not_called()
-        assert load.launcher_status == "fresh status"
-        assert load.allocated_cpu_rate == 10
-        assert load.cluster_load_rate == 0
-        assert load.nb_queued_jobs == 0
 
     def test_import_output_is_called_with_the_right_user(self, tmp_path: Path) -> None:
         # Create user

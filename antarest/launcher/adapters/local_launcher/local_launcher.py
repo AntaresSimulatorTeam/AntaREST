@@ -33,9 +33,10 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
+from antarest.launcher.adapters.local_launcher.local_load import LocalLoad
 from antarest.launcher.adapters.log_manager import LogTailManager
 from antarest.launcher.exceptions import InvalidScheduleTime, NoValidOutputError
-from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LauncherRuntimeConfig, LogType
+from antarest.launcher.model import JobStatus, LauncherParametersDTO, LauncherRuntimeConfig, LogType
 from antarest.login.utils import current_user_context, require_current_user
 from antarest.study.model import STUDY_VERSION_9_2
 
@@ -52,7 +53,7 @@ def _check_option(option_name: str, min_version: SolverVersion, actual_version: 
         raise ValueError(f"Option '{option_name}' is not supported for solver version {actual_version}.")
 
 
-class LocalLauncher(AbstractLauncher):
+class LocalLauncher(AbstractLauncher, LocalLoad):
     """
     This local launcher is meant to work when using AntaresWeb on a single worker process in local mode
     """
@@ -71,7 +72,6 @@ class LocalLauncher(AbstractLauncher):
         logs_path.mkdir(parents=True, exist_ok=True)
         self.log_directory = logs_path
         self.log_tail_manager = LogTailManager()
-        self.submitted_jobs: dict[str, LauncherParametersDTO] = {}
         self.job_id_to_study_id: dict[str, tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: dict[str, str] = {}
 
@@ -291,18 +291,3 @@ class LocalLauncher(AbstractLauncher):
     @override
     def get_solver_versions(self) -> list[SolverVersion]:
         return sorted(self.local_config.binaries)
-
-    @override
-    def get_load(self) -> LauncherLoadDTO:
-        local_used_cpus = sum(params.nb_cpu or 1 for params in self.submitted_jobs.values())
-
-        # The cluster load is approximated by the percentage of used CPUs.
-        cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
-
-        args = {
-            "allocatedCpuRate": cluster_load_approx,
-            "clusterLoadRate": cluster_load_approx,
-            "nbQueuedJobs": 0,
-            "launcherStatus": "SUCCESS",
-        }
-        return LauncherLoadDTO(**args)
