@@ -128,14 +128,6 @@ class SolverPresetsRepository:
 
 
 class LauncherRuntimeConfigRepository:
-    """
-    Aggregate repository for a launcher's runtime configuration.
-
-    It speaks the ``LauncherRuntimeConfig`` wrapper and owns the per-scope tables it is composed of
-    (only ``slurm_runtime_config`` today; a launcher-level *common* table can be added here later
-    without changing the service).
-    """
-
     def get(self, launcher_id: str) -> LauncherRuntimeConfig:
         logger.debug(f"Retrieving LauncherRuntimeConfig {launcher_id}")
         slurm_db = db.session.get(SlurmRuntimeConfigDB, launcher_id)
