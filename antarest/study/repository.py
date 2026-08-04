@@ -18,7 +18,6 @@ from sqlalchemy import TEXT, and_, delete, exists, func, literal, not_, or_, sel
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Query, Session, joinedload, with_polymorphic
 
-from antarest.core.interfaces.cache import ICache
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.serde import AntaresBaseModel
@@ -152,15 +151,13 @@ class StudyMetadataRepository:
     Database connector to manage Study entity
     """
 
-    def __init__(self, cache_service: ICache, session: Session | None = None):
+    def __init__(self, session: Session | None = None):
         """
         Initialize the repository.
 
         Args:
-            cache_service: Cache service for the repository.
             session: Optional SQLAlchemy session to be used.
         """
-        self.cache_service = cache_service
         self._session = session
 
     @property

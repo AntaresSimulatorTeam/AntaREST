@@ -14,9 +14,9 @@ import io
 import json
 import zipfile
 from pathlib import Path
+from subprocess import run
 from unittest.mock import Mock
 
-import py7zr
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -46,8 +46,8 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
         with zipfile.ZipFile(sta_mini_archive_path) as zip_output:
             zip_output.extractall(path=path_studies)
     elif sta_mini_archive_path.suffix == ".7z":
-        with py7zr.SevenZipFile(sta_mini_archive_path, "r") as szf:
-            szf.extractall(path=path_studies / "STA-mini")
+        target_dir = str(path_studies / "STA-mini")
+        run(["7z", "x", str(sta_mini_archive_path), f"-o{target_dir}", "-y"], check=True)
     else:
         raise ValueError(f"Unsupported archive format {sta_mini_archive_path.suffix}")
 

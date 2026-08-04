@@ -13,6 +13,7 @@ import functools
 import logging
 import os
 import shutil
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -35,9 +36,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
-from antarest.launcher.exceptions import NoValidOutputError
-from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
-from antarest.launcher.extensions.interface import ILauncherExtension
+from antarest.launcher.exceptions import InvalidScheduleTime, NoValidOutputError
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
@@ -45,6 +44,7 @@ from antarest.launcher.model import (
     JobStatus,
     LauncherInfoDTO,
     LauncherListDTO,
+    LauncherLoad,
     LauncherLoadDTO,
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
@@ -57,7 +57,8 @@ from antarest.launcher.model import (
     apply_update_solver_presets,
     is_version_covered_by_config,
 )
-from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
+from antarest.launcher.repository import JobResultRepository, LauncherLoadRepository, SolverPresetsRepository
+from antarest.launcher.ssh_client import SlurmError
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user, require_current_user
 from antarest.output.service import OutputService
@@ -97,6 +98,8 @@ class LauncherServiceNotAvailableException(HTTPException):
 LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
 EXECUTION_INFO_FILE = "execution_info.ini"
 
+MAX_SCHEDULE_HORIZON = timedelta(days=15)
+
 
 class LauncherService:
     def __init__(
@@ -107,6 +110,7 @@ class LauncherService:
         login_service: LoginService,
         job_result_repository: JobResultRepository,
         solver_presets_repository: SolverPresetsRepository,
+        launcher_load_repository: LauncherLoadRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
@@ -119,6 +123,7 @@ class LauncherService:
         self.login_service = login_service
         self.job_result_repository = job_result_repository
         self.solver_presets_repository = solver_presets_repository
+        self.launcher_cache_repository = launcher_load_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -134,11 +139,6 @@ class LauncherService:
             event_bus,
             cache,
         )
-        self.extensions = self._init_extensions()
-
-    def _init_extensions(self) -> dict[str, ILauncherExtension]:
-        adequacy_patch_ext = AdequacyPatchExtension(self.study_service, self.config)
-        return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
     def get_launchers(self) -> LauncherListDTO:
         configs = self.config.launcher.configs or []
@@ -163,24 +163,6 @@ class LauncherService:
             )
         default_launcher = self.config.launcher.default
         return LauncherListDTO(launchers=launchers, default_launcher=default_launcher)
-
-    def _after_export_flat_hooks(
-        self,
-        job_id: str,
-        study_id: str,
-        study_exported_path: Path,
-        launcher_params: LauncherParametersDTO,
-    ) -> None:
-        for ext in self.extensions:
-            if launcher_params is not None and launcher_params.__getattribute__(ext) is not None:
-                logger.info(f"Applying extension {ext} after_export_flat_hook on job {job_id}")
-                with db():
-                    self.extensions[ext].after_export_flat_hook(
-                        job_id,
-                        study_id,
-                        study_exported_path,
-                        launcher_params.__getattribute__(ext),
-                    )
 
     def update(
         self,
@@ -237,6 +219,27 @@ class LauncherService:
     def _generate_new_id() -> str:
         return str(uuid4())
 
+    @staticmethod
+    def _normalize_scheduled_at(run_at: datetime) -> datetime:
+        """
+        Validate a requested scheduled start time and convert it to a naive UTC datetime.
+
+        A naive `run_at` is assumed to already be UTC; an aware one is converted to UTC.
+
+        Raises:
+            InvalidScheduleTime: if the time is not in the future or beyond the allowed horizon.
+        """
+        if run_at.tzinfo is not None:
+            run_at = run_at.astimezone(timezone.utc).replace(tzinfo=None)
+        now = current_time()
+        if run_at <= now:
+            raise InvalidScheduleTime("The scheduled start time must be in the future")
+        if run_at > now + MAX_SCHEDULE_HORIZON:
+            raise InvalidScheduleTime(
+                f"The scheduled start time cannot be more than {MAX_SCHEDULE_HORIZON.days} days in the future"
+            )
+        return run_at
+
     def run_study(
         self,
         study_uuid: str,
@@ -244,11 +247,14 @@ class LauncherService:
         launcher_parameters: LauncherParametersDTO,
         solver_presets_id: str | None = None,
         version: str | None = None,
+        run_at: datetime | None = None,
     ) -> str:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
         study_info = self.study_service.get_study_information(uuid=study_uuid)
         solver_version = SolverVersion.parse(version or study_info.version)
+
+        scheduled_at = self._normalize_scheduled_at(run_at) if run_at is not None else None
 
         if solver_presets_id is not None:
             solver_presets = self.get_solver_presets(solver_presets_id)
@@ -273,10 +279,11 @@ class LauncherService:
             launcher=launcher,
             launcher_params=launcher_parameters.model_dump_json() if launcher_parameters else None,
             owner_id=(owner_id or None),
+            scheduled_at=scheduled_at,
         )
         self.job_result_repository.save(job_status)
 
-        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_parameters)
+        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_parameters, scheduled_at)
 
         self.event_bus.push(
             Event(
@@ -450,7 +457,6 @@ class LauncherService:
                 output_list=output_list,
             )
         self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
-        self._after_export_flat_hooks(job_id, study_id, target_path, launcher_params)
 
     def _get_job_output_fallback_path(self, job_id: str) -> Path:
         return self.config.storage.tmp_dir / f"output_{job_id}"
@@ -624,7 +630,25 @@ class LauncherService:
         if launcher is None:
             raise InvalidConfigurationError(launcher_id)
 
+        load = self.launcher_cache_repository.get_launcher_load(launcher_id)
+        if load is not None and not self._is_outdated_load_data(load):
+            return load.to_dto()
+
+        logger.info("No valid cached load for launcher '%s', querying live", launcher_id)
         return launcher.get_load()
+
+    def _is_outdated_load_data(self, load: LauncherLoad) -> bool:
+        return load.date < current_time() - self.config.launcher.launcher_cache_validity_time
+
+    def get_all_loads(self) -> dict[str, LauncherLoadDTO]:
+        all_loads = {}
+        for launcher_id, launcher in self.launchers.items():
+            try:
+                all_loads[launcher_id] = launcher.get_load()
+            except SlurmError:
+                logger.warning("Failed to query load for launcher '%s'", launcher_id)
+
+        return all_loads
 
     def get_solver_versions(self, launcher_id: str | None) -> list[SolverVersion]:
         """

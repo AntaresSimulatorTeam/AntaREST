@@ -1101,6 +1101,36 @@ COMMANDS = [
         None,
         id="remove_reserve_definitions",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_THERMAL_RESERVE_CERTIFICATIONS.value,
+            args={
+                "area_id": "fr",
+                "certifications": {
+                    "r1": {
+                        "th1": {
+                            "max_power": 3.2,
+                            "max_power_off": 1.2,
+                            "participation_cost": 0,
+                            "participation_cost_off": 4,
+                        }
+                    }
+                },
+            },
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="replace_thermal_reserve_certifications",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_THERMAL_RESERVE_SYMMETRIES.value,
+            args={"area_id": "paris", "symmetries": {"th1": [["r1", "r2", "r3"]]}},
+            study_version=STUDY_VERSION_10_0,
+        ),
+        None,
+        id="replace_thermal_reserve_symmetries",
+    ),
 ]
 
 

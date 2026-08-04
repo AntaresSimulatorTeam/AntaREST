@@ -150,6 +150,12 @@ class ReserveDefinitionNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
+class ReserveDefinitionsNotFound(HTTPException):
+    def __init__(self, invalid_reserve_ids: dict[str, set[str]]):
+        msg = f"Reserve definitions not found: {invalid_reserve_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
 # ============================================================
 # Duplicate (409)
 # ============================================================
@@ -250,11 +256,6 @@ class CommandNotValid(HTTPException):
 class CommandApplicationError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.INTERNAL_SERVER_ERROR, message)
-
-
-class CommandUpdateAuthorizationError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.LOCKED, message)
 
 
 class StudyValidationError(HTTPException):
@@ -600,13 +601,14 @@ class LayerNotAllowedToBeDeleted(HTTPException):
         )
 
 
-class UserResourcesNotFound(HTTPException):
+class UserResourceNotFound(HTTPException):
     def __init__(self, path: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, f"User resources not found: '{path}'")
 
 
-class StudyOutputNotFoundError(Exception):
-    pass
+class UserResourceIsAFolder(HTTPException):
+    def __init__(self, path: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, f"User resources '{path}' is a folder. Please provide a file.")
 
 
 class AreaNotFound(HTTPException):
@@ -850,4 +852,16 @@ class RenewableClustersNotFound(HTTPException):
 class STStoragesNotFound(HTTPException):
     def __init__(self, invalid_sts_ids: dict[str, set[str]]) -> None:
         msg = f"Short term storages not found: {invalid_sts_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class SevenZipNotSupportedOnThisMachine(Exception):
+    def __init__(self) -> None:
+        msg = "7z command line is not supported on this machine. Consider installing it if you want to unarchive these files."
+        super().__init__(msg)
+
+
+class ThermalReserveCertificationNotFound(HTTPException):
+    def __init__(self, area_id: str, thermal_id: str, reserve_ids: set[str]):
+        msg = f"Certifications for reserve(s) '{reserve_ids}' on thermal cluster '{thermal_id}' not found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)

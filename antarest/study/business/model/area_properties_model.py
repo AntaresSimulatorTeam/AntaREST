@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from collections.abc import Iterable
-from typing import Literal, TypeAlias, cast
+from typing import Literal, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -53,7 +53,7 @@ def parse_filters(value: str) -> set[FrequencyFilter]:
 def _validate_filter(value: str) -> FrequencyFilter:
     if value not in FILTER_OPTIONS:
         raise ValueError(f"Invalid filter {value}, expected one of {','.join(FILTER_OPTIONS)}.")
-    return cast(FrequencyFilter, value)
+    return value
 
 
 def serialize_filters(encoded_value: set[FrequencyFilter]) -> str:

@@ -20,7 +20,6 @@ from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
@@ -97,7 +96,7 @@ class TestArchiveOldStudiesIntegration:
         now = current_time()
 
         with db():
-            repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
+            repository = StudyMetadataRepository()
             db_session = repository.session
 
             # Create old studies that should be archived
@@ -153,7 +152,7 @@ class TestArchiveOldStudiesIntegration:
         now = current_time()
 
         with db():
-            repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
+            repository = StudyMetadataRepository()
             db_session = repository.session
 
             # Create only recent studies
@@ -202,7 +201,7 @@ class TestArchiveOldStudiesIntegration:
         now = current_time()
 
         with db():
-            repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
+            repository = StudyMetadataRepository()
             db_session = repository.session
 
             # Create an old but already archived study

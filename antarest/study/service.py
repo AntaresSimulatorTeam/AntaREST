@@ -79,7 +79,9 @@ from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.areas.renewable_management import RenewableManager
+from antarest.study.business.areas.reserve_certification_management import ReserveCertificationsManager
 from antarest.study.business.areas.reserve_definitions_management import ReserveDefinitionsManager
+from antarest.study.business.areas.reserve_symmetries_management import ReserveSymmetriesManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
@@ -111,12 +113,14 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
+from antarest.study.business.user_resources_management import UserResourcesManager
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.directory_service import DirectoryService
 from antarest.study.dtos import StudySynthesis
+from antarest.study.events import notify_study_creation, notify_study_edition, notify_study_map_edition
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
@@ -337,28 +341,7 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 thermal_outage_details=self.thermal_outage_details,
             )
             self.study_interface_supplier(study).add_commands([command], listener)
-
-            if isinstance(study, VariantStudy):
-                # In this case we only added the command to the list.
-                # It means the generation will really be executed in the next snapshot generation.
-                # We don't want this, we want this task to generate the matrices no matter the study.
-                # Therefore, we have to launch a variant generation task inside the timeseries generation one.
-                variant_service = self.storage_service.variant_study_service
-                task_service = variant_service.task_service
-                generation_task_id = variant_service.generate_task(study, False, listener)
-                task_service.await_task(generation_task_id)
-                result = task_service.status_task(generation_task_id)
-                assert result.result is not None
-                if not result.result.success:
-                    raise ValueError(result.result.message)
-
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study),
-                )
-            )
+            notify_study_edition(self.event_bus, study)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         msg = f"Generating thermal timeseries for study '{self._study_id}'"
@@ -404,13 +387,7 @@ class StudyUpgraderTask:
             remove_from_cache(self.cache_service, study_to_upgrade.id)
             study_to_upgrade.version = f"{self._target_version:2d}"
             self.repository.save(study_to_upgrade)
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_EDITED,
-                    payload=study_to_upgrade.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study_to_upgrade),
-                )
-            )
+            notify_study_edition(self.event_bus, study_to_upgrade)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
         """
@@ -551,16 +528,19 @@ class VariantStudyInterface(StudyInterface):
 
     @override
     def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
-        # get current user if not in session, otherwise get session user
         self._variant_service.append_commands(self._study.id, transform_command_to_dto(commands, force_aggregate=True))
 
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
         """
-        We update the last modification date in DB.
-        This way, the variant snapshot will be re-generated inside future operations.
+        If the study is stored on the filesystem, some of its metadata is duplicated.
+        They are stored in DB and on the disk.
+        When updating the metadata, we store the new data in DB and increment the `commands_list_version` table.
+        This way, the variant snapshot will be re-generated with the metadata stored in DB for future operations.
         """
         self._study.updated_at = current_time()
+        if self._study.storage_mode == StorageMode.FILESYSTEM:
+            self._variant_service.repository.increment_commands_list_version(self._study.id)
         self._variant_service.repository.save(self._study)
 
 
@@ -569,7 +549,7 @@ class IOutputsAccess(ABC):
     Access to outputs data.
 
     The abstraction is quite leaky: the behaviour for outputs stored in-study is kept
-    unchanched for backward compat, and stays mainly implemented in raw study service.
+    unchanged for backward compat, and stays mainly implemented in raw study service.
 
     Lightweight interface to the output service, with only a few methods that are legitimate to
     use by studies being an aggregate of study input data and output data.
@@ -666,6 +646,8 @@ class StudyService:
         self.compatibility_parameters_manager = CompatibilityParamsManager(command_context)
         self.reserves_global_parameters_manager = ReservesGlobalParametersManager(command_context)
         self.reserve_definitions_manager = ReserveDefinitionsManager(command_context)
+        self.reserve_symmetries_manager = ReserveSymmetriesManager(command_context)
+        self.reserve_certifications_manager = ReserveCertificationsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
@@ -686,6 +668,7 @@ class StudyService:
             self.st_storage_manager,
             self.binding_constraint_manager,
         )
+        self.user_resources_manager = UserResourcesManager(command_context)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: list[Callable[[str], None]] = []
@@ -930,13 +913,7 @@ class StudyService:
         if metadata_patch.tags is not None:
             self.repository.update_tags(study, metadata_patch.tags)
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_edition(self.event_bus, study)
 
         remove_from_cache(cache=self.cache_service, root_id=study.id)
         return self.get_study_information(study.id)
@@ -946,6 +923,12 @@ class StudyService:
         assert_permission(study, permission)
         self.assert_study_unarchived(study)
         return study
+
+    def invalidate_cache(self, uuid: str) -> None:
+        """Drop the study cache so the next read rebuilds its config from disk."""
+        study = self.get_study(uuid)
+        logger.info(f"Invalidating cache for study {study.id}")
+        remove_from_cache(cache=self.cache_service, root_id=study.id)
 
     def get_study_interface(self, study: Study) -> StudyInterface:
         """
@@ -1024,13 +1007,7 @@ class StudyService:
         self.repository.save(raw)
         self.storage_service.raw_study_service.create_study_dao(raw)
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_CREATED,
-                payload=raw.to_json_summary(),
-                permissions=PermissionInfo.from_study(raw),
-            )
-        )
+        notify_study_creation(self.event_bus, raw)
 
         logger.info("study %s created by user %s with storage_mode=%s", raw.id, get_user_id(), storage_mode)
         return str(raw.id)
@@ -1201,13 +1178,7 @@ class StudyService:
                     # study.content_status = self._analyse_study(study)
 
                     self.repository.save(study)
-                    self.event_bus.push(
-                        Event(
-                            type=EventType.STUDY_CREATED,
-                            payload=study.to_json_summary(),
-                            permissions=PermissionInfo.from_study(study),
-                        )
-                    )
+                    notify_study_creation(self.event_bus, study)
                 except Exception as e:
                     logger.error(f"Failed to add study {folder.path}", exc_info=e)
             elif directory and (workspace, study_path) in studies_by_path_workspace:
@@ -1298,13 +1269,7 @@ class StudyService:
                 new_jobs = [job.copy_jobs_for_study(study.id) for job in jobs]
                 self.job_result_repository.save_all(new_jobs)
 
-            self.event_bus.push(
-                Event(
-                    type=EventType.STUDY_CREATED,
-                    payload=study.to_json_summary(),
-                    permissions=PermissionInfo.from_study(study),
-                )
-            )
+            notify_study_creation(self.event_bus, study)
 
             logger.info(
                 "study %s copied to %s by user %s",
@@ -1356,13 +1321,7 @@ class StudyService:
         study.directory_id = directory_id
 
         self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_edition(self.event_bus, study)
 
     def export_study(
         self,
@@ -1642,13 +1601,7 @@ class StudyService:
                 self.repository.delete(study.id)
                 raise StudyImportFailed(sid, reason=str(e))
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_CREATED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_creation(self.event_bus, study)
 
         logger.info("study %s imported by user %s", study.id, get_user_id())
         return study.id
@@ -1741,30 +1694,17 @@ class StudyService:
         self.get_study_interface(study).add_commands(commands)
         return commands  # for testing purpose
 
-    def apply_commands(self, uuid: str, commands: list[CommandDTO]) -> list[str] | None:
+    def apply_commands(self, uuid: str, commands: list[CommandDTO]) -> None:
         study = self.get_study(uuid)
-        if isinstance(study, VariantStudy):
-            return self.storage_service.variant_study_service.append_commands(uuid, commands)
-        else:
-            assert_permission(study, StudyPermissionType.WRITE)
-            self.assert_study_unarchived(study)
-            parsed_commands: list[ICommand] = []
-            for command in commands:
-                parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
-            self.get_study_interface(study).add_commands(parsed_commands)
+        assert_permission(study, StudyPermissionType.WRITE)
+        self.assert_study_unarchived(study)
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
-        logger.info(
-            "Study %s updated by user %s",
-            uuid,
-            get_user_id(),
-        )
+        parsed_commands: list[ICommand] = []
+        for command in commands:
+            parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
+        self.get_study_interface(study).add_commands(parsed_commands)
+
+        logger.info("Study %s updated by user %s", uuid, get_user_id())
         return None
 
     def edit_study(self, uuid: str, url: str, new: SUB_JSON) -> JSON:
@@ -1803,13 +1743,6 @@ class StudyService:
         else:
             self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
         logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
         return cast(JSON, new)
 
@@ -1834,13 +1767,7 @@ class StudyService:
 
         study.owner = new_owner
         self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_edition(self.event_bus, study)
 
         self.get_study_interface(study).update_study_metadata(StudyMetadataUpdate(author=new_owner.name or ""))
 
@@ -1863,13 +1790,7 @@ class StudyService:
         if group not in study.groups:
             study.groups = study.groups + [group]
         self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_edition(self.event_bus, study)
 
         logger.info(
             "adding group %s to study %s by user %s",
@@ -1892,13 +1813,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         study.groups = [group for group in study.groups if group.id != group_id]
         self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_edition(self.event_bus, study)
 
         logger.info(
             "removing group %s to study %s by user %s",
@@ -1921,18 +1836,8 @@ class StudyService:
         assert_permission(study, StudyPermissionType.MANAGE_PERMISSIONS)
         study.public_mode = mode
         self.repository.save(study)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
-        logger.info(
-            "updated public mode of study %s by user %s",
-            study_id,
-            get_user_id(),
-        )
+        notify_study_edition(self.event_bus, study)
+        logger.info("updated public mode of study %s by user %s", study_id, get_user_id())
 
     def get_all_areas_info(
         self,
@@ -1969,13 +1874,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         new_area = self.area_manager.create_area(self.get_study_interface(study), area_creation_dto)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_map_edition(self.event_bus, study)
         return new_area
 
     def create_link(
@@ -1987,13 +1886,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         new_link = self.links_manager.create_link(self.get_study_interface(study), link_creation_dto)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_map_edition(self.event_bus, study)
         return new_link
 
     def update_link(
@@ -2009,13 +1902,7 @@ class StudyService:
         updated_link = self.links_manager.update_link(
             self.get_study_interface(study), area_from, area_to, link_update_dto
         )
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_map_edition(self.event_bus, study)
         return updated_link
 
     def update_area_ui(
@@ -2028,7 +1915,8 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
-        return self.area_manager.update_area_ui(self.get_study_interface(study), area_id, area_ui, layer)
+        self.area_manager.update_area_ui(self.get_study_interface(study), area_id, area_ui, layer)
+        notify_study_map_edition(self.event_bus, study)
 
     def delete_area(self, uuid: str, area_id: str) -> None:
         """
@@ -2056,13 +1944,7 @@ class StudyService:
 
         # Delete the area
         self.area_manager.delete_area(study_interface, area_id)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_map_edition(self.event_bus, study)
 
     def delete_link(
         self,
@@ -2094,13 +1976,7 @@ class StudyService:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
         self.links_manager.delete_link(study_interface, area_from, area_to)
-        self.event_bus.push(
-            Event(
-                type=EventType.STUDY_DATA_EDITED,
-                payload=study.to_json_summary(),
-                permissions=PermissionInfo.from_study(study),
-            )
-        )
+        notify_study_map_edition(self.event_bus, study)
 
     def archive(self, uuid: str) -> str:
         logger.info(f"Archiving study {uuid}")
@@ -2140,13 +2016,7 @@ class StudyService:
                     raise StudyNotFoundError(uuid)
                 study_db.archived = True
                 self.repository.save(study_db)
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_EDITED,
-                        payload=study_db.to_json_summary(),
-                        permissions=PermissionInfo.from_study(study_db),
-                    )
-                )
+                notify_study_edition(self.event_bus, study_db)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2189,13 +2059,7 @@ class StudyService:
                     raise StudyNotFoundError(uuid)
                 study_db.archived = False
                 self.repository.save(study_db)
-                self.event_bus.push(
-                    Event(
-                        type=EventType.STUDY_EDITED,
-                        payload=study_db.to_json_summary(),
-                        permissions=PermissionInfo.from_study(study_db),
-                    )
-                )
+                notify_study_edition(self.event_bus, study_db)
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
 
             return TaskResult(success=True, message="ok")

@@ -21,7 +21,7 @@ from typing import TYPE_CHECKING
 
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
-from antarest.service_creator import SESSION_ARGS, create_core_services, init_db_engine
+from antarest.service_creator import SESSION_ARGS, Services, create_core_services, create_services, init_db_engine
 from antarest.study.repository import StudyDiskSpaceRepository
 
 if TYPE_CHECKING:
@@ -38,9 +38,10 @@ logger = logging.getLogger(__name__)
 class MaintenanceContext:
     """Holds services needed by maintenance tasks."""
 
-    def __init__(self, config: "Config", core_services: "CoreServices") -> None:
+    def __init__(self, config: "Config", core_services: "CoreServices", services: "Services") -> None:
         self.config = config
         self.core_services = core_services
+        self.services = services
 
     @classmethod
     def create(cls, config: "Config") -> "MaintenanceContext":
@@ -50,8 +51,9 @@ class MaintenanceContext:
         engine = init_db_engine(config, auto_upgrade_db=False)
         init_db_singleton(custom_engine=engine, session_args=SESSION_ARGS)
         core_services = create_core_services(config=config)
+        services = create_services(config=config)
 
-        return cls(config, core_services)
+        return cls(config, core_services, services)
 
     @property
     def matrix_service(self) -> "MatrixService":

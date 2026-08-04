@@ -32,7 +32,9 @@ from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
 from antarest.study.dao.file.file_study_optimization_preferences import FileStudyOptimizationPreferencesDao
 from antarest.study.dao.file.file_study_playlist_config_dao import FileStudyPlaylistConfigDao
 from antarest.study.dao.file.file_study_renewable_dao import FileStudyRenewableDao
+from antarest.study.dao.file.file_study_reserve_certification_dao import FileStudyThermalReserveCertificationDao
 from antarest.study.dao.file.file_study_reserve_definition_dao import FileStudyReserveDefinitionDao
+from antarest.study.dao.file.file_study_reserve_symmetries_dao import FileStudyThermalReserveSymmetriesDao
 from antarest.study.dao.file.file_study_reserves_global_parameters_dao import FileStudyReservesGlobalParametersDao
 from antarest.study.dao.file.file_study_scenario_builder_dao import FileStudyScenarioBuilderDao
 from antarest.study.dao.file.file_study_st_storage_dao import FileStudySTStorageDao
@@ -78,6 +80,8 @@ class FileStudyTreeDao(
     FileStudyAreaDao,
     FileStudyReservesGlobalParametersDao,
     FileStudyReserveDefinitionDao,
+    FileStudyThermalReserveCertificationDao,
+    FileStudyThermalReserveSymmetriesDao,
 ):
     """
     Implementation of study DAO over the simulator input format.

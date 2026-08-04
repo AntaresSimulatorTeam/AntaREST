@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeVar
 
 from antarest.core.exceptions import WritingInsideZippedFileException
-from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 
 if TYPE_CHECKING:
@@ -125,14 +124,7 @@ class INode(ABC, Generic[G, S, V]):
     def get_file_content(self) -> OriginalFile:
         suffix = self.config.path.suffix
         filename = self.config.path.name
-        if self.config.archive_path:
-            content = read_original_file_in_archive(
-                self.config.archive_path,
-                self.get_relative_path_inside_archive(self.config.archive_path),
-            )
-            return OriginalFile(suffix=suffix, filename=filename, content=content)
-        else:
-            return OriginalFile(content=self.config.path.read_bytes(), suffix=suffix, filename=filename)
+        return OriginalFile(content=self.config.path.read_bytes(), suffix=suffix, filename=filename)
 
     def get_relative_path_inside_archive(self, archive_path: Path) -> str:
         return self.config.path.relative_to(archive_path.parent / self.config.study_id).as_posix()

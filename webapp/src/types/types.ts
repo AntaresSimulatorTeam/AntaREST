@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { TimeFrequencyType } from "@/components/Matrix/shared/types";
 import type { StudySortConfigSchema } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import type { Job } from "@/services/api/launcher/jobs/types";
 import type z from "zod";
@@ -362,18 +363,10 @@ export enum StudyOutputDownloadType {
   AREAS = "AREA",
 }
 
-export enum StudyOutputDownloadLevelDTO {
-  ANNUAL = "annual",
-  MONTHLY = "monthly",
-  WEEKLY = "weekly",
-  DAILY = "daily",
-  HOURLY = "hourly",
-}
-
 export interface StudyOutputDownloadDTO {
   type: StudyOutputDownloadType;
   years?: number[];
-  level: StudyOutputDownloadLevelDTO;
+  level: TimeFrequencyType;
   filterIn?: string;
   filterOut?: string;
   filter?: string[];
@@ -386,7 +379,7 @@ export interface MatrixIndex {
   start_date: string;
   steps: number;
   first_week_size: number;
-  level: StudyOutputDownloadLevelDTO;
+  level: TimeFrequencyType;
 }
 
 export enum MatrixStats {

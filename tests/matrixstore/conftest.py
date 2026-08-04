@@ -36,7 +36,7 @@ def content_repo_fixture(tmp_path: Path) -> MatrixContentRepository:
     return MatrixContentRepository(tmp_path.joinpath("content_repo"), format=DEFAULT_INTERNAL_FORMAT)
 
 
-@pytest.fixture(name="matrix_service")
+@pytest.fixture(name="matrix_service_on_disk")
 def matrix_service_fixture(
     matrix_repo: MatrixRepository, dataset_repo: MatrixDataSetRepository, content_repo: MatrixContentRepository
 ) -> MatrixService:

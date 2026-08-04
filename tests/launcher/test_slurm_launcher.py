@@ -321,15 +321,6 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
     ):
         XpansionParametersDTO(adequacy_criterion=True, sensitivity_mode=True)
 
-    launcher_params = apply_params(LauncherParametersDTO(post_processing=False))
-    assert launcher_params.post_processing is False
-
-    launcher_params = apply_params(LauncherParametersDTO(post_processing=True))
-    assert launcher_params.post_processing is True
-
-    launcher_params = apply_params(LauncherParametersDTO(adequacy_patch={}))
-    assert launcher_params.post_processing is True
-
 
 # noinspection PyUnresolvedReferences
 @pytest.mark.parametrize(
@@ -392,10 +383,12 @@ def test_run_study(
     assert f"solver_version = {version:ddd}" in study_antares_path.read_text(encoding="utf-8")
 
     slurm_launcher.callbacks.export_study.assert_called_once()
-    slurm_launcher.callbacks.update_status.assert_called_once_with(ANY, job_status, ANY, None)
     if job_status == JobStatus.RUNNING:
+        slurm_launcher.callbacks.update_status.assert_not_called()
         slurm_launcher.start.assert_called_once()
         slurm_launcher._delete_workspace_file.assert_called_once()
+    else:
+        slurm_launcher.callbacks.update_status.assert_called_once_with(ANY, JobStatus.FAILED, ANY, None)
 
 
 def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
@@ -530,6 +523,7 @@ def test_kill_job(
         xpansion_mode=None,
         other_options=None,
         oversubscribe=False,
+        run_at=None,
     )
     launcher_parameters = MainParameters(
         json_dir=Path(tmp_path),

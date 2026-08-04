@@ -17,7 +17,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
 )
@@ -575,11 +574,10 @@ _ALL_HYDRO_MATRIX_TABLES = [
 class TestHydroMatrices:
     """Tests for hydro matrix CRUD operations."""
 
-    def test_save_and_get_all_hydro_matrices(
-        self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]
-    ) -> None:
+    def test_save_and_get_all_hydro_matrices(self, dao_93: StudyDao) -> None:
         """Test saving and retrieving all 13 hydro matrix types."""
-        dao, matrix_service = dao_and_matrix_service
+        dao = dao_93
+        matrix_service = dao.matrix_service
         save_area(dao, "Paris")
 
         def make(data: list[list[float]]) -> tuple[pl.DataFrame, str]:
@@ -723,10 +721,10 @@ class TestHydroMatrices:
                 rows = db_session.execute(select(table)).fetchall()
                 assert rows == [], f"Table {table.name} should be empty after cascade delete"
 
-    def test_errors_inside_save_matrices(self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
-        dao, matrix_service = dao_and_matrix_service
+    def test_errors_inside_save_matrices(self, dao_93: StudyDao) -> None:
+        dao = dao_93
 
-        series_id = matrix_service.create(pl.DataFrame([[4]]))
+        series_id = dao.matrix_service.create(pl.DataFrame([[4]]))
 
         save_methods = [
             dao.save_hydro_credit_modulations,

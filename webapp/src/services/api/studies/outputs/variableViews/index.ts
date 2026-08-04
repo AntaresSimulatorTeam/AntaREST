@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import type { DateTimeMetadataDTO } from "@/components/Matrix/shared/types";
 import client from "@/services/api/client";
-import { adaptVariableViewParamsToDto, sanitizeNaNResponse } from "./adapters";
+import type { MatrixIndex } from "@/types/types";
+import { sanitizeJsonResponse } from "@/utils/apiUtils";
+import { adaptVariableViewParamsToDto } from "./adapters";
 import type {
   ExportVariableViewParams,
   GetTimeIndexParams,
@@ -40,8 +41,8 @@ export async function getVariablesList({ studyId, outputId }: GetVariablesListPa
 // Variable View Data
 ////////////////////////////////////////////////////////////////
 
-export async function getTimeIndex({ studyId, outputId, frequency }: GetTimeIndexParams) {
-  const { data } = await client.get<DateTimeMetadataDTO>(
+export async function getOutputMatrixIndex({ studyId, outputId, frequency }: GetTimeIndexParams) {
+  const { data } = await client.get<MatrixIndex>(
     `/v1/studies/${studyId}/output/${outputId}/time-index`,
     { params: { frequency } },
   );
@@ -60,7 +61,7 @@ export async function getVariableViewData({
       params: queryParams,
       // Custom transformer to handle NaN values from backend
       // The backend sends invalid JSON with literal NaN tokens that must be sanitized
-      transformResponse: [(data) => sanitizeNaNResponse(data)],
+      transformResponse: [sanitizeJsonResponse],
     },
   );
   return data;
