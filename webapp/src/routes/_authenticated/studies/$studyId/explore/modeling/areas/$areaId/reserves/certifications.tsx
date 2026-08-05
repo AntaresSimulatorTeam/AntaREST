@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { areaKeys } from "@/queries/areas/keys";
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
 import type {
@@ -21,14 +20,12 @@ import type {
   ReserveCertification,
   ReserveCertifications,
 } from "@/services/api/studies/areas/reserves/types";
-import type { AreaWithId } from "@/types/types";
 import { Alert } from "@mui/material";
-import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Study } from "@/services/api/studies/types";
-import { getThermalClusters } from "../thermals/-utils";
+import { thermalClustersQueries } from "./-utils";
 import CertificationsTable, {
   type ClusterRow,
   type ReserveRow,
@@ -36,7 +33,6 @@ import CertificationsTable, {
 import UpdateCertificationDrawer from "./-components/UpdateCertificationDrawer";
 import UpdateReserveClustersDrawer, {
   type ClustersFormValues,
-  type ClustersSection,
 } from "./-components/UpdateReserveClustersDrawer";
 
 export const Route = createFileRoute(
@@ -44,17 +40,6 @@ export const Route = createFileRoute(
 )({
   component: ReservesCertifications,
 });
-
-// Thermal clusters have no query layer yet (their API service still lives in the
-// thermals route folder), so the query options are defined here for now.
-const thermalClustersQueries = {
-  list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
-    return queryOptions({
-      queryKey: [...areaKeys.all(), "thermals", { studyId, areaId }],
-      queryFn: () => getThermalClusters(studyId, areaId),
-    });
-  },
-};
 
 // A cluster newly selected for a reserve starts with these values: the warning
 // shown in the table prompts the user to fill them in.
@@ -145,8 +130,10 @@ function ReservesCertifications() {
   // removed (the PUT endpoint replaces the whole mapping).
   const handleClustersSubmit = async (values: ClustersFormValues) => {
     if (!selectedReserve) {
-      return;
+      return values;
     }
+
+    const submittedValues = { ...values };
 
     for (const [productionType, selectedIds] of Object.entries(values) as Array<
       [CertificationProductionType, string[]]
@@ -169,13 +156,24 @@ function ReservesCertifications() {
         delete data[selectedReserve.id];
       }
 
-      await updateMutation.mutateAsync({ studyId, areaId, productionType, data });
+      const updatedCertifications = await updateMutation.mutateAsync({
+        studyId,
+        areaId,
+        productionType,
+        data,
+      });
+
+      submittedValues[productionType] = Object.keys(
+        updatedCertifications[selectedReserve.id] ?? {},
+      );
     }
+
+    return submittedValues;
   };
 
   const handleCertificationSubmit = async (certification: ReserveCertification) => {
     if (!editingCluster) {
-      return;
+      return certification;
     }
 
     const { productionType, reserveId, clusterId } = editingCluster;
@@ -189,24 +187,19 @@ function ReservesCertifications() {
       },
     };
 
-    await updateMutation.mutateAsync({ studyId, areaId, productionType, data });
+    const updatedCertifications = await updateMutation.mutateAsync({
+      studyId,
+      areaId,
+      productionType,
+      data,
+    });
+
+    return updatedCertifications[reserveId]?.[clusterId] ?? certification;
   };
 
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
-
-  const sections: ClustersSection[] = selectedReserve
-    ? [
-        {
-          productionType: "thermals",
-          label: t("study.modeling.reserves.certifications.productionType.thermals"),
-          clusters: thermalClusters,
-          certifiedIds: Object.keys(thermalCertifications[selectedReserve.id] ?? {}),
-        },
-        // "storages" and "hydro" sections will be added once their endpoints are released
-      ]
-    : [];
 
   return (
     <>
@@ -226,8 +219,10 @@ function ReservesCertifications() {
         <UpdateReserveClustersDrawer
           key={selectedReserve.id}
           open={isClustersDrawerOpen}
-          title={selectedReserve.name}
-          sections={sections}
+          reserveId={selectedReserve.id}
+          defaultValues={{
+            thermals: Object.keys(thermalCertifications[selectedReserve.id] ?? {}),
+          }}
           onClose={() => setIsClustersDrawerOpen(false)}
           onSubmit={handleClustersSubmit}
         />
