@@ -220,7 +220,7 @@ class TestLoadService:
             )
         ),
     )
-    def tet_local_loads_are_not_cached(self) -> None:
+    def test_local_loads_are_not_cached(self) -> None:
 
         local_load = LocalLoad()
 

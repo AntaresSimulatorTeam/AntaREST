@@ -170,7 +170,8 @@ class SlurmLauncher(AbstractLauncher, SlurmLoad):
         retrieve_existing_jobs: bool = False,
         workspace_id: str = f"workspace-{ANTAREST_WORKER_ID}",
     ) -> None:
-        super().__init__(callbacks, event_bus, cache)
+        AbstractLauncher.__init__(self, callbacks, event_bus, cache)
+        SlurmLoad.__init__(self, config)
         self.slurm_config: SlurmConfig = config
         self.check_state: bool = True
         self.event_bus = event_bus

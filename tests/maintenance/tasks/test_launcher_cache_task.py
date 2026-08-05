@@ -19,10 +19,12 @@ import pytest
 from antarest.core.config import Config, LauncherConfig, LocalConfig, SlurmConfig, StorageConfig
 from antarest.core.utils.utils import current_time
 from antarest.launcher.adapters.abstract_load import AbstractLoad
+from antarest.launcher.adapters.local_launcher.local_launcher import LocalLauncher
 from antarest.launcher.adapters.local_launcher.local_load import LocalLoad
+from antarest.launcher.adapters.slurm_launcher.slurm_launcher import SlurmLauncher
 from antarest.launcher.adapters.slurm_launcher.slurm_load import SlurmLoad
 from antarest.launcher.load_service import LoadService
-from antarest.launcher.model import LauncherLoad, LauncherLoadDTO
+from antarest.launcher.model import LauncherLoad, LauncherLoadDTO, LauncherParametersDTO
 from antarest.launcher.repository import LauncherLoadRepository
 from antarest.launcher.ssh_client import SlurmError
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, MaintenanceContextNotFoundError
@@ -134,6 +136,57 @@ class TestSaveLauncherCacheTask:
         result = save_launcher_cache_task.run.__wrapped__(save_launcher_cache_task)
 
         assert result.status == BackGroundTaskStatus.SUCCESS
+
+    @patch(
+        "antarest.launcher.adapters.slurm_launcher.slurm_load.SlurmLoad.get_load",
+        new=Mock(
+            return_value=LauncherLoadDTO(
+                allocated_cpu_rate=10, cluster_load_rate=0, nb_queued_jobs=2, launcher_status="SUCCESS"
+            )
+        ),
+    )
+    @with_db_context
+    def test_caches_the_load_of_a_real_slurm_launcher(self, tmp_path: Path, with_maintenance_ctx) -> None:
+        """Uses a real `SlurmLauncher` (as built by `FactoryLauncher`/`service_creator.py` in
+        production) rather than a bare `SlurmLoad`, to catch bugs in the `AbstractLauncher`/
+        `AbstractLoad` multiple-inheritance wiring"""
+        slurm_launcher = SlurmLauncher(
+            config=SlurmConfig(id="slurm", name="name", local_workspace=tmp_path),
+            callbacks=Mock(),
+            event_bus=Mock(),
+            cache=Mock(),
+            use_private_workspace=False,
+        )
+        load_service = _build_load_service(tmp_path, {"slurm": slurm_launcher})
+        with_maintenance_ctx(load_service)
+
+        result = save_launcher_cache_task.run.__wrapped__(save_launcher_cache_task)
+
+        assert result.status == BackGroundTaskStatus.SUCCESS
+        cached_load = load_service.launcher_cache_repository.get_launcher_load("slurm")
+        assert cached_load is not None
+        assert cached_load.allocated_cpu_rate == 10
+        assert cached_load.nb_queued_jobs == 2
+
+    @with_db_context
+    def test_does_not_cache_the_load_of_a_real_local_launcher(self, tmp_path: Path, with_maintenance_ctx) -> None:
+        """Uses a real `LocalLauncher` (as built by `FactoryLauncher`/`service_creator.py` in
+        production) rather than a bare `LocalLoad`, to catch bugs in the `AbstractLauncher`/
+        `AbstractLoad` multiple-inheritance wiring."""
+        local_launcher = LocalLauncher(
+            config=LocalConfig(id="local", name="name", local_workspace=tmp_path),
+            callbacks=Mock(),
+            event_bus=Mock(),
+            cache=Mock(),
+        )
+        local_launcher.submitted_jobs["job-1"] = LauncherParametersDTO(nb_cpu=4)
+        load_service = _build_load_service(tmp_path, {"local": local_launcher})
+        with_maintenance_ctx(load_service)
+
+        result = save_launcher_cache_task.run.__wrapped__(save_launcher_cache_task)
+
+        assert result.status == BackGroundTaskStatus.SUCCESS
+        assert load_service.launcher_cache_repository.get_launcher_load("local") is None
 
 
 def test_raises_without_context(with_no_maintenance_ctx: None) -> None:
