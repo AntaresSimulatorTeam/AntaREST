@@ -16,6 +16,9 @@ from antarest.launcher.model import LauncherLoadDTO
 
 
 class AbstractLoad(ABC):
+    def __init__(self):
+        self.supports_load_caching = True
+
     @abstractmethod
     def get_load(self) -> LauncherLoadDTO:
         raise NotImplementedError()

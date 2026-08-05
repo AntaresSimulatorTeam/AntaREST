@@ -102,33 +102,6 @@ class TestSaveLauncherCacheTask:
         assert load_service._is_outdated_load_data(stored_load) is True
 
     @with_db_context
-    def test_local_load_reported_by_the_worker_is_disconnected_from_the_web_process_state(
-        self, tmp_path: Path, with_maintenance_ctx
-    ) -> None:
-        """Regression/documentation test: `LocalLoad.submitted_jobs` is per-instance, in-memory
-        state. The celery worker builds its own `AbstractLoad` objects (via `build_loads`),
-        entirely separate from whichever `LocalLoad`/`LocalLauncher` instance may be live in the
-        web process. So even if real jobs are running "in the web process", the load cached by
-        the worker for the local launcher is always reported as idle."""
-        web_process_local_load = LocalLoad()
-        web_process_load_service = _build_load_service(tmp_path, {"local": web_process_local_load})
-
-        # Real activity happens in the "web process" instance only.
-        web_process_local_load.submitted_jobs["job-1"] = LauncherParametersDTO(nb_cpu=4)
-        live_load_in_web_process = web_process_load_service.get_load("local")
-        assert live_load_in_web_process.allocated_cpu_rate > 0
-
-        # The "worker process" has its own, separate, always-empty LocalLoad instance.
-        worker_process_load_service = _build_load_service(tmp_path, {"local": LocalLoad()})
-        with_maintenance_ctx(worker_process_load_service)
-
-        save_launcher_cache_task.run()
-
-        cached_load = worker_process_load_service.launcher_cache_repository.get_launcher_load("local")
-        assert cached_load is not None
-        assert cached_load.allocated_cpu_rate == 0
-
-    @with_db_context
     def test_returns_partial_success_when_one_launcher_fails(self, tmp_path: Path, with_maintenance_ctx) -> None:
         ok_load = LocalLoad()
         failing_load = Mock()

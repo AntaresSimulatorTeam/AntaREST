@@ -19,7 +19,9 @@ from antarest.launcher.model import LauncherLoadDTO, LauncherParametersDTO
 
 class LocalLoad(AbstractLoad):
     def __init__(self):
+        super().__init__()
         self.submitted_jobs: dict[str, LauncherParametersDTO] = {}
+        self.supports_load_caching = False
 
     @override
     def get_load(self) -> LauncherLoadDTO:

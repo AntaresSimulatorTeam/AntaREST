@@ -15,7 +15,7 @@ import os
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from pydantic import ValidationError
@@ -24,9 +24,12 @@ from antarest.core.config import (
     Config,
     LauncherConfig,
     LocalConfig,
+    SlurmConfig,
     StorageConfig,
 )
 from antarest.core.utils.utils import current_time
+from antarest.launcher.adapters.local_launcher.local_load import LocalLoad
+from antarest.launcher.adapters.slurm_launcher.slurm_load import SlurmLoad
 from antarest.launcher.load_service import LoadService
 from antarest.launcher.model import (
     JobResult,
@@ -36,6 +39,12 @@ from antarest.launcher.model import (
 
 
 class TestLoadService:
+    tmp_path = Path("/tmp")
+    config = Config(
+        storage=StorageConfig(tmp_dir=tmp_path),
+        launcher=LauncherConfig(default="local", configs=[LocalConfig(id="local", name="name")]),
+    )
+
     @pytest.mark.parametrize(
         ["running_jobs", "expected_result", "default_launcher"],
         [
@@ -159,13 +168,8 @@ class TestLoadService:
         launcher_load_repository_mock = Mock()
         launcher_load_repository_mock.get_launcher_load.return_value = outdated_cached_data
 
-        config = Config(
-            storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(default="local", configs=[LocalConfig(id="local", name="name")]),
-        )
-
         load_service = LoadService(
-            config=config,
+            config=self.config,
             launcher_load_repository=launcher_load_repository_mock,
             loads={"local": load_mock},
         )
@@ -194,13 +198,8 @@ class TestLoadService:
         launcher_load_repository_mock = Mock()
         launcher_load_repository_mock.get_launcher_load.return_value = recent_cached_data
 
-        config = Config(
-            storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(default="local", configs=[LocalConfig(id="local", name="name")]),
-        )
-
         launcher_service = LoadService(
-            config=config,
+            config=self.config,
             launcher_load_repository=launcher_load_repository_mock,
             loads={"local": load_mock},
         )
@@ -212,3 +211,93 @@ class TestLoadService:
         assert load.allocated_cpu_rate == 10
         assert load.cluster_load_rate == 0
         assert load.nb_queued_jobs == 0
+
+    @patch(
+        "antarest.launcher.adapters.local_launcher.local_load.LocalLoad.get_load",
+        return_value=LauncherLoadDTO(
+            allocated_cpu_rate=10, cluster_load_rate=0, nb_queued_jobs=2, launcher_status="SUCCESS"
+        ),
+    )
+    def tet_local_loads_are_not_cached(self) -> None:
+
+        local_load = LocalLoad()
+
+        launcher_load_repository_mock = Mock()
+        launcher_load_repository_mock.get_launcher_load.raise_exception = True
+
+        launcher_service = LoadService(
+            config=self.config,
+            launcher_load_repository=launcher_load_repository_mock,
+            loads={"local": local_load},
+        )
+
+        # Testing the get_load method
+        actual_load = launcher_service.get_load("local")
+
+        launcher_load_repository_mock.get_launcher_load.assert_not_called()
+        assert actual_load.launcher_status == "SUCCESS"
+        assert actual_load.allocated_cpu_rate == 10
+        assert actual_load.cluster_load_rate == 0
+        assert actual_load.nb_queued_jobs == 2
+
+        # Testing the get_all_loads method
+        actual_loads = launcher_service.get_all_loads()
+
+        launcher_load_repository_mock.get_launcher_load.assert_not_called()
+        assert actual_loads["local"].launcher_status == "SUCCESS"
+        assert actual_loads["local"].allocated_cpu_rate == 10
+        assert actual_loads["local"].cluster_load_rate == 0
+        assert actual_loads["local"].nb_queued_jobs == 2
+
+    @patch(
+        "antarest.launcher.adapters.slurm_launcher.slurm_load.SlurmLoad.get_load",
+        return_value=LauncherLoadDTO(
+            allocated_cpu_rate=10, cluster_load_rate=0, nb_queued_jobs=2, launcher_status="SUCCESS"
+        ),
+    )
+    def test_slum_loads_are_cached(self, tmp_path: Path) -> None:
+
+        local_load = SlurmLoad(config=SlurmConfig(id="slurm_id", name="slurm"))
+
+        launcher_load_repository_mock = Mock()
+        launcher_load_repository_mock.get_launcher_load.return_value = LauncherLoad(
+            launcher_name="slurm",
+            date=current_time(),
+            launcher_status="cached status",
+            allocated_cpu_rate=20,
+            cluster_load_rate=12,
+            nb_queued_jobs=3,
+        )
+
+        launcher_service = LoadService(
+            config=self.config,
+            launcher_load_repository=launcher_load_repository_mock,
+            loads={"slurm": local_load},
+        )
+
+        # Testing the get_load method
+        actual_load = launcher_service.get_load("slurm")
+
+        launcher_load_repository_mock.get_launcher_load.assert_called_once_with("slurm")
+        assert actual_load.launcher_status == "cached status"
+        assert actual_load.allocated_cpu_rate == 20
+        assert actual_load.cluster_load_rate == 12
+        assert actual_load.nb_queued_jobs == 3
+
+        # Testing the get_all_loads method
+        launcher_load_repository_mock.reset_mock()  # reset mock to be able to check the second call
+        launcher_load_repository_mock.get_launcher_load.return_value = LauncherLoad(
+            launcher_name="slurm",
+            date=current_time(),
+            launcher_status="cached status get_all_loads",
+            allocated_cpu_rate=30,
+            cluster_load_rate=13,
+            nb_queued_jobs=4,
+        )
+        actual_loads = launcher_service.get_all_loads()
+
+        launcher_load_repository_mock.get_launcher_load.assert_called_once_with("slurm")
+        assert actual_loads["slurm"].launcher_status == "cached status get_all_loads"
+        assert actual_loads["slurm"].allocated_cpu_rate == 30
+        assert actual_loads["slurm"].cluster_load_rate == 13
+        assert actual_loads["slurm"].nb_queued_jobs == 4

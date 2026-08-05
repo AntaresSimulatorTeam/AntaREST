@@ -21,10 +21,8 @@ from antarest.launcher.ssh_config import SSHConfigDTO
 
 
 class SlurmLoad(AbstractLoad):
-    def __init__(
-        self,
-        config: SlurmConfig,
-    ):
+    def __init__(self, config: SlurmConfig):
+        super().__init__()
         self.slurm_config = config
 
     @override

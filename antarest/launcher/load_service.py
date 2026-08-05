@@ -41,9 +41,10 @@ class LoadService:
         if load is None:
             raise InvalidConfigurationError(launcher_id)
 
-        cached_load = self.launcher_cache_repository.get_launcher_load(launcher_id)
-        if cached_load is not None and not self._is_outdated_load_data(cached_load):
-            return cached_load.to_dto()
+        if load.supports_load_caching:
+            cached_load = self.launcher_cache_repository.get_launcher_load(launcher_id)
+            if cached_load is not None and not self._is_outdated_load_data(cached_load):
+                return cached_load.to_dto()
 
         logger.info("No valid cached load for launcher '%s', querying live", launcher_id)
         return load.get_load()
@@ -55,7 +56,7 @@ class LoadService:
         all_loads = {}
         for launcher_id, load in self.loads.items():
             try:
-                all_loads[launcher_id] = load.get_load()
+                all_loads[launcher_id] = self.get_load(launcher_id)
             except SlurmError:
                 logger.warning("Failed to query load for launcher '%s'", launcher_id)
 
