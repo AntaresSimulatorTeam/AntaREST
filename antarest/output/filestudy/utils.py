@@ -12,8 +12,10 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, StrEnum
+from io import StringIO
+from itertools import islice
 from pathlib import Path
-from typing import TypeAlias
+from typing import IO, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -110,12 +112,11 @@ def get_start_column(frequency: MatrixFrequency) -> int:
         raise NotImplementedError(f"Unknown frequency {frequency.value}")
 
 
-def parse_headers(content: str, start_col: int) -> MultipleOutputHeaders:
-    lines = content.splitlines()
-    header_lines = []
-    for idx, line in enumerate(lines[4:7]):
-        cols = line.split("\t")[start_col:]
-        if idx == 0:
+def parse_headers(content: IO[str], start_col: int) -> MultipleOutputHeaders:
+    header_lines: list[list[str]] = []
+    for line in islice(content, 4, 7):  # Note: avoids to go over the whole file, much faster for larger files
+        cols = [s.strip() for s in line.split("\t")[start_col:]]
+        if not header_lines:
             header_lines = [[col] for col in cols]
         else:
             for k, col in enumerate(cols):
@@ -167,7 +168,7 @@ def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
 
 def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
     content = file_path.read_text(encoding="utf-8")
-    output_headers = parse_headers(content, first_column)
+    output_headers = parse_headers(StringIO(content), first_column)
     polars_df = _parse_output_dataframe(file_path)
 
     df = polars_df[polars_df.columns[first_column:]]
