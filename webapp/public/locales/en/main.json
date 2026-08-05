@@ -665,7 +665,7 @@
   "study.modeling.reserves.certifications.productionType.thermals": "Thermal clusters",
   "study.modeling.reserves.certifications.certifiedClusters": "Certified clusters",
   "study.modeling.reserves.certifications.incomplete": "Incomplete certification: Max Power must be greater than 0",
-  "study.modeling.reserves.certifications.removeWarning": "These clusters will lose their certification parameters: {{clusters}}",
+  "study.modeling.reserves.certifications.removeWarning": "These clusters will lose their certification parameters: {{clusters, list}}",
   "study.modeling.reserves.certifications.field.participationCost": "P.Cost (€/MW)",
   "study.modeling.reserves.certifications.field.participationCostOff": "P.Cost-off (€/MW)",
   "study.modeling.reserves.certifications.field.maxPower": "Max Power (MW)",

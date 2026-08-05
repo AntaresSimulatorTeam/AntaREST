@@ -118,7 +118,7 @@ function UpdateReserveClustersDrawer({ open, reserveId, defaultValues, onClose, 
             {removedNames.length > 0 && (
               <Alert severity="warning">
                 {t("study.modeling.reserves.certifications.removeWarning", {
-                  clusters: removedNames.join(", "),
+                  clusters: removedNames,
                 })}
               </Alert>
             )}
