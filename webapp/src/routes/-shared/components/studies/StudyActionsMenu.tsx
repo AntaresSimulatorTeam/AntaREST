@@ -66,6 +66,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
   const latestVersion = useAppSelector(getLatestStudyVersion);
 
   const isLatestVersion = study.version === latestVersion;
+  const isReference = study.type === "rawstudy";
   const isVariant = study.type === "variantstudy";
   const isManaged = study.managed;
   const isArchived = study.archived;
@@ -128,7 +129,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
           menuItem(!isArchived, t("global.launch"), BoltIcon, "launch"),
           menuItem(!isArchived, t("study.properties"), EditOutlinedIcon, "properties"),
           menuItem(
-            !isArchived && !isLatestVersion && !isVariant, // Display an error if the study has a variant
+            !isArchived && !isLatestVersion && isReference, // Display an error if the study has a variant
             t("study.upgrade"),
             UpgradeIcon,
             "upgrade",
@@ -139,11 +140,11 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
             isVariant ? SaveAsIcon : FileCopyOutlinedIcon,
             "copy",
           ),
-          menuItem(isManaged, t("global.move"), DriveFileMoveIcon, "move"),
+          menuItem(isManaged && isReference, t("global.move"), DriveFileMoveIcon, "move"),
           menuItem(!isArchived, t("global.export"), DownloadOutlinedIcon, "export"),
           menuItem(isArchived, t("global.unarchive"), UnarchiveOutlinedIcon, handleUnarchive),
           menuItem(
-            isManaged && !isArchived && !isVariant,
+            isManaged && isReference && !isArchived,
             t("global.archive"),
             ArchiveOutlinedIcon,
             handleArchive,
