@@ -857,7 +857,7 @@
   "studies.filters.archive": "Archive",
   "studies.batch.launchPartial_one": "Only {{count}} of {{total}} selected studies is unarchived and will be launched",
   "studies.batch.launchPartial_other": "Only {{count}} of {{total}} selected studies are unarchived and will be launched",
-  "studies.batch.movePartial_one": "Only {{count}} of {{total}} selected studies is managed reference and will be moved",
+  "studies.batch.movePartial_one": "Only {{count}} of {{total}} selected studies is a managed reference and will be moved",
   "studies.batch.movePartial_other": "Only {{count}} of {{total}} selected studies are managed references and will be moved",
   "studies.batch.deletePartial_one": "Only {{count}} of {{total}} selected studies is managed and will be deleted",
   "studies.batch.deletePartial_other": "Only {{count}} of {{total}} selected studies are managed and will be deleted",
