@@ -31,9 +31,14 @@ from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
-from antarest.dependencies import AppState
+from antarest.dependencies import (
+    get_config,
+    get_file_transfer_manager,
+    get_login_service,
+    get_output_service,
+    get_study_service,
+)
 from antarest.main import add_exception_handlers
-from antarest.matrixstore.service import MatrixService
 from antarest.output.routes import create_output_routes
 from antarest.output.service import OutputService
 from antarest.study.model import (
@@ -76,18 +81,22 @@ def create_test_client(
     file_transfer_manager: FileTransferManager = Mock(),
     raise_server_exceptions: bool = True,
 ) -> TestClient:
-    services = Mock()
-    services.study = service
-    services.output_service = output_service
-    services.file_transfer_manager = file_transfer_manager
-    services.matrix = Mock(spec=MatrixService)
+
     app = FastAPI(title=__name__)
     add_exception_handlers(app)
-    app.state.app_state = AppState(config=CONFIG, services=services, ws_manager=Mock())
+
+    # inject only necessary dependencies
+    app.dependency_overrides[get_study_service] = lambda: service
+    app.dependency_overrides[get_config] = lambda: CONFIG
+    app.dependency_overrides[get_output_service] = lambda: output_service
+    app.dependency_overrides[get_file_transfer_manager] = lambda: file_transfer_manager
+    app.dependency_overrides[get_login_service] = lambda: Mock()
+
     app.include_router(create_study_routes())
     app.include_router(create_raw_study_routes())
     app.include_router(create_study_variant_routes())
     app.include_router(create_output_routes())
+
     return TestClient(app, raise_server_exceptions=raise_server_exceptions)
 
 

@@ -29,7 +29,12 @@ from starlette.testclient import TestClient
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.dependencies import AppState
+from antarest.dependencies import (
+    get_config,
+    get_login_service,
+    get_output_service,
+    get_study_service,
+)
 from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.model import OutputVariablesInformation
@@ -55,19 +60,23 @@ from tests.storage.integration.data.set_values_monthly import set_values_monthly
 
 @pytest.fixture
 def client(services, db_engine: Engine) -> TestClient:
-    study_service, output_service, config = services
-    services = Mock()
-    services.study = study_service
-    services.output_service = output_service
-    services.file_transfer_manager = study_service.file_transfer_manager
+
     app = FastAPI(title=__name__)
     init_db_singleton(custom_engine=db_engine, session_args={"autocommit": False, "autoflush": False})
     app.add_middleware(DBSessionMiddleware)
     add_exception_handlers(app)
-    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
+
+    # inject only necessary dependencies
+    study_service, output_service, config = services
+    app.dependency_overrides[get_study_service] = lambda: study_service
+    app.dependency_overrides[get_config] = lambda: config
+    app.dependency_overrides[get_output_service] = lambda: output_service
+    app.dependency_overrides[get_login_service] = lambda: Mock()
+
     app.include_router(create_study_routes())
     app.include_router(create_raw_study_routes())
     app.include_router(create_output_routes())
+
     return TestClient(app)
 
 
