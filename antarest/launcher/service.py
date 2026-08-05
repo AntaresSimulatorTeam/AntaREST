@@ -114,6 +114,7 @@ class LauncherService:
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
+        cache: ICache,
         factory_launcher: FactoryLauncher = FactoryLauncher(),
     ) -> None:
         self.config = config
@@ -136,6 +137,7 @@ class LauncherService:
                 import_output=self._import_output,
             ),
             event_bus,
+            cache,
         )
 
     def get_launchers(self) -> LauncherListDTO:
