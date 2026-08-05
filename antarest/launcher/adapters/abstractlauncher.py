@@ -63,7 +63,6 @@ class LauncherCallbacks(NamedTuple):
 
 class AbstractLauncher(AbstractLoad):
     def __init__(self, callbacks: LauncherCallbacks, event_bus: IEventBus, cache: ICache):
-        AbstractLoad.__init__(self)
         self.callbacks = callbacks
         self.event_bus = event_bus
         self.cache = cache

@@ -17,7 +17,6 @@ from antarest.core.utils.utils import current_time
 from antarest.launcher.adapters.abstract_load import AbstractLoad
 from antarest.launcher.model import LauncherLoad, LauncherLoadDTO
 from antarest.launcher.repository import LauncherLoadRepository
-from antarest.launcher.ssh_client import SlurmError
 
 logger = logging.getLogger(__name__)
 
@@ -63,9 +62,9 @@ class LoadService:
         for launcher_id, load in self.loads.items():
             if load.supports_load_caching:
                 try:
-                    all_loads[launcher_id] = self.get_load(launcher_id)
-                except SlurmError:
-                    logger.warning("Failed to query load for launcher '%s'", launcher_id)
+                    all_loads[launcher_id] = load.get_load()
+                except Exception as e:
+                    logger.exception("Failed to query load for launcher '%s'", launcher_id, exc_info=e)
 
         return all_loads
 

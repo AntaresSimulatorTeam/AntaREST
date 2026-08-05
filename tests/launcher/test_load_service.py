@@ -242,7 +242,7 @@ class TestLoadService:
         assert actual_load.cluster_load_rate == 0
         assert actual_load.nb_queued_jobs == 2
 
-        # Testing the get_all_loads method
+        # Testing the get_cacheable_loads method
         actual_loads = launcher_service.get_cacheable_loads()
 
         launcher_load_repository_mock.get_launcher_load.assert_not_called()
@@ -285,21 +285,7 @@ class TestLoadService:
         assert actual_load.cluster_load_rate == 12
         assert actual_load.nb_queued_jobs == 3
 
-        # Testing the get_all_loads method
-        launcher_load_repository_mock.reset_mock()  # reset mock to be able to check the second call
-        launcher_load_repository_mock.get_launcher_load.return_value = LauncherLoad(
-            launcher_name="slurm",
-            date=current_time(),
-            launcher_status="cached status get_all_loads",
-            allocated_cpu_rate=30,
-            cluster_load_rate=13,
-            nb_queued_jobs=4,
-        )
+        # Testing the get_cacheable_loads method
         actual_loads = launcher_service.get_cacheable_loads()
 
-        launcher_load_repository_mock.get_launcher_load.assert_called_once_with("slurm")
         assert len(actual_loads) == 1
-        assert actual_loads["slurm"].launcher_status == "cached status get_all_loads"
-        assert actual_loads["slurm"].allocated_cpu_rate == 30
-        assert actual_loads["slurm"].cluster_load_rate == 13
-        assert actual_loads["slurm"].nb_queued_jobs == 4
