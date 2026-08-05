@@ -65,7 +65,8 @@ class LocalLauncher(AbstractLauncher, LocalLoad):
         event_bus: IEventBus,
         cache: ICache,
     ) -> None:
-        super().__init__(callbacks, event_bus, cache)
+        AbstractLauncher.__init__(self, callbacks, event_bus, cache)
+        LocalLoad.__init__(self)
         self.local_config: LocalConfig = config
         self.local_workspace = config.local_workspace
         logs_path = self.local_workspace / "LOGS"

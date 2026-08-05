@@ -103,9 +103,9 @@ class TestLoadService:
             launcher=LauncherConfig(default=default_launcher, configs=[LocalConfig(id="local", name="name")]),
         )
 
-        launchers_dict = {}
+        load_dict = {}
         if default_launcher == "local":
-            launchers_dict[default_launcher] = Mock()
+            load_dict[default_launcher] = Mock()
 
         launcher_load_repository_mock = Mock()
         launcher_load_repository_mock.get_launcher_load.return_value.date = current_time()
@@ -116,7 +116,7 @@ class TestLoadService:
         launcher_service = LoadService(
             config=config,
             launcher_load_repository=launcher_load_repository_mock,
-            launchers=launchers_dict,
+            loads=load_dict,
         )
 
         launcher_expected_result = LauncherLoadDTO.model_validate(expected_result)
@@ -152,8 +152,8 @@ class TestLoadService:
         )
 
         # Mock the live launcher adapter
-        launcher_mock = Mock()
-        launcher_mock.get_load.return_value = fresh_dto
+        load_mock = Mock()
+        load_mock.get_load.return_value = fresh_dto
 
         # Mock the DAO to return the outdated DB entry
         launcher_load_repository_mock = Mock()
@@ -167,13 +167,13 @@ class TestLoadService:
         load_service = LoadService(
             config=config,
             launcher_load_repository=launcher_load_repository_mock,
-            launchers={"local": launcher_mock},
+            loads={"local": load_mock},
         )
 
         load = load_service.get_load("local")
 
         # The live launcher should have been called since the DB data was outdated
-        launcher_mock.get_load.assert_called_once()
+        load_mock.get_load.assert_called_once()
         assert load.launcher_status == "new status"
         assert load.allocated_cpu_rate == 50
         assert load.cluster_load_rate == 50
@@ -189,7 +189,7 @@ class TestLoadService:
             date=current_time(),
         )
 
-        launcher_mock = Mock()
+        load_mock = Mock()
 
         launcher_load_repository_mock = Mock()
         launcher_load_repository_mock.get_launcher_load.return_value = recent_cached_data
@@ -202,12 +202,12 @@ class TestLoadService:
         launcher_service = LoadService(
             config=config,
             launcher_load_repository=launcher_load_repository_mock,
-            launchers={"local": launcher_mock},
+            loads={"local": load_mock},
         )
 
         load = launcher_service.get_load("local")
 
-        launcher_mock.get_load.assert_not_called()
+        load_mock.get_load.assert_not_called()
         assert load.launcher_status == "fresh status"
         assert load.allocated_cpu_rate == 10
         assert load.cluster_load_rate == 0

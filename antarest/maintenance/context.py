@@ -27,6 +27,7 @@ from antarest.study.repository import StudyDiskSpaceRepository
 if TYPE_CHECKING:
     from antarest.blobstore.service import BlobService
     from antarest.core.config import Config
+    from antarest.launcher.load_service import LoadService
     from antarest.matrixstore.service import MatrixService
     from antarest.output.service import OutputService
     from antarest.service_creator import CoreServices
@@ -78,3 +79,7 @@ class MaintenanceContext:
     @property
     def study_disk_space_repository(self) -> "StudyDiskSpaceRepository":
         return self.core_services.study_disk_space_repository
+
+    @property
+    def load_service(self) -> "LoadService":
+        return self.core_services.load_service

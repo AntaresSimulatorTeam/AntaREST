@@ -49,7 +49,11 @@ from antarest.favorite.service import (
     FavoriteExternalDirectoryService,
     FavoriteStudyService,
 )
+from antarest.launcher.adapters.abstract_load import AbstractLoad
+from antarest.launcher.adapters.factory_load import build_loads
+from antarest.launcher.load_service import LoadService
 from antarest.launcher.main import build_launcher
+from antarest.launcher.repository import LauncherLoadRepository
 from antarest.launcher.service import LauncherService
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.login.main import build_login
@@ -184,6 +188,7 @@ class CoreServices:
     favorite_aggregate_service: FavoriteAggregateService
     study_disk_space_repository: StudyDiskSpaceRepository
     tablemode_service: TableModeService
+    load_service: LoadService
 
 
 def build_favorite_service(
@@ -288,6 +293,12 @@ def build_output_service(
     return output_service
 
 
+def build_load_service(config: Config) -> LoadService:
+    loads = build_loads(config)
+    launcher_load_repository = LauncherLoadRepository()
+    return LoadService(config=config, loads=loads, launcher_load_repository=launcher_load_repository)
+
+
 def create_core_services(config: Config) -> CoreServices:
     event_bus, redis_client = create_event_bus(config)
     cache = build_cache(config=config, redis_client=redis_client)
@@ -334,6 +345,8 @@ def create_core_services(config: Config) -> CoreServices:
 
     study_disk_space_repository = StudyDiskSpaceRepository()
 
+    load_service = build_load_service(config)
+
     return CoreServices(
         cache=cache,
         event_bus=event_bus,
@@ -351,6 +364,7 @@ def create_core_services(config: Config) -> CoreServices:
         favorite_aggregate_service=favorite_aggregate_service,
         tablemode_service=tablemode_service,
         study_disk_space_repository=study_disk_space_repository,
+        load_service=load_service,
     )
 
 
@@ -436,6 +450,7 @@ class Services:
     task_service: ITaskService
     file_transfer_manager: FileTransferManager
     output_service: OutputService
+    load_service: LoadService
     launcher: LauncherService | None = None
     matrix_gc: MatrixGarbageCollector | None = None
     auto_archiver: AutoArchiveService | None = None
@@ -459,6 +474,16 @@ def create_services(config: Config, create_all: bool = False) -> Services:
         task_service=core_services.task_service,
         file_transfer_manager=core_services.file_transfer_manager,
         cache=core_services.cache,
+    )
+
+    # Reuse the actual launcher instances as `AbstractLoad`s (rather than the fresh, disconnected
+    # ones built by `build_load_service`/`build_loads`), so the live `/launcher/load` endpoint
+    # reflects e.g. the local launcher's real in-memory `submitted_jobs` state in this process.
+    loads: dict[str, AbstractLoad] = dict(launcher.launchers.items()) if launcher else {}
+    load_service = LoadService(
+        config=config,
+        loads=loads,
+        launcher_load_repository=LauncherLoadRepository(),
     )
 
     watcher = create_watcher(config=config, study_service=core_services.study_service)
@@ -498,6 +523,7 @@ def create_services(config: Config, create_all: bool = False) -> Services:
         task_service=core_services.task_service,
         file_transfer_manager=core_services.file_transfer_manager,
         output_service=core_services.output_service,
+        load_service=load_service,
         launcher=launcher,
         matrix_gc=matrix_garbage_collector,
         auto_archiver=auto_archiver,

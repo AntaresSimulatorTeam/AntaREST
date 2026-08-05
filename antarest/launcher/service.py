@@ -58,7 +58,6 @@ from antarest.launcher.model import (
 )
 from antarest.launcher.repository import (
     JobResultRepository,
-    LauncherLoadRepository,
     LauncherRuntimeConfigRepository,
     SolverPresetsRepository,
 )
@@ -113,7 +112,6 @@ class LauncherService:
         login_service: LoginService,
         job_result_repository: JobResultRepository,
         solver_presets_repository: SolverPresetsRepository,
-        launcher_load_repository: LauncherLoadRepository,
         event_bus: IEventBus,
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
