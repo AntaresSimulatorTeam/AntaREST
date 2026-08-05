@@ -42,9 +42,15 @@ class LoadService:
             raise InvalidConfigurationError(launcher_id)
 
         if load.supports_load_caching:
-            cached_load = self.launcher_cache_repository.get_launcher_load(launcher_id)
-            if cached_load is not None and not self._is_outdated_load_data(cached_load):
-                return cached_load.to_dto()
+            return self._get_load_supporting_cache(launcher_id, load)
+
+        logger.info("Querying live load for launcher '%s' that does not support caching", launcher_id)
+        return load.get_load()
+
+    def _get_load_supporting_cache(self, launcher_id: str, load: AbstractLoad) -> LauncherLoadDTO:
+        cached_load = self.launcher_cache_repository.get_launcher_load(launcher_id)
+        if cached_load is not None and not self._is_outdated_load_data(cached_load):
+            return cached_load.to_dto()
 
         logger.info("No valid cached load for launcher '%s', querying live", launcher_id)
         return load.get_load()
@@ -52,12 +58,16 @@ class LoadService:
     def _is_outdated_load_data(self, load: LauncherLoad) -> bool:
         return load.date < current_time() - self.config.launcher.launcher_cache_validity_time
 
-    def get_all_loads(self) -> dict[str, LauncherLoadDTO]:
+    def get_cacheable_loads(self) -> dict[str, LauncherLoadDTO]:
         all_loads = {}
         for launcher_id, load in self.loads.items():
-            try:
-                all_loads[launcher_id] = self.get_load(launcher_id)
-            except SlurmError:
-                logger.warning("Failed to query load for launcher '%s'", launcher_id)
+            if load.supports_load_caching:
+                try:
+                    all_loads[launcher_id] = self.get_load(launcher_id)
+                except SlurmError:
+                    logger.warning("Failed to query load for launcher '%s'", launcher_id)
 
         return all_loads
+
+    def get_cacheable_loads_names(self) -> list[str]:
+        return [load_name for load_name, load in self.loads.items() if load.supports_load_caching]

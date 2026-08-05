@@ -31,22 +31,22 @@ class LauncherCacheTaskResult(BaseModel):
 
 @celery_app.task(base=MaintenanceTask, bind=True, name=TaskName.CACHE_LAUNCHER_LOAD, pydantic=True)
 def save_launcher_cache_task(self: MaintenanceTask) -> LauncherCacheTaskResult:
-    logger.info("Saving launcher cache to database")
+    logger.info("Saving launchers caches to database")
     load_service = self.context.load_service
 
     start_time = time.time()
     try:
         with db():
-            all_launchers_cache_dto_by_id = load_service.get_all_loads()
+            all_launchers_cache_dto_by_id = load_service.get_cacheable_loads()
             launchers_cache = [
                 LauncherLoad.from_dto(load_cache, load_name)
                 for load_name, load_cache in all_launchers_cache_dto_by_id.items()
             ]
             load_service.launcher_cache_repository.update_all_launcher_loads(launchers_cache)
-        expected_launcher_ids = load_service.loads.keys()
+        expected_launcher_ids = load_service.get_cacheable_loads_names()
         status = (
             BackGroundTaskStatus.SUCCESS
-            if all_launchers_cache_dto_by_id.keys() >= expected_launcher_ids
+            if all_launchers_cache_dto_by_id.keys() >= set(expected_launcher_ids)
             else BackGroundTaskStatus.PARTIAL_SUCCESS
         )
         return LauncherCacheTaskResult(

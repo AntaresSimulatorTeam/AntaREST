@@ -12,16 +12,17 @@
 
 from datetime import timedelta
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
-from antarest.core.config import Config, LauncherConfig, LocalConfig, StorageConfig
+from antarest.core.config import Config, LauncherConfig, LocalConfig, SlurmConfig, StorageConfig
 from antarest.core.utils.utils import current_time
 from antarest.launcher.adapters.abstract_load import AbstractLoad
 from antarest.launcher.adapters.local_launcher.local_load import LocalLoad
+from antarest.launcher.adapters.slurm_launcher.slurm_load import SlurmLoad
 from antarest.launcher.load_service import LoadService
-from antarest.launcher.model import LauncherLoad, LauncherParametersDTO
+from antarest.launcher.model import LauncherLoad, LauncherLoadDTO
 from antarest.launcher.repository import LauncherLoadRepository
 from antarest.launcher.ssh_client import SlurmError
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, MaintenanceContextNotFoundError
@@ -65,11 +66,18 @@ def with_maintenance_ctx():
 
 
 class TestSaveLauncherCacheTask:
+    @patch(
+        "antarest.launcher.adapters.slurm_launcher.slurm_load.SlurmLoad.get_load",
+        new=Mock(
+            return_value=LauncherLoadDTO(
+                allocated_cpu_rate=10, cluster_load_rate=0, nb_queued_jobs=2, launcher_status="SUCCESS"
+            )
+        ),
+    )
     @with_db_context
     def test_load_read_back_from_db_is_naive_and_still_comparable(self, tmp_path: Path, with_maintenance_ctx) -> None:
-        local_load = LocalLoad()
-        local_load.submitted_jobs["job-1"] = LauncherParametersDTO(nb_cpu=1)
-        load_service = _build_load_service(tmp_path, {"local": local_load})
+        slurm_load = SlurmLoad(SlurmConfig(id="local", name="name"))
+        load_service = _build_load_service(tmp_path, {"local": slurm_load})
         with_maintenance_ctx(load_service)
 
         result = save_launcher_cache_task.run.__wrapped__(save_launcher_cache_task)
@@ -113,7 +121,9 @@ class TestSaveLauncherCacheTask:
         result = save_launcher_cache_task.run.__wrapped__(save_launcher_cache_task)
 
         assert result.status == BackGroundTaskStatus.PARTIAL_SUCCESS
-        assert load_service.launcher_cache_repository.get_launcher_load("local") is not None
+        # local launchers are not cached
+        assert load_service.launcher_cache_repository.get_launcher_load("local") is None
+        # slurm launcher failed to be cached
         assert load_service.launcher_cache_repository.get_launcher_load("slurm") is None
 
     @with_db_context
