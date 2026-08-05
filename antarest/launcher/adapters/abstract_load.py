@@ -16,7 +16,7 @@ from antarest.launcher.model import LauncherLoadDTO
 
 
 class AbstractLoad(ABC):
-    def __init__(self):
+    def __init__(self) -> None:
         self.supports_load_caching = True
 
     @abstractmethod

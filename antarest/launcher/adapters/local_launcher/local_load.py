@@ -11,14 +11,15 @@
 # This file is part of the Antares project.
 
 import os
-from typing import override
+
+from typing_extensions import override
 
 from antarest.launcher.adapters.abstract_load import AbstractLoad
 from antarest.launcher.model import LauncherLoadDTO, LauncherParametersDTO
 
 
 class LocalLoad(AbstractLoad):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.submitted_jobs: dict[str, LauncherParametersDTO] = {}
         self.supports_load_caching = False

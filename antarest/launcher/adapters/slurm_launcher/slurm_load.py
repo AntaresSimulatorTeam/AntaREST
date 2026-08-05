@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import override
+
+from typing_extensions import override
 
 from antarest.core.config import SlurmConfig
 from antarest.launcher.adapters.abstract_load import AbstractLoad
