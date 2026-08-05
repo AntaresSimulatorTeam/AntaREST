@@ -319,6 +319,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.unarchive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
+                self._output_repository.delete(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -338,8 +339,6 @@ class OutputService:
             progress=None,
             custom_event_messages=None,
         )
-
-        self._output_repository.delete(study_id, output_id)
 
         return task_id
 
@@ -595,6 +594,8 @@ class OutputService:
 
         self._find_output_storage(uuid, output_name).delete_output(uuid, output_name)
 
+        self._output_repository.delete(uuid, output_name)
+
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
     def archive_outputs(self, study_id: str) -> list[str]:
@@ -643,6 +644,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
+                self._output_repository.delete(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
@@ -653,8 +655,6 @@ class OutputService:
                     exc_info=e,
                 )
                 raise e
-
-        self._output_repository.delete(study_id, output_id)
 
         task_id = self._task_service.add_task(
             archive_output_task,
@@ -945,6 +945,8 @@ class OutputService:
             current_storage.export_output(study_id, output_id, tmp_zip)
             target_storage.import_output(study_id, tmp_zip)
             current_storage.delete_output(study_id, output_id)
+
+        self._output_repository.delete(study_id, output_id)
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)

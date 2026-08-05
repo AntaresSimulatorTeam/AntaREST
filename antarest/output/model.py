@@ -14,7 +14,7 @@ from typing import Annotated, TypeAlias
 
 from pydantic import BeforeValidator
 from pydantic.alias_generators import to_camel
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import BigInteger, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from antarest.core.persistence import Base
@@ -109,14 +109,5 @@ class Output(Base):
         nullable=False,
     )
     output_id: Mapped[str] = mapped_column(String(), primary_key=True, nullable=False)
-    disk_space_bytes: Mapped[int] = mapped_column(Integer(), nullable=True, default=None)
+    disk_space_bytes: Mapped[int] = mapped_column(BigInteger(), nullable=False, default=None)
     study: Mapped["Study"] = relationship(Study)
-
-    def to_dto(self) -> "OutputDTO":
-        return OutputDTO(output_id=self.output_id, study_id=self.study_id, disk_space_bytes=self.disk_space_bytes)
-
-
-class OutputDTO(AntaresBaseModel, extra="forbid"):
-    output_id: str
-    study_id: str
-    disk_space_bytes: int

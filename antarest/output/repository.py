@@ -30,7 +30,6 @@ class OutputRepository:
     def save(self, output_metadata: Output) -> Output:
         session = self.session
         output = session.merge(output_metadata)
-        session.add(output)
         session.commit()
         return output
 

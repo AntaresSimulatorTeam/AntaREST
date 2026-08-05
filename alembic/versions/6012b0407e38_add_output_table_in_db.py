@@ -20,10 +20,10 @@ depends_on = None
 def upgrade():
     op.create_table(
         "output",
-        sa.Column("output_id", sa.String(), nullable=False),
         sa.Column("study_id", sa.String(), nullable=False),
-        sa.Column("disk_space_bytes", sa.BigInteger(), nullable=True),
-        sa.PrimaryKeyConstraint("output_id", "study_id", name="pk_output"),
+        sa.Column("output_id", sa.String(), nullable=False),
+        sa.Column("disk_space_bytes", sa.BigInteger(), nullable=False),
+        sa.PrimaryKeyConstraint("study_id", "output_id", name="pk_output"),
         sa.ForeignKeyConstraint(["study_id"], ["study.id"], name="fk_output_study_id", ondelete="CASCADE"),
     )
 
