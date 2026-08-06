@@ -21,7 +21,7 @@ from pydantic import Field
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.utils.web import APITag
-from antarest.dependencies import ConfigDep, LauncherServiceDep, auth_required
+from antarest.dependencies import ConfigDep, LauncherServiceDep, LoadServiceDep, auth_required
 from antarest.launcher.model import (
     JobCreationDTO,
     JobResultDTO,
@@ -164,7 +164,7 @@ def create_launcher_api() -> APIRouter:
         "/load",
         summary="Get the SLURM cluster or local machine load",
     )
-    def get_load(service: LauncherServiceDep, launcher_id: SanitizedStr | None = None) -> LauncherLoadDTO:
+    def get_load(service: LoadServiceDep, launcher_id: SanitizedStr | None = None) -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
         try:
             return service.get_load(launcher_id)

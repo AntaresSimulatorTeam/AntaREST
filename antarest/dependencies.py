@@ -51,6 +51,7 @@ from antarest.favorite.service import (
     FavoriteExternalDirectoryService,
     FavoriteStudyService,
 )
+from antarest.launcher.load_service import LoadService
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import JwtSettings
 from antarest.login.service import LoginService
@@ -109,6 +110,10 @@ def get_launcher_service(request: Request) -> LauncherService:
     if launcher is None:
         raise ValueError("Launcher service is not configured.")
     return launcher
+
+
+def get_load_service(request: Request) -> LoadService:
+    return get_app_state(request).services.load_service
 
 
 def get_matrix_service(request: Request) -> MatrixService:
@@ -212,6 +217,7 @@ ExplorerDep: TypeAlias = Annotated[Explorer, Depends(get_explorer)]
 WatcherDep: TypeAlias = Annotated[Watcher, Depends(get_watcher)]
 LoginServiceDep: TypeAlias = Annotated[LoginService, Depends(get_login_service)]
 LauncherServiceDep: TypeAlias = Annotated[LauncherService, Depends(get_launcher_service)]
+LoadServiceDep: TypeAlias = Annotated[LoadService, Depends(get_load_service)]
 MatrixServiceDep: TypeAlias = Annotated[MatrixService, Depends(get_matrix_service)]
 FileTransferManagerDep: TypeAlias = Annotated[FileTransferManager, Depends(get_file_transfer_manager)]
 OutputServiceDep: TypeAlias = Annotated[OutputService, Depends(get_output_service)]

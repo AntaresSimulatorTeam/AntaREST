@@ -152,8 +152,8 @@ class LauncherLoadRepository:
     def get_launcher_load(self, launcher_name: str) -> LauncherLoad | None:
         return db.session.get(LauncherLoad, launcher_name)
 
-    def update_all_launcher_loads(self, existing_loads: list[LauncherLoad]) -> None:
-        for launcher_cache in existing_loads:
+    def update_all_launcher_loads(self, loads: list[LauncherLoad]) -> None:
+        for launcher_cache in loads:
             db.session.merge(launcher_cache)
 
         db.session.commit()

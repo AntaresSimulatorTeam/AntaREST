@@ -42,7 +42,6 @@ def _build_service(tmp_path: Path) -> LauncherService:
         job_result_repository=Mock(),
         solver_presets_repository=Mock(),
         launcher_runtime_config_repository=LauncherRuntimeConfigRepository(),  # real repo, real DB
-        launcher_load_repository=Mock(),
         factory_launcher=factory_launcher_mock,
         event_bus=Mock(),
         file_transfer_manager=Mock(),
