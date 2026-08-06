@@ -49,6 +49,7 @@ from antarest.launcher.model import (
     JobStatus,
     LauncherLoadDTO,
     LauncherParametersDTO,
+    LauncherRuntimeConfig,
     LogType,
     XpansionParametersDTO,
 )
@@ -478,6 +479,7 @@ class SlurmLauncher(AbstractLauncher):
         launcher_params: LauncherParametersDTO,
         version: SolverVersion,
         jwt_user: JWTUser,
+        runtime_config: LauncherRuntimeConfig | None = None,
         run_at: datetime | None = None,
     ) -> None:
         with current_user_context(jwt_user):
@@ -510,7 +512,7 @@ class SlurmLauncher(AbstractLauncher):
                             f" ({server_time:%Y-%m-%d %H:%M:%S %Z} server time)",
                         )
                     append_log(launch_uuid, "Submitting study to slurm launcher")
-                    launcher_args = self._apply_params(launcher_params, run_at)
+                    launcher_args = self._apply_params(launcher_params, runtime_config, run_at)
                     self._call_launcher(launcher_args, self.launcher_params)
 
                     launch_success = self._check_if_study_is_in_launcher_db(launch_uuid)
@@ -554,7 +556,10 @@ class SlurmLauncher(AbstractLauncher):
         return any(s.name == job_id for s in studies)
 
     def _apply_params(
-        self, launcher_params: LauncherParametersDTO, run_at: datetime | None = None
+        self,
+        launcher_params: LauncherParametersDTO,
+        runtime_config: LauncherRuntimeConfig | None = None,
+        run_at: datetime | None = None,
     ) -> argparse.Namespace:
         """
         Populate a `argparse.Namespace` object with the user parameters.
@@ -564,6 +569,8 @@ class SlurmLauncher(AbstractLauncher):
                 Contains the launcher parameters selected by the user.
                 If a parameter is not provided (`None`), the default value should be retrieved
                 from the configuration.
+            runtime_config:
+                Admin-set runtime configuration of the launcher (DB-backed).
             run_at:
                 If set, the launch is scheduled to start at that (naive UTC) time using SLURM `--begin`.
 
@@ -578,6 +585,13 @@ class SlurmLauncher(AbstractLauncher):
             launcher_args.apply_xpansion_mode(launcher_params)
             launcher_args.apply_time_limit(launcher_params, self.slurm_config.time_limit)
             launcher_args.apply_nb_cpu(launcher_params, self.slurm_config.nb_cores)
+
+            # Enable SLURM oversubscribe (job may share a compute node) when the effective number of
+            # cores (after default/clamping in `apply_nb_cpu`) is at or below the admin-set threshold.
+            slurm_runtime = runtime_config.slurm if runtime_config is not None else None
+            oversubscribe_core_threshold = slurm_runtime.oversubscribe_core_threshold if slurm_runtime else None
+            if oversubscribe_core_threshold is not None and launcher_args.n_cpu <= oversubscribe_core_threshold:
+                launcher_args.oversubscribe = True
 
             if "'" in launcher_args.other_options:
                 # The launcher will wrongly interpret single quotes, which will cause Simulation fails and
@@ -594,12 +608,13 @@ class SlurmLauncher(AbstractLauncher):
         job_id: str,
         version: SolverVersion,
         launcher_parameters: LauncherParametersDTO,
+        runtime_config: LauncherRuntimeConfig | None = None,
         run_at: datetime | None = None,
     ) -> None:
         user = require_current_user()
         thread = threading.Thread(
             target=self._run_study,
-            args=(study_uuid, job_id, launcher_parameters, version, user, run_at),
+            args=(study_uuid, job_id, launcher_parameters, version, user, runtime_config, run_at),
             name=f"{self.__class__.__name__}-JobRunner",
         )
         thread.start()
