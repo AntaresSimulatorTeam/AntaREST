@@ -22,6 +22,7 @@ from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy import create_engine
 
@@ -54,7 +55,9 @@ from antarest.launcher.model import (
     LauncherLoad,
     LauncherLoadDTO,
     LauncherParametersDTO,
+    LauncherRuntimeConfig,
     LogType,
+    SlurmRuntimeConfig,
     SolverPresets,
     SolverPresetsDB,
 )
@@ -135,6 +138,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             launcher_load_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
@@ -167,6 +171,66 @@ class TestLauncherService:
             )
         )
 
+    def test_runtime_config(self, tmp_path: Path) -> None:
+        config = Config(
+            storage=StorageConfig(tmp_dir=tmp_path),
+            launcher=LauncherConfig(
+                default="slurm",
+                configs=[SlurmConfig(id="slurm", name="slurm"), LocalConfig(id="local", name="local")],
+            ),
+        )
+        runtime_repo = Mock()
+        runtime_repo.get.return_value = LauncherRuntimeConfig()
+        runtime_repo.save.side_effect = lambda launcher_id, config: config
+
+        factory_launcher_mock = Mock()
+        factory_launcher_mock.build_launcher.return_value = {"slurm": Mock(), "local": Mock()}
+
+        launcher_service = LauncherService(
+            config=config,
+            study_service=Mock(),
+            output_service=Mock(),
+            login_service=Mock(),
+            job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
+            launcher_runtime_config_repository=runtime_repo,
+            launcher_load_repository=Mock(),
+            factory_launcher=factory_launcher_mock,
+            event_bus=Mock(),
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+
+        # GET returns an empty config when nothing is stored
+        assert launcher_service.get_runtime_config("slurm") == LauncherRuntimeConfig()
+
+        # GET reflects the stored value
+        runtime_repo.get.return_value = LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=12))
+        stored = launcher_service.get_runtime_config("slurm")
+        assert stored.slurm is not None
+        assert stored.slurm.oversubscribe_core_threshold == 12
+
+        new_config = LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=8))
+
+        # PUT as admin persists and returns the config
+        with current_user_context(DEFAULT_ADMIN_USER):
+            result = launcher_service.update_runtime_config("slurm", new_config)
+        assert result.slurm is not None
+        assert result.slurm.oversubscribe_core_threshold == 8
+        runtime_repo.save.assert_called_once()
+
+        # PUT of a SLURM config on a non-SLURM launcher is rejected
+        with current_user_context(DEFAULT_ADMIN_USER):
+            with pytest.raises(HTTPException):
+                launcher_service.update_runtime_config("local", new_config)
+
+        # PUT by a non-admin user is forbidden
+        non_admin = JWTUser(id=2, impersonator=2, type="users", groups=[])
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(non_admin):
+                launcher_service.update_runtime_config("slurm", new_config)
+
     @with_admin_user
     def test_service_get_result_from_launcher(self) -> None:
         launcher_mock = Mock()
@@ -197,6 +261,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             launcher_load_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -238,6 +303,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             launcher_load_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -327,6 +393,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             launcher_load_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
@@ -1252,6 +1319,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=solver_presets_repository,
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             launcher_load_repository=Mock(),
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,

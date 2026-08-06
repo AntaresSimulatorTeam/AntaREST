@@ -15,7 +15,13 @@ import logging
 from sqlalchemy import delete, select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult, LauncherLoad, SolverPresetsDB
+from antarest.launcher.model import (
+    JobResult,
+    LauncherLoad,
+    LauncherRuntimeConfig,
+    SlurmRuntimeConfigDB,
+    SolverPresetsDB,
+)
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
@@ -119,6 +125,27 @@ class SolverPresetsRepository:
         stmt = delete(SolverPresetsDB).where(SolverPresetsDB.id == id)
         db.session.execute(stmt)
         db.session.commit()
+
+
+class LauncherRuntimeConfigRepository:
+    def get(self, launcher_id: str) -> LauncherRuntimeConfig:
+        logger.debug(f"Retrieving LauncherRuntimeConfig {launcher_id}")
+        slurm_db = db.session.get(SlurmRuntimeConfigDB, launcher_id)
+        slurm = slurm_db.to_model() if slurm_db is not None else None
+        return LauncherRuntimeConfig(slurm=slurm)
+
+    def save(self, launcher_id: str, config: LauncherRuntimeConfig) -> LauncherRuntimeConfig:
+        logger.debug(f"Saving LauncherRuntimeConfig {launcher_id}")
+        if config.slurm is None:
+            existing = db.session.get(SlurmRuntimeConfigDB, launcher_id)
+            if existing is not None:
+                db.session.delete(existing)
+            db.session.commit()
+            return LauncherRuntimeConfig(slurm=None)
+
+        merged_slurm = db.session.merge(SlurmRuntimeConfigDB.from_model(launcher_id, config.slurm))
+        db.session.commit()
+        return LauncherRuntimeConfig(slurm=merged_slurm.to_model())
 
 
 class LauncherLoadRepository:

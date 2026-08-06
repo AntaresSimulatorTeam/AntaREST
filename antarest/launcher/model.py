@@ -697,6 +697,50 @@ def apply_update_solver_presets(
     return SolverPresetsDB.from_model(updated_dto)
 
 
+class SlurmRuntimeConfig(AntaresBaseModel):
+    """
+    Runtime config for slurm launchers.
+
+    Determines in particular if we should use the "oversubscribe" flag when starting a computation.
+    That flag tells slurm that other simulations may be run on the same node.
+
+    Attributes:
+        oversubscribe_core_threshold:  enable oversubscribe if requested cores for a simulation is below this threshold.
+    """
+
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
+
+    oversubscribe_core_threshold: int | None = Field(default=None, ge=1)
+
+
+class LauncherRuntimeConfig(AntaresBaseModel):
+    """
+    Specific launcher configuration that may be changed at runtime.
+
+    Attributes:
+        slurm:  specific configuration for slurm launchers. Only valid for slurm launchers.
+    """
+
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
+
+    slurm: SlurmRuntimeConfig | None = None
+
+
+class SlurmRuntimeConfigDB(Base):
+    __tablename__ = "slurm_runtime_config"
+
+    launcher_id = mapped_column(String(36), primary_key=True)
+    oversubscribe_core_threshold = mapped_column(Integer, nullable=True)
+
+    def to_model(self) -> SlurmRuntimeConfig:
+        return SlurmRuntimeConfig(oversubscribe_core_threshold=self.oversubscribe_core_threshold)
+
+    @classmethod
+    def from_model(cls, launcher_id: str, slurm: SlurmRuntimeConfig | None) -> "SlurmRuntimeConfigDB":
+        threshold = slurm.oversubscribe_core_threshold if slurm else None
+        return cls(launcher_id=launcher_id, oversubscribe_core_threshold=threshold)
+
+
 def is_version_covered_by_config(
     solver_presets: SolverPresets,
     solver_version: SolverVersion,
