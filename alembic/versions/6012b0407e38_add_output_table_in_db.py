@@ -1,7 +1,7 @@
 """add output table in db
 
 Revision ID: 6012b0407e38
-Revises: 80fdf2408ede
+Revises: 06697016d057
 Create Date: 2026-07-08 13:51:13.329059
 
 """
