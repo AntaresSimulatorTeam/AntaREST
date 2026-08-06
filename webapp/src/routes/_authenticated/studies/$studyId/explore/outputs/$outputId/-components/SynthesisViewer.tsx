@@ -21,11 +21,14 @@ import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import usePromise from "@/hooks/usePromise";
 import { getStudyData } from "@/services/api/study";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import useOutput from "../-hooks/useOutput";
+import type { GridType } from "../-utils";
+import useStudy from "../../../../-hooks/useStudy";
+import { createOutputDataPath } from "./OutputMatrixViewer/utils";
 
 interface SynthesisViewerProps {
-  gridId: string;
+  gridType: GridType;
 }
 
 interface SynthesisData {
@@ -33,21 +36,20 @@ interface SynthesisData {
   data: string[][];
 }
 
-function SynthesisViewer({ gridId }: SynthesisViewerProps) {
+function SynthesisViewer({ gridType }: SynthesisViewerProps) {
   const { t } = useTranslation();
-  const { studyId, outputId } = useParams({
-    from: "/_authenticated/studies/$studyId/explore/outputs/$outputId/",
-  });
+  const study = useStudy();
+  const output = useOutput();
 
   const response = usePromise(
     () => {
       return getStudyData<SynthesisData | null>(
-        studyId,
-        `output/${outputId}/economy/mc-all/grid/${gridId}`,
+        study.id,
+        createOutputDataPath({ output, gridType }),
       );
     },
     {
-      deps: [studyId, outputId, gridId],
+      deps: [study.id, output, gridType],
     },
   );
 

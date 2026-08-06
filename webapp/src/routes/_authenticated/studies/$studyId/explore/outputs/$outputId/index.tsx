@@ -26,7 +26,7 @@ import { getAreas, getDistricts, getLinks } from "../../../../../../../redux/sel
 import OutputMatrixViewer from "./-components/OutputMatrixViewer";
 import SynthesisViewer from "./-components/SynthesisViewer";
 import useOutput from "./-hooks/useOutput";
-import { isDistrict, SYNTHESIS_ITEMS, type Item, type ListType } from "./-utils";
+import { isDistrict, SYNTHESIS_ITEMS, type GridType, type Item, type ListType } from "./-utils";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/$outputId/")(
   {
@@ -45,7 +45,7 @@ function Output() {
   const districts = useAppSelector((state) => getDistricts(state, studyId));
   const links = useAppSelector((state) => getLinks(state, studyId));
 
-  const list = useMemo<Array<ListViewItem<Item | undefined>>>(() => {
+  const list = useMemo<Array<ListViewItem<Item | GridType>>>(() => {
     if (listType === "areas") {
       const adaptedDistricts = districts.map((district) => ({
         ...district,
@@ -106,11 +106,16 @@ function Output() {
           </Tabs>
         </Stack>
       }
-      renderItemView={({ id, data }) => {
-        if (data) {
-          return <OutputMatrixViewer item={data} />;
+      renderItemView={({ data }) => {
+        if (!data) {
+          return null;
         }
-        return <SynthesisViewer gridId={id} />;
+
+        if (typeof data === "string") {
+          return <SynthesisViewer gridType={data} />;
+        }
+
+        return <OutputMatrixViewer item={data} />;
       }}
     />
   );

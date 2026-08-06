@@ -21,6 +21,7 @@ import type { AreaWithId, District, LinkElement } from "@/types/types";
 
 export type ListType = "areas" | "links" | "synthesis";
 export type DataType = "values" | "details" | "details-res" | "id" | "details-STstorage";
+export type GridType = "areas" | "links" | "digest" | "thermal";
 export type Frequency = "hourly" | "daily" | "weekly" | "monthly" | "annual";
 export type MonteCarloMode = "mc-ind" | "mc-all" | "variable-per-variable";
 export type Item = AreaWithId | District | LinkElement;
@@ -33,20 +34,24 @@ export const SYNTHESIS_ITEMS = [
   {
     id: "areas",
     label: "Areas synthesis",
+    data: "areas",
   },
   {
     id: "links",
     label: "Links synthesis",
+    data: "links",
   },
   {
     id: "digest",
     label: "Digest",
+    data: "digest",
   },
   {
     id: "thermal",
     label: "Thermal synthesis",
+    data: "thermal",
   },
-] as const satisfies ListViewItem[];
+] as const satisfies Array<ListViewItem<GridType>>;
 
 ////////////////////////////////////////////////////////////////
 // Functions
