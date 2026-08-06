@@ -23,9 +23,8 @@ import { getStudyData } from "@/services/api/study";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { useTranslation } from "react-i18next";
 import useOutput from "../-hooks/useOutput";
-import type { GridType } from "../-utils";
+import { createOutputDataPath, type GridType } from "../-utils";
 import useStudy from "../../../../-hooks/useStudy";
-import { createOutputDataPath } from "./OutputMatrixViewer/utils";
 
 interface SynthesisViewerProps {
   gridType: GridType;

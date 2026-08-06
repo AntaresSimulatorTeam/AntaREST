@@ -14,14 +14,11 @@
 
 import { Column } from "@/components/Matrix/shared/constants";
 import type { EnhancedGridColumn } from "@/components/Matrix/shared/types";
-import type { Output } from "@/services/api/studies/outputs/types";
 import type { VariableViewParams } from "@/services/api/studies/outputs/variableViews/types";
 import {
   isAreaOrDistrict,
-  isLink,
   type DataType,
   type Frequency,
-  type GridType,
   type Item,
   type MonteCarloMode,
 } from "../../-utils";
@@ -38,23 +35,6 @@ export interface ColumnsFiltersData {
   searches: string[];
   stats: ColumnStatisticsFilter;
 }
-
-interface CreateItemOutputDataPathParams {
-  output: Output;
-  item: Item;
-  dataType: DataType;
-  frequency: Frequency;
-  year?: number;
-}
-
-interface CreateSynthesisOutputDataPathParams {
-  output: Output;
-  gridType: GridType;
-}
-
-type CreateOutputDataPathParams =
-  | CreateItemOutputDataPathParams
-  | CreateSynthesisOutputDataPathParams;
 
 interface BuildVariableViewParamsParams {
   item: Item;
@@ -97,31 +77,6 @@ export const DEFAULT_COLUMNS_FILTERS = {
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
-
-export function createOutputDataPath(params: CreateItemOutputDataPathParams): string;
-export function createOutputDataPath(params: CreateSynthesisOutputDataPathParams): string;
-
-export function createOutputDataPath(params: CreateOutputDataPathParams): string {
-  const { output } = params;
-  const mode = output.mode === "Adequacy" ? "adequacy" : "economy";
-  const basePath = `output/${output.id}/${mode}`;
-
-  if ("item" in params) {
-    const { item, dataType, frequency, year } = params;
-
-    const isYearPeriod = year && year > 0;
-    const periodFolder = isYearPeriod
-      ? `mc-ind/${Math.min(year, output.nbYears).toString().padStart(5, "0")}`
-      : "mc-all";
-    const itemType = isLink(item) ? "links" : "areas";
-    const itemFolder = isLink(item) ? `${item.area1}/${item.area2}` : item.id;
-
-    return `${basePath}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${frequency}`;
-  }
-
-  // Synthesis path
-  return `${basePath}/mc-all/grid/${params.gridType}`;
-}
 
 /**
  * Check if the given data type is a cluster data type.
