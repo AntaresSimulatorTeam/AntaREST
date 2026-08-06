@@ -67,7 +67,7 @@ class FileStudyDaoFactory(StudyFactoryDao):
         return self._build_dao(is_study_managed, file_study)
 
     def get_dao_from_path(self, study_path: Path, study_id: str, is_study_managed: bool) -> FileStudyTreeDao:
-        file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study_id, None)
+        file_study = self._study_factory.create_from_fs(study_path, is_study_managed, study_id, None, False)
 
         return self._build_dao(is_study_managed, file_study)
 

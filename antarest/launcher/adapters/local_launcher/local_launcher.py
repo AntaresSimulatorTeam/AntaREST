@@ -20,6 +20,7 @@ import sys
 import threading
 import time
 from collections.abc import Callable
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -32,8 +33,10 @@ from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.jwt import JWTUser
 from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
+from antarest.launcher.adapters.local_launcher.local_load import LocalLoad
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType
+from antarest.launcher.exceptions import InvalidScheduleTime, NoValidOutputError
+from antarest.launcher.model import JobStatus, LauncherParametersDTO, LauncherRuntimeConfig, LogType
 from antarest.login.utils import current_user_context, require_current_user
 from antarest.study.model import STUDY_VERSION_9_2
 
@@ -50,7 +53,7 @@ def _check_option(option_name: str, min_version: SolverVersion, actual_version: 
         raise ValueError(f"Option '{option_name}' is not supported for solver version {actual_version}.")
 
 
-class LocalLauncher(AbstractLauncher):
+class LocalLauncher(AbstractLauncher, LocalLoad):
     """
     This local launcher is meant to work when using AntaresWeb on a single worker process in local mode
     """
@@ -62,14 +65,14 @@ class LocalLauncher(AbstractLauncher):
         event_bus: IEventBus,
         cache: ICache,
     ) -> None:
-        super().__init__(callbacks, event_bus, cache)
+        AbstractLauncher.__init__(self, callbacks, event_bus, cache)
+        LocalLoad.__init__(self)
         self.local_config: LocalConfig = config
         self.local_workspace = config.local_workspace
         logs_path = self.local_workspace / "LOGS"
         logs_path.mkdir(parents=True, exist_ok=True)
         self.log_directory = logs_path
         self.log_tail_manager = LogTailManager()
-        self.submitted_jobs: dict[str, LauncherParametersDTO] = {}
         self.job_id_to_study_id: dict[str, tuple[str, Path, subprocess.Popen]] = {}  # type: ignore
         self.logs: dict[str, str] = {}
 
@@ -81,8 +84,23 @@ class LocalLauncher(AbstractLauncher):
 
     @override
     def run_study(
-        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
+        self,
+        study_uuid: str,
+        job_id: str,
+        version: SolverVersion,
+        launcher_parameters: LauncherParametersDTO,
+        runtime_config: LauncherRuntimeConfig | None = None,
+        run_at: datetime | None = None,
     ) -> None:
+        if run_at is not None:
+            self.callbacks.update_status(
+                job_id,
+                JobStatus.FAILED,
+                None,
+                None,
+            )
+            raise InvalidScheduleTime("Scheduling a launch at a given time is only supported on SLURM launchers")
+
         antares_solver_path = self._select_best_binary(version)
         self.submitted_jobs[job_id] = launcher_parameters
 
@@ -133,17 +151,14 @@ class LocalLauncher(AbstractLauncher):
                 while process.poll() is None:
                     time.sleep(1)
 
-                if launcher_parameters is not None and (
-                    launcher_parameters.post_processing or launcher_parameters.adequacy_patch is not None
-                ):
-                    subprocess.run(["Rscript", "post-processing.R"], cwd=export_path)
-
                 output_id: str | None = None
                 if process.returncode == 0:
                     # The job succeed we need to import the output
                     try:
                         launcher_logs = self._get_launcher_logs(job_id)
                         output_id = self.callbacks.import_output(job_id, export_path / "output", launcher_logs)
+                    except NoValidOutputError:
+                        logger.info(f"No valid output to import for study {study_uuid} located at {export_path}")
                     except Exception as e:
                         logger.error(
                             f"Failed to import output for study {study_uuid} located at {export_path}",
@@ -277,18 +292,3 @@ class LocalLauncher(AbstractLauncher):
     @override
     def get_solver_versions(self) -> list[SolverVersion]:
         return sorted(self.local_config.binaries)
-
-    @override
-    def get_load(self) -> LauncherLoadDTO:
-        local_used_cpus = sum(params.nb_cpu or 1 for params in self.submitted_jobs.values())
-
-        # The cluster load is approximated by the percentage of used CPUs.
-        cluster_load_approx = min(100.0, 100 * local_used_cpus / (os.cpu_count() or 1))
-
-        args = {
-            "allocatedCpuRate": cluster_load_approx,
-            "clusterLoadRate": cluster_load_approx,
-            "nbQueuedJobs": 0,
-            "launcherStatus": "SUCCESS",
-        }
-        return LauncherLoadDTO(**args)

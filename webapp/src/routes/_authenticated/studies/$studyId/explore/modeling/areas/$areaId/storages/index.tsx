@@ -57,7 +57,7 @@ function Storages() {
     deps: [study.id, areaId],
   });
 
-  const [totals, setTotals] = useState(getStoragesTotals(storages));
+  const [totals, setTotals] = useState(() => getStoragesTotals(storages));
 
   const columns = useMemo(() => {
     const { totalInjectionNominalCapacity, totalWithdrawalNominalCapacity } = totals;
@@ -176,7 +176,7 @@ function Storages() {
     <GroupedDataTable
       key={status}
       isLoading={isLoading}
-      data={storages || []}
+      data={storages}
       columns={columns}
       groups={[...STORAGE_GROUPS] as string[]}
       allowNewGroups={semver.gte(study.version, "9.2.0")}

@@ -38,9 +38,22 @@ from antarest.core.remote.remote_executor import RemoteWorkerExecutor
 from antarest.core.tasks.main import build_taskjob_manager
 from antarest.core.tasks.service import ITaskService
 from antarest.eventbus.main import build_eventbus
-from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
-from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
+from antarest.favorite.repository import (
+    FavoriteDirectoryRepository,
+    FavoriteExternalDirectoryRepository,
+    FavoriteStudyRepository,
+)
+from antarest.favorite.service import (
+    FavoriteAggregateService,
+    FavoriteDirectoryService,
+    FavoriteExternalDirectoryService,
+    FavoriteStudyService,
+)
+from antarest.launcher.adapters.abstract_load import AbstractLoad
+from antarest.launcher.adapters.factory_load import build_loads
+from antarest.launcher.load_service import LoadService
 from antarest.launcher.main import build_launcher
+from antarest.launcher.repository import LauncherLoadRepository
 from antarest.launcher.service import LauncherService
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.login.main import build_login
@@ -53,6 +66,7 @@ from antarest.output.adapters import (
     study_service_as_in_study_file_outputs_provider,
     study_service_as_studies_repository,
 )
+from antarest.output.repository import OutputRepository
 from antarest.output.service import OutputService
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.output.storage.file.out_of_study import OutOfStudyFileOutputStorage
@@ -159,6 +173,7 @@ def create_event_bus(config: Config) -> tuple[IEventBus, redis.Redis | None]:  #
 
 @dataclass
 class CoreServices:
+    favorite_external_directory_service: FavoriteExternalDirectoryService
     cache: ICache
     event_bus: IEventBus
     task_service: ITaskService
@@ -171,18 +186,36 @@ class CoreServices:
     blob_service: BlobService
     favorite_study_service: FavoriteStudyService
     favorite_directory_service: FavoriteDirectoryService
+    favorite_aggregate_service: FavoriteAggregateService
     study_disk_space_repository: StudyDiskSpaceRepository
     tablemode_service: TableModeService
+    load_service: LoadService
 
 
-def build_favorite_service() -> tuple[FavoriteStudyService, FavoriteDirectoryService]:
+def build_favorite_service(
+    config: Config,
+) -> tuple[FavoriteStudyService, FavoriteDirectoryService, FavoriteExternalDirectoryService, FavoriteAggregateService]:
     favorite_repository = FavoriteStudyRepository()
     favorite_study_service = FavoriteStudyService(favorite_study_repository=favorite_repository)
 
     favorite_directory_repository = FavoriteDirectoryRepository()
     favorite_directory_service = FavoriteDirectoryService(favorite_directory_repository=favorite_directory_repository)
 
-    return favorite_study_service, favorite_directory_service
+    favorite_external_directory_repository = FavoriteExternalDirectoryRepository()
+    favorite_external_directory_service = FavoriteExternalDirectoryService(
+        favorite_external_directory_repository=favorite_external_directory_repository, workspace_config=config
+    )
+
+    favorite_aggregate_service = FavoriteAggregateService(
+        favorite_study_service, favorite_directory_service, favorite_external_directory_service
+    )
+
+    return (
+        favorite_study_service,
+        favorite_directory_service,
+        favorite_external_directory_service,
+        favorite_aggregate_service,
+    )
 
 
 def build_tablemode_service() -> TableModeService:
@@ -247,6 +280,8 @@ def build_output_service(
 
     storages = build_output_storage_list(config, in_study_file_output_storage, out_of_study_file_output_storage)
 
+    output_repo = OutputRepository()
+
     output_service = OutputService(
         studies_repository=study_service_as_studies_repository(study_service),
         storages=storages,
@@ -254,11 +289,18 @@ def build_output_service(
         file_transfer_manager=filetransfer_service,
         matrix_service=matrix_service,
         tmp_dir=config.storage.tmp_dir,
+        output_repository=output_repo,
     )
 
     study_service.register_output_access(adapt_output_service_to_study_service(output_service))
 
     return output_service
+
+
+def build_load_service(config: Config) -> LoadService:
+    loads = build_loads(config)
+    launcher_load_repository = LauncherLoadRepository()
+    return LoadService(config=config, loads=loads, launcher_load_repository=launcher_load_repository)
 
 
 def create_core_services(config: Config) -> CoreServices:
@@ -297,10 +339,17 @@ def create_core_services(config: Config) -> CoreServices:
         matrix_service=matrix_service,
     )
 
-    favorite_study_service, favorite_directory_service = build_favorite_service()
+    (
+        favorite_study_service,
+        favorite_directory_service,
+        favorite_external_directory_service,
+        favorite_aggregate_service,
+    ) = build_favorite_service(config=config)
     tablemode_service = build_tablemode_service()
 
     study_disk_space_repository = StudyDiskSpaceRepository()
+
+    load_service = build_load_service(config)
 
     return CoreServices(
         cache=cache,
@@ -315,8 +364,11 @@ def create_core_services(config: Config) -> CoreServices:
         blob_service=blob_service,
         favorite_study_service=favorite_study_service,
         favorite_directory_service=favorite_directory_service,
+        favorite_external_directory_service=favorite_external_directory_service,
+        favorite_aggregate_service=favorite_aggregate_service,
         tablemode_service=tablemode_service,
         study_disk_space_repository=study_disk_space_repository,
+        load_service=load_service,
     )
 
 
@@ -393,6 +445,8 @@ class Services:
     matrix: MatrixService
     favorite_study: FavoriteStudyService
     favorite_directory: FavoriteDirectoryService
+    favorite_external_directory: FavoriteExternalDirectoryService
+    favorite_aggregate_service: FavoriteAggregateService
     tablemode_service: TableModeService
     user: LoginService
     cache: ICache
@@ -400,6 +454,7 @@ class Services:
     task_service: ITaskService
     file_transfer_manager: FileTransferManager
     output_service: OutputService
+    load_service: LoadService
     launcher: LauncherService | None = None
     matrix_gc: MatrixGarbageCollector | None = None
     auto_archiver: AutoArchiveService | None = None
@@ -423,6 +478,16 @@ def create_services(config: Config, create_all: bool = False) -> Services:
         task_service=core_services.task_service,
         file_transfer_manager=core_services.file_transfer_manager,
         cache=core_services.cache,
+    )
+
+    # Reuse the actual launcher instances as `AbstractLoad`s (rather than the fresh, disconnected
+    # ones built by `build_load_service`/`build_loads`), so the live `/launcher/load` endpoint
+    # reflects e.g. the local launcher's real in-memory `submitted_jobs` state in this process.
+    loads: dict[str, AbstractLoad] = dict(launcher.launchers.items()) if launcher else {}
+    load_service = LoadService(
+        config=config,
+        loads=loads,
+        launcher_load_repository=LauncherLoadRepository(),
     )
 
     watcher = create_watcher(config=config, study_service=core_services.study_service)
@@ -453,6 +518,8 @@ def create_services(config: Config, create_all: bool = False) -> Services:
         matrix=core_services.matrix_service,
         favorite_study=core_services.favorite_study_service,
         favorite_directory=core_services.favorite_directory_service,
+        favorite_external_directory=core_services.favorite_external_directory_service,
+        favorite_aggregate_service=core_services.favorite_aggregate_service,
         tablemode_service=core_services.tablemode_service,
         user=core_services.login_service,
         cache=core_services.cache,
@@ -460,6 +527,7 @@ def create_services(config: Config, create_all: bool = False) -> Services:
         task_service=core_services.task_service,
         file_transfer_manager=core_services.file_transfer_manager,
         output_service=core_services.output_service,
+        load_service=load_service,
         launcher=launcher,
         matrix_gc=matrix_garbage_collector,
         auto_archiver=auto_archiver,

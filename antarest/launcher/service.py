@@ -13,6 +13,7 @@ import functools
 import logging
 import os
 import shutil
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -35,8 +36,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import StopWatch, current_time
 from antarest.launcher.adapters.abstractlauncher import LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.factory_launcher import FactoryLauncher
-from antarest.launcher.extensions.adequacy_patch.extension import AdequacyPatchExtension
-from antarest.launcher.extensions.interface import ILauncherExtension
+from antarest.launcher.exceptions import InvalidScheduleTime, NoValidOutputError
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
@@ -44,9 +44,9 @@ from antarest.launcher.model import (
     JobStatus,
     LauncherInfoDTO,
     LauncherListDTO,
-    LauncherLoadDTO,
     LauncherParametersDTO,
     LauncherResourceRangeDTO,
+    LauncherRuntimeConfig,
     LogType,
     SolverPresets,
     SolverPresetsCreation,
@@ -56,7 +56,11 @@ from antarest.launcher.model import (
     apply_update_solver_presets,
     is_version_covered_by_config,
 )
-from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
+from antarest.launcher.repository import (
+    JobResultRepository,
+    LauncherRuntimeConfigRepository,
+    SolverPresetsRepository,
+)
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user, require_current_user
 from antarest.output.service import OutputService
@@ -96,6 +100,8 @@ class LauncherServiceNotAvailableException(HTTPException):
 LAUNCHER_PARAM_NAME_SUFFIX = "output_suffix"
 EXECUTION_INFO_FILE = "execution_info.ini"
 
+MAX_SCHEDULE_HORIZON = timedelta(days=15)
+
 
 class LauncherService:
     def __init__(
@@ -110,6 +116,7 @@ class LauncherService:
         file_transfer_manager: FileTransferManager,
         task_service: ITaskService,
         cache: ICache,
+        launcher_runtime_config_repository: LauncherRuntimeConfigRepository = LauncherRuntimeConfigRepository(),
         factory_launcher: FactoryLauncher = FactoryLauncher(),
     ) -> None:
         self.config = config
@@ -118,6 +125,7 @@ class LauncherService:
         self.login_service = login_service
         self.job_result_repository = job_result_repository
         self.solver_presets_repository = solver_presets_repository
+        self.launcher_runtime_config_repository = launcher_runtime_config_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
         self.task_service = task_service
@@ -133,11 +141,6 @@ class LauncherService:
             event_bus,
             cache,
         )
-        self.extensions = self._init_extensions()
-
-    def _init_extensions(self) -> dict[str, ILauncherExtension]:
-        adequacy_patch_ext = AdequacyPatchExtension(self.study_service, self.config)
-        return {adequacy_patch_ext.get_name(): adequacy_patch_ext}
 
     def get_launchers(self) -> LauncherListDTO:
         configs = self.config.launcher.configs or []
@@ -162,24 +165,6 @@ class LauncherService:
             )
         default_launcher = self.config.launcher.default
         return LauncherListDTO(launchers=launchers, default_launcher=default_launcher)
-
-    def _after_export_flat_hooks(
-        self,
-        job_id: str,
-        study_id: str,
-        study_exported_path: Path,
-        launcher_params: LauncherParametersDTO,
-    ) -> None:
-        for ext in self.extensions:
-            if launcher_params is not None and launcher_params.__getattribute__(ext) is not None:
-                logger.info(f"Applying extension {ext} after_export_flat_hook on job {job_id}")
-                with db():
-                    self.extensions[ext].after_export_flat_hook(
-                        job_id,
-                        study_id,
-                        study_exported_path,
-                        launcher_params.__getattribute__(ext),
-                    )
 
     def update(
         self,
@@ -236,6 +221,27 @@ class LauncherService:
     def _generate_new_id() -> str:
         return str(uuid4())
 
+    @staticmethod
+    def _normalize_scheduled_at(run_at: datetime) -> datetime:
+        """
+        Validate a requested scheduled start time and convert it to a naive UTC datetime.
+
+        A naive `run_at` is assumed to already be UTC; an aware one is converted to UTC.
+
+        Raises:
+            InvalidScheduleTime: if the time is not in the future or beyond the allowed horizon.
+        """
+        if run_at.tzinfo is not None:
+            run_at = run_at.astimezone(timezone.utc).replace(tzinfo=None)
+        now = current_time()
+        if run_at <= now:
+            raise InvalidScheduleTime("The scheduled start time must be in the future")
+        if run_at > now + MAX_SCHEDULE_HORIZON:
+            raise InvalidScheduleTime(
+                f"The scheduled start time cannot be more than {MAX_SCHEDULE_HORIZON.days} days in the future"
+            )
+        return run_at
+
     def run_study(
         self,
         study_uuid: str,
@@ -243,11 +249,14 @@ class LauncherService:
         launcher_parameters: LauncherParametersDTO,
         solver_presets_id: str | None = None,
         version: str | None = None,
+        run_at: datetime | None = None,
     ) -> str:
         job_uuid = self._generate_new_id()
         logger.info(f"New study launch (study={study_uuid}, job_id={job_uuid})")
         study_info = self.study_service.get_study_information(uuid=study_uuid)
         solver_version = SolverVersion.parse(version or study_info.version)
+
+        scheduled_at = self._normalize_scheduled_at(run_at) if run_at is not None else None
 
         if solver_presets_id is not None:
             solver_presets = self.get_solver_presets(solver_presets_id)
@@ -272,10 +281,17 @@ class LauncherService:
             launcher=launcher,
             launcher_params=launcher_parameters.model_dump_json() if launcher_parameters else None,
             owner_id=(owner_id or None),
+            scheduled_at=scheduled_at,
         )
         self.job_result_repository.save(job_status)
 
-        self.launchers[launcher].run_study(study_uuid, job_uuid, solver_version, launcher_parameters)
+        # Read the admin-set runtime config here (request context, DB session valid) and pass it down:
+        # the launch itself runs in a detached thread where the DB session is not available.
+        runtime_config = self.launcher_runtime_config_repository.get(launcher)
+
+        self.launchers[launcher].run_study(
+            study_uuid, job_uuid, solver_version, launcher_parameters, runtime_config, scheduled_at
+        )
 
         self.event_bus.push(
             Event(
@@ -449,7 +465,6 @@ class LauncherService:
                 output_list=output_list,
             )
         self.append_log(job_id, "Study extracted", JobLogType.BEFORE)
-        self._after_export_flat_hooks(job_id, study_id, target_path, launcher_params)
 
     def _get_job_output_fallback_path(self, job_id: str) -> Path:
         return self.config.storage.tmp_dir / f"output_{job_id}"
@@ -522,6 +537,9 @@ class LauncherService:
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
             output_true_path = find_single_output_path(output_path)
+
+            if not output_true_path.is_dir() and not is_zip(output_true_path):
+                raise NoValidOutputError(f"No valid output for job {job_id}: {output_true_path}")
 
             self._save_solver_stats(job_result, output_true_path)
 
@@ -609,19 +627,6 @@ class LauncherService:
             return self.output_service.export_output(job_result.study_id, job_result.output_id)
         raise JobNotFound()
 
-    def get_load(self, launcher_id: str | None) -> LauncherLoadDTO:
-        """
-        Get the load of the specified launcher.
-        """
-        if launcher_id is None:
-            launcher_id = self.config.launcher.default
-
-        launcher = self.launchers.get(launcher_id)
-        if launcher is None:
-            raise InvalidConfigurationError(launcher_id)
-
-        return launcher.get_load()
-
     def get_solver_versions(self, launcher_id: str | None) -> list[SolverVersion]:
         """
         Fetch the list of solver versions from the configuration.
@@ -661,6 +666,35 @@ class LauncherService:
             raise ValueError(f"Job {job_id} has no launcher")
         launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0.0}
         return float(launch_progress_json.get("progress", 0.0))
+
+    def get_runtime_config(self, launcher_id: str) -> LauncherRuntimeConfig:
+        """
+        Retrieve the runtime (DB-backed) configuration of a launcher.
+
+        Returns an empty configuration (all fields unset) when nothing has been stored yet.
+        """
+        self._assert_launcher_is_initialized(launcher_id)
+        return self.launcher_runtime_config_repository.get(launcher_id)
+
+    def update_runtime_config(self, launcher_id: str, config: LauncherRuntimeConfig) -> LauncherRuntimeConfig:
+        """
+        Replace the whole runtime configuration of a launcher (admin only).
+        """
+        user = require_current_user()
+        if not user.is_site_admin():
+            raise UserHasNotPermissionError("Only administrators can update the launcher configuration")
+
+        self._assert_launcher_is_initialized(launcher_id)
+
+        if config.slurm is not None:
+            slurm_ids = {cfg.id for cfg in self.config.launcher.get_slurm_configs()}
+            if launcher_id not in slurm_ids:
+                raise HTTPException(
+                    status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
+                    detail=f"Cannot set a SLURM configuration on non-SLURM launcher '{launcher_id}'",
+                )
+
+        return self.launcher_runtime_config_repository.save(launcher_id, config)
 
     def create_solver_presets(self, solver_presets_creation: SolverPresetsCreation) -> SolverPresets:
         """

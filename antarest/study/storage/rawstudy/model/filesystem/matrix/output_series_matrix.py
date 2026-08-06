@@ -12,13 +12,12 @@
 
 import logging
 
-import numpy as np
 import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
-from antarest.output.filestudy.utils import get_start_column, parse_output_file
+from antarest.output.filestudy.utils import get_start_column, parse_output_file_as_pandas_dataframe
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
@@ -44,10 +43,7 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
         output_first_column = get_start_column(self.freq)
         file_path = self.config.path
         try:
-            output = parse_output_file(file_path, output_first_column)
-            df = output.data.to_pandas().astype(np.float64)
-            df.columns = pd.MultiIndex.from_tuples(output.headers)  # type: ignore
-            return df
+            return parse_output_file_as_pandas_dataframe(file_path, output_first_column)
         except FileNotFoundError as e:
             # Raise 404 'Not Found' if the TSV file is not found
             logger.warning(f"Matrix file'{file_path}' not found")

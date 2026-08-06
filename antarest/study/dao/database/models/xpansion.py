@@ -11,9 +11,9 @@
 # This file is part of the Antares project.
 from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, LargeBinary, String, Table
 
+from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.xpansion_model import Master, Solver, UcType
-from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 

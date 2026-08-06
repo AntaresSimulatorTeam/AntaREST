@@ -108,15 +108,18 @@ class CreateArea(ICommand):
                 study_data.save_hydro_max_hourly_pump_power({area_id: constants.get_hydro_max_hourly_pump_power()})
                 study_data.save_hydro_max_daily_gen_energy({area_id: constants.get_hydro_max_daily_gen_energy()})
                 study_data.save_hydro_max_daily_pump_energy({area_id: constants.get_hydro_max_daily_pump_energy()})
+
         # Matrices
         study_data.save_load({area_id: null_matrix})
         study_data.save_solar({area_id: null_matrix})
         study_data.save_wind({area_id: null_matrix})
+        study_data.save_misc_gen({area_id: constants.get_default_miscgen()})
+
+        # Reserves
         if self.study_version < STUDY_VERSION_10_0:
             study_data.save_reserves({area_id: constants.get_default_reserves()})
         else:
             study_data.save_reserves_global_parameters({area_id: ReservesGlobalParameters()})
-        study_data.save_misc_gen({area_id: constants.get_default_miscgen()})
 
         return command_succeeded(message=f"Area '{self.area_name}' created", result=None)
 

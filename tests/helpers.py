@@ -248,6 +248,7 @@ def create_variant_study(
     name: str | None = None,
     path: str | None = None,
     version: str = "880",
+    storage_mode: StorageMode = StorageMode.FILESYSTEM,
     **kwargs: Any,
 ) -> VariantStudy:
     """
@@ -268,6 +269,7 @@ def create_variant_study(
         name=name or "My Study",
         path=str(path or Path("path/to/variant_study")),
         version=version,
+        storage_mode=storage_mode,
         **kwargs,
     )
 

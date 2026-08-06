@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "AntaREST"
-version = "2.32.0"
+version = "2.33.0"
 authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -17,7 +17,7 @@ classifiers=[
         "Operating System :: OS Independent",
     ]
 dependencies = [
-    "antares-launcher==1.4.9",
+    "antares-launcher==1.6.0",
     "antares-study-version==1.0.20",
     "antares-timeseries-generation==0.1.9",
     "fastapi==0.136.3",
@@ -43,7 +43,6 @@ dependencies = [
     "polars~=1.41.2",
     "psycopg2-binary~=2.9.9",
     "pyarrow~=23.0.1",
-    "py7zr~=0.22.0",
     "prometheus-client==0.25.0",
     "PyYAML~=6.0.3",
     # Note: celery[redis]~=5.5.x requires redis<6.0.0
@@ -61,7 +60,7 @@ dev = [
     {include-group = "test"},
     "celery-types~=0.26.0",
     "ruff~=0.15.2",
-    "mypy~=1.20.2",
+    "mypy~=2.3.0",
     "pre-commit~=4.6.0",
     "pyinstaller==6.21.0",
     "pyinstaller-hooks-contrib==2026.6",

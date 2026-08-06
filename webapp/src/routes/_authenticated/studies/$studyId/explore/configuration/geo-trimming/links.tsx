@@ -13,7 +13,7 @@
  */
 
 import ViewWrapper from "@/components/page/ViewWrapper";
-import TableMode from "@/components/TableMode";
+import TableModeDataForm from "@/components/TableModeDataForm";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
@@ -27,7 +27,11 @@ function Links() {
 
   return (
     <ViewWrapper>
-      <TableMode studyId={studyId} type="links" columns={["filterYearByYear", "filterSynthesis"]} />
+      <TableModeDataForm
+        studyId={studyId}
+        type="links"
+        columns={["filterYearByYear", "filterSynthesis"]}
+      />
     </ViewWrapper>
   );
 }

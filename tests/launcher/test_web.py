@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import http
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, call
 from uuid import uuid4
 
@@ -59,7 +60,36 @@ def test_run() -> None:
 
     assert res.status_code == 200
     assert res.json() == {"job_id": str(job)}
-    service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), None, None)
+    service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), None, None, None)
+
+
+def test_run__with_scheduled_start() -> None:
+    job = uuid4()
+    study = str(uuid4())
+
+    service = Mock()
+    service.run_study.return_value = str(job)
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.post(f"/v1/launcher/run/{study}?run_at=2026-07-08T12:00:00")
+
+    assert res.status_code == 200
+    assert res.json() == {"job_id": str(job)}
+    service.run_study.assert_called_once_with(
+        study, "local", LauncherParametersDTO(), None, None, datetime(2026, 7, 8, 12, 0, 0)
+    )
+
+    # A timezone-aware time (Paris summer time, UTC+02:00) is forwarded as-is; the web layer
+    # does not normalize it (that is `LauncherService`'s job).
+    service.run_study.reset_mock()
+    paris_tz = timezone(timedelta(hours=2))
+    res = client.post(f"/v1/launcher/run/{study}?run_at=2026-07-08T14:00:00%2B02:00")
+
+    assert res.status_code == 200
+    service.run_study.assert_called_once_with(
+        study, "local", LauncherParametersDTO(), None, None, datetime(2026, 7, 8, 14, 0, 0, tzinfo=paris_tz)
+    )
 
 
 def test_result() -> None:

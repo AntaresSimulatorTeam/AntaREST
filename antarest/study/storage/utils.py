@@ -12,6 +12,7 @@
 
 import calendar
 import contextlib
+import io
 import logging
 import math
 import os
@@ -21,10 +22,11 @@ from collections.abc import Sequence
 from datetime import datetime, timedelta
 from io import StringIO
 from pathlib import Path
-from typing import Any, BinaryIO, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
+import polars as pl
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 from antares.study.version.upgrade_app import is_temporary_upgrade_dir
@@ -51,7 +53,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import extract_archive_from_path, extract_archive_from_stream
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
+from antarest.core.utils.utils import current_time, is_path_safe
 from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_impersonator, require_current_user
 from antarest.output.filestudy.file_output_utils import parse_output_config
@@ -68,8 +70,10 @@ from antarest.study.model import (
     StudyMetadataCopy,
     StudyMetadataDTO,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.helpers import parse_input_config
+
+if TYPE_CHECKING:
+    from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +124,10 @@ def find_single_output_path(all_output_path: Path) -> Path:
     if len(children) == 1:
         if children[0].endswith(".zip"):
             return all_output_path / children[0]
-        return find_single_output_path(all_output_path / children[0])
+        only_child = all_output_path / children[0]
+        if only_child.is_dir():
+            return find_single_output_path(only_child)
+        return only_child
     return all_output_path
 
 
@@ -436,24 +443,6 @@ def get_start_date(
     return get_matrix_index(simulation_range, is_output=output_path is not None, level=level)
 
 
-def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
-    """
-    Check if the provided folder path is safe to prevent path traversal attack.
-
-    Args:
-        workspace: The workspace name.
-        folder: The folder path.
-
-    Returns:
-        `True` if the folder path is safe, `False` otherwise.
-    """
-    requested_path = workspace.path / folder
-    requested_path = requested_path.resolve()
-    safe_dir = workspace.path.resolve()
-    # check whether the requested path is a subdirectory of the workspace
-    return requested_path.is_relative_to(safe_dir)
-
-
 def is_study_folder(path: Path) -> bool:
     return path.is_dir() and (path / "study.antares").exists()
 
@@ -473,7 +462,7 @@ def get_workspace_from_config(config: Config, workspace_name: str, default_allow
 
 
 def get_folder_from_workspace(workspace: WorkspaceConfig, folder: str) -> Path:
-    if not is_folder_safe(workspace, folder):
+    if not is_path_safe(workspace.path, folder):
         raise FolderNotFoundInWorkspace(f"Invalid path for folder: {folder} in workspace {workspace}")
     folder_path = workspace.path / folder
     if not folder_path.is_dir():
@@ -646,7 +635,7 @@ def extract_data_to_dir(dst_path: Path, source: Path | BinaryIO, tmp_dir: Path) 
         raise
 
 
-def update_study_from_raw_metadata(study: Study, file_study: FileStudy) -> None:
+def update_study_from_raw_metadata(study: Study, file_study: "FileStudy") -> None:
     """
     The given `study` object needs to be updated according to the real filesystem data inside `FileStudy`
     """
@@ -665,11 +654,15 @@ def update_study_from_raw_metadata(study: Study, file_study: FileStudy) -> None:
         logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         study_antares = file_study.tree.get(url=["study", "antares"])
+
         author = study_antares.get("author")
         editor = study_antares.get("editor", author)
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
+        if not isinstance(author, str):
+            raise TypeError(f"Invalid author type: {type(author)!r}")
+        if not isinstance(editor, str):
+            raise TypeError(f"Invalid editor type: {type(editor)!r}")
+        if not isinstance(horizon, (str, int)):
+            raise TypeError(f"Invalid horizon type: {type(horizon)!r}")
         study.horizon = horizon
         study.author = author
         study.editor = editor
@@ -681,3 +674,10 @@ def update_study_from_raw_metadata(study: Study, file_study: FileStudy) -> None:
         study.updated_at = study.updated_at or current_time()
         study.author = study.author or "Unknown"
         study.editor = study.editor or "Unknown"
+
+
+def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
+    if df.is_empty() and isinstance(path_or_buf, Path):
+        path_or_buf.write_bytes(b"")
+    else:
+        df.write_csv(path_or_buf, separator="\t", include_header=False)

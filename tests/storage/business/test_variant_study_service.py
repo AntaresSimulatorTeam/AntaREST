@@ -17,6 +17,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
+from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.jwt import JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
@@ -26,7 +27,7 @@ from antarest.login.utils import current_user_context
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, StorageMode, StudyType
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import create_variant_study
+from tests.helpers import create_raw_study, create_variant_study, with_db_context
 
 
 def build_config(study_path: Path) -> Config:
@@ -116,3 +117,47 @@ def test_get_variant_children(tmp_path: Path, admin_user: Any) -> None:
             else:
                 with pytest.raises(UserHasNotPermissionError):
                     study_service.get_all_variants_children("parent")
+
+
+def test_get_root_study_id(tmp_path: Path) -> None:
+    repo_mock = Mock(spec=VariantStudyRepository)
+    study_service = VariantStudyService(
+        raw_study_service=Mock(),
+        cache=Mock(),
+        task_service=Mock(),
+        command_factory=Mock(),
+        study_factory=Mock(),
+        config=build_config(tmp_path),
+        repository=repo_mock,
+        event_bus=Mock(),
+        matrix_service=Mock(),
+    )
+
+    repo_mock.get_root_ancestor_id.return_value = "root"
+    assert study_service.get_root_study_id("leaf") == "root"
+    repo_mock.get_root_ancestor_id.assert_called_once_with("leaf")
+
+    repo_mock.get_root_ancestor_id.return_value = None
+    with pytest.raises(StudyNotFoundError):
+        study_service.get_root_study_id("missing")
+
+
+@with_db_context
+def test_get_all_variants_children_from_root(
+    variant_study_service: VariantStudyService,
+    admin_user: JWTUser,
+) -> None:
+    """When `from_root=True`, the tree is rebuilt starting at the topmost ancestor."""
+    root = create_raw_study(name="root")
+    db.session.add(root)
+    db.session.commit()
+
+    leaf = create_variant_study(name="leaf", parent_id=root.id)
+    db.session.add(leaf)
+    db.session.commit()
+
+    with current_user_context(admin_user):
+        tree = variant_study_service.get_all_variants_children(leaf.id, from_root=True)
+
+    assert tree.node.id == root.id
+    assert [c.node.id for c in tree.children] == [leaf.id]

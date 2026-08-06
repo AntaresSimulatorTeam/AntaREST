@@ -44,7 +44,7 @@ def launcher_config(tmp_path: Path) -> LocalConfig:
         "enable_nb_cores_detection": True,
         "local_workspace": tmp_path,
     }
-    return LocalConfig.from_dict(data)
+    return LocalConfig.model_validate(data)
 
 
 def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
@@ -79,9 +79,7 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
     local_launcher.job_id_to_study_id = {job_id: ("study-id", tmp_path / "run", Mock())}
     local_launcher.callbacks.import_output.return_value = "some output"
     launcher_parameters = LauncherParametersDTO(
-        adequacy_patch=None,
         nb_cpu=8,
-        post_processing=False,
         time_limit=3600,
         xpansion=False,
         xpansion_r_version=False,
@@ -222,7 +220,7 @@ def test_unsupported_launcher_other_options_should_raise(
 
 def test_parse_xpress_dir(tmp_path: Path) -> None:
     data = {"id": "id", "name": "name", "type": "local", "xpress_dir": "fake_path_for_test"}
-    launcher_config = LocalConfig.from_dict(data)
+    launcher_config = LocalConfig.model_validate(data)
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     launch_parameters = LauncherParametersDTO(other_options="xpress")
     _, env_variables = local_launcher._parse_launcher_options(launch_parameters, SolverVersion.parse("9.2"))
@@ -267,7 +265,7 @@ def test_select_best_binary() -> None:
         SolverVersion.parse("1000"): Path("1000"),
     }
     local_launcher = LocalLauncher(
-        LocalConfig.from_dict({"id": "id", "name": "name", "type": "local", "binaries": binaries}),
+        LocalConfig.model_validate({"id": "id", "name": "name", "type": "local", "binaries": binaries}),
         callbacks=Mock(),
         event_bus=Mock(),
         cache=Mock(),

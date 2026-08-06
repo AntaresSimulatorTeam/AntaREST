@@ -13,7 +13,6 @@
 
 from typing_extensions import override
 
-from antarest.core.utils.archives import extract_lines_from_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
@@ -44,10 +43,7 @@ class InputAreasList(INode[list[str], list[str], list[str]]):
         expanded: bool = False,
         formatted: bool = True,
     ) -> list[str]:
-        if self.config.archive_path:
-            lines = extract_lines_from_archive(self.config.archive_path, AREAS_LIST_RELATIVE_PATH)
-        else:
-            lines = self.config.path.read_text().split("\n")
+        lines = self.config.path.read_text().split("\n")
         return [line.strip() for line in lines if line.strip()]
 
     @override

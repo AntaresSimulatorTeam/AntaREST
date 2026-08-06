@@ -21,7 +21,7 @@ export interface VariantTree {
 
 export interface GetVariantTreeParams {
   studyId: Study["id"];
-  includeParents?: boolean;
+  fromRoot?: boolean;
 }
 
 export interface CreateVariantParams {

@@ -16,13 +16,13 @@ SQLAlchemy Core table definitions for thermal cluster storage.
 
 from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, String, Table
 
+from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
     ThermalCostGeneration,
 )
-from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 

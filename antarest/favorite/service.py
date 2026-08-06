@@ -10,12 +10,29 @@
 #
 # This file is part of the Antares project.
 import http
+from pathlib import PurePosixPath
 
 from fastapi import HTTPException
 
-from antarest.favorite.model import FavoriteDirectory, FavoriteDirectoryDTO, FavoriteStudy, FavoriteStudyDTO
-from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
+from antarest.core.config import Config
+from antarest.core.utils.utils import is_path_safe
+from antarest.favorite.model import (
+    FavoriteAggregateDTO,
+    FavoriteDirectory,
+    FavoriteDirectoryDTO,
+    FavoriteExternalDirectory,
+    FavoriteExternalDirectoryDTO,
+    FavoriteStudy,
+    FavoriteStudyDTO,
+)
+from antarest.favorite.repository import (
+    FavoriteDirectoryRepository,
+    FavoriteExternalDirectoryRepository,
+    FavoriteStudyRepository,
+)
 from antarest.login.utils import get_user_impersonator
+from antarest.study.directory_exceptions import DirectoryNotFoundError
+from antarest.study.storage.utils import get_workspace_from_config
 
 
 class FavoriteStudyService:
@@ -110,3 +127,93 @@ class FavoriteDirectoryService:
             raise HTTPException(
                 status_code=http.HTTPStatus.NOT_FOUND, detail=f"Directory with id {directory_uuid} not found"
             ) from None
+
+
+class FavoriteExternalDirectoryService:
+    def __init__(
+        self, favorite_external_directory_repository: FavoriteExternalDirectoryRepository, workspace_config: Config
+    ):
+        self.favorite_external_directory_repository = favorite_external_directory_repository
+        self.workspace_config = workspace_config
+
+    def add_favorite(self, directory_path: str, workspace: str) -> FavoriteExternalDirectoryDTO:
+        """
+        Add an external directory to the current user list of favorites
+        Args:
+            directory_path: the path of the external directory that we want to add as a favorite
+            workspace: the workspace of the external directory that we want to add as a favorite
+
+        Returns: the DTO of the saved favorite external directory
+
+        """
+        workspace_conf = get_workspace_from_config(self.workspace_config, workspace)
+
+        if not is_path_safe(workspace_conf.path, directory_path):
+            raise HTTPException(
+                status_code=http.HTTPStatus.BAD_REQUEST,
+                detail=f"Directory {directory_path} is not safe",
+            )
+
+        full_directory_path = workspace_conf.path / directory_path
+
+        if not full_directory_path.exists():
+            raise DirectoryNotFoundError(f"{directory_path}")
+
+        favorite_external_directory = FavoriteExternalDirectory(
+            # We will always receive a posix path, so we convert it to posix in order to make it functional for Linux and Windows
+            path=PurePosixPath(directory_path).as_posix(),
+            workspace=workspace,
+            user_id=get_user_impersonator(),
+        )
+        dto = self.favorite_external_directory_repository.save(favorite_external_directory).to_dto()
+        return dto
+
+    def list_favorites(self) -> list[FavoriteExternalDirectoryDTO]:
+        """
+        List all favorite external directories from the current user
+        Returns: The favorite external directories DTOs of the current user in ascending order
+
+        """
+        favorite_dtos = [favorite.to_dto() for favorite in self.favorite_external_directory_repository.get_all()]
+        return favorite_dtos
+
+    def delete_favorite(self, workspace: str, path: str) -> None:
+        """
+        Delete a favorite external directory from the current user list of favorites
+        Args:
+            workspace: the workspace of the favorite external directory that will be deleted
+            path: the path of the favorite external directory that we want to delete
+
+        Returns:
+
+        """
+        deleted_result = self.favorite_external_directory_repository.delete(workspace=workspace, path=path)
+        if not deleted_result:
+            raise HTTPException(
+                status_code=http.HTTPStatus.NOT_FOUND,
+                detail=f"Favorite external directory with path {path} and workspace {workspace} not found",
+            )
+
+
+class FavoriteAggregateService:
+    def __init__(
+        self,
+        favorite_study_service: FavoriteStudyService,
+        favorite_directory_service: FavoriteDirectoryService,
+        favorite_external_directory_service: FavoriteExternalDirectoryService,
+    ):
+        self.favorite_study_service = favorite_study_service
+        self.favorite_directory_service = favorite_directory_service
+        self.favorite_external_directory_service = favorite_external_directory_service
+
+    def list_favorites(self) -> FavoriteAggregateDTO:
+        """
+        Aggregate all favorite studies, favorite directories and favorite external directories from the current user
+        Returns: The list of favorite studies, favorite directories and favorite external directories of the current user
+
+        """
+        studies = self.favorite_study_service.list_favorites()
+        directories = self.favorite_directory_service.list_favorites()
+        external_directories = self.favorite_external_directory_service.list_favorites()
+
+        return FavoriteAggregateDTO(studies=studies, directories=directories, external_directories=external_directories)

@@ -67,11 +67,12 @@ class RawStudyService(AbstractStudyService):
         self.study_factory = study_factory
         self.repository = repository
         self._matrix_service = command_context.matrix_service
+        blob_service = command_context.blob_service
         generator_matrix_constants = command_context.generator_matrix_constants
-        db_dao_factory = DatabaseStudyDaoFactory(self._matrix_service, generator_matrix_constants)
+        db_dao_factory = DatabaseStudyDaoFactory(self._matrix_service, blob_service, generator_matrix_constants)
         fs_dao_factory = FileStudyDaoFactory(
             self._matrix_service,
-            command_context.blob_service,
+            blob_service,
             generator_matrix_constants,
             study_factory,
             cache,
@@ -190,5 +191,5 @@ class RawStudyService(AbstractStudyService):
         self._storage_mapping[study.storage_mode].import_study(study, study_dir)
         return study
 
-    def denormalize_study(self, study: Study) -> None:
-        self._file_study_storage.denormalize_study(study)
+    def upgrade_study(self, study: Study, version: StudyVersion) -> None:
+        self._storage_mapping[study.storage_mode].upgrade_study(study, version)

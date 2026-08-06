@@ -26,7 +26,7 @@ from antarest.worker.worker import WorkerTaskCommand, WorkerTaskResult
 
 def test_remote_executor():
     config = Config()
-    config.tasks.remote_workers.append(RemoteWorkerConfig("worker", queues=["q1", "q2"]))
+    config.tasks.remote_workers.append(RemoteWorkerConfig(name="worker", queues=["q1", "q2"]))
 
     event_bus = EventBusService(LocalEventBus())
     executor = RemoteWorkerExecutor(event_bus=event_bus, config=config)
@@ -63,7 +63,7 @@ def test_remote_executor():
 
 def test_remote_executor_should_reject_unknown_queue():
     config = Config()
-    config.tasks.remote_workers.append(RemoteWorkerConfig("worker", queues=["q1", "q2"]))
+    config.tasks.remote_workers.append(RemoteWorkerConfig(name="worker", queues=["q1", "q2"]))
 
     executor = RemoteWorkerExecutor(event_bus=Mock(), config=config)
 

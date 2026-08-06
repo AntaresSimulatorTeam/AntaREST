@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Annotated, NewType, TypeAlias
+from typing import Annotated, Any, NewType, TypeAlias
 
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
@@ -28,8 +28,8 @@ GLOBAL_PARAMETERS_SECTION = "globalparameters"
 
 # Reserved reserve ids:
 # - "global-parameters": collides with the /areas/{id}/reserves/global-parameters route.
-# - GLOBAL_PARAMETERS_SECTION: collides with the [globalparameters] INI section.
-# - "reserves": collides with the `reserves.ini` file at `input/reserves/<area>/reserves`.
+# - GLOBAL_PARAMETERS_SECTION: collides with the [globalparameters] YAML section.
+# - "reserves": collides with the `reserves.yml` file at `input/reserves/<area>/reserves`.
 _RESERVED_RESERVE_IDS = frozenset({"global-parameters", GLOBAL_PARAMETERS_SECTION, "reserves"})
 
 
@@ -47,15 +47,23 @@ Ratio = Annotated[float, Field(ge=0, le=1)]
 Duration = Annotated[int, Field(ge=0)]
 
 
-def _check_not_reserved_id(id_: str) -> None:
-    if transform_name_to_id(id_) in _RESERVED_RESERVE_IDS:
-        raise ReservedReserveDefinitionId(id_)
+def _check_not_reserved_id(name: str) -> None:
+    if transform_name_to_id(name) in _RESERVED_RESERVE_IDS:
+        raise ReservedReserveDefinitionId(name)
 
 
 class ReserveDefinition(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    id: ItemName
+    @model_validator(mode="before")
+    @classmethod
+    def set_id(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "id" not in data and "name" in data:
+            data["id"] = transform_name_to_id(data["name"])
+        return data
+
+    id: str
+    name: ItemName
     type: ReserveType
     failure_cost: Cost = 0.0
     spillage_cost: Cost = 0.0
@@ -67,7 +75,7 @@ class ReserveDefinition(AntaresBaseModel):
 class ReserveDefinitionCreation(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    id: ItemName
+    name: ItemName
     type: ReserveType
     failure_cost: Cost | None = None
     spillage_cost: Cost | None = None
@@ -77,7 +85,7 @@ class ReserveDefinitionCreation(AntaresBaseModel):
 
     @model_validator(mode="after")
     def _check_id(self) -> "ReserveDefinitionCreation":
-        _check_not_reserved_id(self.id)
+        _check_not_reserved_id(self.name)
         return self
 
 

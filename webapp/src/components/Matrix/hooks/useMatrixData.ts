@@ -101,7 +101,9 @@ export function useMatrixData({
       const [matrix, index] = await Promise.all([
         // Use the custom fetch function if provided, else use the regular `/raw` API.
         fetchFn ? fetchFn(studyId) : getStudyData<MatrixDataDTO>(studyId, path, 1),
-        getStudyMatrixIndex(studyId, path),
+        // The matrix index endpoint only applies to standard `/raw` matrices.
+        // Custom-fetcher matrices carry their own labels, so we skip it.
+        fetchFn ? Promise.resolve(undefined) : getStudyMatrixIndex(studyId, path),
       ]);
 
       const newState = {
