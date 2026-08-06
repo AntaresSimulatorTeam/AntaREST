@@ -16,6 +16,18 @@ from antarest.core.persistence import Base
 
 
 class Output(Base):
+    """
+    Metadata for one output.
+
+    Currently only used to cache the disk space used by the output, but usage may be extended in the future.
+
+    Attributes:
+        study_id: ID of the study to which the output belongs.
+        output_id: ID of the output.
+        disk_space_bytes: Disk space used by the output, in bytes. Used as a cached value, should be invalidated
+                          when an operation changing the actual size is performed (archival ...)
+    """
+
     __tablename__ = "output"
 
     study_id: Mapped[str] = mapped_column(
