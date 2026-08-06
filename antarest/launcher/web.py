@@ -28,6 +28,7 @@ from antarest.launcher.model import (
     LauncherListDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
+    LauncherRuntimeConfig,
     LogType,
     SolverPresets,
     SolverPresetsCreation,
@@ -248,5 +249,25 @@ def create_launcher_api() -> APIRouter:
     def delete_solver_presets(service: LauncherServiceDep, solver_presets_id: SanitizedStr) -> None:
         logger.info(f"Deleting solver preset for ID {solver_presets_id}")
         service.delete_solver_presets(solver_presets_id)
+
+    @bp.get(
+        "/{launcher_id}/config",
+        summary="Get the runtime configuration of a launcher",
+    )
+    def get_launcher_config(service: LauncherServiceDep, launcher_id: SanitizedStr) -> LauncherRuntimeConfig:
+        logger.info(f"Fetching runtime configuration for launcher '{launcher_id}'")
+        return service.get_runtime_config(launcher_id)
+
+    @bp.put(
+        "/{launcher_id}/config",
+        summary="Replace the runtime configuration of a launcher (admin only)",
+    )
+    def update_launcher_config(
+        service: LauncherServiceDep,
+        launcher_id: SanitizedStr,
+        config: LauncherRuntimeConfig,
+    ) -> LauncherRuntimeConfig:
+        logger.info(f"Updating runtime configuration for launcher '{launcher_id}'")
+        return service.update_runtime_config(launcher_id, config)
 
     return bp
