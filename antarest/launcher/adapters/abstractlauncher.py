@@ -24,7 +24,7 @@ from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, Even
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.launcher.adapters.abstract_load import AbstractLoad
 from antarest.launcher.adapters.log_parser import LaunchProgressDTO
-from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LauncherRuntimeConfig, LogType
+from antarest.launcher.model import JobStatus, LauncherParametersDTO, LauncherRuntimeConfig, LogType
 
 
 @dataclass(frozen=True)
