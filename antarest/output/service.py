@@ -49,6 +49,7 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.output.dbmodel import Output
 from antarest.output.filestudy.aggregator_management import (
     AREA_COL,
     CLUSTER_ID_COL,
@@ -65,7 +66,6 @@ from antarest.output.filestudy.utils import (
     split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
-    Output,
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesViewResponse,

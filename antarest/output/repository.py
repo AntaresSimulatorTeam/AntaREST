@@ -14,7 +14,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.output.model import Output
+from antarest.output.dbmodel import Output
 
 
 class OutputRepository:

@@ -14,12 +14,8 @@ from typing import Annotated, TypeAlias
 
 from pydantic import BeforeValidator
 from pydantic.alias_generators import to_camel
-from sqlalchemy import BigInteger, ForeignKey, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.model import Study
 
 Variables: TypeAlias = Annotated[list[str], BeforeValidator(lambda x: sorted(x))]
 
@@ -97,17 +93,3 @@ class OutputVariablesViewStatus(StrEnum):
 class OutputVariablesViewResponse(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     status: OutputVariablesViewStatus
     task_id: str | None
-
-
-class Output(Base):
-    __tablename__ = "output"
-
-    study_id: Mapped[str] = mapped_column(
-        String(),
-        ForeignKey("study.id", name="fk_output_study_id", ondelete="CASCADE"),
-        primary_key=True,
-        nullable=False,
-    )
-    output_id: Mapped[str] = mapped_column(String(), primary_key=True, nullable=False)
-    disk_space_bytes: Mapped[int] = mapped_column(BigInteger(), nullable=False, default=None)
-    study: Mapped["Study"] = relationship(Study)
