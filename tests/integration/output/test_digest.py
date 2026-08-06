@@ -13,46 +13,43 @@
 from starlette.testclient import TestClient
 
 
-class TestDigest:
-    def test_get_digest_endpoint(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+def test_get_digest_endpoint(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
-        # Nominal case
-        output_id = "20201014-1422eco-hello"
-        res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_id}/digest-ui")
-        assert res.status_code == 200
-        digest = res.json()
-        assert list(digest.keys()) == ["area", "districts", "flowLinear", "flowQuadratic"]
-        assert digest["districts"] == {"columns": [], "data": [], "groupedColumns": False}
-        flow = {
-            "columns": ["", "de", "es", "fr", "it"],
-            "data": [
-                ["de", "X", "--", "0", "--"],
-                ["es", "--", "X", "0", "--"],
-                ["fr", "0", "0", "X", "0"],
-                ["it", "--", "--", "0", "X"],
-            ],
-            "groupedColumns": False,
-        }
-        assert digest["flowQuadratic"] == flow
-        assert digest["flowLinear"] == flow
-        area_matrix = digest["area"]
-        assert area_matrix["groupedColumns"] is True
-        assert area_matrix["columns"][:3] == [[""], ["OV. COST", "Euro", "EXP"], ["OP. COST", "Euro", "EXP"]]
+    # Nominal case
+    output_id = "20201014-1422eco-hello"
+    res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_id}/digest-ui")
+    assert res.status_code == 200
+    digest = res.json()
+    assert list(digest.keys()) == ["area", "districts", "flowLinear", "flowQuadratic"]
+    assert digest["districts"] == {"columns": [], "data": [], "groupedColumns": False}
+    flow = {
+        "columns": ["", "de", "es", "fr", "it"],
+        "data": [
+            ["de", "X", "--", "0", "--"],
+            ["es", "--", "X", "0", "--"],
+            ["fr", "0", "0", "X", "0"],
+            ["it", "--", "--", "0", "X"],
+        ],
+        "groupedColumns": False,
+    }
+    assert digest["flowQuadratic"] == flow
+    assert digest["flowLinear"] == flow
+    area_matrix = digest["area"]
+    assert area_matrix["groupedColumns"] is True
+    assert area_matrix["columns"][:3] == [[""], ["OV. COST", "Euro", "EXP"], ["OP. COST", "Euro", "EXP"]]
 
-        # Asserts we have a 404 Exception when the output doesn't exist
-        res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/fake_output/digest-ui")
-        assert res.status_code == 404
-        assert res.json() == {
-            "description": "Output 'fake_output' not found",
-            "exception": "OutputNotFound",
-        }
+    # Asserts we have a 404 Exception when the output doesn't exist
+    res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/fake_output/digest-ui")
+    assert res.status_code == 404
+    assert res.json() == {
+        "description": "Output 'fake_output' not found",
+        "exception": "OutputNotFound",
+    }
 
-        # Asserts we have a 404 Exception when the digest file doesn't exist
-        output_wo_digest = "20201014-1430adq"
-        res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_wo_digest}/digest-ui")
-        assert res.status_code == 404
-        assert res.json() == {
-            "description": f"Digest file not found for study {internal_study_id} and output {output_wo_digest}",
-            "exception": "ChildNotFoundError",
-        }
+    # Asserts we can read digest also in "adequacy" outputs
+    output_wo_digest = "20201014-1430adq"
+    res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_wo_digest}/digest-ui")
+    assert res.status_code == 200
+    digest = res.json()
+    assert list(digest.keys()) == ["area", "districts", "flowLinear", "flowQuadratic"]

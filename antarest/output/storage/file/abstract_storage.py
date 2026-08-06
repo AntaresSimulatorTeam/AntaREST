@@ -56,6 +56,7 @@ from antarest.output.storage.output_storage import (
     OutputSettings,
     OutputStorageType,
 )
+from antarest.output.utils import find_mode_dir
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8,
@@ -477,8 +478,11 @@ class AbstractFileOutputStorage(IOutputStorage):
         """
         Digest of the output.
         """
-        output_path = self._outputs_provider.get_outputs(study_id).outputs_path
-        file_path = output_path / output_id / "economy" / "mc-all" / "grid" / "digest.txt"
+        output_path = self._outputs_provider.get_outputs(study_id).outputs_path / output_id
+        mode_dir = find_mode_dir(output_path)
+        if not mode_dir:
+            raise ChildNotFoundError(f"Digest file not found for study {study_id} and output {output_id}")
+        file_path = mode_dir / "mc-all" / "grid" / "digest.txt"
         if not file_path.exists():
             raise ChildNotFoundError(f"Digest file not found for study {study_id} and output {output_id}")
         return DigestSynthesis.parse_file_for_ui(file_path)
