@@ -92,11 +92,15 @@ def test_get_digest_endpoint(
     res = client.get(f"/v1/studies/{internal_study_id}/outputs")
     assert len(res.json()) == 5
 
-    client.post(f"/v1/studies/{internal_study_id}/output", files={"output": io.BytesIO(empty_output_path.read_bytes())})
+    res = client.post(
+        f"/v1/studies/{internal_study_id}/output", files={"output": io.BytesIO(empty_output_path.read_bytes())}
+    )
+    assert res.status_code == 202
+    output_id = res.json()
     # Ensures the output has been successfully imported
     res = client.get(f"/v1/studies/{internal_study_id}/outputs")
     assert len(res.json()) == 6
 
-    res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{adequacy_output}/digest-ui")
+    res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_id}/digest-ui")
     assert res.status_code == 404
     assert res.json()["exception"] == "DigestNotFoundError"
