@@ -9,8 +9,23 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import zipfile
+from pathlib import Path
 
+import pytest
 from starlette.testclient import TestClient
+
+
+@pytest.fixture
+def empty_output_path(tmp_path: Path, sta_mini_zip_path: Path) -> Path:
+    output_path = tmp_path / "empty-output"
+    with zipfile.ZipFile(sta_mini_zip_path, "r") as zip_file:
+        zip_file.extractall(output_path, members=[f for f in zip_file.namelist() if "20201014-1430adq" in f])
+    return output_path
+
+
+def test_empty_output(empty_output_path: Path) -> None:
+    assert list(empty_output_path.iterdir()) == []
 
 
 def test_get_digest_endpoint(client: TestClient, user_access_token: str, internal_study_id: str) -> None:

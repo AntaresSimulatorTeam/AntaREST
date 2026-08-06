@@ -241,6 +241,9 @@ class IOutputStorage(ABC):
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
         """
         Digest of the output.
+
+        Raises:
+            DigestNotFoundError: if digest data is absent
         """
 
     @abstractmethod
