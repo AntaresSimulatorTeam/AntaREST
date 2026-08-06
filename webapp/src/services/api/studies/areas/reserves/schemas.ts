@@ -53,7 +53,7 @@ export const reserveCertificationSchema = z.object({
 
 // Shape: { [reserveId]: { [clusterId]: certification } }.
 // A cluster absent from a reserve's record has no active certification for it.
-export const reserveCertificationsSchema = z.record(
+export const reservesCertificationsSchema = z.record(
   z.string(),
   z.record(z.string(), reserveCertificationSchema),
 );

@@ -16,8 +16,8 @@ import {
   createReserve,
   deleteReserves,
   updateReserve,
-  updateReserveCertifications,
   updateReserveGlobalParameters,
+  updateReservesCertifications,
 } from "@/services/api/studies/areas/reserves";
 import type { CertificationProductionType } from "@/services/api/studies/areas/reserves/types";
 import type { AreaWithId } from "@/types/types";
@@ -57,7 +57,7 @@ export const reserveMutations = {
   ) => {
     return mutationOptions({
       mutationKey: reserveKeys.updateCertifications(studyId, areaId, productionType),
-      mutationFn: updateReserveCertifications,
+      mutationFn: updateReservesCertifications,
     });
   },
 };

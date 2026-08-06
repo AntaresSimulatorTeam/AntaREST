@@ -14,9 +14,9 @@
 
 import {
   getReserve,
-  getReserveCertifications,
   getReserveGlobalParameters,
   getReserves,
+  getReservesCertifications,
 } from "@/services/api/studies/areas/reserves";
 import type {
   CertificationProductionType,
@@ -61,7 +61,7 @@ export const reserveQueries = {
   ) => {
     return queryOptions({
       queryKey: reserveKeys.certifications(studyId, areaId, productionType),
-      queryFn: () => getReserveCertifications({ studyId, areaId, productionType }),
+      queryFn: () => getReservesCertifications({ studyId, areaId, productionType }),
     });
   },
 };

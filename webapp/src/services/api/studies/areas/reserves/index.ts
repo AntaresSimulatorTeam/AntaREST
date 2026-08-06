@@ -15,9 +15,9 @@
 import client from "@/services/api/client";
 import {
   createReserveParamsSchema,
-  reserveCertificationsSchema,
   reserveGlobalParametersSchema,
   reserveSchema,
+  reservesCertificationsSchema,
   reservesSchema,
   updateReserveGlobalParametersSchema,
   updateReserveParamsSchema,
@@ -27,13 +27,13 @@ import type {
   DeleteReservesParams,
   GetReserveParams,
   Reserve,
-  ReserveCertifications,
-  ReserveCertificationsParams,
   ReserveGlobalParameters,
   ReservesAreaParams,
-  UpdateReserveCertificationsParams,
+  ReservesCertifications,
+  ReservesCertificationsParams,
   UpdateReserveGlobalParametersParams,
   UpdateReserveParams,
+  UpdateReservesCertificationsParams,
 } from "./types";
 
 /**
@@ -149,14 +149,14 @@ export async function updateReserveGlobalParameters(
  * @returns The certifications, keyed by reserve ID then cluster ID.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getReserveCertifications(
-  params: ReserveCertificationsParams,
-): Promise<ReserveCertifications> {
+export async function getReservesCertifications(
+  params: ReservesCertificationsParams,
+): Promise<ReservesCertifications> {
   const { studyId, areaId, productionType } = params;
   const res = await client.get(
     `/v1/studies/${studyId}/areas/${areaId}/reserves/certifications/${productionType}`,
   );
-  return reserveCertificationsSchema.parse(res.data);
+  return reservesCertificationsSchema.parse(res.data);
 }
 
 /**
@@ -170,14 +170,14 @@ export async function getReserveCertifications(
  * @returns The updated certifications mapping.
  * @throws If the params or response doesn't match the expected schema.
  */
-export async function updateReserveCertifications(
-  params: UpdateReserveCertificationsParams,
-): Promise<ReserveCertifications> {
+export async function updateReservesCertifications(
+  params: UpdateReservesCertificationsParams,
+): Promise<ReservesCertifications> {
   const { studyId, areaId, productionType, data } = params;
-  const body = reserveCertificationsSchema.parse(data);
+  const body = reservesCertificationsSchema.parse(data);
   const res = await client.put(
     `/v1/studies/${studyId}/areas/${areaId}/reserves/certifications/${productionType}`,
     body,
   );
-  return reserveCertificationsSchema.parse(res.data);
+  return reservesCertificationsSchema.parse(res.data);
 }

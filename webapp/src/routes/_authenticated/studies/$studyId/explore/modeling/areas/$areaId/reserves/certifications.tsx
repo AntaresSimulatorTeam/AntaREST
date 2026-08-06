@@ -18,7 +18,7 @@ import type {
   CertificationProductionType,
   Reserve,
   ReserveCertification,
-  ReserveCertifications,
+  ReservesCertifications,
 } from "@/services/api/studies/areas/reserves/types";
 import { Alert } from "@mui/material";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
@@ -73,7 +73,7 @@ function ReservesCertifications() {
 
   // Certifications mapping per production type. "storages" and "hydro" will be
   // added once their endpoints are released.
-  const certificationsByType: Record<CertificationProductionType, ReserveCertifications> = {
+  const certificationsByType: Record<CertificationProductionType, ReservesCertifications> = {
     thermals: thermalCertifications,
   };
 

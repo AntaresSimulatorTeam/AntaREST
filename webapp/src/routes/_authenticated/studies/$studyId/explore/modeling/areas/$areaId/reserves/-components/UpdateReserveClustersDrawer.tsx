@@ -89,9 +89,11 @@ function UpdateReserveClustersDrawer({ open, reserveId, defaultValues, onClose, 
       onSubmit={handleSubmit}
     >
       {({ control, watch }) => {
+        const watchAllFields = watch();
+
         // Certified clusters that are deselected lose their parameters on save
         const removedNames = sections.flatMap((section) => {
-          const selectedIds = watch(section.productionType) ?? [];
+          const selectedIds = watchAllFields[section.productionType] ?? [];
           return defaultValues[section.productionType]
             .filter((id) => !selectedIds.includes(id))
             .map((id) => clusterNamesById.get(id) ?? id);

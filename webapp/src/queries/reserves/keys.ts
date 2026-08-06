@@ -60,7 +60,7 @@ export const reserveKeys = {
   ) => {
     return [
       ...reserveKeys.certifications(studyId, areaId, productionType),
-      "updateReserveCertifications",
+      "updateReservesCertifications",
     ];
   },
 };
