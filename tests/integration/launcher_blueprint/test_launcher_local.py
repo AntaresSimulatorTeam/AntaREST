@@ -15,11 +15,7 @@ from starlette.testclient import TestClient
 from antarest.core.config import LocalConfig
 
 
-def test_get_launchers(
-    self,
-    client: TestClient,
-    user_access_token: str,
-) -> None:
+def test_get_launchers(client: TestClient, user_access_token: str) -> None:
     # NOTE: we have `enable_nb_cores_detection: True` in `tests/integration/assets/config.template.yml`.
     local_config = LocalConfig.model_validate(
         {"id": "local_id", "type": "local", "name": "local", "enable_nb_cores_detection": True}
@@ -52,12 +48,7 @@ def test_get_launchers(
     assert actual["defaultLauncher"] == "local_id"
 
 
-def test_jobs_permissions(
-    self,
-    client: TestClient,
-    user_access_token: str,
-    admin_access_token: str,
-) -> None:
+def test_jobs_permissions(client: TestClient, user_access_token: str, admin_access_token: str) -> None:
     # create an admin study with no permissions
     res = client.post(
         "/v1/studies",
