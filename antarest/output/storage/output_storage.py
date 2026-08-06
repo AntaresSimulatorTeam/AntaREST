@@ -131,6 +131,11 @@ class OutputDetails(AntaresBaseModel):
         return data
 
 
+class DigestNotFoundError(HTTPException):
+    def __init__(self, study_id: str, output_id: str):
+        super().__init__(HTTPStatus.NOT_FOUND, f"Digest file not found for study {study_id} and output {output_id}")
+
+
 class IOutputStorage(ABC):
     """
     Provides access to stored outputs.
@@ -304,8 +309,3 @@ class IOutputStorage(ABC):
         """
         Retrieves the original file as it exists on the file system
         """
-
-
-class DigestNotFoundError(HTTPException):
-    def __init__(self, study_id: str, output_id: str):
-        super().__init__(HTTPStatus.NOT_FOUND, f"Digest file not found for study {study_id} and output {output_id}")
