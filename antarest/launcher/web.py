@@ -251,7 +251,7 @@ def create_launcher_api() -> APIRouter:
         service.delete_solver_presets(solver_presets_id)
 
     @bp.get(
-        "/{launcher_id}/config",
+        "/launchers/{launcher_id}/config",
         summary="Get the runtime configuration of a launcher",
     )
     def get_launcher_config(service: LauncherServiceDep, launcher_id: SanitizedStr) -> LauncherRuntimeConfig:
@@ -259,7 +259,7 @@ def create_launcher_api() -> APIRouter:
         return service.get_runtime_config(launcher_id)
 
     @bp.put(
-        "/{launcher_id}/config",
+        "/launchers/{launcher_id}/config",
         summary="Replace the runtime configuration of a launcher (admin only)",
     )
     def update_launcher_config(
