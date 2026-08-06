@@ -115,7 +115,7 @@ def get_start_column(frequency: MatrixFrequency) -> int:
 def parse_headers(content: IO[str], start_col: int) -> MultipleOutputHeaders:
     header_lines: list[list[str]] = []
     for line in islice(content, 4, 7):  # Note: avoids to go over the whole file, much faster for larger files
-        cols = [s.strip() for s in line.split("\t")[start_col:]]
+        cols = line.rstrip("\n").split("\t")[start_col:]
         if not header_lines:
             header_lines = [[col] for col in cols]
         else:
