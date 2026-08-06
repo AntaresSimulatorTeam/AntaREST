@@ -698,12 +698,29 @@ def apply_update_solver_presets(
 
 
 class SlurmRuntimeConfig(AntaresBaseModel):
+    """
+    Runtime config for slurm launchers.
+
+    Determines in particular if we should use the "oversubscribe" flag when starting a computation.
+    That flag tells slurm that other simulations may be run on the same node.
+
+    Attributes:
+        oversubscribe_core_threshold:  enable oversubscribe if requested cores for a simulation is below this threshold.
+    """
+
     model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
 
     oversubscribe_core_threshold: int | None = Field(default=None, ge=1)
 
 
 class LauncherRuntimeConfig(AntaresBaseModel):
+    """
+    Specific launcher configuration that may be changed at runtime.
+
+    Attributes:
+        slurm:  specific configuration for slurm launchers. Only valid for slurm launchers.
+    """
+
     model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
 
     slurm: SlurmRuntimeConfig | None = None
