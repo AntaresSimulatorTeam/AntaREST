@@ -9,26 +9,42 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import io
+import shutil
 import zipfile
 from pathlib import Path
 
 import pytest
 from starlette.testclient import TestClient
 
+from antarest.core.utils.archives import ArchiveFormat, archive_dir
+
 
 @pytest.fixture
 def empty_output_path(tmp_path: Path, sta_mini_zip_path: Path) -> Path:
-    output_path = tmp_path / "empty-output"
+    """
+    Just a duplicate of output "20201014-1430adq" with no mc-all data
+    """
+    unzip_path = tmp_path / "empty-output"
     with zipfile.ZipFile(sta_mini_zip_path, "r") as zip_file:
-        zip_file.extractall(output_path, members=[f for f in zip_file.namelist() if "20201014-1430adq" in f])
-    return output_path
+        zip_file.extractall(unzip_path, members=[f for f in zip_file.namelist() if "20201014-1430adq" in f])
+
+    output_path = unzip_path / "STA-mini" / "output" / "20201014-1430adq"
+    shutil.rmtree(output_path / "adequacy" / "mc-all")
+
+    output_zip_path = tmp_path / "empty-output.zip"
+    archive_dir(
+        src_dir_path=output_path,
+        target_archive_path=output_zip_path,
+        remove_source_dir=True,
+        archive_format=ArchiveFormat.ZIP,
+    )
+    return output_zip_path
 
 
-def test_empty_output(empty_output_path: Path) -> None:
-    assert list(empty_output_path.iterdir()) == []
-
-
-def test_get_digest_endpoint(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
+def test_get_digest_endpoint(
+    client: TestClient, user_access_token: str, internal_study_id: str, empty_output_path: Path
+) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     # Nominal case
@@ -63,8 +79,24 @@ def test_get_digest_endpoint(client: TestClient, user_access_token: str, interna
     }
 
     # Asserts we can read digest also in "adequacy" outputs
-    output_wo_digest = "20201014-1430adq"
-    res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_wo_digest}/digest-ui")
+    adequacy_output = "20201014-1430adq"
+    res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{adequacy_output}/digest-ui")
     assert res.status_code == 200
     digest = res.json()
     assert list(digest.keys()) == ["area", "districts", "flowLinear", "flowQuadratic"]
+
+    # Replace the last output with an output without mc-all data
+    res = client.delete(f"/v1/studies/{internal_study_id}/outputs/{adequacy_output}")
+    assert res.status_code == 200
+    # Ensures the output has been successfully deleted
+    res = client.get(f"/v1/studies/{internal_study_id}/outputs")
+    assert len(res.json()) == 5
+
+    client.post(f"/v1/studies/{internal_study_id}/output", files={"output": io.BytesIO(empty_output_path.read_bytes())})
+    # Ensures the output has been successfully imported
+    res = client.get(f"/v1/studies/{internal_study_id}/outputs")
+    assert len(res.json()) == 6
+
+    res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{adequacy_output}/digest-ui")
+    assert res.status_code == 404
+    assert res.json()["exception"] == "DigestNotFoundError"
