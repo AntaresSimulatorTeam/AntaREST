@@ -15,14 +15,12 @@ import zipfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
-from http import HTTPStatus
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 from uuid import uuid4
 
 import pandas as pd
 import polars as pl
-from fastapi import HTTPException
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -51,6 +49,7 @@ from antarest.output.filestudy.utils import QueryFileType, get_start_column, par
 from antarest.output.model import OutputVariablesList
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
+    DigestNotFoundError,
     IOutputStorage,
     OutputDetails,
     OutputMetadata,
@@ -205,11 +204,6 @@ def _add_logs(output_dir: Path, logs: SimulationLogs) -> None:
         _copy_file(logs.out, output_dir, PurePosixPath("antares-out.log"))
     if logs.err:
         _copy_file(logs.err, output_dir, PurePosixPath("antares-err.log"))
-
-
-class DigestNotFoundError(HTTPException):
-    def __init__(self, study_id: str, output_id: str):
-        super().__init__(HTTPStatus.NOT_FOUND, f"Digest file not found for study {study_id} and output {output_id}")
 
 
 class AbstractFileOutputStorage(IOutputStorage):

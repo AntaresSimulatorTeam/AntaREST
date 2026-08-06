@@ -14,11 +14,13 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any, BinaryIO
 
 import pandas as pd
 import polars as pl
+from fastapi import HTTPException
 from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
 
@@ -302,3 +304,8 @@ class IOutputStorage(ABC):
         """
         Retrieves the original file as it exists on the file system
         """
+
+
+class DigestNotFoundError(HTTPException):
+    def __init__(self, study_id: str, output_id: str):
+        super().__init__(HTTPStatus.NOT_FOUND, f"Digest file not found for study {study_id} and output {output_id}")
