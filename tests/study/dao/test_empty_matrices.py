@@ -77,7 +77,7 @@ def test_empty_matrices(dao_93: StudyDao) -> None:
     default_credit_modulation_dataframe = create_polars_dataframe(default_credit_modulation())
     default_bc_hourly_dataframe = create_polars_dataframe(default_bc_hourly())
     default_bc_daily_weekly_dataframe = create_polars_dataframe(default_bc_weekly_daily())
-    null_dataframe = create_polars_dataframe([[]])
+    null_dataframe = create_polars_dataframe([])
 
     # Test each DAO matrix getter
     load = dao.get_load(area_id)
