@@ -40,11 +40,13 @@ function BatchActions({ selectedStudyIds, setSelectedStudyIds }: Props) {
 
   const selection = useMemo(() => {
     const studies = selectedStudyIds.map((id) => studiesById[id]).filter(Boolean);
+    const managed = studies.filter((study) => study.managed);
 
     return {
       all: studies,
-      managed: studies.filter((s) => s.managed),
-      unarchived: studies.filter((s) => !s.archived),
+      managed,
+      managedReferences: managed.filter((study) => study.type === "rawstudy"),
+      unarchived: studies.filter((study) => !study.archived),
     };
   }, [selectedStudyIds, studiesById]);
 
@@ -139,7 +141,7 @@ function BatchActions({ selectedStudyIds, setSelectedStudyIds }: Props) {
     <>
       {renderActionButton({
         defaultTooltip: t("global.launch"),
-        partialSelectionTooltip: (options) => t("studies.launchOnlyUnarchivedStudies", options),
+        partialSelectionTooltip: (options) => t("studies.batch.launchPartial", options),
         onClick: handleLaunchStudies,
         color: "primary",
         icon: <BoltIcon />,
@@ -148,23 +150,23 @@ function BatchActions({ selectedStudyIds, setSelectedStudyIds }: Props) {
       })}
       {renderActionButton({
         defaultTooltip: t("global.move"),
-        partialSelectionTooltip: (options) => t("studies.moveOnlyManagedStudies", options),
+        partialSelectionTooltip: (options) => t("studies.batch.movePartial", options),
         onClick: handleMoveStudies,
         color: "inherit",
         icon: <DriveFileMoveIcon />,
         label: t("global.move"),
-        selection: selection.managed,
+        selection: selection.managedReferences,
       })}
       {renderActionButton({
         defaultTooltip: t("global.delete"),
-        partialSelectionTooltip: (options) => t("studies.deleteOnlyManagedStudies", options),
+        partialSelectionTooltip: (options) => t("studies.batch.deletePartial", options),
         onClick: handleDeleteStudies,
         color: "error",
         icon: <DeleteIcon />,
         label: t("global.delete"),
         selection: selection.managed,
       })}
-      <Tooltip title={t("studies.deselectAll")}>
+      <Tooltip title={t("studies.batch.deselectAll")}>
         <Stack>
           <IconButton color="primary" onClick={handleDeselectAll}>
             <CheckBoxIcon />

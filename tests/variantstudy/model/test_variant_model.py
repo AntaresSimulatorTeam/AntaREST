@@ -16,25 +16,62 @@ from pathlib import Path
 
 import pytest
 from antares.study.version import StudyVersion
-from sqlalchemy import event
 
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
-from antarest.login.utils import current_user_context
+from antarest.login.utils import current_user_context, get_current_user
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import StorageMode
+from antarest.study.model import STUDY_VERSION_8_6, StorageMode, StudyMetadataCreation
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from antarest.study.storage.utils import create_new_empty_study
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import CommandDTO, CommandDTOAPI
 from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import AnyUUID, create_raw_study, with_admin_user, with_db_context
+from tests.db_statement_recorder import DBStatementRecorder
+from tests.helpers import create_raw_study, with_admin_user, with_db_context
+
+
+def create_root_study(
+    public_mode: PublicMode,
+    tmp_path: Path,
+    variant_study_service: VariantStudyService,
+    user_id: int,
+    storage_mode: StorageMode = StorageMode.FILESYSTEM,
+) -> str:
+    # Prepare a RAW study in the temporary folder
+    study_dir = tmp_path / "my_study"
+    root_study_id = str(uuid.uuid4())
+    root_study = create_raw_study(
+        id=root_study_id,
+        workspace="default",
+        path=str(study_dir),
+        version="860",
+        created_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
+        author="john.doe",
+        owner_id=user_id,
+        public_mode=public_mode,
+        storage_mode=storage_mode,
+    )
+    if storage_mode == StorageMode.FILESYSTEM:
+        # Saves the study on disk
+        create_new_empty_study(STUDY_VERSION_8_6, study_dir, author="john.doe")
+    with db():
+        # Save the root study in database
+        variant_study_service.repository.save(root_study)
+        if storage_mode == StorageMode.DATABASE:
+            # Initialize the study data
+            ctx = variant_study_service.command_factory.command_context
+            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.blob_service, ctx.generator_matrix_constants)
+            metadata = StudyMetadataCreation(id=root_study_id, name="my_study", version=STUDY_VERSION_8_6, managed=True)
+            factory.create_study_dao(metadata)
+    return root_study_id
 
 
 class TestVariantStudyService:
@@ -70,35 +107,16 @@ class TestVariantStudyService:
     ) -> str:
         # Get public mode argument
         public_mode = request.param
-
-        # Prepare a RAW study in the temporary folder
-        study_dir = tmp_path / "my_study"
-        root_study_id = str(uuid.uuid4())
-        root_study = create_raw_study(
-            id=root_study_id,
-            workspace="default",
-            path=str(study_dir),
-            version="860",
-            created_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
-            updated_at=datetime.datetime.now(datetime.UTC).replace(tzinfo=None),
-            author="john.doe",
-            owner_id=jwt_user.id,
-            public_mode=PublicMode.EDIT if public_mode else PublicMode.NONE,
-        )
-        with db():
-            # Save the root study in database
-            variant_study_service.repository.save(root_study)
-        return root_study_id
+        return create_root_study(public_mode, tmp_path, variant_study_service, jwt_user.id)
 
     @with_admin_user
-    @pytest.mark.parametrize("root_study_id", [False], indirect=True)
     @with_db_context
+    @pytest.mark.parametrize("storage_mode", [StorageMode.FILESYSTEM, StorageMode.DATABASE])
     def test_commands_service(
-        self,
-        root_study_id: str,
-        generator_matrix_constants: GeneratorMatrixConstants,
-        variant_study_service: VariantStudyService,
+        self, variant_study_service: VariantStudyService, tmp_path: Path, storage_mode: StorageMode
     ) -> None:
+        jwt_user = get_current_user()
+        root_study_id = create_root_study(PublicMode.NONE, tmp_path, variant_study_service, jwt_user.id, storage_mode)
         # Create a new variant
         variant_study = variant_study_service.create_variant_study(root_study_id, "my-variant")
         study_version = StudyVersion.parse(variant_study.version)
@@ -170,49 +188,16 @@ class TestVariantStudyService:
                 variant_study_service.get_study_paths,
             )
         else:
-            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+            factory = DatabaseStudyDaoFactory(ctx.matrix_service, ctx.blob_service, ctx.generator_matrix_constants)
         # Generate the snapshot
         results = generator.generate_snapshot(saved_id, dao_factory=factory)
-        # Check the results
-        assert results.model_dump() == {
-            "success": True,
-            "should_invalidate_cache": False,
-            "details": [
-                {
-                    "id": AnyUUID(),
-                    "name": "create_area",
-                    "status": True,
-                    "msg": "Area 'Yes' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_area",
-                    "status": True,
-                    "msg": "Area 'No' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_link",
-                    "status": True,
-                    "msg": "Link between 'no' and 'yes' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_cluster",
-                    "status": True,
-                    "msg": "Thermal cluster 'cl1' added to area 'yes'.",
-                },
-            ],
-        }
+        # Check the results. `details` should be empty as all commands were applied synchronously
+        assert results.model_dump() == {"success": True, "should_invalidate_cache": False, "details": []}
         assert study.snapshot.id == study.id
 
-    @pytest.mark.parametrize("root_study_id", [True], indirect=True)
     @with_db_context
     def test_command_several_authors(
-        self,
-        jwt_user: JWTUser,
-        variant_study_service: VariantStudyService,
-        root_study_id: str,
+        self, jwt_user: JWTUser, variant_study_service: VariantStudyService, tmp_path: Path
     ) -> None:
         """
         Test two different users that are authors on two different commands of the same variant
@@ -226,7 +211,7 @@ class TestVariantStudyService:
             Test whether the commands have the `user_name` and `updated_at` attributes
             Test authors of the commands
         """
-        # Get the owner request parameters
+        root_study_id = create_root_study(PublicMode.EDIT, tmp_path, variant_study_service, jwt_user.id)
 
         # create another user that has the write privilege
         other_user = User(id=3, name="jane.doe", type="users")
@@ -271,13 +256,9 @@ class TestVariantStudyService:
         assert commands[0].user_name == "john.doe"
         assert commands[1].user_name == "jane.doe"
 
-    @pytest.mark.parametrize("root_study_id", [False], indirect=True)
     @with_db_context
     def test_command_same_author(
-        self,
-        jwt_user: JWTUser,
-        variant_study_service: VariantStudyService,
-        root_study_id: str,
+        self, jwt_user: JWTUser, variant_study_service: VariantStudyService, tmp_path: Path
     ) -> None:
         """
         Test the case of multiple commands was created by the same user.
@@ -292,18 +273,8 @@ class TestVariantStudyService:
             the author of the currently retrieved command is not already known during
             the process
         """
-        from typing import Any
-
-        nb_queries = 0  # Store number of orm queries to database
-
-        # Watch orm events and update `nb_queries`
-        @event.listens_for(db.session, "do_orm_execute")
-        def check_orm_operations(orm_execute_state: Any) -> None:
-            if orm_execute_state.is_select:
-                nonlocal nb_queries
-                nb_queries += 1
-
         # Generate a variant on a study that allow other user to edit it
+        root_study_id = create_root_study(PublicMode.NONE, tmp_path, variant_study_service, jwt_user.id)
         with current_user_context(jwt_user):
             variant_study = variant_study_service.create_variant_study(root_study_id, "new_variant")
 
@@ -321,20 +292,19 @@ class TestVariantStudyService:
         with current_user_context(jwt_user):
             variant_study_service.append_commands(variant_study.id, commands)
 
-        nb_queries = 0
-        with current_user_context(jwt_user):
-            variant_study_service.get_commands(variant_study.id)  # execute database query
-        assert nb_queries == 1  # Ensure only two queries were made (one for study, one for user)
+        variant_id = variant_study.id
+        # Isolate it in a new DB session to make sure we mimic an independent request
+        with db(), current_user_context(jwt_user):
+            with DBStatementRecorder(db.session.bind) as db_recorder:
+                variant_study_service.get_commands(variant_id)
+                # Only 1 query must be executed:
+                # 1. Get the variant study with its owner, groups and commands
+                #    No N+1 query to get user information
+                assert len(db_recorder.sql_statements) == 1
 
     @with_admin_user
-    @pytest.mark.parametrize("root_study_id", [False], indirect=True)
     @with_db_context
-    def test_update_editor(
-        self,
-        jwt_user: JWTUser,
-        variant_study_service: VariantStudyService,
-        root_study_id: str,
-    ) -> None:
+    def test_update_editor(self, jwt_user: JWTUser, variant_study_service: VariantStudyService, tmp_path: Path) -> None:
         """
         Test two different users, one that is the author and the other that is an editor on one study of the service
         Set up:
@@ -344,6 +314,7 @@ class TestVariantStudyService:
 
         Tests:
         """
+        root_study_id = create_root_study(PublicMode.NONE, tmp_path, variant_study_service, jwt_user.id)
         admin_group = JWTGroup(id="admin", name="admin", role=RoleType.ADMIN)
         test_user_editor = User(id=2, name="jane.editor", type="users")
         jwt_user_editor = JWTUser(

@@ -10,6 +10,17 @@
 #
 # This file is part of the Antares project.
 
+from http import HTTPStatus
+
+from fastapi import HTTPException
+
+
+class InvalidScheduleTime(HTTPException):
+    """Raised when a requested scheduled start time is invalid or unsupported (maps to HTTP 400)."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
 
 class NoValidOutputError(Exception):
     """

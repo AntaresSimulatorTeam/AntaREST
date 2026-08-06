@@ -571,15 +571,3 @@ def _parse_links_filtering(root: Path, area: str) -> dict[str, LinkConfig]:
         file_type=FileType.SIMPLE_INI,
     )
     return {link_id: parse_link(obj, area, link_id).to_config() for link_id, obj in properties_ini.items()}
-
-
-def _check_build_on_solver_tests(test_dir: Path) -> None:
-    for antares_path in test_dir.rglob("study.antares"):
-        study_path = antares_path.parent
-        print(f"Checking '{study_path}'...")
-        build(study_path, "test")
-
-
-if __name__ == "__main__":
-    TEST_DIR = Path("~/Projects/antarest_data/studies/Antares_Simulator_Tests_NR").expanduser()
-    _check_build_on_solver_tests(TEST_DIR)

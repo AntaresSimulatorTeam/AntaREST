@@ -20,6 +20,10 @@ class ReadOnlyUserResourcesDao(ABC):
     def get_all_user_resources(self) -> list[UserResourceDataCreation]:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
+        raise NotImplementedError()
+
 
 class UserResourcesDao(ReadOnlyUserResourcesDao):
     @abstractmethod

@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import datetime
-from unittest.mock import Mock
 from uuid import uuid4
 
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -26,7 +25,7 @@ from tests.helpers import create_raw_study, with_db_context
 def test_job_result() -> None:
     repo = JobResultRepository()
     study_id = str(uuid4())
-    study_repo = StudyMetadataRepository(Mock())
+    study_repo = StudyMetadataRepository()
     study_repo.save(create_raw_study(id=study_id))
     a = JobResult(
         id=str(uuid4()),

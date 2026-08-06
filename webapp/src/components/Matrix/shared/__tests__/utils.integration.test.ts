@@ -14,9 +14,9 @@
 
 /* eslint-disable vitest/no-conditional-expect */
 
+import type { MatrixIndex } from "@/types/types";
 import { describe, expect, test } from "vitest";
 import { TimeFrequency } from "../constants";
-import type { DateTimeMetadataDTO } from "../types";
 import { generateDateTime } from "../utils";
 
 /**
@@ -27,7 +27,7 @@ import { generateDateTime } from "../utils";
 describe("DateTime Generation - Integration Tests", () => {
   describe("UTC behavior verification", () => {
     test("should not skip hours during spring DST transition (Europe)", () => {
-      const config: DateTimeMetadataDTO = {
+      const config: MatrixIndex = {
         start_date: "2023-03-26T00:00:00.000Z", // Last Sunday of March - DST starts in Europe
         steps: 5,
         first_week_size: 7,
@@ -44,7 +44,7 @@ describe("DateTime Generation - Integration Tests", () => {
     });
 
     test("should not duplicate hours during fall DST transition (Europe)", () => {
-      const config: DateTimeMetadataDTO = {
+      const config: MatrixIndex = {
         start_date: "2023-10-29T00:00:00.000Z", // Last Sunday of October - DST ends in Europe
         steps: 5,
         first_week_size: 7,
@@ -61,7 +61,7 @@ describe("DateTime Generation - Integration Tests", () => {
     });
 
     test("should generate 24 consecutive hours across DST boundary", () => {
-      const config: DateTimeMetadataDTO = {
+      const config: MatrixIndex = {
         start_date: "2023-03-26T00:00:00.000Z", // DST transition date
         steps: 24,
         first_week_size: 7,
@@ -86,7 +86,7 @@ describe("DateTime Generation - Integration Tests", () => {
     });
 
     test("should maintain consistent intervals across multiple days with DST", () => {
-      const config: DateTimeMetadataDTO = {
+      const config: MatrixIndex = {
         start_date: "2023-03-25T00:00:00.000Z", // Day before DST transition
         steps: 72, // 3 days
         first_week_size: 7,
@@ -125,7 +125,7 @@ describe("DateTime Generation - Integration Tests", () => {
     });
 
     test("should handle DST transitions for US timezones", () => {
-      const config: DateTimeMetadataDTO = {
+      const config: MatrixIndex = {
         start_date: "2023-03-12T00:00:00.000Z", // Second Sunday of March - DST starts in US
         steps: 5,
         first_week_size: 7,
@@ -147,7 +147,7 @@ describe("DateTime Generation - Integration Tests", () => {
       };
 
       // Test daily frequency
-      const dailyConfig: DateTimeMetadataDTO = {
+      const dailyConfig: MatrixIndex = {
         ...baseConfig,
         steps: 14, // Two weeks
         level: TimeFrequency.Daily,
@@ -158,7 +158,7 @@ describe("DateTime Generation - Integration Tests", () => {
       expect(new Set(dailyResult.values).size).toBe(14); // All unique
 
       // Test weekly frequency
-      const weeklyConfig: DateTimeMetadataDTO = {
+      const weeklyConfig: MatrixIndex = {
         ...baseConfig,
         steps: 4, // Four weeks
         level: TimeFrequency.Weekly,

@@ -26,10 +26,10 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.study.business.model.district_model import District
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
-from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao

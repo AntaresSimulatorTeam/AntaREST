@@ -301,7 +301,7 @@ def test_study_listing(db_session: Session) -> None:
     cache.get.return_value = None
 
     config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
-    repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
     service = build_study_service(
         raw_study_service, Mock(spec=DirectoryService), repository, config, cache_service=cache
     )
@@ -549,7 +549,7 @@ def test_remove_duplicate(db_session: Session) -> None:
         assert study_count == 2  # there are 2 studies with same path before removing duplicates
 
     with db_session:
-        repository = StudyMetadataRepository(Mock(), db_session)
+        repository = StudyMetadataRepository(db_session)
         config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig()}))
         service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
         service.remove_duplicates()
@@ -1933,7 +1933,7 @@ def test_upgrade_study__raw_study__nominal(tmp_path: Path, workspace: str) -> No
     cache_service = Mock()
 
     # The `StudyMetadataRepository` is used to store the study in database.
-    repository = StudyMetadataRepository(cache_service)
+    repository = StudyMetadataRepository()
 
     # The `StudyStorageService` is used to retrieve:
     # - the `RawStudyService` of a RAW study, or
@@ -2017,7 +2017,7 @@ def test_upgrade_study__raw_study__failed(upgrade_mock: Mock, tmp_path: Path) ->
     cache_service = Mock()
 
     # The `StudyMetadataRepository` is used to store the study in database.
-    repository = StudyMetadataRepository(cache_service)
+    repository = StudyMetadataRepository()
 
     # Mocks the `upgrade_study` method to mimick an upgrade failure.
     storage_service = Mock()

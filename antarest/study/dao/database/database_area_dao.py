@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LayerNotFound
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
@@ -47,7 +48,6 @@ from antarest.study.dao.database.models.area import (
     WIND_TABLE,
 )
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_4_fixed_hourly,

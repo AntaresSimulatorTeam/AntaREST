@@ -16,13 +16,17 @@ import GroupedDataTable from "@/components/GroupedDataTable";
 import type { RowData } from "@/components/GroupedDataTable/types";
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
-import type { Reserve } from "@/services/api/studies/areas/reserves/types";
-import { Alert, Chip } from "@mui/material";
+import type { Reserve, UpdateReserveData } from "@/services/api/studies/areas/reserves/types";
+import EditIcon from "@mui/icons-material/Edit";
+import { Alert, Button, Chip } from "@mui/material";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import CreateReserveDialog from "./-components/CreateReserveDialog";
+import UpdateGlobalParametersDrawer from "./-components/UpdateGlobalParametersDrawer";
+import UpdateReserveDrawer from "./-components/UpdateReserveDrawer";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general",
@@ -30,19 +34,7 @@ export const Route = createFileRoute(
   component: ReservesGeneral,
 });
 
-interface ReserveRow extends Reserve {
-  name: string;
-}
-
-function reserveToRow(reserve: Reserve): ReserveRow {
-  return { ...reserve, name: reserve.id };
-}
-
-function reservesToRows(reserves: Reserve[]): ReserveRow[] {
-  return reserves.map(reserveToRow);
-}
-
-const columnHelper = createMRTColumnHelper<ReserveRow>();
+const columnHelper = createMRTColumnHelper<Reserve>();
 
 const columns = [
   columnHelper.accessor("type", {
@@ -70,15 +62,17 @@ function ReservesGeneral() {
   const { t } = useTranslation();
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
+  const [editingReserve, setEditingReserve] = useState<Reserve | null>(null);
+  const [isUpdateReserveOpen, setIsUpdateReserveOpen] = useState(false);
+  const [isGlobalParametersOpen, setIsGlobalParametersOpen] = useState(false);
 
   const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
 
   const { queryKey: listQueryKey } = reserveQueries.list(studyId, areaId);
 
-  const { data: rows } = useSuspenseQuery({
-    ...reserveQueries.list(studyId, areaId),
-    select: reservesToRows,
-  });
+  const { data: rows, isFetching: isRowsFetching } = useSuspenseQuery(
+    reserveQueries.list(studyId, areaId),
+  );
 
   const createMutation = useMutation({
     ...reserveMutations.create(studyId, areaId),
@@ -96,41 +90,62 @@ function ReservesGeneral() {
     },
   });
 
+  const updateMutation = useMutation({
+    ...reserveMutations.update(studyId, areaId),
+    onSuccess: (updatedReserve) => {
+      queryClient.setQueryData(listQueryKey, (old = []) =>
+        old.map((reserve) => (reserve.id === updatedReserve.id ? updatedReserve : reserve)),
+      );
+    },
+  });
+
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async ({ name, type }: RowData & Partial<ReserveRow>) => {
-    // `type` is always set: it's a required field of the create dialog
+  const handleNameClick = (row: Reserve) => {
+    setEditingReserve(row);
+    setIsUpdateReserveOpen(true);
+  };
+
+  const handleCreate = ({ name, type }: RowData & Partial<Reserve>) => {
     if (!type) {
       throw new Error("Reserve type is required");
     }
 
-    const newReserve = await createMutation.mutateAsync({
+    return createMutation.mutateAsync({
       studyId,
       areaId,
-      data: { id: name, type },
+      data: { name, type },
     });
-
-    return reserveToRow(newReserve);
   };
 
-  const handleDuplicate = async (row: ReserveRow, newName: string) => {
-    // The extra `name` row prop is stripped by the create input schema
-    const newReserve = await createMutation.mutateAsync({
+  const handleDuplicate = (row: Reserve, newName: string) => {
+    return createMutation.mutateAsync({
       studyId,
       areaId,
-      data: { ...row, id: newName },
+      data: { ...row, name: newName },
     });
-
-    return reserveToRow(newReserve);
   };
 
-  const handleDelete = (rowsToDelete: ReserveRow[]) => {
+  const handleDelete = (rowsToDelete: Reserve[]) => {
     return deleteMutation.mutateAsync({
       studyId,
       areaId,
       reserveIds: rowsToDelete.map((row) => row.id),
+    });
+  };
+
+  const handleUpdate = async (data: UpdateReserveData) => {
+    if (!editingReserve) {
+      return;
+    }
+
+    await updateMutation.mutateAsync({
+      studyId,
+      areaId,
+      reserveId: editingReserve.id,
+      data,
     });
   };
 
@@ -150,6 +165,7 @@ function ReservesGeneral() {
         data={rows}
         columns={columns}
         readOnly={!reservesEnabled}
+        isLoading={isRowsFetching}
         onCreate={handleCreate}
         renderCreateDialog={({ open, onClose, onSubmit, existingNames }) => (
           <CreateReserveDialog
@@ -161,12 +177,35 @@ function ReservesGeneral() {
         )}
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
+        onNameClick={handleNameClick}
         deleteConfirmationMessage={(rowsToDelete) =>
           t("study.modeling.reserves.question.delete", {
             count: rowsToDelete.length,
             reserveNames: rowsToDelete.map((row) => row.name),
           })
         }
+        toolbarActions={
+          <Button
+            variant="outlined"
+            startIcon={<EditIcon />}
+            onClick={() => setIsGlobalParametersOpen(true)}
+            disabled={!reservesEnabled}
+          >
+            {t("study.modeling.reserves.globalParameters")}
+          </Button>
+        }
+      />
+      {editingReserve && (
+        <UpdateReserveDrawer
+          open={isUpdateReserveOpen}
+          reserve={editingReserve}
+          onClose={() => setIsUpdateReserveOpen(false)}
+          onSubmit={handleUpdate}
+        />
+      )}
+      <UpdateGlobalParametersDrawer
+        open={isGlobalParametersOpen}
+        onClose={() => setIsGlobalParametersOpen(false)}
       />
     </>
   );

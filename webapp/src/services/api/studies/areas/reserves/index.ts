@@ -17,6 +17,7 @@ import {
   createReserveParamsSchema,
   reserveGlobalParametersSchema,
   reserveSchema,
+  reservesCertificationsSchema,
   reservesSchema,
   updateReserveGlobalParametersSchema,
   updateReserveParamsSchema,
@@ -28,8 +29,11 @@ import type {
   Reserve,
   ReserveGlobalParameters,
   ReservesAreaParams,
+  ReservesCertifications,
+  ReservesCertificationsParams,
   UpdateReserveGlobalParametersParams,
   UpdateReserveParams,
+  UpdateReservesCertificationsParams,
 } from "./types";
 
 /**
@@ -135,4 +139,45 @@ export async function updateReserveGlobalParameters(
     body,
   );
   return reserveGlobalParametersSchema.parse(res.data);
+}
+
+/**
+ * GET /v1/studies/{studyId}/areas/{areaId}/reserves/certifications/{productionType} - Gets the
+ * reserve certifications of an area for a given production type.
+ *
+ * @param params - Study, area identifiers and the production type.
+ * @returns The certifications, keyed by reserve ID then cluster ID.
+ * @throws If the response doesn't match the expected schema.
+ */
+export async function getReservesCertifications(
+  params: ReservesCertificationsParams,
+): Promise<ReservesCertifications> {
+  const { studyId, areaId, productionType } = params;
+  const res = await client.get(
+    `/v1/studies/${studyId}/areas/${areaId}/reserves/certifications/${productionType}`,
+  );
+  return reservesCertificationsSchema.parse(res.data);
+}
+
+/**
+ * PUT /v1/studies/{studyId}/areas/{areaId}/reserves/certifications/{productionType} - Replaces
+ * the reserve certifications of an area for a given production type.
+ *
+ * The whole mapping is replaced: a cluster omitted from a reserve's record loses its
+ * certification for that reserve.
+ *
+ * @param params - Identifiers, the production type and the full certifications mapping.
+ * @returns The updated certifications mapping.
+ * @throws If the params or response doesn't match the expected schema.
+ */
+export async function updateReservesCertifications(
+  params: UpdateReservesCertificationsParams,
+): Promise<ReservesCertifications> {
+  const { studyId, areaId, productionType, data } = params;
+  const body = reservesCertificationsSchema.parse(data);
+  const res = await client.put(
+    `/v1/studies/${studyId}/areas/${areaId}/reserves/certifications/${productionType}`,
+    body,
+  );
+  return reservesCertificationsSchema.parse(res.data);
 }

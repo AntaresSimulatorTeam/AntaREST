@@ -15,17 +15,7 @@
 import type { Frequency } from "@/routes/_authenticated/studies/$studyId/explore/outputs/$outputId/-utils";
 import type { TableExportFormatValue } from "../../raw/types";
 
-export interface ThermalClusterVariablesDTO {
-  name: string;
-  variables: string[];
-}
-
-export interface RenewableClusterVariablesDTO {
-  name: string;
-  variables: string[];
-}
-
-export interface ShortTermStorageVariablesDTO {
+export interface ItemVariablesDTO {
   name: string;
   variables: string[];
 }
@@ -33,9 +23,9 @@ export interface ShortTermStorageVariablesDTO {
 export interface AreaVariablesDTO {
   name: string;
   variables: string[];
-  thermalClusters?: ThermalClusterVariablesDTO[];
-  renewableClusters?: RenewableClusterVariablesDTO[];
-  shortTermStorages?: ShortTermStorageVariablesDTO[];
+  thermalClusters?: ItemVariablesDTO[];
+  renewableClusters?: ItemVariablesDTO[];
+  shortTermStorages?: ItemVariablesDTO[];
 }
 
 export interface LinkVariablesDTO {

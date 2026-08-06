@@ -33,6 +33,7 @@ import {
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
 } from "material-react-table";
+import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -75,6 +76,10 @@ export interface GroupedDataTableProps<
   readOnly?: boolean;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((rows: TData[]) => string);
+  /**
+   * Extra actions rendered next to the built-in Add/Duplicate/Delete buttons.
+   */
+  toolbarActions?: React.ReactNode;
   fillPendingRow?: (
     pendingRow: RowData<TGroups[number]>,
   ) => RowData<TGroups[number]> & Partial<TData>;
@@ -102,6 +107,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   isLoading,
   deleteConfirmationMessage,
   fillPendingRow,
+  toolbarActions,
 }: GroupedDataTableProps<TGroups, TData>) {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState<"add" | "duplicate" | "delete" | "">("");
@@ -115,6 +121,39 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => onDataChange?.(tableData), [tableData]);
+
+  // Keep rows in sync when their source data changes outside this component's own
+  // create/duplicate/delete handlers.
+  useEffect(() => {
+    setTableData((prev) => {
+      // NOTE: matching by `name` is fragile it breaks if a consumer ever allows
+      // renaming rows from outside (the renamed row keeps stale values), and rows
+      // sharing a name collapse onto the last one. Match on a stable id once
+      // `RowData` exposes one.
+      const dataByName = R.indexBy((d) => d.name, data);
+      let hasChanges = false;
+
+      const next = prev.map((row) => {
+        if (isPendingRow(row)) {
+          return row;
+        }
+
+        const updatedRow = dataByName[row.name];
+
+        if (!updatedRow || R.equals(updatedRow, row)) {
+          return row;
+        }
+
+        hasChanges = true;
+
+        return updatedRow;
+      });
+
+      // Bail out with the same reference if nothing changed, to avoid unnecessary re-renders.
+      return hasChanges ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   const existingNames = useMemo(() => tableData.map((row) => row.name.toLowerCase()), [tableData]);
 
@@ -286,6 +325,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
             {t("global.delete")}
           </Button>
         )}
+        {toolbarActions}
       </Box>
     ),
     renderToolbarInternalActions: ({ table }) => (

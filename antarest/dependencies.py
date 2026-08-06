@@ -45,7 +45,13 @@ from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.eventbus.connections import ConnectionManager
 from antarest.fastapi_jwt_auth import AuthJWT
-from antarest.favorite.service import FavoriteDirectoryService, FavoriteExternalDirectoryService, FavoriteStudyService
+from antarest.favorite.service import (
+    FavoriteAggregateService,
+    FavoriteDirectoryService,
+    FavoriteExternalDirectoryService,
+    FavoriteStudyService,
+)
+from antarest.launcher.load_service import LoadService
 from antarest.launcher.service import LauncherService
 from antarest.login.auth import JwtSettings
 from antarest.login.service import LoginService
@@ -106,6 +112,10 @@ def get_launcher_service(request: Request) -> LauncherService:
     return launcher
 
 
+def get_load_service(request: Request) -> LoadService:
+    return get_app_state(request).services.load_service
+
+
 def get_matrix_service(request: Request) -> MatrixService:
     return get_app_state(request).services.matrix
 
@@ -128,6 +138,10 @@ def get_favorite_directory_service(request: Request) -> FavoriteDirectoryService
 
 def get_favorite_external_directory_service(request: Request) -> FavoriteExternalDirectoryService:
     return get_app_state(request).services.favorite_external_directory
+
+
+def get_favorite_aggregate_service(request: Request) -> FavoriteAggregateService:
+    return get_app_state(request).services.favorite_aggregate_service
 
 
 def get_tablemode_service(request: Request) -> TableModeService:
@@ -203,6 +217,7 @@ ExplorerDep: TypeAlias = Annotated[Explorer, Depends(get_explorer)]
 WatcherDep: TypeAlias = Annotated[Watcher, Depends(get_watcher)]
 LoginServiceDep: TypeAlias = Annotated[LoginService, Depends(get_login_service)]
 LauncherServiceDep: TypeAlias = Annotated[LauncherService, Depends(get_launcher_service)]
+LoadServiceDep: TypeAlias = Annotated[LoadService, Depends(get_load_service)]
 MatrixServiceDep: TypeAlias = Annotated[MatrixService, Depends(get_matrix_service)]
 FileTransferManagerDep: TypeAlias = Annotated[FileTransferManager, Depends(get_file_transfer_manager)]
 OutputServiceDep: TypeAlias = Annotated[OutputService, Depends(get_output_service)]
@@ -211,6 +226,7 @@ FavoriteDirectoryServiceDep: TypeAlias = Annotated[FavoriteDirectoryService, Dep
 FavoriteExternalDirectoryServiceDep: TypeAlias = Annotated[
     FavoriteExternalDirectoryService, Depends(get_favorite_external_directory_service)
 ]
+FavoriteAggregateServiceDep: TypeAlias = Annotated[FavoriteAggregateService, Depends(get_favorite_aggregate_service)]
 TablemodeServiceDep: TypeAlias = Annotated[TableModeService, Depends(get_tablemode_service)]
 TaskServiceDep: TypeAlias = Annotated[ITaskService, Depends(get_task_service)]
 MaintenanceServiceDep: TypeAlias = Annotated[MaintenanceService, Depends(get_maintenance_service)]

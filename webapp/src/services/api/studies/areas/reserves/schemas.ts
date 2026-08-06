@@ -22,6 +22,7 @@ export const reserveTypeSchema = z.enum(["up", "down"]);
 
 export const reserveSchema = z.object({
   id: z.string(),
+  name: z.string(),
   type: reserveTypeSchema,
   failureCost: z.number(),
   spillageCost: z.number(),
@@ -39,12 +40,33 @@ export const reserveGlobalParametersSchema = z.object({
   energyActivationRatioDown: z.number(),
 });
 
+// Production types with released certification endpoints.
+// "storages" and "hydro" are coming soon: add them here once their endpoints are released.
+export const certificationProductionTypeSchema = z.enum(["thermals"]);
+
+export const reserveCertificationSchema = z.object({
+  maxPower: z.number(),
+  maxPowerOff: z.number(),
+  participationCost: z.number(),
+  participationCostOff: z.number(),
+});
+
+// Shape: { [reserveId]: { [clusterId]: certification } }.
+// A cluster absent from a reserve's record has no active certification for it.
+export const reservesCertificationsSchema = z.record(
+  z.string(),
+  z.record(z.string(), reserveCertificationSchema),
+);
+
 ////////////////////////////////////////////////////////////////
 // Input Schemas
 ////////////////////////////////////////////////////////////////
 
-export const createReserveParamsSchema = reserveSchema.partial().required({ id: true, type: true });
+export const createReserveParamsSchema = reserveSchema
+  .omit({ id: true })
+  .partial()
+  .required({ name: true, type: true });
 
-export const updateReserveParamsSchema = reserveSchema.omit({ id: true }).partial();
+export const updateReserveParamsSchema = reserveSchema.omit({ id: true, name: true }).partial();
 
 export const updateReserveGlobalParametersSchema = reserveGlobalParametersSchema.partial();

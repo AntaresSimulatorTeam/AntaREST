@@ -19,9 +19,9 @@ when a study has storage_mode=DATABASE.
 
 from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, String, Table
 
+from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
-from antarest.study.dao.database.sql_utils import enum_col
 
 metadata = Base.metadata
 
