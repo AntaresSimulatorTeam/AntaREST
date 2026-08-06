@@ -24,7 +24,16 @@ from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.dependencies import AppState
-from antarest.launcher.model import JobResult, JobResultDTO, JobStatus, LauncherParametersDTO, LogType
+from antarest.launcher.model import (
+    JobResult,
+    JobResultDTO,
+    JobStatus,
+    LauncherParametersDTO,
+    LauncherRuntimeConfig,
+    LogType,
+    SlurmRuntimeConfig,
+)
+from antarest.launcher.service import LauncherServiceNotAvailableException
 from antarest.launcher.web import create_launcher_api
 from antarest.main import add_exception_handlers
 
@@ -230,3 +239,44 @@ def test_kill_job() -> None:
     res = client.post(f"/v1/launcher/jobs/{job_id}/kill")
     assert res.status_code == 200
     service.kill_job.assert_called_once_with(job_id=job_id)
+
+
+def test_get_runtime_config() -> None:
+
+    service = Mock()
+    service.get_runtime_config.side_effect = [
+        LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=10)),
+        LauncherServiceNotAvailableException("wrong-launcher"),
+    ]
+
+    app = create_app(service)
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.get("/v1/launcher/launchers/my-launcher/config")
+    service.get_runtime_config.assert_called_once_with("my-launcher")
+    assert res.status_code == 200
+    assert res.json() == {"slurm": {"oversubscribeCoreThreshold": 10}}
+
+    res = client.get("/v1/launcher/launchers/my-launcher/config")
+    assert res.status_code == 400
+
+
+def test_post_runtime_config() -> None:
+
+    service = Mock()
+    service.update_runtime_config.side_effect = [
+        LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=10)),
+        LauncherServiceNotAvailableException("wrong-launcher"),
+    ]
+
+    app = create_app(service)
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.put("/v1/launcher/launchers/my-launcher/config", json={"slurm": {"oversubscribeCoreThreshold": 10}})
+    service.update_runtime_config.assert_called_once_with(
+        "my-launcher",
+        LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=10)),
+    )
+    assert res.status_code == 200
+    assert res.json() == {"slurm": {"oversubscribeCoreThreshold": 10}}
+
+    res = client.put("/v1/launcher/launchers/my-launcher/config", json={"slurm": {"oversubscribeCoreThreshold": 10}})
+    assert res.status_code == 400
