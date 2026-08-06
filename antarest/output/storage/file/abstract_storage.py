@@ -15,16 +15,17 @@ import zipfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
+from http import HTTPStatus
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 from uuid import uuid4
 
 import pandas as pd
 import polars as pl
+from fastapi import HTTPException
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    ChildNotFoundError,
     OutputAlreadyArchived,
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
@@ -204,6 +205,11 @@ def _add_logs(output_dir: Path, logs: SimulationLogs) -> None:
         _copy_file(logs.out, output_dir, PurePosixPath("antares-out.log"))
     if logs.err:
         _copy_file(logs.err, output_dir, PurePosixPath("antares-err.log"))
+
+
+class DigestNotFoundError(HTTPException):
+    def __init__(self, study_id: str, output_id: str):
+        super().__init__(HTTPStatus.NOT_FOUND, f"Digest file not found for study {study_id} and output {output_id}")
 
 
 class AbstractFileOutputStorage(IOutputStorage):
@@ -481,10 +487,10 @@ class AbstractFileOutputStorage(IOutputStorage):
         output_path = self._outputs_provider.get_outputs(study_id).outputs_path / output_id
         mode_dir = find_mode_dir(output_path)
         if not mode_dir:
-            raise ChildNotFoundError(f"Digest file not found for study {study_id} and output {output_id}")
+            raise DigestNotFoundError(study_id, output_id)
         file_path = mode_dir / "mc-all" / "grid" / "digest.txt"
         if not file_path.exists():
-            raise ChildNotFoundError(f"Digest file not found for study {study_id} and output {output_id}")
+            raise DigestNotFoundError(study_id, output_id)
         return DigestSynthesis.parse_file_for_ui(file_path)
 
     @override
