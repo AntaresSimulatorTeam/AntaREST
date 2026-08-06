@@ -27,7 +27,7 @@ class TestLauncherConfiguration:
         user_access_token: str,
     ) -> None:
         # NOTE: we have `enable_nb_cores_detection: True` in `tests/integration/assets/config.template.yml`.
-        local_config = LocalConfig.from_dict(
+        local_config = LocalConfig.model_validate(
             {"id": "local_id", "type": "local", "name": "local", "enable_nb_cores_detection": True}
         )
         expected_launchers = [

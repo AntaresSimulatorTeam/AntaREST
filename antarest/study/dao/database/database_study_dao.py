@@ -17,7 +17,7 @@ This DAO provides database-backed storage for studies when storage_mode=DATABASE
 Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -25,7 +25,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
 from antarest.study.dao.api.study_dao import StudyDao
@@ -37,7 +39,11 @@ from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
+from antarest.study.dao.database.database_reserve_certification_dao import (
+    DatabaseReserveCertificationDao,
+)
 from antarest.study.dao.database.database_reserve_definition_dao import DatabaseReserveDefinitionDao
+from antarest.study.dao.database.database_reserve_symmetries_dao import DatabaseReserveSymmetriesDao
 from antarest.study.dao.database.database_reserves_global_parameters_dao import DatabaseReservesGlobalParametersDao
 from antarest.study.dao.database.database_scenario_builder_dao import DatabaseScenarioBuilderDao
 from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
@@ -47,17 +53,12 @@ from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
 from antarest.study.dao.database.models.comments import COMMENTS_TABLE
-from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import Study, StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import MatrixSupplier
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-
-if TYPE_CHECKING:
-    from antarest.matrixstore.service import ISimpleMatrixService
-    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class DatabaseStudyDao(
@@ -79,6 +80,8 @@ class DatabaseStudyDao(
     DatabaseBindingConstraintDao,
     DatabaseReservesGlobalParametersDao,
     DatabaseReserveDefinitionDao,
+    DatabaseReserveCertificationDao,
+    DatabaseReserveSymmetriesDao,
 ):
     """
     Database implementation of StudyDao.
@@ -89,6 +92,7 @@ class DatabaseStudyDao(
         study_id: str,
         db_session: Session,
         matrix_service: ISimpleMatrixService,
+        blob_service: IBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
     ) -> None:
         """
@@ -98,6 +102,7 @@ class DatabaseStudyDao(
             study_id: The study ID for database queries
             db_session: SQLAlchemy session for database operations
             matrix_service: Matrix storage service
+            blob_service: Blobs storage service
             generator_matrix_constants: Predefined matrix constants generator
         """
         DatabaseAreaDao.__init__(self, study_id, db_session)
@@ -109,7 +114,7 @@ class DatabaseStudyDao(
         DatabaseThermalDao.__init__(self, study_id, db_session)
         DatabaseStudySettingsDao.__init__(self, study_id, db_session)
         DatabaseRenewableDao.__init__(self, study_id, db_session)
-        DatabaseUserResourcesDao.__init__(self, study_id, db_session)
+        DatabaseUserResourcesDao.__init__(self, study_id, db_session, blob_service)
         DatabaseStStorageDao.__init__(self, study_id, db_session)
         DatabaseThematicTrimmingDao.__init__(self, study_id, db_session)
         DatabaseScenarioBuilderDao.__init__(self, study_id, db_session)
@@ -122,12 +127,12 @@ class DatabaseStudyDao(
 
     @override
     @property
-    def matrix_service(self) -> "ISimpleMatrixService":
+    def matrix_service(self) -> ISimpleMatrixService:
         return self._matrix_service
 
     @override
     @property
-    def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
+    def generator_matrix_constants(self) -> GeneratorMatrixConstants:
         return self._generator_matrix_constants
 
     # Implementation of abstract methods required by StudyDao

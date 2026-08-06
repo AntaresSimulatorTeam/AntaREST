@@ -15,6 +15,7 @@
 import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
 import { getStudyData } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
+import { sanitizeJsonResponse } from "@/utils/apiUtils";
 import type { SvgIconComponent } from "@mui/icons-material";
 import BlockIcon from "@mui/icons-material/Block";
 import DataObjectIcon from "@mui/icons-material/DataObject";
@@ -245,11 +246,7 @@ function parseResponse(res: string | MatrixDataDTO): string {
   }
 
   try {
-    // Handle case where API returns unparsed JSON string
-    // Replace special numeric values with their string representations
-    const sanitizedJson = res.replace(/NaN/g, '"NaN"').replace(/Infinity/g, '"Infinity"');
-
-    const parsed = JSON.parse(sanitizedJson);
+    const parsed = sanitizeJsonResponse<MatrixDataDTO>(res);
     return formatMatrixToString(parsed.data);
   } catch {
     // If JSON parsing fails, assume it's plain text

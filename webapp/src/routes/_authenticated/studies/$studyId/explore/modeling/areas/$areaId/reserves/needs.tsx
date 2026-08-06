@@ -19,7 +19,7 @@ import { reserveQueries } from "@/queries/reserves/queries";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
 import { sortByProp } from "@/services/utils";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { Box, Stack } from "@mui/material";
+import { Alert, Box, Stack } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -28,9 +28,6 @@ import { useTranslation } from "react-i18next";
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs",
 )({
-  loader: async ({ context, params: { studyId, areaId } }) => {
-    await context.queryClient.ensureQueryData(reserveQueries.list(studyId, areaId));
-  },
   component: ReservesNeeds,
 });
 
@@ -46,6 +43,8 @@ function ReservesNeeds() {
     ...reserveQueries.list(studyId, areaId),
     select: getReserveIds,
   });
+
+  const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
 
   const [selectedReserveId, setSelectedReserveId] = useState(() => reserveIds[0] ?? "");
 
@@ -70,7 +69,12 @@ function ReservesNeeds() {
   }
 
   return (
-    <Stack direction="column" gap={1} sx={{ height: 1 }}>
+    <Stack direction="column" spacing={1} sx={{ height: 1 }}>
+      {reservesEnabled === false && (
+        <Alert severity="warning" sx={{ mb: 1 }}>
+          {t("study.modeling.reserves.readOnly.alert")}
+        </Alert>
+      )}
       <SelectFE
         label={t("study.modeling.reserves.needs.select")}
         value={selectedReserveId}
@@ -84,6 +88,7 @@ function ReservesNeeds() {
           key={`${areaId}-${selectedReserveId}`}
           studyId={studyId}
           url={`input/reserves/${areaId}/${selectedReserveId}`}
+          readOnly={!reservesEnabled}
         />
       </Box>
     </Stack>

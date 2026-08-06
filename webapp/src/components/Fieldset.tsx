@@ -91,7 +91,7 @@ function Fieldset({
         <>
           <Stack
             component="legend"
-            gap={0.5}
+            spacing={0.5}
             {...(canCollapse &&
               isLegendString && { onClick: handleToggleCollapse, sx: { cursor: "pointer" } })}
           >

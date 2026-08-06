@@ -15,6 +15,7 @@ from pydantic import ValidationError
 
 from antarest.core.exceptions import LinkValidationError
 from antarest.core.serde.ini_reader import IniReader
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -27,10 +28,9 @@ from tests.helpers import build_dao_from_file_study
 
 
 class TestCreateLink:
-    def test_validation(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
+    def test_validation(self, dao: StudyDao, command_context: CommandContext) -> None:
         area1 = "Area1"
         area2 = "Area2"
-        dao = build_dao_from_file_study(empty_study_880, command_context)
 
         CreateArea.model_validate(
             {"area_name": area1, "command_context": command_context, "study_version": STUDY_VERSION_8_8}
@@ -207,3 +207,13 @@ class TestCreateLink:
             study_version=study_version,
         ).apply(dao)
         assert not output.status
+
+        with pytest.raises(ValidationError):
+            CreateLink(
+                area1=area1,
+                area2=area1,
+                parameters={},
+                command_context=command_context,
+                series=[[0]],
+                study_version=STUDY_VERSION_8_8,
+            )

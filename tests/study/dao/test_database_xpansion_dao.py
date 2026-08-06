@@ -26,7 +26,6 @@ from antarest.core.exceptions import (
     XpansionConfigurationDoesNotExist,
     XpansionFileNotFoundError,
 )
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -193,11 +192,9 @@ class TestXpansionSettings:
         with pytest.raises(CandidateNotFoundError):
             dao.save_xpansion_settings(settings)
 
-    def test_checks_xpansion_settings_correct(
-        self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]
-    ) -> None:
+    def test_checks_xpansion_settings_correct(self, dao_93: StudyDao) -> None:
         """checks_xpansion_settings_are_correct should validate that referenced constraint/weight files exist."""
-        dao, matrix_service = dao_and_matrix_service
+        dao = dao_93
         dao.create_xpansion_configuration()
 
         # --- missing constraint file raises ---
@@ -211,7 +208,7 @@ class TestXpansionSettings:
             dao.checks_xpansion_settings_are_correct(XpansionSettingsUpdate(yearly_weights="missing_weights.csv"))
 
         # --- files exist: no raise ---
-        series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
+        series_id = dao.matrix_service.create(pl.DataFrame({"col": [1.0]}))
         dao.save_xpansion_weight({"weights.csv": series_id})
         dao.save_xpansion_constraint({"constraints.txt": b"some content"})
         dao.checks_xpansion_settings_are_correct(
@@ -316,10 +313,10 @@ class TestXpansionCandidates:
         ],
     )
     def test_candidate_coherence_raises_for_missing_capacity_profile(
-        self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService], profile_field: str
+        self, dao_93: StudyDao, profile_field: str
     ) -> None:
         """checks_xpansion_candidate_coherence should raise when a link profile references a non-existent capacity."""
-        dao, matrix_service = dao_and_matrix_service
+        dao = dao_93
         dao.create_xpansion_configuration()
         save_area(dao, "Paris")
         save_area(dao, "Lyon")
@@ -338,7 +335,7 @@ class TestXpansionCandidates:
             dao.checks_xpansion_candidate_coherence(candidate)
 
         # --- profile file present: no raise ---
-        series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
+        series_id = dao.matrix_service.create(pl.DataFrame({"col": [1.0]}))
         dao.save_xpansion_capacity({"missing_capa.txt": series_id})
         dao.checks_xpansion_candidate_coherence(candidate)  # must not raise
 
@@ -457,13 +454,11 @@ class TestCascadeDelete:
             # FS backend does not cascade-delete candidates when a link is removed.
             assert len(dao.get_all_xpansion_candidates()) == 2
 
-    def test_cascade_delete_removes_resource_rows(
-        self, db_session: Session, db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService]
-    ) -> None:
+    def test_cascade_delete_removes_resource_rows(self, db_session: Session, db_dao_930: DatabaseStudyDao) -> None:
         """Deleting the configuration should cascade-delete constraint, capacity and weight rows."""
-        db_dao, matrix_service = db_dao_930_and_matrix_service
+        db_dao = db_dao_930
         db_dao.create_xpansion_configuration()
-        series_id = matrix_service.create(pl.DataFrame({"col": [1.0]}))
+        series_id = db_dao.matrix_service.create(pl.DataFrame({"col": [1.0]}))
         db_dao.save_xpansion_constraint({"my.txt": b"content"})
         db_dao.save_xpansion_capacity({"capa.txt": series_id})
         db_dao.save_xpansion_weight({"weights.csv": series_id})
@@ -518,9 +513,8 @@ class TestXpansionResources:
         with pytest.raises(XpansionFileNotFoundError):
             dao.delete_xpansion_resource(XpansionResourceFileType.CONSTRAINTS, "my_constraints.txt")
 
-    def test_capacity_save_get_list_delete(self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
+    def test_capacity_save_get_list_delete(self, dao: StudyDao) -> None:
         """Capacity: round-trip save/get (DataFrame), listing, upsert, not-found, and delete."""
-        dao, matrix_service = dao_and_matrix_service
         dao.create_xpansion_configuration()
 
         # --- initially empty ---
@@ -528,7 +522,7 @@ class TestXpansionResources:
 
         # --- save and get ---
         df = pl.DataFrame({"col1": [1.0, 2.0], "col2": [3.0, 4.0]})
-        series_id = matrix_service.create(df)
+        series_id = dao.matrix_service.create(df)
         dao.save_xpansion_capacity({"link_capa.txt": series_id})
 
         result = dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
@@ -545,7 +539,7 @@ class TestXpansionResources:
 
         # --- upsert with different series ---
         df2 = pl.DataFrame({"col1": [9.0]})
-        series_id2 = matrix_service.create(df2)
+        series_id2 = dao.matrix_service.create(df2)
         dao.save_xpansion_capacity({"link_capa.txt": series_id2})
         result = dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
         assert isinstance(result, pl.DataFrame)
@@ -563,14 +557,13 @@ class TestXpansionResources:
         with pytest.raises(XpansionFileNotFoundError):
             dao.delete_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
 
-    def test_weight_save_get_list_delete(self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
+    def test_weight_save_get_list_delete(self, dao: StudyDao) -> None:
         """Weight: round-trip save/get (DataFrame), listing, upsert, not-found, and delete."""
-        dao, matrix_service = dao_and_matrix_service
         dao.create_xpansion_configuration()
 
         # --- save and get ---
         df = pl.DataFrame({"w": [0.5, 0.3, 0.2]})
-        series_id = matrix_service.create(df)
+        series_id = dao.matrix_service.create(df)
         dao.save_xpansion_weight({"mc_weights.csv": series_id})
 
         result = dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
@@ -587,7 +580,7 @@ class TestXpansionResources:
 
         # --- upsert with different series ---
         df2 = pl.DataFrame({"w": [0.9]})
-        series_id2 = matrix_service.create(df2)
+        series_id2 = dao.matrix_service.create(df2)
         dao.save_xpansion_weight({"mc_weights.csv": series_id2})
         result = dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
         assert isinstance(result, pl.DataFrame)
@@ -605,36 +598,32 @@ class TestXpansionResources:
         with pytest.raises(XpansionFileNotFoundError):
             dao.delete_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
 
-    def test_get_all_xpansion_weights_returns_saved_data(
-        self, db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService]
-    ) -> None:
+    def test_get_all_xpansion_weights_returns_saved_data(self, dao_93: StudyDao) -> None:
         """get_all_xpansion_weights should return {filename: matrix_id} for all saved weights."""
-        db_dao, matrix_service = db_dao_930_and_matrix_service
-        db_dao.create_xpansion_configuration()
+        dao = dao_93
+        dao.create_xpansion_configuration()
 
-        series_id = matrix_service.create(pl.DataFrame({"col": [1.0, 2.0]}))
-        db_dao.save_xpansion_weight({"weights.csv": series_id})
+        series_id = dao.matrix_service.create(pl.DataFrame({"col": [1.0, 2.0]}))
+        dao.save_xpansion_weight({"weights.csv": series_id})
 
-        assert db_dao.get_all_xpansion_weights() == {"weights.csv": series_id}
+        assert dao.get_all_xpansion_weights() == {"weights.csv": series_id}
 
-    def test_get_all_xpansion_capacities_returns_saved_data(
-        self, db_dao_930_and_matrix_service: tuple[DatabaseStudyDao, ISimpleMatrixService]
-    ) -> None:
+    def test_get_all_xpansion_capacities_returns_saved_data(self, dao_93: StudyDao) -> None:
         """get_all_xpansion_capacities should return {filename: matrix_id} for all saved capacities."""
-        db_dao, matrix_service = db_dao_930_and_matrix_service
-        db_dao.create_xpansion_configuration()
+        dao = dao_93
+        dao.create_xpansion_configuration()
 
-        series_id = matrix_service.create(pl.DataFrame({"col": [1.0, 2.0]}))
-        db_dao.save_xpansion_capacity({"capa.txt": series_id})
+        series_id = dao.matrix_service.create(pl.DataFrame({"col": [1.0, 2.0]}))
+        dao.save_xpansion_capacity({"capa.txt": series_id})
 
-        assert db_dao.get_all_xpansion_capacities() == {"capa.txt": series_id}
+        assert dao.get_all_xpansion_capacities() == {"capa.txt": series_id}
 
-    def test_get_all_xpansion_constraints_returns_saved_data(self, db_dao: DatabaseStudyDao) -> None:
+    def test_get_all_xpansion_constraints_returns_saved_data(self, dao: StudyDao) -> None:
         """get_all_xpansion_constraints should return {filename: content-bytes} for all saved constraints."""
-        db_dao.create_xpansion_configuration()
-        db_dao.save_xpansion_constraint({"constraint.txt": b"content-bytes"})
+        dao.create_xpansion_configuration()
+        dao.save_xpansion_constraint({"constraint.txt": b"content-bytes"})
 
-        assert db_dao.get_all_xpansion_constraints() == {"constraint.txt": b"content-bytes"}
+        assert dao.get_all_xpansion_constraints() == {"constraint.txt": b"content-bytes"}
 
     def test_checks_constraint_can_be_deleted_raises_if_used_in_settings(self, dao: StudyDao) -> None:
         """checks_xpansion_resource_can_be_deleted should raise if constraint file is referenced by settings."""

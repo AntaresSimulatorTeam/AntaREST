@@ -36,7 +36,13 @@ from antarest.launcher.adapters.slurm_launcher.slurm_launcher import (
     SlurmLauncher,
     VersionNotSupportedError,
 )
-from antarest.launcher.model import JobStatus, LauncherParametersDTO, XpansionParametersDTO
+from antarest.launcher.model import (
+    JobStatus,
+    LauncherParametersDTO,
+    LauncherRuntimeConfig,
+    SlurmRuntimeConfig,
+    XpansionParametersDTO,
+)
 
 
 @pytest.fixture
@@ -62,7 +68,7 @@ def launcher_config(tmp_path: Path) -> SlurmConfig:
         "enable_nb_cores_detection": False,
         "nb_cores": {"min": 1, "default": 34, "max": 36},
     }
-    return SlurmConfig.from_dict(data)
+    return SlurmConfig.model_validate(data)
 
 
 def test_init_slurm_launcher_arguments(tmp_path: Path) -> None:
@@ -321,14 +327,41 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
     ):
         XpansionParametersDTO(adequacy_criterion=True, sensitivity_mode=True)
 
-    launcher_params = apply_params(LauncherParametersDTO(post_processing=False))
-    assert launcher_params.post_processing is False
 
-    launcher_params = apply_params(LauncherParametersDTO(post_processing=True))
-    assert launcher_params.post_processing is True
+def test_oversubscribe(launcher_config: SlurmConfig) -> None:
+    """
+    `--oversubscribe` is added when the effective number of cores requested is at or below the
+    admin-set threshold, and left off otherwise (or when no threshold is configured).
+    """
+    slurm_launcher = SlurmLauncher(
+        config=launcher_config,
+        callbacks=Mock(),
+        event_bus=Mock(),
+        cache=Mock(),
+    )
+    apply_params = slurm_launcher._apply_params
+    default_cores = launcher_config.nb_cores.default
 
-    launcher_params = apply_params(LauncherParametersDTO(adequacy_patch={}))
-    assert launcher_params.post_processing is True
+    def runtime_config(threshold: int) -> LauncherRuntimeConfig:
+        return LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=threshold))
+
+    # No runtime config (or no threshold) -> never oversubscribe
+    assert apply_params(LauncherParametersDTO(nb_cpu=1)).oversubscribe is False
+    assert apply_params(LauncherParametersDTO(nb_cpu=1), LauncherRuntimeConfig()).oversubscribe is False
+
+    # Requested cores below / equal to the threshold -> oversubscribe (inclusive)
+    assert apply_params(LauncherParametersDTO(nb_cpu=1), runtime_config(12)).oversubscribe is True
+    assert apply_params(LauncherParametersDTO(nb_cpu=12), runtime_config(12)).oversubscribe is True
+
+    # Requested cores above the threshold -> no oversubscribe
+    assert apply_params(LauncherParametersDTO(nb_cpu=12), runtime_config(11)).oversubscribe is False
+
+    # Comparison uses the *effective* core count: unset nb_cpu resolves to the config default
+    assert apply_params(LauncherParametersDTO(), runtime_config(default_cores)).oversubscribe is True
+    assert apply_params(LauncherParametersDTO(), runtime_config(default_cores - 1)).oversubscribe is False
+
+    # Out-of-range nb_cpu is clamped to the default before the comparison
+    assert apply_params(LauncherParametersDTO(nb_cpu=999), runtime_config(default_cores)).oversubscribe is True
 
 
 # noinspection PyUnresolvedReferences
@@ -392,10 +425,12 @@ def test_run_study(
     assert f"solver_version = {version:ddd}" in study_antares_path.read_text(encoding="utf-8")
 
     slurm_launcher.callbacks.export_study.assert_called_once()
-    slurm_launcher.callbacks.update_status.assert_called_once_with(ANY, job_status, ANY, None)
     if job_status == JobStatus.RUNNING:
+        slurm_launcher.callbacks.update_status.assert_not_called()
         slurm_launcher.start.assert_called_once()
         slurm_launcher._delete_workspace_file.assert_called_once()
+    else:
+        slurm_launcher.callbacks.update_status.assert_called_once_with(ANY, JobStatus.FAILED, ANY, None)
 
 
 def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
@@ -530,6 +565,7 @@ def test_kill_job(
         xpansion_mode=None,
         other_options=None,
         oversubscribe=False,
+        run_at=None,
     )
     launcher_parameters = MainParameters(
         json_dir=Path(tmp_path),

@@ -32,7 +32,6 @@ import {
   getStudySynthesis,
 } from "../../../../../../services/api/study";
 import {
-  StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
   type GenericInfo,
   type StudyMetadata,
@@ -77,7 +76,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   const [studySynthesis, setStudySynthesis] = useState<StudySynthesis>();
   const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
     type: StudyOutputDownloadType.AREAS,
-    level: StudyOutputDownloadLevelDTO.WEEKLY,
+    level: "weekly",
     synthesis: false,
     includeClusters: false,
   });
