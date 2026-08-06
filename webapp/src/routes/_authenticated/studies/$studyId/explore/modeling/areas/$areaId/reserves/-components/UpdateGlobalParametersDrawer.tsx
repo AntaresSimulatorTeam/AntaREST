@@ -31,7 +31,7 @@ interface Props {
   onClose: VoidFunction;
 }
 
-function EditGlobalParametersDrawer({ open, onClose }: Props) {
+function UpdateGlobalParametersDrawer({ open, onClose }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { id: studyId } = useStudy();
@@ -106,4 +106,4 @@ function EditGlobalParametersDrawer({ open, onClose }: Props) {
   );
 }
 
-export default EditGlobalParametersDrawer;
+export default UpdateGlobalParametersDrawer;

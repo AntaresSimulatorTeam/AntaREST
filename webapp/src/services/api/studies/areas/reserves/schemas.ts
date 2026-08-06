@@ -40,6 +40,24 @@ export const reserveGlobalParametersSchema = z.object({
   energyActivationRatioDown: z.number(),
 });
 
+// Production types with released certification endpoints.
+// "storages" and "hydro" are coming soon: add them here once their endpoints are released.
+export const certificationProductionTypeSchema = z.enum(["thermals"]);
+
+export const reserveCertificationSchema = z.object({
+  maxPower: z.number(),
+  maxPowerOff: z.number(),
+  participationCost: z.number(),
+  participationCostOff: z.number(),
+});
+
+// Shape: { [reserveId]: { [clusterId]: certification } }.
+// A cluster absent from a reserve's record has no active certification for it.
+export const reservesCertificationsSchema = z.record(
+  z.string(),
+  z.record(z.string(), reserveCertificationSchema),
+);
+
 ////////////////////////////////////////////////////////////////
 // Input Schemas
 ////////////////////////////////////////////////////////////////
