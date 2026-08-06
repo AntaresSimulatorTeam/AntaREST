@@ -49,6 +49,7 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.output.dbmodel import Output
 from antarest.output.filestudy.aggregator_management import (
     AREA_COL,
     CLUSTER_ID_COL,
@@ -70,6 +71,7 @@ from antarest.output.model import (
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
+from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
@@ -229,6 +231,7 @@ class OutputService:
         matrix_service: ISimpleMatrixService,
         tmp_dir: Path,
         studies_repository: IStudyMetadataProvider,
+        output_repository: OutputRepository,
     ) -> None:
         self._storages = tuple(storages)
         self._task_service = task_service
@@ -236,6 +239,7 @@ class OutputService:
         self._matrix_service = matrix_service
         self._tmp_dir = tmp_dir
         self._studies_repository = studies_repository
+        self._output_repository = output_repository
 
         OutputVariablesMatrixUsageProvider(self._matrix_service)
 
@@ -315,6 +319,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.unarchive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
+                self._output_repository.delete(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -589,6 +594,8 @@ class OutputService:
 
         self._find_output_storage(uuid, output_name).delete_output(uuid, output_name)
 
+        self._output_repository.delete(uuid, output_name)
+
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
     def archive_outputs(self, study_id: str) -> list[str]:
@@ -637,6 +644,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
+                self._output_repository.delete(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
@@ -912,7 +920,13 @@ class OutputService:
         return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, log_type)
 
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
-        return self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
+        output = self._output_repository.get(study_id, output_id)
+        if output and output.disk_space_bytes is not None:
+            return output.disk_space_bytes
+        else:
+            disk_usage = self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
+            self._output_repository.save(Output(study_id=study_id, output_id=output_id, disk_space_bytes=disk_usage))
+            return disk_usage
 
     def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
         """
@@ -931,6 +945,8 @@ class OutputService:
             current_storage.export_output(study_id, output_id, tmp_zip)
             target_storage.import_output(study_id, tmp_zip)
             current_storage.delete_output(study_id, output_id)
+
+        self._output_repository.delete(study_id, output_id)
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)
