@@ -269,7 +269,7 @@ def test_already_existing_study_raises_error_and_deletes_output() -> None:
     storage2.storage_type = OutputStorageType.V2
     storage2.import_output.return_value = "output_id"
 
-    studies_repo = Mock(spec=IStudyMetadataProvider)
+    studies_repo = Mock(spec=IStudyMetadataProvider, unsafe=True)
     studies_repo.get_study_metadata.return_value = StudyMetadata("id", "name", StorageMode.FILESYSTEM)
 
     output_service = OutputService(
