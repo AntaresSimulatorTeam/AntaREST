@@ -16,12 +16,11 @@ Models for the deprecated "download output" feature.
 from enum import StrEnum
 from typing import Annotated
 
-import numpy as np
+import pandas as pd
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.np_array import NpArray
 from antarest.study.model import MatrixFrequency
 
 
@@ -59,13 +58,17 @@ class MatrixIndex(AntaresBaseModel):
     first_week_size: int = 7
     level: MatrixFrequency = MatrixFrequency.HOURLY
 
+    def set_as_df_index(self, df: pd.DataFrame) -> None:
+        time_column = pd.date_range(start=self.start_date, periods=len(df), freq=self.level.value[0])
+        df.index = time_column
+
 
 class TimeSerie(AntaresBaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True, ser_json_inf_nan="constants")
 
     name: str
     unit: str
-    data: NpArray = np.zeros(shape=(0,))
+    data: list[float | None]
 
 
 class TimeSeriesData(AntaresBaseModel):

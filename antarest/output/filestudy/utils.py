@@ -12,18 +12,12 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from io import StringIO
-from itertools import islice
-from pathlib import Path
-from typing import IO, TypeAlias
+from typing import TypeAlias
 
-import numpy as np
 import pandas as pd
 import polars as pl
-from polars.exceptions import ComputeError
 
-from antarest.output.model.download import MatrixIndex, TimeSerie
-from antarest.study.model import MatrixFrequency
+from antarest.output.model.download import TimeSerie
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
@@ -93,42 +87,19 @@ class OutputDataFrame:
 
 
 def normalize_df_column_names(mc_root: MCRoot, output_headers: list[list[str]]) -> list[str]:
+    """
+    That "normal form" is :
+     - for mc-ind, only the variable name "Var"
+     - for mc-all, the concatenation of variable name and stat type in upper case ... "VAR EXP"
+    """
     if mc_root == MCRoot.MC_IND:
         return [col[0] for col in output_headers]
     return [" ".join([col[0], col[2]]).upper().strip() for col in output_headers]
 
 
-def get_start_column(frequency: MatrixFrequency) -> int:
-    if frequency == MatrixFrequency.ANNUAL:
-        return 2
-    elif frequency == MatrixFrequency.MONTHLY:
-        return 3
-    elif frequency == MatrixFrequency.WEEKLY:
-        return 2
-    elif frequency == MatrixFrequency.DAILY:
-        return 4
-    elif frequency == MatrixFrequency.HOURLY:
-        return 5
-    else:
-        raise NotImplementedError(f"Unknown frequency {frequency.value}")
-
-
-def parse_headers(content: IO[str], start_col: int) -> MultipleOutputHeaders:
-    header_lines: list[list[str]] = []
-    for line in islice(content, 4, 7):  # Note: avoids to go over the whole file, much faster for larger files
-        cols = line.rstrip("\n").split("\t")[start_col:]
-        if not header_lines:
-            header_lines = [[col] for col in cols]
-        else:
-            for k, col in enumerate(cols):
-                header_lines[k].append(col)
-
-    return header_lines
-
-
 def concatenate_dataframe_multi_indexed_columns(data: OutputDataFrame) -> None:
     """
-    Used inside Imagrid endpoint as we want to keep the unit of the column but pyarrow doesn't handle MultiIndex.
+    Serializes multi-indexed column headers into a single string, concatenating with " % " as a separator.
     """
     data.headers = [" % ".join(col) for col in data.headers]
 
@@ -140,49 +111,4 @@ def split_concatenated_columns_from_dataframe(df: pd.DataFrame) -> Iterator[Time
     for column in df.columns:
         splitted_col = column.split(" % ")
         name, unit = splitted_col[0], splitted_col[1]
-        yield TimeSerie(name=name, unit=unit or " ", data=df[column].to_numpy())
-
-
-def add_time_index_to_dataframe(df: pd.DataFrame, matrix_index: MatrixIndex) -> None:
-    time_column = pd.date_range(start=matrix_index.start_date, periods=len(df), freq=matrix_index.level.value[0])
-    df.index = time_column
-
-
-def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
-    try:
-        return pl.read_csv(file_path, skip_lines=7, separator="\t", has_header=False, null_values="N/A", n_threads=1)
-    except ComputeError:
-        # Happens if polars wrongly inferred the schema.
-        # If so, we specify that it should read the entire file to be sure it doesn't infer a false schema.
-        # It's significantly slower but it does not fail.
-        # As no file is longer than 10.000 rows we use this value.
-        return pl.read_csv(
-            file_path,
-            skip_lines=7,
-            separator="\t",
-            has_header=False,
-            null_values="N/A",
-            infer_schema_length=10000,
-            n_threads=1,
-        )
-
-
-def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
-    content = file_path.read_text(encoding="utf-8")
-    output_headers = parse_headers(StringIO(content), first_column)
-    polars_df = _parse_output_dataframe(file_path)
-
-    df = polars_df[polars_df.columns[first_column:]]
-
-    # At this point we only have numeric values in our df. But NaN columns are considered to be String by polars.
-    # So we change this to be Float64 to harmonize everything.
-    df = df.with_columns(pl.col(pl.Utf8).cast(pl.Float64))
-
-    return OutputDataFrame(data=df, headers=output_headers)
-
-
-def parse_output_file_as_pandas_dataframe(file_path: Path, first_column: int) -> pd.DataFrame:
-    output = parse_output_file(file_path, first_column)
-    df = output.data.to_pandas().astype(np.float64)
-    df.columns = pd.MultiIndex.from_tuples(output.headers)  # type: ignore
-    return df
+        yield TimeSerie(name=name, unit=unit or " ", data=df[column].to_list())
