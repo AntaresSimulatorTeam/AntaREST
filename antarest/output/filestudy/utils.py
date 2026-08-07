@@ -22,7 +22,8 @@ import pandas as pd
 import polars as pl
 from polars.exceptions import ComputeError
 
-from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
+from antarest.output.model.download import MatrixIndex, TimeSerie
+from antarest.study.model import MatrixFrequency
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"

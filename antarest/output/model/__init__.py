@@ -9,3 +9,45 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+
+from antarest.output.model.download import (
+    MatrixAggregationResultDTO,
+    MatrixIndex,
+    StudyDownloadDTO,
+    StudyDownloadType,
+    TimeSerie,
+    TimeSeriesData,
+)
+from antarest.output.model.variables import (
+    AreaAndLinkVariables,
+    AreaClusterVariables,
+    AreaVariables,
+    ClusterVariables,
+    LinkVariables,
+    OutputVariablesInformation,
+    OutputVariablesList,
+    OutputVariablesType,
+    OutputVariablesViewResponse,
+    OutputVariablesViewStatus,
+    Variables,
+)
+
+__all__ = [
+    "AreaAndLinkVariables",
+    "AreaClusterVariables",
+    "AreaVariables",
+    "ClusterVariables",
+    "LinkVariables",
+    "MatrixAggregationResultDTO",
+    "MatrixIndex",
+    "OutputVariablesInformation",
+    "OutputVariablesList",
+    "OutputVariablesType",
+    "OutputVariablesViewResponse",
+    "OutputVariablesViewStatus",
+    "StudyDownloadDTO",
+    "StudyDownloadType",
+    "TimeSerie",
+    "TimeSeriesData",
+    "Variables",
+]

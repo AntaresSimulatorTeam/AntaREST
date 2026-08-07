@@ -71,6 +71,7 @@ from antarest.output.model import (
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
+from antarest.output.model.download import MatrixAggregationResultDTO, MatrixIndex, StudyDownloadDTO, StudyDownloadType
 from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -87,12 +88,8 @@ from antarest.output.variable_view.model import (
     get_query_file,
 )
 from antarest.study.model import (
-    MatrixAggregationResultDTO,
     MatrixFrequency,
-    MatrixIndex,
     StorageMode,
-    StudyDownloadDTO,
-    StudyDownloadType,
 )
 from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile

@@ -48,6 +48,7 @@ from antarest.output.filestudy.aggregator_management import AggregatorManager
 from antarest.output.filestudy.file_output_utils import extract_variables_list, parse_output_config
 from antarest.output.filestudy.utils import QueryFileType, get_start_column, parse_output_file_as_pandas_dataframe
 from antarest.output.model import OutputVariablesList
+from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -60,7 +61,6 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8,
     MatrixFrequency,
-    MatrixIndex,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     get_playlist,
