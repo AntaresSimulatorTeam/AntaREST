@@ -25,6 +25,6 @@ export const favoriteDirectorySchema = z.object({
 });
 
 export const favoriteExternalDirectorySchema = z.object({
-  workspace: z.string(),
-  path: z.string(),
+  workspace: z.string().min(1),
+  path: z.string().min(1),
 });

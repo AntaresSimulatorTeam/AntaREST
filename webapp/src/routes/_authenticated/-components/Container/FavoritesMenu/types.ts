@@ -20,7 +20,6 @@ import type {
 
 export type Favorite = {
   id: string;
-  // elementId: string;
   name: string;
 } & (
   | { type: "study"; original: FavoriteStudy }
