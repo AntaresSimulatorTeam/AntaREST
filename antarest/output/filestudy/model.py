@@ -12,7 +12,7 @@
 from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from typing import TypeAlias
+from typing import Literal, TypeAlias
 
 import pandas as pd
 import polars as pl
@@ -61,7 +61,9 @@ SingleOutputHeaders: TypeAlias = list[str]
 MultipleOutputHeaders: TypeAlias = list[list[str]]
 
 
-def get_output_object_type(file_type: QueryFileType, is_link: bool) -> str:
+def get_output_object_type(
+    file_type: QueryFileType, is_link: bool
+) -> Literal["areas", "links", "thermal_clusters", "renewable_clusters", "short_term_storages"]:
     if is_link:
         return "links"
 

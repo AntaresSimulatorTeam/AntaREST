@@ -58,7 +58,7 @@ enforce mypy, ruff, and license headers.
 - `main.py` — `build_<service>()` factory wiring dependencies.
 - `model.py` — business objects, DTOs, and DB entities (may be a directory).
 - `repository.py` — DB query helpers for the entities.
-- `business/`, `dao/`, `adapters.py`, `utils.py` — supporting logic.
+- `business/`, `dao/`, `adapters.py`, `model.py` — supporting logic.
 
 The `study/` package is the core domain (largest module): study storage lives in
 `study/storage/` (raw studies, variant studies, upgraders), and DAOs in `study/dao/`.

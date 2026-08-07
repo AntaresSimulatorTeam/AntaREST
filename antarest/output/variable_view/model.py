@@ -14,7 +14,7 @@ from typing import Annotated, Literal, TypeAlias
 from pydantic import BaseModel, Field
 
 from antarest.core.exceptions import OutputVariablesViewError
-from antarest.output.filestudy.utils import MCIndAreasQueryFile, MCIndLinksQueryFile, QueryFileType
+from antarest.output.filestudy.model import MCIndAreasQueryFile, MCIndLinksQueryFile, QueryFileType
 from antarest.output.model import OutputVariablesList
 
 

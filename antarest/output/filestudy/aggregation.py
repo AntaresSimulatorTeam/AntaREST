@@ -20,7 +20,7 @@ import polars as pl
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file
-from antarest.output.filestudy.utils import (
+from antarest.output.filestudy.model import (
     MCYEAR_COL,
     TIME_ID_COL,
     MCAllAreasQueryFile,

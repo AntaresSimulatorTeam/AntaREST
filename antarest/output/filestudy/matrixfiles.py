@@ -23,7 +23,7 @@ import pandas as pd
 import polars as pl
 from polars._plr import ComputeError
 
-from antarest.output.filestudy.utils import MultipleOutputHeaders, OutputDataFrame
+from antarest.output.filestudy.model import MultipleOutputHeaders, OutputDataFrame
 from antarest.study.model import MatrixFrequency
 
 

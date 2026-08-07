@@ -45,9 +45,9 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.output.filestudy.aggregation import AggregatorManager
-from antarest.output.filestudy.file_output_utils import parse_output_config
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file_as_pandas_dataframe
-from antarest.output.filestudy.utils import (
+from antarest.output.filestudy.metadata import parse_output_config
+from antarest.output.filestudy.model import (
     QueryFileType,
 )
 from antarest.output.filestudy.variables import extract_variables_list

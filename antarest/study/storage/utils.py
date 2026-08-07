@@ -56,7 +56,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time, is_path_safe
 from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_impersonator, require_current_user
-from antarest.output.filestudy.file_output_utils import parse_output_config
+from antarest.output.filestudy.metadata import parse_output_config
 from antarest.output.model.download import MatrixIndex
 from antarest.study.business.model.config.general_model import GeneralConfig, Mode
 from antarest.study.model import (

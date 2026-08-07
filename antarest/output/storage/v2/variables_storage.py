@@ -35,7 +35,7 @@ from antarest.core.serde.parquet_writer import (
 )
 from antarest.output.filestudy.aggregation import AggregatorManager
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file
-from antarest.output.filestudy.utils import (
+from antarest.output.filestudy.model import (
     MCYEAR_COL,
     TIME_ID_COL,
     MCAllAreasQueryFile,

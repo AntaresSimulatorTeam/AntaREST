@@ -28,7 +28,7 @@ from antarest.core.serde.matrix_export import TableExportFormat
 from antarest.core.utils.dict_utils import remove_nones
 from antarest.core.utils.web import APITag
 from antarest.dependencies import OutputServiceDep, TmpExportFileDep, auth_required
-from antarest.output.filestudy.utils import (
+from antarest.output.filestudy.model import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,

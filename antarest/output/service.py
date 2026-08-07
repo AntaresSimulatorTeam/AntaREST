@@ -55,7 +55,7 @@ from antarest.output.filestudy.aggregation import (
     CLUSTER_ID_COL,
     LINK_COL,
 )
-from antarest.output.filestudy.utils import (
+from antarest.output.filestudy.model import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,

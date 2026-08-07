@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_headers
-from antarest.output.filestudy.utils import (
+from antarest.output.filestudy.model import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
