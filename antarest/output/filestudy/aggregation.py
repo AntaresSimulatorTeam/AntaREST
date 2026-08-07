@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import warnings
-from collections.abc import Iterator, MutableSequence, Sequence
+from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import cast
 
@@ -19,6 +19,7 @@ import pandas as pd
 import polars as pl
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
+from antarest.output.filestudy.iteration import select_files
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file
 from antarest.output.filestudy.model import (
     MCYEAR_COL,
@@ -76,19 +77,6 @@ def _columns_ordering(df_cols: list[str], column_name: str, is_details: bool, mc
     return new_column_order
 
 
-def _filtered_files_listing(
-    folders_to_check: list[Path],
-    query_file: str,
-    frequency: str,
-) -> dict[str, MutableSequence[str]]:
-    filtered_files: dict[str, MutableSequence[str]] = {}
-    for folder_path in folders_to_check:
-        for file in folder_path.iterdir():
-            if file.stem == f"{query_file}-{frequency}":
-                filtered_files.setdefault(folder_path.name, []).append(file.name)
-    return filtered_files
-
-
 class AggregatorManager:
     def __init__(
         self,
@@ -133,65 +121,6 @@ class AggregatorManager:
             output_data.headers = normalize_df_column_names(self.mc_root, headers)
 
         return output_data
-
-    def _filter_ids(self, folder_path: Path) -> list[str]:
-        if self.output_type == "areas":
-            # Areas names filtering
-            areas_ids = sorted([d.name for d in folder_path.iterdir()])
-            if self.ids_to_consider:
-                areas_ids = [area_id for area_id in areas_ids if area_id in self.ids_to_consider]
-            return areas_ids
-
-        # Links names filtering
-        links_ids = sorted(d.name for d in folder_path.iterdir())
-        if self.ids_to_consider:
-            return [link for link in links_ids if link in self.ids_to_consider]
-        return links_ids
-
-    def _gather_all_files_to_consider(self) -> Sequence[Path]:
-        if self.mc_root == MCRoot.MC_IND:
-            # Monte Carlo years filtering
-            all_mc_years = [d.name for d in self.mc_ind_path.iterdir()]
-            if self.mc_years:
-                all_mc_years = [year for year in all_mc_years if int(year) in self.mc_years]
-            if not all_mc_years:
-                return []
-
-            # Links / Areas ids filtering
-
-            # The list of areas and links is the same whatever the MC year under consideration:
-            # Therefore we choose the first year by default avoiding useless scanning directory operations.
-            first_mc_year = all_mc_years[0]
-            areas_or_links_ids = self._filter_ids(self.mc_ind_path / first_mc_year / self.output_type)
-
-            # Frequency and query file filtering
-            folders_to_check = [self.mc_ind_path / first_mc_year / self.output_type / id for id in areas_or_links_ids]
-            filtered_files = _filtered_files_listing(folders_to_check, self.query_file, self.frequency)
-
-            # Loop on MC years to return the whole list of files
-            all_output_files = [
-                self.mc_ind_path / mc_year / self.output_type / area_or_link / file
-                for mc_year in all_mc_years
-                for area_or_link, files in filtered_files.items()
-                for file in files
-            ]
-        elif self.mc_root == MCRoot.MC_ALL:
-            # Links / Areas ids filtering
-            areas_or_links_ids = self._filter_ids(self.mc_all_path / self.output_type)
-
-            # Frequency and query file filtering
-            folders_to_check = [self.mc_all_path / self.output_type / id for id in areas_or_links_ids]
-            filtered_files = _filtered_files_listing(folders_to_check, self.query_file, self.frequency)
-
-            # Loop to return the whole list of files
-            all_output_files = [
-                self.mc_all_path / self.output_type / area_or_link / file
-                for area_or_link, files in filtered_files.items()
-                for file in files
-            ]
-        else:
-            raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
-        return all_output_files
 
     def _ensures_typing(self, headers: list[str] | list[list[str]]) -> list[str]:
         # Method used to fix mypy typing inside `columns_filtering` method
@@ -341,7 +270,12 @@ class AggregatorManager:
         self._check_mc_root_folder_exists()
 
         # filters files to consider
-        all_output_files = sorted(self._gather_all_files_to_consider())
+        all_output_files = sorted(
+            f.path
+            for f in select_files(
+                self.output_path, self.query_file, self.frequency, self.ids_to_consider, self.mc_years
+            )
+        )
 
         if not all_output_files:
             raise OutputAggregationError(self.output_id, "No output files matching the criteria were found.")
