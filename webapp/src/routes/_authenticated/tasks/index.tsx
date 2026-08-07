@@ -50,6 +50,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import InfoIcon from "@mui/icons-material/Info";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import { Box, Chip, CircularProgress, Tooltip, Typography, colors, useTheme } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
@@ -147,9 +148,23 @@ function Tasks() {
     return <FiberManualRecordIcon style={{ color, fontSize: "10px", marginRight: "8px" }} />;
   };
 
+  // A job is still waiting for its scheduled time as long as it hasn't started running yet.
+  const isJobScheduled = (job: Job) => job.status === "pending" && !!job.scheduledAt;
+
   const renderTags = (job: Job) => {
     return (
       <Box sx={{ ml: 2 }}>
+        {isJobScheduled(job) && (
+          <Tooltip
+            title={t("tasks.scheduledAt", { date: convertUTCToLocalTime(job.scheduledAt || "") })}
+          >
+            <Chip
+              icon={<ScheduleIcon sx={{ color: "white !important" }} />}
+              label={t("tasks.scheduled")}
+              sx={{ m: 0.25, color: "white", bgcolor: colors.blueGrey[400] }}
+            />
+          </Tooltip>
+        )}
         {job.launcherParams?.xpansion?.enabled && (
           <Chip label="Xpansion" sx={{ m: 0.25, color: "white", bgcolor: colors.indigo[300] }} />
         )}
@@ -299,7 +314,7 @@ function Tasks() {
         action: (
           <Box display="flex" alignItems="center" justifyContent="flex-end">
             <Box display="flex" alignItems="center" justifyContent="flex-end">
-              {job.status === "running" ? (
+              {job.status === "running" || isJobScheduled(job) ? (
                 <Tooltip title={t("study.killStudy") as string}>
                   <BlockIcon
                     sx={{

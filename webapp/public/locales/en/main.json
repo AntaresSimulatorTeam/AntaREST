@@ -261,6 +261,8 @@
   "tasks.scan": "Scan",
   "tasks.typeFilter": "Filter by type",
   "tasks.runningTasks": "Running tasks",
+  "tasks.scheduled": "Scheduled",
+  "tasks.scheduledAt": "Scheduled for {{date}}",
   "tasks.type.DOWNLOAD": "Download",
   "tasks.type.LAUNCH": "Launch",
   "tasks.type.COPY": "Copy",

@@ -261,6 +261,8 @@
   "tasks.scan": "Scan",
   "tasks.typeFilter": "Filtrer par type",
   "tasks.runningTasks": "Tâches en cours",
+  "tasks.scheduled": "Planifié",
+  "tasks.scheduledAt": "Planifié pour le {{date}}",
   "tasks.type.DOWNLOAD": "Téléchargement",
   "tasks.type.LAUNCH": "Lancement",
   "tasks.type.COPY": "Copie",
