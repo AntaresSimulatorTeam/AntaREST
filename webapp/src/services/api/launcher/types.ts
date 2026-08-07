@@ -85,6 +85,8 @@ export interface LaunchStudyParams {
   version: StudyMetadata["version"];
   solverPresetsId?: string;
   launcherParams?: LauncherParams;
+  // ISO-8601 datetime at which to schedule the run. If omitted, the study runs immediately.
+  runAt?: string;
 }
 
 export interface GetLauncherVersionsParams {

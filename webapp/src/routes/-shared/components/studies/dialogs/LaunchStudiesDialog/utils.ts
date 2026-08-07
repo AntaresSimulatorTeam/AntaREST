@@ -26,10 +26,52 @@ import {
   MAX_SEMVER,
   ZERO_SEMVER,
 } from "@/utils/versionUtils";
+import { isBefore, isFriday, nextFriday, set } from "date-fns";
 import * as R from "ramda";
 import semver from "semver";
 
 export const XPRESS_OPTION = "xpress" as const;
+
+export const SIMULATION_SCHEDULES = ["now", "tonight7pm", "tonight9pm", "weekend"] as const;
+
+export type SimulationSchedule = (typeof SIMULATION_SCHEDULES)[number];
+
+const SCHEDULE_HOURS: Record<Exclude<SimulationSchedule, "now">, number> = {
+  tonight7pm: 19,
+  tonight9pm: 21,
+  weekend: 19,
+};
+
+/**
+ * Returns the ISO-8601 UTC datetime matching the given schedule option,
+ * or `undefined` for "now" (the API runs the study immediately when
+ * `run_at` is omitted).
+ *
+ * "Tonight" options resolve to today at the scheduled hour (local time),
+ * even if it has already passed (see `validateSchedule` in `Fields`).
+ * "Weekend" resolves to Friday 7 PM: today if it's Friday and 7 PM is
+ * still ahead, the next Friday otherwise.
+ *
+ * @param schedule - The selected schedule option.
+ * @returns The UTC datetime to pass as `run_at`, or `undefined`.
+ */
+export function getScheduleRunAt(schedule: SimulationSchedule): string | undefined {
+  if (schedule === "now") {
+    return undefined;
+  }
+
+  const now = new Date();
+
+  const atScheduledHour = (date: Date) =>
+    set(date, { hours: SCHEDULE_HOURS[schedule], minutes: 0, seconds: 0, milliseconds: 0 });
+
+  if (schedule === "weekend") {
+    const friday = isFriday(now) && isBefore(now, atScheduledHour(now)) ? now : nextFriday(now);
+    return atScheduledHour(friday).toISOString();
+  }
+
+  return atScheduledHour(now).toISOString();
+}
 
 export async function getDefaultValues(studyIds: Array<StudyMetadata["id"]>) {
   const { launchers, defaultLauncher: defaultLauncherId } = await getLaunchersConfig();
@@ -97,6 +139,7 @@ export async function getDefaultValues(studyIds: Array<StudyMetadata["id"]>) {
   return {
     name: "",
     autoUnzip: true,
+    schedule: "now" as SimulationSchedule,
     version: defaultVersion,
     configuration: defaultConfiguration,
     otherOptions: "",
