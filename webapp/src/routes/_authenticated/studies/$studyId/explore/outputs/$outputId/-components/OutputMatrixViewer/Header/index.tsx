@@ -22,9 +22,9 @@ import { shallowEqual } from "react-redux";
 import { useToggle } from "react-use";
 import useOutput from "../../../-hooks/useOutput";
 import useOutputContext from "../../../-hooks/useOutputFilters";
+import { createOutputDataPath } from "../../../-utils";
 import {
   buildVariableViewParams,
-  createOutputDataPath,
   DEFAULT_COLUMNS_FILTERS,
   isMonteCarloModeHasStats,
 } from "../utils";

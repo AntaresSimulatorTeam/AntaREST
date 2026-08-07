@@ -37,7 +37,8 @@ import { useTranslation } from "react-i18next";
 import { useUnmount } from "react-use";
 import useOutput from "../../-hooks/useOutput";
 import useOutputContext from "../../-hooks/useOutputFilters";
-import { createOutputDataPath, DATE_GRID_COLUMN, isValidColumnStatistic } from "./utils";
+import { createOutputDataPath } from "../../-utils";
+import { DATE_GRID_COLUMN, isValidColumnStatistic } from "./utils";
 
 function OutputMatrix() {
   const { t } = useTranslation();

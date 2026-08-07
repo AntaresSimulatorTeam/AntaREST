@@ -76,6 +76,11 @@ export function getDataTypeOptions(item: Item, monteCarloMode: MonteCarloMode) {
     }
   }
 
+  // 'Year by year' mode
+  if (monteCarloMode === "mc-ind") {
+    return DATATYPE_OPTIONS.filter((option) => option.value !== "id");
+  }
+
   return DATATYPE_OPTIONS;
 }
 

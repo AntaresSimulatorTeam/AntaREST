@@ -13,6 +13,7 @@
  */
 
 import type { ListViewItem } from "@/components/page/list/ListView";
+import type { Output } from "@/services/api/studies/outputs/types";
 import type { AreaWithId, District, LinkElement } from "@/types/types";
 
 ////////////////////////////////////////////////////////////////
@@ -21,9 +22,27 @@ import type { AreaWithId, District, LinkElement } from "@/types/types";
 
 export type ListType = "areas" | "links" | "synthesis";
 export type DataType = "values" | "details" | "details-res" | "id" | "details-STstorage";
+export type GridType = "areas" | "links" | "digest" | "thermal";
 export type Frequency = "hourly" | "daily" | "weekly" | "monthly" | "annual";
 export type MonteCarloMode = "mc-ind" | "mc-all" | "variable-per-variable";
 export type Item = AreaWithId | District | LinkElement;
+
+interface CreateItemOutputDataPathParams {
+  output: Output;
+  item: Item;
+  dataType: DataType;
+  frequency: Frequency;
+  year?: number;
+}
+
+interface CreateSynthesisOutputDataPathParams {
+  output: Output;
+  gridType: GridType;
+}
+
+type CreateOutputDataPathParams =
+  | CreateItemOutputDataPathParams
+  | CreateSynthesisOutputDataPathParams;
 
 ////////////////////////////////////////////////////////////////
 // Constants
@@ -33,24 +52,53 @@ export const SYNTHESIS_ITEMS = [
   {
     id: "areas",
     label: "Areas synthesis",
+    data: "areas",
   },
   {
     id: "links",
     label: "Links synthesis",
+    data: "links",
   },
   {
     id: "digest",
     label: "Digest",
+    data: "digest",
   },
   {
     id: "thermal",
     label: "Thermal synthesis",
+    data: "thermal",
   },
-] as const satisfies ListViewItem[];
+] as const satisfies Array<ListViewItem<GridType>>;
 
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
+
+export function createOutputDataPath(params: CreateItemOutputDataPathParams): string;
+export function createOutputDataPath(params: CreateSynthesisOutputDataPathParams): string;
+
+export function createOutputDataPath(params: CreateOutputDataPathParams): string {
+  const { output } = params;
+  const mode = output.mode === "Adequacy" ? "adequacy" : "economy";
+  const basePath = `output/${output.id}/${mode}`;
+
+  if ("item" in params) {
+    const { item, dataType, frequency, year } = params;
+
+    const isYearPeriod = year && year > 0;
+    const periodFolder = isYearPeriod
+      ? `mc-ind/${Math.min(year, output.nbYears).toString().padStart(5, "0")}`
+      : "mc-all";
+    const itemType = isLink(item) ? "links" : "areas";
+    const itemFolder = isLink(item) ? `${item.area1}/${item.area2}` : item.id;
+
+    return `${basePath}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${frequency}`;
+  }
+
+  // Synthesis path
+  return `${basePath}/mc-all/grid/${params.gridType}`;
+}
 
 export function isArea(item: Item): item is AreaWithId {
   return "links" in item;
