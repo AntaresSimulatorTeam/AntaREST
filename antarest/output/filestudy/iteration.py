@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Literal, MutableSequence, Sequence
 
-from antarest.core.exceptions import MCRootNotHandled, OutputSubFolderNotFound
+from antarest.core.exceptions import OutputSubFolderNotFound
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file
 from antarest.output.filestudy.model import (
     MCAllAreasQueryFile,
@@ -34,12 +34,12 @@ from antarest.study.model import MatrixFrequency
 logger = logging.getLogger(__name__)
 
 
-def _find_mode_dir(output_dir: Path) -> Path | None:
+def _find_mode_dir(output_dir: Path) -> Path:
     for mode_name in ("economy", "adequacy"):
         mode_dir = output_dir / mode_name
         if mode_dir.exists():
             return mode_dir
-    return None
+    raise OutputSubFolderNotFound(output_dir.name, "economy|adequacy")
 
 
 def _filtered_files_listing(
@@ -105,9 +105,10 @@ def select_mc_ind_files(
     mc_years: Sequence[int] | None,
 ) -> list[OutputFile]:
     mode_dir = _find_mode_dir(output_path)
-    if mode_dir is None:
-        raise OutputSubFolderNotFound(output_path.name, f"economy/{MCRoot.MC_IND.value}")
     mc_ind_path = mode_dir / MCRoot.MC_IND.value
+    if not mc_ind_path.exists():
+        raise OutputSubFolderNotFound(output_path.name, f"{mode_dir.name}/mc-ind")
+
     output_type = "areas" if isinstance(query_file, MCIndAreasQueryFile) else "links"
 
     # Monte Carlo years filtering
@@ -151,9 +152,10 @@ def select_mc_all_files(
     element_ids: Sequence[str],
 ) -> list[OutputFile]:
     mode_dir = _find_mode_dir(output_path)
-    if mode_dir is None:
-        raise OutputSubFolderNotFound(output_path.name, f"economy/{MCRoot.MC_ALL.value}")
     mc_all_path = mode_dir / MCRoot.MC_ALL.value
+    if not mc_all_path.exists():
+        raise OutputSubFolderNotFound(output_path.name, f"{mode_dir.name}/mc-all")
+
     output_type = "areas" if isinstance(query_file, MCAllAreasQueryFile) else "links"
 
     # Links / Areas ids filtering
@@ -197,7 +199,7 @@ def select_files(
         case MCAllAreasQueryFile() | MCAllLinksQueryFile():
             return select_mc_all_files(output_path, file_type, frequency, element_ids)
         case _:
-            raise MCRootNotHandled(f"Unknown output file type: {file_type}")
+            raise ValueError(f"Unknown output file type: {file_type}")
 
 
 def iterate_output_data(

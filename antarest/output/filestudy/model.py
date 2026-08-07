@@ -57,6 +57,19 @@ class MCAllLinksQueryFile(StrEnum):
 
 QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
 
+AggregationType: TypeAlias = Literal["mc-all", "mc-ind"]
+
+
+def aggregation_type(file_type: QueryFileType) -> AggregationType:
+    match file_type:
+        case MCIndAreasQueryFile() | MCIndLinksQueryFile():
+            return "mc-ind"
+        case MCAllAreasQueryFile() | MCAllLinksQueryFile():
+            return "mc-all"
+        case _:
+            raise ValueError(f"Unknown output file type: {file_type}")
+
+
 SingleOutputHeaders: TypeAlias = list[str]
 MultipleOutputHeaders: TypeAlias = list[list[str]]
 
