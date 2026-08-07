@@ -14,11 +14,9 @@
 
 import { Column } from "@/components/Matrix/shared/constants";
 import type { EnhancedGridColumn } from "@/components/Matrix/shared/types";
-import type { Output } from "@/services/api/studies/outputs/types";
 import type { VariableViewParams } from "@/services/api/studies/outputs/variableViews/types";
 import {
   isAreaOrDistrict,
-  isLink,
   type DataType,
   type Frequency,
   type Item,
@@ -36,14 +34,6 @@ export type ColumnStatisticsFilter = Record<ColumnStatistics, boolean>;
 export interface ColumnsFiltersData {
   searches: string[];
   stats: ColumnStatisticsFilter;
-}
-
-interface CreateOutputDataPathParams {
-  output: Output;
-  item: Item;
-  dataType: DataType;
-  frequency: Frequency;
-  year?: number;
 }
 
 interface BuildVariableViewParamsParams {
@@ -87,24 +77,6 @@ export const DEFAULT_COLUMNS_FILTERS = {
 ////////////////////////////////////////////////////////////////
 // Functions
 ////////////////////////////////////////////////////////////////
-
-export function createOutputDataPath({
-  output,
-  item,
-  dataType,
-  frequency,
-  year,
-}: CreateOutputDataPathParams): string {
-  const { id, mode = "economy" } = output;
-  const isYearPeriod = year && year > 0;
-  const periodFolder = isYearPeriod
-    ? `mc-ind/${Math.min(year, output.nbYears).toString().padStart(5, "0")}`
-    : "mc-all";
-  const itemType = isLink(item) ? "links" : "areas";
-  const itemFolder = isLink(item) ? `${item.area1}/${item.area2}` : item.id;
-
-  return `output/${id}/${mode.toLowerCase()}/${periodFolder}/${itemType}/${itemFolder}/${dataType}-${frequency}`;
-}
 
 /**
  * Check if the given data type is a cluster data type.
