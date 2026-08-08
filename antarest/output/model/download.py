@@ -14,7 +14,7 @@ Models for the deprecated "download output" feature.
 """
 
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, TypeAlias
 
 import pandas as pd
 from pydantic import ConfigDict, Field, model_validator
@@ -71,10 +71,17 @@ class TimeSerie(AntaresBaseModel):
     data: list[float | None]
 
 
+VariableName: TypeAlias = str
+
+
 class TimeSeriesData(AntaresBaseModel):
+    """
+    Data for one element of the system (area or link).
+    """
+
     type: StudyDownloadType
     name: str
-    data: dict[str, list[TimeSerie]] = {}
+    data: dict[VariableName, list[TimeSerie]] = {}
 
 
 class MatrixAggregationResultDTO(AntaresBaseModel):

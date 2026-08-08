@@ -78,6 +78,12 @@ def _columns_ordering(df_cols: list[str], column_name: str, is_details: bool, mc
 
 
 class AggregatorManager:
+    """
+
+    Attributes:
+        transform_columns_headers: False when used by the Imagrid `/download` endpoint.
+    """
+
     def __init__(
         self,
         output_path: Path,
