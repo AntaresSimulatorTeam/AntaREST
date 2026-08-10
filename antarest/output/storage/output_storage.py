@@ -28,7 +28,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.output.filestudy.model import QueryFileType
-from antarest.output.model import OutputVariablesList
+from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
@@ -312,4 +312,13 @@ class IOutputStorage(ABC):
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         """
         Retrieves the original file as it exists on the file system
+        """
+
+    @abstractmethod
+    def get_matrix_aggregation_result(
+        self, study_id: str, output_id: str, data_selection: StudyDownloadDTO
+    ) -> MatrixAggregationResultDTO:
+        """
+        Deprecated feature: returns some output data as a possibly large in-memory model.
+        Just another view of the underlying output data, still used by some clients of the API.
         """

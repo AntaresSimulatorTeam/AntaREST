@@ -44,6 +44,7 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.output.filestudy.aggregation import AggregatorManager
+from antarest.output.filestudy.download import build_matrix_aggregation_result
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file_as_pandas_dataframe
 from antarest.output.filestudy.metadata import parse_output_config
 from antarest.output.filestudy.model import (
@@ -51,7 +52,9 @@ from antarest.output.filestudy.model import (
 )
 from antarest.output.filestudy.variables import extract_variables_list
 from antarest.output.model import (
+    MatrixAggregationResultDTO,
     OutputVariablesList,
+    StudyDownloadDTO,
 )
 from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.file.repository import FileOutputRepository
@@ -616,6 +619,15 @@ class AbstractFileOutputStorage(IOutputStorage):
         # But we need one to build the `OutputSimulation` object. So, we build a fake one.
         matrix_storage_context = MatrixStorageContext(matrix_service=InMemorySimpleMatrixService(), is_managed=True)
         return Output(matrix_storage_context, config)
+
+    @override
+    def get_matrix_aggregation_result(
+        self, study_id: str, output_id: str, data_selection: StudyDownloadDTO
+    ) -> MatrixAggregationResultDTO:
+
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        output_dir = _output_path(study_outputs.outputs_path, output_id)
+        return build_matrix_aggregation_result(output_dir, data_selection)
 
 
 def _build_matrix_file_path(output_dir: Path, url: list[str]) -> Path:
