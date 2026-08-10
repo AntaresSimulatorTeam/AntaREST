@@ -57,6 +57,9 @@ ACTUAL_COLUMN_COMPONENT = 1
 
 logger = logging.getLogger(__name__)
 
+# The implementation uses sometimes plain string headers,
+# sometimes a tuple of strings (name, unit, stat)
+# Typing should be improved, but for now we stick with that union.
 ColMetadata: TypeAlias = tuple[str, str, str] | str
 
 
