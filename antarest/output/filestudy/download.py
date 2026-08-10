@@ -77,7 +77,7 @@ def build_matrix_aggregation_result(output_path: Path, data_selection: StudyDown
             )
             numerical_data = df.to_series(var_index).cast(float).to_list()
             ts_data.data.setdefault(str(year), []).append(
-                TimeSerie(name=var.name, unit=var.unit or "", data=numerical_data)
+                TimeSerie(name=var.name, unit=var.unit or " ", data=numerical_data)
             )
 
     time_index = get_start_date(None, output_path, data_selection.level)
