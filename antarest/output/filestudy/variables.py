@@ -93,7 +93,7 @@ def _read_headers_only(
     if "details" in file_type.value:
         cols_mapping: dict[str, set[str]] = {}
         for col in output_headers:
-            cols_mapping.setdefault(col[0], set()).add(col[0])
+            cols_mapping.setdefault(col[0], set()).add(col[1])
         return [ColumnHeader(name=col, sub_columns_names=list(vars)) for col, vars in cols_mapping.items()]
 
     return [ColumnHeader(name=col) for col in normalize_df_column_names(mc_root, output_headers)]
