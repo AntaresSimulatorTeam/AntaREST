@@ -23,7 +23,6 @@ import shutil
 import tempfile
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import cast
 
 import polars as pl
 
@@ -43,8 +42,8 @@ from antarest.output.filestudy.model import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
-    MultipleOutputHeaders,
     QueryFileType,
+    VariableDescription,
     get_output_object_type,
     normalize_df_column_names,
 )
@@ -198,14 +197,13 @@ def _parse_bc_file(file: Path, mc_root: MCRoot, mc_year: int | None = None) -> p
 
     start_col = get_start_column(frequency)
     try:
-        output_data = parse_output_file(file, start_col)
+        output_data = parse_output_file(file, start_col).map_metadata(VariableDescription.to_tuple)
     except Exception as e:
         logger.debug(f"Skipping binding constraint {file.name}: {e}")
         return None
 
     df = output_data.data
-    headers = cast(MultipleOutputHeaders, output_data.headers)
-    col_names = normalize_df_column_names(mc_root, headers)
+    col_names = normalize_df_column_names(mc_root, output_data.headers)
     df.columns = col_names
     df = df.with_row_index(TIME_ID_COL, offset=1)
 

@@ -69,14 +69,16 @@ def build_matrix_aggregation_result(output_path: Path, data_selection: StudyDown
         if data_selection.type == StudyDownloadType.LINK:
             element_name = "^".join(element_name.split(" - "))
 
-        for var_index, var in enumerate(file_data.data.data.headers):
+        for var_index, var in enumerate(file_data.data.headers):
             if data_selection.columns and var.name not in data_selection.columns:
                 continue
             ts_data = element_results.setdefault(
                 element_name, TimeSeriesData(type=data_selection.type, name=element_name, data={})
             )
             numerical_data = df.to_series(var_index).cast(float).to_list()
-            ts_data.data.setdefault(str(year), []).append(TimeSerie(name=var.name, unit=var.unit, data=numerical_data))
+            ts_data.data.setdefault(str(year), []).append(
+                TimeSerie(name=var.name, unit=var.unit or "", data=numerical_data)
+            )
 
     time_index = get_start_date(None, output_path, data_selection.level)
     return MatrixAggregationResultDTO(

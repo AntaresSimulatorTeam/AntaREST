@@ -13,7 +13,7 @@ import logging
 import warnings
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import cast
+from typing import TypeAlias, cast
 
 import pandas as pd
 import polars as pl
@@ -28,12 +28,12 @@ from antarest.output.filestudy.model import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
-    MultipleOutputHeaders,
     OutputDataFrame,
     QueryFileType,
     SingleOutputHeaders,
+    VariableDescription,
     concatenate_dataframe_multi_indexed_columns,
-    normalize_df_column_names,
+    normalize_df_column_name,
 )
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
@@ -57,6 +57,8 @@ CLUSTER_ID_COMPONENT = 0
 ACTUAL_COLUMN_COMPONENT = 1
 
 logger = logging.getLogger(__name__)
+
+ColMetadata: TypeAlias = tuple[str, str, str] | str
 
 
 def _columns_ordering(df_cols: list[str], column_name: str, is_details: bool, mc_root: MCRoot) -> list[str]:
@@ -119,27 +121,24 @@ class AggregatorManager:
         self._output_first_column = get_start_column(self.frequency)
         self.transform_columns_headers = transform_columns_headers
 
-    def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> OutputDataFrame:
+    def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> OutputDataFrame[ColMetadata]:
         output_data = parse_output_file(file_path, self._output_first_column)
 
-        if normalize_column_names:
-            headers = cast(MultipleOutputHeaders, output_data.headers)
-            output_data.headers = normalize_df_column_names(self.mc_root, headers)
+        def convert_metadata(var: VariableDescription) -> ColMetadata:
+            if normalize_column_names:
+                return normalize_df_column_name(self.mc_root, var.to_tuple())
+            return var.to_tuple()
 
-        return output_data
+        return output_data.map_metadata(convert_metadata)
 
-    def _ensures_typing(self, headers: list[str] | list[list[str]]) -> list[str]:
-        # Method used to fix mypy typing inside `columns_filtering` method
-        if not self.transform_columns_headers:
-            multiple_headers = cast(MultipleOutputHeaders, headers)
-            return [col[0] for col in multiple_headers]
-        return cast(SingleOutputHeaders, headers)
+    def _variable_names(self, headers: list[ColMetadata]) -> list[str]:
+        return [col[0] if isinstance(col, tuple) else col for col in headers]
 
-    def columns_filtering(self, data: OutputDataFrame, is_details: bool) -> OutputDataFrame:
+    def columns_filtering(self, data: OutputDataFrame[ColMetadata], is_details: bool) -> OutputDataFrame[ColMetadata]:
         # columns filtering
         lower_case_columns = [c.lower() for c in self.columns_names]
         if lower_case_columns:
-            df_columns = self._ensures_typing(data.headers)
+            df_columns = self._variable_names(data.headers)
             if self.mc_root == MCRoot.MC_ALL:
                 filtered_columns = [c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)]
             else:
@@ -151,12 +150,11 @@ class AggregatorManager:
 
             indices = [k for k, c in enumerate(df_columns) if c in filtered_columns]
             data.data = data.data.select([data.data.columns[i] for i in indices])
-            headers = cast(MultipleOutputHeaders, data.headers)
-            data.headers = [headers[i] for i in indices]
+            data.headers = [data.headers[i] for i in indices]
 
         return data
 
-    def _process_df(self, file_path: Path, is_details: bool) -> OutputDataFrame:
+    def _process_df(self, file_path: Path, is_details: bool) -> OutputDataFrame[ColMetadata]:
         """
         Process the output file to return a DataFrame with the correct columns and values
             - In the case of a details file, the DataFrame, the columns include two parts cluster name + actual column name
@@ -216,7 +214,7 @@ class AggregatorManager:
             output_data = self.columns_filtering(output_data, is_details)
 
             if not self.transform_columns_headers:
-                concatenate_dataframe_multi_indexed_columns(output_data)
+                output_data = output_data.map_metadata(concatenate_dataframe_multi_indexed_columns)
 
             # Starting from here, output_data.headers are just a list of strings.
             # We can use them as columns for our dataframe.

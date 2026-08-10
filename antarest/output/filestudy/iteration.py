@@ -28,6 +28,7 @@ from antarest.output.filestudy.model import (
     MCRoot,
     OutputDataFrame,
     QueryFileType,
+    VariableDescription,
 )
 from antarest.study.model import MatrixFrequency
 
@@ -86,7 +87,7 @@ class OutputFileData:
     """
 
     file: OutputFile
-    data: OutputDataFrame
+    data: OutputDataFrame[VariableDescription]
 
 
 def _filter_files(folder_path: Path, ids: set[str]) -> list[str]:
