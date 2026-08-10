@@ -88,7 +88,7 @@ function ReservesCertifications() {
   });
 
   const rows = useMemo<ReserveRow[]>(() => {
-    const clusterNamesById = new Map(thermalClusters.map(({ id, name }) => [id, name]));
+    const clustersById = new Map(thermalClusters.map((cluster) => [cluster.id, cluster]));
 
     return reserves.map((reserve) => ({
       kind: "reserve",
@@ -101,7 +101,8 @@ function ReservesCertifications() {
           // Prefixed with the reserve ID because a cluster can be certified for
           // several reserves and row IDs must be unique across the table
           id: `${reserve.id}/${clusterId}`,
-          name: clusterNamesById.get(clusterId) ?? clusterId,
+          name: clustersById.get(clusterId)?.name ?? clusterId,
+          enabled: clustersById.get(clusterId)?.enabled ?? false,
           productionType: "thermals",
           reserveId: reserve.id,
           clusterId,
@@ -232,6 +233,7 @@ function ReservesCertifications() {
           key={editingCluster.id}
           open={isUpdateDrawerOpen}
           clusterName={editingCluster.name}
+          clusterEnabled={editingCluster.enabled}
           certification={editingCluster.certification}
           onClose={() => setIsUpdateDrawerOpen(false)}
           onSubmit={handleCertificationSubmit}

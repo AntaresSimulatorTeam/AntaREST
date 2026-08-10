@@ -19,11 +19,13 @@ import type { SubmitHandlerPlus } from "@/components/Form/types";
 import type { ReserveCertification } from "@/services/api/studies/areas/reserves/types";
 import { validateNumber } from "@/utils/validation/number";
 import EditIcon from "@mui/icons-material/Edit";
+import { Chip, Stack, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
   clusterName: string;
+  clusterEnabled: boolean;
   certification: ReserveCertification;
   onClose: VoidFunction;
   onSubmit: (values: ReserveCertification) => Promise<ReserveCertification>;
@@ -31,7 +33,14 @@ interface Props {
 
 // Updates the certification parameters of a cluster for a reserve. Adding or
 // removing the certification itself is handled by `UpdateReserveClustersDrawer`.
-function UpdateCertificationDrawer({ open, clusterName, certification, onClose, onSubmit }: Props) {
+function UpdateCertificationDrawer({
+  open,
+  clusterName,
+  clusterEnabled,
+  certification,
+  onClose,
+  onSubmit,
+}: Props) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -58,6 +67,16 @@ function UpdateCertificationDrawer({ open, clusterName, certification, onClose, 
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>
+          <Stack direction="row" alignItems="center" gap={1.5}>
+            <Typography variant="body2" color="text.secondary">
+              {t("study.modeling.reserves.certifications.field.enabled")}
+            </Typography>
+            <Chip
+              label={clusterEnabled ? t("button.yes") : t("button.no")}
+              color={clusterEnabled ? "success" : "error"}
+              sx={{ minWidth: 40 }}
+            />
+          </Stack>
           <NumberFE
             label={t("study.modeling.reserves.certifications.field.participationCost")}
             name="participationCost"
