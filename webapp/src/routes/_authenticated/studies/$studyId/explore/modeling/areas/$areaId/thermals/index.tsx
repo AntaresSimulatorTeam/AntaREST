@@ -16,6 +16,7 @@ import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { RowData } from "@/components/GroupedDataTable/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { thermalKeys } from "@/queries/thermals/keys";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
   addClusterCapacity,
@@ -24,6 +25,7 @@ import {
   toCapacityString,
 } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
 import { Box } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useMemo, useState } from "react";
@@ -50,6 +52,7 @@ function Thermals() {
   const study = useStudy();
   const { areaId } = Route.useParams();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const {
     data: clustersWithCapacity = [],
@@ -124,20 +127,28 @@ function Thermals() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
+  // The Certifications table (under Reserves) keeps its own cache of thermal
+  // clusters, so it must be invalidated whenever a cluster is added or removed here.
+  const invalidateCertificationsClusters = () => {
+    return queryClient.invalidateQueries({ queryKey: thermalKeys.list(study.id, areaId) });
+  };
+
   const handleCreate = async (values: RowData) => {
     const cluster = await createThermalCluster(study.id, areaId, values);
+    await invalidateCertificationsClusters();
     return addClusterCapacity(cluster);
   };
 
   const handleDuplicate = async (row: ThermalClusterWithCapacity, newName: string) => {
     const cluster = await duplicateThermalCluster(study.id, areaId, row.id, newName);
-
+    await invalidateCertificationsClusters();
     return { ...row, ...cluster };
   };
 
-  const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
+  const handleDelete = async (rows: ThermalClusterWithCapacity[]) => {
     const ids = rows.map((row) => row.id);
-    return deleteThermalClusters(study.id, areaId, ids);
+    await deleteThermalClusters(study.id, areaId, ids);
+    await invalidateCertificationsClusters();
   };
 
   ////////////////////////////////////////////////////////////////
