@@ -9,8 +9,26 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from antarest.core.exceptions import ThermalReserveCertificationNotFound
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
+from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertificationMapping
+from antarest.study.dao.common import AreaId, ThermalId
+
+
+def check_thermal_symmetries_are_certified(
+    area_id: AreaId,
+    symmetries: dict[ThermalId, ReserveSymmetries],
+    certifications: ThermalReserveCertificationMapping,
+) -> None:
+    """
+    A thermal cluster can only be declared symmetric on reserves it is certified for.
+    """
+    for thermal_id, thermal_symmetries in symmetries.items():
+        certified: set[str] = {reserve_id for reserve_id, thermals in certifications.items() if thermal_id in thermals}
+        required: set[str] = {reserve_id for symmetry in thermal_symmetries for reserve_id in symmetry}
+        if missing := required - certified:
+            raise ThermalReserveCertificationNotFound(area_id, thermal_id, missing)
 
 
 def remove_reserve_symmetries_by_cascade(

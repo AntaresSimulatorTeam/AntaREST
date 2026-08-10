@@ -17,6 +17,7 @@ Database implementation of ReservesGlobalParametersDao using SQLAlchemy Core.
 from typing import Any
 
 from sqlalchemy import Row, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
@@ -86,5 +87,10 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao):
             }
             for area_id, params in mapping.items()
         ]
-        upsert_multiple(session, _TABLE, values)
+        try:
+            upsert_multiple(session, _TABLE, values)
+        except IntegrityError:
+            for area_id in mapping:
+                validate_area_exists(session, study_id, area_id)
+            raise
         session.commit()
