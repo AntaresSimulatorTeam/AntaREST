@@ -63,6 +63,12 @@ logger = logging.getLogger(__name__)
 ColMetadata: TypeAlias = tuple[str, str, str] | str
 
 
+def _check_is_str(value: ColMetadata) -> str:
+    if not isinstance(value, str):
+        raise ValueError(f"Expected a string, got {type(value)}")
+    return value
+
+
 def _columns_ordering(df_cols: list[str], column_name: str, is_details: bool, mc_root: MCRoot) -> list[str]:
     # original columns
     org_cols = df_cols.copy()
@@ -221,6 +227,7 @@ class AggregatorManager:
             # Starting from here, output_data.headers are just a list of strings.
             # We can use them as columns for our dataframe.
             df = output_data.data
+            df.columns = output_data.map_metadata(_check_is_str).headers
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(df.columns, column_name, is_details, self.mc_root)
