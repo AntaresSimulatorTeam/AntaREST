@@ -181,7 +181,7 @@ def test_removing_a_reserve_cascades_on_symmetries_and_certifications(dao_10_0: 
         reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN))
     dao.save_reserve_definitions({"fr": reserves})
 
-    # Save 1 symmetry and 1 certitification.
+    # Save 1 symmetry and 1 certification.
     certification = ThermalReserveCertification()
     dao.save_thermal_reserve_certifications(
         {"fr": {"r1": {"th1": certification, "th2": certification}, "r2": {"th1": certification}}}

@@ -13,11 +13,15 @@ import pytest
 
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
+from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_0
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
+from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_certifications import (
+    ReplaceThermalReserveCertifications,
+)
 from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_symmetries import (
     ReplaceThermalReserveSymmetries,
 )
@@ -50,6 +54,18 @@ def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
         )
         output = cmd.apply(dao)
         assert output.status
+    # A cluster can only be symmetric on reserves it is certified for, so certify every pair.
+    cmd = ReplaceThermalReserveCertifications(
+        area_id="fr",
+        certifications={
+            reserve_name: {"th1": ThermalReserveCertification(), "th2": ThermalReserveCertification()}
+            for reserve_name in ["r1", "r2", "r3", "r4"]
+        },
+        command_context=command_context,
+        study_version=version,
+    )
+    output = cmd.apply(dao)
+    assert output.status
 
 
 def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> None:
