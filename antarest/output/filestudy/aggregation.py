@@ -13,7 +13,7 @@ import logging
 import warnings
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import TypeAlias, cast
+from typing import TypeAlias
 
 import pandas as pd
 import polars as pl
@@ -30,7 +30,6 @@ from antarest.output.filestudy.model import (
     MCRoot,
     OutputDataFrame,
     QueryFileType,
-    SingleOutputHeaders,
     VariableDescription,
     concatenate_dataframe_multi_indexed_columns,
     normalize_df_column_name,
@@ -219,7 +218,6 @@ class AggregatorManager:
             # Starting from here, output_data.headers are just a list of strings.
             # We can use them as columns for our dataframe.
             df = output_data.data
-            df.columns = cast(SingleOutputHeaders, output_data.headers)
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(df.columns, column_name, is_details, self.mc_root)

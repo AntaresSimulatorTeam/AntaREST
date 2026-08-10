@@ -70,10 +70,6 @@ def aggregation_type(file_type: QueryFileType) -> AggregationType:
             raise ValueError(f"Unknown output file type: {file_type}")
 
 
-SingleOutputHeaders: TypeAlias = list[str]
-MultipleOutputHeaders: TypeAlias = list[list[str]]
-
-
 @dataclass(frozen=True, slots=True)
 class VariableDescription:
     name: str
