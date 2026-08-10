@@ -81,7 +81,8 @@ class VariableDescription:
     statistic_type: str | None
 
     def to_tuple(self) -> tuple[str, str, str]:
-        return self.name, self.unit or "", self.statistic_type or ""
+        # Follows convention of output files ... maybe better keep it instead of None after all ?
+        return self.name, self.unit or " ", self.statistic_type or ""
 
 
 def get_output_object_type(

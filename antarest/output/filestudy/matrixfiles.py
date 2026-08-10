@@ -95,7 +95,7 @@ def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame[Var
 
 
 def parse_output_file_as_pandas_dataframe(file_path: Path, first_column: int) -> pd.DataFrame:
-    output = parse_output_file(file_path, first_column)
+    output = parse_output_file(file_path, first_column).map_metadata(VariableDescription.to_tuple)
     df = output.data.to_pandas().astype(np.float64)
-    df.columns = pd.MultiIndex.from_tuples(output.headers)  # type: ignore
+    df.columns = pd.MultiIndex.from_tuples(output.headers)
     return df
