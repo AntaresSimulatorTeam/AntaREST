@@ -46,7 +46,7 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
         Other layers contain the areas that have UI entries for that layer.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         # Get all layer names from LAYER_TABLE
         stmt_layers = select(LAYER_TABLE).where(LAYER_TABLE.c.study_id == study_id)
@@ -84,7 +84,7 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
         Does not persist area associations, use save_layer_areas() for that.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name}
         upsert_one(session, LAYER_TABLE, values)
@@ -102,7 +102,7 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
             raise LayerNotAllowedToBeDeleted()
 
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         result = session.execute(
             delete(LAYER_TABLE).where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer_id))
@@ -126,7 +126,7 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
             return True
 
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         # Check if layer exists in LAYER_TABLE
         stmt = select(LAYER_TABLE.c.layer_id).where(

@@ -69,10 +69,6 @@ class DatabaseDaoBase(ABC):
     def _db_session(self) -> Session:
         return self._context.session
 
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._context.session
-
     @abstractmethod
     def get_impl(self) -> "DatabaseStudyDao":
         pass

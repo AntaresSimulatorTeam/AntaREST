@@ -111,7 +111,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
             ValueError: If the area exists but has no hydro management configuration.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         stmt = select(HYDRO_MANAGEMENT_TABLE).where(
             (HYDRO_MANAGEMENT_TABLE.c.study_id == study_id) & (HYDRO_MANAGEMENT_TABLE.c.area_id == area_id)
@@ -146,7 +146,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
             AreaNotFound: If the area does not exist.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         values = []
         for area_id, management in hydro_management.items():
@@ -176,7 +176,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
             ValueError: If the area exists but has no inflow structure configuration.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         stmt = select(HYDRO_INFLOW_STRUCTURE_TABLE).where(
             (HYDRO_INFLOW_STRUCTURE_TABLE.c.study_id == study_id) & (HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id == area_id)
@@ -193,7 +193,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
     def save_inflow_structure(self, inflow_structure: dict[AreaId, InflowStructure]) -> None:
         """Save inflow structure configuration for several areas"""
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         values = []
         for area_id, inflow in inflow_structure.items():
@@ -222,7 +222,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
             Dictionary mapping area_id to HydroProperties (management_options + inflow_structure).
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         stmt = (
             select(
@@ -268,7 +268,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
             ValueError: If the area exists but has no allocation data.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         stmt = select(HYDRO_ALLOCATION_TABLE).where(
             (HYDRO_ALLOCATION_TABLE.c.study_id == study_id) & (HYDRO_ALLOCATION_TABLE.c.source_area_id == area_id)
@@ -296,7 +296,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
             ValueError: If no hydro allocation data is found for the study.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         stmt = select(HYDRO_ALLOCATION_TABLE).where(HYDRO_ALLOCATION_TABLE.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
@@ -321,7 +321,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
         This will replace any existing allocation for the given areas.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         # Delete existing allocations for the source areas
         stmt_delete = delete(HYDRO_ALLOCATION_TABLE).where(
@@ -387,7 +387,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
             Returns identity matrix (self=1.0, rest=0.0) if no correlations stored.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         # Get all area IDs from the study
         area_ids = self.get_impl().get_all_area_ids()
@@ -417,7 +417,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
         This will replace any existing correlation for the given areas.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         # Validate self-correlation if provided
         for area_id, correlation in correlation_dict.items():
@@ -481,7 +481,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
 
     def _get_hydro_matrix(self, area_id: str, table: Table) -> SeriesId:
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
         stmt = select(table).where((table.c.study_id == study_id) & (table.c.area_id == area_id))
         row = session.execute(stmt).fetchone()
         if not row:
@@ -667,7 +667,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
             return
 
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         if hydro_pmax == HydroPmax.HOURLY:
             area_ids = self.get_impl().get_all_area_ids()

@@ -83,7 +83,7 @@ class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
         Retrieve all physical areas of a study.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         stmt = select(AREA_TABLE.c.area_id).where(AREA_TABLE.c.study_id == study_id)
         result = session.execute(stmt)
@@ -99,7 +99,7 @@ class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
             The list of areas with their basic information.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         stmt = select(AREA_TABLE.c.area_id, AREA_TABLE.c.area_name).where(AREA_TABLE.c.study_id == study_id)
         result = session.execute(stmt)
@@ -122,7 +122,7 @@ class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
             A dictionary mapping area IDs to their UI data.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         # Single query to get all areas and their UI info
         stmt = select(AREA_UI_TABLE).where(AREA_UI_TABLE.c.study_id == study_id)
@@ -181,7 +181,7 @@ class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
             AreaNotFound: If the area does not exist.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         # Fetch both specified layer and default layer in one query
         layers_to_fetch = [layer, DEFAULT_LAYER_ID] if layer != DEFAULT_LAYER_ID else [DEFAULT_LAYER_ID]
@@ -215,7 +215,7 @@ class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
 
         stmt = insert(AREA_TABLE).values(values)
         try:
-            session = self.get_session()
+            session = self._db_session
             session.execute(stmt)
             session.commit()
         except IntegrityError as e:
@@ -237,7 +237,7 @@ class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
             AreaNotFound: If the area does not exist.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         validate_area_exists(session, study_id, area_id)
 
@@ -270,7 +270,7 @@ class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
     @override
     def save_area_ui(self, data: AreaUiMapping) -> None:
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         # Set values
         values = []
@@ -335,7 +335,7 @@ class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
             raise LayerNotFound(layer_id)
 
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         # Get all areas and which ones already have this layer
         stmt = (
@@ -423,8 +423,8 @@ class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
             color_g=g,
             color_b=b,
         )
-        self.get_session().execute(stmt_insert)
-        self.get_session().commit()
+        self._db_session.execute(stmt_insert)
+        self._db_session.commit()
 
     def _get_matrix(self, area_id: str, table: Table) -> SeriesId:
         row = self._get_matrix_row(area_id, table)
@@ -434,7 +434,7 @@ class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
 
     def _get_matrix_row(self, area_id: str, table: Table) -> Row[Any] | None:
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
         stmt = select(table).where((table.c.study_id == study_id) & (table.c.area_id == area_id))
 
         return session.execute(stmt).fetchone()

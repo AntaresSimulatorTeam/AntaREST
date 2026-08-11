@@ -75,7 +75,7 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
 
     @override
     def save_links(self, links: Sequence[Link]) -> None:
-        session = self.get_session()
+        session = self._db_session
         values = []
         for link in links:
             values.append({"study_id": self._study_id, **link.model_dump()})
@@ -90,7 +90,7 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
     @override
     def delete_link(self, link: Link) -> None:
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
         stmt = delete(LINK_TABLE).where(
             (LINK_TABLE.c.study_id == study_id)
             & (LINK_TABLE.c.area1 == link.area1)
@@ -106,7 +106,7 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
     @override
     def get_links(self) -> Sequence[Link]:
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
         stmt = select(LINK_TABLE).where(LINK_TABLE.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
         return [_convert_db_rows_to_model(row) for row in rows]
@@ -126,7 +126,7 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
     def _get_row(self, area1_id: str, area2_id: str, table: Table) -> Row[Any] | None:
         area1, area2 = sorted((area1_id, area2_id))
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
         stmt = select(table).where((table.c.study_id == study_id) & (table.c.area1 == area1) & (table.c.area2 == area2))
         return session.execute(stmt).fetchone()
 
@@ -137,7 +137,7 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
         return str(row.matrix_id)
 
     def _save_link_matrices(self, series: LinkSeriesMapping, table: Table) -> None:
-        session = self.get_session()
+        session = self._db_session
         study_id = self._study_id
 
         values = []

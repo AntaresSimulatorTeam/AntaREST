@@ -56,7 +56,7 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         If the district already exists, it will be overwritten.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         # Validate that all areas exist
         invalid_areas = self.get_impl().get_invalid_area_ids(district.add_areas + district.subtract_areas)
@@ -82,7 +82,7 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         Remove a district from a study.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         result = session.execute(
             delete(DISTRICT_TABLE).where(
@@ -101,7 +101,7 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         Returns the list of districts in this study.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_id == study_id)
         district_rows = session.execute(stmt).fetchall()
@@ -114,7 +114,7 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         Get the district with the given id.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         stmt = select(DISTRICT_TABLE).where(
             (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)
@@ -131,7 +131,7 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         Returns whether a district with the given id exists in the study.
         """
         study_id = self._study_id
-        session = self.get_session()
+        session = self._db_session
 
         stmt = select(DISTRICT_TABLE.c.district_id).where(
             (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)
