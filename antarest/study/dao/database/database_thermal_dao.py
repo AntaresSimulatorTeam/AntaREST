@@ -59,7 +59,7 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
 
     def _convert_db_row_to_thermal(self, row: Any) -> ThermalCluster:
         data = get_row_representation_as_dict(row)
-        del data["study_id"]
+        del data["study_data_id"]
         del data["area_id"]
         data["id"] = data.pop("thermal_id")
         cluster = ThermalCluster(**data)
@@ -68,15 +68,15 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
         return cluster
 
     def _convert_thermal_cluster_to_row(self, area_id: str, cluster: ThermalCluster) -> dict[str, Any]:
-        values = dict(study_id=self._study_id, area_id=area_id, **cluster.model_dump())
+        values = dict(study_data_id=self._study_data_id, area_id=area_id, **cluster.model_dump())
         values["thermal_id"] = values.pop("id").lower()
         return values
 
     def _get_thermal_matrix_row(self, area_id: str, thermal_id: str, table: Table) -> Row[Any] | None:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
         stmt = select(table).where(
-            (table.c.study_id == study_id) & (table.c.area_id == area_id) & (table.c.thermal_id == thermal_id)
+            (table.c.study_data_id == study_data_id) & (table.c.area_id == area_id) & (table.c.thermal_id == thermal_id)
         )
         return session.execute(stmt).fetchone()
 
@@ -87,14 +87,19 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
         return str(row.matrix_id)
 
     def _save_thermal_matrix(self, series: ThermalSeriesMapping, table: Table) -> None:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         try:
             values = []
             for area_id, value in series.items():
                 for thermal_id, matrix_id in value.items():
-                    data = {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "matrix_id": matrix_id}
+                    data = {
+                        "study_data_id": study_data_id,
+                        "area_id": area_id,
+                        "thermal_id": thermal_id,
+                        "matrix_id": matrix_id,
+                    }
                     values.append(data)
             upsert_multiple(session, table, values)
         except IntegrityError as e:
@@ -173,12 +178,12 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
 
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         result = session.execute(
             delete(THERMAL_CLUSTER_TABLE).where(
-                (THERMAL_CLUSTER_TABLE.c.study_id == study_id)
+                (THERMAL_CLUSTER_TABLE.c.study_data_id == study_data_id)
                 & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
                 & (THERMAL_CLUSTER_TABLE.c.thermal_id == thermal_id)
             )
@@ -192,10 +197,10 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
 
     @override
     def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
-        stmt = select(THERMAL_CLUSTER_TABLE).where(THERMAL_CLUSTER_TABLE.c.study_id == study_id)
+        stmt = select(THERMAL_CLUSTER_TABLE).where(THERMAL_CLUSTER_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
 
         thermals_by_areas: dict[str, dict[str, ThermalCluster]] = {}
@@ -206,24 +211,24 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
 
     @override
     def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         stmt = select(THERMAL_CLUSTER_TABLE).where(
-            (THERMAL_CLUSTER_TABLE.c.study_id == study_id) & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
+            (THERMAL_CLUSTER_TABLE.c.study_data_id == study_data_id) & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
         )
         rows = session.execute(stmt).fetchall()
 
         if not rows:
             # Ensures the area exists
-            validate_area_exists(session, study_id, area_id)
+            validate_area_exists(session, study_data_id, area_id)
 
         return [self._convert_db_row_to_thermal(row) for row in rows]
 
     def _select_thermal_cluster(self, area_id: str, thermal_id: str) -> Select[Any]:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         return select(THERMAL_CLUSTER_TABLE).where(
-            (THERMAL_CLUSTER_TABLE.c.study_id == study_id)
+            (THERMAL_CLUSTER_TABLE.c.study_data_id == study_data_id)
             & (THERMAL_CLUSTER_TABLE.c.area_id == area_id)
             & (THERMAL_CLUSTER_TABLE.c.thermal_id == thermal_id)
         )
@@ -270,9 +275,9 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
         return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     def _get_all_thermal_matrix(self, table: Table) -> ThermalSeriesMapping:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
-        stmt = select(table).where(table.c.study_id == study_id)
+        stmt = select(table).where(table.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
         result: ThermalSeriesMapping = {}
         for row in rows:

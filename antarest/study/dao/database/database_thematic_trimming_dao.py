@@ -31,26 +31,26 @@ class DatabaseThematicTrimmingDao(ThematicTrimmingDao, DatabaseDaoBase):
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
 
-        stmt = select(THEMATIC_TRIMMING_TABLE).where(THEMATIC_TRIMMING_TABLE.c.study_id == study_id)
+        stmt = select(THEMATIC_TRIMMING_TABLE).where(THEMATIC_TRIMMING_TABLE.c.study_data_id == study_data_id)
 
         row = self._db_session.execute(stmt).fetchone()
         if not row:
-            raise StudyNotFoundError(study_id)
+            raise StudyNotFoundError(self._study_id)
         return ThematicTrimming.model_validate(row.thematic_trimming)
 
     @override
     def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
         check_thematic_trimming_complete(trimming, self.get_impl().get_version())
         session = self._db_session
-        study_id = self._study_id
-        values = {"study_id": study_id, "thematic_trimming": trimming.model_dump(exclude_none=True)}
+        study_data_id = self._study_data_id
+        values = {"study_data_id": study_data_id, "thematic_trimming": trimming.model_dump(exclude_none=True)}
 
         try:
             upsert_one(session, THEMATIC_TRIMMING_TABLE, values)
         except IntegrityError as e:
             # Happens if the study does not exist -> ForeignKey constraint fails
-            raise StudyNotFoundError(study_id) from e
+            raise StudyNotFoundError(self._study_id) from e
 
         session.commit()

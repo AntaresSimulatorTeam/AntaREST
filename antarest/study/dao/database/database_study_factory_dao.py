@@ -118,13 +118,18 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
             return db.session
         return self._session
 
-    def _initialize_study_data_table(self, study_id: str) -> None:
+    def _initialize_study_data_table(self, study_id: str) -> int:
         """
         Initialize the study data table as every DB DAO table is linked to it via foreign keys.
+
+        Returns:
+            The generated `study_data_id`, the key all study data tables are keyed by.
         """
         session = self.session
-        session.execute(STUDY_DATA_TABLE.insert().values({"study_id": study_id}))
+        stmt = STUDY_DATA_TABLE.insert().values({"study_id": study_id}).returning(STUDY_DATA_TABLE.c.study_data_id)
+        study_data_id: int = session.execute(stmt).scalar_one()
         session.commit()
+        return study_data_id
 
     @override
     def create_study_dao(self, metadata: StudyMetadataCreation) -> DatabaseStudyDao:
@@ -134,7 +139,7 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
                 f"{version} is not a supported version, supported versions are: {STUDY_REFERENCE_TEMPLATES}"
             )
         dao = self.get_study_dao(metadata.id, metadata.managed)
-        self._initialize_study_data_table(dao.get_study_id())
+        dao.set_study_data_id(self._initialize_study_data_table(dao.get_study_id()))
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
         dao.save_district(
             District(

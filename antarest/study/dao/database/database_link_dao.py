@@ -41,7 +41,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
 
 def _convert_db_rows_to_model(db_row: Any) -> Link:
     data = get_row_representation_as_dict(db_row)
-    del data["study_id"]
+    del data["study_data_id"]
     return Link(**data)
 
 
@@ -78,7 +78,7 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
         session = self._db_session
         values = []
         for link in links:
-            values.append({"study_id": self._study_id, **link.model_dump()})
+            values.append({"study_data_id": self._study_data_id, **link.model_dump()})
 
         try:
             upsert_multiple(session, LINK_TABLE, values)
@@ -89,10 +89,10 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
 
     @override
     def delete_link(self, link: Link) -> None:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
         stmt = delete(LINK_TABLE).where(
-            (LINK_TABLE.c.study_id == study_id)
+            (LINK_TABLE.c.study_data_id == study_data_id)
             & (LINK_TABLE.c.area1 == link.area1)
             & (LINK_TABLE.c.area2 == link.area2)
         )
@@ -105,9 +105,9 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
 
     @override
     def get_links(self) -> Sequence[Link]:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
-        stmt = select(LINK_TABLE).where(LINK_TABLE.c.study_id == study_id)
+        stmt = select(LINK_TABLE).where(LINK_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
         return [_convert_db_rows_to_model(row) for row in rows]
 
@@ -125,9 +125,11 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
 
     def _get_row(self, area1_id: str, area2_id: str, table: Table) -> Row[Any] | None:
         area1, area2 = sorted((area1_id, area2_id))
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
-        stmt = select(table).where((table.c.study_id == study_id) & (table.c.area1 == area1) & (table.c.area2 == area2))
+        stmt = select(table).where(
+            (table.c.study_data_id == study_data_id) & (table.c.area1 == area1) & (table.c.area2 == area2)
+        )
         return session.execute(stmt).fetchone()
 
     def _get_link_matrix(self, area_from_id: str, area_to_id: str, table: Table) -> SeriesId:
@@ -138,12 +140,12 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
 
     def _save_link_matrices(self, series: LinkSeriesMapping, table: Table) -> None:
         session = self._db_session
-        study_id = self._study_id
+        study_data_id = self._study_data_id
 
         values = []
         for key, series_id in series.items():
             area1, area2 = sorted(key)
-            values.append({"study_id": study_id, "area1": area1, "area2": area2, "matrix_id": series_id})
+            values.append({"study_data_id": study_data_id, "area1": area1, "area2": area2, "matrix_id": series_id})
         try:
             upsert_multiple(session, table, values)
         except IntegrityError as e:
@@ -181,9 +183,9 @@ class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
         return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_empty)
 
     def _get_link_matrices(self, table: Table) -> LinkSeriesMapping:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
-        stmt = select(table).where(table.c.study_id == study_id)
+        stmt = select(table).where(table.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
         result: LinkSeriesMapping = {}
         for row in rows:

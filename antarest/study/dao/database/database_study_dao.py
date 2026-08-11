@@ -126,6 +126,13 @@ class DatabaseStudyDao(
     def generator_matrix_constants(self) -> GeneratorMatrixConstants:
         return self._generator_matrix_constants
 
+    def set_study_data_id(self, study_data_id: int) -> None:
+        """
+        Prime this DAO with the id of the `study_data` row that was just created for its study,
+        sparing the lookup the first query would otherwise trigger.
+        """
+        self._context.set_study_data_id(study_data_id)
+
     # Implementation of abstract methods required by StudyDao
     @override
     def get_study_id(self) -> str:
@@ -201,13 +208,13 @@ class DatabaseStudyDao(
 
     @override
     def get_comments(self) -> str:
-        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_id == self._study_id)
+        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_data_id == self._study_data_id)
         comments = self._db_session.execute(stmt).scalar_one_or_none()
         return comments if comments is not None else ""
 
     @override
     def save_comments(self, comments: str) -> None:
-        upsert_one(self._db_session, COMMENTS_TABLE, {"study_id": self._study_id, "comments": comments})
+        upsert_one(self._db_session, COMMENTS_TABLE, {"study_data_id": self._study_data_id, "comments": comments})
         self._db_session.commit()
 
     @override

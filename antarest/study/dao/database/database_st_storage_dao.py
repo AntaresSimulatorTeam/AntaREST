@@ -75,13 +75,13 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
     """
 
     def _convert_st_storage_to_row(self, area_id: str, st_storage: STStorage) -> dict[str, Any]:
-        values = dict(study_id=self._study_id, area_id=area_id, **st_storage.model_dump())
+        values = dict(study_data_id=self._study_data_id, area_id=area_id, **st_storage.model_dump())
         values["st_storage_id"] = values.pop("id")
         return values
 
     def _convert_db_row_to_st_storage(self, row: Row[Any]) -> STStorage:
         data = get_row_representation_as_dict(row)
-        del data["study_id"]
+        del data["study_data_id"]
         del data["area_id"]
         data["id"] = data.pop("st_storage_id")
         storage = STStorage(**data)
@@ -92,13 +92,15 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
     def _convert_constraint_to_row(
         self, area_id: str, storage_id: str, constraint: STStorageAdditionalConstraint
     ) -> dict[str, Any]:
-        values = dict(study_id=self._study_id, area_id=area_id, st_storage_id=storage_id, **constraint.model_dump())
+        values = dict(
+            study_data_id=self._study_data_id, area_id=area_id, st_storage_id=storage_id, **constraint.model_dump()
+        )
         values["constraint_id"] = values.pop("id")
         return values
 
     def _convert_db_row_to_constraint(self, row: Row[Any]) -> STStorageAdditionalConstraint:
         data = get_row_representation_as_dict(row)
-        del data["study_id"]
+        del data["study_data_id"]
         del data["area_id"]
         del data["st_storage_id"]
         data["id"] = data.pop("constraint_id")
@@ -175,9 +177,9 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
     @override
     def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:
-        session, study_id = self._db_session, self._study_id
+        session, study_data_id = self._db_session, self._study_data_id
 
-        stmt = select(ST_STORAGE_TABLE).where(ST_STORAGE_TABLE.c.study_id == study_id)
+        stmt = select(ST_STORAGE_TABLE).where(ST_STORAGE_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
 
         st_storages_by_areas: dict[str, dict[str, STStorage]] = {}
@@ -188,25 +190,25 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
     @override
     def get_all_st_storages_for_area(self, area_id: str) -> Sequence[STStorage]:
-        session, study_id = self._db_session, self._study_id
+        session, study_data_id = self._db_session, self._study_data_id
 
         stmt = select(ST_STORAGE_TABLE).where(
-            (ST_STORAGE_TABLE.c.study_id == study_id) & (ST_STORAGE_TABLE.c.area_id == area_id)
+            (ST_STORAGE_TABLE.c.study_data_id == study_data_id) & (ST_STORAGE_TABLE.c.area_id == area_id)
         )
 
         rows = session.execute(stmt).fetchall()
 
         if not rows:
-            validate_area_exists(session, study_id, area_id)
+            validate_area_exists(session, study_data_id, area_id)
 
         return [self._convert_db_row_to_st_storage(row) for row in rows]
 
     @override
     def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
-        session, study_id = self._db_session, self._study_id
+        session, study_data_id = self._db_session, self._study_data_id
 
         stmt = select(ST_STORAGE_TABLE).where(
-            (ST_STORAGE_TABLE.c.study_id == study_id)
+            (ST_STORAGE_TABLE.c.study_data_id == study_data_id)
             & (ST_STORAGE_TABLE.c.area_id == area_id)
             & (ST_STORAGE_TABLE.c.st_storage_id == storage_id)
         )
@@ -220,10 +222,10 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
     @override
     def st_storage_exists(self, area_id: str, storage_id: str) -> bool:
-        session, study_id = self._db_session, self._study_id
+        session, study_data_id = self._db_session, self._study_data_id
 
         stmt = select(ST_STORAGE_TABLE).where(
-            (ST_STORAGE_TABLE.c.study_id == study_id)
+            (ST_STORAGE_TABLE.c.study_data_id == study_data_id)
             & (ST_STORAGE_TABLE.c.area_id == area_id)
             & (ST_STORAGE_TABLE.c.st_storage_id == storage_id)
         )
@@ -236,7 +238,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
         result = session.execute(
             ST_STORAGE_TABLE.delete().where(
-                (ST_STORAGE_TABLE.c.study_id == self._study_id)
+                (ST_STORAGE_TABLE.c.study_data_id == self._study_data_id)
                 & (ST_STORAGE_TABLE.c.area_id == area_id)
                 & (ST_STORAGE_TABLE.c.st_storage_id == storage.id)
             )
@@ -273,10 +275,10 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
     @override
     def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
-        session, study_id = self._db_session, self._study_id
+        session, study_data_id = self._db_session, self._study_data_id
 
         stmt = select(ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE).where(
-            ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE.c.study_id == study_id
+            ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE.c.study_data_id == study_data_id
         )
         rows = session.execute(stmt).fetchall()
 
@@ -290,11 +292,13 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
     def get_st_storage_additional_constraints(
         self, area_id: str, storage_id: str
     ) -> list[STStorageAdditionalConstraint]:
-        session, study_id = self._db_session, self._study_id
+        session, study_data_id = self._db_session, self._study_data_id
 
         table = ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE
         stmt = select(table).where(
-            (table.c.study_id == study_id) & (table.c.area_id == area_id) & (table.c.st_storage_id == storage_id)
+            (table.c.study_data_id == study_data_id)
+            & (table.c.area_id == area_id)
+            & (table.c.st_storage_id == storage_id)
         )
         rows = session.execute(stmt).fetchall()
 
@@ -307,7 +311,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
         result = session.execute(
             table.delete().where(
-                (table.c.study_id == self._study_id)
+                (table.c.study_data_id == self._study_data_id)
                 & (table.c.area_id == area_id)
                 & (table.c.st_storage_id == storage_id)
                 & (table.c.constraint_id.in_(constraints))
@@ -321,14 +325,19 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
         session.commit()
 
     def _save_st_storage_matrix(self, series: StStorageSeriesMapping, table: Table) -> None:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         try:
             values = []
             for area_id, value in series.items():
                 for sts_id, matrix_id in value.items():
-                    data = {"study_id": study_id, "area_id": area_id, "st_storage_id": sts_id, "matrix_id": matrix_id}
+                    data = {
+                        "study_data_id": study_data_id,
+                        "area_id": area_id,
+                        "st_storage_id": sts_id,
+                        "matrix_id": matrix_id,
+                    }
                     values.append(data)
             upsert_multiple(session, table, values)
         except IntegrityError as e:
@@ -428,9 +437,9 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
         return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     def _get_all_sts_matrix(self, table: Table) -> StStorageSeriesMapping:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
-        stmt = select(table).where(table.c.study_id == study_id)
+        stmt = select(table).where(table.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
         result: StStorageSeriesMapping = {}
         for row in rows:
@@ -483,7 +492,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
     ) -> pl.DataFrame:
         table = ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE
         stmt = select(table).where(
-            (table.c.study_id == self._study_id)
+            (table.c.study_data_id == self._study_data_id)
             & (table.c.area_id == area_id)
             & (table.c.st_storage_id == storage_id)
             & (table.c.constraint_id == constraint_id)
@@ -497,7 +506,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
     def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
         result: StStorageConstraintSeriesMapping = {}
         table = ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE
-        stmt = select(table).where(table.c.study_id == self._study_id)
+        stmt = select(table).where(table.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         for row in rows:
             result.setdefault(row.area_id, {}).setdefault(row.st_storage_id, {})[row.constraint_id] = row.matrix_id
@@ -505,7 +514,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
     @override
     def save_st_storage_constraint_matrices(self, series: StStorageConstraintSeriesMapping) -> None:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         values = []
@@ -513,7 +522,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
             for sts_id, v in value.items():
                 for constraint_id, matrix_id in v.items():
                     data = {
-                        "study_id": study_id,
+                        "study_data_id": study_data_id,
                         "area_id": area_id,
                         "st_storage_id": sts_id,
                         "constraint_id": constraint_id,
@@ -534,7 +543,9 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
     def _get_st_storage_matrix_row(self, area_id: str, storage_id: str, table: Table) -> Row[Any] | None:
         stmt = select(table).where(
-            (table.c.study_id == self._study_id) & (table.c.area_id == area_id) & (table.c.st_storage_id == storage_id)
+            (table.c.study_data_id == self._study_data_id)
+            & (table.c.area_id == area_id)
+            & (table.c.st_storage_id == storage_id)
         )
         return self._db_session.execute(stmt).fetchone()
 

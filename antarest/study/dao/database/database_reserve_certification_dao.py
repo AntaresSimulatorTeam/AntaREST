@@ -35,17 +35,17 @@ _THERMAL_TABLE = THERMAL_RESERVE_CERTIFICATION_TABLE
 
 def _convert_row_to_model(row: Row[Any]) -> ThermalReserveCertification:
     data = get_row_representation_as_dict(row)
-    for key in ("study_id", "area_id", "thermal_id", "reserve_id"):
+    for key in ("study_data_id", "area_id", "thermal_id", "reserve_id"):
         del data[key]
     return ThermalReserveCertification.model_validate(data)
 
 
 def _convert_model_to_row(
-    study_id: str, area_id: str, thermal_id: str, reserve_id: str, certification: ThermalReserveCertification
+    study_data_id: int, area_id: str, thermal_id: str, reserve_id: str, certification: ThermalReserveCertification
 ) -> dict[str, Any]:
     values = certification.model_dump()
     values["reserve_id"] = reserve_id
-    values["study_id"] = study_id
+    values["study_data_id"] = study_data_id
     values["area_id"] = area_id
     values["thermal_id"] = thermal_id
     return values
@@ -56,7 +56,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
     def _select_one(self, area_id: str, thermal_id: str, reserve_id: str) -> Select[Any]:
         return select(_THERMAL_TABLE).where(
-            (_THERMAL_TABLE.c.study_id == self._study_id)
+            (_THERMAL_TABLE.c.study_data_id == self._study_data_id)
             & (_THERMAL_TABLE.c.area_id == area_id)
             & (_THERMAL_TABLE.c.thermal_id == thermal_id)
             & (_THERMAL_TABLE.c.reserve_id == reserve_id)
@@ -64,7 +64,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
     @override
     def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
-        stmt = select(_THERMAL_TABLE).where(_THERMAL_TABLE.c.study_id == self._study_id)
+        stmt = select(_THERMAL_TABLE).where(_THERMAL_TABLE.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: dict[AreaId, ThermalReserveCertificationMapping] = {}
         for row in rows:
@@ -75,7 +75,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     @override
     def get_thermal_reserve_certifications(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
         stmt = select(_THERMAL_TABLE).where(
-            (_THERMAL_TABLE.c.study_id == self._study_id) & (_THERMAL_TABLE.c.area_id == area_id)
+            (_THERMAL_TABLE.c.study_data_id == self._study_data_id) & (_THERMAL_TABLE.c.area_id == area_id)
         )
         rows = self._db_session.execute(stmt).fetchall()
         result: ThermalReserveCertificationMapping = {}
@@ -91,12 +91,14 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         for area_id, reserves_dict in data.items():
             for reserve_id, thermal_dict in reserves_dict.items():
                 for thermal_id, certification in thermal_dict.items():
-                    values.append(_convert_model_to_row(self._study_id, area_id, thermal_id, reserve_id, certification))
+                    values.append(
+                        _convert_model_to_row(self._study_data_id, area_id, thermal_id, reserve_id, certification)
+                    )
         try:
             # First, clean the DB
             area_ids = set(data)
             stmt = delete(_THERMAL_TABLE).where(
-                (_THERMAL_TABLE.c.study_id == self._study_id) & (_THERMAL_TABLE.c.area_id.in_(area_ids))
+                (_THERMAL_TABLE.c.study_data_id == self._study_data_id) & (_THERMAL_TABLE.c.area_id.in_(area_ids))
             )
             self._db_session.execute(stmt)
             # Then, insert the new values

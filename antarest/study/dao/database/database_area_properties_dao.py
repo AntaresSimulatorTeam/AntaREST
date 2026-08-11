@@ -52,10 +52,12 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao, DatabaseDaoBase):
 
     @override
     def get_area_properties(self, area_id: str) -> AreaProperties:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
-        stmt = select(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+        stmt = select(AREA_TABLE).where(
+            (AREA_TABLE.c.study_data_id == study_data_id) & (AREA_TABLE.c.area_id == area_id)
+        )
 
         row = session.execute(stmt).fetchone()
         if not row:
@@ -64,22 +66,22 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao, DatabaseDaoBase):
 
     @override
     def get_all_area_properties(self) -> dict[str, AreaProperties]:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         # Single query to get all areas and their properties
-        stmt = select(AREA_TABLE).where(AREA_TABLE.c.study_id == study_id)
+        stmt = select(AREA_TABLE).where(AREA_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt)
         return {row.area_id: _convert_db_properties_to_model(row) for row in rows}
 
     @override
     def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         stmt_update = (
             update(AREA_TABLE)
-            .where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+            .where((AREA_TABLE.c.study_data_id == study_data_id) & (AREA_TABLE.c.area_id == area_id))
             .values(
                 energy_cost_unsupplied=area_properties.energy_cost_unsupplied,
                 energy_cost_spilled=area_properties.energy_cost_spilled,
