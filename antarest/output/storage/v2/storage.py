@@ -39,13 +39,14 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.lfs.lfs import ILargeFileStorage
-from antarest.output.filestudy.file_output_utils import (
+from antarest.output.filestudy.logs import find_simulation_log
+from antarest.output.filestudy.metadata import (
     extract_output_details,
-    extract_variables_list,
-    find_simulation_log,
 )
-from antarest.output.filestudy.utils import QueryFileType
+from antarest.output.filestudy.model import QueryFileType
+from antarest.output.filestudy.variables import extract_variables_list
 from antarest.output.model import OutputVariablesList
+from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
@@ -62,7 +63,7 @@ from antarest.output.storage.v2.variables_storage import (
     read_output_from_parquet,
 )
 from antarest.study.business.model.config.general_model import Mode
-from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import (

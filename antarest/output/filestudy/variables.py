@@ -9,19 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import io
-from collections.abc import Iterator
+"""
+Utilities for extracting variables metadata from output files.
+"""
+
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
-from antarest.core.model import JSON
-from antarest.core.serde.ini_common import DUPLICATE_KEYS
-from antarest.core.serde.ini_reader import IniReader
-from antarest.core.utils.archives import read_original_file_in_archive
-from antarest.launcher.adapters.abstractlauncher import SimulationLogs
-from antarest.launcher.model import LogType
-from antarest.output.filestudy.utils import (
+from antarest.output.filestudy.matrixfiles import get_start_column, parse_headers
+from antarest.output.filestudy.model import (
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
@@ -29,61 +26,10 @@ from antarest.output.filestudy.utils import (
     MCRoot,
     QueryFileType,
     get_output_object_type,
-    get_start_column,
     normalize_df_column_names,
-    parse_headers,
 )
 from antarest.output.model import OutputVariablesList
-from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
-from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
-
-
-def parse_output_config(output_path: Path) -> JSON:
-    if output_path.suffix == ".zip":
-        # We need to read data from the archive
-        content = read_original_file_in_archive(output_path, "about-the-study/parameters.ini")
-        return IniReader(DUPLICATE_KEYS).read(io.StringIO(content.decode("utf-8")))
-    return IniReader(DUPLICATE_KEYS).read(output_path / "about-the-study" / "parameters.ini")
-
-
-def extract_output_details(output_path: Path) -> OutputDetails:
-    # TODO: add some basic checks
-    parameters_path = output_path / "about-the-study" / "parameters.ini"
-    ini_reader = IniReader(special_keys=DUPLICATE_KEYS)
-    parameters_dict = ini_reader.read(parameters_path)
-    general = parameters_dict["general"]
-    output = parameters_dict["output"]
-    mode = Mode(general["mode"])
-    return OutputDetails(
-        id=output_path.name,
-        name=output_path.name,  # TODO: should it be re-built from data instead ?
-        mode=mode,
-        synthesis=output["synthesis"],
-        by_year=general["year-by-year"],
-        nb_years=general["nbyears"],
-        archived=False,
-        storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
-    )
-
-
-def find_simulation_log(output_dir: Path, log_type: LogType) -> Path | None:
-    log_locations = {
-        LogType.STDOUT: [
-            output_dir / "antares-out.log",
-            output_dir / "simulation.log",
-        ],
-        LogType.STDERR: [
-            output_dir / "antares-err.log",
-        ],
-    }
-    return next((loc for loc in log_locations[log_type] if loc.is_file()), None)
-
-
-def find_logs(output_dir: Path) -> SimulationLogs:
-    return SimulationLogs(
-        out=find_simulation_log(output_dir, LogType.STDOUT), err=find_simulation_log(output_dir, LogType.STDERR)
-    )
 
 
 @dataclass(frozen=True)

@@ -9,92 +9,22 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from collections.abc import Iterator
-from dataclasses import dataclass
-from enum import Enum, StrEnum
+"""
+Utilities for parsing output matrix files (text files).
+"""
+
 from io import StringIO
 from itertools import islice
 from pathlib import Path
-from typing import IO, TypeAlias
+from typing import IO
 
 import numpy as np
 import pandas as pd
 import polars as pl
-from polars.exceptions import ComputeError
+from polars._plr import ComputeError
 
-from antarest.study.model import MatrixFrequency, MatrixIndex, TimeSerie
-
-"""Column name for the Monte Carlo year."""
-MCYEAR_COL = "mcYear"
-
-"""Column name for the time index."""
-TIME_ID_COL = "timeId"
-
-
-class MCRoot(Enum):
-    MC_IND = "mc-ind"
-    MC_ALL = "mc-all"
-
-
-class MCIndAreasQueryFile(StrEnum):
-    VALUES = "values"
-    DETAILS = "details"
-    DETAILS_ST_STORAGE = "details-STstorage"
-    DETAILS_RES = "details-res"
-
-
-class MCAllAreasQueryFile(StrEnum):
-    VALUES = "values"
-    DETAILS = "details"
-    DETAILS_ST_STORAGE = "details-STstorage"
-    DETAILS_RES = "details-res"
-    ID = "id"
-
-
-class MCIndLinksQueryFile(StrEnum):
-    VALUES = "values"
-
-
-class MCAllLinksQueryFile(StrEnum):
-    VALUES = "values"
-    ID = "id"
-
-
-QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
-
-SingleOutputHeaders: TypeAlias = list[str]
-MultipleOutputHeaders: TypeAlias = list[list[str]]
-
-
-def get_output_object_type(file_type: QueryFileType, is_link: bool) -> str:
-    if is_link:
-        return "links"
-
-    match file_type:
-        case MCIndAreasQueryFile.DETAILS:
-            return "thermal_clusters"
-        case MCIndAreasQueryFile.DETAILS_RES:
-            return "renewable_clusters"
-        case MCIndAreasQueryFile.DETAILS_ST_STORAGE:
-            return "short_term_storages"
-        case _:
-            return "areas"
-
-
-@dataclass
-class OutputDataFrame:
-    """
-    We separate the polars dataframe and its headers as polars does not handle multi-headers columns.
-    """
-
-    data: pl.DataFrame
-    headers: SingleOutputHeaders | MultipleOutputHeaders
-
-
-def normalize_df_column_names(mc_root: MCRoot, output_headers: list[list[str]]) -> list[str]:
-    if mc_root == MCRoot.MC_IND:
-        return [col[0] for col in output_headers]
-    return [" ".join([col[0], col[2]]).upper().strip() for col in output_headers]
+from antarest.output.filestudy.model import MultipleOutputHeaders, OutputDataFrame
+from antarest.study.model import MatrixFrequency
 
 
 def get_start_column(frequency: MatrixFrequency) -> int:
@@ -123,28 +53,6 @@ def parse_headers(content: IO[str], start_col: int) -> MultipleOutputHeaders:
                 header_lines[k].append(col)
 
     return header_lines
-
-
-def concatenate_dataframe_multi_indexed_columns(data: OutputDataFrame) -> None:
-    """
-    Used inside Imagrid endpoint as we want to keep the unit of the column but pyarrow doesn't handle MultiIndex.
-    """
-    data.headers = [" % ".join(col) for col in data.headers]
-
-
-def split_concatenated_columns_from_dataframe(df: pd.DataFrame) -> Iterator[TimeSerie]:
-    """
-    Performs the inverse transformation compared to the concatenate method. Also used inside Imagrid endpoint.
-    """
-    for column in df.columns:
-        splitted_col = column.split(" % ")
-        name, unit = splitted_col[0], splitted_col[1]
-        yield TimeSerie(name=name, unit=unit or " ", data=df[column].to_numpy())
-
-
-def add_time_index_to_dataframe(df: pd.DataFrame, matrix_index: MatrixIndex) -> None:
-    time_column = pd.date_range(start=matrix_index.start_date, periods=len(df), freq=matrix_index.level.value[0])
-    df.index = time_column
 
 
 def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
