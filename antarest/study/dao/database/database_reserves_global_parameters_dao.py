@@ -18,7 +18,6 @@ from typing import Any
 
 from sqlalchemy import Row, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.utils.sql_utils import upsert_multiple
