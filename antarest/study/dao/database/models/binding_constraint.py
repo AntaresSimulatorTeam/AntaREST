@@ -22,13 +22,14 @@ from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, St
 from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 BINDING_CONSTRAINT_TABLE = Table(
     "binding_constraint",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("constraint_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
     Column("enabled", Boolean, nullable=False),
@@ -41,9 +42,9 @@ BINDING_CONSTRAINT_TABLE = Table(
     # Nullable: only present for study versions >= 8.7
     Column("group", String(255), nullable=True),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["study_data.study_id"],
-        name="fk_binding_constraint_study_id",
+        ["study_data_id"],
+        ["study_data.study_data_id"],
+        name="fk_binding_constraint_study_data_id",
         ondelete="CASCADE",
     ),
 )
@@ -51,15 +52,15 @@ BINDING_CONSTRAINT_TABLE = Table(
 BINDING_CONSTRAINT_LINK_TERM_TABLE = Table(
     "binding_constraint_link_term",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("constraint_id", String(255), nullable=False, primary_key=True),
     Column("area1", String(255), nullable=False, primary_key=True),
     Column("area2", String(255), nullable=False, primary_key=True),
     Column("weight", Float, nullable=False),
     Column("offset", Integer, nullable=True),
     ForeignKeyConstraint(
-        ["study_id", "constraint_id"],
-        ["binding_constraint.study_id", "binding_constraint.constraint_id"],
+        ["study_data_id", "constraint_id"],
+        ["binding_constraint.study_data_id", "binding_constraint.constraint_id"],
         name="fk_bc_link_term_constraint",
         ondelete="CASCADE",
     ),
@@ -68,15 +69,15 @@ BINDING_CONSTRAINT_LINK_TERM_TABLE = Table(
 BINDING_CONSTRAINT_CLUSTER_TERM_TABLE = Table(
     "binding_constraint_cluster_term",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("constraint_id", String(255), nullable=False, primary_key=True),
     Column("area", String(255), nullable=False, primary_key=True),
     Column("cluster", String(255), nullable=False, primary_key=True),
     Column("weight", Float, nullable=False),
     Column("offset", Integer, nullable=True),
     ForeignKeyConstraint(
-        ["study_id", "constraint_id"],
-        ["binding_constraint.study_id", "binding_constraint.constraint_id"],
+        ["study_data_id", "constraint_id"],
+        ["binding_constraint.study_data_id", "binding_constraint.constraint_id"],
         name="fk_bc_cluster_term_constraint",
         ondelete="CASCADE",
     ),
@@ -87,12 +88,12 @@ def _create_bc_matrix_table(name: str) -> Table:
     return Table(
         name,
         metadata,
-        Column("study_id", String(36), nullable=False, primary_key=True),
+        study_data_id_col(),
         Column("constraint_id", String(255), nullable=False, primary_key=True),
         Column("matrix_id", String(64), nullable=False),
         ForeignKeyConstraint(
-            ["study_id", "constraint_id"],
-            ["binding_constraint.study_id", "binding_constraint.constraint_id"],
+            ["study_data_id", "constraint_id"],
+            ["binding_constraint.study_data_id", "binding_constraint.constraint_id"],
             name=f"fk_{name}_constraint",
             ondelete="CASCADE",
         ),

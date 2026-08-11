@@ -10,9 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy import JSON, Column, ForeignKeyConstraint, String, Table
+from sqlalchemy import JSON, Column, ForeignKeyConstraint, Table
 
 from antarest.dbmodel import Base
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
@@ -21,12 +22,12 @@ metadata = Base.metadata
 THEMATIC_TRIMMING_TABLE = Table(
     "thematic_trimming",
     metadata,
-    Column("study_id", String(length=36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("thematic_trimming", JSON(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["study_data.study_id"],
-        name="fk_thematic_trimming_study_id_study",
+        ["study_data_id"],
+        ["study_data.study_data_id"],
+        name="fk_thematic_trimming_study_data_id_study",
         ondelete="CASCADE",
     ),
 )

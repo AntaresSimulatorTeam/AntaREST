@@ -14,16 +14,17 @@
 SQLAlchemy Core table definitions for study comments storage.
 """
 
-from sqlalchemy import Column, ForeignKeyConstraint, String, Table, Text
+from sqlalchemy import Column, ForeignKeyConstraint, Table, Text
 
 from antarest.dbmodel import Base
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 COMMENTS_TABLE = Table(
     "comments",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("comments", Text(), nullable=False, server_default=""),
-    ForeignKeyConstraint(["study_id"], ["study_data.study_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
 )

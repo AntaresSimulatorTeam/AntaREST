@@ -17,14 +17,15 @@ SQLAlchemy Core table definitions for layer storage.
 from sqlalchemy import Column, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 LAYER_TABLE = Table(
     "layer",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("layer_id", String(10), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
-    ForeignKeyConstraint(["study_id"], ["study_data.study_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
 )
