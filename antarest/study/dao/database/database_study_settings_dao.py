@@ -206,7 +206,7 @@ class DatabaseStudySettingsDao(
             logger.warning(
                 "Dropping playlist entries for years outside [1, %d] on study %s: %s",
                 nb_years,
-                self._study_data_id,
+                self._study_id,
                 sorted(out_of_range),
             )
         years = {y: v for y, v in playlist.years.items() if 1 <= y <= nb_years}

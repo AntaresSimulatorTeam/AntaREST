@@ -289,10 +289,14 @@ def test_upgrade_replaces_the_study_key(engine: Engine, alembic_cfg: Config) -> 
         model_primary_key = [column.name for column in Base.metadata.tables[table].primary_key]
         assert primary_key == model_primary_key, f"Primary key of {table} does not match its model"
 
-    # `user_resources` is the one table whose study key is not covered by its primary key.
-    assert any(index["column_names"] == [SURROGATE_KEY] for index in inspector.get_indexes("user_resources")), (
-        "The foreign key of user_resources is left unindexed"
-    )
+    # `user_resources` is the one table whose study key is not covered by its primary key: it is
+    # the only one to need an explicit index, the others would only duplicate their primary key.
+    for table in SEEDED_TABLES:
+        indexed = any(index["column_names"] == [SURROGATE_KEY] for index in inspector.get_indexes(table))
+        if table == "user_resources":
+            assert indexed, "The foreign key of user_resources is left unindexed"
+        else:
+            assert not indexed, f"Table {table} carries an index duplicating its primary key"
 
     reference_columns = {column["name"] for column in inspector.get_columns(REFERENCE_TABLE)}
     assert reference_columns == {STRING_KEY, SURROGATE_KEY}

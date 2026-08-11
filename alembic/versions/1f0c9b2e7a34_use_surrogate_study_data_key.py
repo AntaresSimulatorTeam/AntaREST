@@ -204,7 +204,9 @@ def _upgrade_postgresql(snapshot: _Snapshot) -> None:
     _swap_primary_keys(snapshot, source=STRING_KEY, target=SURROGATE_KEY)
 
     for table in snapshot.tables:
-        if SURROGATE_KEY not in snapshot.primary_keys[table]:
+        # The snapshot predates the DDL above, so the primary key is tested on the column the
+        # surrogate key took the place of.
+        if STRING_KEY not in snapshot.primary_keys[table]:
             # Not covered by the primary key: neither PostgreSQL nor SQLite indexes foreign keys.
             op.create_index(_identifier("ix", table, SURROGATE_KEY), table, [SURROGATE_KEY])
         op.drop_column(table, STRING_KEY)
@@ -342,7 +344,8 @@ def _rebuild_sqlite_table(
     op.drop_table(name)
     op.rename_table(f"{name}_new", name)
 
-    if index_key and target not in primary_key:
+    # `primary_key` is the one reflected before the rebuild, hence tested on `source`.
+    if index_key and source not in primary_key:
         op.create_index(_identifier("ix", name, target), name, [target])
 
 
