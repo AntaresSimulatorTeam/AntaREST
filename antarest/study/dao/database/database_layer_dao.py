@@ -45,7 +45,7 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
         The default layer (id="0") always contains all areas.
         Other layers contain the areas that have UI entries for that layer.
         """
-        study_id = self.get_study_id()
+        study_id = self._study_id
         session = self.get_session()
 
         # Get all layer names from LAYER_TABLE
@@ -83,7 +83,7 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
 
         Does not persist area associations, use save_layer_areas() for that.
         """
-        study_id = self.get_study_id()
+        study_id = self._study_id
         session = self.get_session()
 
         values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name}
@@ -101,7 +101,7 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
         if layer_id == DEFAULT_LAYER_ID:
             raise LayerNotAllowedToBeDeleted()
 
-        study_id = self.get_study_id()
+        study_id = self._study_id
         session = self.get_session()
 
         result = session.execute(
@@ -125,7 +125,7 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
         if layer_id == DEFAULT_LAYER_ID:
             return True
 
-        study_id = self.get_study_id()
+        study_id = self._study_id
         session = self.get_session()
 
         # Check if layer exists in LAYER_TABLE

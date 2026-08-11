@@ -69,10 +69,6 @@ class DatabaseDaoBase(ABC):
     def _db_session(self) -> Session:
         return self._context.session
 
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._context.study_id
-
     def get_session(self) -> Session:
         """Get the SQLAlchemy session for database operations."""
         return self._context.session

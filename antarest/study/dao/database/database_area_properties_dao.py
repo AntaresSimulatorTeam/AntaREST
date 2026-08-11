@@ -52,7 +52,7 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao, DatabaseDaoBase):
 
     @override
     def get_area_properties(self, area_id: str) -> AreaProperties:
-        study_id = self.get_study_id()
+        study_id = self._study_id
         session = self.get_session()
 
         stmt = select(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
@@ -64,7 +64,7 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao, DatabaseDaoBase):
 
     @override
     def get_all_area_properties(self) -> dict[str, AreaProperties]:
-        study_id = self.get_study_id()
+        study_id = self._study_id
         session = self.get_session()
 
         # Single query to get all areas and their properties
@@ -74,7 +74,7 @@ class DatabaseAreaPropertiesDao(AreaPropertiesDao, DatabaseDaoBase):
 
     @override
     def save_area_properties(self, area_id: str, area_properties: AreaProperties) -> None:
-        study_id = self.get_study_id()
+        study_id = self._study_id
         session = self.get_session()
 
         stmt_update = (

@@ -70,7 +70,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_general_config(self, config: GeneralConfig) -> None:
-        values = dict(study_id=self.get_study_id(), **config.model_dump())
+        values = dict(study_id=self._study_id, **config.model_dump())
         session = self.get_session()
         upsert_one(session, GENERAL_CONFIG_TABLE, values)
         session.commit()
@@ -88,7 +88,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
-        values = dict(study_id=self.get_study_id(), **config.model_dump(exclude={"export_mps"}))
+        values = dict(study_id=self._study_id, **config.model_dump(exclude={"export_mps"}))
         # Handle `export_mps` differently as it can either be a string or a boolean but will be stored as String in DB.
         if isinstance(config.export_mps, bool):
             mps = str(config.export_mps)
@@ -124,7 +124,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
-        values = dict(study_id=self.get_study_id(), **parameters.model_dump())
+        values = dict(study_id=self._study_id, **parameters.model_dump())
         session = self.get_session()
         upsert_one(session, ADVANCED_PARAMETERS_TABLE, values)
         session.commit()
@@ -152,14 +152,14 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
-        values = dict(study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax)
+        values = dict(study_id=self._study_id, hydro_pmax=parameters.hydro_pmax)
         session = self.get_session()
         upsert_one(session, COMPATIBILITY_PARAMETERS_TABLE, values)
         session.commit()
 
     @override
     def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
-        values = dict(study_id=self.get_study_id(), **parameters.model_dump())
+        values = dict(study_id=self._study_id, **parameters.model_dump())
         session = self.get_session()
         upsert_one(session, ADEQUACY_PATCH_PARAMETERS_TABLE, values)
         session.commit()
@@ -178,7 +178,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
-        values = dict(study_id=self.get_study_id(), thermal_number=config.thermal.number)
+        values = dict(study_id=self._study_id, thermal_number=config.thermal.number)
         session = self.get_session()
         upsert_one(session, TIMESERIES_CONFIG_TABLE, values)
         session.commit()
@@ -200,11 +200,11 @@ class DatabaseStudySettingsDao(
             logger.warning(
                 "Dropping playlist entries for years outside [1, %d] on study %s: %s",
                 nb_years,
-                self.get_study_id(),
+                self._study_id,
                 sorted(out_of_range),
             )
         years = {y: v for y, v in playlist.years.items() if 1 <= y <= nb_years}
-        values = dict(study_id=self.get_study_id(), years=to_json_string(years))
+        values = dict(study_id=self._study_id, years=to_json_string(years))
         session = self.get_session()
         upsert_one(session, PLAYLIST_TABLE, values)
         session.commit()

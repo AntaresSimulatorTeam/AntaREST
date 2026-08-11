@@ -46,7 +46,7 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao, DatabaseD
 
     @override
     def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
-        study_id = self.get_study_id()
+        study_id = self._study_id
         session = self.get_session()
         stmt = select(_TABLE).where((_TABLE.c.study_id == study_id) & (_TABLE.c.area_id == area_id))
         row = session.execute(stmt).fetchone()
@@ -57,7 +57,7 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao, DatabaseD
 
     @override
     def get_all_reserves_global_parameters(self) -> ReservesGlobalParametersMapping:
-        study_id = self.get_study_id()
+        study_id = self._study_id
         session = self.get_session()
         stmt = select(_TABLE).where(_TABLE.c.study_id == study_id)
         rows = session.execute(stmt)
@@ -66,7 +66,7 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao, DatabaseD
     @override
     def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:
         session = self.get_session()
-        study_id = self.get_study_id()
+        study_id = self._study_id
         values = [
             {
                 "study_id": study_id,
