@@ -50,19 +50,18 @@ from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.dbmodel import Output
-from antarest.output.filestudy.aggregator_management import (
+from antarest.output.filestudy.aggregation import (
     AREA_COL,
     CLUSTER_ID_COL,
     LINK_COL,
 )
-from antarest.output.filestudy.utils import (
+from antarest.output.filestudy.model import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     QueryFileType,
-    add_time_index_to_dataframe,
     split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
@@ -71,6 +70,7 @@ from antarest.output.model import (
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
+from antarest.output.model.download import MatrixAggregationResultDTO, MatrixIndex, StudyDownloadDTO, StudyDownloadType
 from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -87,12 +87,8 @@ from antarest.output.variable_view.model import (
     get_query_file,
 )
 from antarest.study.model import (
-    MatrixAggregationResultDTO,
     MatrixFrequency,
-    MatrixIndex,
     StorageMode,
-    StudyDownloadDTO,
-    StudyDownloadType,
 )
 from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -577,7 +573,6 @@ class OutputService:
         finally:
             for file_path in file_paths:
                 file_path.unlink(missing_ok=True)
-
         return FileResponse(tmp_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
 
     def delete_output(self, uuid: str, output_name: str) -> None:
@@ -843,7 +838,8 @@ class OutputService:
                 polars_df = polars_df.with_columns(pl.all().cast(pl.Float64))
             df = polars_df.to_pandas()
             if with_index:
-                add_time_index_to_dataframe(df, self.get_output_time_index(study_id, output_id, frequency))
+                matrix_index = self.get_output_time_index(study_id, output_id, frequency)
+                matrix_index.set_as_df_index(df)
             return df
 
         # Checks if the asked couple `variable name` / `output_identifier` exists for the output

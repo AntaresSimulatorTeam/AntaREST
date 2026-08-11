@@ -31,10 +31,10 @@ from antarest.core.utils.utils import sanitize_string, validate_folder_path, val
 from antarest.core.utils.web import APITag
 from antarest.dependencies import ConfigDep, StudyServiceDep, auth_required
 from antarest.login.utils import require_admin_user, require_current_user
+from antarest.output.model.download import MatrixIndex
 from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
     DeleteManyStudies,
-    MatrixIndex,
     StorageMode,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
