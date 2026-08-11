@@ -28,6 +28,8 @@ export interface JobDTO {
   launcher_params?: string;
   status: JobStatus;
   creation_date: string;
+  // Requested start time for a scheduled launch, set only while the job hasn't started yet.
+  scheduled_at?: string;
   completion_date?: string;
   msg?: string;
   output_id?: string;
@@ -43,6 +45,7 @@ export interface Job {
   launcherParams?: LauncherParamsDTO;
   status: JobStatus;
   creationDate: string;
+  scheduledAt?: string;
   completionDate?: string;
   msg?: string;
   outputId?: string;
