@@ -108,7 +108,7 @@ class DatabaseStudyDao(
         """
         DatabaseDaoBase.__init__(self, StudyDaoContext(study_id, db_session))
         self._matrix_service = matrix_service
-        self._blob_service_impl = blob_service
+        self._blob_service = blob_service
         self._generator_matrix_constants = generator_matrix_constants
 
     @override
@@ -118,8 +118,8 @@ class DatabaseStudyDao(
 
     @property
     @override
-    def _blob_service(self) -> IBlobService:
-        return self._blob_service_impl
+    def blob_service(self) -> IBlobService:
+        return self._blob_service
 
     @override
     @property

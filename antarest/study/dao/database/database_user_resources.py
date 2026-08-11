@@ -46,7 +46,7 @@ class DatabaseUserResourcesDao(UserResourcesDao, DatabaseDaoBase):
 
     @property
     @abstractmethod
-    def _blob_service(self) -> IBlobService:
+    def blob_service(self) -> IBlobService:
         """Blobs storage service, provided by the concrete DAO."""
 
     @override
@@ -168,7 +168,7 @@ class DatabaseUserResourcesDao(UserResourcesDao, DatabaseDaoBase):
             raise UserResourceIsAFolder(resource_path.as_posix())
 
         assert data.blob_id is not None
-        return self._blob_service.get(data.blob_id)
+        return self.blob_service.get(data.blob_id)
 
     def _build_resources_tree(self) -> dict[PurePosixPath, UserResourcesDatabaseData]:
         stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
