@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from typing import TYPE_CHECKING
 
 from typing_extensions import override
@@ -89,8 +90,10 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
 
     @staticmethod
     def _check_reserves_exist(
-        area_id: str, file_study: FileStudy, reserves_dict: dict[ReserveDefinitionId, dict[str, ReserveCertification]]
-    ):
+        area_id: str,
+        file_study: FileStudy,
+        reserves_dict: Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]],
+    ) -> None:
         existing_reserve_ids = file_study.config.areas[area_id].reserves
         invalid_reserves: set[str] = set(reserves_dict) - set(existing_reserve_ids)  # type: ignore
         if invalid_reserves:
@@ -98,7 +101,7 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
 
     def _check_all_thermals_exist_in_area(
         self, area_id: str, reserves_dict: dict[ReserveDefinitionId, dict[str, ThermalReserveCertification]]
-    ):
+    ) -> None:
         for thermal_ids in reserves_dict.values():
             for thermal_id in thermal_ids:
                 if not self.get_impl().thermal_exists(area_id, thermal_id):
@@ -123,8 +126,8 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
             file_study.tree.save(new_content, get_st_storage_reserve_path(area_id))
 
     def _check_all_st_storages_exist_in_area(
-        self, area_id: str, reserves_dict: dict[ReserveDefinitionId, dict[str, ReserveCertification]]
-    ):
+        self, area_id: str, reserves_dict: Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]]
+    ) -> None:
         for storage_ids in reserves_dict.values():
             for storage_id in storage_ids:
                 if not self.get_impl().st_storage_exists(area_id, storage_id):

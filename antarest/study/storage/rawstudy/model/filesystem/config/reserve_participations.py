@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from typing import Any, Self
+from collections.abc import Mapping
+from typing import Any, Generic, Self, TypeVar, override
 
 from pydantic import ConfigDict, model_validator
 
@@ -45,6 +46,7 @@ class _ThermalCertification(_AreaAssetCertification):
     participation_cost: Cost = 0.0
     participation_cost_off: Cost = 0.0
 
+    @override
     def to_model(self) -> ThermalReserveCertification:
         return ThermalReserveCertification.model_validate(self.model_dump(exclude={"reserve"}))
 
@@ -56,6 +58,7 @@ class _StorageCertification(_AreaAssetCertification):
     max_store: Power = 0.0
     participation_cost: Cost = 0.0
 
+    @override
     def to_model(self) -> StorageReserveCertification:
         return StorageReserveCertification.model_validate(self.model_dump(exclude={"reserve"}))
 
@@ -66,10 +69,13 @@ class Symmetry(AntaresBaseModel):
     reserves: ReserveSymmetry
 
 
-class Participation(ABC, AntaresBaseModel):
+CertificationT = TypeVar("CertificationT", bound=_AreaAssetCertification)
+
+
+class Participation(ABC, AntaresBaseModel, Generic[CertificationT]):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    certifications: list[_AreaAssetCertification] = []
+    certifications: list[CertificationT] = []
     symmetries: list[Symmetry] = []
 
     @model_validator(mode="after")
@@ -84,36 +90,41 @@ class Participation(ABC, AntaresBaseModel):
     def get_id(self) -> str:
         raise NotImplementedError
 
-    def set_id(self, id: str):
+    def set_id(self, id: str) -> None:
         raise NotImplementedError
 
 
-class ThermalParticipation(Participation):
+class ThermalParticipation(Participation[_ThermalCertification]):
     cluster: str
-    certifications: list[_ThermalCertification] = []
 
+    @override
     def get_id(self) -> str:
         return self.cluster
 
-    def set_id(self, id: str):
+    @override
+    def set_id(self, id: str) -> None:
         self.cluster = id
 
 
-class STStorageParticipation(Participation):
+class STStorageParticipation(Participation[_StorageCertification]):
     storage: str
-    certifications: list[_StorageCertification] = []
 
+    @override
     def get_id(self) -> str:
         return self.storage
 
-    def set_id(self, id: str):
+    @override
+    def set_id(self, id: str) -> None:
         self.storage = id
 
 
-class _AreaAssetParticipationFileData(AntaresBaseModel):
+ParticipationT = TypeVar("ParticipationT", bound=Participation[Any])
+
+
+class _AreaAssetParticipationFileData(AntaresBaseModel, Generic[ParticipationT]):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    participations: list[Participation]
+    participations: list[ParticipationT]
 
     @model_validator(mode="after")
     def _validate_model(self) -> Self:
@@ -126,7 +137,7 @@ class _AreaAssetParticipationFileData(AntaresBaseModel):
 
         return self
 
-    def _detect_duplicated_assets(self):
+    def _detect_duplicated_assets(self) -> None:
         raise NotImplementedError
 
     def get_symmetries(self) -> dict[str, ReserveSymmetries]:
@@ -141,7 +152,7 @@ class _AreaAssetParticipationFileData(AntaresBaseModel):
 
     @classmethod
     def _reorganize_certifications(
-        cls, certifications: dict[ReserveDefinitionId, dict[str, ReserveCertification]]
+        cls, certifications: Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]]
     ) -> dict[str, dict[ReserveDefinitionId, ReserveCertification]]:
         # Reorganize certifications to order them by id.
 
@@ -155,11 +166,11 @@ class _AreaAssetParticipationFileData(AntaresBaseModel):
     def from_model(
         cls,
         symmetries: dict[str, ReserveSymmetries],
-        certifications: dict[ReserveDefinitionId, dict[str, ReserveCertification]],
+        certifications: Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]],
     ) -> Self:
         thermal_certifications = cls._reorganize_certifications(certifications)
 
-        participations = []
+        participations: list[dict[str, Any]] = []
         cls._iterate_through_symmetries(participations, symmetries, thermal_certifications)
 
         # Iterate through certifications with an id not in symmetries
@@ -172,7 +183,7 @@ class _AreaAssetParticipationFileData(AntaresBaseModel):
         cls,
         participations: list[Any],
         thermal_certifications: dict[str, dict[ReserveDefinitionId, ReserveCertification]],
-    ):
+    ) -> None:
         for cluster_id, values in thermal_certifications.items():
             participation: dict[str, Any] = cls.initialize_participation(cluster_id)
             if values:
@@ -189,7 +200,7 @@ class _AreaAssetParticipationFileData(AntaresBaseModel):
         participations: list[Any],
         symmetries: dict[str, list[list[ReserveDefinitionId]]],
         certifications: dict[str, dict[ReserveDefinitionId, ReserveCertification]],
-    ):
+    ) -> None:
         for cluster_id, reserve_symmetries in symmetries.items():
             certifs = certifications.pop(cluster_id, {})
             participation: dict[str, Any] = cls.initialize_participation(cluster_id)
@@ -201,10 +212,9 @@ class _AreaAssetParticipationFileData(AntaresBaseModel):
             participations.append(participation)
 
 
-class ThermalReserveParticipationsFileData(_AreaAssetParticipationFileData):
-    participations: list[ThermalParticipation]
-
-    def _detect_duplicated_assets(self):
+class ThermalReserveParticipationsFileData(_AreaAssetParticipationFileData[ThermalParticipation]):
+    @override
+    def _detect_duplicated_assets(self) -> None:
         if len(self.participations) != len({p.cluster for p in self.participations}):
             raise ValueError("Some thermals are duplicated")
 
@@ -218,14 +228,14 @@ class ThermalReserveParticipationsFileData(_AreaAssetParticipationFileData):
         return result
 
     @classmethod
+    @override
     def initialize_participation(cls, cluster_id: str) -> dict[str, str]:
         return {"cluster": cluster_id}
 
 
-class STStorageReserveParticipationsFileData(_AreaAssetParticipationFileData):
-    participations: list[STStorageParticipation]
-
-    def _detect_duplicated_assets(self):
+class STStorageReserveParticipationsFileData(_AreaAssetParticipationFileData[STStorageParticipation]):
+    @override
+    def _detect_duplicated_assets(self) -> None:
         if len(self.participations) != len({p.storage for p in self.participations}):
             raise ValueError("Some short-term storages are duplicated")
 
@@ -239,6 +249,7 @@ class STStorageReserveParticipationsFileData(_AreaAssetParticipationFileData):
         return result
 
     @classmethod
+    @override
     def initialize_participation(cls, storage_id: str) -> dict[str, str]:
         return {"storage": storage_id}
 

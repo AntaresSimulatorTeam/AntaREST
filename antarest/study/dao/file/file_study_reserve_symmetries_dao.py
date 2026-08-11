@@ -97,7 +97,7 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
         # Saves the content into the YAML file
         file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
 
-    def _check_thermal_exists_in_area(self, area_id: str, thermal_id: str):
+    def _check_thermal_exists_in_area(self, area_id: str, thermal_id: str) -> None:
         if not self.get_impl().thermal_exists(area_id, thermal_id):
             raise ThermalClusterNotFound(area_id, thermal_id)
 
@@ -138,13 +138,13 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
         # Saves the content into the YAML file
         file_study.tree.save(new_content, get_st_storage_reserve_path(storage_id))
 
-    def _check_st_storage_exists_in_area(self, area_id: str, asset_id: str):
+    def _check_st_storage_exists_in_area(self, area_id: str, asset_id: str) -> None:
         if not self.get_impl().st_storage_exists(area_id, asset_id):
             raise STStorageNotFound(area_id, asset_id)
 
     def _check_reserve_definitions_exist_in_symmetries(
         self, storage_id: str, symmetries: list[list[ReserveDefinitionId]]
-    ):
+    ) -> None:
         for symmetry in symmetries:
             for reserve_id in symmetry:
                 if not self.get_impl().reserve_definition_exists(storage_id, reserve_id):

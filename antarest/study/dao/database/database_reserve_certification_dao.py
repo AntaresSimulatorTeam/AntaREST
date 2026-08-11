@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from collections.abc import Mapping
 from typing import Any, NoReturn
 
 from sqlalchemy import Row, Select, Table, delete, insert, select
@@ -199,13 +200,13 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         return values
 
     def __clean_db(
-        self, table: Table, data: dict[str, dict[ReserveDefinitionId, dict[str, ReserveCertification]]]
+        self, table: Table, data: Mapping[str, Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]]]
     ) -> None:
         area_ids = set(data)
         stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
         self._db_session.execute(stmt)
 
-    def __insert_data_to_table(self, table: Table, values: list[Any]):
+    def __insert_data_to_table(self, table: Table, values: list[Any]) -> None:
         if values:
             self._db_session.execute(insert(table), values)
 
@@ -228,17 +229,19 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             raise STStoragesNotFound(invalid_st_storage_dict) from exc
 
         # All objects exist. It means that the DB table does not contain the information.
-        raise ValueError("One of the thermal reserve certification table is not filled as it should") from exc
+        raise ValueError(
+            "One of the short-term storage reserve certification table is not filled as it should"
+        ) from exc
 
     def _raise_exception_if_missing_area(
-        self, data: dict[str, dict[ReserveDefinitionId, dict[str, ReserveCertification]]]
+        self, data: Mapping[str, Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]]]
     ) -> None:
         existing_ids = set(self.get_impl().get_all_area_ids())
         if invalid_areas := set(data) - existing_ids:
             raise AreaNotFound(*invalid_areas)
 
     def _raise_exception_if_missing_reserve(
-        self, data: dict[str, dict[ReserveDefinitionId, dict[str, ReserveCertification]]]
+        self, data: Mapping[str, Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]]]
     ) -> None:
         all_existing_reserves = self.get_impl().get_all_reserve_definitions()
         invalid_reserves_dict = {}

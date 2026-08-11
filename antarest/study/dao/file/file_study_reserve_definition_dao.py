@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from typing_extensions import override
@@ -154,27 +154,29 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         area_config = file_study.config.areas[area_id]
         area_config.reserves = [rid for rid in area_config.reserves if rid not in reserve_ids]
 
-    def _remove_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]):
+    def _remove_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]) -> None:
         self._remove_thermal_reserve_from_symmetries(area_id, ids_to_remove)
         self._remove_st_storage_reserve_from_symmetries(area_id, ids_to_remove)
 
-    def _remove_thermal_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]):
+    def _remove_thermal_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]) -> None:
         symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
         new_symmetries = remove_reserve_symmetries_by_cascade(symmetries_dict, ids_to_remove)
         if new_symmetries is not None:
             self.get_impl().save_thermal_reserve_symmetries({area_id: new_symmetries})
 
-    def _remove_st_storage_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]):
+    def _remove_st_storage_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]) -> None:
         symmetries_dict = self.get_impl().get_st_storage_reserve_symmetries(area_id)
         new_symmetries = remove_reserve_symmetries_by_cascade(symmetries_dict, ids_to_remove)
         if new_symmetries is not None:
             self.get_impl().save_st_storage_reserve_symmetries({area_id: new_symmetries})
 
-    def _remove_reserve_from_certifications(self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]):
+    def _remove_reserve_from_certifications(self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
         self._remove_thermal_reserve_from_certifications(area_id, reserve_ids)
         self._remove_st_storage_reserve_from_certifications(area_id, reserve_ids)
 
-    def _remove_thermal_reserve_from_certifications(self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]):
+    def _remove_thermal_reserve_from_certifications(
+        self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]
+    ) -> None:
         certifications = self.get_impl().get_thermal_reserve_certifications(area_id)
         should_update_certifications = False
         for reserve_id in reserve_ids:
@@ -184,7 +186,9 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         if should_update_certifications:
             self.get_impl().save_thermal_reserve_certifications({area_id: certifications})
 
-    def _remove_st_storage_reserve_from_certifications(self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]):
+    def _remove_st_storage_reserve_from_certifications(
+        self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]
+    ) -> None:
         certifications = self.get_impl().get_st_storage_reserve_certifications(area_id)
         should_update_certifications = False
         for reserve_id in reserve_ids:

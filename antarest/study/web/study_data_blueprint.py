@@ -97,6 +97,8 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterUpdate,
 )
 from antarest.study.business.model.reserve_certification_model import (
+    StorageId,
+    StorageReserveCertificationMapping,
     ThermalId,
     ThermalReserveCertificationMapping,
 )
@@ -1662,7 +1664,7 @@ def create_study_data_routes() -> APIRouter:
         path="/studies/{uuid}/areas/{area_id}/reserves/symmetries/thermals",
         summary="Fetch all thermal reserve symmetries for a given area",
     )
-    def get_reserve_symmetries(
+    def get_thermal_reserve_symmetries(
         study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
     ) -> dict[ThermalId, ReserveSymmetries]:
         logger.info("Fetching reserve symmetries for study '%s' and area '%s'", uuid, area_id)
@@ -1686,7 +1688,7 @@ def create_study_data_routes() -> APIRouter:
         path="/studies/{uuid}/areas/{area_id}/reserves/certifications/thermals",
         summary="Fetch all thermal reserve certifications for a given area",
     )
-    def get_reserve_certifications(
+    def get_thermal_reserve_certifications(
         study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
     ) -> ThermalReserveCertificationMapping:
         logger.info("Fetching reserve certifications for study '%s' and area '%s'", uuid, area_id)
@@ -1698,13 +1700,63 @@ def create_study_data_routes() -> APIRouter:
         path="/studies/{uuid}/areas/{area_id}/reserves/certifications/thermals",
         summary="Saves new thermal reserve certifications for a given area",
     )
-    def save_reserve_certifications(
+    def save_thermal_reserve_certifications(
         study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: ThermalReserveCertificationMapping
     ) -> ThermalReserveCertificationMapping:
         logger.info("Saving reserve certifications for study '%s' and area '%s'", uuid, area_id)
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.reserve_certifications_manager.set_thermal_certifications(study_interface, area_id, data)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves/symmetries/storages",
+        summary="Fetch all short-term storages reserve symmetries for a given area",
+    )
+    def get_st_storage_reserve_symmetries(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
+    ) -> dict[StorageId, ReserveSymmetries]:
+        logger.info("Fetching reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_symmetries_manager.get_st_storage_symmetries(study_interface, area_id)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/reserves/symmetries/storages",
+        summary="Saves new short-term storage reserve symmetries for a given area",
+    )
+    def save_st_storage_reserve_symmetries(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: dict[StorageId, ReserveSymmetries]
+    ) -> dict[StorageId, ReserveSymmetries]:
+        logger.info("Saving short-term storage reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_symmetries_manager.set_st_storage_symmetries(study_interface, area_id, data)
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves/certifications/storages",
+        summary="Fetch all short-term storages reserve certifications for a given area",
+    )
+    def get_st_storage_reserve_certifications(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
+    ) -> StorageReserveCertificationMapping:
+        logger.info("Fetching reserve certifications for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_certifications_manager.get_st_storage_certifications(study_interface, area_id)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/reserves/certifications/storages",
+        summary="Saves new short-term storages reserve certifications for a given area",
+    )
+    def save_st_storage_reserve_certifications(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: StorageReserveCertificationMapping
+    ) -> StorageReserveCertificationMapping:
+        logger.info("Saving reserve certifications for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_certifications_manager.set_st_storage_certifications(
+            study_interface, area_id, data
+        )
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",
