@@ -116,6 +116,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao):
             if values:
                 self._db_session.execute(insert(_THERMAL_TABLE), values)
         except IntegrityError as e:
+            self._db_session.rollback()
             self._raise_the_right_thermal_reserve_exception(data, exc=e)
         self._db_session.commit()
 

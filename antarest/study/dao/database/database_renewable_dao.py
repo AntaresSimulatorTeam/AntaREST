@@ -113,6 +113,7 @@ class DatabaseRenewableDao(RenewableDao):
         try:
             upsert_one(session, RENEWABLE_CLUSTER_TABLE, values)
         except IntegrityError as e:
+            session.rollback()
             self._raise_the_right_renewable_exception({area_id: [renewable.id]}, e)
 
         session.commit()
@@ -131,6 +132,7 @@ class DatabaseRenewableDao(RenewableDao):
         try:
             upsert_multiple(session=session, table=RENEWABLE_CLUSTER_TABLE, values=values)
         except IntegrityError as e:
+            session.rollback()
             invalid_data = {area_id: [renew.id.lower() for renew in renewables] for area_id, renewables in data.items()}
             self._raise_the_right_renewable_exception(invalid_data, e)
 
@@ -154,6 +156,7 @@ class DatabaseRenewableDao(RenewableDao):
                     values.append(data)
             upsert_multiple(session, RENEWABLE_SERIES_TABLE, values)
         except IntegrityError as e:
+            session.rollback()
             invalid_data = {area_id: list(renewable_dict) for area_id, renewable_dict in series.items()}
             self._raise_the_right_renewable_exception(invalid_data, e)
 

@@ -246,6 +246,7 @@ class DatabaseAreaDao(AreaDao):
             session.execute(stmt)
             session.commit()
         except IntegrityError as e:
+            session.rollback()
             # Means an area already existed
             existing_ids = set(self.get_all_area_ids())
             invalid_ids = {transform_name_to_id(area_name) for area_name in data} - existing_ids
@@ -321,6 +322,7 @@ class DatabaseAreaDao(AreaDao):
         try:
             upsert_multiple(session, AREA_UI_TABLE, values)
         except IntegrityError as e:
+            session.rollback()
             # Could raise for area not found or layer not found.
 
             # First check the areas

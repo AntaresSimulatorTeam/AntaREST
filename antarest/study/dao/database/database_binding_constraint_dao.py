@@ -278,6 +278,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         try:
             upsert_multiple(self._db_session, table, rows)
         except IntegrityError as e:
+            self._db_session.rollback()
             self._raise_the_right_binding_constraint_exception(set(series), e)
 
     @override

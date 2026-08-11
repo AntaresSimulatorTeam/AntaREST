@@ -103,6 +103,7 @@ class DatabaseLinkDao(LinkDao):
         try:
             upsert_multiple(session, LINK_TABLE, values)
         except IntegrityError as e:
+            session.rollback()
             self._raise_the_right_link_exception(links, e)
 
         session.commit()
@@ -167,6 +168,7 @@ class DatabaseLinkDao(LinkDao):
         try:
             upsert_multiple(session, table, values)
         except IntegrityError as e:
+            session.rollback()
             links = [Link(area1=area1, area2=area2) for area1, area2 in series.keys()]
             self._raise_the_right_link_exception(links, e)
         session.commit()

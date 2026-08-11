@@ -116,6 +116,7 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
         try:
             upsert_multiple(session=self._db_session, table=_TABLE, values=values)
         except IntegrityError as e:
+            self._db_session.rollback()
             for area_id in data:
                 if not area_exists(self._db_session, self._study_id, area_id):
                     raise AreaNotFound(area_id) from e
@@ -186,6 +187,7 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
         try:
             upsert_multiple(session=self._db_session, table=_NEED_TABLE, values=values)
         except IntegrityError as e:
+            self._db_session.rollback()
             for area_id in mapping:
                 if not area_exists(self._db_session, self._study_id, area_id):
                     raise AreaNotFound(area_id) from e
