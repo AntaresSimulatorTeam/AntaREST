@@ -90,6 +90,7 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao):
         try:
             upsert_multiple(session, _TABLE, values)
         except IntegrityError:
+            session.rollback()
             for area_id in mapping:
                 validate_area_exists(session, study_id, area_id)
             raise
