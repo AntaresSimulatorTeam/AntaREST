@@ -12,12 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import type { AreaWithId, StudyMetadata } from "@/types/types";
+import type { AreaWithId } from "@/types/types";
 import { areaKeys } from "../areas/keys";
+import type { Study } from "@/services/api/studies/types";
 
 export const thermalKeys = {
   all: () => [...areaKeys.all(), "thermals"],
-  list: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+  list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...thermalKeys.all(), { studyId, areaId }];
   },
 };

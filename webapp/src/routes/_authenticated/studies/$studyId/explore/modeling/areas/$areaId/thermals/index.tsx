@@ -127,28 +127,29 @@ function Thermals() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  // The Certifications table (under Reserves) keeps its own cache of thermal
-  // clusters, so it must be invalidated whenever a cluster is added or removed here.
-  const invalidateCertificationsClusters = () => {
+  // This page doesn't use the shared `thermalQueries.list` cache itself (it fetches
+  // through `usePromiseWithSnackbarError` instead), but other consumers do (e.g. the
+  // Reserves certifications view), so it must be kept in sync whenever clusters change here.
+  const invalidateThermalClustersQuery = () => {
     return queryClient.invalidateQueries({ queryKey: thermalKeys.list(study.id, areaId) });
   };
 
   const handleCreate = async (values: RowData) => {
     const cluster = await createThermalCluster(study.id, areaId, values);
-    await invalidateCertificationsClusters();
+    await invalidateThermalClustersQuery();
     return addClusterCapacity(cluster);
   };
 
   const handleDuplicate = async (row: ThermalClusterWithCapacity, newName: string) => {
     const cluster = await duplicateThermalCluster(study.id, areaId, row.id, newName);
-    await invalidateCertificationsClusters();
+    await invalidateThermalClustersQuery();
     return { ...row, ...cluster };
   };
 
   const handleDelete = async (rows: ThermalClusterWithCapacity[]) => {
     const ids = rows.map((row) => row.id);
     await deleteThermalClusters(study.id, areaId, ids);
-    await invalidateCertificationsClusters();
+    await invalidateThermalClustersQuery();
   };
 
   ////////////////////////////////////////////////////////////////

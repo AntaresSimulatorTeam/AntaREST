@@ -12,15 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { thermalKeys } from "@/queries/thermals/keys";
+import { getThermalClusters } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/-utils";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
-import { getThermalClusters } from "../thermals/-utils";
+import { thermalKeys } from "./keys";
 
-// Thermal clusters have no query layer yet (their API service still lives in the
-// thermals route folder), so the query options are defined here for now.
-export const thermalClustersQueries = {
+export const thermalQueries = {
   list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return queryOptions({
       queryKey: thermalKeys.list(studyId, areaId),
