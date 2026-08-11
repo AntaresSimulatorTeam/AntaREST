@@ -10,14 +10,12 @@
 #
 # This file is part of the Antares project.
 
-from abc import abstractmethod
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from sqlalchemy import CursorResult, Row, Select, delete, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, ReserveDefinitionsNotFound
@@ -28,12 +26,13 @@ from antarest.study.dao.api.common import remove_reserve_symmetries_by_cascade
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
 from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
 from antarest.study.dao.database.common import area_exists, validate_area_exists
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.reserve_definition import RESERVE_DEFINITION_TABLE
 from antarest.study.dao.database.models.reserve_need import RESERVE_NEED_MATRIX_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
 
 if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+    pass
 
 _TABLE = RESERVE_DEFINITION_TABLE
 _NEED_TABLE = RESERVE_NEED_MATRIX_TABLE
@@ -55,16 +54,8 @@ def _convert_model_to_row(study_id: str, area_id: str, reserve: ReserveDefinitio
     return values
 
 
-class DatabaseReserveDefinitionDao(ReserveDefinitionDao):
+class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
     """Database implementation of ReserveDefinitionDao."""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     def _select_reserve(self, area_id: str, reserve_id: str) -> Select[Any]:
         return select(_TABLE).where(

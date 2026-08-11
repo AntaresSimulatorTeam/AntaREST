@@ -16,13 +16,11 @@ Database implementation of LayerDao.
 This module provides database-backed storage for layers when storage_mode=DATABASE.
 """
 
-from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from sqlalchemy import CursorResult, delete, select
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
@@ -30,40 +28,18 @@ from antarest.core.utils.sql_utils import upsert_one
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.layer_dao import LayerDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.area import AREA_UI_TABLE
 from antarest.study.dao.database.models.layer import LAYER_TABLE
 
 if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+    pass
 
 
-class DatabaseLayerDao(LayerDao):
+class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
     """
     Database implementation of LayerDao.
     """
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        """
-        Initialize DatabaseLayerDao with dependencies.
-
-        Args:
-            study_id: The study ID for database queries.
-            db_session: SQLAlchemy session for database operations.
-        """
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     @override
     def get_layers(self) -> Sequence[Layer]:

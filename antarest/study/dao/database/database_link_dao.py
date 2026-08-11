@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from abc import abstractmethod
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
@@ -17,7 +16,6 @@ import polars as pl
 from sqlalchemy import Row, Table, delete, select
 from sqlalchemy.engine.cursor import CursorResult
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, LinksNotFound
@@ -26,6 +24,7 @@ from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.dao.common import LinkSeriesMapping, SeriesId
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.link import (
     LINK_DIRECT_CAPACITY_TABLE,
     LINK_INDIRECT_CAPACITY_TABLE,
@@ -40,7 +39,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
 )
 
 if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+    pass
 
 
 def _convert_db_rows_to_model(db_row: Any) -> Link:
@@ -49,24 +48,8 @@ def _convert_db_rows_to_model(db_row: Any) -> Link:
     return Link(**data)
 
 
-class DatabaseLinkDao(LinkDao):
+class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
     """Database implementation of LinkDao"""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     def _raise_the_right_link_exception(self, links: Sequence[Link], exc: IntegrityError | None = None) -> None:
         # Happens if some link's areas did not exist -> ForeignKey constraint fails

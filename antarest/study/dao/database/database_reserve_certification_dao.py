@@ -9,12 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, NoReturn
 
 from sqlalchemy import Row, Select, delete, insert, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -29,10 +27,11 @@ from antarest.study.business.model.thermal_reserve_certification_model import (
 )
 from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
 from antarest.study.dao.common import AreaId
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
 
 if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+    pass
 
 
 _THERMAL_TABLE = THERMAL_RESERVE_CERTIFICATION_TABLE
@@ -56,12 +55,8 @@ def _convert_model_to_row(
     return values
 
 
-class DatabaseReserveCertificationDao(ReserveCertificationDao):
+class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     """Database implementation of ReserveCertificationDao."""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
 
     def _select_one(self, area_id: str, thermal_id: str, reserve_id: str) -> Select[Any]:
         return select(_THERMAL_TABLE).where(
@@ -70,10 +65,6 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao):
             & (_THERMAL_TABLE.c.thermal_id == thermal_id)
             & (_THERMAL_TABLE.c.reserve_id == reserve_id)
         )
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     @override
     def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:

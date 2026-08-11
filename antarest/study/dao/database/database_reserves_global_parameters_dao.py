@@ -26,6 +26,7 @@ from antarest.study.business.model.reserves_global_parameters_model import Reser
 from antarest.study.dao.api.reserves_global_parameters_dao import ReservesGlobalParametersDao
 from antarest.study.dao.common import ReservesGlobalParametersMapping
 from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.area import RESERVES_GLOBAL_PARAMETERS_TABLE
 
 _TABLE = RESERVES_GLOBAL_PARAMETERS_TABLE
@@ -40,18 +41,8 @@ def _convert_row_to_model(row: Row[Any]) -> ReservesGlobalParameters:
     )
 
 
-class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao):
+class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao, DatabaseDaoBase):
     """Database implementation of ReservesGlobalParametersDao"""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        return self._study_id
-
-    def get_session(self) -> Session:
-        return self._db_session
 
     @override
     def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:

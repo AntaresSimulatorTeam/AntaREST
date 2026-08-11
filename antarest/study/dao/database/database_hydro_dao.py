@@ -17,14 +17,12 @@ This module provides database-backed storage for hydro configuration when storag
 """
 
 import math
-from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import polars as pl
 from sqlalchemy import Row, Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
@@ -47,6 +45,7 @@ from antarest.study.dao.database.common import (
     save_area_matrix,
     validate_area_exists,
 )
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.area import AREA_TABLE
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
@@ -82,34 +81,11 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
 _MANAGEMENT_COLS = [c for c in HYDRO_MANAGEMENT_TABLE.c if c.name not in ("study_id", "area_id")]
 
 if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+    pass
 
 
-class DatabaseHydroDao(HydroDao):
+class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
     """Database implementation of HydroDao"""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        """
-        Initialize DatabaseHydroDao with dependencies.
-
-        Args:
-            study_id: The study ID for database queries.
-            db_session: SQLAlchemy session for database operations.
-        """
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     @staticmethod
     def _convert_row_to_hydro_management(row: Row[Any]) -> HydroManagement:

@@ -9,11 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, insert, select
-from sqlalchemy.orm import Session
 from sqlalchemy.sql.schema import Table
 from typing_extensions import override
 
@@ -27,6 +25,7 @@ from antarest.study.business.model.scenario_builder_model import (
 )
 from antarest.study.business.model.study_index import StudyIndex
 from antarest.study.dao.api.scenario_builder_dao import ScenarioBuilderDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.ruleset import (
     SCENARIO_BINDING_CONSTRAINTS_TABLE,
     SCENARIO_HYDRO_FINAL_LEVEL_TABLE,
@@ -44,7 +43,7 @@ from antarest.study.dao.database.models.ruleset import (
 )
 
 if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+    pass
 
 _LINK_SEPARATOR = " / "
 
@@ -66,18 +65,10 @@ _AREA_ITEM_TABLE_MAP: dict[ScenarioType, tuple[Table, str]] = {
 }
 
 
-class DatabaseScenarioBuilderDao(ScenarioBuilderDao):
+class DatabaseScenarioBuilderDao(ScenarioBuilderDao, DatabaseDaoBase):
     """
     Database implementation of ScenarioBuilderDao.
     """
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     @override
     def save_scenario_builder(self, ruleset: Ruleset) -> None:

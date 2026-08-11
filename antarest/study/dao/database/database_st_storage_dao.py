@@ -14,14 +14,12 @@
 Database implementation of StStorageDao.
 """
 
-from abc import abstractmethod
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NoReturn
 
 import polars as pl
 from sqlalchemy import CursorResult, Row, Table, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -48,6 +46,7 @@ from antarest.study.dao.common import (
     StStorageSeriesMapping,
 )
 from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.st_storage import (
     COST_INJECTION_TABLE,
     COST_LEVEL_TABLE,
@@ -70,28 +69,13 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
 )
 
 if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+    pass
 
 
-class DatabaseStStorageDao(STStorageDao):
+class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
     """
     Database implementation of StStorageDao.
     """
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        """
-        Initialize DatabaseStStorageDao with dependencies.
-
-        Args:
-            study_id: The study ID for database queries.
-            db_session: SQLAlchemy session for database operations.
-        """
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     def _convert_st_storage_to_row(self, area_id: str, st_storage: STStorage) -> dict[str, Any]:
         values = dict(study_id=self._study_id, area_id=area_id, **st_storage.model_dump())

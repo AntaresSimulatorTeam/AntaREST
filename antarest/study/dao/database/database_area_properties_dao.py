@@ -16,11 +16,9 @@ Database implementation of AreaDao using SQLAlchemy Core.
 This module provides database-backed storage for areas when storage_mode=DATABASE.
 """
 
-from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import CursorResult, select, update
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound
@@ -30,10 +28,11 @@ from antarest.study.dao.database.common import (
     parse_frequency_filters,
     serialize_frequency_filters,
 )
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.area import AREA_TABLE
 
 if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+    pass
 
 
 def _convert_db_properties_to_model(db_row: Any) -> AreaProperties:
@@ -51,24 +50,8 @@ def _convert_db_properties_to_model(db_row: Any) -> AreaProperties:
     )
 
 
-class DatabaseAreaPropertiesDao(AreaPropertiesDao):
+class DatabaseAreaPropertiesDao(AreaPropertiesDao, DatabaseDaoBase):
     """Database implementation of AreaPropertiesDao"""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     @override
     def get_area_properties(self, area_id: str) -> AreaProperties:

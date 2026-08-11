@@ -31,6 +31,7 @@ from antarest.core.utils.sql_utils import upsert_one
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase, StudyDaoContext
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
 from antarest.study.dao.database.database_binding_constraint_dao import DatabaseBindingConstraintDao
@@ -105,30 +106,20 @@ class DatabaseStudyDao(
             blob_service: Blobs storage service
             generator_matrix_constants: Predefined matrix constants generator
         """
-        DatabaseAreaDao.__init__(self, study_id, db_session)
-        DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
-        DatabaseDistrictDao.__init__(self, study_id, db_session)
-        DatabaseLinkDao.__init__(self, study_id, db_session)
-        DatabaseLayerDao.__init__(self, study_id, db_session)
-        DatabaseHydroDao.__init__(self, study_id, db_session)
-        DatabaseThermalDao.__init__(self, study_id, db_session)
-        DatabaseStudySettingsDao.__init__(self, study_id, db_session)
-        DatabaseRenewableDao.__init__(self, study_id, db_session)
-        DatabaseUserResourcesDao.__init__(self, study_id, db_session, blob_service)
-        DatabaseStStorageDao.__init__(self, study_id, db_session)
-        DatabaseThematicTrimmingDao.__init__(self, study_id, db_session)
-        DatabaseScenarioBuilderDao.__init__(self, study_id, db_session)
-        DatabaseXpansionDao.__init__(self, study_id, db_session)
-        DatabaseBindingConstraintDao.__init__(self, study_id, db_session)
-        DatabaseReservesGlobalParametersDao.__init__(self, study_id, db_session)
-        DatabaseReserveDefinitionDao.__init__(self, study_id, db_session)
+        DatabaseDaoBase.__init__(self, StudyDaoContext(study_id, db_session))
         self._matrix_service = matrix_service
+        self._blob_service_impl = blob_service
         self._generator_matrix_constants = generator_matrix_constants
 
     @override
     @property
     def matrix_service(self) -> ISimpleMatrixService:
         return self._matrix_service
+
+    @property
+    @override
+    def _blob_service(self) -> IBlobService:
+        return self._blob_service_impl
 
     @override
     @property
