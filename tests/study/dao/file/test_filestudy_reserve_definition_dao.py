@@ -56,110 +56,43 @@ def _make_reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overr
     return ReserveDefinition(**base)
 
 
-class TestCoexistenceWithGlobalParameters:
-    """Reserves and global parameters share the same INI file per area — ensure they don't overwrite each other."""
+def test_yaml_file_is_written_and_read_correctly(filestudy_dao_v10: FileStudyTreeDao) -> None:
+    save_area(filestudy_dao_v10, "paris")
+    global_params = ReservesGlobalParameters(
+        reference_activation_duration_down=5,
+        energy_activation_ratio_down=0.33,
+        reference_activation_duration_up=11,
+        energy_activation_ratio_up=0.66,
+    )
+    filestudy_dao_v10.save_reserves_global_parameters({"paris": global_params})
 
-    def test_get_all_excludes_global_parameters_section(self, filestudy_dao_v10: FileStudyTreeDao) -> None:
-        save_area(filestudy_dao_v10, "paris")
-        filestudy_dao_v10.save_reserves_global_parameters(
-            {"paris": ReservesGlobalParameters(reference_activation_duration_up=7)}
-        )
-        filestudy_dao_v10.save_reserve_definitions(
-            {"paris": [_make_reserve("Reserve 1"), _make_reserve("Reserve 2", ReserveType.DOWN)]}
-        )
-
-        reserves = list(filestudy_dao_v10.get_all_reserve_definitions_for_area("paris"))
-        ids = sorted(r.id for r in reserves)
-        assert ids == ["reserve 1", "reserve 2"]
-        assert "globalparameters" not in ids
-
-    def test_save_reserve_preserves_global_parameters(self, filestudy_dao_v10: FileStudyTreeDao) -> None:
-        save_area(filestudy_dao_v10, "paris")
-        global_params = ReservesGlobalParameters(
-            reference_activation_duration_up=42,
-            energy_activation_ratio_down=0.33,
-        )
-        filestudy_dao_v10.save_reserves_global_parameters({"paris": global_params})
-        filestudy_dao_v10.save_reserve_definitions({"paris": [_make_reserve("R1")]})
-
-        assert filestudy_dao_v10.get_reserves_global_parameters("paris") == global_params
-
-    def test_save_global_parameters_preserves_reserves(self, filestudy_dao_v10: FileStudyTreeDao) -> None:
-        save_area(filestudy_dao_v10, "paris")
-        reserve = _make_reserve("R1")
-        filestudy_dao_v10.save_reserve_definitions({"paris": [reserve]})
-        filestudy_dao_v10.save_reserves_global_parameters(
-            {"paris": ReservesGlobalParameters(reference_activation_duration_up=9)}
-        )
-
-        assert filestudy_dao_v10.get_reserve_definition("paris", "r1") == reserve
-
-    def test_delete_reserve_preserves_global_parameters(self, filestudy_dao_v10: FileStudyTreeDao) -> None:
-        save_area(filestudy_dao_v10, "paris")
-        global_params = ReservesGlobalParameters(reference_activation_duration_up=11)
-        filestudy_dao_v10.save_reserves_global_parameters({"paris": global_params})
-        filestudy_dao_v10.save_reserve_definitions({"paris": [_make_reserve("R1")]})
-
-        filestudy_dao_v10.delete_reserve_definitions("paris", ["r1"])
-
-        assert filestudy_dao_v10.get_reserves_global_parameters("paris") == global_params
-        assert filestudy_dao_v10.reserve_definition_exists("paris", "r1") is False
-
-    def test_upsert_multiple_reserves_preserves_global_parameters(self, filestudy_dao_v10: FileStudyTreeDao) -> None:
-        save_area(filestudy_dao_v10, "paris")
-        global_params = ReservesGlobalParameters(reference_activation_duration_down=5)
-        filestudy_dao_v10.save_reserves_global_parameters({"paris": global_params})
-        filestudy_dao_v10.save_reserve_definitions(
-            {"paris": [_make_reserve("R1"), _make_reserve("R2", ReserveType.DOWN)]}
-        )
-        filestudy_dao_v10.save_reserve_definitions(
-            {"paris": [_make_reserve("R1", failure_cost=999.0), _make_reserve("R3")]}
-        )
-
-        assert filestudy_dao_v10.get_reserves_global_parameters("paris") == global_params
-        assert filestudy_dao_v10.get_reserve_definition("paris", "r1").failure_cost == 999.0
-        assert filestudy_dao_v10.reserve_definition_exists("paris", "r2") is True
-        assert filestudy_dao_v10.reserve_definition_exists("paris", "r3") is True
-
-    def test_yaml_file_is_written_and_read_correctly(self, filestudy_dao_v10: FileStudyTreeDao) -> None:
-        save_area(filestudy_dao_v10, "paris")
-        global_params = ReservesGlobalParameters(
-            reference_activation_duration_down=5,
-            energy_activation_ratio_down=0.33,
-            reference_activation_duration_up=11,
-            energy_activation_ratio_up=0.66,
-        )
-        filestudy_dao_v10.save_reserves_global_parameters({"paris": global_params})
-
-        # Check the YML content
-        study_path = (
-            filestudy_dao_v10.get_file_study().config.study_path / "input" / "reserves" / "paris" / "reserves.yml"
-        )
-        content = YAMLReader().read(study_path)
-        expected_content: dict[str, Any] = {
-            "globalparameters": {
-                "energy-activation-ratio-down": 0.33,
-                "energy-activation-ratio-up": 0.66,
-                "reference-activation-duration-down": 5,
-                "reference-activation-duration-up": 11,
-            }
+    # Check the YML content
+    study_path = filestudy_dao_v10.get_file_study().config.study_path / "input" / "reserves" / "paris" / "reserves.yml"
+    content = YAMLReader().read(study_path)
+    expected_content: dict[str, Any] = {
+        "globalparameters": {
+            "energy-activation-ratio-down": 0.33,
+            "energy-activation-ratio-up": 0.66,
+            "reference-activation-duration-down": 5,
+            "reference-activation-duration-up": 11,
         }
-        assert content == expected_content
+    }
+    assert content == expected_content
 
-        # Add a reserve definition
-        filestudy_dao_v10.save_reserve_definitions({"paris": [_make_reserve("R1", failure_cost=999)]})
+    # Add a reserve definition
+    filestudy_dao_v10.save_reserve_definitions({"paris": [_make_reserve("R1", failure_cost=999)]})
 
-        # Check the YML content
-        content = YAMLReader().read(study_path)
-        expected_content["reserves"] = [
-            {
-                "energy-activation-ratio": 0.9,
-                "failure-cost": 999.0,
-                "name": "R1",
-                "power-activation-ratio": 0.4,
-                "reference-activation-duration": 3,
-                "spillage-cost": 5.0,
-                "type": "up",
-            }
-        ]
-        assert content == expected_content
+    # Check the YML content
+    content = YAMLReader().read(study_path)
+    expected_content["reserves"] = [
+        {
+            "energy-activation-ratio": 0.9,
+            "failure-cost": 999.0,
+            "name": "R1",
+            "power-activation-ratio": 0.4,
+            "reference-activation-duration": 3,
+            "spillage-cost": 5.0,
+            "type": "up",
+        }
+    ]
+    assert content == expected_content

@@ -67,6 +67,23 @@ def test_save_updates_existing(dao_10_0: StudyDao) -> None:
     assert result.reference_activation_duration_up == 10
 
 
+def test_save_raises_for_nonexistent_area(dao_10_0: StudyDao) -> None:
+    with pytest.raises(AreaNotFound):
+        dao_10_0.save_reserves_global_parameters({"nonexistent": ReservesGlobalParameters()})
+
+
+def test_save_validates_all_areas_before_writing(dao_10_0: StudyDao) -> None:
+    save_area(dao_10_0, "paris")
+
+    with pytest.raises(AreaNotFound):
+        dao_10_0.save_reserves_global_parameters(
+            {
+                "paris": ReservesGlobalParameters(reference_activation_duration_up=42),
+                "nonexistent": ReservesGlobalParameters(),
+            }
+        )
+
+
 def test_get_all(dao_10_0: StudyDao) -> None:
     dao = dao_10_0
     save_area(dao, "paris")
