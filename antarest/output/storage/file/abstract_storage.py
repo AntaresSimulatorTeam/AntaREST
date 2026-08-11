@@ -24,7 +24,6 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    ChildNotFoundError,
     OutputAlreadyArchived,
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
@@ -50,12 +49,14 @@ from antarest.output.filestudy.utils import QueryFileType, get_start_column, par
 from antarest.output.model import OutputVariablesList
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
+    DigestNotFoundError,
     IOutputStorage,
     OutputDetails,
     OutputMetadata,
     OutputSettings,
     OutputStorageType,
 )
+from antarest.output.utils import find_mode_dir
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8,
@@ -477,10 +478,13 @@ class AbstractFileOutputStorage(IOutputStorage):
         """
         Digest of the output.
         """
-        output_path = self._outputs_provider.get_outputs(study_id).outputs_path
-        file_path = output_path / output_id / "economy" / "mc-all" / "grid" / "digest.txt"
+        output_path = self._outputs_provider.get_outputs(study_id).outputs_path / output_id
+        mode_dir = find_mode_dir(output_path)
+        if not mode_dir:
+            raise DigestNotFoundError(study_id, output_id)
+        file_path = mode_dir / "mc-all" / "grid" / "digest.txt"
         if not file_path.exists():
-            raise ChildNotFoundError(f"Digest file not found for study {study_id} and output {output_id}")
+            raise DigestNotFoundError(study_id, output_id)
         return DigestSynthesis.parse_file_for_ui(file_path)
 
     @override
