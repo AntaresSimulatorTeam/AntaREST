@@ -18,7 +18,7 @@ This module provides database-backed storage for districts when storage_mode=DAT
 
 import json
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy import CursorResult, delete, select
 from typing_extensions import override
@@ -29,9 +29,6 @@ from antarest.study.business.model.district_model import District
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
-
-if TYPE_CHECKING:
-    pass
 
 
 def _convert_db_row_to_district(db_row: Any) -> District:

@@ -17,7 +17,7 @@ This module provides database-backed storage for hydro configuration when storag
 """
 
 import math
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import numpy as np
 import polars as pl
@@ -79,9 +79,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
 )
 
 _MANAGEMENT_COLS = [c for c in HYDRO_MANAGEMENT_TABLE.c if c.name not in ("study_id", "area_id")]
-
-if TYPE_CHECKING:
-    pass
 
 
 class DatabaseHydroDao(HydroDao, DatabaseDaoBase):

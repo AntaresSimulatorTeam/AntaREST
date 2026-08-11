@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import json
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.exc import IntegrityError
@@ -28,10 +28,6 @@ from antarest.study.dao.common import (
 )
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.thermal_reserve_symmetries import THERMAL_RESERVE_SYMMETRIES_TABLE
-
-if TYPE_CHECKING:
-    pass
-
 
 _THERMAL_TABLE = THERMAL_RESERVE_SYMMETRIES_TABLE
 

@@ -15,7 +15,7 @@ Database implementation of ThermalDao.
 """
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import Any, NoReturn
 
 import polars as pl
 from sqlalchemy import CursorResult, Select, delete, select
@@ -39,9 +39,6 @@ from antarest.study.dao.database.common import validate_area_exists
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
-
-if TYPE_CHECKING:
-    pass
 
 
 class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):

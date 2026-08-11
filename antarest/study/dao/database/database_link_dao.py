@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import polars as pl
 from sqlalchemy import Row, Table, delete, select
@@ -37,9 +37,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
     default_8_fixed_hourly,
     default_scenario_hourly,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 def _convert_db_rows_to_model(db_row: Any) -> Link:

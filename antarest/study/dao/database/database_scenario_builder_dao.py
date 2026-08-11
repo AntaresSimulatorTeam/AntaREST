@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy import delete, insert, select
 from sqlalchemy.sql.schema import Table
@@ -41,9 +41,6 @@ from antarest.study.dao.database.models.ruleset import (
     SCENARIO_THERMAL_TABLE,
     SCENARIO_WIND_TABLE,
 )
-
-if TYPE_CHECKING:
-    pass
 
 _LINK_SEPARATOR = " / "
 

@@ -14,7 +14,7 @@
 Database implementation of XpansionDao.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import polars as pl
 from sqlalchemy import CursorResult, Table, asc, delete, insert, or_, select, update
@@ -57,9 +57,6 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_SETTINGS_TABLE,
     XPANSION_WEIGHT_TABLE,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 class DatabaseXpansionDao(XpansionDao, DatabaseDaoBase):

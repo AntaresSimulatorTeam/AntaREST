@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 import logging
-from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 from typing_extensions import override
@@ -45,10 +44,6 @@ from antarest.study.dao.database.models.settings import (
     PLAYLIST_TABLE,
     TIMESERIES_CONFIG_TABLE,
 )
-
-if TYPE_CHECKING:
-    pass
-
 
 logger = logging.getLogger(__name__)
 

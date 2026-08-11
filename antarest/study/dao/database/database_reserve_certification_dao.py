@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import Any, NoReturn
 
 from sqlalchemy import Row, Select, delete, insert, select
 from sqlalchemy.exc import IntegrityError
@@ -29,10 +29,6 @@ from antarest.study.dao.api.reserve_certification_dao import ReserveCertificatio
 from antarest.study.dao.common import AreaId
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
-
-if TYPE_CHECKING:
-    pass
-
 
 _THERMAL_TABLE = THERMAL_RESERVE_CERTIFICATION_TABLE
 

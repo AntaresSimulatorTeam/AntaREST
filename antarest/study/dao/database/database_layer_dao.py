@@ -18,7 +18,6 @@ This module provides database-backed storage for layers when storage_mode=DATABA
 
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 from sqlalchemy import CursorResult, delete, select
 from typing_extensions import override
@@ -31,9 +30,6 @@ from antarest.study.dao.api.layer_dao import LayerDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.area import AREA_UI_TABLE
 from antarest.study.dao.database.models.layer import LAYER_TABLE
-
-if TYPE_CHECKING:
-    pass
 
 
 class DatabaseLayerDao(LayerDao, DatabaseDaoBase):

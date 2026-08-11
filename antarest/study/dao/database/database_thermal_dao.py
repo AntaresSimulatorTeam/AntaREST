@@ -15,7 +15,7 @@ Database implementation of ThermalDao.
 """
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import Any, NoReturn
 
 import polars as pl
 from sqlalchemy import CursorResult, Row, Select, Table, delete, select
@@ -47,9 +47,6 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.
     default_data_matrix,
     default_modulation_matrix,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):

@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -25,9 +24,6 @@ from antarest.study.business.model.thematic_trimming_model import (
 from antarest.study.dao.api.thematic_trimming_dao import ThematicTrimmingDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.thematic_trimming import THEMATIC_TRIMMING_TABLE
-
-if TYPE_CHECKING:
-    pass
 
 
 class DatabaseThematicTrimmingDao(ThematicTrimmingDao, DatabaseDaoBase):

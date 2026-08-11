@@ -17,7 +17,7 @@ This module provides database-backed storage for areas when storage_mode=DATABAS
 """
 
 import json
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import polars as pl
 from sqlalchemy import Row, Table, case, delete, insert, select, update
@@ -53,9 +53,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
     default_8_fixed_hourly,
     default_scenario_hourly,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 class DatabaseAreaDao(AreaDao, DatabaseDaoBase):

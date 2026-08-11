@@ -16,7 +16,7 @@ Database implementation of AreaDao using SQLAlchemy Core.
 This module provides database-backed storage for areas when storage_mode=DATABASE.
 """
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy import CursorResult, select, update
 from typing_extensions import override
@@ -30,9 +30,6 @@ from antarest.study.dao.database.common import (
 )
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.area import AREA_TABLE
-
-if TYPE_CHECKING:
-    pass
 
 
 def _convert_db_properties_to_model(db_row: Any) -> AreaProperties:

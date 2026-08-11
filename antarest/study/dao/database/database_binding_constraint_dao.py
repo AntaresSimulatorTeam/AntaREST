@@ -16,7 +16,7 @@ Database implementation of ConstraintDao.
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NewType, Sequence
+from typing import Any, NewType, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -133,10 +133,6 @@ class _MatrixChanges:
 
     def add_insertion(self, constraint_id: ConstraintId, matrix_type: _MatrixType, matrix_id: _MatrixID) -> None:
         self.insertions.append(_MatrixInsertion(constraint_id, matrix_type, matrix_id))
-
-
-if TYPE_CHECKING:
-    pass
 
 
 class DatabaseBindingConstraintDao(ConstraintDao, DatabaseDaoBase):

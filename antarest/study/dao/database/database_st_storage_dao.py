@@ -15,7 +15,7 @@ Database implementation of StStorageDao.
 """
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import Any, NoReturn
 
 import polars as pl
 from sqlalchemy import CursorResult, Row, Table, select
@@ -67,9 +67,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
     default_scenario_hourly,
     default_scenario_hourly_ones,
 )
-
-if TYPE_CHECKING:
-    pass
 
 
 class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):

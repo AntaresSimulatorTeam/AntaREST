@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import polars as pl
 from sqlalchemy import CursorResult, Row, Select, delete, select
@@ -30,9 +30,6 @@ from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.reserve_definition import RESERVE_DEFINITION_TABLE
 from antarest.study.dao.database.models.reserve_need import RESERVE_NEED_MATRIX_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
-
-if TYPE_CHECKING:
-    pass
 
 _TABLE = RESERVE_DEFINITION_TABLE
 _NEED_TABLE = RESERVE_NEED_MATRIX_TABLE
