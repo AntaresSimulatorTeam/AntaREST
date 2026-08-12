@@ -124,19 +124,19 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
             self._save_st_storage_reserve_symmetries_for_area(area_id, data[area_id])
 
     def _save_st_storage_reserve_symmetries_for_area(
-        self, storage_id: AreaId, new_symmetries: dict[AreaAssetId, ReserveSymmetries]
+        self, area_id: AreaId, new_symmetries: dict[AreaAssetId, ReserveSymmetries]
     ) -> None:
         file_study = self.get_file_study()
         for asset_id, symmetries in new_symmetries.items():
-            self._check_st_storage_exists_in_area(storage_id, asset_id)
-            self._check_reserve_definitions_exist_in_symmetries(storage_id, symmetries)
+            self._check_st_storage_exists_in_area(area_id, asset_id)
+            self._check_reserve_definitions_exist_in_symmetries(area_id, symmetries)
 
-        yaml_content = get_st_storage_reserve_participations_as_yaml_content(storage_id, file_study)
+        yaml_content = get_st_storage_reserve_participations_as_yaml_content(area_id, file_study)
         certifications = parse_st_storage_reserves_certifications(yaml_content)
         new_content = serialize_st_storage_reserve_participations(new_symmetries, certifications)
 
         # Saves the content into the YAML file
-        file_study.tree.save(new_content, get_st_storage_reserve_path(storage_id))
+        file_study.tree.save(new_content, get_st_storage_reserve_path(area_id))
 
     def _check_st_storage_exists_in_area(self, area_id: str, asset_id: str) -> None:
         if not self.get_impl().st_storage_exists(area_id, asset_id):

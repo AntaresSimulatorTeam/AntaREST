@@ -90,6 +90,7 @@ class Participation(ABC, AntaresBaseModel, Generic[CertificationT]):
     def get_id(self) -> str:
         raise NotImplementedError
 
+    @abstractmethod
     def set_id(self, id: str) -> None:
         raise NotImplementedError
 
@@ -121,7 +122,7 @@ class STStorageParticipation(Participation[_StorageCertification]):
 ParticipationT = TypeVar("ParticipationT", bound=Participation[Any])
 
 
-class _AreaAssetParticipationFileData(AntaresBaseModel, Generic[ParticipationT]):
+class _AreaAssetParticipationFileData(ABC, AntaresBaseModel, Generic[ParticipationT]):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     participations: list[ParticipationT]
@@ -137,6 +138,7 @@ class _AreaAssetParticipationFileData(AntaresBaseModel, Generic[ParticipationT])
 
         return self
 
+    @abstractmethod
     def _detect_duplicated_assets(self) -> None:
         raise NotImplementedError
 
@@ -182,15 +184,16 @@ class _AreaAssetParticipationFileData(AntaresBaseModel, Generic[ParticipationT])
     def _iterate_through_certifications(
         cls,
         participations: list[Any],
-        thermal_certifications: dict[str, dict[ReserveDefinitionId, ReserveCertification]],
+        certifications: dict[str, dict[ReserveDefinitionId, ReserveCertification]],
     ) -> None:
-        for cluster_id, values in thermal_certifications.items():
+        for cluster_id, values in certifications.items():
             participation: dict[str, Any] = cls.initialize_participation(cluster_id)
             if values:
                 participation["certifications"] = [{"reserve": r_id, **c.model_dump()} for r_id, c in values.items()]
             participations.append(participation)
 
     @classmethod
+    @abstractmethod
     def initialize_participation(cls, cluster_id: str) -> dict[str, str]:
         raise NotImplementedError
 
