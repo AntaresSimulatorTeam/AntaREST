@@ -16,6 +16,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import ReserveDefinitionNotFound, ThermalClusterNotFound
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
+from antarest.study.dao.api.common import check_thermal_symmetries_are_certified
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
@@ -82,6 +83,10 @@ class FileStudyThermalReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
 
         yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
         certifications = parse_thermal_reserves_certifications(yaml_content)
+
+        # Verify that the thermals are certified on the reserves they are symmetric on
+        check_thermal_symmetries_are_certified(area_id, data, certifications)
+
         new_content = serialize_thermal_reserve_participations(data, certifications)
 
         # Saves the content into the YAML file

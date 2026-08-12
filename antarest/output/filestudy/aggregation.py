@@ -19,7 +19,8 @@ import pandas as pd
 import polars as pl
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
-from antarest.output.filestudy.utils import (
+from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file
+from antarest.output.filestudy.model import (
     MCYEAR_COL,
     TIME_ID_COL,
     MCAllAreasQueryFile,
@@ -31,9 +32,7 @@ from antarest.output.filestudy.utils import (
     QueryFileType,
     SingleOutputHeaders,
     concatenate_dataframe_multi_indexed_columns,
-    get_start_column,
     normalize_df_column_names,
-    parse_output_file,
 )
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
