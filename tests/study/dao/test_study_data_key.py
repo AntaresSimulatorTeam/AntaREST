@@ -87,10 +87,8 @@ def test_resolution_fails_for_a_study_without_data(db_session: Session, matrix_s
         db_session.add(study)
         db_session.commit()
 
-    dao = _build_factory(db_session, matrix_service).get_study_dao(study_id, True)
-
     with pytest.raises(StudyNotFoundError):
-        dao.get_all_area_ids()
+        _build_factory(db_session, matrix_service).get_study_dao(study_id, True)
 
 
 def test_studies_do_not_see_each_other_data(db_session: Session, matrix_service: ISimpleMatrixService) -> None:

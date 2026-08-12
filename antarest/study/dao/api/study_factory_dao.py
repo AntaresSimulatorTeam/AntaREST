@@ -32,5 +32,8 @@ class StudyFactoryDao(ABC):
     def get_study_dao(self, study_id: str, is_study_managed: bool) -> StudyDao:
         """
         Creates a DAO instance for a study which already contains data.
+
+        Raises:
+            StudyNotFoundError: if there is no existing data for that study
         """
         raise NotImplementedError()
