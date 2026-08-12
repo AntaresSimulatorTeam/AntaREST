@@ -227,7 +227,7 @@ def test_removing_an_st_storage_reserve_cascades_on_symmetries_and_certification
     # Remove the reserve `r1`. We should no longer see `r1` in the symmetries and certifications.
     dao.delete_reserve_definitions("fr", ["r1"])
 
-    assert dao.get_thermal_reserve_symmetries("fr") == {}
+    assert dao.get_st_storage_reserve_symmetries("fr") == {}
     assert dao.get_st_storage_reserve_certifications("fr") == {"r2": {"sts1": certification}}
 
 
