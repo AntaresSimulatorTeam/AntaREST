@@ -13,7 +13,7 @@ import re
 
 import pytest
 
-from antarest.study.storage.rawstudy.model.filesystem.config.thermal_reserve_participations import (
+from antarest.study.storage.rawstudy.model.filesystem.config.reserve_participations import (
     parse_thermal_reserves_certifications,
     parse_thermal_reserves_symmetries,
 )

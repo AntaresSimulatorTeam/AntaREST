@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 from antarest.study.business.model.area_properties_model import AreaProperties
+from antarest.study.business.model.reserve_certification_model import ThermalReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertification
 from antarest.study.dao.api.study_dao import StudyDao
 
 

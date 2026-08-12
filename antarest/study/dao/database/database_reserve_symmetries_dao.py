@@ -20,7 +20,7 @@ from typing_extensions import override
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, ThermalReserveCertificationNotFound
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
-from antarest.study.dao.api.common import check_thermal_symmetries_are_certified
+from antarest.study.dao.api.common import check_symmetries_are_certified
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
@@ -130,7 +130,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
         for area_id, thermal_dict in data.items():
             certifications = self.get_impl().get_thermal_reserve_certifications(area_id)
             try:
-                check_thermal_symmetries_are_certified(area_id, thermal_dict, certifications)
+                check_symmetries_are_certified(area_id, thermal_dict, certifications)
             except ThermalReserveCertificationNotFound:
                 # A missing certification is ambiguous: the thermal may simply not exist.
                 existing_ids = {thermal.id for thermal in self.get_impl().get_all_thermals_for_area(area_id)}

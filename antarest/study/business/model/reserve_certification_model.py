@@ -9,13 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, TypeAlias
+from typing import Annotated, Mapping, TypeAlias
 
 from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
+from antarest.study.dao.common import AreaAssetId
 
 Cost = Annotated[float, Field(ge=0)]
 Power = Annotated[float, Field(ge=0)]
@@ -26,6 +27,8 @@ class ReserveCertification(AntaresBaseModel):
 
     participation_cost: Cost = 0.0
 
+
+ReserveCertificationMapping = Mapping[ReserveDefinitionId, Mapping[AreaAssetId, ReserveCertification]]
 
 ##########################
 # Thermal part
