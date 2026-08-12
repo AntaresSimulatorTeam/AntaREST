@@ -91,6 +91,7 @@ class DatabaseStudyDao(
     def __init__(
         self,
         study_id: str,
+        study_data_id: int,
         db_session: Session,
         matrix_service: ISimpleMatrixService,
         blob_service: IBlobService,
@@ -106,7 +107,7 @@ class DatabaseStudyDao(
             blob_service: Blobs storage service
             generator_matrix_constants: Predefined matrix constants generator
         """
-        DatabaseDaoBase.__init__(self, StudyDaoContext(study_id, db_session))
+        DatabaseDaoBase.__init__(self, StudyDaoContext(study_id, study_data_id, db_session))
         self._matrix_service = matrix_service
         self._blob_service = blob_service
         self._generator_matrix_constants = generator_matrix_constants
@@ -125,13 +126,6 @@ class DatabaseStudyDao(
     @property
     def generator_matrix_constants(self) -> GeneratorMatrixConstants:
         return self._generator_matrix_constants
-
-    def set_study_data_id(self, study_data_id: int) -> None:
-        """
-        Prime this DAO with the id of the `study_data` row that was just created for its study,
-        sparing the lookup the first query would otherwise trigger.
-        """
-        self._context.set_study_data_id(study_data_id)
 
     # Implementation of abstract methods required by StudyDao
     @override
