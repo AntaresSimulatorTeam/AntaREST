@@ -12,19 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import { areaKeys } from "@/queries/areas/keys";
+import { getThermalClusters } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/-utils";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
-import { getThermalClusters } from "../thermals/-utils";
+import { EXTERNALLY_MUTATED } from "../utils";
+import { thermalKeys } from "./keys";
 
-// Thermal clusters have no query layer yet (their API service still lives in the
-// thermals route folder), so the query options are defined here for now.
-export const thermalClustersQueries = {
+export const thermalQueries = {
   list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return queryOptions({
-      queryKey: [...areaKeys.all(), "thermals", { studyId, areaId }],
+      queryKey: thermalKeys.list(studyId, areaId),
       queryFn: () => getThermalClusters(studyId, areaId),
+      // Clusters are mutated by the legacy Thermals pages and table mode, none of
+      // which invalidate this cache.
+      ...EXTERNALLY_MUTATED,
     });
   },
 };
