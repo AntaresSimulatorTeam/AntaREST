@@ -55,7 +55,6 @@ import { Box, Chip, CircularProgress, Tooltip, Typography, colors, useTheme } fr
 import { createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import debug from "debug";
-import debounce from "lodash/debounce";
 import moment from "moment";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
