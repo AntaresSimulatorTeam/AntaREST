@@ -14,14 +14,12 @@
 Database implementation of ThermalDao.
 """
 
-from abc import abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import Any, NoReturn
 
 import polars as pl
 from sqlalchemy import CursorResult, Select, delete, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -38,30 +36,13 @@ from antarest.study.business.model.renewable_cluster_model import (
 from antarest.study.dao.api.renewable_dao import RenewableDao
 from antarest.study.dao.common import AreaId, RenewableId, RenewableSeriesMapping
 from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
 
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
-
-class DatabaseRenewableDao(RenewableDao):
+class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
     """Database implementation of RenewableDao"""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        """
-        Initialize DatabaseRenewableDao with dependencies.
-
-        Args:
-            study_id: The study ID for database queries.
-            db_session: SQLAlchemy session for database operations.
-        """
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     def _convert_db_row_to_renewable(self, row: Any) -> RenewableCluster:
         data = get_row_representation_as_dict(row)

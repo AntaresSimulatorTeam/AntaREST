@@ -16,13 +16,10 @@ Database implementation of LayerDao.
 This module provides database-backed storage for layers when storage_mode=DATABASE.
 """
 
-from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
 
 from sqlalchemy import CursorResult, delete, select
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
@@ -30,40 +27,15 @@ from antarest.core.utils.sql_utils import upsert_one
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.layer_dao import LayerDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.area import AREA_UI_TABLE
 from antarest.study.dao.database.models.layer import LAYER_TABLE
 
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
-
-class DatabaseLayerDao(LayerDao):
+class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
     """
     Database implementation of LayerDao.
     """
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        """
-        Initialize DatabaseLayerDao with dependencies.
-
-        Args:
-            study_id: The study ID for database queries.
-            db_session: SQLAlchemy session for database operations.
-        """
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     @override
     def get_layers(self) -> Sequence[Layer]:
@@ -73,8 +45,8 @@ class DatabaseLayerDao(LayerDao):
         The default layer (id="0") always contains all areas.
         Other layers contain the areas that have UI entries for that layer.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         # Get all layer names from LAYER_TABLE
         stmt_layers = select(LAYER_TABLE).where(LAYER_TABLE.c.study_id == study_id)
@@ -111,8 +83,8 @@ class DatabaseLayerDao(LayerDao):
 
         Does not persist area associations, use save_layer_areas() for that.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name}
         upsert_one(session, LAYER_TABLE, values)
@@ -129,8 +101,8 @@ class DatabaseLayerDao(LayerDao):
         if layer_id == DEFAULT_LAYER_ID:
             raise LayerNotAllowedToBeDeleted()
 
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         result = session.execute(
             delete(LAYER_TABLE).where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer_id))
@@ -153,8 +125,8 @@ class DatabaseLayerDao(LayerDao):
         if layer_id == DEFAULT_LAYER_ID:
             return True
 
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         # Check if layer exists in LAYER_TABLE
         stmt = select(LAYER_TABLE.c.layer_id).where(

@@ -10,11 +10,8 @@
 #
 # This file is part of the Antares project.
 import logging
-from abc import abstractmethod
-from typing import TYPE_CHECKING
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import StudyNotFoundError
@@ -37,6 +34,7 @@ from antarest.study.dao.api.general_config_dao import GeneralConfigDao
 from antarest.study.dao.api.optimization_preferences_dao import OptimizationPreferencesDao
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao
 from antarest.study.dao.api.timeseries_config_dao import TimeSeriesConfigDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.settings import (
     ADEQUACY_PATCH_PARAMETERS_TABLE,
     ADVANCED_PARAMETERS_TABLE,
@@ -46,10 +44,6 @@ from antarest.study.dao.database.models.settings import (
     PLAYLIST_TABLE,
     TIMESERIES_CONFIG_TABLE,
 )
-
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-
 
 logger = logging.getLogger(__name__)
 
@@ -70,29 +64,14 @@ class DatabaseStudySettingsDao(
     AdequacyPatchParametersDao,
     TimeSeriesConfigDao,
     PlaylistConfigDao,
+    DatabaseDaoBase,
 ):
     """Database implementation of all study settings DAOs"""
 
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
-
     @override
     def save_general_config(self, config: GeneralConfig) -> None:
-        values = dict(study_id=self.get_study_id(), **config.model_dump())
-        session = self.get_session()
+        values = dict(study_id=self._study_id, **config.model_dump())
+        session = self._db_session
         upsert_one(session, GENERAL_CONFIG_TABLE, values)
         session.commit()
 
@@ -100,7 +79,7 @@ class DatabaseStudySettingsDao(
     def get_general_config(self) -> GeneralConfig:
         study_id = self._study_id
         stmt = select(GENERAL_CONFIG_TABLE).where(GENERAL_CONFIG_TABLE.c.study_id == study_id)
-        row = self.get_session().execute(stmt).fetchone()
+        row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
         data = get_row_representation_as_dict(row)
@@ -109,7 +88,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
-        values = dict(study_id=self.get_study_id(), **config.model_dump(exclude={"export_mps"}))
+        values = dict(study_id=self._study_id, **config.model_dump(exclude={"export_mps"}))
         # Handle `export_mps` differently as it can either be a string or a boolean but will be stored as String in DB.
         if isinstance(config.export_mps, bool):
             mps = str(config.export_mps)
@@ -117,7 +96,7 @@ class DatabaseStudySettingsDao(
             mps = config.export_mps
         values["export_mps"] = mps
 
-        session = self.get_session()
+        session = self._db_session
         upsert_one(session, OPTIMIZATION_PREFERENCES_TABLE, values)
         session.commit()
 
@@ -125,7 +104,7 @@ class DatabaseStudySettingsDao(
     def get_optimization_preferences(self) -> OptimizationPreferences:
         study_id = self._study_id
         stmt = select(OPTIMIZATION_PREFERENCES_TABLE).where(OPTIMIZATION_PREFERENCES_TABLE.c.study_id == study_id)
-        row = self.get_session().execute(stmt).fetchone()
+        row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
 
@@ -145,8 +124,8 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
-        values = dict(study_id=self.get_study_id(), **parameters.model_dump())
-        session = self.get_session()
+        values = dict(study_id=self._study_id, **parameters.model_dump())
+        session = self._db_session
         upsert_one(session, ADVANCED_PARAMETERS_TABLE, values)
         session.commit()
 
@@ -154,7 +133,7 @@ class DatabaseStudySettingsDao(
     def get_advanced_parameters(self) -> AdvancedParameters:
         study_id = self._study_id
         stmt = select(ADVANCED_PARAMETERS_TABLE).where(ADVANCED_PARAMETERS_TABLE.c.study_id == study_id)
-        row = self.get_session().execute(stmt).fetchone()
+        row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
 
@@ -166,22 +145,22 @@ class DatabaseStudySettingsDao(
     def get_compatibility_parameters(self) -> CompatibilityParameters:
         study_id = self._study_id
         stmt = select(COMPATIBILITY_PARAMETERS_TABLE).where(COMPATIBILITY_PARAMETERS_TABLE.c.study_id == study_id)
-        row = self.get_session().execute(stmt).fetchone()
+        row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
         return CompatibilityParameters(hydro_pmax=row.hydro_pmax)
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
-        values = dict(study_id=self.get_study_id(), hydro_pmax=parameters.hydro_pmax)
-        session = self.get_session()
+        values = dict(study_id=self._study_id, hydro_pmax=parameters.hydro_pmax)
+        session = self._db_session
         upsert_one(session, COMPATIBILITY_PARAMETERS_TABLE, values)
         session.commit()
 
     @override
     def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
-        values = dict(study_id=self.get_study_id(), **parameters.model_dump())
-        session = self.get_session()
+        values = dict(study_id=self._study_id, **parameters.model_dump())
+        session = self._db_session
         upsert_one(session, ADEQUACY_PATCH_PARAMETERS_TABLE, values)
         session.commit()
 
@@ -189,7 +168,7 @@ class DatabaseStudySettingsDao(
     def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
         study_id = self._study_id
         stmt = select(ADEQUACY_PATCH_PARAMETERS_TABLE).where(ADEQUACY_PATCH_PARAMETERS_TABLE.c.study_id == study_id)
-        row = self.get_session().execute(stmt).fetchone()
+        row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
 
@@ -199,8 +178,8 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
-        values = dict(study_id=self.get_study_id(), thermal_number=config.thermal.number)
-        session = self.get_session()
+        values = dict(study_id=self._study_id, thermal_number=config.thermal.number)
+        session = self._db_session
         upsert_one(session, TIMESERIES_CONFIG_TABLE, values)
         session.commit()
 
@@ -208,7 +187,7 @@ class DatabaseStudySettingsDao(
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
         study_id = self._study_id
         stmt = select(TIMESERIES_CONFIG_TABLE).where(TIMESERIES_CONFIG_TABLE.c.study_id == study_id)
-        row = self.get_session().execute(stmt).fetchone()
+        row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
         return TimeSeriesConfiguration(thermal=TimeSeriesType(number=row.thermal_number))
@@ -221,12 +200,12 @@ class DatabaseStudySettingsDao(
             logger.warning(
                 "Dropping playlist entries for years outside [1, %d] on study %s: %s",
                 nb_years,
-                self.get_study_id(),
+                self._study_id,
                 sorted(out_of_range),
             )
         years = {y: v for y, v in playlist.years.items() if 1 <= y <= nb_years}
-        values = dict(study_id=self.get_study_id(), years=to_json_string(years))
-        session = self.get_session()
+        values = dict(study_id=self._study_id, years=to_json_string(years))
+        session = self._db_session
         upsert_one(session, PLAYLIST_TABLE, values)
         session.commit()
 
@@ -234,7 +213,7 @@ class DatabaseStudySettingsDao(
     def get_playlist_config(self) -> Playlist:
         study_id = self._study_id
         stmt = select(PLAYLIST_TABLE).where(PLAYLIST_TABLE.c.study_id == study_id)
-        row = self.get_session().execute(stmt).fetchone()
+        row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(study_id)
         sparse = Playlist(years=from_json(row.years))

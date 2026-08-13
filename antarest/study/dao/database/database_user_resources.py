@@ -15,12 +15,12 @@ Database implementation of UserResourcesDao.
 """
 
 import uuid
+from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.blobstore.service import IBlobService
@@ -28,6 +28,7 @@ from antarest.core.exceptions import UserResourceIsAFolder, UserResourceNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
 
 _TABLE = USER_RESOURCES_TABLE
@@ -40,20 +41,13 @@ class UserResourcesDatabaseData:
     resource_type: ResourceType
 
 
-class DatabaseUserResourcesDao(UserResourcesDao):
+class DatabaseUserResourcesDao(UserResourcesDao, DatabaseDaoBase):
     """Database implementation of UserResourcesDao"""
 
-    def __init__(self, study_id: str, db_session: Session, blob_service: IBlobService) -> None:
-        """
-        Initialize DatabaseUserResourcesDao with dependencies.
-
-        Args:
-            study_id: The study ID for database queries.
-            db_session: SQLAlchemy session for database operations.
-        """
-        self._study_id = study_id
-        self._db_session = db_session
-        self._blob_service = blob_service
+    @property
+    @abstractmethod
+    def blob_service(self) -> IBlobService:
+        """Blobs storage service, provided by the concrete DAO."""
 
     @override
     def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
@@ -174,7 +168,7 @@ class DatabaseUserResourcesDao(UserResourcesDao):
             raise UserResourceIsAFolder(resource_path.as_posix())
 
         assert data.blob_id is not None
-        return self._blob_service.get(data.blob_id)
+        return self.blob_service.get(data.blob_id)
 
     def _build_resources_tree(self) -> dict[PurePosixPath, UserResourcesDatabaseData]:
         stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
