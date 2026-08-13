@@ -38,6 +38,16 @@ const containerBaseStyles = {
   minHeight: 0,
 } satisfies SxProps<Theme>;
 
+export const nodeActionsContainerStyles = {
+  ".MuiTreeItem-content:not(:hover) &": {
+    display: "none",
+  },
+} satisfies SxProps<Theme>;
+
+export const actionButtonStyles = {
+  p: 0.25,
+} satisfies SxProps<Theme>;
+
 ////////////////////////////////////////////////////////////////
 // Variant styles
 ////////////////////////////////////////////////////////////////
