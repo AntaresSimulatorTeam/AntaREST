@@ -37,17 +37,45 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao: FileS
         reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN))
     dao.save_reserve_definitions({"fr": reserves})
 
+    # A storage can only be symmetric on reserves it is certified for, so certify everything sts1 needs first.
+    dao.save_st_storage_reserve_certifications(
+        {
+            "fr": {
+                "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                "r2": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                "r3": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                "r4": {"sts1": StorageReserveCertification()},
+            }
+        }
+    )
+
     # Save 2 symmetries. Then 1 certification. Ensures the certification writing didn't affect the symmetries.
     dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"], ["r3", "r4"]]}})
-    dao.save_st_storage_reserve_certifications({"fr": {"r1": {"sts2": StorageReserveCertification()}}})
+    dao.save_st_storage_reserve_certifications(
+        {
+            "fr": {
+                "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                "r2": {"sts2": StorageReserveCertification()},
+                "r3": {"sts2": StorageReserveCertification()},
+            }
+        }
+    )
 
     assert dao.get_st_storage_reserve_symmetries("fr") == {"sts1": [["r1", "r2"], ["r3", "r4"]]}
-    assert dao.get_st_storage_reserve_certifications("fr") == {"r1": {"sts2": StorageReserveCertification()}}
+    assert dao.get_st_storage_reserve_certifications("fr") == {
+        "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+        "r2": {"sts2": StorageReserveCertification()},
+        "r3": {"sts2": StorageReserveCertification()},
+    }
 
     # Save a new symmetry. Ensures the symmetry writing didn't affect the certification.
     dao.save_st_storage_reserve_symmetries({"fr": {"sts2": [["r1", "r2", "r3"]]}})
 
-    assert dao.get_st_storage_reserve_certifications("fr") == {"r1": {"sts2": StorageReserveCertification()}}
+    assert dao.get_st_storage_reserve_certifications("fr") == {
+        "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+        "r2": {"sts2": StorageReserveCertification()},
+        "r3": {"sts2": StorageReserveCertification()},
+    }
     # The symmetry should also be overwritten by the new value.
     assert dao.get_st_storage_reserve_symmetries("fr") == {"sts2": [["r1", "r2", "r3"]]}
 

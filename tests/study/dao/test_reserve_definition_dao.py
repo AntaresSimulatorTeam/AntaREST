@@ -213,16 +213,12 @@ def test_removing_an_st_storage_reserve_cascades_on_symmetries_and_certification
         reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN, id=reserve_name))
     dao.save_reserve_definitions({"fr": reserves})
 
-    # Save 1 symmetry and 1 certitification.
-    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]]}})
+    # Save 1 symmetry and 1 certification.
     certification = StorageReserveCertification()
-    dao.save_st_storage_reserve_certifications({"fr": {"r1": {"sts2": certification}, "r2": {"sts1": certification}}})
-
-    assert dao.get_st_storage_reserve_symmetries("fr") == {"sts1": [["r1", "r2"]]}
-    assert dao.get_st_storage_reserve_certifications("fr") == {
-        "r1": {"sts2": certification},
-        "r2": {"sts1": certification},
-    }
+    dao.save_st_storage_reserve_certifications(
+        {"fr": {"r1": {"sts1": certification, "sts2": certification}, "r2": {"sts1": certification}}}
+    )
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]]}})
 
     # Remove the reserve `r1`. We should no longer see `r1` in the symmetries and certifications.
     dao.delete_reserve_definitions("fr", ["r1"])

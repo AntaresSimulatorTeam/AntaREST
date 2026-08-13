@@ -133,6 +133,10 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
 
         yaml_content = get_st_storage_reserve_participations_as_yaml_content(area_id, file_study)
         certifications = parse_st_storage_reserves_certifications(yaml_content)
+
+        # Verify that the thermals are certified on the reserves they are symmetric on
+        check_symmetries_are_certified(area_id, new_symmetries, certifications)
+
         new_content = serialize_st_storage_reserve_participations(new_symmetries, certifications)
 
         # Saves the content into the YAML file

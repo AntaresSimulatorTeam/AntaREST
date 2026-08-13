@@ -11,12 +11,16 @@
 # This file is part of the Antares project.
 import pytest
 
+from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_0
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_certifications import (
+    ReplaceStStorageReserveCertifications,
+)
 from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_symmetries import (
     ReplaceStStorageReserveSymmetries,
 )
@@ -49,6 +53,18 @@ def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
         )
         output = cmd.apply(dao)
         assert output.status
+    # A storage can only be symmetric on reserves it is certified for, so certify every pair.
+    cmd = ReplaceStStorageReserveCertifications(
+        area_id="fr",
+        certifications={
+            reserve_name: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()}
+            for reserve_name in ["r1", "r2", "r3", "r4"]
+        },
+        command_context=command_context,
+        study_version=version,
+    )
+    output = cmd.apply(dao)
+    assert output.status
 
 
 def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> None:

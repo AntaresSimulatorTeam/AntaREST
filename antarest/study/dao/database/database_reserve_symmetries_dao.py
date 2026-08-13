@@ -17,7 +17,11 @@ from sqlalchemy import Row, Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, ThermalReserveCertificationNotFound
+from antarest.core.exceptions import (
+    AreaNotFound,
+    ReserveCertificationNotFound,
+    ReserveDefinitionNotFound,
+)
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.api.common import check_symmetries_are_certified
@@ -82,7 +86,7 @@ def _convert_all_rows_to_dict_of_models(
     return result
 
 
-def _checks_foreign_key_integrity(
+def _validate_foreign_key_integrity(
     new_data: ReserveSymmetriesMapping, reserve_ids: dict[AreaId, list[ReserveDefinitionId]]
 ) -> None:
     """
@@ -131,7 +135,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
             certifications = self.get_impl().get_thermal_reserve_certifications(area_id)
             try:
                 check_symmetries_are_certified(area_id, thermal_dict, certifications)
-            except ThermalReserveCertificationNotFound:
+            except ReserveCertificationNotFound:
                 # A missing certification is ambiguous: the thermal may simply not exist.
                 existing_ids = {thermal.id for thermal in self.get_impl().get_all_thermals_for_area(area_id)}
                 if unknown_ids := [t_id for t_id in thermal_dict if t_id not in existing_ids]:
@@ -168,6 +172,18 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     def save_st_storage_reserve_symmetries(self, data: STStorageReserveSymmetriesMapping) -> None:
         self._check_foreign_key_integrity(data)
 
+        # Verify that the short-term storages are certified on the reserves they are symmetric on
+        for area_id, st_storage_dict in data.items():
+            certifications = self.get_impl().get_st_storage_reserve_certifications(area_id)
+            try:
+                check_symmetries_are_certified(area_id, st_storage_dict, certifications)
+            except ReserveCertificationNotFound:
+                # A missing certification is ambiguous: the thermal may simply not exist.
+                existing_ids = {storage.id for storage in self.get_impl().get_all_st_storages_for_area(area_id)}
+                if unknown_ids := [t_id for t_id in st_storage_dict if t_id not in existing_ids]:
+                    self.get_impl().raise_the_right_storage_exception({area_id: unknown_ids})
+                raise
+
         # Save the new values
         values = []
         for area_id, st_storage_dict in data.items():
@@ -197,4 +213,4 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
         existing_reserve_ids = {}
         for area_id, value in existing_reserve_definitions.items():
             existing_reserve_ids[area_id] = list(value)
-        _checks_foreign_key_integrity(data, existing_reserve_ids)
+        _validate_foreign_key_integrity(data, existing_reserve_ids)

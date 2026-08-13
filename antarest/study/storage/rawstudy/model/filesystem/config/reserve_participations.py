@@ -12,9 +12,10 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import Any, Generic, Self, TypeVar, override
+from typing import Any, Generic, Self, TypeVar
 
 from pydantic import ConfigDict, model_validator
+from typing_extensions import override
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
