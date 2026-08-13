@@ -63,6 +63,7 @@ import { useMount } from "react-use";
 import JobTableView from "./-components/JobTableView";
 import LaunchJobLogView from "./-components/LaunchJobLogView";
 import { TASK_TYPES_MANAGED } from "./-components/utils";
+import useDebounce from "@/hooks/useDebounce";
 
 export const Route = createFileRoute("/_authenticated/tasks/")({
   component: Tasks,
@@ -178,7 +179,7 @@ function Tasks() {
     );
   };
 
-  const exportJobOutput = debounce(
+  const exportJobOutput = useDebounce(
     async (jobId: string): Promise<void> => {
       try {
         await downloadJobOutput(jobId);
@@ -186,8 +187,7 @@ function Tasks() {
         enqueueErrorSnackbar(t("study.error.exportOutput"), e as AxiosError);
       }
     },
-    2000,
-    { leading: true },
+    { wait: 2000, leading: true },
   );
 
   const killTask = (jobId: string) => {
