@@ -14,7 +14,6 @@ from typing import Any, NoReturn
 
 from sqlalchemy import Row, Select, Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import (
@@ -34,8 +33,8 @@ from antarest.study.business.model.reserve_certification_model import (
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
 from antarest.study.dao.common import AreaId
-from antarest.study.dao.database.models.st_storage_reserve_certification import ST_STORAGE_RESERVE_CERTIFICATION_TABLE
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
+from antarest.study.dao.database.models.st_storage_reserve_certification import ST_STORAGE_RESERVE_CERTIFICATION_TABLE
 from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
 
 _THERMAL_TABLE = THERMAL_RESERVE_CERTIFICATION_TABLE

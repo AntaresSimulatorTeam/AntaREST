@@ -10,8 +10,7 @@
 #
 # This file is part of the Antares project.
 import json
-from typing import Any, cast
-from typing import Sequence
+from typing import Any, Sequence, cast
 
 from sqlalchemy import Row, Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
