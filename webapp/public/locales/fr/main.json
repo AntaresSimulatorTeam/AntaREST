@@ -674,6 +674,7 @@
   "study.modeling.reserves.certifications.certifiedClusters": "Clusters certifiés",
   "study.modeling.reserves.certifications.incomplete": "Certification incomplète : la puissance maximale doit être supérieure à 0",
   "study.modeling.reserves.certifications.removeWarning": "Ces clusters perdront leurs paramètres de certification : {{clusters, list}}",
+  "study.modeling.reserves.certifications.field.enabled": "Activé",
   "study.modeling.reserves.certifications.field.participationCost": "Coût de participation (€/MW)",
   "study.modeling.reserves.certifications.field.participationCostOff": "Coût en désactivation (€/MW)",
   "study.modeling.reserves.certifications.field.maxPower": "Puissance maximale (MW)",

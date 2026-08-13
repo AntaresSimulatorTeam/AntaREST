@@ -17,6 +17,7 @@ import Fieldset from "@/components/Fieldset";
 import FormDrawer from "@/components/FormDrawer";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { reserveQueries } from "@/queries/reserves/queries";
+import { thermalQueries } from "@/queries/thermals/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import useArea from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-hooks/useArea";
 import type {
@@ -27,7 +28,6 @@ import FactoryIcon from "@mui/icons-material/Factory";
 import { Alert, Typography } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { thermalClustersQueries } from "../-utils";
 
 // One entry per production type ("thermals" for now, "storages" and "hydro" coming soon)
 export type ClustersFormValues = Record<CertificationProductionType, string[]>;
@@ -48,7 +48,7 @@ function UpdateReserveClustersDrawer({ open, reserveId, defaultValues, onClose, 
   const { id: areaId } = useArea();
 
   const { data: reserves } = useSuspenseQuery(reserveQueries.list(studyId, areaId));
-  const { data: thermalClusters } = useSuspenseQuery(thermalClustersQueries.list(studyId, areaId));
+  const { data: thermalClusters } = useSuspenseQuery(thermalQueries.list(studyId, areaId));
 
   const reserveName = reserves.find(({ id }) => id === reserveId)?.name ?? reserveId;
 

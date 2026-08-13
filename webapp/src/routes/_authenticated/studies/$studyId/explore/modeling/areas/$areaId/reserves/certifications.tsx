@@ -14,6 +14,7 @@
 
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
+import { thermalQueries } from "@/queries/thermals/queries";
 import type {
   CertificationProductionType,
   Reserve,
@@ -25,7 +26,6 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { thermalClustersQueries } from "./-utils";
 import CertificationsTable, {
   type ClusterRow,
   type ReserveRow,
@@ -69,7 +69,7 @@ function ReservesCertifications() {
     reserveQueries.certifications(studyId, areaId, "thermals"),
   );
 
-  const { data: thermalClusters } = useSuspenseQuery(thermalClustersQueries.list(studyId, areaId));
+  const { data: thermalClusters } = useSuspenseQuery(thermalQueries.list(studyId, areaId));
 
   // Certifications mapping per production type. "storages" and "hydro" will be
   // added once their endpoints are released.
@@ -88,7 +88,7 @@ function ReservesCertifications() {
   });
 
   const rows = useMemo<ReserveRow[]>(() => {
-    const clusterNamesById = new Map(thermalClusters.map(({ id, name }) => [id, name]));
+    const clustersById = new Map(thermalClusters.map((cluster) => [cluster.id, cluster]));
 
     return reserves.map((reserve) => ({
       kind: "reserve",
@@ -101,7 +101,8 @@ function ReservesCertifications() {
           // Prefixed with the reserve ID because a cluster can be certified for
           // several reserves and row IDs must be unique across the table
           id: `${reserve.id}/${clusterId}`,
-          name: clusterNamesById.get(clusterId) ?? clusterId,
+          name: clustersById.get(clusterId)?.name ?? clusterId,
+          enabled: clustersById.get(clusterId)?.enabled ?? false,
           productionType: "thermals",
           reserveId: reserve.id,
           clusterId,
@@ -232,6 +233,7 @@ function ReservesCertifications() {
           key={editingCluster.id}
           open={isUpdateDrawerOpen}
           clusterName={editingCluster.name}
+          clusterEnabled={editingCluster.enabled}
           certification={editingCluster.certification}
           onClose={() => setIsUpdateDrawerOpen(false)}
           onSubmit={handleCertificationSubmit}
