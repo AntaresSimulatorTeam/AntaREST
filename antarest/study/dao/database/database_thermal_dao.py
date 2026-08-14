@@ -98,6 +98,7 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
                     values.append(data)
             upsert_multiple(session, table, values)
         except IntegrityError as e:
+            session.rollback()
             invalid_data = {area_id: list(thermal_dict) for area_id, thermal_dict in series.items()}
             self.raise_the_right_thermal_exception(invalid_data, e)
 
@@ -146,6 +147,7 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
         try:
             upsert_multiple(session=session, table=THERMAL_CLUSTER_TABLE, values=values)
         except IntegrityError as e:
+            session.rollback()
             invalid_data = {area_id: [thermal.id.lower() for thermal in thermals] for area_id, thermals in data.items()}
             self.raise_the_right_thermal_exception(invalid_data, e)
 
