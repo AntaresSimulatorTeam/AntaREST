@@ -91,6 +91,7 @@ class DatabaseStudyDao(
     def __init__(
         self,
         study_id: str,
+        study_data_id: int,
         db_session: Session,
         matrix_service: ISimpleMatrixService,
         blob_service: IBlobService,
@@ -106,7 +107,7 @@ class DatabaseStudyDao(
             blob_service: Blobs storage service
             generator_matrix_constants: Predefined matrix constants generator
         """
-        DatabaseDaoBase.__init__(self, StudyDaoContext(study_id, db_session))
+        DatabaseDaoBase.__init__(self, StudyDaoContext(study_id, study_data_id, db_session))
         self._matrix_service = matrix_service
         self._blob_service = blob_service
         self._generator_matrix_constants = generator_matrix_constants
@@ -201,13 +202,13 @@ class DatabaseStudyDao(
 
     @override
     def get_comments(self) -> str:
-        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_id == self._study_id)
+        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_data_id == self._study_data_id)
         comments = self._db_session.execute(stmt).scalar_one_or_none()
         return comments if comments is not None else ""
 
     @override
     def save_comments(self, comments: str) -> None:
-        upsert_one(self._db_session, COMMENTS_TABLE, {"study_id": self._study_id, "comments": comments})
+        upsert_one(self._db_session, COMMENTS_TABLE, {"study_data_id": self._study_data_id, "comments": comments})
         self._db_session.commit()
 
     @override

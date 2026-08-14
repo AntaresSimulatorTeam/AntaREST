@@ -14,13 +14,14 @@ from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, La
 from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.xpansion_model import Master, Solver, UcType
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 XPANSION_SETTINGS_TABLE = Table(
     "xpansion_settings",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     # --- XpansionSettings scalars ---
     Column("master", enum_col(Master, name="xpansion_master"), nullable=False),
     Column("uc_type", enum_col(UcType, name="xpansion_uc_type"), nullable=False),
@@ -41,9 +42,9 @@ XPANSION_SETTINGS_TABLE = Table(
     Column("sensitivity_epsilon", Float(), nullable=False),
     Column("sensitivity_capex", Boolean(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["study_data.study_id"],
-        name="fk_xpansion_settings_study_id",
+        ["study_data_id"],
+        ["study_data.study_data_id"],
+        name="fk_xpansion_settings_study_data_id",
         ondelete="CASCADE",
     ),
 )
@@ -51,7 +52,7 @@ XPANSION_SETTINGS_TABLE = Table(
 XPANSION_CANDIDATE_TABLE = Table(
     "xpansion_candidate",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("name", String(255), nullable=False, primary_key=True),
     Column("link_area_from", String(255), nullable=False),
     Column("link_area_to", String(255), nullable=False),
@@ -67,14 +68,14 @@ XPANSION_CANDIDATE_TABLE = Table(
     Column("already_installed_direct_link_profile", String(255), nullable=True),
     Column("already_installed_indirect_link_profile", String(255), nullable=True),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["xpansion_settings.study_id"],
+        ["study_data_id"],
+        ["xpansion_settings.study_data_id"],
         name="fk_xpansion_candidate_settings",
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
-        ["study_id", "link_area_from", "link_area_to"],
-        ["link.study_id", "link.area1", "link.area2"],
+        ["study_data_id", "link_area_from", "link_area_to"],
+        ["link.study_data_id", "link.area1", "link.area2"],
         name="fk_xpansion_candidate_link",
         ondelete="CASCADE",
     ),
@@ -83,11 +84,11 @@ XPANSION_CANDIDATE_TABLE = Table(
 XPANSION_SENSITIVITY_PROJECTION_TABLE = Table(
     "xpansion_sensitivity_projection",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("candidate_name", String(255), nullable=False, primary_key=True),
     ForeignKeyConstraint(
-        ["study_id", "candidate_name"],
-        ["xpansion_candidate.study_id", "xpansion_candidate.name"],
+        ["study_data_id", "candidate_name"],
+        ["xpansion_candidate.study_data_id", "xpansion_candidate.name"],
         name="fk_xpansion_sensitivity_projection_candidate",
         ondelete="CASCADE",
         onupdate="CASCADE",
@@ -97,12 +98,12 @@ XPANSION_SENSITIVITY_PROJECTION_TABLE = Table(
 XPANSION_ADEQUACY_CRITERION_TABLE = Table(
     "xpansion_adequacy_criterion",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("stopping_threshold", Float(), nullable=False),
     Column("criterion_count_threshold", Float(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["xpansion_settings.study_id"],
+        ["study_data_id"],
+        ["xpansion_settings.study_data_id"],
         name="fk_xpansion_adequacy_criterion_settings",
         ondelete="CASCADE",
     ),
@@ -111,19 +112,19 @@ XPANSION_ADEQUACY_CRITERION_TABLE = Table(
 XPANSION_ADEQUACY_PATTERN_TABLE = Table(
     "xpansion_adequacy_pattern",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area", String(255), nullable=False, primary_key=True),
     Column("criterion", Float(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["xpansion_adequacy_criterion.study_id"],
+        ["study_data_id"],
+        ["xpansion_adequacy_criterion.study_data_id"],
         name="fk_xpansion_adequacy_pattern_criterion",
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
-        ["study_id", "area"],
-        ["area.study_id", "area.area_id"],
-        name="fk_xpansion_adequacy_pattern_study_id_area_area",
+        ["study_data_id", "area"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_xpansion_adequacy_pattern_study_data_id_area_area",
         ondelete="CASCADE",
     ),
 )
@@ -131,12 +132,12 @@ XPANSION_ADEQUACY_PATTERN_TABLE = Table(
 XPANSION_CONSTRAINT_TABLE = Table(
     "xpansion_constraint",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("filename", String(255), nullable=False, primary_key=True),
     Column("content", LargeBinary(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["xpansion_settings.study_id"],
+        ["study_data_id"],
+        ["xpansion_settings.study_data_id"],
         name="fk_xpansion_constraint_settings",
         ondelete="CASCADE",
     ),
@@ -145,12 +146,12 @@ XPANSION_CONSTRAINT_TABLE = Table(
 XPANSION_CAPACITY_TABLE = Table(
     "xpansion_capacity",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("filename", String(255), nullable=False, primary_key=True),
     Column("matrix_id", String(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["xpansion_settings.study_id"],
+        ["study_data_id"],
+        ["xpansion_settings.study_data_id"],
         name="fk_xpansion_capacity_settings",
         ondelete="CASCADE",
     ),
@@ -159,12 +160,12 @@ XPANSION_CAPACITY_TABLE = Table(
 XPANSION_WEIGHT_TABLE = Table(
     "xpansion_weight",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("filename", String(255), nullable=False, primary_key=True),
     Column("matrix_id", String(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["xpansion_settings.study_id"],
+        ["study_data_id"],
+        ["xpansion_settings.study_data_id"],
         name="fk_xpansion_weight_settings",
         ondelete="CASCADE",
     ),

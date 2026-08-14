@@ -48,18 +48,19 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_SETTINGS_TABLE,
     XPANSION_WEIGHT_TABLE,
 )
+from antarest.study.dao.database.study_data_queries import belongs_to_study
 from tests.study.dao.utils import save_area
 
 
 def _assert_tables_empty(db_session: Session, tables: list[Table], study_id: str) -> None:
     for table in tables:
-        rows = db_session.execute(select(table).where(table.c.study_id == study_id)).fetchall()
+        rows = db_session.execute(select(table).where(belongs_to_study(table, study_id))).fetchall()
         assert rows == [], f"{table.name}: expected no rows for study {study_id}, found {len(rows)}"
 
 
 def _assert_tables_have_row(db_session: Session, tables: list[Table], study_id: str) -> None:
     for table in tables:
-        row = db_session.execute(select(table).where(table.c.study_id == study_id)).fetchone()
+        row = db_session.execute(select(table).where(belongs_to_study(table, study_id))).fetchone()
         assert row is not None, f"{table.name}: expected a row for study {study_id}"
 
 

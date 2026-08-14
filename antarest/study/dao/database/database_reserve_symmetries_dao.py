@@ -37,9 +37,14 @@ def _convert_row_to_model(row: Row[Any]) -> ReserveSymmetries:
 
 
 def _convert_model_to_row(
-    study_id: str, area_id: str, thermal_id: str, symmetries: ReserveSymmetries
+    study_data_id: int, area_id: str, thermal_id: str, symmetries: ReserveSymmetries
 ) -> dict[str, Any]:
-    values = {"study_id": study_id, "area_id": area_id, "thermal_id": thermal_id, "symmetries": json.dumps(symmetries)}
+    values = {
+        "study_data_id": study_data_id,
+        "area_id": area_id,
+        "thermal_id": thermal_id,
+        "symmetries": json.dumps(symmetries),
+    }
     return values
 
 
@@ -65,7 +70,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
-        stmt = select(_THERMAL_TABLE).where(_THERMAL_TABLE.c.study_id == self._study_id)
+        stmt = select(_THERMAL_TABLE).where(_THERMAL_TABLE.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: ThermalReserveSymmetriesMapping = {}
         for row in rows:
@@ -75,7 +80,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
         stmt = select(_THERMAL_TABLE).where(
-            (_THERMAL_TABLE.c.study_id == self._study_id) & (_THERMAL_TABLE.c.area_id == area_id)
+            (_THERMAL_TABLE.c.study_data_id == self._study_data_id) & (_THERMAL_TABLE.c.area_id == area_id)
         )
         rows = self._db_session.execute(stmt).fetchall()
         result = {}
@@ -110,12 +115,12 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
             for thermal_id, symmetries in thermal_dict.items():
                 if symmetries == [[]]:
                     continue
-                values.append(_convert_model_to_row(self._study_id, area_id, thermal_id, symmetries))
+                values.append(_convert_model_to_row(self._study_data_id, area_id, thermal_id, symmetries))
         try:
             # First, clean the DB
             area_ids = set(data)
             stmt = delete(_THERMAL_TABLE).where(
-                (_THERMAL_TABLE.c.study_id == self._study_id) & (_THERMAL_TABLE.c.area_id.in_(area_ids))
+                (_THERMAL_TABLE.c.study_data_id == self._study_data_id) & (_THERMAL_TABLE.c.area_id.in_(area_ids))
             )
             self._db_session.execute(stmt)
             # Then, insert the new values

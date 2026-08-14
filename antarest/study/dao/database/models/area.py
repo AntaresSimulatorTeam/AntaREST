@@ -17,24 +17,19 @@ This module defines the database tables used when a study has storage_mode=DATAB
 These tables store study data (areas, UI positions, etc.) in the database instead of the filesystem.
 """
 
-from sqlalchemy import Boolean, Column, Float, ForeignKey, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.area_properties_model import AdequacyPatchMode
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 AREA_TABLE = Table(
     "area",
     metadata,
-    Column(
-        "study_id",
-        String(36),
-        ForeignKey("study_data.study_id", ondelete="CASCADE"),
-        nullable=False,
-        primary_key=True,
-    ),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("area_name", String(255), nullable=False),
     Column("energy_cost_unsupplied", Float, nullable=False),
@@ -47,13 +42,14 @@ AREA_TABLE = Table(
     Column("filter_synthesis", String(), nullable=False),
     Column("filter_by_year", String(), nullable=False),
     Column("adequacy_patch_mode", enum_col(AdequacyPatchMode), nullable=True),  # Since v8.3
+    ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
 )
 
 # Relation: One area can have multiple UI configurations (one per layer)
 AREA_UI_TABLE = Table(
     "area_ui",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("layer_id", String(10), nullable=False, primary_key=True),
     Column("x", Integer, nullable=False),
@@ -62,13 +58,13 @@ AREA_UI_TABLE = Table(
     Column("color_g", Integer, nullable=False),
     Column("color_b", Integer, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "area_id"],
-        ["area.study_id", "area.area_id"],
+        ["study_data_id", "area_id"],
+        ["area.study_data_id", "area.area_id"],
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
-        ["study_id", "layer_id"],
-        ["layer.study_id", "layer.layer_id"],
+        ["study_data_id", "layer_id"],
+        ["layer.study_data_id", "layer.layer_id"],
         ondelete="CASCADE",
     ),
 )
@@ -78,10 +74,10 @@ def _create_matrix_table(name: str) -> Table:
     return Table(
         name,
         metadata,
-        Column("study_id", String(36), nullable=False, primary_key=True),
+        study_data_id_col(),
         Column("area_id", String(255), nullable=False, primary_key=True),
         Column("matrix_id", String(64), nullable=False),
-        ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["study_data_id", "area_id"], ["area.study_data_id", "area.area_id"], ondelete="CASCADE"),
     )
 
 
@@ -95,11 +91,11 @@ MISC_GEN_TABLE = _create_matrix_table("misc_gen")
 RESERVES_GLOBAL_PARAMETERS_TABLE = Table(
     "reserves_global_parameters",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("reference_activation_duration_up", Integer, nullable=False),
     Column("energy_activation_ratio_up", Float, nullable=False),
     Column("reference_activation_duration_down", Integer, nullable=False),
     Column("energy_activation_ratio_down", Float, nullable=False),
-    ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_data_id", "area_id"], ["area.study_data_id", "area.area_id"], ondelete="CASCADE"),
 )

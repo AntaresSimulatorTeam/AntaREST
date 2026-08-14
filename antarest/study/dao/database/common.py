@@ -25,24 +25,26 @@ if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-def validate_area_exists(session: Session, study_id: str, area_id: str) -> None:
-    if not area_exists(session, study_id, area_id):
+def validate_area_exists(session: Session, study_data_id: int, area_id: str) -> None:
+    if not area_exists(session, study_data_id, area_id):
         raise AreaNotFound(area_id)
 
 
-def area_exists(session: Session, study_id: str, area_id: str) -> bool:
-    stmt = select(AREA_TABLE.c.area_id).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+def area_exists(session: Session, study_data_id: int, area_id: str) -> bool:
+    stmt = select(AREA_TABLE.c.area_id).where(
+        (AREA_TABLE.c.study_data_id == study_data_id) & (AREA_TABLE.c.area_id == area_id)
+    )
     return session.execute(stmt).fetchone() is not None
 
 
 def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: Table) -> None:
     session = dao._db_session
-    study_id = dao.get_study_id()
+    study_data_id = dao._study_data_id
 
     try:
         values = []
         for area_id, series_id in series.items():
-            data = {"study_id": study_id, "area_id": area_id, "matrix_id": series_id}
+            data = {"study_data_id": study_data_id, "area_id": area_id, "matrix_id": series_id}
             values.append(data)
         upsert_multiple(session, table, values)
 
@@ -58,8 +60,8 @@ def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: 
     session.commit()
 
 
-def get_all_area_matrices(study_id: str, session: Session, table: Table) -> AreaSeriesMapping:
-    stmt = select(table).where((table.c.study_id == study_id))
+def get_all_area_matrices(study_data_id: int, session: Session, table: Table) -> AreaSeriesMapping:
+    stmt = select(table).where((table.c.study_data_id == study_data_id))
     rows = session.execute(stmt).fetchall()
     return {row.area_id: row.matrix_id for row in rows}
 

@@ -15,13 +15,14 @@ from sqlalchemy import Column, Float, ForeignKeyConstraint, Integer, String, Tab
 from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.reserve_definition_model import ReserveType
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 RESERVE_DEFINITION_TABLE = Table(
     "reserve_definition",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("reserve_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
@@ -31,5 +32,5 @@ RESERVE_DEFINITION_TABLE = Table(
     Column("reference_activation_duration", Integer, nullable=False),
     Column("power_activation_ratio", Float, nullable=False),
     Column("energy_activation_ratio", Float, nullable=False),
-    ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_data_id", "area_id"], ["area.study_data_id", "area.area_id"], ondelete="CASCADE"),
 )

@@ -45,30 +45,30 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao, DatabaseD
 
     @override
     def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
-        stmt = select(_TABLE).where((_TABLE.c.study_id == study_id) & (_TABLE.c.area_id == area_id))
+        stmt = select(_TABLE).where((_TABLE.c.study_data_id == study_data_id) & (_TABLE.c.area_id == area_id))
         row = session.execute(stmt).fetchone()
         if not row:
-            validate_area_exists(session, study_id, area_id)
+            validate_area_exists(session, study_data_id, area_id)
             raise ValueError(f"Reserves global parameters not found for area '{area_id}'")
         return _convert_row_to_model(row)
 
     @override
     def get_all_reserves_global_parameters(self) -> ReservesGlobalParametersMapping:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
-        stmt = select(_TABLE).where(_TABLE.c.study_id == study_id)
+        stmt = select(_TABLE).where(_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt)
         return {row.area_id: _convert_row_to_model(row) for row in rows}
 
     @override
     def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:
         session = self._db_session
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         values = [
             {
-                "study_id": study_id,
+                "study_data_id": study_data_id,
                 "area_id": area_id,
                 "reference_activation_duration_up": params.reference_activation_duration_up,
                 "energy_activation_ratio_up": params.energy_activation_ratio_up,
@@ -82,6 +82,6 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao, DatabaseD
         except IntegrityError:
             session.rollback()
             for area_id in mapping:
-                validate_area_exists(session, study_id, area_id)
+                validate_area_exists(session, study_data_id, area_id)
             raise
         session.commit()

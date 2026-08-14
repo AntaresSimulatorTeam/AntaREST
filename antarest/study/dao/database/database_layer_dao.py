@@ -45,17 +45,17 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
         The default layer (id="0") always contains all areas.
         Other layers contain the areas that have UI entries for that layer.
         """
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         # Get all layer names from LAYER_TABLE
-        stmt_layers = select(LAYER_TABLE).where(LAYER_TABLE.c.study_id == study_id)
+        stmt_layers = select(LAYER_TABLE).where(LAYER_TABLE.c.study_data_id == study_data_id)
         layer_rows = session.execute(stmt_layers).fetchall()
         layer_id_to_name = {row.layer_id: row.name for row in layer_rows}
 
         # Get all area-layer associations from AREA_UI_TABLE
         stmt_area_ui = select(AREA_UI_TABLE.c.layer_id, AREA_UI_TABLE.c.area_id).where(
-            AREA_UI_TABLE.c.study_id == study_id
+            AREA_UI_TABLE.c.study_data_id == study_data_id
         )
         area_ui_rows = session.execute(stmt_area_ui).fetchall()
 
@@ -83,10 +83,10 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
 
         Does not persist area associations, use save_layer_areas() for that.
         """
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
-        values = {"study_id": study_id, "layer_id": layer.id, "name": layer.name}
+        values = {"study_data_id": study_data_id, "layer_id": layer.id, "name": layer.name}
         upsert_one(session, LAYER_TABLE, values)
         session.commit()
 
@@ -101,11 +101,13 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
         if layer_id == DEFAULT_LAYER_ID:
             raise LayerNotAllowedToBeDeleted()
 
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         result = session.execute(
-            delete(LAYER_TABLE).where((LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer_id))
+            delete(LAYER_TABLE).where(
+                (LAYER_TABLE.c.study_data_id == study_data_id) & (LAYER_TABLE.c.layer_id == layer_id)
+            )
         )
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
@@ -125,11 +127,11 @@ class DatabaseLayerDao(LayerDao, DatabaseDaoBase):
         if layer_id == DEFAULT_LAYER_ID:
             return True
 
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         # Check if layer exists in LAYER_TABLE
         stmt = select(LAYER_TABLE.c.layer_id).where(
-            (LAYER_TABLE.c.study_id == study_id) & (LAYER_TABLE.c.layer_id == layer_id)
+            (LAYER_TABLE.c.study_data_id == study_data_id) & (LAYER_TABLE.c.layer_id == layer_id)
         )
         return session.execute(stmt).fetchone() is not None
