@@ -40,6 +40,7 @@ export const convertStudyDtoToMetadata = (
     owner: metadata.owner,
     author: metadata.author,
     editor: metadata.editor,
+    storageMode: metadata.storage_mode,
     groups: metadata.groups,
     type: metadata.type,
     publicMode: metadata.public_mode,

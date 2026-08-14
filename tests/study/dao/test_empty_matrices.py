@@ -47,13 +47,13 @@ from tests.study.dao.conftest import build_real_case_study, build_reserve_defini
 from tests.study.dao.utils import save_area
 
 
-def test_empty_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
+def test_empty_matrices(dao_93: StudyDao) -> None:
     """
     Parametrized test for both FS and DB DAOs.
     Ensures DAO methods return the default matrices when the null_matrix is saved.
     """
-    dao, matrix_service = dao_and_matrix_service
-    result = build_real_case_study(dao, matrix_service, null_matrices=True)
+    dao = dao_93
+    result = build_real_case_study(dao, null_matrices=True)
 
     area_id, area2 = result.area1, result.area2
     thermal_id, renewable_id, st_storage_id = result.thermal_id, result.renewable_id, result.sts_id
@@ -77,7 +77,7 @@ def test_empty_matrices(dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixSer
     default_credit_modulation_dataframe = create_polars_dataframe(default_credit_modulation())
     default_bc_hourly_dataframe = create_polars_dataframe(default_bc_hourly())
     default_bc_daily_weekly_dataframe = create_polars_dataframe(default_bc_weekly_daily())
-    null_dataframe = create_polars_dataframe([[]])
+    null_dataframe = create_polars_dataframe([])
 
     # Test each DAO matrix getter
     load = dao.get_load(area_id)

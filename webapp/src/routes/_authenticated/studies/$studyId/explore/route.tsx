@@ -64,10 +64,10 @@ function StudyExploreLayout() {
           }),
         },
         {
-          id: "tablemode",
-          label: t("study.tableMode"),
+          id: "table-modes",
+          label: t("study.tableModes"),
           linkOptions: linkOptions({
-            to: "/studies/$studyId/explore/tablemode",
+            to: "/studies/$studyId/explore/table-modes",
             params,
           }),
         },
@@ -88,7 +88,7 @@ function StudyExploreLayout() {
             params,
           }),
         },
-        {
+        study.storageMode === "filesystem" && {
           id: "debug",
           label: t("study.debug"),
           linkOptions: linkOptions({
@@ -97,7 +97,7 @@ function StudyExploreLayout() {
             search: { path: undefined },
           }),
         },
-      ]}
+      ].filter(Boolean)}
       divider
     />
   );

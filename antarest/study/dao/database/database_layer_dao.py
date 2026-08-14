@@ -26,12 +26,12 @@ from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.layer_dao import LayerDao
 from antarest.study.dao.database.models.area import AREA_UI_TABLE
 from antarest.study.dao.database.models.layer import LAYER_TABLE
-from antarest.study.dao.database.sql_utils import upsert_one
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao

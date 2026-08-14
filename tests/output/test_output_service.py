@@ -119,6 +119,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
         studies_repository=studies_metadata_repository,
         storages=[output_storage],
         task_service=task_service,
+        output_repository=Mock(),
     )
 
     output_id = "some-output"
@@ -174,6 +175,7 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         studies_repository=studies_metadata_repository,
         storages=[output_storage],
         task_service=task_service,
+        output_repository=Mock(),
     )
 
     output_zipped = "some-output_zipped"
@@ -267,7 +269,7 @@ def test_already_existing_study_raises_error_and_deletes_output() -> None:
     storage2.storage_type = OutputStorageType.V2
     storage2.import_output.return_value = "output_id"
 
-    studies_repo = Mock(spec=IStudyMetadataProvider)
+    studies_repo = Mock(spec=IStudyMetadataProvider, unsafe=True)
     studies_repo.get_study_metadata.return_value = StudyMetadata("id", "name", StorageMode.FILESYSTEM)
 
     output_service = OutputService(
@@ -277,6 +279,7 @@ def test_already_existing_study_raises_error_and_deletes_output() -> None:
         tmp_dir=Mock(),
         studies_repository=studies_repo,
         task_service=Mock(),
+        output_repository=Mock(),
     )
 
     # Output

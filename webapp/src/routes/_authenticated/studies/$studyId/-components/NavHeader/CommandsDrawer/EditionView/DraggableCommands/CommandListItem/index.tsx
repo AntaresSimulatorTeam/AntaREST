@@ -12,12 +12,10 @@
  * This file is part of the Antares project.
  */
 
-// @flow
+import JSONEditor from "@/components/JSONEditor";
 import LogModal from "@/components/LogModal";
-import CloudDownloadOutlinedIcon from "@mui/icons-material/CloudDownloadOutlined";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import InfoIcon from "@mui/icons-material/Info";
-import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
 import {
   AccordionDetails,
   AccordionSummary,
@@ -27,15 +25,12 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import ReactJson, { type InteractionProps } from "react-json-view";
 import type { CommandResultDTO } from "../../../../../../../../../../types/types";
 import type { CommandItem } from "../../commandTypes";
-import CommandImportButton from "../CommandImportButton";
 import CommandDetails from "./CommandDetails";
 import CommandMatrixViewer from "./CommandMatrixViewer";
 import {
   detailsStyle,
-  Header,
   headerIconStyle,
   Info,
   ItemContainer,
@@ -60,10 +55,6 @@ interface PropsType {
   generationStatus: boolean;
   generationIndex: number;
   onDelete: (index: number) => void;
-  onArgsUpdate: (index: number, json: object) => void;
-  onSave: (index: number) => void;
-  onCommandImport: (index: number, json: object) => void;
-  onCommandExport: (index: number) => void;
   onExpanded: (index: number, value: boolean) => void;
   expandedIndex: number;
 }
@@ -76,31 +67,9 @@ function CommandListItem({
   generationIndex,
   expandedIndex,
   onDelete,
-  onArgsUpdate,
-  onSave,
-  onCommandImport,
-  onCommandExport,
   onExpanded,
 }: PropsType) {
-  const [jsonData, setJsonData] = useState<object>(item.args);
   const [logModalOpen, setLogModalOpen] = useState<boolean>(false);
-
-  const updateJson = (e: InteractionProps) => {
-    setJsonData(e.updated_src);
-    onArgsUpdate(index, e.updated_src);
-  };
-
-  const onImport = async (json: object) => {
-    // setJsonData((json as any)['args']);
-    const oldJson = { ...jsonData };
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setJsonData(json as any);
-      await onCommandImport(index, json);
-    } catch {
-      setJsonData(oldJson);
-    }
-  };
 
   const itemElements = () => {
     if (generationStatus && generationIndex === index) {
@@ -147,25 +116,13 @@ function CommandListItem({
           </AccordionSummary>
           <AccordionDetails sx={{ ...detailsStyle }}>
             <Box sx={{ ...detailsStyle }}>
-              <Header>
-                {item.updated && (
-                  <SaveOutlinedIcon sx={{ ...headerIconStyle }} onClick={() => onSave(index)} />
-                )}
-                {!generationStatus && <CommandImportButton onImport={onImport} />}
-                {!generationStatus && (
-                  <CloudDownloadOutlinedIcon
-                    sx={{ ...headerIconStyle }}
-                    onClick={() => onCommandExport(index)}
-                  />
-                )}
-              </Header>
               <JsonContainer>
-                <ReactJson
-                  src={jsonData}
-                  onEdit={!generationStatus ? updateJson : undefined}
-                  onDelete={!generationStatus ? updateJson : undefined}
-                  onAdd={!generationStatus ? updateJson : undefined}
-                  theme="monokai"
+                <JSONEditor
+                  json={item.args}
+                  mode="view"
+                  mainMenuBar={false}
+                  navigationBar={false}
+                  sx={{ width: 1 }}
                 />
               </JsonContainer>
               <CommandMatrixViewer command={item} />

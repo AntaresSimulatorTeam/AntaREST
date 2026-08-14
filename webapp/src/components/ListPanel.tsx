@@ -91,7 +91,7 @@ function ListPanel<TItem extends ListPanelItem>({
     <Stack direction="column">
       {hasActions && (
         <Stack
-          gap={1}
+          spacing={1}
           sx={{
             p: 1,
             pb: 0,

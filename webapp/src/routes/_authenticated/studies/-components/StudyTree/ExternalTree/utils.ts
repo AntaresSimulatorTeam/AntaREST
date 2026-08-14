@@ -12,10 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import * as R from "ramda";
 import { DEFAULT_WORKSPACE_NAME, TREE_ROOT_NAME } from "@/components/utils/constants";
 import type { FolderDTO, WorkspaceDTO } from "@/queries/explorer/schemas";
 import type { StudyMetadata } from "@/types/types";
+import * as R from "ramda";
 import type { ExternalTreeNodeMetadata } from "./types";
 
 // Builds the full path from a parent path and folder name

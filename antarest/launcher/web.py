@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -20,13 +21,14 @@ from pydantic import Field
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.utils.web import APITag
-from antarest.dependencies import ConfigDep, LauncherServiceDep, auth_required
+from antarest.dependencies import ConfigDep, LauncherServiceDep, LoadServiceDep, auth_required
 from antarest.launcher.model import (
     JobCreationDTO,
     JobResultDTO,
     LauncherListDTO,
     LauncherLoadDTO,
     LauncherParametersDTO,
+    LauncherRuntimeConfig,
     LogType,
     SolverPresets,
     SolverPresetsCreation,
@@ -54,6 +56,17 @@ def create_launcher_api() -> APIRouter:
         launcher_parameters: LauncherParametersDTO = LauncherParametersDTO(),
         solver_presets_id: SanitizedStr | None = None,
         version: SanitizedStr | None = None,
+        run_at: Annotated[
+            datetime | None,
+            Query(
+                description=(
+                    "ISO-8601 datetime at which to schedule the run. A timezone-aware value is converted"
+                    " to UTC, a naive value (no offset) is assumed to already be UTC."
+                    " If omitted, the study runs immediately."
+                ),
+                examples=["2026-07-15T14:30:00Z", "2026-07-15T16:30:00+02:00"],
+            ),
+        ] = None,
     ) -> JobCreationDTO:
         logger.info(f"Launching study {study_id} with options {launcher_parameters}")
         selected_launcher = launcher if launcher is not None else config.launcher.default
@@ -65,6 +78,7 @@ def create_launcher_api() -> APIRouter:
                 launcher_parameters,
                 solver_presets_id,
                 version,
+                run_at,
             )
         )
 
@@ -150,7 +164,7 @@ def create_launcher_api() -> APIRouter:
         "/load",
         summary="Get the SLURM cluster or local machine load",
     )
-    def get_load(service: LauncherServiceDep, launcher_id: SanitizedStr | None = None) -> LauncherLoadDTO:
+    def get_load(service: LoadServiceDep, launcher_id: SanitizedStr | None = None) -> LauncherLoadDTO:
         logger.info("Fetching launcher load")
         try:
             return service.get_load(launcher_id)
@@ -235,5 +249,25 @@ def create_launcher_api() -> APIRouter:
     def delete_solver_presets(service: LauncherServiceDep, solver_presets_id: SanitizedStr) -> None:
         logger.info(f"Deleting solver preset for ID {solver_presets_id}")
         service.delete_solver_presets(solver_presets_id)
+
+    @bp.get(
+        "/launchers/{launcher_id}/config",
+        summary="Get the runtime configuration of a launcher",
+    )
+    def get_launcher_config(service: LauncherServiceDep, launcher_id: SanitizedStr) -> LauncherRuntimeConfig:
+        logger.info(f"Fetching runtime configuration for launcher '{launcher_id}'")
+        return service.get_runtime_config(launcher_id)
+
+    @bp.put(
+        "/launchers/{launcher_id}/config",
+        summary="Replace the runtime configuration of a launcher (admin only)",
+    )
+    def update_launcher_config(
+        service: LauncherServiceDep,
+        launcher_id: SanitizedStr,
+        config: LauncherRuntimeConfig,
+    ) -> LauncherRuntimeConfig:
+        logger.info(f"Updating runtime configuration for launcher '{launcher_id}'")
+        return service.update_runtime_config(launcher_id, config)
 
     return bp

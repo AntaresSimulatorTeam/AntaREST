@@ -14,21 +14,24 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from http import HTTPStatus
 from pathlib import Path
 from typing import Any, BinaryIO
 
 import pandas as pd
 import polars as pl
+from fastapi import HTTPException
 from pydantic import ConfigDict, Field, SerializerFunctionWrapHandler, model_serializer
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.output.filestudy.utils import QueryFileType
+from antarest.output.filestudy.model import QueryFileType
 from antarest.output.model import OutputVariablesList
+from antarest.output.model.download import MatrixIndex
 from antarest.study.business.model.config.general_model import Mode
-from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
@@ -127,6 +130,11 @@ class OutputDetails(AntaresBaseModel):
         if data.get("settings") is None:
             data.pop("settings", None)
         return data
+
+
+class DigestNotFoundError(HTTPException):
+    def __init__(self, study_id: str, output_id: str):
+        super().__init__(HTTPStatus.NOT_FOUND, f"Digest file not found for study {study_id} and output {output_id}")
 
 
 class IOutputStorage(ABC):
@@ -234,6 +242,9 @@ class IOutputStorage(ABC):
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
         """
         Digest of the output.
+
+        Raises:
+            DigestNotFoundError: if digest data is absent
         """
 
     @abstractmethod

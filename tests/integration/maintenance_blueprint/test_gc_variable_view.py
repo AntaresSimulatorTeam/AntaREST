@@ -63,8 +63,9 @@ def _create_variable_view(
 class TestCleanVariableViewsIntegration:
     """Integration tests for clean_variable_views using real database."""
 
-    def test_deletes_old_variable_views(self, matrix_service: MatrixService):
+    def test_deletes_old_variable_views(self, real_matrix_service: MatrixService):
         """Test that old variable views are deleted."""
+        matrix_service = real_matrix_service
         study_id = str(uuid.uuid4())
         output_id = "test-output"
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
@@ -96,8 +97,9 @@ class TestCleanVariableViewsIntegration:
             views_after = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_after) == 0
 
-    def test_keeps_recent_variable_views(self, matrix_service: MatrixService):
+    def test_keeps_recent_variable_views(self, real_matrix_service: MatrixService):
         """Test that recent variable views are NOT deleted."""
+        matrix_service = real_matrix_service
         study_id = str(uuid.uuid4())
         output_id = "test-output"
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
@@ -126,8 +128,9 @@ class TestCleanVariableViewsIntegration:
             views_after = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_after) == 1
 
-    def test_dry_run_does_not_delete(self, matrix_service: MatrixService):
+    def test_dry_run_does_not_delete(self, real_matrix_service: MatrixService):
         """Test that dry_run mode does not delete variable views."""
+        matrix_service = real_matrix_service
         study_id = str(uuid.uuid4())
         output_id = "test-output"
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
@@ -165,8 +168,9 @@ class TestCleanVariableViewsIntegration:
         assert result.deleted_count == 0
         assert result.duration_seconds >= 0
 
-    def test_deletes_only_old_views_keeps_recent(self, matrix_service: MatrixService):
+    def test_deletes_only_old_views_keeps_recent(self, real_matrix_service: MatrixService):
         """Test that only old views are deleted while recent ones are kept."""
+        matrix_service = real_matrix_service
         study_id = str(uuid.uuid4())
         output_id = "test-output"
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])

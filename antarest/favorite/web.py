@@ -11,13 +11,27 @@
 # This file is part of the Antares project.
 
 import logging
+from http import HTTPStatus
 
 from fastapi import APIRouter, Depends
 
 from antarest.core.api_types import UuidStr
 from antarest.core.utils.web import APITag
-from antarest.dependencies import FavoriteDirectoryServiceDep, FavoriteStudyServiceDep, auth_required
-from antarest.favorite.model import FavoriteDirectoryDTO, FavoriteStudyDTO
+from antarest.dependencies import (
+    FavoriteAggregateServiceDep,
+    FavoriteDirectoryServiceDep,
+    FavoriteExternalDirectoryServiceDep,
+    FavoriteStudyServiceDep,
+    auth_required,
+)
+from antarest.favorite.model import (
+    DirectoryPathType,
+    FavoriteAggregateDTO,
+    FavoriteDirectoryDTO,
+    FavoriteExternalDirectoryDTO,
+    FavoriteStudyDTO,
+    WorkspaceType,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,40 +39,102 @@ logger = logging.getLogger(__name__)
 def create_favorite_routes() -> APIRouter:
     bp = APIRouter(prefix="/v1", tags=[APITag.favorite], dependencies=[Depends(auth_required)])
 
-    @bp.get("/favorites/studies", summary="Listing favorites for current user")
+    @bp.get("/favorites/studies", summary="Listing favorites for current user", status_code=HTTPStatus.OK)
     def list_favorite_studies(
         favorite_service: FavoriteStudyServiceDep,
     ) -> list[FavoriteStudyDTO]:
         logger.info("Listing favorites for current user")
         return favorite_service.list_favorites()
 
-    @bp.post("/favorites/studies/{uuid}", summary="Add a study in the list of favorite studies")
+    @bp.post(
+        "/favorites/studies/{uuid}",
+        summary="Add a study in the list of favorite studies",
+        status_code=HTTPStatus.CREATED,
+    )
     def add_favorite_study(favorite_service: FavoriteStudyServiceDep, uuid: UuidStr) -> FavoriteStudyDTO:
         logger.info(f"Adding study {uuid} as a favorite.")
         return favorite_service.add_favorite(uuid)
 
-    @bp.delete("/favorites/studies/{uuid}", summary="Delete a study from the ")
+    @bp.delete(
+        "/favorites/studies/{uuid}",
+        summary="Delete a study from the favorite list",
+        status_code=HTTPStatus.NO_CONTENT,
+    )
     def delete_favorite_study(favorite_service: FavoriteStudyServiceDep, uuid: UuidStr) -> None:
         logger.info(f"Deleting study {uuid} from favorites.")
         favorite_service.delete_favorite(uuid)
 
-    @bp.get("/favorites/directories", summary="Listing favorite directories for current user")
+    @bp.get(
+        "/favorites/directories", summary="Listing favorite directories for current user", status_code=HTTPStatus.OK
+    )
     def list_favorite_directories(
         favorite_directory_service: FavoriteDirectoryServiceDep,
     ) -> list[FavoriteDirectoryDTO]:
         logger.info("Listing favorite directories for current user")
         return favorite_directory_service.list_favorites()
 
-    @bp.post("/favorites/directories/{uuid}", summary="Add a directory in the list of favorite directories")
+    @bp.post(
+        "/favorites/directories/{uuid}",
+        summary="Add a directory in the list of favorite directories",
+        status_code=HTTPStatus.CREATED,
+    )
     def add_favorite_directory(
         favorite_directory_service: FavoriteDirectoryServiceDep, uuid: UuidStr
     ) -> FavoriteDirectoryDTO:
         logger.info(f"Adding directory {uuid} as a favorite.")
         return favorite_directory_service.add_favorite(uuid)
 
-    @bp.delete("/favorites/directories/{uuid}", summary="Delete a directory from the list of favorite directories")
+    @bp.delete(
+        "/favorites/directories/{uuid}",
+        summary="Delete a directory from the list of favorite directories",
+        status_code=HTTPStatus.NO_CONTENT,
+    )
     def delete_favorite_directory(favorite_directory_service: FavoriteDirectoryServiceDep, uuid: UuidStr) -> None:
         logger.info(f"Deleting directory {uuid} from favorites.")
         favorite_directory_service.delete_favorite(uuid)
+
+    @bp.get(
+        "/favorites/external-directories",
+        summary="Listing favorite external directories for current user",
+        status_code=HTTPStatus.OK,
+    )
+    def list_favorite_external_directories(
+        favorite_external_directory_service: FavoriteExternalDirectoryServiceDep,
+    ) -> list[FavoriteExternalDirectoryDTO]:
+        logger.info("Listing favorite external directories for current user.")
+        return favorite_external_directory_service.list_favorites()
+
+    @bp.post(
+        "/favorites/external-directories",
+        summary="Add an external directory in the list of favorite directories",
+        status_code=HTTPStatus.CREATED,
+    )
+    def add_favorite_external_directory(
+        favorite_external_directory_service: FavoriteExternalDirectoryServiceDep,
+        workspace: WorkspaceType,
+        path: DirectoryPathType,
+    ) -> FavoriteExternalDirectoryDTO:
+        logger.info("Adding external directory as a favorite.")
+        return favorite_external_directory_service.add_favorite(workspace=workspace, directory_path=path)
+
+    @bp.delete(
+        "/favorites/external-directories",
+        summary="Delete an external directory from the list of favorite directories",
+        status_code=HTTPStatus.NO_CONTENT,
+    )
+    def delete_favorite_external_directory(
+        favorite_external_directory_service: FavoriteExternalDirectoryServiceDep,
+        workspace: WorkspaceType,
+        path: DirectoryPathType,
+    ) -> None:
+        logger.info("Deleting external directory from favorites.")
+        favorite_external_directory_service.delete_favorite(workspace=workspace, path=path)
+
+    @bp.get("/favorites", summary="Listing all favorites for current user", status_code=HTTPStatus.OK)
+    def list_all_favorites(
+        favorite_aggregate_service: FavoriteAggregateServiceDep,
+    ) -> FavoriteAggregateDTO:
+        logger.info("Listing all favorites for current user.")
+        return favorite_aggregate_service.list_favorites()
 
     return bp

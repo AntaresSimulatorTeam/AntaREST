@@ -24,7 +24,6 @@ import polars as pl
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    ChildNotFoundError,
     OutputAlreadyArchived,
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
@@ -44,23 +43,31 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
-from antarest.output.filestudy.aggregator_management import AggregatorManager
-from antarest.output.filestudy.file_output_utils import extract_variables_list, parse_output_config
-from antarest.output.filestudy.utils import QueryFileType, get_start_column, parse_output_file_as_pandas_dataframe
-from antarest.output.model import OutputVariablesList
+from antarest.output.filestudy.aggregation import AggregatorManager
+from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file_as_pandas_dataframe
+from antarest.output.filestudy.metadata import parse_output_config
+from antarest.output.filestudy.model import (
+    QueryFileType,
+)
+from antarest.output.filestudy.variables import extract_variables_list
+from antarest.output.model import (
+    OutputVariablesList,
+)
+from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
+    DigestNotFoundError,
     IOutputStorage,
     OutputDetails,
     OutputMetadata,
     OutputSettings,
     OutputStorageType,
 )
+from antarest.output.utils import find_mode_dir
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8,
     MatrixFrequency,
-    MatrixIndex,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     get_playlist,
@@ -477,10 +484,13 @@ class AbstractFileOutputStorage(IOutputStorage):
         """
         Digest of the output.
         """
-        output_path = self._outputs_provider.get_outputs(study_id).outputs_path
-        file_path = output_path / output_id / "economy" / "mc-all" / "grid" / "digest.txt"
+        output_path = self._outputs_provider.get_outputs(study_id).outputs_path / output_id
+        mode_dir = find_mode_dir(output_path)
+        if not mode_dir:
+            raise DigestNotFoundError(study_id, output_id)
+        file_path = mode_dir / "mc-all" / "grid" / "digest.txt"
         if not file_path.exists():
-            raise ChildNotFoundError(f"Digest file not found for study {study_id} and output {output_id}")
+            raise DigestNotFoundError(study_id, output_id)
         return DigestSynthesis.parse_file_for_ui(file_path)
 
     @override

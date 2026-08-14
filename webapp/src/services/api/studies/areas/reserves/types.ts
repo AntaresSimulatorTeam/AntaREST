@@ -15,10 +15,13 @@
 import type { AreaWithId } from "@/types/types";
 import type { z } from "zod";
 import type {
+  certificationProductionTypeSchema,
   createReserveParamsSchema,
+  reserveCertificationSchema,
   reserveGlobalParametersSchema,
   reserveSchema,
   reserveTypeSchema,
+  reservesCertificationsSchema,
   updateReserveGlobalParametersSchema,
   updateReserveParamsSchema,
 } from "./schemas";
@@ -27,6 +30,9 @@ import type { Study } from "../../types";
 export type ReserveType = z.infer<typeof reserveTypeSchema>;
 export type Reserve = z.infer<typeof reserveSchema>;
 export type ReserveGlobalParameters = z.infer<typeof reserveGlobalParametersSchema>;
+export type CertificationProductionType = z.infer<typeof certificationProductionTypeSchema>;
+export type ReserveCertification = z.infer<typeof reserveCertificationSchema>;
+export type ReservesCertifications = z.infer<typeof reservesCertificationsSchema>;
 
 export type CreateReserveData = z.infer<typeof createReserveParamsSchema>;
 export type UpdateReserveData = z.infer<typeof updateReserveParamsSchema>;
@@ -56,4 +62,12 @@ export interface DeleteReservesParams extends ReservesAreaParams {
 
 export interface UpdateReserveGlobalParametersParams extends ReservesAreaParams {
   data: UpdateReserveGlobalParametersData;
+}
+
+export interface ReservesCertificationsParams extends ReservesAreaParams {
+  productionType: CertificationProductionType;
+}
+
+export interface UpdateReservesCertificationsParams extends ReservesCertificationsParams {
+  data: ReservesCertifications;
 }

@@ -18,9 +18,11 @@ import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import UploadDialog, { type UploadDialogProps } from "@/components/dialogs/UploadDialog";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
 import { directoryQueries } from "@/queries/directories/queries";
 import { createStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { StorageMode } from "@/types/types";
 
 import { StudyDestinationFE } from "../../StudyDestinationFE";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
@@ -43,6 +45,7 @@ function ImportStudyDialog({ open, onClose }: Props) {
 
   const [destination, setDestination] = useState<DirectoryDestination>(ROOT_DESTINATION);
   const [redirect, setRedirect] = useState(true);
+  const [storageMode, setStorageMode] = useState(StorageMode.FILESYSTEM);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -51,8 +54,12 @@ function ImportStudyDialog({ open, onClose }: Props) {
   const handleImport: UploadDialogProps["onImport"] = async (file, onUploadProgress) => {
     const directoryPath = toDirectoryPath(destination, directories);
 
-    await dispatch(createStudy({ file, onUploadProgress, directory: directoryPath })).unwrap();
+    await dispatch(
+      createStudy({ file, onUploadProgress, directory: directoryPath, storageMode }),
+    ).unwrap();
+  };
 
+  const handleImportComplete: UploadDialogProps["onImportComplete"] = async () => {
     const updatedDirectories = await refreshDirectoriesIfNeeded(
       queryClient,
       destination,
@@ -68,13 +75,16 @@ function ImportStudyDialog({ open, onClose }: Props) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  const enableDatabaseStorage = false; // To be removed when activating the feature
   return (
     <UploadDialog
       open={open}
       title={t("studies.importNewStudy")}
       dropzoneText={t("studies.importHint")}
+      multiple
       onCancel={onClose}
       onImport={handleImport}
+      onImportComplete={handleImportComplete}
       maxWidth="md"
       fullWidth
       PaperProps={{ sx: { height: "100%" } }}
@@ -85,6 +95,23 @@ function ImportStudyDialog({ open, onClose }: Props) {
             onChange={(event) => setDestination(event.target.value)}
             fillHeight
           />
+          {enableDatabaseStorage && (
+            <SelectFE
+              label={t("studies.storageMode")}
+              options={[
+                { value: StorageMode.FILESYSTEM, label: t("studies.storageMode.filesystem") },
+                { value: StorageMode.DATABASE, label: t("studies.storageMode.database") },
+              ]}
+              value={storageMode}
+              onChange={(event) => setStorageMode(event.target.value as StorageMode)}
+              helperText={
+                storageMode === StorageMode.DATABASE
+                  ? t("studies.storageMode.gemsCompatible")
+                  : undefined
+              }
+              size="small"
+            />
+          )}
           <CheckBoxFE
             value={redirect}
             onChange={(_event, checked) => setRedirect(checked)}

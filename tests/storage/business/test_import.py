@@ -14,12 +14,11 @@ import io
 import os
 import shutil
 from pathlib import Path
+from subprocess import run
 from unittest.mock import Mock
 
-import py7zr
 import pytest
 
-from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.exceptions import StudyImportFailed, StudyValidationError
 from antarest.login.model import User
 from antarest.study.model import StorageMode
@@ -40,7 +39,7 @@ def test_import_study(tmp_path: Path, study_service: StudyService, empty_study_9
     output_access_mock = Mock()
     study_service.register_output_access(output_access_mock)
     study_service.user_service.get_user.return_value = User(id=1, name="admin")
-    study_service.repository = StudyMetadataRepository(LocalCache())
+    study_service.repository = StudyMetadataRepository()
 
     # .zip part
     filepath_zip = shutil.make_archive(str(study_path.absolute()), "zip", study_path)
@@ -66,8 +65,7 @@ def test_import_study(tmp_path: Path, study_service: StudyService, empty_study_9
 
     # .7z part
     filepath_7zip = study_path.parent / f"{study_path.name}.7z"
-    with py7zr.SevenZipFile(filepath_7zip, "w") as archive:
-        archive.writeall(study_path, arcname="")
+    run(["7z", "a", str(filepath_7zip.resolve()), "."], cwd=str(study_path), check=True)
 
     with filepath_7zip.open("rb") as input_file:
         study_id = study_service.import_study(input_file, group_ids=[], directory="", storage_mode=StorageMode.DATABASE)

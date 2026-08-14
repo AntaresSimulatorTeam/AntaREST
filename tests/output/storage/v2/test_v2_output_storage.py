@@ -13,7 +13,6 @@ import shutil
 import uuid
 import zipfile
 from pathlib import Path
-from unittest.mock import Mock
 
 import polars as pl
 import pytest
@@ -26,11 +25,12 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.lfs.lfs import ILargeFileStorage
-from antarest.output.filestudy.utils import MCAllAreasQueryFile
+from antarest.output.filestudy.model import MCAllAreasQueryFile
+from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.output.storage.v2.variables_storage import parquet_output_dir
-from antarest.study.model import MatrixFrequency, MatrixIndex, Study
+from antarest.study.model import MatrixFrequency, Study
 from antarest.study.repository import StudyMetadataRepository
 from tests.test_helpers.dates import utc_to_local
 
@@ -44,7 +44,7 @@ def init_db(db_engine: Engine) -> None:
 
 @pytest.fixture
 def study_repo(init_db) -> StudyMetadataRepository:
-    return StudyMetadataRepository(cache_service=Mock())
+    return StudyMetadataRepository()
 
 
 @pytest.fixture

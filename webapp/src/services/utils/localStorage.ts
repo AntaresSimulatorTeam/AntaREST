@@ -15,12 +15,10 @@
 import type { FolderDTO } from "@/queries/explorer/schemas";
 import type { StudyFilters } from "@/redux/ducks/studies";
 import type { UIState } from "@/redux/ducks/ui";
-import type { TableTemplate } from "@/routes/_authenticated/studies/$studyId/explore/tablemode/-utils";
+import type { ViewMode } from "@/routes/_authenticated/studies/-components/StudiesList/types";
 import type { StudySortConfig, UserInfo } from "@/types/types";
 import * as RA from "ramda-adjunct";
 import packages from "../../../package.json";
-import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
-import type { ViewMode } from "@/routes/_authenticated/studies/-components/StudiesList/types";
 
 export const StorageKey = {
   AuthUser: "authUser",
@@ -28,7 +26,6 @@ export const StorageKey = {
   StudiesSort: "studies.sort",
   StudiesFilters: "studies.filters",
   StudiesViewMode: "studies.viewMode",
-  StudiesModelTableModeTemplates: "studies.model.tableMode.templates",
   StudyTreeFolders: "studyTree.folders",
   // UI
   UIMenuCollapsed: "ui.menuCollapsed",
@@ -46,7 +43,6 @@ interface TypeFromKey {
   [StorageKey.StudiesSort]: Partial<StudySortConfig>;
   [StorageKey.StudiesFilters]: Partial<StudyFilters>;
   [StorageKey.StudiesViewMode]: ViewMode;
-  [StorageKey.StudiesModelTableModeTemplates]: TableTemplate[];
   [StorageKey.StudyTreeFolders]: FolderDTO[];
   [StorageKey.TasksFilterUser]: string;
   [StorageKey.UIMenuCollapsed]: UIState["menuOpen"];
@@ -71,18 +67,7 @@ function getItem<T extends Key>(key: T): TypeFromKey[T] | null {
     if (serializedState === null) {
       return null;
     }
-    const res = JSON.parse(serializedState);
-
-    // Convert deprecated types to new ones (breaking change from v2.16.8)
-    if (key === StorageKey.StudiesModelTableModeTemplates) {
-      return res.map((template: Record<string, unknown>) => ({
-        ...template,
-        // @ts-expect-error To ignore error TS2551
-        type: TABLE_MODE_TYPES_ALIASES[template.type] ?? template.type,
-      }));
-    }
-
-    return res;
+    return JSON.parse(serializedState);
   } catch {
     return null;
   }

@@ -14,6 +14,7 @@ from pathlib import PurePosixPath
 import pytest
 
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.replace_user_resource import ReplaceUserResource
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -65,13 +66,10 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
     assert content == {"second_folder": {}}
 
 
-def test_error_case(empty_study_930: FileStudy, command_context: CommandContext):
-    study = empty_study_930
-    dao = build_dao_from_file_study(study, command_context)
+def test_error_case(fs_dao: FileStudyTreeDao, command_context: CommandContext):
     _set_up(command_context)
 
     # Unexisting blob_id
-
     cmd = ReplaceUserResource(
         data=UserResourceDataCreation(
             path=PurePosixPath("new_file.txt"),
@@ -79,17 +77,24 @@ def test_error_case(empty_study_930: FileStudy, command_context: CommandContext)
             blob_id="fake_id",
         ),
         command_context=command_context,
-        study_version=study.config.version,
+        study_version=fs_dao.get_version(),
     )
-    output = cmd.apply(dao)
+    output = cmd.apply(fs_dao)
     assert not output.status
     assert "'fake_id'" in output.message
 
     # Giving a blob_id with a resource_type.FOLDER
-
     with pytest.raises(ValueError, match="You cannot provide a blob_id for a folder"):
         UserResourceDataCreation(
             path=PurePosixPath("new_file.txt"),
             resource_type=ResourceType.FOLDER,
             blob_id="blob_id",
+        )
+
+    # User must give a `blob_id` with a `ResourceType.FILE`
+    with pytest.raises(ValueError, match="You must provide a blob_id for a file"):
+        UserResourceDataCreation(
+            path=PurePosixPath("new_file.txt"),
+            resource_type=ResourceType.FILE,
+            blob_id=None,
         )

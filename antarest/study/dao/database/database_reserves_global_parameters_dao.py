@@ -17,15 +17,16 @@ Database implementation of ReservesGlobalParametersDao using SQLAlchemy Core.
 from typing import Any
 
 from sqlalchemy import Row, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.dao.api.reserves_global_parameters_dao import ReservesGlobalParametersDao
 from antarest.study.dao.common import ReservesGlobalParametersMapping
 from antarest.study.dao.database.common import validate_area_exists
 from antarest.study.dao.database.models.area import RESERVES_GLOBAL_PARAMETERS_TABLE
-from antarest.study.dao.database.sql_utils import upsert_multiple
 
 _TABLE = RESERVES_GLOBAL_PARAMETERS_TABLE
 
@@ -86,5 +87,11 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao):
             }
             for area_id, params in mapping.items()
         ]
-        upsert_multiple(session, _TABLE, values)
+        try:
+            upsert_multiple(session, _TABLE, values)
+        except IntegrityError:
+            session.rollback()
+            for area_id in mapping:
+                validate_area_exists(session, study_id, area_id)
+            raise
         session.commit()

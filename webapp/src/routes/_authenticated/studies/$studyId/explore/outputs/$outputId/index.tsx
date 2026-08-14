@@ -14,6 +14,7 @@
 
 import BackButton from "@/components/buttons/BackButton";
 import ListView, { type ListViewItem } from "@/components/page/list/ListView";
+import useStudySynthesis from "@/redux/hooks/useStudySynthesis";
 import { sortByName } from "@/services/utils";
 import AutoAwesomeMotionIcon from "@mui/icons-material/AutoAwesomeMotion";
 import { Stack, Tab, Tabs } from "@mui/material";
@@ -24,8 +25,8 @@ import useAppSelector from "../../../../../../../redux/hooks/useAppSelector";
 import { getAreas, getDistricts, getLinks } from "../../../../../../../redux/selectors";
 import OutputMatrixViewer from "./-components/OutputMatrixViewer";
 import SynthesisViewer from "./-components/SynthesisViewer";
-import useStudyOutput from "./-hooks/useStudyOutput";
-import { isDistrict, SYNTHESIS_ITEMS, type Item, type ListType } from "./-utils";
+import useOutput from "./-hooks/useOutput";
+import { isDistrict, SYNTHESIS_ITEMS, type GridType, type Item, type ListType } from "./-utils";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/outputs/$outputId/")(
   {
@@ -35,16 +36,16 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId/explore/o
 
 function Output() {
   const { t } = useTranslation();
-  const { studyId, outputId } = Route.useParams();
+  const { studyId } = Route.useParams();
   const [listType, setListType] = useState<ListType>("areas");
+  const output = useOutput();
 
+  useStudySynthesis({ studyId });
   const areas = useAppSelector((state) => getAreas(state, studyId));
   const districts = useAppSelector((state) => getDistricts(state, studyId));
   const links = useAppSelector((state) => getLinks(state, studyId));
 
-  const { data: output } = useStudyOutput({ studyId, outputId });
-
-  const list = useMemo<Array<ListViewItem<Item | undefined>>>(() => {
+  const list = useMemo<Array<ListViewItem<Item | GridType>>>(() => {
     if (listType === "areas") {
       const adaptedDistricts = districts.map((district) => ({
         ...district,
@@ -101,15 +102,20 @@ function Output() {
           <Tabs value={listType} onChange={handleListTypeChange} size="extra-small">
             <Tab label={t("study.areas")} value="areas" />
             <Tab label={t("study.links")} value="links" />
-            {output?.synthesis && <Tab label={t("study.synthesis")} value="synthesis" />}
+            {output.synthesis && <Tab label={t("study.synthesis")} value="synthesis" />}
           </Tabs>
         </Stack>
       }
-      renderItemView={({ id, data }) => {
-        if (data) {
-          return <OutputMatrixViewer output={output} selectedItem={data} />;
+      renderItemView={({ data }) => {
+        if (!data) {
+          return null;
         }
-        return <SynthesisViewer gridId={id} />;
+
+        if (typeof data === "string") {
+          return <SynthesisViewer gridType={data} />;
+        }
+
+        return <OutputMatrixViewer item={data} />;
       }}
     />
   );

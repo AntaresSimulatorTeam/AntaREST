@@ -21,13 +21,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import { IconButton, Stack, Typography } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
+import { actionButtonStyles, nodeActionsContainerStyles } from "../styles";
 import EditableTreeItem from "./EditableTreeItem";
-import {
-  actionButtonStyles,
-  nodeActionsContainerStyles,
-  treeItemStyles,
-  treeNodeIcons,
-} from "./styles";
+import { treeItemStyles, treeNodeIcons } from "./styles";
 import type { ManagedTreeNodeProps } from "./types";
 
 function ManagedTreeNode({
@@ -123,11 +119,11 @@ function ManagedTreeNode({
     <TreeItemEnhanced
       itemId={path}
       label={
-        <Stack justifyContent="space-between" gap={1}>
+        <Stack justifyContent="space-between" spacing={1}>
           <Typography variant="body2" noWrap>
             {name}
           </Typography>
-          <Stack gap={0.25} sx={nodeActionsContainerStyles}>
+          <Stack spacing={0.25} sx={nodeActionsContainerStyles}>
             <FavoriteDirectoryToggle
               directoryId={id}
               slotProps={{ icon: { fontSize: "extra-small" } }}

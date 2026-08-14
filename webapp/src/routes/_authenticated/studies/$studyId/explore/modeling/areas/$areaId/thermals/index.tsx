@@ -67,7 +67,7 @@ function Thermals() {
     },
   );
 
-  const [totals, setTotals] = useState(getClustersWithCapacityTotals(clustersWithCapacity));
+  const [totals, setTotals] = useState(() => getClustersWithCapacityTotals(clustersWithCapacity));
 
   const columns = useMemo(() => {
     const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } = totals;
@@ -131,7 +131,6 @@ function Thermals() {
 
   const handleDuplicate = async (row: ThermalClusterWithCapacity, newName: string) => {
     const cluster = await duplicateThermalCluster(study.id, areaId, row.id, newName);
-
     return { ...row, ...cluster };
   };
 

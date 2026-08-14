@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import http
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, call
 from uuid import uuid4
 
@@ -23,7 +24,16 @@ from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.dependencies import AppState
-from antarest.launcher.model import JobResult, JobResultDTO, JobStatus, LauncherParametersDTO, LogType
+from antarest.launcher.model import (
+    JobResult,
+    JobResultDTO,
+    JobStatus,
+    LauncherParametersDTO,
+    LauncherRuntimeConfig,
+    LogType,
+    SlurmRuntimeConfig,
+)
+from antarest.launcher.service import LauncherServiceNotAvailableException
 from antarest.launcher.web import create_launcher_api
 from antarest.main import add_exception_handlers
 
@@ -59,7 +69,36 @@ def test_run() -> None:
 
     assert res.status_code == 200
     assert res.json() == {"job_id": str(job)}
-    service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), None, None)
+    service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), None, None, None)
+
+
+def test_run__with_scheduled_start() -> None:
+    job = uuid4()
+    study = str(uuid4())
+
+    service = Mock()
+    service.run_study.return_value = str(job)
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.post(f"/v1/launcher/run/{study}?run_at=2026-07-08T12:00:00")
+
+    assert res.status_code == 200
+    assert res.json() == {"job_id": str(job)}
+    service.run_study.assert_called_once_with(
+        study, "local", LauncherParametersDTO(), None, None, datetime(2026, 7, 8, 12, 0, 0)
+    )
+
+    # A timezone-aware time (Paris summer time, UTC+02:00) is forwarded as-is; the web layer
+    # does not normalize it (that is `LauncherService`'s job).
+    service.run_study.reset_mock()
+    paris_tz = timezone(timedelta(hours=2))
+    res = client.post(f"/v1/launcher/run/{study}?run_at=2026-07-08T14:00:00%2B02:00")
+
+    assert res.status_code == 200
+    service.run_study.assert_called_once_with(
+        study, "local", LauncherParametersDTO(), None, None, datetime(2026, 7, 8, 14, 0, 0, tzinfo=paris_tz)
+    )
 
 
 def test_result() -> None:
@@ -200,3 +239,44 @@ def test_kill_job() -> None:
     res = client.post(f"/v1/launcher/jobs/{job_id}/kill")
     assert res.status_code == 200
     service.kill_job.assert_called_once_with(job_id=job_id)
+
+
+def test_get_runtime_config() -> None:
+
+    service = Mock()
+    service.get_runtime_config.side_effect = [
+        LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=10)),
+        LauncherServiceNotAvailableException("wrong-launcher"),
+    ]
+
+    app = create_app(service)
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.get("/v1/launcher/launchers/my-launcher/config")
+    service.get_runtime_config.assert_called_once_with("my-launcher")
+    assert res.status_code == 200
+    assert res.json() == {"slurm": {"oversubscribeCoreThreshold": 10}}
+
+    res = client.get("/v1/launcher/launchers/my-launcher/config")
+    assert res.status_code == 400
+
+
+def test_post_runtime_config() -> None:
+
+    service = Mock()
+    service.update_runtime_config.side_effect = [
+        LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=10)),
+        LauncherServiceNotAvailableException("wrong-launcher"),
+    ]
+
+    app = create_app(service)
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.put("/v1/launcher/launchers/my-launcher/config", json={"slurm": {"oversubscribeCoreThreshold": 10}})
+    service.update_runtime_config.assert_called_once_with(
+        "my-launcher",
+        LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=10)),
+    )
+    assert res.status_code == 200
+    assert res.json() == {"slurm": {"oversubscribeCoreThreshold": 10}}
+
+    res = client.put("/v1/launcher/launchers/my-launcher/config", json={"slurm": {"oversubscribeCoreThreshold": 10}})
+    assert res.status_code == 400

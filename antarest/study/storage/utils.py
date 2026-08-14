@@ -53,16 +53,16 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import extract_archive_from_path, extract_archive_from_stream
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
+from antarest.core.utils.utils import current_time, is_path_safe
 from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_impersonator, require_current_user
-from antarest.output.filestudy.file_output_utils import parse_output_config
+from antarest.output.filestudy.metadata import parse_output_config
+from antarest.output.model.download import MatrixIndex
 from antarest.study.business.model.config.general_model import GeneralConfig, Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
     MatrixFrequency,
-    MatrixIndex,
     RawStudy,
     Study,
     StudyContentStatus,
@@ -124,7 +124,10 @@ def find_single_output_path(all_output_path: Path) -> Path:
     if len(children) == 1:
         if children[0].endswith(".zip"):
             return all_output_path / children[0]
-        return find_single_output_path(all_output_path / children[0])
+        only_child = all_output_path / children[0]
+        if only_child.is_dir():
+            return find_single_output_path(only_child)
+        return only_child
     return all_output_path
 
 
@@ -440,24 +443,6 @@ def get_start_date(
     return get_matrix_index(simulation_range, is_output=output_path is not None, level=level)
 
 
-def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
-    """
-    Check if the provided folder path is safe to prevent path traversal attack.
-
-    Args:
-        workspace: The workspace name.
-        folder: The folder path.
-
-    Returns:
-        `True` if the folder path is safe, `False` otherwise.
-    """
-    requested_path = workspace.path / folder
-    requested_path = requested_path.resolve()
-    safe_dir = workspace.path.resolve()
-    # check whether the requested path is a subdirectory of the workspace
-    return requested_path.is_relative_to(safe_dir)
-
-
 def is_study_folder(path: Path) -> bool:
     return path.is_dir() and (path / "study.antares").exists()
 
@@ -477,7 +462,7 @@ def get_workspace_from_config(config: Config, workspace_name: str, default_allow
 
 
 def get_folder_from_workspace(workspace: WorkspaceConfig, folder: str) -> Path:
-    if not is_folder_safe(workspace, folder):
+    if not is_path_safe(workspace.path, folder):
         raise FolderNotFoundInWorkspace(f"Invalid path for folder: {folder} in workspace {workspace}")
     folder_path = workspace.path / folder
     if not folder_path.is_dir():
@@ -669,11 +654,15 @@ def update_study_from_raw_metadata(study: Study, file_study: "FileStudy") -> Non
         logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
         study_antares = file_study.tree.get(url=["study", "antares"])
+
         author = study_antares.get("author")
         editor = study_antares.get("editor", author)
-        assert isinstance(author, str)
-        assert isinstance(editor, str)
-        assert isinstance(horizon, (str, int))
+        if not isinstance(author, str):
+            raise TypeError(f"Invalid author type: {type(author)!r}")
+        if not isinstance(editor, str):
+            raise TypeError(f"Invalid editor type: {type(editor)!r}")
+        if not isinstance(horizon, (str, int)):
+            raise TypeError(f"Invalid horizon type: {type(horizon)!r}")
         study.horizon = horizon
         study.author = author
         study.editor = editor

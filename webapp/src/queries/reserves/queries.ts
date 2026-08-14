@@ -16,11 +16,16 @@ import {
   getReserve,
   getReserveGlobalParameters,
   getReserves,
+  getReservesCertifications,
 } from "@/services/api/studies/areas/reserves";
-import type { Reserve } from "@/services/api/studies/areas/reserves/types";
+import type {
+  CertificationProductionType,
+  Reserve,
+} from "@/services/api/studies/areas/reserves/types";
+import { getOptimization } from "@/services/api/studies/config/optimization";
 import type { AreaWithId } from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
-import { queryListOptions } from "../utils";
+import { EXTERNALLY_MUTATED, queryListOptions } from "../utils";
 import { reserveKeys } from "./keys";
 import type { Study } from "@/services/api/studies/types";
 
@@ -41,6 +46,25 @@ export const reserveQueries = {
     return queryOptions({
       queryKey: reserveKeys.globalParameters(studyId, areaId),
       queryFn: () => getReserveGlobalParameters({ studyId, areaId }),
+    });
+  },
+  enabled: (studyId: Study["id"]) => {
+    return queryOptions({
+      queryKey: reserveKeys.enabled(studyId),
+      queryFn: () => getOptimization({ studyId }).then((o) => !!o.includeReserves),
+    });
+  },
+  certifications: (
+    studyId: Study["id"],
+    areaId: AreaWithId["id"],
+    productionType: CertificationProductionType,
+  ) => {
+    return queryOptions({
+      queryKey: reserveKeys.certifications(studyId, areaId, productionType),
+      queryFn: () => getReservesCertifications({ studyId, areaId, productionType }),
+      // Deleting a cluster elsewhere (Thermals page, table mode) cascades to its
+      // certifications server-side without invalidating this cache.
+      ...EXTERNALLY_MUTATED,
     });
   },
 };
