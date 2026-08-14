@@ -45,7 +45,7 @@ services:
     container_name: postgres
     environment:
       - POSTGRES_PASSWORD=somepass
-      - PG_DATA=/var/lib/postgresql/data/pgdata
+      - PGDATA=/var/lib/postgresql/data/pgdata
     volumes:
       - ./resources/deploy/db:/var/lib/postgresql/data
     command: [ "postgres", "-c", "log_statement=all", "-c", "log_destination=stderr" ]
