@@ -10,12 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from abc import abstractmethod
-from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import StudyNotFoundError
@@ -25,22 +22,12 @@ from antarest.study.business.model.thematic_trimming_model import (
     check_thematic_trimming_complete,
 )
 from antarest.study.dao.api.thematic_trimming_dao import ThematicTrimmingDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.thematic_trimming import THEMATIC_TRIMMING_TABLE
 
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
-
-class DatabaseThematicTrimmingDao(ThematicTrimmingDao):
+class DatabaseThematicTrimmingDao(ThematicTrimmingDao, DatabaseDaoBase):
     """Database implementation of ThematicTrimmingDao"""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     @override
     def get_thematic_trimming(self) -> ThematicTrimming:

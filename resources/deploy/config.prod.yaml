@@ -18,6 +18,7 @@ storage:
   tmp_dir: /antarest_tmp_dir
   archive_dir: /studies/archives
   matrixstore: /matrixstore
+  blobstore: /blobstore
   matrix_gc_dry_run: true
   workspaces:
     default: # required, no filters applied, this folder is not watched

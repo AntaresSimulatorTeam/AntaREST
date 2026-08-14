@@ -14,13 +14,11 @@
 Database implementation of XpansionDao.
 """
 
-from abc import abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import polars as pl
 from sqlalchemy import CursorResult, Table, asc, delete, insert, or_, select, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import ColumnElement
 from typing_extensions import override
 
@@ -48,6 +46,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.dao.common import XpansionCapacitiesMapping, XpansionConstraintsMapping, XpansionWeightsMapping
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.xpansion import (
     XPANSION_ADEQUACY_CRITERION_TABLE,
     XPANSION_ADEQUACY_PATTERN_TABLE,
@@ -59,24 +58,9 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_WEIGHT_TABLE,
 )
 
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
-
-class DatabaseXpansionDao(XpansionDao):
+class DatabaseXpansionDao(XpansionDao, DatabaseDaoBase):
     """Database implementation of XpansionDao."""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
 
     def _settings_row_exists(self) -> bool:
         stmt = select(XPANSION_SETTINGS_TABLE.c.study_id).where(XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)

@@ -20,7 +20,7 @@ import type {
   ReserveCertification,
 } from "@/services/api/studies/areas/reserves/types";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { Box, Stack, Tooltip } from "@mui/material";
+import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import {
   createMRTColumnHelper,
   MaterialReactTable,
@@ -36,6 +36,7 @@ export interface ClusterRow {
   kind: "cluster";
   id: string;
   name: string;
+  enabled: boolean;
   productionType: CertificationProductionType;
   reserveId: Reserve["id"];
   clusterId: string;
@@ -103,9 +104,36 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
                 {renderedCellValue}
               </Box>
             )}
+            {row.original.kind === "reserve" && (
+              <Tooltip title={t("study.modeling.reserves.certifications.certifiedClusters")}>
+                <Typography variant="caption" color="text.secondary">
+                  ({row.original.subRows.length})
+                </Typography>
+              </Tooltip>
+            )}
           </Stack>
         ),
         ...getTableOptionsForAlign("left"),
+      }),
+      columnHelper.accessor((row) => (row.kind === "cluster" ? row.enabled : null), {
+        id: "enabled",
+        header: t("study.modeling.reserves.certifications.field.enabled"),
+        size: 80,
+        Cell: ({ cell }) => {
+          const value = cell.getValue();
+
+          if (value === null) {
+            return null;
+          }
+
+          return (
+            <Chip
+              label={value ? t("button.yes") : t("button.no")}
+              color={value ? "success" : "error"}
+              sx={{ minWidth: 40 }}
+            />
+          );
+        },
       }),
       columnHelper.accessor(
         (row) => (row.kind === "cluster" ? row.certification.participationCost : null),

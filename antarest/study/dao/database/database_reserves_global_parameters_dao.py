@@ -18,7 +18,6 @@ from typing import Any
 
 from sqlalchemy import Row, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.utils.sql_utils import upsert_multiple
@@ -26,6 +25,7 @@ from antarest.study.business.model.reserves_global_parameters_model import Reser
 from antarest.study.dao.api.reserves_global_parameters_dao import ReservesGlobalParametersDao
 from antarest.study.dao.common import ReservesGlobalParametersMapping
 from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.area import RESERVES_GLOBAL_PARAMETERS_TABLE
 
 _TABLE = RESERVES_GLOBAL_PARAMETERS_TABLE
@@ -40,23 +40,13 @@ def _convert_row_to_model(row: Row[Any]) -> ReservesGlobalParameters:
     )
 
 
-class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao):
+class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao, DatabaseDaoBase):
     """Database implementation of ReservesGlobalParametersDao"""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        return self._study_id
-
-    def get_session(self) -> Session:
-        return self._db_session
 
     @override
     def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
         stmt = select(_TABLE).where((_TABLE.c.study_id == study_id) & (_TABLE.c.area_id == area_id))
         row = session.execute(stmt).fetchone()
         if not row:
@@ -66,16 +56,16 @@ class DatabaseReservesGlobalParametersDao(ReservesGlobalParametersDao):
 
     @override
     def get_all_reserves_global_parameters(self) -> ReservesGlobalParametersMapping:
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
         stmt = select(_TABLE).where(_TABLE.c.study_id == study_id)
         rows = session.execute(stmt)
         return {row.area_id: _convert_row_to_model(row) for row in rows}
 
     @override
     def save_reserves_global_parameters(self, mapping: ReservesGlobalParametersMapping) -> None:
-        session = self.get_session()
-        study_id = self.get_study_id()
+        session = self._db_session
+        study_id = self._study_id
         values = [
             {
                 "study_id": study_id,

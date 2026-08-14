@@ -14,14 +14,12 @@
 Database implementation of ThermalDao.
 """
 
-from abc import abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import Any, NoReturn
 
 import polars as pl
 from sqlalchemy import CursorResult, Row, Select, Table, delete, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ThermalClusterNotFound, ThermalClustersNotFound
@@ -35,6 +33,7 @@ from antarest.study.business.model.thermal_cluster_model import (
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeriesMapping
 from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CLUSTER_TABLE,
     THERMAL_CO2_COST_TABLE,
@@ -49,32 +48,14 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.
     default_modulation_matrix,
 )
 
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
-
-class DatabaseThermalDao(ThermalDao):
+class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
     """
     Database implementation of ThermalDao.
 
     TODO: decide IDs handling, and in particular should we be case insensitive when searching
           for a cluster (same question for areas etc)
     """
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        """
-        Initialize DatabaseThermalDao with dependencies.
-
-        Args:
-            study_id: The study ID for database queries.
-            db_session: SQLAlchemy session for database operations.
-        """
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     def _convert_db_row_to_thermal(self, row: Any) -> ThermalCluster:
         data = get_row_representation_as_dict(row)
