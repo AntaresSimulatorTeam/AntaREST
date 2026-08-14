@@ -27,3 +27,34 @@ export function getParentPaths(path: string) {
     .slice(0, -1) // Remove the last item
     .map((_, index, arr) => arr.slice(0, index + 1).join("/"));
 }
+
+/**
+ * Get the last segment of a given path.
+ *
+ * @example
+ * getLastPathSegment("a/b/c/d"); // Returns: "d"
+ * getLastPathSegment("a/b/c/d/"); // Returns: "d"
+ *
+ * @param path - The path from which to get the last segment.
+ * @returns The last segment of the path.
+ */
+export function getLastPathSegment(path: string) {
+  const segments = path.replace(/\/+$/, "").split("/");
+  return segments[segments.length - 1];
+}
+
+/**
+ * Join multiple paths into a single path, ensuring that there are no duplicate slashes.
+ *
+ * @example
+ * joinPaths("a/b", "c/d"); // Returns: "a/b/c/d"
+ * joinPaths("a/b/", "/c/d"); // Returns: "a/b/c/d"
+ * joinPaths("/a/b/", "/c/d/"); // Returns: "/a/b/c/d/"
+ *
+ * @param paths - The paths to join.
+ * @returns The joined path.
+ */
+export function joinPaths(...paths: string[]): string {
+  const joined = paths.join("/").replace(/\/+/g, "/");
+  return joined;
+}
