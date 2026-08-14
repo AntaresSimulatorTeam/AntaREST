@@ -101,6 +101,7 @@ function CreateStudyDialog({ open, onClose }: Props) {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
+  const enableDatabaseStorage = false; // To be removed when activating the feature
 
   return (
     <FormDialog
@@ -136,20 +137,22 @@ function CreateStudyDialog({ open, onClose }: Props) {
               control={control}
               rules={{ required: t("form.field.required") }}
             />
-            <SelectFE
-              label={t("studies.storageMode")}
-              options={[
-                { value: StorageMode.FILESYSTEM, label: t("studies.storageMode.filesystem") },
-                { value: StorageMode.DATABASE, label: t("studies.storageMode.database") },
-              ]}
-              name="storageMode"
-              control={control}
-              helperText={
-                watch("storageMode") === StorageMode.DATABASE
-                  ? t("studies.storageMode.gemsCompatible")
-                  : undefined
-              }
-            />
+            {enableDatabaseStorage && (
+              <SelectFE
+                label={t("studies.storageMode")}
+                options={[
+                  { value: StorageMode.FILESYSTEM, label: t("studies.storageMode.filesystem") },
+                  { value: StorageMode.DATABASE, label: t("studies.storageMode.database") },
+                ]}
+                name="storageMode"
+                control={control}
+                helperText={
+                  watch("storageMode") === StorageMode.DATABASE
+                    ? t("studies.storageMode.gemsCompatible")
+                    : undefined
+                }
+              />
+            )}
           </Fieldset>
           <Fieldset legend={t("global.permission")} fullFieldWidth>
             <SelectFE
