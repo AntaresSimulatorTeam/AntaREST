@@ -75,6 +75,7 @@ function ImportStudyDialog({ open, onClose }: Props) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  const enableDatabaseStorage = false; // To be removed when activating the feature
   return (
     <UploadDialog
       open={open}
@@ -94,21 +95,23 @@ function ImportStudyDialog({ open, onClose }: Props) {
             onChange={(event) => setDestination(event.target.value)}
             fillHeight
           />
-          <SelectFE
-            label={t("studies.storageMode")}
-            options={[
-              { value: StorageMode.FILESYSTEM, label: t("studies.storageMode.filesystem") },
-              { value: StorageMode.DATABASE, label: t("studies.storageMode.database") },
-            ]}
-            value={storageMode}
-            onChange={(event) => setStorageMode(event.target.value as StorageMode)}
-            helperText={
-              storageMode === StorageMode.DATABASE
-                ? t("studies.storageMode.gemsCompatible")
-                : undefined
-            }
-            size="small"
-          />
+          {enableDatabaseStorage && (
+            <SelectFE
+              label={t("studies.storageMode")}
+              options={[
+                { value: StorageMode.FILESYSTEM, label: t("studies.storageMode.filesystem") },
+                { value: StorageMode.DATABASE, label: t("studies.storageMode.database") },
+              ]}
+              value={storageMode}
+              onChange={(event) => setStorageMode(event.target.value as StorageMode)}
+              helperText={
+                storageMode === StorageMode.DATABASE
+                  ? t("studies.storageMode.gemsCompatible")
+                  : undefined
+              }
+              size="small"
+            />
+          )}
           <CheckBoxFE
             value={redirect}
             onChange={(_event, checked) => setRedirect(checked)}

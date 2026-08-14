@@ -36,7 +36,7 @@ def area_exists(session: Session, study_id: str, area_id: str) -> bool:
 
 
 def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: Table) -> None:
-    session = dao.get_session()
+    session = dao._db_session
     study_id = dao.get_study_id()
 
     try:

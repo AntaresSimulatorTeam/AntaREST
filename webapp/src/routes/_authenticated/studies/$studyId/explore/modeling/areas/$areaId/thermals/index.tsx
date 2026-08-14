@@ -131,7 +131,6 @@ function Thermals() {
 
   const handleDuplicate = async (row: ThermalClusterWithCapacity, newName: string) => {
     const cluster = await duplicateThermalCluster(study.id, areaId, row.id, newName);
-
     return { ...row, ...cluster };
   };
 

@@ -10,12 +10,10 @@
 #
 # This file is part of the Antares project.
 import json
-from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, cast
+from typing import Any, cast
 
 from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, ThermalReserveCertificationNotFound
@@ -28,11 +26,8 @@ from antarest.study.dao.common import (
     ThermalId,
     ThermalReserveSymmetriesMapping,
 )
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.thermal_reserve_symmetries import THERMAL_RESERVE_SYMMETRIES_TABLE
-
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-
 
 _THERMAL_TABLE = THERMAL_RESERVE_SYMMETRIES_TABLE
 
@@ -65,16 +60,8 @@ def _checks_foreign_key_integrity(
                         raise ReserveDefinitionNotFound(area_id, reserve_id)
 
 
-class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao):
+class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     """Database implementation of ReserveSymmetriesDao."""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:

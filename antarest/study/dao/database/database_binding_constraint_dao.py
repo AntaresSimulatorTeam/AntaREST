@@ -14,16 +14,14 @@
 Database implementation of ConstraintDao.
 """
 
-from abc import abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NewType, Sequence
+from typing import Any, NewType, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
 from sqlalchemy import Row, Table, delete, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from sqlalchemy.sql import outerjoin
 from typing_extensions import override
 
@@ -42,6 +40,7 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
 from antarest.study.dao.common import BindingConstraintSeriesMapping, SeriesId
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_CLUSTER_TERM_TABLE as CT,
 )
@@ -136,19 +135,7 @@ class _MatrixChanges:
         self.insertions.append(_MatrixInsertion(constraint_id, matrix_type, matrix_id))
 
 
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-
-
-class DatabaseBindingConstraintDao(ConstraintDao):
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
-
+class DatabaseBindingConstraintDao(ConstraintDao, DatabaseDaoBase):
     def _fetch_constraints(self, constraint_ids: list[ConstraintId]) -> dict[ConstraintId, BindingConstraint]:
         """
         Two steps in this function
