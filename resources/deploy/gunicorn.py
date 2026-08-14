@@ -13,11 +13,16 @@ the formula is based on the assumption that for a given core,
 one worker will be reading or writing from the socket
 while the other worker is processing a request.
 https://docs.gunicorn.org/en/stable/design.html#how-many-workers
+
+The result is capped, the same way scripts/start.sh already caps its own
+uvicorn path: past a few dozen workers, the memory each one needs to load the
+application outweighs the extra concurrency.
 """
 
 workers = os.getenv("GUNICORN_WORKERS")
 if workers == "ALL_AVAILABLE" or workers is None:
-    workers = multiprocessing.cpu_count() * 2 + 1
+    # max is 30, as in scripts/start.sh
+    workers = min(30, multiprocessing.cpu_count() * 2 + 1)
 
 timeout = 10 * 120  # 10 minutes
 keepalive = 24 * 60 * 60  # 1 day
