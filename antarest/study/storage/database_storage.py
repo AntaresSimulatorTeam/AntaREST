@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Iterator
 
 from antares.study.version import StudyVersion
-from sqlalchemy import delete, select
+from sqlalchemy import delete
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -75,6 +75,7 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_SERIES_TABLE,
 )
 from antarest.study.dao.database.models.xpansion import XPANSION_CAPACITY_TABLE, XPANSION_WEIGHT_TABLE
+from antarest.study.dao.database.study_data_queries import yield_matrix_ids
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import RawStudy, Study, StudyMetadataCopy, StudyMetadataCreation
@@ -247,12 +248,9 @@ class DatabaseStudyStorage(IStudyStorage):
     @override
     def yield_matrix_references(self, study: Study) -> Iterator[MatrixReference]:
         with db():
-            for table in MATRIX_TABLES:
-                stmt = select(table.c.matrix_id).where(table.c.study_id == study.id)
-                rows = db.session.execute(stmt).fetchall()
-                for row in rows:
-                    description = f"Matrix used inside table {table.name}, for study {study.id}"
-                    yield MatrixReference(matrix_id=row.matrix_id, use_description=description)
+            for table, matrix_id in yield_matrix_ids(db.session, MATRIX_TABLES, study.id):
+                description = f"Matrix used inside table {table.name}, for study {study.id}"
+                yield MatrixReference(matrix_id=matrix_id, use_description=description)
 
     @override
     def normalize_study(self, study: Study) -> None:

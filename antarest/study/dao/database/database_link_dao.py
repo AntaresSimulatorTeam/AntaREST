@@ -9,15 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from abc import abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import polars as pl
 from sqlalchemy import Row, Table, delete, select
 from sqlalchemy.engine.cursor import CursorResult
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LinkNotFound, LinksNotFound
@@ -26,6 +24,7 @@ from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.link_model import Link
 from antarest.study.dao.api.link_dao import LinkDao
 from antarest.study.dao.common import LinkSeriesMapping, SeriesId
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.link import (
     LINK_DIRECT_CAPACITY_TABLE,
     LINK_INDIRECT_CAPACITY_TABLE,
@@ -39,9 +38,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
     default_scenario_hourly,
 )
 
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-
 
 def _convert_db_rows_to_model(db_row: Any) -> Link:
     data = get_row_representation_as_dict(db_row)
@@ -49,24 +45,8 @@ def _convert_db_rows_to_model(db_row: Any) -> Link:
     return Link(**data)
 
 
-class DatabaseLinkDao(LinkDao):
+class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
     """Database implementation of LinkDao"""
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     def _raise_the_right_link_exception(self, links: Sequence[Link], exc: IntegrityError | None = None) -> None:
         # Happens if some link's areas did not exist -> ForeignKey constraint fails
@@ -95,10 +75,10 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def save_links(self, links: Sequence[Link]) -> None:
-        session = self.get_session()
+        session = self._db_session
         values = []
         for link in links:
-            values.append({"study_id": self.get_study_id(), **link.model_dump()})
+            values.append({"study_id": self._study_id, **link.model_dump()})
 
         try:
             upsert_multiple(session, LINK_TABLE, values)
@@ -109,8 +89,8 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def delete_link(self, link: Link) -> None:
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
         stmt = delete(LINK_TABLE).where(
             (LINK_TABLE.c.study_id == study_id)
             & (LINK_TABLE.c.area1 == link.area1)
@@ -125,8 +105,8 @@ class DatabaseLinkDao(LinkDao):
 
     @override
     def get_links(self) -> Sequence[Link]:
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
         stmt = select(LINK_TABLE).where(LINK_TABLE.c.study_id == study_id)
         rows = session.execute(stmt).fetchall()
         return [_convert_db_rows_to_model(row) for row in rows]
@@ -145,8 +125,8 @@ class DatabaseLinkDao(LinkDao):
 
     def _get_row(self, area1_id: str, area2_id: str, table: Table) -> Row[Any] | None:
         area1, area2 = sorted((area1_id, area2_id))
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
         stmt = select(table).where((table.c.study_id == study_id) & (table.c.area1 == area1) & (table.c.area2 == area2))
         return session.execute(stmt).fetchone()
 
@@ -157,8 +137,8 @@ class DatabaseLinkDao(LinkDao):
         return str(row.matrix_id)
 
     def _save_link_matrices(self, series: LinkSeriesMapping, table: Table) -> None:
-        session = self.get_session()
-        study_id = self.get_study_id()
+        session = self._db_session
+        study_id = self._study_id
 
         values = []
         for key, series_id in series.items():

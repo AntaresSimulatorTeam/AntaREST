@@ -17,22 +17,18 @@ This module provides database-backed storage for districts when storage_mode=DAT
 """
 
 import json
-from abc import abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy import CursorResult, delete, select
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.core.utils.sql_utils import upsert_one
 from antarest.study.business.model.district_model import District
 from antarest.study.dao.api.district_dao import DistrictDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
-
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
 def _convert_db_row_to_district(db_row: Any) -> District:
@@ -47,33 +43,10 @@ def _convert_db_row_to_district(db_row: Any) -> District:
     )
 
 
-class DatabaseDistrictDao(DistrictDao):
+class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
     """
     Database implementation of DistrictDao.
     """
-
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        """
-        Initialize DatabaseDistrictDao with dependencies.
-
-        Args:
-            study_id: The study ID for database queries.
-            db_session: SQLAlchemy session for database operations.
-        """
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
 
     @override
     def save_district(self, district: District) -> None:
@@ -82,8 +55,8 @@ class DatabaseDistrictDao(DistrictDao):
 
         If the district already exists, it will be overwritten.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         # Validate that all areas exist
         invalid_areas = self.get_impl().get_invalid_area_ids(district.add_areas + district.subtract_areas)
@@ -108,8 +81,8 @@ class DatabaseDistrictDao(DistrictDao):
         """
         Remove a district from a study.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         result = session.execute(
             delete(DISTRICT_TABLE).where(
@@ -127,8 +100,8 @@ class DatabaseDistrictDao(DistrictDao):
         """
         Returns the list of districts in this study.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_id == study_id)
         district_rows = session.execute(stmt).fetchall()
@@ -140,8 +113,8 @@ class DatabaseDistrictDao(DistrictDao):
         """
         Get the district with the given id.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         stmt = select(DISTRICT_TABLE).where(
             (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)
@@ -157,8 +130,8 @@ class DatabaseDistrictDao(DistrictDao):
         """
         Returns whether a district with the given id exists in the study.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_id = self._study_id
+        session = self._db_session
 
         stmt = select(DISTRICT_TABLE.c.district_id).where(
             (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)

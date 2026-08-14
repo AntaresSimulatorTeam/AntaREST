@@ -106,7 +106,7 @@ wheels = [
 
 [[package]]
 name = "antarest"
-version = "2.33.0"
+version = "2.34.0"
 source = { editable = "." }
 dependencies = [
     { name = "alembic" },

@@ -65,7 +65,7 @@ def test_update_blob_id(dao: StudyDao, blob_service: InMemoryBlobService) -> Non
 
     # Specific DB test. Ensure we only have one entry in DB, as we updated the existing one rather than creating a new.
     if isinstance(dao, DatabaseStudyDao):
-        assert len(dao.get_session().execute(select(USER_RESOURCES_TABLE)).all()) == 1
+        assert len(dao._db_session.execute(select(USER_RESOURCES_TABLE)).all()) == 1
 
     result = list(dao.get_all_user_resources())
     assert len(result) == 1
@@ -157,7 +157,7 @@ def test_save_same_resource_twice(dao: StudyDao) -> None:
 
     # Specific DB test. Ensure we only have 2 entries in DB: `folderB` and `subfolderB`
     if isinstance(dao, DatabaseStudyDao):
-        assert len(dao.get_session().execute(select(USER_RESOURCES_TABLE)).all()) == 2
+        assert len(dao._db_session.execute(select(USER_RESOURCES_TABLE)).all()) == 2
 
 
 def test_save_folder_inside_an_existing_one(dao: StudyDao) -> None:
@@ -215,7 +215,7 @@ def test_save_folders_which_share_the_same_parent(dao: StudyDao, blob_service: I
 
     # Specific DB test. Ensure we only have 3 entries in DB: `a`, `b` and `c`. Not `a` twice.
     if isinstance(dao, DatabaseStudyDao):
-        assert len(dao.get_session().execute(select(USER_RESOURCES_TABLE)).all()) == 3
+        assert len(dao._db_session.execute(select(USER_RESOURCES_TABLE)).all()) == 3
 
 
 def test_get_resource_out_of_user_folder(dao: StudyDao) -> None:
@@ -235,5 +235,5 @@ def test_save_relative_folder_use_the_longest_parent(db_dao: DatabaseStudyDao) -
     res = db_dao.get_all_user_resources()
     assert len(res) == 2  # Should only be 'a/b' and 'a/c/d'
 
-    rows = db_dao.get_session().execute(select(USER_RESOURCES_TABLE)).fetchall()
+    rows = db_dao._db_session.execute(select(USER_RESOURCES_TABLE)).fetchall()
     assert len(rows) == 4  # Should only be 'a', 'b', 'c' and 'd'

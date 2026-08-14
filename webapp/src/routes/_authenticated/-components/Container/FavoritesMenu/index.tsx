@@ -12,8 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import RouterListItemButton from "@/components/router/RouterListItemButton";
-import RouterMenuItem from "@/components/router/RouterMenuItem";
+import RouterListItemButton, {
+  type RouterListItemButtonProps,
+} from "@/components/router/RouterListItemButton";
+import RouterMenuItem, { type RouterMenuItemProps } from "@/components/router/RouterMenuItem";
 import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
@@ -49,35 +51,53 @@ function FavoritesMenu() {
   };
 
   const getFavoriteLinkOptions = (fav: Favorite) => {
-    // Study favorite
-    if (fav.type === "study") {
+    if (fav.type === "directory") {
       return {
-        ...linkOptions({
-          to: "/studies/$studyId",
-          params: { studyId: fav.elementId },
-        }),
-        onClick: closeMenu,
-      };
+        ...linkOptions({ to: "/studies" }),
+        onClick: () => {
+          dispatch(
+            updateStudyFilters({
+              activeTree: "managed",
+              managed: {
+                directoryId: fav.original.directoryId,
+                directoryIds: getDescendantIds(fav.original.directoryId, directories),
+              },
+            }),
+          );
+
+          closeMenu();
+        },
+        activeProps: {},
+      } satisfies RouterListItemButtonProps | RouterMenuItemProps;
     }
 
-    // Directory favorite
-    return {
-      ...linkOptions({ to: "/studies" }),
-      onClick: () => {
-        dispatch(
-          updateStudyFilters({
-            activeTree: "managed",
-            managed: {
-              directoryId: fav.elementId,
-              directoryIds: getDescendantIds(fav.elementId, directories),
-            },
-          }),
-        );
+    if (fav.type === "externalDirectory") {
+      return {
+        ...linkOptions({ to: "/studies" }),
+        onClick: () => {
+          dispatch(
+            updateStudyFilters({
+              activeTree: "external",
+              external: {
+                path: fav.absolutePath,
+              },
+            }),
+          );
 
-        closeMenu();
-      },
-      activeProps: {},
-    };
+          closeMenu();
+        },
+        activeProps: {},
+      } satisfies RouterListItemButtonProps | RouterMenuItemProps;
+    }
+
+    // Study favorite
+    return {
+      ...linkOptions({
+        to: "/studies/$studyId",
+        params: { studyId: fav.original.studyId },
+      }),
+      onClick: closeMenu,
+    } satisfies RouterListItemButtonProps | RouterMenuItemProps;
   };
 
   const getFavoriteIcon = (fav: Favorite) => {
@@ -85,6 +105,14 @@ function FavoritesMenu() {
       return (
         <ListItemIcon sx={[isMainMenuOpen && { minWidth: 26 }]}>
           <FolderIcon fontSize="extra-small" color="info" />
+        </ListItemIcon>
+      );
+    }
+
+    if (fav.type === "externalDirectory") {
+      return (
+        <ListItemIcon sx={[isMainMenuOpen && { minWidth: 26 }]}>
+          <FolderIcon fontSize="extra-small" sx={{ color: "text.secondary" }} />
         </ListItemIcon>
       );
     }
