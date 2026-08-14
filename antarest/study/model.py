@@ -312,7 +312,7 @@ class Study(Base):
     created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     last_access: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    path: Mapped[str] = mapped_column(String())
+    path: Mapped[str | None] = mapped_column(String(), nullable=True)
     folder: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     directory_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("directory.id", ondelete="SET NULL"), nullable=True, index=True
