@@ -122,6 +122,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
             if values:
                 self._db_session.execute(insert(_THERMAL_TABLE), values)
         except IntegrityError as e:
+            self._db_session.rollback()
             thermals = {area_id: list(thermal_dict) for area_id, thermal_dict in data.items()}
             self.get_impl().raise_the_right_thermal_exception(thermals, exc=e)
         self._db_session.commit()

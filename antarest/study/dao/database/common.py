@@ -47,6 +47,7 @@ def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: 
         upsert_multiple(session, table, values)
 
     except IntegrityError as e:
+        session.rollback()
         invalid_ids = set(series) - set(dao.get_all_area_ids())
         if invalid_ids:
             raise AreaNotFound(*invalid_ids)

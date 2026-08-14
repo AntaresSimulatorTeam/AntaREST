@@ -167,6 +167,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
         try:
             upsert_multiple(session, ST_STORAGE_TABLE, values)
         except IntegrityError as e:
+            session.rollback()
             # Means an area does not exist
             invalid_areas = self.get_impl().get_invalid_area_ids(list(data))
             raise AreaNotFound(*invalid_areas) from e
@@ -263,6 +264,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
         try:
             upsert_multiple(session, ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE, values)
         except IntegrityError as e:
+            session.rollback()
             invalid_data = {
                 area_id: {sts_id: constraint.id for sts_id, constraints in v.items() for constraint in constraints}
                 for area_id, v in data.items()
@@ -332,6 +334,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
                     values.append(data)
             upsert_multiple(session, table, values)
         except IntegrityError as e:
+            session.rollback()
             invalid_data = {area_id: list(st_storage_dict) for area_id, st_storage_dict in series.items()}
             self._raise_the_right_storage_exception(invalid_data, e)
 
@@ -524,6 +527,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
         try:
             upsert_multiple(session, ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE, values)
         except IntegrityError as e:
+            session.rollback()
             invalid_data = {
                 area_id: {sts_id: constraint_id for sts_id, constraints in v.items() for constraint_id in constraints}
                 for area_id, v in series.items()
