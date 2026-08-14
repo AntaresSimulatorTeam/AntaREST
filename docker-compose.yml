@@ -12,6 +12,7 @@ services:
       - ./resources/deploy/examples:/workspaces
       - ./resources/deploy/tmp:/antarest_tmp_dir
       - ./resources/deploy/matrices:/matrixstore
+      - ./resources/deploy/blobstore:/blobstore
       - ./resources/deploy/config.prod.yaml:/resources/application.yaml
       - ./resources/deploy/logs:/logs
       - ./resources/deploy/gunicorn.py:/conf/gunicorn.py
@@ -23,6 +24,7 @@ services:
       - ./resources/deploy/examples:/workspaces
       - ./resources/deploy/tmp:/antarest_tmp_dir
       - ./resources/deploy/matrices:/matrixstore
+      - ./resources/deploy/blobstore:/blobstore
       - ./resources/deploy/config.prod.yaml:/resources/application.yaml
       - ./resources/deploy/logs:/logs
     depends_on:
@@ -35,6 +37,7 @@ services:
       - ./resources/deploy/examples:/workspaces
       - ./resources/deploy/tmp:/antarest_tmp_dir
       - ./resources/deploy/matrices:/matrixstore
+      - ./resources/deploy/blobstore:/blobstore
       - ./resources/deploy/config.prod.yaml:/resources/application.yaml
       - ./resources/deploy/logs:/logs
     depends_on:
