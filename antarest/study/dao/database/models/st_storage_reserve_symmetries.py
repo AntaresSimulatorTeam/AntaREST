@@ -13,19 +13,20 @@
 from sqlalchemy import Column, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 ST_STORAGE_RESERVE_SYMMETRIES_TABLE = Table(
     "st_storage_reserve_symmetries",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("st_storage_id", String(255), nullable=False, primary_key=True),
     Column("symmetries", String(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "area_id", "st_storage_id"],
-        ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
+        ["study_data_id", "area_id", "st_storage_id"],
+        ["st_storage.study_data_id", "st_storage.area_id", "st_storage.st_storage_id"],
         ondelete="CASCADE",
     ),
 )

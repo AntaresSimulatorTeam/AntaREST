@@ -13,13 +13,14 @@
 from sqlalchemy import Column, Float, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 ST_STORAGE_RESERVE_CERTIFICATION_TABLE = Table(
     "st_storage_reserve_certifications",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("st_storage_id", String(255), nullable=False, primary_key=True),
     Column("reserve_id", String(255), nullable=False, primary_key=True),
@@ -27,13 +28,13 @@ ST_STORAGE_RESERVE_CERTIFICATION_TABLE = Table(
     Column("max_release", Float, nullable=False),
     Column("max_store", Float, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "area_id", "st_storage_id"],
-        ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
+        ["study_data_id", "area_id", "st_storage_id"],
+        ["st_storage.study_data_id", "st_storage.area_id", "st_storage.st_storage_id"],
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
-        ["study_id", "area_id", "reserve_id"],
-        ["reserve_definition.study_id", "reserve_definition.area_id", "reserve_definition.reserve_id"],
+        ["study_data_id", "area_id", "reserve_id"],
+        ["reserve_definition.study_data_id", "reserve_definition.area_id", "reserve_definition.reserve_id"],
         ondelete="CASCADE",
     ),
 )
