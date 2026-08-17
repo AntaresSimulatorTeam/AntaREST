@@ -75,8 +75,16 @@ else
   case "$1" in
     celery-beat)
       echo "Starting Celery Beat scheduler..."
+      # Celery writes its schedule to `celerybeat-schedule`, relative to the
+      # working directory: set CELERYBEAT_SCHEDULE when that directory is not
+      # writable.
+      EXTRA_OPTS=()
+      if [ -n "${CELERYBEAT_SCHEDULE:-}" ]; then
+        EXTRA_OPTS+=(--schedule="$CELERYBEAT_SCHEDULE")
+      fi
       exec celery -A antarest.maintenance.app:celery_app beat \
         --loglevel=info \
+        "${EXTRA_OPTS[@]}" \
         --pidfile=/tmp/celerybeat.pid
       ;;
     celery-worker)
