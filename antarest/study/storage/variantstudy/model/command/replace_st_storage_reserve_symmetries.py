@@ -22,7 +22,7 @@ from antarest.study.business.model.reserve_symmetries_model import ReserveSymmet
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.common import AreaId
 from antarest.study.model import (
-    STUDY_VERSION_10_0,
+    STUDY_VERSION_10_2,
 )
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -49,8 +49,8 @@ class ReplaceStStorageReserveSymmetries(ICommand):
 
     @model_validator(mode="after")
     def _validate_version(self) -> Self:
-        if self.study_version < STUDY_VERSION_10_0:
-            msg = "Short-term storage reserve symmetries are not valid for study version before 10.0"
+        if self.study_version < STUDY_VERSION_10_2:
+            msg = "Short-term storage reserve symmetries are not valid for study version before 10.2"
             raise InvalidFieldForVersionError(msg)
 
         return self

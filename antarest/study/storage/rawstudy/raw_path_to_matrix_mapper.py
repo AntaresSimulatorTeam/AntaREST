@@ -25,7 +25,12 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_8_2, STUDY_VERSION_8_7, STUDY_VERSION_10_0, MatrixFrequency
+from antarest.study.model import (
+    STUDY_VERSION_8_2,
+    STUDY_VERSION_8_7,
+    STUDY_VERSION_10_2,
+    MatrixFrequency,
+)
 
 
 @dataclass(frozen=True)
@@ -501,7 +506,7 @@ class RawPathToMatrixMapper:
                     ),
                 ]
             )
-        if study_version >= STUDY_VERSION_10_0:
+        if study_version >= STUDY_VERSION_10_2:
             self._path_matchers.append(
                 RegexMatcher(
                     # Exclude `reserves` as a reserve_id: `input/reserves/<area>/reserves` is the

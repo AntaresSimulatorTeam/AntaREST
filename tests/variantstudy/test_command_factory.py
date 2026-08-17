@@ -26,7 +26,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
-    STUDY_VERSION_10_0,
+    STUDY_VERSION_10_2,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
@@ -1078,7 +1078,7 @@ COMMANDS = [
                 "area_id": "paris",
                 "parameters": {"name": "Reserve 1", "type": "up"},
             },
-            study_version=STUDY_VERSION_10_0,
+            study_version=STUDY_VERSION_10_2,
         ),
         None,
         id="create_reserve_definition",
@@ -1087,7 +1087,7 @@ COMMANDS = [
         CommandDTO(
             action=CommandName.UPDATE_RESERVE_DEFINITIONS.value,
             args={"reserve_properties": {"paris": {"reserve 1": {"failureCost": 500.0}}}},
-            study_version=STUDY_VERSION_10_0,
+            study_version=STUDY_VERSION_10_2,
         ),
         None,
         id="update_reserve_definitions",
@@ -1096,7 +1096,7 @@ COMMANDS = [
         CommandDTO(
             action=CommandName.REMOVE_RESERVE_DEFINITIONS.value,
             args={"area_id": "paris", "reserve_ids": ["reserve 1"]},
-            study_version=STUDY_VERSION_10_0,
+            study_version=STUDY_VERSION_10_2,
         ),
         None,
         id="remove_reserve_definitions",
@@ -1117,7 +1117,7 @@ COMMANDS = [
                     }
                 },
             },
-            study_version=STUDY_VERSION_10_0,
+            study_version=STUDY_VERSION_10_2,
         ),
         None,
         id="replace_thermal_reserve_certifications",
@@ -1126,7 +1126,7 @@ COMMANDS = [
         CommandDTO(
             action=CommandName.REPLACE_THERMAL_RESERVE_SYMMETRIES.value,
             args={"area_id": "paris", "symmetries": {"th1": [["r1", "r2", "r3"]]}},
-            study_version=STUDY_VERSION_10_0,
+            study_version=STUDY_VERSION_10_2,
         ),
         None,
         id="replace_thermal_reserve_symmetries",

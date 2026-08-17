@@ -32,7 +32,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
     STUDY_VERSION_9_2,
-    STUDY_VERSION_10_0,
+    STUDY_VERSION_10_2,
 )
 
 
@@ -187,7 +187,7 @@ class StudyConverter:
         self._new_dao.save_misc_gen(self._source_dao.get_all_misc_gen())
 
         # Reserves
-        if self._study_version >= STUDY_VERSION_10_0:
+        if self._study_version >= STUDY_VERSION_10_2:
             self._convert_reserves()
         else:
             # Legacy reserves behavior

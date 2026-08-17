@@ -16,9 +16,9 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster, 
 from antarest.study.dao.api.study_dao import StudyDao
 
 
-def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_0: StudyDao) -> None:
+def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: StudyDao) -> None:
     # Create 1 area with 2 thermal clusters and 4 reserves
-    dao = dao_10_0
+    dao = dao_10_2
     dao.save_areas_with_properties({"fr": AreaProperties()})
     th1 = ThermalCluster(name="th1")
     th2 = ThermalCluster(name="th2")

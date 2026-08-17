@@ -123,8 +123,8 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                         _convert_thermal_model_to_row(self._study_data_id, area_id, thermal_id, reserve_id, certification)
                     )
         try:
-            self.__clean_db(_THERMAL_TABLE, new_certifications)
-            self.__insert_data_to_table(_THERMAL_TABLE, values)
+            self._clean_db(_THERMAL_TABLE, new_certifications)
+            self._insert_data_to_table(_THERMAL_TABLE, values)
         except IntegrityError as e:
             self._raise_the_right_thermal_reserve_exception(new_certifications, exc=e)
         self._db_session.commit()
@@ -180,8 +180,8 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             return
         values = self._convert_st_storages_models_to_rows(new_certifications)
         try:
-            self.__clean_db(_ST_STORAGE_TABLE, new_certifications)
-            self.__insert_data_to_table(_ST_STORAGE_TABLE, values)
+            self._clean_db(_ST_STORAGE_TABLE, new_certifications)
+            self._insert_data_to_table(_ST_STORAGE_TABLE, values)
         except IntegrityError as e:
             self._raise_the_right_st_storage_reserve_exception(new_certifications, exc=e)
         self._db_session.commit()
@@ -198,14 +198,14 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                     )
         return values
 
-    def __clean_db(
+    def _clean_db(
         self, table: Table, data: Mapping[str, Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]]]
     ) -> None:
         area_ids = set(data)
         stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
         self._db_session.execute(stmt)
 
-    def __insert_data_to_table(self, table: Table, values: list[Any]) -> None:
+    def _insert_data_to_table(self, table: Table, values: list[Any]) -> None:
         if values:
             self._db_session.execute(insert(table), values)
 

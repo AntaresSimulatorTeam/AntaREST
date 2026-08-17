@@ -18,7 +18,7 @@ from antarest.study.business.model.reserve_certification_model import StorageRes
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
 from antarest.study.business.model.sts_model import STStorage
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.reserve_participations import (
     parse_st_storage_reserves_certifications,
     parse_st_storage_reserves_symmetries,
@@ -28,7 +28,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.reserve_participati
 def test_symmetries_and_certifications_do_not_overwrite_each_other(fs_dao: FileStudyTreeDao) -> None:
     # Build a v10.0 FS DAO.
     dao = fs_dao
-    dao.get_file_study().config.version = STUDY_VERSION_10_0
+    dao.get_file_study().config.version = STUDY_VERSION_10_2
     # Create 1 area with 2 short-term storages and 4 reserves
     dao.save_areas_with_properties({"fr": AreaProperties()})
     dao.save_st_storages({"fr": [STStorage(name="sts1", id="sts1"), STStorage(name="sts2", id="sts2")]})

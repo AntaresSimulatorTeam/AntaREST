@@ -216,15 +216,15 @@ def test_empty_matrices(dao_93: StudyDao) -> None:
     assert_frame_equal(bc_eq, default_bc_daily_weekly_dataframe, check_dtypes=False)
 
 
-def test_empty_reserve_need_matrix(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
+def test_empty_reserve_need_matrix(dao_10_2: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     area_id = "paris"
     reserve_name = "R1"
     reserve_id = "r1"
-    save_area(dao_10_0, area_id)
-    dao_10_0.save_reserve_definitions({area_id: [build_reserve_definition(reserve_name)]})
+    save_area(dao_10_2, area_id)
+    dao_10_2.save_reserve_definitions({area_id: [build_reserve_definition(reserve_name)]})
 
     null_matrix_id = matrix_service.create(pl.DataFrame(orient="row"))
-    dao_10_0.save_reserve_needs({area_id: {ReserveDefinitionId(reserve_id): null_matrix_id}})
+    dao_10_2.save_reserve_needs({area_id: {ReserveDefinitionId(reserve_id): null_matrix_id}})
 
-    result = dao_10_0.get_reserve_need(area_id, reserve_id)
+    result = dao_10_2.get_reserve_need(area_id, reserve_id)
     assert_frame_equal(result, create_polars_dataframe(default_scenario_hourly()), check_dtypes=False)

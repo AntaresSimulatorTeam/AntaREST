@@ -14,7 +14,7 @@ import pytest
 from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -52,24 +52,24 @@ def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
         assert output.status
 
 
-def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     # Get reserves at first to check the current state
-    result = dao_10_0.get_all_st_storage_reserve_certifications()
+    result = dao_10_2.get_all_st_storage_reserve_certifications()
     assert result == {}
 
     cmd = ReplaceStStorageReserveCertifications(
         area_id="fr",
         certifications={"r1": {"sts1": StorageReserveCertification()}},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
     # Check the certifications
-    result = dao_10_0.get_all_st_storage_reserve_certifications()
+    result = dao_10_2.get_all_st_storage_reserve_certifications()
     assert result == {"fr": {"r1": {"sts1": StorageReserveCertification()}}}
 
     new_certifications = {
@@ -84,13 +84,13 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
         area_id="fr",
         certifications=new_certifications,
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
     # Check the certifications
-    result = dao_10_0.get_st_storage_reserve_certifications("fr")
+    result = dao_10_2.get_st_storage_reserve_certifications("fr")
     assert result == new_certifications
 
     # Ensures replacing existing data with new one erases the old values
@@ -100,12 +100,12 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
         area_id="fr",
         certifications=new_certifications,
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
-    result = dao_10_0.get_st_storage_reserve_certifications("fr")
+    result = dao_10_2.get_st_storage_reserve_certifications("fr")
     assert result == new_certifications
 
     # Ensures we're able to remove all certifications
@@ -113,21 +113,21 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
         area_id="fr",
         certifications={},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
-    result = dao_10_0.get_st_storage_reserve_certifications("fr")
+    result = dao_10_2.get_st_storage_reserve_certifications("fr")
     assert result == {}
 
 
-def test_study_version_sould_be_at_least_10_0_for_reserves(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_study_version_sould_be_at_least_10_2_for_reserves(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     certification = StorageReserveCertification()
     # Wrong version
-    with pytest.raises(ValueError, match="study version before 10.0"):
+    with pytest.raises(ValueError, match="study version before 10.2"):
         ReplaceStStorageReserveCertifications(
             area_id="fr",
             certifications={"r1": {"sts1": certification}},
@@ -136,8 +136,8 @@ def test_study_version_sould_be_at_least_10_0_for_reserves(dao_10_0: StudyDao, c
         )
 
 
-def test_area_should_be_valid(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_area_should_be_valid(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     certification = StorageReserveCertification()
     # Wrong area
@@ -145,15 +145,15 @@ def test_area_should_be_valid(dao_10_0: StudyDao, command_context: CommandContex
         area_id="fake_area",
         certifications={"r1": {"sts1": certification}},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert not output.status
     assert "Area is not found: 'fake_area'" in output.message
 
 
-def test_reserve_should_be_valid(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_reserve_should_be_valid(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     certification = StorageReserveCertification()
 
@@ -161,15 +161,15 @@ def test_reserve_should_be_valid(dao_10_0: StudyDao, command_context: CommandCon
         area_id="fr",
         certifications={"fake_reserve": {"sts1": certification}},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert not output.status
     assert "Reserve definitions not found: {'fr': {'fake_reserve'}}" in output.message
 
 
-def test_st_storage_should_be_valid(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_st_storage_should_be_valid(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     certification = StorageReserveCertification()
 
@@ -177,9 +177,9 @@ def test_st_storage_should_be_valid(dao_10_0: StudyDao, command_context: Command
         area_id="fr",
         certifications={"r1": {"fake_storage": certification}},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert not output.status
     expected_msg_db = "Short term storages not found: {'fr': {'fake_storage'}}"
     expected_msg_fs = "Short-term storage 'fake_storage' not found in area 'fr'"

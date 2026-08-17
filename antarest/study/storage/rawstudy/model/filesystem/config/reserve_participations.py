@@ -31,35 +31,27 @@ from antarest.study.business.model.reserve_symmetries_model import ReserveSymmet
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
-class _AreaAssetCertification(ABC, AntaresBaseModel):
-    reserve: str
-
-    @abstractmethod
-    def to_model(self) -> Any:
-        raise NotImplementedError
-
-
-class _ThermalCertification(_AreaAssetCertification):
+class _ThermalCertification(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
 
     max_power: Power = 0.0
     max_power_off: Power = 0.0
     participation_cost: Cost = 0.0
     participation_cost_off: Cost = 0.0
+    reserve: str
 
-    @override
     def to_model(self) -> ThermalReserveCertification:
         return ThermalReserveCertification.model_validate(self.model_dump(exclude={"reserve"}))
 
 
-class _StorageCertification(_AreaAssetCertification):
+class _StorageCertification(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_kebab_case, extra="forbid", populate_by_name=True)
 
     max_release: Power = 0.0
     max_store: Power = 0.0
     participation_cost: Cost = 0.0
+    reserve: str
 
-    @override
     def to_model(self) -> StorageReserveCertification:
         return StorageReserveCertification.model_validate(self.model_dump(exclude={"reserve"}))
 
@@ -70,13 +62,14 @@ class Symmetry(AntaresBaseModel):
     reserves: ReserveSymmetry
 
 
+_AreaAssetCertification = _ThermalCertification | _StorageCertification
 CertificationT = TypeVar("CertificationT", bound=_AreaAssetCertification)
 
 
 class Participation(ABC, AntaresBaseModel, Generic[CertificationT]):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    certifications: list[CertificationT] = []
+    certifications: list[_AreaAssetCertification] = []
     symmetries: list[Symmetry] = []
 
     @model_validator(mode="after")

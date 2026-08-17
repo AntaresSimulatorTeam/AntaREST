@@ -14,7 +14,7 @@ import pytest
 from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -67,37 +67,37 @@ def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
     assert output.status
 
 
-def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     # Get reserves at first to check the current state
-    result = dao_10_0.get_all_st_storage_reserve_symmetries()
+    result = dao_10_2.get_all_st_storage_reserve_symmetries()
     assert result == {}
 
     cmd = ReplaceStStorageReserveSymmetries(
         area_id="fr",
         symmetries={"sts1": [["r1", "r2"]]},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
     # Check the symmetries
-    result = dao_10_0.get_all_st_storage_reserve_symmetries()
+    result = dao_10_2.get_all_st_storage_reserve_symmetries()
     assert result == {"fr": {"sts1": [["r1", "r2"]]}}
 
     cmd = ReplaceStStorageReserveSymmetries(
         area_id="fr",
         symmetries={"sts1": [["r2", "r3"], ["r4", "r1"]], "sts2": [["r1", "r2"]]},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
     # Check the symmetries
-    result = dao_10_0.get_all_st_storage_reserve_symmetries()
+    result = dao_10_2.get_all_st_storage_reserve_symmetries()
     assert result == {"fr": {"sts1": [["r2", "r3"], ["r1", "r4"]], "sts2": [["r1", "r2"]]}}
 
     # Ensures replacing existing data with new one erases the old values
@@ -107,12 +107,12 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
         area_id="fr",
         symmetries=new_symmetries,
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
-    result = dao_10_0.get_st_storage_reserve_symmetries("fr")
+    result = dao_10_2.get_st_storage_reserve_symmetries("fr")
     assert result == new_symmetries
 
     # Ensures we're able to remove all symmetries
@@ -120,19 +120,19 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
         area_id="fr",
         symmetries={},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
-    result = dao_10_0.get_st_storage_reserve_symmetries("fr")
+    result = dao_10_2.get_st_storage_reserve_symmetries("fr")
     assert result == {}
 
 
-def test_study_version_sould_be_at_least_10_0_for_reserves(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_study_version_sould_be_at_least_10_2_for_reserves(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
-    with pytest.raises(ValueError, match="study version before 10.0"):
+    with pytest.raises(ValueError, match="study version before 10.2"):
         ReplaceStStorageReserveSymmetries(
             area_id="fr",
             symmetries={"sts1": [["r1", "r2"]]},
@@ -141,44 +141,44 @@ def test_study_version_sould_be_at_least_10_0_for_reserves(dao_10_0: StudyDao, c
         )
 
 
-def test_area_should_be_valid(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_area_should_be_valid(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     cmd = ReplaceStStorageReserveSymmetries(
         area_id="fake_area",
         symmetries={"sts1": [["r1", "r2"]]},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert not output.status
     assert "Area is not found: 'fake_area'" in output.message
 
 
-def test_reserve_should_be_valid(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_reserve_should_be_valid(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     cmd = ReplaceStStorageReserveSymmetries(
         area_id="fr",
         symmetries={"sts1": [["fake_reserve", "r2"]]},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert not output.status
     assert "Reserve definition 'fake_reserve' not found in area 'fr'" in output.message
 
 
-def test_short_term_storage_should_be_valid(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_short_term_storage_should_be_valid(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     # Wrong short-term storage
     cmd = ReplaceStStorageReserveSymmetries(
         area_id="fr",
         symmetries={"fake_storage": [["r1", "r2"]]},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert not output.status
     assert "Short-term storage 'fake_storage' not found in area 'fr'" in output.message

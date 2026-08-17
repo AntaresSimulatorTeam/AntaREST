@@ -31,7 +31,7 @@ from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_6,
     STUDY_VERSION_9_2,
-    STUDY_VERSION_10_0,
+    STUDY_VERSION_10_2,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -116,7 +116,7 @@ class CreateArea(ICommand):
         study_data.save_misc_gen({area_id: constants.get_default_miscgen()})
 
         # Reserves
-        if self.study_version < STUDY_VERSION_10_0:
+        if self.study_version < STUDY_VERSION_10_2:
             study_data.save_reserves({area_id: constants.get_default_reserves()})
         else:
             study_data.save_reserves_global_parameters({area_id: ReservesGlobalParameters()})

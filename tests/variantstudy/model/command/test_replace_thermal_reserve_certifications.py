@@ -15,7 +15,7 @@ from antarest.study.business.model.reserve_certification_model import ThermalRes
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
@@ -53,24 +53,24 @@ def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
         assert output.status
 
 
-def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     # Get reserves at first to check the current state
-    result = dao_10_0.get_all_thermal_reserve_certifications()
+    result = dao_10_2.get_all_thermal_reserve_certifications()
     assert result == {}
 
     cmd = ReplaceThermalReserveCertifications(
         area_id="fr",
         certifications={"r1": {"th1": ThermalReserveCertification()}},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
     # Check the certifications
-    result = dao_10_0.get_all_thermal_reserve_certifications()
+    result = dao_10_2.get_all_thermal_reserve_certifications()
     assert result == {"fr": {"r1": {"th1": ThermalReserveCertification()}}}
 
     new_certifications = {
@@ -87,13 +87,13 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
         area_id="fr",
         certifications=new_certifications,
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
     # Check the certifications
-    result = dao_10_0.get_thermal_reserve_certifications("fr")
+    result = dao_10_2.get_thermal_reserve_certifications("fr")
     assert result == new_certifications
 
     # Ensures replacing existing data with new one erases the old values
@@ -103,12 +103,12 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
         area_id="fr",
         certifications=new_certifications,
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
-    result = dao_10_0.get_thermal_reserve_certifications("fr")
+    result = dao_10_2.get_thermal_reserve_certifications("fr")
     assert result == new_certifications
 
     # Ensures we're able to remove all certifications
@@ -116,20 +116,20 @@ def test_nominal_case(dao_10_0: StudyDao, command_context: CommandContext) -> No
         area_id="fr",
         certifications={},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert output.status
 
-    result = dao_10_0.get_thermal_reserve_certifications("fr")
+    result = dao_10_2.get_thermal_reserve_certifications("fr")
     assert result == {}
 
 
-def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> None:
-    _set_up(dao_10_0, command_context)
+def test_error_cases(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
 
     # Wrong version
-    with pytest.raises(ValueError, match="study version before 10.0"):
+    with pytest.raises(ValueError, match="study version before 10.2"):
         ReplaceThermalReserveCertifications(
             area_id="fr",
             certifications={"r1": {"th1": ThermalReserveCertification()}},
@@ -142,9 +142,9 @@ def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> Non
         area_id="fake_area",
         certifications={"r1": {"th1": ThermalReserveCertification()}},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert not output.status
     assert "Area is not found: 'fake_area'" in output.message
 
@@ -153,9 +153,9 @@ def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> Non
         area_id="fr",
         certifications={"fake_reserve": {"th1": ThermalReserveCertification()}},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert not output.status
     assert "Reserve definitions not found: {'fr': {'fake_reserve'}}" in output.message
 
@@ -164,9 +164,9 @@ def test_error_cases(dao_10_0: StudyDao, command_context: CommandContext) -> Non
         area_id="fr",
         certifications={"r1": {"fake_thermal": ThermalReserveCertification()}},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
-    output = cmd.apply(dao_10_0)
+    output = cmd.apply(dao_10_2)
     assert not output.status
     expected_msg_db = "Thermal clusters not found: {'fr': {'fake_thermal'}}"
     expected_msg_fs = "Thermal cluster 'fake_thermal' not found in area 'fr'"
