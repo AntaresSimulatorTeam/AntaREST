@@ -130,9 +130,8 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
             if invalid_ids := set(reserve_ids) - existing:
                 raise ReserveDefinitionsNotFound({area_id: invalid_ids})  # type: ignore
 
-        self._db_session.commit()
-
         self._delete_symmetries_associated_with_deleted_reserve(area_id, reserve_ids)
+        self._db_session.commit()
 
     def _delete_symmetries_associated_with_deleted_reserve(
         self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]

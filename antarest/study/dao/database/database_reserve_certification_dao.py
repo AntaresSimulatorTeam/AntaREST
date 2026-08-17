@@ -49,7 +49,7 @@ def _convert_thermal_row_to_model(row: Row[Any]) -> ThermalReserveCertification:
 
 
 def _convert_thermal_model_to_row(
-    study_data_id: str, area_id: str, thermal_id: str, reserve_id: str, certification: ThermalReserveCertification
+    study_data_id: int, area_id: str, thermal_id: str, reserve_id: str, certification: ThermalReserveCertification
 ) -> dict[str, Any]:
     values = certification.model_dump()
     values["reserve_id"] = reserve_id
@@ -61,16 +61,16 @@ def _convert_thermal_model_to_row(
 
 def _convert_st_storage_row_to_model(row: Row[Any]) -> StorageReserveCertification:
     data = get_row_representation_as_dict(row)
-    for key in ("study_id", "area_id", "st_storage_id", "reserve_id"):
+    for key in ("study_data_id", "area_id", "st_storage_id", "reserve_id"):
         del data[key]
     return StorageReserveCertification.model_validate(data)
 
 
 def _convert_st_storage_model_to_row(
-    study_id: str, area_id: str, storage_id: str, reserve_id: str, certification: StorageReserveCertification
+    study_data_id: int, area_id: str, storage_id: str, reserve_id: str, certification: StorageReserveCertification
 ) -> dict[str, Any]:
     values = certification.model_dump()
-    values["study_id"] = study_id
+    values["study_data_id"] = study_data_id
     values["area_id"] = area_id
     values["st_storage_id"] = storage_id
     values["reserve_id"] = reserve_id
@@ -120,7 +120,9 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             for reserve_id, thermal_dict in reserves_dict.items():
                 for thermal_id, certification in thermal_dict.items():
                     values.append(
-                        _convert_thermal_model_to_row(self._study_data_id, area_id, thermal_id, reserve_id, certification)
+                        _convert_thermal_model_to_row(
+                            self._study_data_id, area_id, thermal_id, reserve_id, certification
+                        )
                     )
         try:
             self._clean_db(_THERMAL_TABLE, new_certifications)
@@ -153,7 +155,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
     @override
     def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
-        stmt = select(_ST_STORAGE_TABLE).where(_ST_STORAGE_TABLE.c.study_id == self._study_id)
+        stmt = select(_ST_STORAGE_TABLE).where(_ST_STORAGE_TABLE.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: dict[AreaId, StorageReserveCertificationMapping] = {}
         for row in rows:
@@ -164,7 +166,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     @override
     def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
         stmt = select(_ST_STORAGE_TABLE).where(
-            (_ST_STORAGE_TABLE.c.study_id == self._study_id) & (_ST_STORAGE_TABLE.c.area_id == area_id)
+            (_ST_STORAGE_TABLE.c.study_data_id == self._study_data_id) & (_ST_STORAGE_TABLE.c.area_id == area_id)
         )
         rows = self._db_session.execute(stmt).fetchall()
         result: StorageReserveCertificationMapping = {}
@@ -194,7 +196,9 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             for reserve_id, storage_dict in reserves_dict.items():
                 for storage_id, certification in storage_dict.items():
                     values.append(
-                        _convert_st_storage_model_to_row(self._study_id, area_id, storage_id, reserve_id, certification)
+                        _convert_st_storage_model_to_row(
+                            self._study_data_id, area_id, storage_id, reserve_id, certification
+                        )
                     )
         return values
 

@@ -58,10 +58,10 @@ def _convert_thermal_model_to_row(
 
 
 def _convert_st_storage_model_to_row(
-    study_id: str, area_id: str, st_storage_id: str, symmetries: ReserveSymmetries
+    study_data_id: int, area_id: str, st_storage_id: str, symmetries: ReserveSymmetries
 ) -> dict[str, Any]:
     values = {
-        "study_id": study_id,
+        "study_data_id": study_data_id,
         "area_id": area_id,
         "st_storage_id": st_storage_id,
         "symmetries": json.dumps(symmetries),
@@ -69,7 +69,9 @@ def _convert_st_storage_model_to_row(
     return values
 
 
-def _convert_all_rows_to_model(rows: Sequence[Row[tuple[Any]]], id_field_name: str) -> dict[Any, Any]:
+def _convert_all_rows_to_model(
+    rows: Sequence[Row[tuple[Any]]], id_field_name: str
+) -> dict[Any, list[list[ReserveDefinitionId]]]:
     result = {}
     for row in rows:
         result[row._mapping[id_field_name]] = _convert_row_to_model(row)
@@ -107,11 +109,11 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
-        rows = self._get_all_area_assets_matching_study_id(_THERMAL_TABLE)
+        rows = self._get_all_area_assets_matching_study_data_id(_THERMAL_TABLE)
         return _convert_all_rows_to_dict_of_models(rows, "thermal_id")
 
-    def _get_all_area_assets_matching_study_id(self, table: Table) -> Sequence[Row[tuple[Any]]]:
-        stmt = select(table).where(table.c.study_id == self._study_id)
+    def _get_all_area_assets_matching_study_data_id(self, table: Table) -> Sequence[Row[tuple[Any]]]:
+        stmt = select(table).where(table.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         return rows
 
@@ -159,7 +161,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
-        rows = self._get_all_area_assets_matching_study_id(_ST_STORAGE_TABLE)
+        rows = self._get_all_area_assets_matching_study_data_id(_ST_STORAGE_TABLE)
         return _convert_all_rows_to_dict_of_models(rows, "st_storage_id")
 
     @override
@@ -189,11 +191,12 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
             for st_storage_id, symmetries in st_storage_dict.items():
                 if symmetries == [[]]:
                     continue
-                values.append(_convert_st_storage_model_to_row(self._study_id, area_id, st_storage_id, symmetries))
+                values.append(_convert_st_storage_model_to_row(self._study_data_id, area_id, st_storage_id, symmetries))
         try:
             self.__clean_db(_ST_STORAGE_TABLE, data)
             self.__insert_data_to_table(_ST_STORAGE_TABLE, values)
         except IntegrityError as e:
+            self._db_session.rollback()
             st_storages = {area_id: list(st_storage_dict) for area_id, st_storage_dict in data.items()}
             self.get_impl().raise_the_right_storage_exception(st_storages, exc=e)
         self._db_session.commit()
