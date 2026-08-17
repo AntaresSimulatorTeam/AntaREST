@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from typing_extensions import override
 
@@ -95,7 +95,7 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
         reserves_dict: Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]],
     ) -> None:
         existing_reserve_ids = file_study.config.areas[area_id].reserves
-        invalid_reserves: set[str] = set(reserves_dict) - set(existing_reserve_ids)  # type: ignore
+        invalid_reserves: set[str] = cast(set[str], set(reserves_dict) - set(existing_reserve_ids))
         if invalid_reserves:
             raise ReserveDefinitionsNotFound({area_id: invalid_reserves})
 
