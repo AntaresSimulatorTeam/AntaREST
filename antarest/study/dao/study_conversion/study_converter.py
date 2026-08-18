@@ -263,7 +263,7 @@ class StudyConverter:
         self._convert_certifications_reserves()
         self._convert_resvers_symmetries()
 
-    def _convert_certifications_reserves(self):
+    def _convert_certifications_reserves(self) -> None:
         # Thermal certifications
         thermal_certifications = self._source_dao.get_all_thermal_reserve_certifications()
         if thermal_certifications:
@@ -274,7 +274,7 @@ class StudyConverter:
         if st_storage_certitifcations:
             self._new_dao.save_st_storage_reserve_certifications(st_storage_certitifcations)
 
-    def _convert_resvers_symmetries(self):
+    def _convert_resvers_symmetries(self) -> None:
         # Thermal symmetries
         thermal_symmetries = self._source_dao.get_all_thermal_reserve_symmetries()
         if thermal_symmetries:
