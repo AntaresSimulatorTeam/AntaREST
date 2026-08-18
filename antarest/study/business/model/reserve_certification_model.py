@@ -31,10 +31,10 @@ class ThermalReserveCertification(
 ):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    participation_cost: Cost = 0.0
     max_power: Power = 0.0
     max_power_off: Power = 0.0
     participation_cost_off: Cost = 0.0
+    participation_cost: Cost = 0.0
 
 
 ThermalId: TypeAlias = str

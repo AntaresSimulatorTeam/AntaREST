@@ -1679,7 +1679,7 @@ def create_study_data_routes() -> APIRouter:
     def save_thermal_reserve_symmetries(
         study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: dict[ThermalId, ReserveSymmetries]
     ) -> dict[ThermalId, ReserveSymmetries]:
-        logger.info("Saving thermal reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+        logger.info(f"Saving thermal reserve symmetries for study {uuid} and area {area_id}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.reserve_symmetries_manager.set_thermal_symmetries(study_interface, area_id, data)
@@ -1715,7 +1715,7 @@ def create_study_data_routes() -> APIRouter:
     def get_st_storage_reserve_symmetries(
         study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
     ) -> dict[StorageId, ReserveSymmetries]:
-        logger.info("Fetching reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+        logger.info(f"Fetching reserve symmetries for study {uuid} and area {area_id}")
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.reserve_symmetries_manager.get_st_storage_symmetries(study_interface, area_id)

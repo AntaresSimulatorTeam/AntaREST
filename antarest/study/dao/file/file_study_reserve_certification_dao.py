@@ -46,6 +46,17 @@ if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
+def _check_reserves_exist(
+    area_id: str,
+    file_study: FileStudy,
+    reserves_dict: Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]],
+) -> None:
+    existing_reserve_ids = file_study.config.areas[area_id].reserves
+    invalid_reserves: set[str] = cast(set[str], set(reserves_dict) - set(existing_reserve_ids))
+    if invalid_reserves:
+        raise ReserveDefinitionsNotFound({area_id: invalid_reserves})
+
+
 class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
@@ -78,7 +89,7 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
 
         for area_id, reserves_dict in new_certifications.items():
             check_area_exists(file_study.config, area_id)
-            self._check_reserves_exist(area_id, file_study, reserves_dict)
+            _check_reserves_exist(area_id, file_study, reserves_dict)
             self._check_all_thermals_exist_in_area(area_id, reserves_dict)
 
             yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
@@ -87,17 +98,6 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
 
             # Saves the content into the YAML file
             file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
-
-    @staticmethod
-    def _check_reserves_exist(
-        area_id: str,
-        file_study: FileStudy,
-        reserves_dict: Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]],
-    ) -> None:
-        existing_reserve_ids = file_study.config.areas[area_id].reserves
-        invalid_reserves: set[str] = cast(set[str], set(reserves_dict) - set(existing_reserve_ids))
-        if invalid_reserves:
-            raise ReserveDefinitionsNotFound({area_id: invalid_reserves})
 
     def _check_all_thermals_exist_in_area(
         self, area_id: str, reserves_dict: dict[ReserveDefinitionId, dict[str, ThermalReserveCertification]]
@@ -115,7 +115,7 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
 
         for area_id, reserves_dict in new_certifications.items():
             check_area_exists(file_study.config, area_id)
-            self._check_reserves_exist(area_id, file_study, reserves_dict)
+            _check_reserves_exist(area_id, file_study, reserves_dict)
             self._check_all_st_storages_exist_in_area(area_id, reserves_dict)
 
             yaml_content = get_st_storage_reserve_participations_as_yaml_content(area_id, file_study)
