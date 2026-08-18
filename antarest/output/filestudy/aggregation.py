@@ -119,16 +119,6 @@ class AggregatorManager:
         )
         self._output_first_column = get_start_column(self.frequency)
 
-    def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> OutputDataFrame[ColMetadata]:
-        output_data = parse_output_file(file_path, self._output_first_column)
-
-        def convert_metadata(var: VariableDescription) -> ColMetadata:
-            if normalize_column_names:
-                return var.normal_repr()
-            return var
-
-        return output_data.map_metadata(convert_metadata)
-
     def _variable_names(self, headers: list[ColMetadata]) -> list[str]:
         return [col.name if isinstance(col, VariableDescription) else col for col in headers]
 
@@ -168,13 +158,12 @@ class AggregatorManager:
         Returns:
             the DataFrame with the correct columns and values
         """
-        normalize_cols = not is_details
-        output_data = self._parse_output_file(file_path, normalize_column_names=normalize_cols)
+        output_data = parse_output_file(file_path, self._output_first_column)
         if not is_details:
-            return output_data
+            return output_data.map_metadata(VariableDescription.normal_repr)
 
         df = output_data.data.to_pandas()
-        df.columns = pd.MultiIndex.from_tuples(output_data.headers)  # type: ignore
+        df.columns = pd.MultiIndex.from_tuples(c.to_tuple() for c in output_data.headers)
         nb_clusters = df.columns.get_level_values(CLUSTER_ID_COMPONENT).nunique()
         # actual columns without the cluster id (NODU, production etc.)
         actual_cols = sorted(df.columns.get_level_values(ACTUAL_COLUMN_COMPONENT).unique())
