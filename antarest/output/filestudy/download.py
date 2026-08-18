@@ -33,6 +33,8 @@ def build_matrix_aggregation_result(output_path: Path, data_selection: StudyDown
     """
     Build a MatrixAggregationResultDTO from the given output path and data.
     """
+    # areas and districts are handled identically
+    is_area = data_selection.type in {StudyDownloadType.AREA, StudyDownloadType.DISTRICT}
 
     # Gathering all relevant files data
     def get_output_data(type: QueryFileType) -> Iterable[OutputFileData]:
@@ -44,11 +46,9 @@ def build_matrix_aggregation_result(output_path: Path, data_selection: StudyDown
             mc_years=data_selection.years,
         )
 
-    output_data = get_output_data(
-        MCIndAreasQueryFile.VALUES if data_selection.type == StudyDownloadType.AREA else MCIndLinksQueryFile.VALUES
-    )
+    output_data = get_output_data(MCIndAreasQueryFile.VALUES if is_area else MCIndLinksQueryFile.VALUES)
 
-    if data_selection.type == StudyDownloadType.AREA and data_selection.include_clusters:
+    if is_area and data_selection.include_clusters:
         output_data = itertools.chain(
             output_data,
             get_output_data(MCIndAreasQueryFile.DETAILS),

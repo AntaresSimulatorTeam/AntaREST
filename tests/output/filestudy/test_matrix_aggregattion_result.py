@@ -61,3 +61,29 @@ def test_build_aggregates__different_thermal_groups(data_dir: Path) -> None:
         "NODU",
         "RES LOAD",
     ]
+
+
+def test_build_aggregates__district(data_dir: Path) -> None:
+    output_dir = data_dir / "20260810-1420eco-thermal_groups"
+
+    download = StudyDownloadDTO(
+        type=StudyDownloadType.DISTRICT,
+        years=[1],
+        level=MatrixFrequency.MONTHLY,
+    )
+    aggregate = build_matrix_aggregation_result(output_dir, download)
+
+    year1_st_by_area = {data.name: data.data["1"] for data in aggregate.data}
+    all_areas_variables = [ts.name for ts in year1_st_by_area["@ all areas"]]
+
+    assert all_areas_variables == [
+        "CO2 EMIS.",
+        "AVL DTG",
+        "DTG MRG",
+        "MAX MRG",
+        "NP COST",
+        "RES LOAD",
+        "NODU",
+        "ES_NUCLEAR_TH_PROD",
+        "FR_NUCLEAR_TH_PROD",
+    ]
