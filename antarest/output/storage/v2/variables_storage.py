@@ -111,7 +111,6 @@ def _aggregate_to_parquet(
         frequency=frequency,
         ids_to_consider=ids_to_consider,
         columns_names=[],
-        transform_columns_headers=True,
     )
     try:
         dataframes = manager.aggregate_output_data()

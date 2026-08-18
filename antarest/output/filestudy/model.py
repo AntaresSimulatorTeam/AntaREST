@@ -74,7 +74,7 @@ class VariableDescription:
 
     def to_tuple(self) -> tuple[str, str, str]:
         # Follows convention of output files ... maybe better keep it instead of None after all ?
-        return self.name, self.unit or " ", self.statistic_type or ""
+        return self.name, self.unit_repr(), self.statistic_type_repr()
 
     def unit_repr(self) -> str:
         """
@@ -146,12 +146,3 @@ class OutputDataFrame(Generic[C]):
 
     def map_metadata(self, func: Callable[[C], C2]) -> "OutputDataFrame[C2]":
         return OutputDataFrame(self.data, [func(col) for col in self.headers])
-
-
-def concatenate_dataframe_multi_indexed_columns(output_header: tuple[str, str, str] | str) -> str:
-    """
-    Serializes multi-indexed column headers into a single string, concatenating with " % " as a separator.
-    """
-    if isinstance(output_header, str):
-        raise ValueError("Header concatenation is only supported for tuple headers.")
-    return " % ".join(output_header)

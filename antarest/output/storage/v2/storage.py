@@ -408,7 +408,6 @@ class V2OutputStorage(IOutputStorage):
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        transform_columns_headers: bool,
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         target_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
@@ -419,8 +418,6 @@ class V2OutputStorage(IOutputStorage):
             if batch.is_empty():
                 continue
             has_data = True
-            if not transform_columns_headers:
-                batch = batch.drop("timeId", strict=False)
             yield batch
 
         if not has_data:

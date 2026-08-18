@@ -31,7 +31,6 @@ from antarest.output.filestudy.model import (
     OutputDataFrame,
     QueryFileType,
     VariableDescription,
-    concatenate_dataframe_multi_indexed_columns,
 )
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
@@ -59,7 +58,7 @@ logger = logging.getLogger(__name__)
 # The implementation uses sometimes plain string headers,
 # sometimes a tuple of strings (name, unit, stat)
 # Typing should be improved, but for now we stick with that union.
-ColMetadata: TypeAlias = tuple[str, str, str] | str
+ColMetadata: TypeAlias = VariableDescription | str
 
 
 def _check_is_str(value: ColMetadata) -> str:
@@ -87,12 +86,6 @@ def _columns_ordering(df_cols: list[str], column_name: str, is_details: bool, mc
 
 
 class AggregatorManager:
-    """
-
-    Attributes:
-        transform_columns_headers: False when used by the Imagrid `/download` endpoint.
-    """
-
     def __init__(
         self,
         output_path: Path,
@@ -100,7 +93,6 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        transform_columns_headers: bool,  # False when used by the Imagrid `/download` endpoint.
         mc_years: Sequence[int] | None = None,
     ):
         self.output_path = output_path
@@ -126,7 +118,6 @@ class AggregatorManager:
             else MCRoot.MC_ALL
         )
         self._output_first_column = get_start_column(self.frequency)
-        self.transform_columns_headers = transform_columns_headers
 
     def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> OutputDataFrame[ColMetadata]:
         output_data = parse_output_file(file_path, self._output_first_column)
@@ -134,12 +125,12 @@ class AggregatorManager:
         def convert_metadata(var: VariableDescription) -> ColMetadata:
             if normalize_column_names:
                 return var.normal_repr()
-            return var.to_tuple()
+            return var
 
         return output_data.map_metadata(convert_metadata)
 
     def _variable_names(self, headers: list[ColMetadata]) -> list[str]:
-        return [col[0] if isinstance(col, tuple) else col for col in headers]
+        return [col.name if isinstance(col, VariableDescription) else col for col in headers]
 
     def columns_filtering(self, data: OutputDataFrame[ColMetadata], is_details: bool) -> OutputDataFrame[ColMetadata]:
         # columns filtering
@@ -177,9 +168,9 @@ class AggregatorManager:
         Returns:
             the DataFrame with the correct columns and values
         """
-        normalize_cols = self.transform_columns_headers and not is_details
+        normalize_cols = not is_details
         output_data = self._parse_output_file(file_path, normalize_column_names=normalize_cols)
-        if not self.transform_columns_headers or not is_details:
+        if not is_details:
             return output_data
 
         df = output_data.data.to_pandas()
@@ -220,9 +211,6 @@ class AggregatorManager:
             # columns filtering
             output_data = self.columns_filtering(output_data, is_details)
 
-            if not self.transform_columns_headers:
-                output_data = output_data.map_metadata(concatenate_dataframe_multi_indexed_columns)
-
             # Starting from here, output_data.headers are just a list of strings.
             # We can use them as columns for our dataframe.
             df = output_data.data
@@ -246,13 +234,12 @@ class AggregatorManager:
                 data = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
                 df = df.with_columns(pl.lit(data).alias(column_name))
 
-            if self.transform_columns_headers:
-                # add a column for the time id
-                if not is_details:
-                    df = df.with_row_index(TIME_ID_COL, offset=1)
+            # add a column for the time id
+            if not is_details:
+                df = df.with_row_index(TIME_ID_COL, offset=1)
 
-                # Reorganize the columns
-                df = df.select(new_column_order)
+            # Reorganize the columns
+            df = df.select(new_column_order)
 
             yield df
 

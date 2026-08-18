@@ -680,7 +680,6 @@ class OutputService:
                     frequency,
                     ids_to_consider,
                     columns_names,
-                    transform_columns_headers,
                     mc_years,
                 )
                 export_df_chunks(self._tmp_dir, file_path, results, export_format)

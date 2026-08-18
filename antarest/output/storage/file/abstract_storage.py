@@ -519,7 +519,6 @@ class AbstractFileOutputStorage(IOutputStorage):
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        transform_columns_headers: bool,
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
@@ -529,7 +528,6 @@ class AbstractFileOutputStorage(IOutputStorage):
             frequency,
             ids_to_consider,
             columns_names,
-            transform_columns_headers,
             mc_years,
         )
         return aggregator_manager.aggregate_output_data()
