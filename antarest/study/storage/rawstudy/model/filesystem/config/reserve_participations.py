@@ -154,8 +154,8 @@ class _AreaAssetParticipationFileData(ABC, AntaresBaseModel, Generic[Participati
 
         reorganized_certifications: dict[str, dict[ReserveDefinitionId, ReserveCertification]] = {}
         for reserve_id, value in certifications.items():
-            for thermal_id, certification in value.items():
-                reorganized_certifications.setdefault(thermal_id, {})[reserve_id] = certification
+            for asset_id, certification in value.items():
+                reorganized_certifications.setdefault(asset_id, {})[reserve_id] = certification
         return reorganized_certifications
 
     @classmethod
@@ -164,13 +164,13 @@ class _AreaAssetParticipationFileData(ABC, AntaresBaseModel, Generic[Participati
         symmetries: dict[str, ReserveSymmetries],
         certifications: Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]],
     ) -> Self:
-        thermal_certifications = cls._reorganize_certifications(certifications)
+        reorganized_certifications = cls._reorganize_certifications(certifications)
 
         participations: list[dict[str, Any]] = []
-        cls._iterate_through_symmetries(participations, symmetries, thermal_certifications)
+        cls._build_participations_from_symmetries(participations, symmetries, reorganized_certifications)
 
         # Iterate through certifications with an id not in symmetries
-        cls._iterate_through_certifications(participations, thermal_certifications)
+        cls._iterate_through_certifications(participations, reorganized_certifications)
 
         return cls.model_validate({"participations": participations})
 
@@ -192,15 +192,18 @@ class _AreaAssetParticipationFileData(ABC, AntaresBaseModel, Generic[Participati
         raise NotImplementedError
 
     @classmethod
-    def _iterate_through_symmetries(
+    def _build_participations_from_symmetries(
         cls,
         participations: list[Any],
         symmetries: dict[str, list[list[ReserveDefinitionId]]],
         certifications: dict[str, dict[ReserveDefinitionId, ReserveCertification]],
     ) -> None:
-        for cluster_id, reserve_symmetries in symmetries.items():
-            certifs = certifications.pop(cluster_id, {})
-            participation: dict[str, Any] = cls.initialize_participation(cluster_id)
+        """
+        Builds a participation entry for every asset that has symmetries, appending it to `participations`.
+        """
+        for asset_id, reserve_symmetries in symmetries.items():
+            certifs = certifications.pop(asset_id, {})
+            participation: dict[str, Any] = cls.initialize_participation(asset_id)
             if certifs:
                 participation["certifications"] = [{"reserve": r_id, **c.model_dump()} for r_id, c in certifs.items()]
             if reserve_symmetries != [[]]:

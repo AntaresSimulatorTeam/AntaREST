@@ -260,15 +260,30 @@ class StudyConverter:
             )
             self._new_dao.save_reserve_needs(self._source_dao.get_all_reserve_needs())
 
+        self._convert_certifications_reserves()
+        self._convert_resvers_symmetries()
+
+    def _convert_certifications_reserves(self):
         # Thermal certifications
         thermal_certifications = self._source_dao.get_all_thermal_reserve_certifications()
         if thermal_certifications:
             self._new_dao.save_thermal_reserve_certifications(thermal_certifications)
 
+        # Short-term storage certifications
+        st_storage_certitifcations = self._source_dao.get_all_st_storage_reserve_certifications()
+        if st_storage_certitifcations:
+            self._new_dao.save_st_storage_reserve_certifications(st_storage_certitifcations)
+
+    def _convert_resvers_symmetries(self):
         # Thermal symmetries
         thermal_symmetries = self._source_dao.get_all_thermal_reserve_symmetries()
         if thermal_symmetries:
             self._new_dao.save_thermal_reserve_symmetries(thermal_symmetries)
+
+        # Short-term storage symmetries
+        st_storage_symmetries = self._source_dao.get_all_st_storage_reserve_symmetries()
+        if st_storage_symmetries:
+            self._new_dao.save_st_storage_reserve_symmetries(st_storage_symmetries)
 
     def _convert_short_term_storages(
         self, storages: dict[str, dict[str, STStorage]], constraints: STStorageAdditionalConstraintsMap
