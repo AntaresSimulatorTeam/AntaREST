@@ -76,7 +76,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
-        # Check foreign key integrity
+        # Check foreign keys integrity
         existing_certifications = self.get_impl().get_all_thermal_reserve_certifications()
 
         for area_id, value in data.items():
@@ -85,6 +85,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                 validate_area_exists(self._db_session, self._study_data_id, area_id)
                 raise ThermalReserveCertificationsNotFound(area_id)
 
+            # Verify that the thermals are certified on the reserves they are symmetric on
             for thermal_id, symmetries in value.items():
                 for symmetry in symmetries:
                     for reserve_id in symmetry:
