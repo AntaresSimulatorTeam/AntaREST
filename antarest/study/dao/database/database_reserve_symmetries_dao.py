@@ -18,6 +18,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import (
     ReserveDefinitionNotFound,
+    ThermalClusterNotFound,
     ThermalReserveCertificationNotFound,
     ThermalReserveCertificationsNotFound,
 )
@@ -92,6 +93,8 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                         if reserve_id not in existing_certifications[area_id]:
                             raise ReserveDefinitionNotFound(area_id, reserve_id)
                         if thermal_id not in existing_certifications[area_id][reserve_id]:
+                            if not self.get_impl().thermal_exists(area_id, thermal_id):
+                                raise ThermalClusterNotFound(area_id, thermal_id)
                             raise ThermalReserveCertificationNotFound(area_id, thermal_id, {reserve_id})
 
         # Save the new values
