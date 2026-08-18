@@ -78,7 +78,13 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     @override
     def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
         # Check foreign keys integrity
-        existing_certifications = self.get_impl().get_all_thermal_reserve_certifications()
+
+        if len(data) == 1:
+            # Fetch the given area only to speed up the query
+            area_id = next(iter(data))
+            existing_certifications = {area_id: self.get_impl().get_thermal_reserve_certifications(area_id)}
+        else:
+            existing_certifications = self.get_impl().get_all_thermal_reserve_certifications()
 
         for area_id, value in data.items():
             if area_id not in existing_certifications:
