@@ -91,7 +91,9 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                 for symmetry in symmetries:
                     for reserve_id in symmetry:
                         if reserve_id not in existing_certifications[area_id]:
-                            raise ReserveDefinitionNotFound(area_id, reserve_id)
+                            if not self.get_impl().reserve_definition_exists(area_id, reserve_id):
+                                raise ReserveDefinitionNotFound(area_id, reserve_id)
+                            raise ThermalReserveCertificationNotFound(area_id, thermal_id, {reserve_id})
                         if thermal_id not in existing_certifications[area_id][reserve_id]:
                             if not self.get_impl().thermal_exists(area_id, thermal_id):
                                 raise ThermalClusterNotFound(area_id, thermal_id)
