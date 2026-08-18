@@ -9,15 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, StrEnum
 from typing import Callable, Generic, Literal, Sequence, TypeAlias, TypeVar
 
-import pandas as pd
 import polars as pl
-
-from antarest.output.model.download import TimeSerie
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
@@ -153,13 +149,3 @@ def concatenate_dataframe_multi_indexed_columns(output_header: tuple[str, str, s
     if isinstance(output_header, str):
         raise ValueError("Header concatenation is only supported for tuple headers.")
     return " % ".join(output_header)
-
-
-def split_concatenated_columns_from_dataframe(df: pd.DataFrame) -> Iterator[TimeSerie]:
-    """
-    Performs the inverse transformation compared to the concatenate method. Also used inside Imagrid endpoint.
-    """
-    for column in df.columns:
-        splitted_col = column.split(" % ")
-        name, unit = splitted_col[0], splitted_col[1]
-        yield TimeSerie(name=name, unit=unit or " ", data=df[column].to_list())
