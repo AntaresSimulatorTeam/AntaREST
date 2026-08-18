@@ -17,12 +17,10 @@ from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    AreaNotFound,
     ReserveDefinitionNotFound,
     ThermalReserveCertificationNotFound,
     ThermalReserveCertificationsNotFound,
 )
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
@@ -51,23 +49,6 @@ def _convert_model_to_row(
         "symmetries": json.dumps(symmetries),
     }
     return values
-
-
-def _checks_foreign_key_integrity(
-    new_data: ThermalReserveSymmetriesMapping, reserve_ids: dict[AreaId, list[ReserveDefinitionId]]
-) -> None:
-    """
-    There is no foreign key constraint between symmetries and reserve ids but they are linked.
-    So we have to check the data integrity manually.
-    """
-    for area_id, value in new_data.items():
-        if area_id not in reserve_ids:
-            raise AreaNotFound(area_id)
-        for symmetries in value.values():
-            for symmetry in symmetries:
-                for reserve_id in symmetry:
-                    if reserve_id not in reserve_ids[area_id]:
-                        raise ReserveDefinitionNotFound(area_id, reserve_id)
 
 
 class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
