@@ -71,7 +71,7 @@ class TimeSerie(AntaresBaseModel):
     data: list[float | None]
 
 
-VariableName: TypeAlias = str
+McYearStr: TypeAlias = str
 
 
 class TimeSeriesData(AntaresBaseModel):
@@ -81,7 +81,7 @@ class TimeSeriesData(AntaresBaseModel):
 
     type: StudyDownloadType
     name: str
-    data: dict[VariableName, list[TimeSerie]] = {}
+    data: dict[McYearStr, list[TimeSerie]] = {}
 
 
 class MatrixAggregationResultDTO(AntaresBaseModel):
