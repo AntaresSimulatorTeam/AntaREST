@@ -16,16 +16,21 @@ from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, ThermalReserveCertificationNotFound
+from antarest.core.exceptions import (
+    AreaNotFound,
+    ReserveDefinitionNotFound,
+    ThermalReserveCertificationNotFound,
+    ThermalReserveCertificationsNotFound,
+)
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
-from antarest.study.dao.api.common import check_thermal_symmetries_are_certified
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
     ThermalId,
     ThermalReserveSymmetriesMapping,
 )
+from antarest.study.dao.database.common import validate_area_exists
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.thermal_reserve_symmetries import THERMAL_RESERVE_SYMMETRIES_TABLE
 
@@ -91,23 +96,21 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     @override
     def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
         # Check foreign key integrity
-        existing_reserve_definitions = self.get_impl().get_all_reserve_definitions()
-        existing_reserve_ids = {}
-        for area_id, value in existing_reserve_definitions.items():
-            existing_reserve_ids[area_id] = list(value)
-        _checks_foreign_key_integrity(data, existing_reserve_ids)
+        existing_certifications = self.get_impl().get_all_thermal_reserve_certifications()
 
-        # Verify that the thermals are certified on the reserves they are symmetric on
-        for area_id, thermal_dict in data.items():
-            certifications = self.get_impl().get_thermal_reserve_certifications(area_id)
-            try:
-                check_thermal_symmetries_are_certified(area_id, thermal_dict, certifications)
-            except ThermalReserveCertificationNotFound:
-                # A missing certification is ambiguous: the thermal may simply not exist.
-                existing_ids = {thermal.id for thermal in self.get_impl().get_all_thermals_for_area(area_id)}
-                if unknown_ids := [t_id for t_id in thermal_dict if t_id not in existing_ids]:
-                    self.get_impl().raise_the_right_thermal_exception({area_id: unknown_ids})
-                raise
+        for area_id, value in data.items():
+            if area_id not in existing_certifications:
+                # Means that either the area does not exist, or the area does not contain any thermal certification.
+                validate_area_exists(self._db_session, self._study_data_id, area_id)
+                raise ThermalReserveCertificationsNotFound(area_id)
+
+            for thermal_id, symmetries in value.items():
+                for symmetry in symmetries:
+                    for reserve_id in symmetry:
+                        if reserve_id not in existing_certifications[area_id]:
+                            raise ReserveDefinitionNotFound(area_id, reserve_id)
+                        if thermal_id not in existing_certifications[area_id][reserve_id]:
+                            raise ThermalReserveCertificationNotFound(area_id, thermal_id, {reserve_id})
 
         # Save the new values
         values = []
