@@ -27,10 +27,12 @@ if TYPE_CHECKING:
 
 
 def check_thermal_symmetries_integrity(study_dao: "StudyDao", new_symmetries: ThermalReserveSymmetriesMapping) -> None:
+    existing_certifications = {}
     if len(new_symmetries) == 1:
         # Fetch the given area only to speed up the query
         area_id = next(iter(new_symmetries))
-        existing_certifications = {area_id: study_dao.get_thermal_reserve_certifications(area_id)}
+        if certifications_for_area := study_dao.get_thermal_reserve_certifications(area_id):
+            existing_certifications = {area_id: certifications_for_area}
     else:
         existing_certifications = study_dao.get_all_thermal_reserve_certifications()
 
