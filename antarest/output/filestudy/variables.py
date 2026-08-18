@@ -26,7 +26,6 @@ from antarest.output.filestudy.model import (
     MCRoot,
     QueryFileType,
     get_output_object_type,
-    normalize_df_column_names,
 )
 from antarest.output.model import OutputVariablesList
 from antarest.study.model import MatrixFrequency
@@ -88,15 +87,15 @@ def _read_headers_only(
     """
 
     with open(file_path, encoding="utf-8") as file:
-        output_headers = [v.to_tuple() for v in parse_headers(file, start_column)]
+        output_headers = parse_headers(file, start_column)
 
     if "details" in file_type.value:
         cols_mapping: dict[str, set[str]] = {}
         for col in output_headers:
-            cols_mapping.setdefault(col[0], set()).add(col[1])
+            cols_mapping.setdefault(col.name, set()).add(col.unit or " ")
         return [ColumnHeader(name=col, sub_columns_names=list(vars)) for col, vars in cols_mapping.items()]
 
-    return [ColumnHeader(name=col) for col in normalize_df_column_names(mc_root, output_headers)]
+    return [ColumnHeader(name=col.normal_repr()) for col in output_headers]
 
 
 def _get_all_headers_and_file_type(

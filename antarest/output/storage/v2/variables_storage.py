@@ -43,9 +43,7 @@ from antarest.output.filestudy.model import (
     MCIndLinksQueryFile,
     MCRoot,
     QueryFileType,
-    VariableDescription,
     get_output_object_type,
-    normalize_df_column_names,
 )
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
@@ -197,13 +195,13 @@ def _parse_bc_file(file: Path, mc_root: MCRoot, mc_year: int | None = None) -> p
 
     start_col = get_start_column(frequency)
     try:
-        output_data = parse_output_file(file, start_col).map_metadata(VariableDescription.to_tuple)
+        output_data = parse_output_file(file, start_col)
     except Exception as e:
         logger.debug(f"Skipping binding constraint {file.name}: {e}")
         return None
 
     df = output_data.data
-    col_names = normalize_df_column_names(mc_root, output_data.headers)
+    col_names = [c.normal_repr() for c in output_data.headers]
     df.columns = col_names
     df = df.with_row_index(TIME_ID_COL, offset=1)
 

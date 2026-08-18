@@ -32,7 +32,6 @@ from antarest.output.filestudy.model import (
     QueryFileType,
     VariableDescription,
     concatenate_dataframe_multi_indexed_columns,
-    normalize_df_column_name,
 )
 from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
@@ -134,7 +133,7 @@ class AggregatorManager:
 
         def convert_metadata(var: VariableDescription) -> ColMetadata:
             if normalize_column_names:
-                return normalize_df_column_name(self.mc_root, var.to_tuple())
+                return var.normal_repr()
             return var.to_tuple()
 
         return output_data.map_metadata(convert_metadata)

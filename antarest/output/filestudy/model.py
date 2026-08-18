@@ -76,6 +76,32 @@ class VariableDescription:
         # Follows convention of output files ... maybe better keep it instead of None after all ?
         return self.name, self.unit or " ", self.statistic_type or ""
 
+    def unit_repr(self) -> str:
+        """
+        Representation of the unit as in output files, never None.
+        """
+        return self.unit or " "
+
+    def statistic_type_repr(self) -> str:
+        """
+        Representation of the statistic type as in output files, never None.
+        """
+        return self.statistic_type or ""
+
+    def normal_repr(self) -> str:
+        """
+        That "normal form" is :
+         - for mc-ind, only the variable name "Var"
+         - for mc-all, the concatenation of variable name and stat type in upper case ... "VAR EXP"
+
+        Cannot see any justification for that convention, it's inherited implicit choices from the past,
+        could be changed in the future.
+        """
+        mc_ind = self.statistic_type is None
+        if mc_ind:
+            return self.name
+        return f"{self.name} {self.statistic_type_repr()}".upper().strip()
+
 
 def get_output_object_type(
     file_type: QueryFileType, is_link: bool
@@ -120,26 +146,6 @@ class OutputDataFrame(Generic[C]):
 
     def map_metadata(self, func: Callable[[C], C2]) -> "OutputDataFrame[C2]":
         return OutputDataFrame(self.data, [func(col) for col in self.headers])
-
-
-def normalize_df_column_name(mc_root: MCRoot, output_header: tuple[str, str, str]) -> str:
-    """
-    That "normal form" is :
-     - for mc-ind, only the variable name "Var"
-     - for mc-all, the concatenation of variable name and stat type in upper case ... "VAR EXP"
-    """
-    if mc_root == MCRoot.MC_IND:
-        return output_header[0]
-    return " ".join([output_header[0], output_header[2]]).upper().strip()
-
-
-def normalize_df_column_names(mc_root: MCRoot, output_headers: list[tuple[str, str, str]]) -> list[str]:
-    """
-    That "normal form" is :
-     - for mc-ind, only the variable name "Var"
-     - for mc-all, the concatenation of variable name and stat type in upper case ... "VAR EXP"
-    """
-    return [normalize_df_column_name(mc_root, col) for col in output_headers]
 
 
 def concatenate_dataframe_multi_indexed_columns(output_header: tuple[str, str, str] | str) -> str:
