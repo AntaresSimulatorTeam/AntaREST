@@ -33,8 +33,6 @@ def build_matrix_aggregation_result(output_path: Path, data_selection: StudyDown
     """
     Build a MatrixAggregationResultDTO from the given output path and data.
     """
-    if data_selection.type == StudyDownloadType.DISTRICT:
-        raise ValueError("DISTRICT download type is not supported anymore")
 
     # Gathering all relevant files data
     def get_output_data(type: QueryFileType) -> Iterable[OutputFileData]:
