@@ -103,4 +103,4 @@ def validate_optimization_preferences_against_version(
     version: StudyVersion, parameters: OptimizationPreferences | OptimizationPreferencesUpdate
 ) -> None:
     if version < STUDY_VERSION_10_2 and parameters.include_reserves is not None:
-        raise InvalidFieldForVersionError("Field include_reserves is not a valid field for study version before 10.0")
+        raise InvalidFieldForVersionError("Field include_reserves is not a valid field for study version before 10.2")
