@@ -32,20 +32,16 @@ from antarest.study.business.model.config.optimization_config_model import (
     SimplexOptimizationRange,
     UnfeasibleProblemBehavior,
 )
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 # Relations: One to one with `Study`
 
-
-def get_study_id_col() -> Column[str]:
-    return Column("study_id", String(length=36), nullable=False, primary_key=True)
-
-
 GENERAL_CONFIG_TABLE = Table(
     "general_config",
     metadata,
-    get_study_id_col(),
+    study_data_id_col(),
     Column("mode", enum_col(Mode), nullable=False),
     Column("first_day", Integer(), nullable=False),
     Column("last_day", Integer(), nullable=False),
@@ -63,13 +59,15 @@ GENERAL_CONFIG_TABLE = Table(
     Column("filtering", Boolean(), nullable=True),
     Column("geographic_trimming", Boolean(), nullable=True),
     Column("thematic_trimming", Boolean(), nullable=True),
-    ForeignKeyConstraint(["study_id"], ["study_data.study_id"], name="fk_general_config_study_id", ondelete="CASCADE"),
+    ForeignKeyConstraint(
+        ["study_data_id"], ["study_data.study_data_id"], name="fk_general_config_study_data_id", ondelete="CASCADE"
+    ),
 )
 
 ADVANCED_PARAMETERS_TABLE = Table(
     "advanced_parameters",
     metadata,
-    get_study_id_col(),
+    study_data_id_col(),
     Column("accuracy_on_correlation", String(), nullable=False),
     Column("power_fluctuations", enum_col(PowerFluctuation), nullable=False),
     Column("shedding_policy", enum_col(SheddingPolicy), nullable=False),
@@ -93,14 +91,14 @@ ADVANCED_PARAMETERS_TABLE = Table(
     Column("initial_reservoir_levels", enum_col(InitialReservoirLevel), nullable=True),
     Column("accurate_shave_peaks_include_short_term_storage", Boolean(), nullable=True),
     ForeignKeyConstraint(
-        ["study_id"], ["study_data.study_id"], name="fk_advanced_parameters_study_id", ondelete="CASCADE"
+        ["study_data_id"], ["study_data.study_data_id"], name="fk_advanced_parameters_study_data_id", ondelete="CASCADE"
     ),
 )
 
 ADEQUACY_PATCH_PARAMETERS_TABLE = Table(
     "adequacy_patch_parameters",
     metadata,
-    get_study_id_col(),
+    study_data_id_col(),
     Column("enable_adequacy_patch", Boolean(), nullable=False),
     Column("ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch", Boolean(), nullable=False),
     Column("price_taking_order", enum_col(PriceTakingOrder), nullable=True),
@@ -112,9 +110,9 @@ ADEQUACY_PATCH_PARAMETERS_TABLE = Table(
     Column("ntc_between_physical_areas_out_adequacy_patch", Boolean(), nullable=True),
     Column("redispatch", Boolean(), nullable=True),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["study_data.study_id"],
-        name="fk_adequacy_patch_parameters_study_id",
+        ["study_data_id"],
+        ["study_data.study_data_id"],
+        name="fk_adequacy_patch_parameters_study_data_id",
         ondelete="CASCADE",
     ),
 )
@@ -123,12 +121,12 @@ ADEQUACY_PATCH_PARAMETERS_TABLE = Table(
 COMPATIBILITY_PARAMETERS_TABLE = Table(
     "compatibility_parameters",
     metadata,
-    get_study_id_col(),
+    study_data_id_col(),
     Column("hydro_pmax", enum_col(HydroPmax), nullable=True),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["study_data.study_id"],
-        name="fk_compatibility_parameters_study_id",
+        ["study_data_id"],
+        ["study_data.study_data_id"],
+        name="fk_compatibility_parameters_study_data_id",
         ondelete="CASCADE",
     ),
 )
@@ -136,7 +134,7 @@ COMPATIBILITY_PARAMETERS_TABLE = Table(
 OPTIMIZATION_PREFERENCES_TABLE = Table(
     "optimization_preferences",
     metadata,
-    get_study_id_col(),
+    study_data_id_col(),
     Column("binding_constraints", Boolean(), nullable=False),
     Column("hurdle_costs", Boolean(), nullable=False),
     Column("transmission_capacities", String(), nullable=False),
@@ -151,9 +149,9 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
     Column("simplex_optimization_range", enum_col(SimplexOptimizationRange), nullable=False),
     Column("include_reserves", Boolean(), nullable=True),
     ForeignKeyConstraint(
-        ["study_id"],
-        ["study_data.study_id"],
-        name="fk_optimization_preferences_study_id",
+        ["study_data_id"],
+        ["study_data.study_data_id"],
+        name="fk_optimization_preferences_study_data_id",
         ondelete="CASCADE",
     ),
 )
@@ -161,17 +159,19 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
 TIMESERIES_CONFIG_TABLE = Table(
     "timeseries_config",
     metadata,
-    get_study_id_col(),
+    study_data_id_col(),
     Column("thermal_number", Integer(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id"], ["study_data.study_id"], name="fk_timeseries_config_study_id", ondelete="CASCADE"
+        ["study_data_id"], ["study_data.study_data_id"], name="fk_timeseries_config_study_data_id", ondelete="CASCADE"
     ),
 )
 
 PLAYLIST_TABLE = Table(
     "playlist",
     metadata,
-    get_study_id_col(),
+    study_data_id_col(),
     Column("years", String(), nullable=False),
-    ForeignKeyConstraint(["study_id"], ["study_data.study_id"], name="fk_playlist_study_id", ondelete="CASCADE"),
+    ForeignKeyConstraint(
+        ["study_data_id"], ["study_data.study_data_id"], name="fk_playlist_study_data_id", ondelete="CASCADE"
+    ),
 )

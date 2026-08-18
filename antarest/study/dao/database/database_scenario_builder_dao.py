@@ -69,7 +69,7 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao, DatabaseDaoBase):
 
     @override
     def save_scenario_builder(self, ruleset: Ruleset) -> None:
-        study_id, session = self._study_id, self._db_session
+        study_data_id, session = self._study_data_id, self._db_session
 
         # Delete all existing scenario data for the study
         all_tables = [
@@ -80,9 +80,9 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao, DatabaseDaoBase):
             SCENARIO_STORAGE_CONSTRAINTS_TABLE,
         ]
         for table in all_tables:
-            session.execute(delete(table).where(table.c.study_id == study_id))
+            session.execute(delete(table).where(table.c.study_data_id == study_data_id))
 
-        base = {"study_id": study_id}
+        base = {"study_data_id": study_data_id}
 
         for field_name, table in _AREA_FIELD_TO_TABLE.items():
             scenarios: dict[str, Any] = getattr(ruleset, field_name)
@@ -143,29 +143,29 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao, DatabaseDaoBase):
 
     @override
     def get_ruleset(self) -> Ruleset:
-        study_id, session = self._study_id, self._db_session
+        study_data_id, session = self._study_data_id, self._db_session
         ruleset = Ruleset()
 
         for field_name, table in _AREA_FIELD_TO_TABLE.items():
-            stmt = select(table).where(table.c.study_id == study_id)
+            stmt = select(table).where(table.c.study_data_id == study_data_id)
             scenarios = {row.area_id: row.value for row in session.execute(stmt)}
             if scenarios:
                 setattr(ruleset, field_name, scenarios)
 
-        stmt = select(SCENARIO_NTC_TABLE).where(SCENARIO_NTC_TABLE.c.study_id == study_id)
+        stmt = select(SCENARIO_NTC_TABLE).where(SCENARIO_NTC_TABLE.c.study_data_id == study_data_id)
         ntc = {f"{row.area1}{_LINK_SEPARATOR}{row.area2}": row.value for row in session.execute(stmt)}
         if ntc:
             ruleset.ntc = ntc
 
         stmt = select(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
-            SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == study_id
+            SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_data_id == study_data_id
         )
         bc = {row.bc_group_id: row.value for row in session.execute(stmt)}
         if bc:
             ruleset.binding_constraints = bc
 
         for scenario_type, (table, id_col) in _AREA_ITEM_TABLE_MAP.items():
-            stmt = select(table).where(table.c.study_id == study_id)
+            stmt = select(table).where(table.c.study_data_id == study_data_id)
             result: dict[str, dict[str, Any]] = {}
             for row in session.execute(stmt):
                 result.setdefault(row.area_id, {})[getattr(row, id_col)] = row.value
@@ -173,7 +173,7 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao, DatabaseDaoBase):
                 ruleset.set(scenario_type, result)
 
         stmt = select(SCENARIO_STORAGE_CONSTRAINTS_TABLE).where(
-            SCENARIO_STORAGE_CONSTRAINTS_TABLE.c.study_id == study_id
+            SCENARIO_STORAGE_CONSTRAINTS_TABLE.c.study_data_id == study_data_id
         )
         storage_constraints: dict[str, dict[str, dict[str, Any]]] = {}
         for row in session.execute(stmt):

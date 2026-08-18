@@ -22,6 +22,7 @@ from antarest.study.business.model.sts_model import (
     AdditionalConstraintOperator,
     AdditionalConstraintVariable,
 )
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
@@ -32,7 +33,7 @@ _OPERATOR_ENUM = enum_col(AdditionalConstraintOperator, name="additionalconstrai
 ST_STORAGE_TABLE = Table(
     "st_storage",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("st_storage_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
@@ -48,7 +49,7 @@ ST_STORAGE_TABLE = Table(
     Column("penalize_variation_injection", Boolean, nullable=True),
     Column("penalize_variation_withdrawal", Boolean, nullable=True),
     Column("allow_overflow", Boolean, nullable=True),
-    ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_data_id", "area_id"], ["area.study_data_id", "area.area_id"], ondelete="CASCADE"),
 )
 
 
@@ -56,13 +57,13 @@ def _create_st_storage_matrix_table(name: str) -> Table:
     return Table(
         name,
         metadata,
-        Column("study_id", String(36), nullable=False, primary_key=True),
+        study_data_id_col(),
         Column("area_id", String(255), nullable=False, primary_key=True),
         Column("st_storage_id", String(255), nullable=False, primary_key=True),
         Column("matrix_id", String(64), nullable=False),
         ForeignKeyConstraint(
-            ["study_id", "area_id", "st_storage_id"],
-            ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
+            ["study_data_id", "area_id", "st_storage_id"],
+            ["st_storage.study_data_id", "st_storage.area_id", "st_storage.st_storage_id"],
             ondelete="CASCADE",
         ),
     )
@@ -83,7 +84,7 @@ COST_VARIATION_WITHDRAWAL_TABLE = _create_st_storage_matrix_table("st_storage_co
 ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE = Table(
     "st_storage_additional_constraint",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("st_storage_id", String(255), nullable=False, primary_key=True),
     Column("constraint_id", String(255), nullable=False, primary_key=True),
@@ -93,8 +94,8 @@ ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE = Table(
     Column("occurrences", JSON, nullable=False),
     Column("enabled", Boolean, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "area_id", "st_storage_id"],
-        ["st_storage.study_id", "st_storage.area_id", "st_storage.st_storage_id"],
+        ["study_data_id", "area_id", "st_storage_id"],
+        ["st_storage.study_data_id", "st_storage.area_id", "st_storage.st_storage_id"],
         ondelete="CASCADE",
     ),
 )
@@ -102,15 +103,15 @@ ST_STORAGE_ADDITIONAL_CONSTRAINT_TABLE = Table(
 ST_STORAGE_ADDITIONAL_CONSTRAINT_MATRIX_TABLE = Table(
     "st_storage_additional_constraint_matrix",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("st_storage_id", String(255), nullable=False, primary_key=True),
     Column("constraint_id", String(255), nullable=False, primary_key=True),
     Column("matrix_id", String(64), nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "area_id", "st_storage_id", "constraint_id"],
+        ["study_data_id", "area_id", "st_storage_id", "constraint_id"],
         [
-            "st_storage_additional_constraint.study_id",
+            "st_storage_additional_constraint.study_data_id",
             "st_storage_additional_constraint.area_id",
             "st_storage_additional_constraint.st_storage_id",
             "st_storage_additional_constraint.constraint_id",
