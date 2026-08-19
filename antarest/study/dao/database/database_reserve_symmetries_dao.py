@@ -34,9 +34,6 @@ from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.st_storage_reserve_symmetries import ST_STORAGE_RESERVE_SYMMETRIES_TABLE
 from antarest.study.dao.database.models.thermal_reserve_symmetries import THERMAL_RESERVE_SYMMETRIES_TABLE
 
-_THERMAL_TABLE = THERMAL_RESERVE_SYMMETRIES_TABLE
-_ST_STORAGE_TABLE = ST_STORAGE_RESERVE_SYMMETRIES_TABLE
-
 
 def _convert_row_to_model(row: Row[Any]) -> ReserveSymmetries:
     return cast(ReserveSymmetries, json.loads(row.symmetries))
@@ -54,9 +51,9 @@ class SymmetryType(StrEnum):
 
     def db_table(self) -> Table:
         if self == SymmetryType.THERMAL:
-            return _THERMAL_TABLE
+            return THERMAL_RESERVE_SYMMETRIES_TABLE
         else:
-            return _ST_STORAGE_TABLE
+            return ST_STORAGE_RESERVE_SYMMETRIES_TABLE
 
     def convert_to_row(
         self, study_data_id: int, area_id: str, object_id: str, symmetries: ReserveSymmetries
@@ -75,15 +72,12 @@ class SymmetryType(StrEnum):
             result[row_as_dict[self._db_key()]] = _convert_row_to_model(row)
         return result
 
-
-def _convert_all_rows_to_dict_of_models(
-    rows: Sequence[Row[tuple[Any]]], id_field_name: str
-) -> dict[str, dict[str, list[list[ReserveDefinitionId]]]]:
-    result: ReserveSymmetriesMapping = {}
-    for row in rows:
-        row_as_dict = get_row_representation_as_dict(row)
-        result.setdefault(row.area_id, {})[row_as_dict[id_field_name]] = _convert_row_to_model(row)
-    return result
+    def convert_all_rows_to_dict_of_models(self, rows: Sequence[Row[tuple[Any]]]) -> ReserveSymmetriesMapping:
+        result: ReserveSymmetriesMapping = {}
+        for row in rows:
+            row_as_dict = get_row_representation_as_dict(row)
+            result.setdefault(row.area_id, {})[row_as_dict[self._db_key()]] = _convert_row_to_model(row)
+        return result
 
 
 class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
@@ -91,8 +85,9 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
-        rows = self._get_all_symmetries(_THERMAL_TABLE)
-        return _convert_all_rows_to_dict_of_models(rows, "thermal_id")
+        symmetry_type = SymmetryType.THERMAL
+        rows = self._get_all_symmetries(symmetry_type.db_table())
+        return symmetry_type.convert_all_rows_to_dict_of_models(rows)
 
     def _get_all_symmetries(self, table: Table) -> Sequence[Row[tuple[Any]]]:
         stmt = select(table).where(table.c.study_data_id == self._study_data_id)
@@ -135,8 +130,9 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
-        rows = self._get_all_symmetries(_ST_STORAGE_TABLE)
-        return _convert_all_rows_to_dict_of_models(rows, "st_storage_id")
+        symmetry_type = SymmetryType.ST_STORAGE
+        rows = self._get_all_symmetries(symmetry_type.db_table())
+        return symmetry_type.convert_all_rows_to_dict_of_models(rows)
 
     @override
     def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[StStorageId, ReserveSymmetries]:
