@@ -30,8 +30,8 @@ def _set_up(dao: StudyDao) -> None:
     dao.save_reserve_definitions({"fr": reserves})
 
 
-def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_0: StudyDao) -> None:
-    dao = dao_10_0
+def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
     _set_up(dao)
 
     # A cluster can only be symmetric on reserves it is certified for, so certify both clusters first.
@@ -57,9 +57,9 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_0: Stu
     assert dao.get_thermal_reserve_symmetries("fr") == {"th2": [["r1", "r2", "r3"]]}
 
 
-def test_deleting_the_last_reserves_removes_their_symmetries(dao_10_0: StudyDao) -> None:
+def test_deleting_the_last_reserves_removes_their_symmetries(dao_10_2: StudyDao) -> None:
     # Deleting a reserve cascades on the certifications and on the symmetries referencing it.
-    dao = dao_10_0
+    dao = dao_10_2
     _set_up(dao)
     certification = ThermalReserveCertification()
     dao.save_thermal_reserve_certifications({"fr": {"r1": {"th1": certification}, "r2": {"th1": certification}}})
