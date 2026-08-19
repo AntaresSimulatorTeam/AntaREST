@@ -9,3 +9,17 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import polars as pl
+import pytest
+
+from antarest.output.filestudy.model import OutputDataFrame
+
+
+def test_output_df_should_raise_when_wrong_headers_count() -> None:
+
+    df = pl.DataFrame(data=[[0, 1], [2, 3]], schema=["1", "2"])
+    with pytest.raises(ValueError):
+        OutputDataFrame(data=df, headers=("col1"))
+
+    output_df = OutputDataFrame(data=df, headers=("col1", "col2"))
+    assert output_df.headers == ["col1", "col2"]
