@@ -77,3 +77,21 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: Stu
     }
     # The symmetry should also be overwritten by the new value.
     assert dao.get_st_storage_reserve_symmetries("fr") == {"sts2": [["r1", "r2", "r3"]]}
+
+
+def test_deleting_the_last_reserves_removes_their_symmetries(dao_10_2: StudyDao) -> None:
+    # Deleting a reserve cascades on the certifications and on the symmetries referencing it.
+    dao = dao_10_2
+    _set_up(dao)
+    certification = StorageReserveCertification()
+    dao.save_st_storage_reserve_certifications({"fr": {"r1": {"sts1": certification}, "r2": {"sts1": certification}}})
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]]}})
+
+    # Deleting every reserve of the area leaves it without any certification and symmetries.
+    dao.delete_reserve_definitions("fr", ["r1", "r2"])
+
+    certifications = dao.get_all_st_storage_reserve_certifications()
+    assert certifications == {}
+
+    symmetries = dao.get_st_storage_reserve_symmetries("fr")
+    assert symmetries == {}
