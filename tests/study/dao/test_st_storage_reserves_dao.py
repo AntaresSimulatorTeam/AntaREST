@@ -14,19 +14,28 @@
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
-from antarest.study.business.model.sts_model import STStorage
+from antarest.study.business.model.sts_model import STStorage, initialize_st_storage
 from antarest.study.dao.api.study_dao import StudyDao
+
+
+def _set_up(dao: StudyDao) -> None:
+    # Create 1 area with 2 short-term storages and 4 reserves
+    dao.save_areas_with_properties({"fr": AreaProperties()})
+    sts1 = STStorage(name="sts1")
+    sts2 = STStorage(name="sts2")
+    initialize_st_storage(sts1, dao.get_version())
+    initialize_st_storage(sts2, dao.get_version())
+    dao.save_st_storages({"fr": [sts1, sts2]})
+    reserves = []
+    for reserve_name in ["r1", "r2", "r3", "r4"]:
+        reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN))
+    dao.save_reserve_definitions({"fr": reserves})
 
 
 def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     # Create 1 area with 2 short-term storages and 4 reserves
-    dao.save_areas_with_properties({"fr": AreaProperties()})
-    dao.save_st_storages({"fr": [STStorage(name="sts1", id="sts1"), STStorage(name="sts2", id="sts2")]})
-    reserves = []
-    for reserve_name in ["r1", "r2", "r3", "r4"]:
-        reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN))
-    dao.save_reserve_definitions({"fr": reserves})
+    _set_up(dao)
 
     # A storage can only be symmetric on reserves it is certified for, so certify everything sts1 needs first.
     dao.save_st_storage_reserve_certifications(
