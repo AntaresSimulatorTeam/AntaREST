@@ -92,7 +92,7 @@ def _read_headers_only(
     if "details" in file_type.value:
         cols_mapping: dict[str, set[str]] = {}
         for col in output_headers:
-            cols_mapping.setdefault(col.name, set()).add(col.unit or " ")
+            cols_mapping.setdefault(col.name, set()).add(col.unit_repr())
         return [ColumnHeader(name=col, sub_columns_names=list(vars)) for col, vars in cols_mapping.items()]
 
     return [ColumnHeader(name=col.normal_repr()) for col in output_headers]

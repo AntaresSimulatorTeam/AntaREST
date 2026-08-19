@@ -82,8 +82,7 @@ class OutputFile:
 @dataclass(frozen=True)
 class OutputFileData:
     """
-    Carries information about the current state of a matrix which was read from an output file, and possibly already
-    transformed (column fitlers, pivots, ...).
+    Carries information about the current state of a matrix which was read from an output file.
     """
 
     file: OutputFile
@@ -91,7 +90,9 @@ class OutputFileData:
 
 
 def _filter_files(folder_path: Path, ids: set[str]) -> list[str]:
-    # Areas names filtering
+    """
+    Filters out subdirs corresponding to not-selected system elements (areas/links).
+    """
     filtered = sorted([d.name for d in folder_path.iterdir()])
     if not ids:
         return filtered
@@ -107,14 +108,12 @@ def select_mc_ind_files(
 ) -> list[OutputFile]:
     mode_dir = _find_mode_dir(output_path)
     mc_ind_path = mode_dir / MCRoot.MC_IND.value
-    if not mc_ind_path.exists():
+    if not mc_ind_path.is_dir():
         raise OutputSubFolderNotFound(output_path.name, f"{mode_dir.name}/mc-ind")
 
     output_type = "areas" if isinstance(query_file, MCIndAreasQueryFile) else "links"
 
     # Monte Carlo years filtering
-    if not mc_ind_path.is_dir():
-        return []
     all_mc_years = [d.name for d in mc_ind_path.iterdir()]
     if mc_years:
         all_mc_years = [y for y in all_mc_years if int(y) in frozenset(mc_years)]
