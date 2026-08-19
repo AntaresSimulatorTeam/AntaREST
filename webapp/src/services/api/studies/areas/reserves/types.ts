@@ -38,6 +38,17 @@ export type ReservesCertifications = z.infer<typeof reservesCertificationsSchema
 export type SymmetryProductionType = z.infer<typeof symmetryProductionTypeSchema>;
 export type ReservesSymmetries = z.infer<typeof reservesSymmetriesSchema>;
 
+// UI row for one symmetry, adapted from a `ReservesSymmetries` entry.
+// `uiId` and `index` have no API equivalent: they exist for row identity
+// (React keys, undo/redo) and display order in the table.
+export interface SymmetryRow {
+  uiId: string;
+  clusterId: string;
+  // 1-based, sequential within the cluster.
+  index: number;
+  reserves: Set<string>;
+}
+
 export type CreateReserveData = z.infer<typeof createReserveParamsSchema>;
 export type UpdateReserveData = z.infer<typeof updateReserveParamsSchema>;
 export type UpdateReserveGlobalParametersData = z.infer<typeof updateReserveGlobalParametersSchema>;

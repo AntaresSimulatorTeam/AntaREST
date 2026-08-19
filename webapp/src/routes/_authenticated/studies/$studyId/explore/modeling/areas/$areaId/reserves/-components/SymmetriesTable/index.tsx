@@ -25,7 +25,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import SaveIcon from "@mui/icons-material/Save";
 import UndoIcon from "@mui/icons-material/Undo";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { Alert, Box, Button, Checkbox, IconButton, Stack, Tooltip, Typography } from "@mui/material";
+import { Alert, Box, Button, Checkbox, IconButton, Stack, Tooltip } from "@mui/material";
 import {
   createMRTColumnHelper,
   MaterialReactTable,
@@ -38,15 +38,7 @@ import {
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ClusterGroup, SymmetryValidationError } from "./SymmetriesTable.model";
-
-interface ClusterHeaderRow {
-  kind: "cluster";
-  id: string;
-  clusterId: string;
-  clusterName: string;
-  subRows: SymmetryDataRow[];
-}
+import type { ClusterGroup, SymmetryValidationError } from "./utils";
 
 interface SymmetryDataRow {
   kind: "symmetry";
@@ -55,6 +47,14 @@ interface SymmetryDataRow {
   clusterId: string;
   index: number;
   reserves: Set<string>;
+}
+
+interface ClusterHeaderRow {
+  kind: "cluster";
+  id: string;
+  clusterId: string;
+  clusterName: string;
+  subRows: SymmetryDataRow[];
 }
 
 type SymmetriesTableRow = ClusterHeaderRow | SymmetryDataRow;
@@ -132,11 +132,6 @@ function SymmetriesTable({
     [validationErrors],
   );
 
-  const symmetryRowCount = useMemo(
-    () => groups.reduce((sum, group) => sum + group.symmetries.length, 0),
-    [groups],
-  );
-
   const columns = useMemo(
     () => [
       columnHelper.accessor(
@@ -170,11 +165,14 @@ function SymmetriesTable({
             header: reserve.name,
             size: 90,
             Cell: ({ row, cell }) => {
-              if (row.original.kind !== "symmetry") {
+              const original = row.original;
+
+              if (original.kind !== "symmetry") {
                 return null;
               }
 
-              const isCertified = certifiedReservesByCluster.get(row.original.clusterId)?.has(reserve.id) ?? false;
+              const isCertified =
+                certifiedReservesByCluster.get(original.clusterId)?.has(reserve.id) ?? false;
 
               return (
                 <Tooltip
@@ -187,7 +185,7 @@ function SymmetriesTable({
                       size="small"
                       checked={cell.getValue<boolean | null>() === true}
                       disabled={readOnly || !isCertified}
-                      onChange={() => onToggleReserve(row.original.uiId, reserve.id)}
+                      onChange={() => onToggleReserve(original.uiId, reserve.id)}
                     />
                   </span>
                 </Tooltip>
@@ -208,7 +206,7 @@ function SymmetriesTable({
     enableExpanding: true,
     enableRowSelection: true,
     enableMultiRowSelection: true,
-    // Cluster and symmetry rows are two independent selection states (RM-04):
+    // Cluster and symmetry rows are two independent selection states
     // selecting a cluster row must not implicitly select its symmetries.
     enableSubRowSelection: false,
     filterFromLeafRows: true,
@@ -228,21 +226,25 @@ function SymmetriesTable({
     positionToolbarDropZone: "none",
     renderTopToolbarCustomActions: ({ table }) => {
       const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
-      const selectedClusters = selectedRows.filter((row) => row.kind === "cluster");
-      const selectedSymmetries = selectedRows.filter((row) => row.kind === "symmetry");
+      const selectedClusters = selectedRows.filter(
+        (row): row is ClusterHeaderRow => row.kind === "cluster",
+      );
+      const selectedSymmetries = selectedRows.filter(
+        (row): row is SymmetryDataRow => row.kind === "symmetry",
+      );
       const isSingleClusterSelected = selectedRows.length === 1 && selectedClusters.length === 1;
       const isSingleSymmetrySelected = selectedRows.length === 1 && selectedSymmetries.length === 1;
       const isOnlySymmetriesSelected =
         selectedRows.length > 0 && selectedSymmetries.length === selectedRows.length;
 
-      const isCountEditable = readOnly || !isSingleClusterSelected;
+      const isCountDisabled = readOnly || !isSingleClusterSelected;
 
       return (
         <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap">
           <Stack direction="row" alignItems="center">
             <IconButton
               size="small"
-              disabled={isCountEditable || symmetryCount <= 1}
+              disabled={isCountDisabled || symmetryCount <= 1}
               onClick={() => setSymmetryCount((count) => R.clamp(1, 100, count - 1))}
             >
               <RemoveIcon fontSize="small" />
@@ -251,12 +253,12 @@ function SymmetriesTable({
               size="small"
               value={symmetryCount}
               onChange={(e) => setSymmetryCount(R.clamp(1, 100, Number(e.target.value)))}
-              disabled={isCountEditable}
+              disabled={isCountDisabled}
               sx={{ width: 70 }}
             />
             <IconButton
               size="small"
-              disabled={isCountEditable || symmetryCount >= 100}
+              disabled={isCountDisabled || symmetryCount >= 100}
               onClick={() => setSymmetryCount((count) => R.clamp(1, 100, count + 1))}
             >
               <AddIcon fontSize="small" />
@@ -329,40 +331,33 @@ function SymmetriesTable({
           })}
         </Alert>
       )}
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 1.5 }}>
-        <Typography variant="caption" color="text.secondary">
-          {t("study.modeling.reserves.symmetries.counts", {
-            rows: symmetryRowCount,
-            columns: reserves.length,
-            cells: symmetryRowCount * reserves.length,
-          })}
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Button
-            variant="contained"
-            startIcon={<SaveIcon />}
-            loading={isSaving}
-            loadingPosition="start"
-            disabled={readOnly || !canSave || isSaving || validationErrors.length > 0}
-            onClick={onSave}
-          >
-            {t("global.save")}
-          </Button>
-          <Tooltip title={t("global.undo")}>
-            <span>
-              <IconButton onClick={onUndo} disabled={readOnly || !canUndo || isSaving}>
-                <UndoIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title={t("global.redo")}>
-            <span>
-              <IconButton onClick={onRedo} disabled={readOnly || !canRedo || isSaving}>
-                <RedoIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Box>
+      <Box
+        sx={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 1, mt: 1.5 }}
+      >
+        <Button
+          variant="contained"
+          startIcon={<SaveIcon />}
+          loading={isSaving}
+          loadingPosition="start"
+          disabled={readOnly || !canSave || isSaving || validationErrors.length > 0}
+          onClick={onSave}
+        >
+          {t("global.save")}
+        </Button>
+        <Tooltip title={t("global.undo")}>
+          <span>
+            <IconButton onClick={onUndo} disabled={readOnly || !canUndo || isSaving}>
+              <UndoIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
+        <Tooltip title={t("global.redo")}>
+          <span>
+            <IconButton onClick={onRedo} disabled={readOnly || !canRedo || isSaving}>
+              <RedoIcon />
+            </IconButton>
+          </span>
+        </Tooltip>
       </Box>
     </Box>
   );

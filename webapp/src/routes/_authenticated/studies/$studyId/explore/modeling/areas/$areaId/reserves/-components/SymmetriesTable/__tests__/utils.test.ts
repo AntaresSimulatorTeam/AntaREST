@@ -21,14 +21,25 @@ import {
   toApi,
   toggleReserve,
   validateGroups,
-} from "../SymmetriesTable.model";
+  type ClusterGroup,
+} from "../utils";
 
 const CLUSTERS = [
   { id: "cluster_1", name: "Cluster 1" },
   { id: "cluster_2", name: "Cluster 2" },
 ];
 
-describe("SymmetriesTable.model", () => {
+function getGroup(groups: ClusterGroup[], clusterId: string): ClusterGroup {
+  const group = groups.find((g) => g.clusterId === clusterId);
+
+  if (!group) {
+    throw new Error(`Group not found: ${clusterId}`);
+  }
+
+  return group;
+}
+
+describe("SymmetriesTable/utils", () => {
   describe("fromApi / toApi", () => {
     test("round-trips the API payload", () => {
       const data: ReservesSymmetries = {
@@ -64,7 +75,7 @@ describe("SymmetriesTable.model", () => {
       const groups = fromApi(CLUSTERS, {});
       const next = addSymmetries(groups, "cluster_1", 3);
 
-      const rows = next.find((g) => g.clusterId === "cluster_1")!.symmetries;
+      const rows = getGroup(next, "cluster_1").symmetries;
       expect(rows.map((r) => r.index)).toEqual([1, 2, 3]);
       expect(rows.every((r) => r.reserves.size === 0)).toBe(true);
     });
@@ -73,14 +84,18 @@ describe("SymmetriesTable.model", () => {
       const groups = fromApi(CLUSTERS, {});
       const next = addSymmetries(groups, "cluster_1", 1);
 
-      expect(next.find((g) => g.clusterId === "cluster_2")!.symmetries).toHaveLength(0);
+      expect(getGroup(next, "cluster_2").symmetries).toHaveLength(0);
     });
   });
 
   describe("deleteSymmetryRows", () => {
     test("renumbers subsequent symmetries after deleting a middle row (RM-02)", () => {
       const groups = fromApi(CLUSTERS, {
-        cluster_1: [["a", "b"], ["a", "c"], ["a", "d"]],
+        cluster_1: [
+          ["a", "b"],
+          ["a", "c"],
+          ["a", "d"],
+        ],
       });
       const middleUiId = groups[0].symmetries[1].uiId;
 
@@ -88,7 +103,10 @@ describe("SymmetriesTable.model", () => {
 
       const rows = next[0].symmetries;
       expect(rows.map((r) => r.index)).toEqual([1, 2]);
-      expect(rows.map((r) => [...r.reserves])).toEqual([["a", "b"], ["a", "d"]]);
+      expect(rows.map((r) => [...r.reserves])).toEqual([
+        ["a", "b"],
+        ["a", "d"],
+      ]);
     });
 
     test("keeps the cluster group row when it reaches zero symmetries (RM-06)", () => {
@@ -118,7 +136,10 @@ describe("SymmetriesTable.model", () => {
   describe("duplicateSymmetryRow", () => {
     test("inserts an exact copy immediately after and renumbers (RM-05)", () => {
       const groups = fromApi(CLUSTERS, {
-        cluster_1: [["a", "b"], ["c", "d"]],
+        cluster_1: [
+          ["a", "b"],
+          ["c", "d"],
+        ],
       });
       const firstUiId = groups[0].symmetries[0].uiId;
 
