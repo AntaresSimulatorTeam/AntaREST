@@ -58,22 +58,22 @@ class TestUpdateOptimizationPreferences:
 
         assert optimization_preferences == default_values
 
-    def test_version_10(self, dao_10_0: StudyDao, command_context: CommandContext) -> None:
-        assert dao_10_0.get_optimization_preferences().include_reserves is False  # Default value
+    def test_version_10_2(self, dao_10_2: StudyDao, command_context: CommandContext) -> None:
+        assert dao_10_2.get_optimization_preferences().include_reserves is False  # Default value
 
-        version = dao_10_0.get_version()
+        version = dao_10_2.get_version()
         properties = OptimizationPreferencesUpdate(include_reserves=True)
         command = UpdateOptimizationPreferences(
             parameters=properties, command_context=command_context, study_version=version
         )
-        output = command.apply(dao_10_0)
+        output = command.apply(dao_10_2)
         assert output.status
 
-        assert dao_10_0.get_optimization_preferences().include_reserves is True
+        assert dao_10_2.get_optimization_preferences().include_reserves is True
 
-        # Ensure we cannot update the field `include_reserves` for a study version before 10.0
+        # Ensure we cannot update the field `include_reserves` for a study version before 10.2
         with pytest.raises(
-            ValueError, match="Field include_reserves is not a valid field for study version before 10.0"
+            ValueError, match="Field include_reserves is not a valid field for study version before 10.2"
         ):
             UpdateOptimizationPreferences(
                 parameters=properties, command_context=command_context, study_version=STUDY_VERSION_9_3

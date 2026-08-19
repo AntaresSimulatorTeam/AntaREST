@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 
-from antarest.study.business.model.thermal_reserve_certification_model import (
+from antarest.study.business.model.reserve_certification_model import (
+    StorageReserveCertificationMapping,
     ThermalReserveCertificationMapping,
 )
 from antarest.study.dao.common import AreaId
@@ -34,10 +35,20 @@ class ReadOnlyReserveCertificationDao(ABC):
     def get_thermal_reserve_certifications(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
+        raise NotImplementedError()
+
 
 class ReserveCertificationDao(ReadOnlyReserveCertificationDao):
     @abstractmethod
-    def save_thermal_reserve_certifications(self, data: dict[AreaId, ThermalReserveCertificationMapping]) -> None:
+    def save_thermal_reserve_certifications(
+        self, new_certifications: dict[AreaId, ThermalReserveCertificationMapping]
+    ) -> None:
         """
         Replace the thermal reserve certifications with the given one.
 
@@ -46,4 +57,10 @@ class ReserveCertificationDao(ReadOnlyReserveCertificationDao):
         - If a thermal cluster is absent from in the given data, its certifications will be removed.
 
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_st_storage_reserve_certifications(
+        self, new_certifications: dict[AreaId, StorageReserveCertificationMapping]
+    ) -> None:
         raise NotImplementedError()
