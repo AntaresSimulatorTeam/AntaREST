@@ -10,12 +10,14 @@
 #
 # This file is part of the Antares project.
 import json
+from enum import StrEnum
 from typing import Any, Sequence, cast
 
 from sqlalchemy import Row, Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.api.common import check_st_storage_symmetries_integrity, check_thermal_symmetries_integrity
@@ -40,37 +42,32 @@ def _convert_row_to_model(row: Row[Any]) -> ReserveSymmetries:
     return cast(ReserveSymmetries, json.loads(row.symmetries))
 
 
-def _convert_thermal_model_to_row(
-    study_data_id: int, area_id: str, thermal_id: str, symmetries: ReserveSymmetries
-) -> dict[str, Any]:
-    values = {
-        "study_data_id": study_data_id,
-        "area_id": area_id,
-        "thermal_id": thermal_id,
-        "symmetries": json.dumps(symmetries),
-    }
-    return values
+class SymmetryType(StrEnum):
+    THERMAL = "thermal"
+    ST_STORAGE = "st_storage"
 
+    def _db_key(self) -> str:
+        if self == SymmetryType.THERMAL:
+            return "thermal_id"
+        else:
+            return "st_storage_id"
 
-def _convert_st_storage_model_to_row(
-    study_data_id: int, area_id: str, st_storage_id: str, symmetries: ReserveSymmetries
-) -> dict[str, Any]:
-    values = {
-        "study_data_id": study_data_id,
-        "area_id": area_id,
-        "st_storage_id": st_storage_id,
-        "symmetries": json.dumps(symmetries),
-    }
-    return values
+    def convert_to_row(
+        self, study_data_id: int, area_id: str, object_id: str, symmetries: ReserveSymmetries
+    ) -> dict[str, Any]:
+        return {
+            "study_data_id": study_data_id,
+            "area_id": area_id,
+            "symmetries": json.dumps(symmetries),
+            self._db_key(): object_id,
+        }
 
-
-def _convert_all_rows_to_model(
-    rows: Sequence[Row[tuple[Any]]], id_field_name: str
-) -> dict[Any, list[list[ReserveDefinitionId]]]:
-    result = {}
-    for row in rows:
-        result[row._mapping[id_field_name]] = _convert_row_to_model(row)
-    return result
+    def convert_all_rows_to_model(self, rows: Sequence[Row[tuple[Any]]]) -> dict[str, list[list[ReserveDefinitionId]]]:
+        result = {}
+        for row in rows:
+            row_as_dict = get_row_representation_as_dict(row)
+            result[row_as_dict[self._db_key()]] = _convert_row_to_model(row)
+        return result
 
 
 def _convert_all_rows_to_dict_of_models(
@@ -78,7 +75,8 @@ def _convert_all_rows_to_dict_of_models(
 ) -> dict[str, dict[str, list[list[ReserveDefinitionId]]]]:
     result: ReserveSymmetriesMapping = {}
     for row in rows:
-        result.setdefault(row.area_id, {})[row._mapping[id_field_name]] = _convert_row_to_model(row)
+        row_as_dict = get_row_representation_as_dict(row)
+        result.setdefault(row.area_id, {})[row_as_dict[id_field_name]] = _convert_row_to_model(row)
     return result
 
 
@@ -98,7 +96,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
         rows = self._get_all_area_assets_matching_area(area_id, _THERMAL_TABLE)
-        return _convert_all_rows_to_model(rows, "thermal_id")
+        return SymmetryType.THERMAL.convert_all_rows_to_model(rows)
 
     def _get_all_area_assets_matching_area(self, area_id: str, table: Table) -> Sequence[Row[tuple[Any]]]:
         stmt = select(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id == area_id))
@@ -112,11 +110,12 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
         # Save the new values
         values = []
+        symmetry_type = SymmetryType.THERMAL
         for area_id, thermal_dict in data.items():
             for thermal_id, symmetries in thermal_dict.items():
                 if symmetries == [[]]:
                     continue
-                values.append(_convert_thermal_model_to_row(self._study_data_id, area_id, thermal_id, symmetries))
+                values.append(symmetry_type.convert_to_row(self._study_data_id, area_id, thermal_id, symmetries))
         try:
             self._clean_table(_THERMAL_TABLE, set(data))
             self._insert_data_to_table(_THERMAL_TABLE, values)
@@ -134,7 +133,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     @override
     def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[StStorageId, ReserveSymmetries]:
         rows = self._get_all_area_assets_matching_area(area_id, _ST_STORAGE_TABLE)
-        return _convert_all_rows_to_model(rows, "st_storage_id")
+        return SymmetryType.ST_STORAGE.convert_all_rows_to_model(rows)
 
     @override
     def save_st_storage_reserve_symmetries(self, data: STStorageReserveSymmetriesMapping) -> None:
@@ -143,11 +142,12 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
         # Save the new values
         values = []
+        symmetry_type = SymmetryType.ST_STORAGE
         for area_id, st_storage_dict in data.items():
             for st_storage_id, symmetries in st_storage_dict.items():
                 if symmetries == [[]]:
                     continue
-                values.append(_convert_st_storage_model_to_row(self._study_data_id, area_id, st_storage_id, symmetries))
+                values.append(symmetry_type.convert_to_row(self._study_data_id, area_id, st_storage_id, symmetries))
         try:
             self._clean_table(_ST_STORAGE_TABLE, set(data))
             self._insert_data_to_table(_ST_STORAGE_TABLE, values)
