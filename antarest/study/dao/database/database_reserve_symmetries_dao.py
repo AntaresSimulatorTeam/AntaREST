@@ -85,14 +85,17 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
-        symmetry_type = SymmetryType.THERMAL
-        rows = self._get_all_symmetries(symmetry_type.db_table())
-        return symmetry_type.convert_all_rows_to_dict_of_models(rows)
+        return self._get_all_symmetries(SymmetryType.THERMAL)
 
-    def _get_all_symmetries(self, table: Table) -> Sequence[Row[Any]]:
+    @override
+    def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
+        return self._get_all_symmetries(SymmetryType.ST_STORAGE)
+
+    def _get_all_symmetries(self, symmetry_type: SymmetryType) -> dict[AreaId, dict[str, ReserveSymmetries]]:
+        table = symmetry_type.db_table()
         stmt = select(table).where(table.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
-        return rows
+        return symmetry_type.convert_all_rows_to_dict_of_models(rows)
 
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
@@ -130,12 +133,6 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
             thermals = {area_id: list(thermal_dict) for area_id, thermal_dict in data.items()}
             self.get_impl().raise_the_right_thermal_exception(thermals, exc=e)
         self._db_session.commit()
-
-    @override
-    def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
-        symmetry_type = SymmetryType.ST_STORAGE
-        rows = self._get_all_symmetries(symmetry_type.db_table())
-        return symmetry_type.convert_all_rows_to_dict_of_models(rows)
 
     @override
     def save_st_storage_reserve_symmetries(self, data: STStorageReserveSymmetriesMapping) -> None:
