@@ -85,20 +85,20 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
-        rows = self._get_all_area_assets_matching_study_data_id(_THERMAL_TABLE)
+        rows = self._get_all_symmetries(_THERMAL_TABLE)
         return _convert_all_rows_to_dict_of_models(rows, "thermal_id")
 
-    def _get_all_area_assets_matching_study_data_id(self, table: Table) -> Sequence[Row[tuple[Any]]]:
+    def _get_all_symmetries(self, table: Table) -> Sequence[Row[tuple[Any]]]:
         stmt = select(table).where(table.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         return rows
 
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
-        rows = self._get_all_area_assets_matching_area(area_id, _THERMAL_TABLE)
+        rows = self._get_all_symmetries_for_area(area_id, _THERMAL_TABLE)
         return SymmetryType.THERMAL.convert_all_rows_to_model(rows)
 
-    def _get_all_area_assets_matching_area(self, area_id: str, table: Table) -> Sequence[Row[tuple[Any]]]:
+    def _get_all_symmetries_for_area(self, area_id: str, table: Table) -> Sequence[Row[tuple[Any]]]:
         stmt = select(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id == area_id))
         rows = self._db_session.execute(stmt).fetchall()
         return rows
@@ -127,12 +127,12 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
-        rows = self._get_all_area_assets_matching_study_data_id(_ST_STORAGE_TABLE)
+        rows = self._get_all_symmetries(_ST_STORAGE_TABLE)
         return _convert_all_rows_to_dict_of_models(rows, "st_storage_id")
 
     @override
     def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[StStorageId, ReserveSymmetries]:
-        rows = self._get_all_area_assets_matching_area(area_id, _ST_STORAGE_TABLE)
+        rows = self._get_all_symmetries_for_area(area_id, _ST_STORAGE_TABLE)
         return SymmetryType.ST_STORAGE.convert_all_rows_to_model(rows)
 
     @override
