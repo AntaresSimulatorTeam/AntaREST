@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
-from antarest.study.dao.api.common import check_thermal_symmetries_integrity
+from antarest.study.dao.api.common import check_st_storage_symmetries_integrity, check_thermal_symmetries_integrity
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
@@ -100,7 +100,7 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
 
     @override
     def save_st_storage_reserve_symmetries(self, data: STStorageReserveSymmetriesMapping) -> None:
-        check_thermal_symmetries_integrity(self.get_impl(), data)
+        check_st_storage_symmetries_integrity(self.get_impl(), data)
 
         file_study = self.get_file_study()
         memory_mapping = {}
