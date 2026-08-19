@@ -72,9 +72,7 @@ def get_st_storage_reserve_path(area_id: str) -> list[str]:
     return ["input", "st-storage", "clusters", area_id, "reserve-participations"]
 
 
-def _get_reserve_participations_as_yaml_content(
-    area_id: AreaId, file_study: FileStudy, func: Callable[[str], list[str]]
-) -> dict[str, Any]:
+def _get_participations(area_id: AreaId, file_study: FileStudy, func: Callable[[str], list[str]]) -> dict[str, Any]:
     if area_id not in file_study.config.areas:
         raise AreaNotFound(area_id)
     data = file_study.tree.get(func(area_id))
@@ -85,8 +83,8 @@ def _get_reserve_participations_as_yaml_content(
 
 
 def get_st_storage_reserve_participations_as_yaml_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
-    return _get_reserve_participations_as_yaml_content(area_id, file_study, get_st_storage_reserve_path)
+    return _get_participations(area_id, file_study, get_st_storage_reserve_path)
 
 
 def get_thermal_reserve_participations_as_yaml_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
-    return _get_reserve_participations_as_yaml_content(area_id, file_study, get_thermal_reserve_path)
+    return _get_participations(area_id, file_study, get_thermal_reserve_path)
