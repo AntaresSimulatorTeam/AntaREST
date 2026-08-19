@@ -34,7 +34,6 @@ def _set_up(dao: StudyDao) -> None:
 
 def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    # Create 1 area with 2 short-term storages and 4 reserves
     _set_up(dao)
 
     # A storage can only be symmetric on reserves it is certified for, so certify everything sts1 needs first.
