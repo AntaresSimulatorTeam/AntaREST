@@ -18,7 +18,6 @@ from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.dbmodel import get_row_representation_as_dict
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.api.common import check_st_storage_symmetries_integrity, check_thermal_symmetries_integrity
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
@@ -65,7 +64,7 @@ class SymmetryType(StrEnum):
             self._db_key(): object_id,
         }
 
-    def convert_all_rows_to_model(self, rows: Sequence[Row[Any]]) -> dict[str, list[list[ReserveDefinitionId]]]:
+    def convert_all_rows_to_model(self, rows: Sequence[Row[Any]]) -> dict[str, ReserveSymmetries]:
         result = {}
         for row in rows:
             row_as_dict = get_row_representation_as_dict(row)
