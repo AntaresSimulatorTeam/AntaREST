@@ -16,11 +16,7 @@ from sqlalchemy import Row, Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import (
-    AreaNotFound,
-    ReserveCertificationNotFound,
-    ReserveDefinitionNotFound,
-)
+from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.api.common import check_thermal_symmetries_integrity
@@ -169,7 +165,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                 print(certifications)
                 # todo
                 # check_symmetries_are_certified(area_id, st_storage_dict, certifications)
-            except ReserveCertificationNotFound:
+            except Exception:
                 # A missing certification is ambiguous: the thermal may simply not exist.
                 existing_ids = {storage.id for storage in self.get_impl().get_all_st_storages_for_area(area_id)}
                 if unknown_ids := [t_id for t_id in st_storage_dict if t_id not in existing_ids]:

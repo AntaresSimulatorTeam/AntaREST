@@ -861,19 +861,13 @@ class SevenZipNotSupportedOnThisMachine(Exception):
         super().__init__(msg)
 
 
-class ThermalReserveCertificationNotFound(HTTPException):
-    def __init__(self, area_id: str, thermal_id: str, reserve_ids: set[str]):
-        msg = f"Certifications for reserve(s) '{reserve_ids}' on thermal cluster '{thermal_id}' not found in area '{area_id}'"
-        super().__init__(HTTPStatus.NOT_FOUND, msg)
-
-
 class ReserveCertificationNotFound(HTTPException):
-    def __init__(self, area_id: str, area_asset_id: str, reserve_ids: set[str]):
-        msg = f"Certifications for reserve(s) '{reserve_ids}' on area asset '{area_asset_id}' not found in area '{area_id}'"
+    def __init__(self, area_id: str, object_type: str, object_id: str, reserve_ids: set[str]):
+        msg = f"Certifications for reserve(s) '{reserve_ids}' on {object_type} '{object_id}' not found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
-class ThermalReserveCertificationsNotFound(HTTPException):
-    def __init__(self, area_id: str):
-        msg = f"No thermal reserve certifications found in area '{area_id}'"
+class ReserveCertificationsNotFound(HTTPException):
+    def __init__(self, area_id: str, objet_type: str):
+        msg = f"No {objet_type} reserve certifications found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
