@@ -91,7 +91,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
         return self._get_all_symmetries(SymmetryType.ST_STORAGE)
 
-    def _get_all_symmetries(self, symmetry_type: SymmetryType) -> dict[AreaId, dict[str, ReserveSymmetries]]:
+    def _get_all_symmetries(self, symmetry_type: SymmetryType) -> ReserveSymmetriesMapping:
         table = symmetry_type.db_table()
         stmt = select(table).where(table.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
@@ -164,3 +164,6 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     def _insert_data_to_table(self, table: Table, values: list[Any]) -> None:
         if values:
             self._db_session.execute(insert(table), values)
+
+    def _save_reserve_symmetries(self, data: ReserveSymmetriesMapping, symmetry_type: SymmetryType) -> None:
+        pass
