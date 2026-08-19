@@ -16,10 +16,9 @@ from sqlalchemy import Row, Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
-from antarest.study.dao.api.common import check_thermal_symmetries_integrity
+from antarest.study.dao.api.common import check_st_storage_symmetries_integrity, check_thermal_symmetries_integrity
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
@@ -83,23 +82,6 @@ def _convert_all_rows_to_dict_of_models(
     return result
 
 
-def _validate_foreign_key_integrity(
-    new_data: ReserveSymmetriesMapping, reserve_ids: dict[AreaId, list[ReserveDefinitionId]]
-) -> None:
-    """
-    There is no foreign key constraint between symmetries and reserve ids but they are linked.
-    So we have to check the data integrity manually.
-    """
-    for area_id, value in new_data.items():
-        if area_id not in reserve_ids:
-            raise AreaNotFound(area_id)
-        for symmetries in value.values():
-            for symmetry in symmetries:
-                for reserve_id in symmetry:
-                    if reserve_id not in reserve_ids[area_id]:
-                        raise ReserveDefinitionNotFound(area_id, reserve_id)
-
-
 class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     """Database implementation of ReserveSymmetriesDao."""
 
@@ -156,21 +138,8 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def save_st_storage_reserve_symmetries(self, data: STStorageReserveSymmetriesMapping) -> None:
-        self._check_foreign_key_integrity(data)
-
-        # Verify that the short-term storages are certified on the reserves they are symmetric on
-        for area_id, st_storage_dict in data.items():
-            certifications = self.get_impl().get_st_storage_reserve_certifications(area_id)
-            try:
-                print(certifications)
-                # todo
-                # check_symmetries_are_certified(area_id, st_storage_dict, certifications)
-            except Exception:
-                # A missing certification is ambiguous: the thermal may simply not exist.
-                existing_ids = {storage.id for storage in self.get_impl().get_all_st_storages_for_area(area_id)}
-                if unknown_ids := [t_id for t_id in st_storage_dict if t_id not in existing_ids]:
-                    self.get_impl().raise_the_right_storage_exception({area_id: unknown_ids})
-                raise
+        # Check foreign keys integrity
+        check_st_storage_symmetries_integrity(self.get_impl(), data)
 
         # Save the new values
         values = []
@@ -195,10 +164,3 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
     def _insert_data_to_table(self, table: Table, values: list[Any]) -> None:
         if values:
             self._db_session.execute(insert(table), values)
-
-    def _check_foreign_key_integrity(self, data: dict[str, dict[str, list[list[ReserveDefinitionId]]]]) -> None:
-        existing_reserve_definitions = self.get_impl().get_all_reserve_definitions()
-        existing_reserve_ids = {}
-        for area_id, value in existing_reserve_definitions.items():
-            existing_reserve_ids[area_id] = list(value)
-        _validate_foreign_key_integrity(data, existing_reserve_ids)
