@@ -28,6 +28,7 @@ from antarest.study.model import (
     Study,
     StudyMetadataDTO,
 )
+from antarest.study.storage.file_study_utils import check_study_path
 from antarest.study.storage.study_service_interface import IStudyService
 from antarest.study.storage.utils import remove_from_cache
 
@@ -86,7 +87,7 @@ class AbstractStudyService(IStudyService, ABC):
     def _get_study_path_on_file_system(self, metadata: Study) -> Path:
         if metadata.archived:
             return self.find_archive_path(metadata)
-        return Path(metadata.path)
+        return Path(check_study_path(metadata))
 
     def find_archive_path(self, study: Study) -> Path:
         """

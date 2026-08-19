@@ -23,6 +23,7 @@ from antarest.output.service import IStudyMetadataProvider, StudyMetadata
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.service import StudyService
+from antarest.study.storage.file_study_utils import check_study_path
 from antarest.study.storage.utils import assert_permission
 
 
@@ -36,7 +37,7 @@ def study_service_as_in_study_file_outputs_provider(study_service: StudyService)
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             metadata = study_service.get_study(study_id)
             return FileStudyOutputs(
-                outputs_path=Path(metadata.path) / "output",
+                outputs_path=Path(check_study_path(metadata)) / "output",
                 study_workspace=getattr(metadata, "workspace", DEFAULT_WORKSPACE_NAME),
             )
 

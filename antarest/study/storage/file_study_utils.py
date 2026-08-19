@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 from typing import Sequence
 
+from antarest.core.exceptions import IncorrectPathError
 from antarest.study.model import Study, StudyMetadataCreation
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.utils import format_timestamp
@@ -26,11 +27,23 @@ logger = logging.getLogger(__name__)
 def get_study_path(study: Study) -> Path:
     if isinstance(study, VariantStudy):
         return get_snapshot_dir(study)
-    return Path(study.path)
+    return Path(check_study_path(study))
 
 
 def get_snapshot_dir(study: VariantStudy) -> Path:
-    return Path(study.path) / "snapshot"
+    return Path(check_study_path(study)) / "snapshot"
+
+
+def check_study_path(study: Study) -> str:
+    """
+    Ensures the given study has a path on disk and returns it.
+
+    Raises:
+        IncorrectPathError: if the study has no path (e.g. a database-mode study).
+    """
+    if not study.path:
+        raise IncorrectPathError(f"Filesystem studies must have a defined path, but study {study.id} does not")
+    return study.path
 
 
 def export_study_to_flat_directory(study_dir: Path, dest: Path) -> None:

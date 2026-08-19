@@ -18,11 +18,17 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
+from antarest.core.exceptions import IncorrectPathError
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import RawStudy, Study, StudyMetadataCopy
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.file_study_utils import export_study_to_flat_directory, get_study_path, update_antares_info
+from antarest.study.storage.file_study_utils import (
+    check_study_path,
+    export_study_to_flat_directory,
+    get_study_path,
+    update_antares_info,
+)
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import (
     InputSeriesMatrix,
@@ -58,6 +64,9 @@ class FileStudyStorage(IStudyStorage):
     def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
         new_study = build_raw_study_from_source(src_study, self._config.get_workspace_path(), metadata)
 
+        if not new_study.path:
+            raise IncorrectPathError(f"Filesystem studies must have a defined path, but study {new_study.id} does not")
+
         src_path = get_study_path(src_study)
         dest_path = Path(new_study.path)
 
@@ -75,17 +84,17 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:
-        shutil.copytree(src=Path(study.path), dst=dst_path)
+        shutil.copytree(src=Path(check_study_path(study)), dst=dst_path)
         file_study = self._get_file_study(dst_path, False)
         self._denormalize_file_study(file_study)
 
     @override
     def remove_study_data(self, study: Study) -> None:
-        shutil.rmtree(Path(study.path), ignore_errors=True)
+        shutil.rmtree(Path(check_study_path(study)), ignore_errors=True)
 
     @override
     def unarchive(self, study: RawStudy, archive_path: Path) -> None:
-        extract_data_to_dir(Path(study.path), archive_path, self._config.storage.tmp_dir)
+        extract_data_to_dir(Path(check_study_path(study)), archive_path, self._config.storage.tmp_dir)
         self.update_from_raw_metadata(study)
 
     @override
@@ -115,7 +124,7 @@ class FileStudyStorage(IStudyStorage):
     @override
     def get_disk_usage(self, study: Study) -> int:
         # We need to exclude the output folder
-        study_path = Path(study.path)
+        study_path = Path(check_study_path(study))
 
         if not study_path.exists():
             # Could be the case for a variant that was not generated yet
@@ -129,7 +138,7 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def normalize_study(self, study: Study) -> None:
-        file_study = self._get_file_study(Path(study.path), is_managed(study), study.id)
+        file_study = self._get_file_study(Path(check_study_path(study)), is_managed(study), study.id)
         self.normalize_file_study(file_study)
 
     def normalize_file_study(self, file_study: FileStudy) -> None:
@@ -144,7 +153,7 @@ class FileStudyStorage(IStudyStorage):
     @override
     def import_study(self, study: RawStudy, study_dir: Path) -> None:
         # Move the study data to the Study `path` directory
-        study_path = Path(study.path)
+        study_path = Path(check_study_path(study))
         study_dir.rename(study_path)
 
         # Move the "output" subfolder back to its original location as we only want to import the inputs here
@@ -154,7 +163,7 @@ class FileStudyStorage(IStudyStorage):
             outputs_path.rename(study_dir / "output")
 
         # As we don't know yet how outputs will be handled, we don't want to fill the cache with wrong data
-        file_study = self._get_file_study(Path(study.path), is_managed(study), use_cache=False)
+        file_study = self._get_file_study(Path(check_study_path(study)), is_managed(study), use_cache=False)
         update_study_from_raw_metadata(study, file_study)
         self.normalize_file_study(file_study)
 
@@ -162,7 +171,7 @@ class FileStudyStorage(IStudyStorage):
     def upgrade_study(self, study: Study, version: StudyVersion) -> None:
         is_study_denormalized = False
         try:
-            study_path = Path(study.path)
+            study_path = Path(check_study_path(study))
             study_upgrader = StudyUpgrader(study_path, version)
             if is_managed(study) and study_upgrader.should_denormalize_study():
                 # We have to denormalize the study because the upgrade impacts study matrices
@@ -172,18 +181,18 @@ class FileStudyStorage(IStudyStorage):
         finally:
             if is_study_denormalized:
                 # We don't want to use the cache as the study was upgraded
-                file_study = self._get_file_study(Path(study.path), managed=True, use_cache=False)
+                file_study = self._get_file_study(Path(check_study_path(study)), managed=True, use_cache=False)
                 self.normalize_file_study(file_study)
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """
         The given `study` object needs to be updated according to the real filesystem data
         """
-        file_study = self._get_file_study(Path(study.path), is_managed(study))
+        file_study = self._get_file_study(Path(check_study_path(study)), is_managed(study))
         update_study_from_raw_metadata(study, file_study)
 
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
-        path = Path(study.path)
+        path = Path(check_study_path(study))
         try:
             file_study = self._get_file_study(path, is_managed(study))
             raw_meta = file_study.tree.get(["study", "antares"])
@@ -204,7 +213,7 @@ class FileStudyStorage(IStudyStorage):
         return self._study_factory.create_from_fs(study_path, managed, study_id=study_id, use_cache=use_cache)
 
     def denormalize_study(self, study: Study) -> None:
-        file_study = self._get_file_study(Path(study.path), is_managed(study), study.id)
+        file_study = self._get_file_study(Path(check_study_path(study)), is_managed(study), study.id)
         self._denormalize_file_study(file_study)
 
     def _denormalize_file_study(self, file_study: FileStudy) -> None:

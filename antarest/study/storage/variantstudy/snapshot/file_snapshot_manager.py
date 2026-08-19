@@ -17,7 +17,7 @@ from typing_extensions import override
 
 from antarest.core.interfaces.cache import ICache
 from antarest.study.model import RawStudy, Study
-from antarest.study.storage.file_study_utils import export_study_to_flat_directory, get_snapshot_dir
+from antarest.study.storage.file_study_utils import check_study_path, export_study_to_flat_directory, get_snapshot_dir
 from antarest.study.storage.utils import remove_from_cache
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.snapshot.snapshot_manager_interface import ISnapshotManager
@@ -40,7 +40,7 @@ class FileSnapshotManager(ISnapshotManager):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
             export_study_to_flat_directory(get_snapshot_dir(ref_study), snapshot_dir)
         elif isinstance(ref_study, RawStudy):
-            export_study_to_flat_directory(Path(ref_study.path), snapshot_dir)
+            export_study_to_flat_directory(Path(check_study_path(ref_study)), snapshot_dir)
 
     @override
     def clear_snapshot(self, variant_study: VariantStudy) -> None:

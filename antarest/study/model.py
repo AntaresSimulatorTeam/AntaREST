@@ -284,6 +284,7 @@ class Study(Base):
                 Note that generally speaking, this will not correspond to a valid folder on disk, this is only a logical
                 folder presented to the user, not the way we organize data internally.
                 This field is kept for backward compatibility but will be progressively replaced by directory_id.
+                Note that this field is empty for database studies
         directory_id: The ID of the directory containing this study. Only for managed studies.
         parent_id: The ID of the parent study, if any. Only makes sense for variant studies.
         public_mode: Defines the actions any user logged in is allowed to take on the study.
