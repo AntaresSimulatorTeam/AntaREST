@@ -75,18 +75,17 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
     def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
         check_thermal_symmetries_integrity(self.get_impl(), data)
 
-        for area_id in data:
-            self._save_thermal_reserve_symmetries(area_id, data[area_id])
-
-    def _save_thermal_reserve_symmetries(self, area_id: AreaId, data: dict[ThermalId, ReserveSymmetries]) -> None:
         file_study = self.get_file_study()
+        memory_mapping = {}
+        for area_id in data:
+            yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
+            certifications = parse_thermal_reserves_certifications(yaml_content)
+            new_content = serialize_thermal_reserve_participations(data[area_id], certifications)
+            memory_mapping[area_id] = new_content
 
-        yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
-        certifications = parse_thermal_reserves_certifications(yaml_content)
-        new_content = serialize_thermal_reserve_participations(data, certifications)
-
-        # Saves the content into the YAML file
-        file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
+        # Once we've validated all the contents, we can save them
+        for area_id, new_content in memory_mapping.items():
+            file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
 
     @override
     def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
