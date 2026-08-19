@@ -72,5 +72,4 @@ def test_deleting_the_last_reserves_removes_their_symmetries(dao_10_0: StudyDao)
     assert certifications == {}
 
     symmetries = dao.get_thermal_reserve_symmetries("fr")
-    remaining = {reserve_id for value in symmetries.values() for symmetry in value for reserve_id in symmetry}
-    assert remaining == set()
+    assert symmetries == {}
