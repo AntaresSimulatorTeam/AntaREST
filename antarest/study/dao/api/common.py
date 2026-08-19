@@ -9,26 +9,30 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.core.exceptions import ThermalReserveCertificationNotFound
+from typing import Mapping
+
+from antarest.core.exceptions import ReserveCertificationNotFound
+from antarest.study.business.model.reserve_certification_model import (
+    ReserveCertificationMapping,
+)
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
-from antarest.study.business.model.thermal_reserve_certification_model import ThermalReserveCertificationMapping
-from antarest.study.dao.common import AreaId, ThermalId
+from antarest.study.dao.common import AreaAssetId, AreaId
 
 
-def check_thermal_symmetries_are_certified(
+def check_symmetries_are_certified(
     area_id: AreaId,
-    symmetries: dict[ThermalId, ReserveSymmetries],
-    certifications: ThermalReserveCertificationMapping,
+    symmetries_dict: Mapping[AreaAssetId, ReserveSymmetries],
+    certifications: ReserveCertificationMapping,
 ) -> None:
     """
     A thermal cluster can only be declared symmetric on reserves it is certified for.
     """
-    for thermal_id, thermal_symmetries in symmetries.items():
-        certified: set[str] = {reserve_id for reserve_id, thermals in certifications.items() if thermal_id in thermals}
-        required: set[str] = {reserve_id for symmetry in thermal_symmetries for reserve_id in symmetry}
+    for asset_id, symmetries in symmetries_dict.items():
+        certified: set[str] = {reserve_id for reserve_id, assets in certifications.items() if asset_id in assets}
+        required: set[str] = {reserve_id for symmetry in symmetries for reserve_id in symmetry}
         if missing := required - certified:
-            raise ThermalReserveCertificationNotFound(area_id, thermal_id, missing)
+            raise ReserveCertificationNotFound(area_id, asset_id, missing)
 
 
 def remove_reserve_symmetries_by_cascade(

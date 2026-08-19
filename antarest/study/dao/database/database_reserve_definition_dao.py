@@ -130,13 +130,23 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
             if invalid_ids := set(reserve_ids) - existing:
                 raise ReserveDefinitionsNotFound({area_id: invalid_ids})  # type: ignore
 
+        self._delete_symmetries_associated_with_deleted_reserve(area_id, reserve_ids)
         self._db_session.commit()
 
-        # We have to delete the reserve symmetries associated with the reserve as we do not have a foreign key constraint
-        symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
-        new_symmetries = remove_reserve_symmetries_by_cascade(symmetries_dict, set(reserve_ids))
-        if new_symmetries is not None:
-            self.get_impl().save_thermal_reserve_symmetries({area_id: new_symmetries})
+    def _delete_symmetries_associated_with_deleted_reserve(
+        self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]
+    ) -> None:
+        reserve_ids_set = set(reserve_ids)
+
+        thermal_symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
+        new_thermal_symmetries = remove_reserve_symmetries_by_cascade(thermal_symmetries_dict, reserve_ids_set)
+        if new_thermal_symmetries is not None:
+            self.get_impl().save_thermal_reserve_symmetries({area_id: new_thermal_symmetries})
+
+        st_storage_symmetries_dict = self.get_impl().get_st_storage_reserve_symmetries(area_id)
+        new_st_storage_symmetries = remove_reserve_symmetries_by_cascade(st_storage_symmetries_dict, reserve_ids_set)
+        if new_st_storage_symmetries is not None:
+            self.get_impl().save_st_storage_reserve_symmetries({area_id: new_st_storage_symmetries})
 
     @override
     def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:

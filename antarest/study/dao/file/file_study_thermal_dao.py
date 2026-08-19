@@ -27,7 +27,7 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster, 
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, ThermalId, ThermalSeriesMapping
 from antarest.study.dao.file.common import check_area_exists
-from antarest.study.model import STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -309,8 +309,8 @@ class FileStudyThermalDao(ThermalDao, ABC):
         # Cascade: Remove any reserve certification attached to the deleted cluster.
         # Avoids leaving orphan sections in `input/thermal/clusters/<area>/reserve-participations.yml`.
         """
-        if self.get_file_study().config.version < STUDY_VERSION_10_0:
-            # Reserves only exist in version 10.0+
+        if self.get_file_study().config.version < STUDY_VERSION_10_2:
+            # Reserves only exist in version 10.2+
             return
 
         thermal_exists = False

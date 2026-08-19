@@ -11,16 +11,18 @@
 # This file is part of the Antares project.
 import pytest
 
-from antarest.study.business.model.reserve_certification_model import ThermalReserveCertification
+from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
-from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
-from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
-from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_certifications import (
-    ReplaceThermalReserveCertifications,
+from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_certifications import (
+    ReplaceStStorageReserveCertifications,
+)
+from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_symmetries import (
+    ReplaceStStorageReserveSymmetries,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -31,11 +33,11 @@ def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
     cmd1 = CreateArea(area_name="FR", command_context=command_context, study_version=version)
     output = cmd1.apply(dao)
     assert output.status
-    # Create 2 thermals inside area `fr`
-    for thermal_name in ["th1", "th2"]:
-        cmd = CreateCluster(
+    # Create 2 short-term storages inside area `fr`
+    for storage_name in ["sts1", "sts2"]:
+        cmd = CreateSTStorage(
             area_id="fr",
-            parameters=ThermalClusterCreation(name=thermal_name),
+            parameters={"name": storage_name},
             command_context=command_context,
             study_version=version,
         )
@@ -51,96 +53,100 @@ def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
         )
         output = cmd.apply(dao)
         assert output.status
+    # A storage can only be symmetric on reserves it is certified for, so certify every pair.
+    cmd = ReplaceStStorageReserveCertifications(
+        area_id="fr",
+        certifications={
+            reserve_name: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()}
+            for reserve_name in ["r1", "r2", "r3", "r4"]
+        },
+        command_context=command_context,
+        study_version=version,
+    )
+    output = cmd.apply(dao)
+    assert output.status
 
 
 def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> None:
     _set_up(dao_10_2, command_context)
 
     # Get reserves at first to check the current state
-    result = dao_10_2.get_all_thermal_reserve_certifications()
+    result = dao_10_2.get_all_st_storage_reserve_symmetries()
     assert result == {}
 
-    cmd = ReplaceThermalReserveCertifications(
+    cmd = ReplaceStStorageReserveSymmetries(
         area_id="fr",
-        certifications={"r1": {"th1": ThermalReserveCertification()}},
+        symmetries={"sts1": [["r1", "r2"]]},
         command_context=command_context,
         study_version=STUDY_VERSION_10_2,
     )
     output = cmd.apply(dao_10_2)
     assert output.status
 
-    # Check the certifications
-    result = dao_10_2.get_all_thermal_reserve_certifications()
-    assert result == {"fr": {"r1": {"th1": ThermalReserveCertification()}}}
+    # Check the symmetries
+    result = dao_10_2.get_all_st_storage_reserve_symmetries()
+    assert result == {"fr": {"sts1": [["r1", "r2"]]}}
 
-    new_certifications = {
-        "r1": {
-            "th1": ThermalReserveCertification(
-                participation_cost_off=10.4, participation_cost=10.5, max_power_off=6, max_power=21
-            ),
-            "th2": ThermalReserveCertification(),
-        },
-        "r2": {"th2": ThermalReserveCertification(participation_cost=1000, max_power=1)},
-    }
-
-    cmd = ReplaceThermalReserveCertifications(
+    cmd = ReplaceStStorageReserveSymmetries(
         area_id="fr",
-        certifications=new_certifications,
+        symmetries={"sts1": [["r2", "r3"], ["r4", "r1"]], "sts2": [["r1", "r2"]]},
         command_context=command_context,
         study_version=STUDY_VERSION_10_2,
     )
     output = cmd.apply(dao_10_2)
     assert output.status
 
-    # Check the certifications
-    result = dao_10_2.get_thermal_reserve_certifications("fr")
-    assert result == new_certifications
+    # Check the symmetries
+    result = dao_10_2.get_all_st_storage_reserve_symmetries()
+    assert result == {"fr": {"sts1": [["r2", "r3"], ["r1", "r4"]], "sts2": [["r1", "r2"]]}}
 
     # Ensures replacing existing data with new one erases the old values
-    new_certifications = {"r2": {"th1": ThermalReserveCertification(participation_cost=4, max_power=1.2)}}
+    new_symmetries = {"sts2": [["r1", "r3", "r4"]]}
 
-    cmd = ReplaceThermalReserveCertifications(
+    cmd = ReplaceStStorageReserveSymmetries(
         area_id="fr",
-        certifications=new_certifications,
+        symmetries=new_symmetries,
         command_context=command_context,
         study_version=STUDY_VERSION_10_2,
     )
     output = cmd.apply(dao_10_2)
     assert output.status
 
-    result = dao_10_2.get_thermal_reserve_certifications("fr")
-    assert result == new_certifications
+    result = dao_10_2.get_st_storage_reserve_symmetries("fr")
+    assert result == new_symmetries
 
-    # Ensures we're able to remove all certifications
-    cmd = ReplaceThermalReserveCertifications(
+    # Ensures we're able to remove all symmetries
+    cmd = ReplaceStStorageReserveSymmetries(
         area_id="fr",
-        certifications={},
+        symmetries={},
         command_context=command_context,
         study_version=STUDY_VERSION_10_2,
     )
     output = cmd.apply(dao_10_2)
     assert output.status
 
-    result = dao_10_2.get_thermal_reserve_certifications("fr")
+    result = dao_10_2.get_st_storage_reserve_symmetries("fr")
     assert result == {}
 
 
-def test_error_cases(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+def test_study_version_sould_be_at_least_10_2_for_reserves(dao_10_2: StudyDao, command_context: CommandContext) -> None:
     _set_up(dao_10_2, command_context)
 
-    # Wrong version
     with pytest.raises(ValueError, match="study version before 10.2"):
-        ReplaceThermalReserveCertifications(
+        ReplaceStStorageReserveSymmetries(
             area_id="fr",
-            certifications={"r1": {"th1": ThermalReserveCertification()}},
+            symmetries={"sts1": [["r1", "r2"]]},
             command_context=command_context,
             study_version=STUDY_VERSION_9_3,
         )
 
-    # Wrong area
-    cmd = ReplaceThermalReserveCertifications(
+
+def test_area_should_be_valid(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
+
+    cmd = ReplaceStStorageReserveSymmetries(
         area_id="fake_area",
-        certifications={"r1": {"th1": ThermalReserveCertification()}},
+        symmetries={"sts1": [["r1", "r2"]]},
         command_context=command_context,
         study_version=STUDY_VERSION_10_2,
     )
@@ -148,26 +154,31 @@ def test_error_cases(dao_10_2: StudyDao, command_context: CommandContext) -> Non
     assert not output.status
     assert "Area is not found: 'fake_area'" in output.message
 
-    # Wrong reserve
-    cmd = ReplaceThermalReserveCertifications(
-        area_id="fr",
-        certifications={"fake_reserve": {"th1": ThermalReserveCertification()}},
-        command_context=command_context,
-        study_version=STUDY_VERSION_10_2,
-    )
-    output = cmd.apply(dao_10_2)
-    assert not output.status
-    assert "Reserve definitions not found: {'fr': {'fake_reserve'}}" in output.message
 
-    # Wrong cluster
-    cmd = ReplaceThermalReserveCertifications(
+def test_reserve_should_be_valid(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
+
+    cmd = ReplaceStStorageReserveSymmetries(
         area_id="fr",
-        certifications={"r1": {"fake_thermal": ThermalReserveCertification()}},
+        symmetries={"sts1": [["fake_reserve", "r2"]]},
         command_context=command_context,
         study_version=STUDY_VERSION_10_2,
     )
     output = cmd.apply(dao_10_2)
     assert not output.status
-    expected_msg_db = "Thermal clusters not found: {'fr': {'fake_thermal'}}"
-    expected_msg_fs = "Thermal cluster 'fake_thermal' not found in area 'fr'"
-    assert expected_msg_db in output.message or expected_msg_fs in output.message
+    assert "Reserve definition 'fake_reserve' not found in area 'fr'" in output.message
+
+
+def test_short_term_storage_should_be_valid(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
+
+    # Wrong short-term storage
+    cmd = ReplaceStStorageReserveSymmetries(
+        area_id="fr",
+        symmetries={"fake_storage": [["r1", "r2"]]},
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_2,
+    )
+    output = cmd.apply(dao_10_2)
+    assert not output.status
+    assert "Short-term storage 'fake_storage' not found in area 'fr'" in output.message

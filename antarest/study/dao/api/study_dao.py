@@ -35,7 +35,11 @@ from antarest.study.business.model.hydro_model import HydroManagement, HydroProp
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
+from antarest.study.business.model.reserve_certification_model import (
+    StorageReserveCertificationMapping,
+    ThermalReserveCertificationMapping,
+)
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.scenario_builder_model import AnyScenarios, Ruleset, ScenarioType
@@ -46,10 +50,6 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.model.thermal_reserve_certification_model import (
-    ThermalReserveCertification,
-    ThermalReserveCertificationMapping,
-)
 from antarest.study.business.model.user_model import UserResourceDataCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -113,6 +113,8 @@ from antarest.study.dao.common import (
     ReserveDefinitionsMapping,
     ReserveNeedsMapping,
     StStorageConstraintSeriesMapping,
+    StStorageId,
+    STStorageReserveSymmetriesMapping,
     StStorageSeriesMapping,
     ThermalId,
     ThermalReserveSymmetriesMapping,
@@ -448,6 +450,14 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_st_storages_for_area(self, area_id: str) -> Sequence[STStorage]:
         return self._adaptee.get_all_st_storages_for_area(area_id)
+
+    @override
+    def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
+        return self._adaptee.get_all_st_storage_reserve_symmetries()
+
+    @override
+    def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[StStorageId, ReserveSymmetries]:
+        return self._adaptee.get_st_storage_reserve_symmetries(area_id)
 
     @override
     def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
@@ -914,9 +924,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_thermal_reserve_certifications()
 
     @override
-    def get_thermal_reserve_certifications(
-        self, area_id: AreaId
-    ) -> dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]:
+    def get_thermal_reserve_certifications(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
         return self._adaptee.get_thermal_reserve_certifications(area_id)
 
     @override
@@ -926,3 +934,11 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
         return self._adaptee.get_thermal_reserve_symmetries(area_id)
+
+    @override
+    def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
+        return self._adaptee.get_st_storage_reserve_certifications(area_id)
+
+    @override
+    def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
+        return self._adaptee.get_all_st_storage_reserve_certifications()
