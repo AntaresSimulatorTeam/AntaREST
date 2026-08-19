@@ -56,16 +56,6 @@ QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLink
 AggregationType: TypeAlias = Literal["mc-all", "mc-ind"]
 
 
-def aggregation_type(file_type: QueryFileType) -> AggregationType:
-    match file_type:
-        case MCIndAreasQueryFile() | MCIndLinksQueryFile():
-            return "mc-ind"
-        case MCAllAreasQueryFile() | MCAllLinksQueryFile():
-            return "mc-all"
-        case _:
-            raise ValueError(f"Unknown output file type: {file_type}")
-
-
 @dataclass(frozen=True, slots=True)
 class VariableDescription:
     """
