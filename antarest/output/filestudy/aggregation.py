@@ -31,8 +31,8 @@ from antarest.output.filestudy.model import (
     OutputDataFrame,
     QueryFileType,
     VariableDescription,
+    find_mode_dir,
 )
-from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
 
 # We use pandas.DataFrame.stack() without the `future_stack` keyword as its 2 times faster
@@ -108,8 +108,6 @@ class AggregatorManager:
             else "links"
         )
         _mode_dir = find_mode_dir(self.output_path)
-        if _mode_dir is None:
-            raise OutputSubFolderNotFound(self.output_id, f"economy/{MCRoot.MC_IND.value}")
         self.mc_ind_path = _mode_dir / MCRoot.MC_IND.value
         self.mc_all_path = _mode_dir / MCRoot.MC_ALL.value
         self.mc_root = (

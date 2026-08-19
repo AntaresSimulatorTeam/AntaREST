@@ -22,4 +22,4 @@ def test_output_df_should_raise_when_wrong_headers_count() -> None:
         OutputDataFrame(data=df, headers=("col1"))
 
     output_df = OutputDataFrame(data=df, headers=("col1", "col2"))
-    assert output_df.headers == ["col1", "col2"]
+    assert output_df.headers == ("col1", "col2")

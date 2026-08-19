@@ -11,9 +11,12 @@
 # This file is part of the Antares project.
 from dataclasses import dataclass
 from enum import Enum, StrEnum
+from pathlib import Path
 from typing import Callable, Generic, Literal, Sequence, TypeAlias, TypeVar
 
 import polars as pl
+
+from antarest.core.exceptions import OutputSubFolderNotFound
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
@@ -146,3 +149,17 @@ class OutputDataFrame(Generic[C]):
 
     def map_metadata(self, func: Callable[[C], C2]) -> "OutputDataFrame[C2]":
         return OutputDataFrame(self.data, [func(col) for col in self.headers])
+
+
+def find_mode_dir(output_dir: Path) -> Path:
+    """
+    Identifies economy or adequacy dir
+
+    Raises:
+        OutputSubFolderNotFound: when no folder matches.
+    """
+    for mode_name in ("economy", "adequacy"):
+        mode_dir = output_dir / mode_name
+        if mode_dir.exists():
+            return mode_dir
+    raise OutputSubFolderNotFound(output_dir.name, "economy|adequacy")

@@ -29,18 +29,11 @@ from antarest.output.filestudy.model import (
     OutputDataFrame,
     QueryFileType,
     VariableDescription,
+    find_mode_dir,
 )
 from antarest.study.model import MatrixFrequency
 
 logger = logging.getLogger(__name__)
-
-
-def _find_mode_dir(output_dir: Path) -> Path:
-    for mode_name in ("economy", "adequacy"):
-        mode_dir = output_dir / mode_name
-        if mode_dir.exists():
-            return mode_dir
-    raise OutputSubFolderNotFound(output_dir.name, "economy|adequacy")
 
 
 def _filtered_files_listing(
@@ -106,7 +99,7 @@ def select_mc_ind_files(
     element_ids: Sequence[str],
     mc_years: Sequence[int] | None,
 ) -> list[OutputFile]:
-    mode_dir = _find_mode_dir(output_path)
+    mode_dir = find_mode_dir(output_path)
     mc_ind_path = mode_dir / MCRoot.MC_IND.value
     if not mc_ind_path.is_dir():
         raise OutputSubFolderNotFound(output_path.name, f"{mode_dir.name}/mc-ind")
@@ -151,7 +144,7 @@ def select_mc_all_files(
     frequency: MatrixFrequency,
     element_ids: Sequence[str],
 ) -> list[OutputFile]:
-    mode_dir = _find_mode_dir(output_path)
+    mode_dir = find_mode_dir(output_path)
     mc_all_path = mode_dir / MCRoot.MC_ALL.value
     if not mc_all_path.exists():
         raise OutputSubFolderNotFound(output_path.name, f"{mode_dir.name}/mc-all")

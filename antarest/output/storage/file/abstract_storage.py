@@ -49,6 +49,7 @@ from antarest.output.filestudy.matrixfiles import get_start_column, parse_output
 from antarest.output.filestudy.metadata import parse_output_config
 from antarest.output.filestudy.model import (
     QueryFileType,
+    find_mode_dir,
 )
 from antarest.output.filestudy.variables import extract_variables_list
 from antarest.output.model import (
@@ -66,7 +67,6 @@ from antarest.output.storage.output_storage import (
     OutputSettings,
     OutputStorageType,
 )
-from antarest.output.utils import find_mode_dir
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8,
@@ -489,8 +489,6 @@ class AbstractFileOutputStorage(IOutputStorage):
         """
         output_path = self._outputs_provider.get_outputs(study_id).outputs_path / output_id
         mode_dir = find_mode_dir(output_path)
-        if not mode_dir:
-            raise DigestNotFoundError(study_id, output_id)
         file_path = mode_dir / "mc-all" / "grid" / "digest.txt"
         if not file_path.exists():
             raise DigestNotFoundError(study_id, output_id)
