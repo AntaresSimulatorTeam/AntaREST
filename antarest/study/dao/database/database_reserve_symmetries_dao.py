@@ -124,8 +124,9 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                     continue
                 values.append(symmetry_type.convert_to_row(self._study_data_id, area_id, thermal_id, symmetries))
         try:
-            self._clean_table(_THERMAL_TABLE, set(data))
-            self._insert_data_to_table(_THERMAL_TABLE, values)
+            db_table = symmetry_type.db_table()
+            self._clean_table(db_table, set(data))
+            self._insert_data_to_table(db_table, values)
         except IntegrityError as e:
             self._db_session.rollback()
             thermals = {area_id: list(thermal_dict) for area_id, thermal_dict in data.items()}
@@ -157,8 +158,9 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                     continue
                 values.append(symmetry_type.convert_to_row(self._study_data_id, area_id, st_storage_id, symmetries))
         try:
-            self._clean_table(_ST_STORAGE_TABLE, set(data))
-            self._insert_data_to_table(_ST_STORAGE_TABLE, values)
+            db_table = symmetry_type.db_table()
+            self._clean_table(db_table, set(data))
+            self._insert_data_to_table(db_table, values)
         except IntegrityError as e:
             self._db_session.rollback()
             st_storages = {area_id: list(st_storage_dict) for area_id, st_storage_dict in data.items()}
