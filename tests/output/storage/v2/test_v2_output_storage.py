@@ -780,7 +780,6 @@ def test_aggregate_areas_values(
                 frequency=MatrixFrequency.DAILY,
                 ids_to_consider=[],
                 columns_names=[],
-                transform_columns_headers=True,
             )
         )
         assert len(dfs) >= 1
@@ -808,7 +807,6 @@ def test_aggregate_with_area_filter(
                 frequency=MatrixFrequency.DAILY,
                 ids_to_consider=["de"],
                 columns_names=[],
-                transform_columns_headers=True,
             )
         )
 
@@ -832,7 +830,6 @@ def test_aggregate_with_column_filter(
                 frequency=MatrixFrequency.DAILY,
                 ids_to_consider=[],
                 columns_names=["load"],
-                transform_columns_headers=True,
             )
         )
         df = pl.concat(dfs)
@@ -857,7 +854,6 @@ def test_aggregate_thermal_clusters(
                 frequency=MatrixFrequency.DAILY,
                 ids_to_consider=[],
                 columns_names=[],
-                transform_columns_headers=True,
             )
         )
         df = pl.concat(dfs)

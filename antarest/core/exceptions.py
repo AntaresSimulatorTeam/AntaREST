@@ -437,8 +437,8 @@ class OutputSubFolderNotFound(HTTPException):
     Exception raised when an output sub folders do not exist
     """
 
-    def __init__(self, output_id: str, mc_root: str) -> None:
-        message = f"The output '{output_id}' sub-folder '{mc_root}' does not exist"
+    def __init__(self, output_id: str, relpath: str) -> None:
+        message = f"The output '{output_id}' sub-folder '{relpath}' does not exist"
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
     @override

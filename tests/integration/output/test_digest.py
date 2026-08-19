@@ -103,4 +103,4 @@ def test_get_digest_endpoint(
 
     res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_id}/digest-ui")
     assert res.status_code == 404
-    assert res.json()["exception"] == "DigestNotFoundError"
+    assert res.json()["exception"] == "OutputSubFolderNotFound"
