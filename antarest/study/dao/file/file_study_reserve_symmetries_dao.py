@@ -20,8 +20,8 @@ from antarest.study.business.model.reserve_symmetries_model import ReserveSymmet
 from antarest.study.dao.api.common import check_thermal_symmetries_integrity
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
-    AreaAssetId,
     AreaId,
+    StStorageId,
     STStorageReserveSymmetriesMapping,
     ThermalId,
     ThermalReserveSymmetriesMapping,
@@ -111,7 +111,7 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
             self._save_st_storage_reserve_symmetries_for_area(area_id, data[area_id])
 
     def _save_st_storage_reserve_symmetries_for_area(
-        self, area_id: AreaId, new_symmetries: dict[AreaAssetId, ReserveSymmetries]
+        self, area_id: AreaId, new_symmetries: dict[StStorageId, ReserveSymmetries]
     ) -> None:
         file_study = self.get_file_study()
         for asset_id, symmetries in new_symmetries.items():
