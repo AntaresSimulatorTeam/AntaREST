@@ -186,13 +186,6 @@ class StudyConverter:
         self._new_dao.save_wind(self._source_dao.get_all_wind())
         self._new_dao.save_misc_gen(self._source_dao.get_all_misc_gen())
 
-        # Reserves
-        if self._study_version >= STUDY_VERSION_10_2:
-            self._convert_reserves()
-        else:
-            # Legacy reserves behavior
-            self._new_dao.save_reserves(self._source_dao.get_all_reserves())
-
         # Hydro
         self._convert_hydro()
 
@@ -220,6 +213,13 @@ class StudyConverter:
                 if self._study_version >= STUDY_VERSION_9_2:
                     st_storages_constraints = self._source_dao.get_all_st_storage_additional_constraints()
                 self._convert_short_term_storages(st_storages, st_storages_constraints)
+
+        # Once every area assets are converted, converting reserves
+        if self._study_version >= STUDY_VERSION_10_2:
+            self._convert_reserves()
+        else:
+            # Legacy reserves behavior
+            self._new_dao.save_reserves(self._source_dao.get_all_reserves())
 
     def _convert_thermal_clusters(self, data: dict[str, list[ThermalCluster]]) -> None:
         self._new_dao.save_thermals(data)

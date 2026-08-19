@@ -310,7 +310,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
         # Avoids leaving orphan sections in `input/thermal/clusters/<area>/reserve-participations.yml`.
         """
         if self.get_file_study().config.version < STUDY_VERSION_10_2:
-            # Reserves only exist in version 10.0+
+            # Reserves only exist in version 10.2+
             return
 
         thermal_exists = False

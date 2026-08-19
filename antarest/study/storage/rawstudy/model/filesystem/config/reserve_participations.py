@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
-from typing import Any, Generic, Self, TypeVar, cast
+from typing import Any, Generic, Self, TypeVar
 
 from pydantic import ConfigDict, model_validator
 from typing_extensions import override
@@ -69,7 +69,7 @@ CertificationT = TypeVar("CertificationT", bound=_AreaAssetCertification)
 class Participation(ABC, AntaresBaseModel, Generic[CertificationT]):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    certifications: list[_AreaAssetCertification] = []
+    certifications: list[CertificationT] = []
     symmetries: list[Symmetry] = []
 
     @model_validator(mode="after")
@@ -224,7 +224,7 @@ class ThermalReserveParticipationsFileData(_AreaAssetParticipationFileData[Therm
             for certification in participation.certifications:
                 model = certification.to_model()
                 reserve_id = ReserveDefinitionId(transform_name_to_id(certification.reserve))
-                result.setdefault(reserve_id, {})[participation.cluster] = cast(ThermalReserveCertification, model)
+                result.setdefault(reserve_id, {})[participation.cluster] = model
         return result
 
     @classmethod
@@ -245,7 +245,7 @@ class STStorageReserveParticipationsFileData(_AreaAssetParticipationFileData[STS
             for certification in participation.certifications:
                 model = certification.to_model()
                 reserve_id = ReserveDefinitionId(transform_name_to_id(certification.reserve))
-                result.setdefault(reserve_id, {})[participation.storage] = cast(StorageReserveCertification, model)
+                result.setdefault(reserve_id, {})[participation.storage] = model
         return result
 
     @classmethod

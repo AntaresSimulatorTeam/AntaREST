@@ -25,6 +25,7 @@ from antarest.core.exceptions import (
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.reserve_certification_model import (
     ReserveCertification,
+    StorageId,
     StorageReserveCertification,
     StorageReserveCertificationMapping,
     ThermalReserveCertification,
@@ -32,7 +33,7 @@ from antarest.study.business.model.reserve_certification_model import (
 )
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
-from antarest.study.dao.common import AreaId
+from antarest.study.dao.common import AreaId, ThermalId
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.st_storage_reserve_certification import ST_STORAGE_RESERVE_CERTIFICATION_TABLE
 from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
@@ -128,6 +129,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             self._clean_db(_THERMAL_TABLE, new_certifications)
             self._insert_data_to_table(_THERMAL_TABLE, values)
         except IntegrityError as e:
+            self._db_session.rollback()
             self._raise_the_right_thermal_reserve_exception(new_certifications, exc=e)
         self._db_session.commit()
 
@@ -141,11 +143,12 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
         # Checks if some thermals are missing
         all_existing_thermals = self.get_impl().get_all_thermals()
-        invalid_thermal_dict = {}
+        invalid_thermal_dict: dict[AreaId, set[ThermalId]] = {}
         for area_id, reserves_dict in data.items():
             for thermal_ids in reserves_dict.values():
                 if invalid_thermals := set(thermal_ids) - set(all_existing_thermals.get(area_id, [])):
-                    invalid_thermal_dict[area_id] = invalid_thermals
+                    invalid_thermal_dict.setdefault(area_id, set())
+                    invalid_thermal_dict[area_id] |= invalid_thermals
 
         if invalid_thermal_dict:
             raise ThermalClustersNotFound(invalid_thermal_dict) from exc
@@ -185,6 +188,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             self._clean_db(_ST_STORAGE_TABLE, new_certifications)
             self._insert_data_to_table(_ST_STORAGE_TABLE, values)
         except IntegrityError as e:
+            self._db_session.rollback()
             self._raise_the_right_st_storage_reserve_exception(new_certifications, exc=e)
         self._db_session.commit()
 
@@ -222,11 +226,12 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         self._raise_exception_if_missing_reserve(data)
 
         all_existing_st_storage = self.get_impl().get_all_st_storages()
-        invalid_st_storage_dict = {}
+        invalid_st_storage_dict: dict[AreaId, set[StorageId]] = {}
         for area_id, reserves_dict in data.items():
             for st_storage_ids in reserves_dict.values():
                 if invalid_st_storage := set(st_storage_ids) - set(all_existing_st_storage.get(area_id, [])):
-                    invalid_st_storage_dict[area_id] = invalid_st_storage
+                    invalid_st_storage_dict.setdefault(area_id, set())
+                    invalid_st_storage_dict[area_id] |= invalid_st_storage
 
         if invalid_st_storage_dict:
             raise STStoragesNotFound(invalid_st_storage_dict) from exc

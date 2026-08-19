@@ -181,6 +181,6 @@ def test_st_storage_should_be_valid(dao_10_2: StudyDao, command_context: Command
     )
     output = cmd.apply(dao_10_2)
     assert not output.status
-    expected_msg_db = "Short term storages not found: {'fr': {'fake_storage'}}"
+    expected_msg_db = "Short-term storages not found: {'fr': {'fake_storage'}}"
     expected_msg_fs = "Short-term storage 'fake_storage' not found in area 'fr'"
     assert expected_msg_db in output.message or expected_msg_fs in output.message

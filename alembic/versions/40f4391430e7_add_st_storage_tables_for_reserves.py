@@ -1,7 +1,7 @@
 """add_st_storage_tables_for_reserves
 
 Revision ID: 40f4391430e7
-Revises: 1f0c9b2e7a34
+Revises: 17f8a36cbed6
 Create Date: 2026-08-11 15:49:32.314554
 
 """
@@ -9,12 +9,11 @@ Create Date: 2026-08-11 15:49:32.314554
 from sqlalchemy import Column, Float, ForeignKeyConstraint, String
 
 from alembic import op
-
 from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = '40f4391430e7'
-down_revision = '1f0c9b2e7a34'
+down_revision = '17f8a36cbed6'
 branch_labels = None
 depends_on = None
 
