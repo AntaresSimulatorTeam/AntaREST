@@ -117,17 +117,8 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
         check_thermal_symmetries_integrity(self.get_impl(), data)
 
         # Save the new values
-        values = []
-        symmetry_type = SymmetryType.THERMAL
-        for area_id, thermal_dict in data.items():
-            for thermal_id, symmetries in thermal_dict.items():
-                if symmetries == [[]]:
-                    continue
-                values.append(symmetry_type.convert_to_row(self._study_data_id, area_id, thermal_id, symmetries))
         try:
-            db_table = symmetry_type.db_table()
-            self._clean_table(db_table, set(data))
-            self._insert_data_to_table(db_table, values)
+            self._save_reserve_symmetries(data, SymmetryType.THERMAL)
         except IntegrityError as e:
             self._db_session.rollback()
             thermals = {area_id: list(thermal_dict) for area_id, thermal_dict in data.items()}
@@ -140,30 +131,24 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
         check_st_storage_symmetries_integrity(self.get_impl(), data)
 
         # Save the new values
-        values = []
-        symmetry_type = SymmetryType.ST_STORAGE
-        for area_id, st_storage_dict in data.items():
-            for st_storage_id, symmetries in st_storage_dict.items():
-                if symmetries == [[]]:
-                    continue
-                values.append(symmetry_type.convert_to_row(self._study_data_id, area_id, st_storage_id, symmetries))
         try:
-            db_table = symmetry_type.db_table()
-            self._clean_table(db_table, set(data))
-            self._insert_data_to_table(db_table, values)
+            self._save_reserve_symmetries(data, SymmetryType.ST_STORAGE)
         except IntegrityError as e:
             self._db_session.rollback()
             st_storages = {area_id: list(st_storage_dict) for area_id, st_storage_dict in data.items()}
             self.get_impl().raise_the_right_storage_exception(st_storages, exc=e)
         self._db_session.commit()
 
-    def _clean_table(self, table: Table, area_ids: set[str]) -> None:
-        stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
-        self._db_session.execute(stmt)
+    def _save_reserve_symmetries(self, data: ReserveSymmetriesMapping, symmetry_type: SymmetryType) -> None:
+        values = []
+        for area_id, value in data.items():
+            for object_id, symmetries in value.items():
+                if symmetries == [[]]:
+                    continue
+                values.append(symmetry_type.convert_to_row(self._study_data_id, area_id, object_id, symmetries))
 
-    def _insert_data_to_table(self, table: Table, values: list[Any]) -> None:
+        table = symmetry_type.db_table()
+        stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(set(data))))
+        self._db_session.execute(stmt)
         if values:
             self._db_session.execute(insert(table), values)
-
-    def _save_reserve_symmetries(self, data: ReserveSymmetriesMapping, symmetry_type: SymmetryType) -> None:
-        pass
