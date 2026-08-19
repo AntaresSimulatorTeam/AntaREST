@@ -20,6 +20,7 @@ from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
     ReserveSymmetriesMapping,
+    StStorageId,
     STStorageReserveSymmetriesMapping,
     ThermalId,
     ThermalReserveSymmetriesMapping,
@@ -78,6 +79,11 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
         return parse_thermal_reserves_symmetries(yaml_content)
 
     @override
+    def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[StStorageId, ReserveSymmetries]:
+        yaml_content = get_st_storage_reserve_participations_as_yaml_content(area_id, self.get_file_study())
+        return parse_st_storage_reserves_symmetries(yaml_content)
+
+    @override
     def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
         check_thermal_symmetries_integrity(self.get_impl(), data)
 
@@ -92,11 +98,6 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
         # Once we've validated all the contents, we can save them
         for area_id, new_content in memory_mapping.items():
             file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
-
-    @override
-    def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
-        yaml_content = get_st_storage_reserve_participations_as_yaml_content(area_id, self.get_file_study())
-        return parse_st_storage_reserves_symmetries(yaml_content)
 
     @override
     def save_st_storage_reserve_symmetries(self, data: STStorageReserveSymmetriesMapping) -> None:
