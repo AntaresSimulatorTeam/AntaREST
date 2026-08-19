@@ -14,20 +14,16 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ReserveDefinitionNotFound, STStorageNotFound
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.api.common import check_thermal_symmetries_integrity
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
-    StStorageId,
     STStorageReserveSymmetriesMapping,
     ThermalId,
     ThermalReserveSymmetriesMapping,
 )
 from antarest.study.dao.file.common import (
-    check_area_exists,
     get_st_storage_reserve_participations_as_yaml_content,
     get_st_storage_reserve_path,
     get_thermal_reserve_participations_as_yaml_content,
@@ -104,39 +100,16 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
 
     @override
     def save_st_storage_reserve_symmetries(self, data: STStorageReserveSymmetriesMapping) -> None:
+        check_thermal_symmetries_integrity(self.get_impl(), data)
+
         file_study = self.get_file_study()
+        memory_mapping = {}
         for area_id in data:
-            check_area_exists(file_study.config, area_id)
-            self._save_st_storage_reserve_symmetries_for_area(area_id, data[area_id])
+            yaml_content = get_st_storage_reserve_participations_as_yaml_content(area_id, file_study)
+            certifications = parse_st_storage_reserves_certifications(yaml_content)
+            new_content = serialize_st_storage_reserve_participations(data[area_id], certifications)
+            memory_mapping[area_id] = new_content
 
-    def _save_st_storage_reserve_symmetries_for_area(
-        self, area_id: AreaId, new_symmetries: dict[StStorageId, ReserveSymmetries]
-    ) -> None:
-        file_study = self.get_file_study()
-        for asset_id, symmetries in new_symmetries.items():
-            self._check_st_storage_exists_in_area(area_id, asset_id)
-            self._check_reserve_definitions_exist_in_symmetries(area_id, symmetries)
-
-        yaml_content = get_st_storage_reserve_participations_as_yaml_content(area_id, file_study)
-        certifications = parse_st_storage_reserves_certifications(yaml_content)
-
-        # Verify that the thermals are certified on the reserves they are symmetric on
-        # todo: fix
-        # check_symmetries_are_certified(area_id, new_symmetries, certifications)
-
-        new_content = serialize_st_storage_reserve_participations(new_symmetries, certifications)
-
-        # Saves the content into the YAML file
-        file_study.tree.save(new_content, get_st_storage_reserve_path(area_id))
-
-    def _check_st_storage_exists_in_area(self, area_id: str, asset_id: str) -> None:
-        if not self.get_impl().st_storage_exists(area_id, asset_id):
-            raise STStorageNotFound(area_id, asset_id)
-
-    def _check_reserve_definitions_exist_in_symmetries(
-        self, storage_id: str, symmetries: list[list[ReserveDefinitionId]]
-    ) -> None:
-        for symmetry in symmetries:
-            for reserve_id in symmetry:
-                if not self.get_impl().reserve_definition_exists(storage_id, reserve_id):
-                    raise ReserveDefinitionNotFound(storage_id, reserve_id)
+        # Once we've validated all the contents, we can save them
+        for area_id, new_content in memory_mapping.items():
+            file_study.tree.save(new_content, get_st_storage_reserve_path(area_id))
