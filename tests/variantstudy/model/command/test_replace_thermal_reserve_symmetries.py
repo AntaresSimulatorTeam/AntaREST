@@ -197,4 +197,4 @@ def test_error_cases(dao_10_2: StudyDao, command_context: CommandContext) -> Non
     )
     output = cmd.apply(dao_10_2)
     assert not output.status
-    assert "Certifications for reserve(s) '{'r2'}' on thermal cluster 'th1' not found in area 'fr'" in output.message
+    assert "Certifications for reserve(s) '{'r2'}' on thermal 'th1' not found in area 'fr'" in output.message
