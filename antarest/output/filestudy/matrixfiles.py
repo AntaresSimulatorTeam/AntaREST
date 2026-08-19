@@ -23,7 +23,7 @@ import pandas as pd
 import polars as pl
 from polars._plr import ComputeError
 
-from antarest.output.filestudy.model import MultipleOutputHeaders, OutputDataFrame
+from antarest.output.filestudy.model import OutputDataFrame, VariableDescription
 from antarest.study.model import MatrixFrequency
 
 
@@ -42,7 +42,7 @@ def get_start_column(frequency: MatrixFrequency) -> int:
         raise NotImplementedError(f"Unknown frequency {frequency.value}")
 
 
-def parse_headers(content: IO[str], start_col: int) -> MultipleOutputHeaders:
+def parse_headers(content: IO[str], start_col: int) -> list[VariableDescription]:
     header_lines: list[list[str]] = []
     for line in islice(content, 4, 7):  # Note: avoids to go over the whole file, much faster for larger files
         cols = line.rstrip("\n").split("\t")[start_col:]
@@ -52,7 +52,13 @@ def parse_headers(content: IO[str], start_col: int) -> MultipleOutputHeaders:
             for k, col in enumerate(cols):
                 header_lines[k].append(col)
 
-    return header_lines
+    def none_if_empty(value: str) -> str | None:
+        return None if not value.strip() else value
+
+    return [
+        VariableDescription(name=col[0], unit=none_if_empty(col[1]), statistic_type=none_if_empty(col[2]))
+        for col in header_lines
+    ]
 
 
 def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
@@ -74,7 +80,7 @@ def _parse_output_dataframe(file_path: Path) -> pl.DataFrame:
         )
 
 
-def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
+def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame[VariableDescription]:
     content = file_path.read_text(encoding="utf-8")
     output_headers = parse_headers(StringIO(content), first_column)
     polars_df = _parse_output_dataframe(file_path)
@@ -89,7 +95,7 @@ def parse_output_file(file_path: Path, first_column: int) -> OutputDataFrame:
 
 
 def parse_output_file_as_pandas_dataframe(file_path: Path, first_column: int) -> pd.DataFrame:
-    output = parse_output_file(file_path, first_column)
+    output = parse_output_file(file_path, first_column).map_metadata(VariableDescription.to_tuple)
     df = output.data.to_pandas().astype(np.float64)
-    df.columns = pd.MultiIndex.from_tuples(output.headers)  # type: ignore
+    df.columns = pd.MultiIndex.from_tuples(output.headers)
     return df

@@ -44,14 +44,18 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.output.filestudy.aggregation import AggregatorManager
+from antarest.output.filestudy.download import build_matrix_aggregation_result
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file_as_pandas_dataframe
 from antarest.output.filestudy.metadata import parse_output_config
 from antarest.output.filestudy.model import (
     QueryFileType,
+    find_mode_dir,
 )
 from antarest.output.filestudy.variables import extract_variables_list
 from antarest.output.model import (
+    MatrixAggregationResultDTO,
     OutputVariablesList,
+    StudyDownloadDTO,
 )
 from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.file.repository import FileOutputRepository
@@ -63,7 +67,6 @@ from antarest.output.storage.output_storage import (
     OutputSettings,
     OutputStorageType,
 )
-from antarest.output.utils import find_mode_dir
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8,
@@ -486,8 +489,6 @@ class AbstractFileOutputStorage(IOutputStorage):
         """
         output_path = self._outputs_provider.get_outputs(study_id).outputs_path / output_id
         mode_dir = find_mode_dir(output_path)
-        if not mode_dir:
-            raise DigestNotFoundError(study_id, output_id)
         file_path = mode_dir / "mc-all" / "grid" / "digest.txt"
         if not file_path.exists():
             raise DigestNotFoundError(study_id, output_id)
@@ -516,7 +517,6 @@ class AbstractFileOutputStorage(IOutputStorage):
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        transform_columns_headers: bool,
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         study_outputs = self._outputs_provider.get_outputs(study_id)
@@ -526,7 +526,6 @@ class AbstractFileOutputStorage(IOutputStorage):
             frequency,
             ids_to_consider,
             columns_names,
-            transform_columns_headers,
             mc_years,
         )
         return aggregator_manager.aggregate_output_data()
@@ -616,6 +615,15 @@ class AbstractFileOutputStorage(IOutputStorage):
         # But we need one to build the `OutputSimulation` object. So, we build a fake one.
         matrix_storage_context = MatrixStorageContext(matrix_service=InMemorySimpleMatrixService(), is_managed=True)
         return Output(matrix_storage_context, config)
+
+    @override
+    def get_matrix_aggregation_result(
+        self, study_id: str, output_id: str, data_selection: StudyDownloadDTO
+    ) -> MatrixAggregationResultDTO:
+
+        study_outputs = self._outputs_provider.get_outputs(study_id)
+        output_dir = _output_path(study_outputs.outputs_path, output_id)
+        return build_matrix_aggregation_result(output_dir, data_selection)
 
 
 def _build_matrix_file_path(output_dir: Path, url: list[str]) -> Path:
