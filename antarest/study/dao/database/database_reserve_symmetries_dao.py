@@ -140,7 +140,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                     continue
                 values.append(_convert_thermal_model_to_row(self._study_data_id, area_id, thermal_id, symmetries))
         try:
-            self._clean_db(_THERMAL_TABLE, data)
+            self._clean_table(_THERMAL_TABLE, set(data))
             self._insert_data_to_table(_THERMAL_TABLE, values)
         except IntegrityError as e:
             self._db_session.rollback()
@@ -184,7 +184,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                     continue
                 values.append(_convert_st_storage_model_to_row(self._study_data_id, area_id, st_storage_id, symmetries))
         try:
-            self._clean_db(_ST_STORAGE_TABLE, data)
+            self._clean_table(_ST_STORAGE_TABLE, set(data))
             self._insert_data_to_table(_ST_STORAGE_TABLE, values)
         except IntegrityError as e:
             self._db_session.rollback()
@@ -192,8 +192,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
             self.get_impl().raise_the_right_storage_exception(st_storages, exc=e)
         self._db_session.commit()
 
-    def _clean_db(self, table: Table, data: dict[str, dict[str, list[list[ReserveDefinitionId]]]]) -> None:
-        area_ids = set(data)
+    def _clean_table(self, table: Table, area_ids: set[str]) -> None:
         stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
         self._db_session.execute(stmt)
 
