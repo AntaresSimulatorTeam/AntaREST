@@ -16,9 +16,8 @@ from antarest.study.business.model.thermal_reserve_certification_model import Th
 from antarest.study.dao.api.study_dao import StudyDao
 
 
-def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_0: StudyDao) -> None:
+def _set_up(dao: StudyDao) -> None:
     # Create 1 area with 2 thermal clusters and 4 reserves
-    dao = dao_10_0
     dao.save_areas_with_properties({"fr": AreaProperties()})
     th1 = ThermalCluster(name="th1")
     th2 = ThermalCluster(name="th2")
@@ -29,6 +28,11 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_0: Stu
     for reserve_name in ["r1", "r2", "r3", "r4"]:
         reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN))
     dao.save_reserve_definitions({"fr": reserves})
+
+
+def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_0: StudyDao) -> None:
+    dao = dao_10_0
+    _set_up(dao)
 
     # A cluster can only be symmetric on reserves it is certified for, so certify both clusters first.
     certification = ThermalReserveCertification()
@@ -51,3 +55,22 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_0: Stu
     assert dao.get_thermal_reserve_certifications("fr") == certifications
     # The symmetry should also be overwritten by the new value.
     assert dao.get_thermal_reserve_symmetries("fr") == {"th2": [["r1", "r2", "r3"]]}
+
+
+def test_deleting_the_last_reserves_removes_their_symmetries(dao_10_0: StudyDao) -> None:
+    # Deleting a reserve cascades on the certifications and on the symmetries referencing it.
+    dao = dao_10_0
+    _set_up(dao)
+    certification = ThermalReserveCertification()
+    dao.save_thermal_reserve_certifications({"fr": {"r1": {"th1": certification}, "r2": {"th1": certification}}})
+    dao.save_thermal_reserve_symmetries({"fr": {"th1": [["r1", "r2"]]}})
+
+    # Deleting every reserve of the area leaves it without any certification and symmetries.
+    dao.delete_reserve_definitions("fr", ["r1", "r2"])
+
+    certifications = dao.get_all_thermal_reserve_certifications()
+    assert certifications == {}
+
+    symmetries = dao.get_thermal_reserve_symmetries("fr")
+    remaining = {reserve_id for value in symmetries.values() for symmetry in value for reserve_id in symmetry}
+    assert remaining == set()

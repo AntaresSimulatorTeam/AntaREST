@@ -37,6 +37,10 @@ def check_thermal_symmetries_integrity(study_dao: "StudyDao", new_symmetries: Th
         existing_certifications = study_dao.get_all_thermal_reserve_certifications()
 
     for area_id, value in new_symmetries.items():
+        # Handle the case where no symmetries are given. Means we only want to clear them all.
+        if all(symmetries == [[]] for symmetries in value.values()):
+            continue
+
         if area_id not in existing_certifications:
             # Means that either the area does not exist, or the area does not contain any thermal certification.
             existing_area_ids = study_dao.get_all_area_ids()
