@@ -140,8 +140,8 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                     continue
                 values.append(_convert_thermal_model_to_row(self._study_data_id, area_id, thermal_id, symmetries))
         try:
-            self.__clean_db(_THERMAL_TABLE, data)
-            self.__insert_data_to_table(_THERMAL_TABLE, values)
+            self._clean_db(_THERMAL_TABLE, data)
+            self._insert_data_to_table(_THERMAL_TABLE, values)
         except IntegrityError as e:
             self._db_session.rollback()
             thermals = {area_id: list(thermal_dict) for area_id, thermal_dict in data.items()}
@@ -184,20 +184,20 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                     continue
                 values.append(_convert_st_storage_model_to_row(self._study_data_id, area_id, st_storage_id, symmetries))
         try:
-            self.__clean_db(_ST_STORAGE_TABLE, data)
-            self.__insert_data_to_table(_ST_STORAGE_TABLE, values)
+            self._clean_db(_ST_STORAGE_TABLE, data)
+            self._insert_data_to_table(_ST_STORAGE_TABLE, values)
         except IntegrityError as e:
             self._db_session.rollback()
             st_storages = {area_id: list(st_storage_dict) for area_id, st_storage_dict in data.items()}
             self.get_impl().raise_the_right_storage_exception(st_storages, exc=e)
         self._db_session.commit()
 
-    def __clean_db(self, table: Table, data: dict[str, dict[str, list[list[ReserveDefinitionId]]]]) -> None:
+    def _clean_db(self, table: Table, data: dict[str, dict[str, list[list[ReserveDefinitionId]]]]) -> None:
         area_ids = set(data)
         stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
         self._db_session.execute(stmt)
 
-    def __insert_data_to_table(self, table: Table, values: list[Any]) -> None:
+    def _insert_data_to_table(self, table: Table, values: list[Any]) -> None:
         if values:
             self._db_session.execute(insert(table), values)
 
