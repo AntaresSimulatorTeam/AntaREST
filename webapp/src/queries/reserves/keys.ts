@@ -15,6 +15,7 @@
 import type {
   CertificationProductionType,
   Reserve,
+  SymmetryProductionType,
 } from "@/services/api/studies/areas/reserves/types";
 import type { AreaWithId } from "@/types/types";
 import { areaKeys } from "../areas/keys";
@@ -62,5 +63,19 @@ export const reserveKeys = {
       ...reserveKeys.certifications(studyId, areaId, productionType),
       "updateReservesCertifications",
     ];
+  },
+  symmetries: (
+    studyId: Study["id"],
+    areaId: AreaWithId["id"],
+    productionType: SymmetryProductionType,
+  ) => {
+    return [...reserveKeys.all(), "symmetries", { studyId, areaId, productionType }];
+  },
+  updateSymmetries: (
+    studyId: Study["id"],
+    areaId: AreaWithId["id"],
+    productionType: SymmetryProductionType,
+  ) => {
+    return [...reserveKeys.symmetries(studyId, areaId, productionType), "updateReservesSymmetries"];
   },
 };
