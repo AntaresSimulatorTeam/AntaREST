@@ -68,6 +68,20 @@ def aggregation_type(file_type: QueryFileType) -> AggregationType:
 
 @dataclass(frozen=True, slots=True)
 class VariableDescription:
+    """
+    Represents the metadata of an output file column.
+
+    Could probably be refined, see descriptions below, to better represent the actual usage (mc-all/mc-ind, details/values ...)
+
+    Attributes:
+        name: the name of the variable. Sometimes, used for an element name such as a cluster name (for example in
+              "details" files).
+        unit: unit of the variable. In output files ("details" files), this is actually sometimes used as a substitute
+              for the name (NP COST - Euro for example), because the variable name is actually used for the cluster name.
+        statistic_type: for mc-all outputs, this defines what statistic this represents: expectations, standard dev,
+                        min, max ...
+    """
+
     name: str
     unit: str | None
     statistic_type: str | None
