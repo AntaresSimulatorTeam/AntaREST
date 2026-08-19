@@ -119,7 +119,7 @@ class AggregatorManager:
         )
         self._output_first_column = get_start_column(self.frequency)
 
-    def _variable_names(self, headers: list[ColMetadata]) -> list[str]:
+    def _variable_names(self, headers: Sequence[ColMetadata]) -> list[str]:
         return [col.name if isinstance(col, VariableDescription) else col for col in headers]
 
     def columns_filtering(self, data: OutputDataFrame[ColMetadata], is_details: bool) -> OutputDataFrame[ColMetadata]:
@@ -137,8 +137,10 @@ class AggregatorManager:
                 filtered_columns.insert(0, CLUSTER_ID_COL)
 
             indices = [k for k, c in enumerate(df_columns) if c in filtered_columns]
-            data.data = data.data.select([data.data.columns[i] for i in indices])
-            data.headers = [data.headers[i] for i in indices]
+            data = OutputDataFrame(
+                data=data.data.select([data.data.columns[i] for i in indices]),
+                headers=[data.headers[i] for i in indices],
+            )
 
         return data
 

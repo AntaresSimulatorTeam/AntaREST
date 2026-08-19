@@ -128,7 +128,7 @@ C = TypeVar("C")
 C2 = TypeVar("C2")
 
 
-@dataclass
+@dataclass(frozen=True)
 class OutputDataFrame(Generic[C]):
     """
     We separate the polars dataframe and its headers as polars does not handle multi-headers columns.
@@ -138,11 +138,9 @@ class OutputDataFrame(Generic[C]):
     """
 
     data: pl.DataFrame
-    headers: list[C]
+    headers: Sequence[C]
 
-    def __init__(self, data: pl.DataFrame, headers: Sequence[C]):
-        self.data = data
-        self.headers = list(headers)
+    def __post_init__(self) -> None:
         if len(self.headers) != len(self.data.columns):
             raise ValueError("The number of headers must match the number of columns in the dataframe")
 
