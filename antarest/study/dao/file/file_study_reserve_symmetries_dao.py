@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from typing_extensions import override
 
@@ -19,6 +19,7 @@ from antarest.study.dao.api.common import check_st_storage_symmetries_integrity,
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
+    ReserveSymmetriesMapping,
     STStorageReserveSymmetriesMapping,
     ThermalId,
     ThermalReserveSymmetriesMapping,
@@ -54,9 +55,18 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
 
     @override
     def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
+        return self._get_all_reserve_symmetries(self.get_thermal_reserve_symmetries)
+
+    @override
+    def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
+        return self._get_all_reserve_symmetries(self.get_st_storage_reserve_symmetries)
+
+    def _get_all_reserve_symmetries(
+        self, func: Callable[[AreaId], dict[str, ReserveSymmetries]]
+    ) -> ReserveSymmetriesMapping:
         result = {}
         for area in self.get_file_study().config.areas:
-            symmetries = self.get_thermal_reserve_symmetries(area)
+            symmetries = func(area)
             if symmetries:
                 # Only return areas with symmetries to have the same behavior as the DB Dao.
                 result[area] = symmetries
@@ -82,16 +92,6 @@ class FileStudyReserveSymmetriesDao(ReserveSymmetriesDao, ABC):
         # Once we've validated all the contents, we can save them
         for area_id, new_content in memory_mapping.items():
             file_study.tree.save(new_content, get_thermal_reserve_path(area_id))
-
-    @override
-    def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
-        result = {}
-        for area in self.get_file_study().config.areas:
-            symmetries = self.get_st_storage_reserve_symmetries(area)
-            if symmetries:
-                # Only return areas with symmetries to have the same behavior as the DB Dao.
-                result[area] = symmetries
-        return result
 
     @override
     def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
