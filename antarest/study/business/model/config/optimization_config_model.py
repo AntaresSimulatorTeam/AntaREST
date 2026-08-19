@@ -16,7 +16,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_10_2
 
 
 class LegacyTransmissionCapacities(EnumIgnoreCase):
@@ -95,12 +95,12 @@ def update_optimization_preferences(
 def initialize_optimization_preferences_against_version(
     parameters: OptimizationPreferences, version: StudyVersion
 ) -> None:
-    if version >= STUDY_VERSION_10_0 and parameters.include_reserves is None:
+    if version >= STUDY_VERSION_10_2 and parameters.include_reserves is None:
         parameters.include_reserves = False
 
 
 def validate_optimization_preferences_against_version(
     version: StudyVersion, parameters: OptimizationPreferences | OptimizationPreferencesUpdate
 ) -> None:
-    if version < STUDY_VERSION_10_0 and parameters.include_reserves is not None:
-        raise InvalidFieldForVersionError("Field include_reserves is not a valid field for study version before 10.0")
+    if version < STUDY_VERSION_10_2 and parameters.include_reserves is not None:
+        raise InvalidFieldForVersionError("Field include_reserves is not a valid field for study version before 10.2")

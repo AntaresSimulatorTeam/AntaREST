@@ -127,7 +127,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
         elif invalid_sts_dict:
             raise STStoragesNotFound(invalid_sts_dict) from exc
 
-    def _raise_the_right_storage_exception(
+    def raise_the_right_storage_exception(
         self, data: dict[AreaId, list[StStorageId]], exc: IntegrityError | None = None
     ) -> NoReturn:
         self._raise_the_right_exc(data, exc)
@@ -217,7 +217,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
         row = session.execute(stmt).fetchone()
 
         if not row:
-            self._raise_the_right_storage_exception({area_id: [storage_id]})
+            self.raise_the_right_storage_exception({area_id: [storage_id]})
 
         return self._convert_db_row_to_st_storage(row)
 
@@ -247,7 +247,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
-            self._raise_the_right_storage_exception({area_id: [storage.id]})
+            self.raise_the_right_storage_exception({area_id: [storage.id]})
 
         session.commit()
 
@@ -322,7 +322,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
-            self._raise_the_right_storage_exception({area_id: [storage_id]})
+            self.raise_the_right_storage_exception({area_id: [storage_id]})
 
         session.commit()
 
@@ -345,7 +345,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
         except IntegrityError as e:
             session.rollback()
             invalid_data = {area_id: list(st_storage_dict) for area_id, st_storage_dict in series.items()}
-            self._raise_the_right_storage_exception(invalid_data, e)
+            self.raise_the_right_storage_exception(invalid_data, e)
 
         session.commit()
 
@@ -556,5 +556,5 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
     def _get_st_storage_matrix(self, area_id: str, storage_id: str, table: Table) -> SeriesId:
         row = self._get_st_storage_matrix_row(area_id, storage_id, table)
         if not row:
-            self._raise_the_right_storage_exception({area_id: [storage_id]})
+            self.raise_the_right_storage_exception({area_id: [storage_id]})
         return str(row.matrix_id)

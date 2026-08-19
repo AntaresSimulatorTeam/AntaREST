@@ -11,13 +11,14 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, Self
+from typing import Self
 
 from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.exceptions import InvalidFieldForVersionError
-from antarest.study.business.model.reserve_certification_model import ThermalReserveCertificationMapping
+from antarest.study.business.model.reserve_certification_model import StorageId
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.common import AreaId
 from antarest.study.model import (
@@ -33,23 +34,23 @@ from antarest.study.storage.variantstudy.model.command_listener.command_listener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
 
-class ReplaceThermalReserveCertifications(ICommand):
+class ReplaceStStorageReserveSymmetries(ICommand):
     """
-    Command used to replace reserve certifications for a given area
+    Command used to replace reserve symmetries for a given area
     """
 
-    command_name: CommandName = CommandName.REPLACE_THERMAL_RESERVE_CERTIFICATIONS
+    command_name: CommandName = CommandName.REPLACE_ST_STORAGE_RESERVE_SYMMETRIES
 
     # Command parameters
     # ==================
 
     area_id: AreaId
-    certifications: ThermalReserveCertificationMapping
+    symmetries: dict[StorageId, ReserveSymmetries]
 
     @model_validator(mode="after")
     def _validate_version(self) -> Self:
         if self.study_version < STUDY_VERSION_10_2:
-            msg = "Thermal cluster reserve certifications are not valid for study version before 10.2"
+            msg = "Short-term storage reserve symmetries are not valid for study version before 10.2"
             raise InvalidFieldForVersionError(msg)
 
         return self
@@ -57,21 +58,16 @@ class ReplaceThermalReserveCertifications(ICommand):
     @override
     def _apply_dao(
         self, study_data: StudyDao, listener: ICommandListener | None = None
-    ) -> CommandOutput[ThermalReserveCertificationMapping]:
-        study_data.save_thermal_reserve_certifications({self.area_id: self.certifications})
+    ) -> CommandOutput[dict[StorageId, ReserveSymmetries]]:
+        study_data.save_st_storage_reserve_symmetries({self.area_id: self.symmetries})
 
-        msg = f"Reserve certifications in area '{self.area_id}' replaced successfully."
-        return command_succeeded(msg, result=self.certifications)
+        msg = f"Reserve symmetries in area '{self.area_id}' replaced successfully."
+        return command_succeeded(msg, result=self.symmetries)
 
     @override
     def to_dto(self) -> CommandDTO:
-        args: dict[str, Any] = {}
-        for reserve_id, thermal_dict in self.certifications.items():
-            for thermal_id, certification in thermal_dict.items():
-                args.setdefault(reserve_id, {})[thermal_id] = certification.model_dump(mode="json")
-
         return CommandDTO(
-            action=CommandName.REPLACE_THERMAL_RESERVE_CERTIFICATIONS.value,
-            args={"area_id": self.area_id, "certifications": args},
+            action=CommandName.REPLACE_ST_STORAGE_RESERVE_SYMMETRIES.value,
+            args={"area_id": self.area_id, "symmetries": self.symmetries},
             study_version=self.study_version,
         )

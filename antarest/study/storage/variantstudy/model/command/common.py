@@ -110,6 +110,8 @@ class CommandName(Enum):
     REMOVE_RESERVE_DEFINITIONS = "remove_reserve_definitions"
     REPLACE_THERMAL_RESERVE_CERTIFICATIONS = "replace_thermal_reserve_certifications"
     REPLACE_THERMAL_RESERVE_SYMMETRIES = "replace_thermal_reserve_symmetries"
+    REPLACE_ST_STORAGE_RESERVE_CERTIFICATIONS = "replace_st_storage_reserve_certifications"
+    REPLACE_ST_STORAGE_RESERVE_SYMMETRIES = "replace_st_storage_reserve_symmetries"
 
 
 @dataclass(frozen=True)

@@ -561,15 +561,15 @@ def test_version_specifics(db_dao_930: DatabaseStudyDao) -> None:
         mapper_93._get_matcher(Path("input/bindingconstraints/bc1"))  # Missing suffix
 
 
-def test_reserve_need_path_get_and_save(dao_10_0: StudyDao, matrix_service: ISimpleMatrixService) -> None:
+def test_reserve_need_path_get_and_save(dao_10_2: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     area_id = "paris"
     reserve_name = "R1"
     reserve_id = "r1"
 
-    save_area(dao_10_0, area_id)
-    dao_10_0.save_reserve_definitions({area_id: [build_reserve_definition(reserve_name)]})
+    save_area(dao_10_2, area_id)
+    dao_10_2.save_reserve_definitions({area_id: [build_reserve_definition(reserve_name)]})
 
-    mapper = RawPathToMatrixMapper(dao_10_0)
+    mapper = RawPathToMatrixMapper(dao_10_2)
 
     generator = np.random.default_rng(42)
     matrix_df = pl.DataFrame(generator.integers(0, 10, size=(5, 3)), orient="row")
@@ -580,4 +580,4 @@ def test_reserve_need_path_get_and_save(dao_10_0: StudyDao, matrix_service: ISim
     fetched = mapper.get_matrix_from_path(Path(f"input/reserves/{area_id}/{reserve_id}"))
     pl.testing.assert_frame_equal(fetched, matrix_df, check_dtypes=False)
 
-    pl.testing.assert_frame_equal(dao_10_0.get_reserve_need(area_id, reserve_id), matrix_df, check_dtypes=False)
+    pl.testing.assert_frame_equal(dao_10_2.get_reserve_need(area_id, reserve_id), matrix_df, check_dtypes=False)

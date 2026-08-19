@@ -9,9 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from antarest.study.business.model.reserve_certification_model import StorageId
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.dao.common import ThermalId
+from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_symmetries import (
+    ReplaceStStorageReserveSymmetries,
+)
 from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_symmetries import (
     ReplaceThermalReserveSymmetries,
 )
@@ -29,6 +33,21 @@ class ReserveSymmetriesManager:
         self, study: StudyInterface, area_id: str, data: dict[ThermalId, ReserveSymmetries]
     ) -> dict[ThermalId, ReserveSymmetries]:
         command = ReplaceThermalReserveSymmetries(
+            area_id=area_id,
+            symmetries=data,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+        study.add_commands([command])
+        return data
+
+    def get_st_storage_symmetries(self, study: StudyInterface, area_id: str) -> dict[StorageId, ReserveSymmetries]:
+        return study.get_study_dao().get_st_storage_reserve_symmetries(area_id)
+
+    def set_st_storage_symmetries(
+        self, study: StudyInterface, area_id: str, data: dict[StorageId, ReserveSymmetries]
+    ) -> dict[StorageId, ReserveSymmetries]:
+        command = ReplaceStStorageReserveSymmetries(
             area_id=area_id,
             symmetries=data,
             command_context=self._command_context,

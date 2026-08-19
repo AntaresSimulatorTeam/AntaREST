@@ -9,10 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.study.business.model.thermal_reserve_certification_model import (
+from antarest.study.business.model.reserve_certification_model import (
+    StorageReserveCertificationMapping,
     ThermalReserveCertificationMapping,
 )
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_certifications import (
+    ReplaceStStorageReserveCertifications,
+)
 from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_certifications import (
     ReplaceThermalReserveCertifications,
 )
@@ -34,6 +38,27 @@ class ReserveCertificationsManager:
     ) -> ThermalReserveCertificationMapping:
 
         command = ReplaceThermalReserveCertifications(
+            area_id=area_id,
+            certifications=data,
+            study_version=study.version,
+            command_context=self._command_context,
+        )
+
+        # Apply the modifications
+        study.add_commands([command])
+        return data
+
+    def get_st_storage_certifications(self, study: StudyInterface, area_id: str) -> StorageReserveCertificationMapping:
+        return study.get_study_dao().get_st_storage_reserve_certifications(area_id)
+
+    def set_st_storage_certifications(
+        self,
+        study: StudyInterface,
+        area_id: str,
+        data: StorageReserveCertificationMapping,
+    ) -> StorageReserveCertificationMapping:
+
+        command = ReplaceStStorageReserveCertifications(
             area_id=area_id,
             certifications=data,
             study_version=study.version,

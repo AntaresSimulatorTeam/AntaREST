@@ -9,13 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, TypeAlias
+from typing import Annotated, Mapping, TypeAlias
 
 from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
+from antarest.study.dao.common import AreaAssetId
 
 Cost = Annotated[float, Field(ge=0)]
 Power = Annotated[float, Field(ge=0)]
@@ -25,14 +26,38 @@ Power = Annotated[float, Field(ge=0)]
 ##########################
 
 
-class ThermalReserveCertification(AntaresBaseModel):
+class ThermalReserveCertification(
+    AntaresBaseModel,
+):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     max_power: Power = 0.0
     max_power_off: Power = 0.0
-    participation_cost: Cost = 0.0
     participation_cost_off: Cost = 0.0
+    participation_cost: Cost = 0.0
 
 
 ThermalId: TypeAlias = str
 ThermalReserveCertificationMapping = dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]
+
+
+##########################
+# Storage part
+##########################
+
+
+class StorageReserveCertification(
+    AntaresBaseModel,
+):
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+
+    participation_cost: Cost = 0.0
+    max_release: Power = 0.0
+    max_store: Power = 0.0
+
+
+StorageId: TypeAlias = str
+StorageReserveCertificationMapping = dict[ReserveDefinitionId, dict[StorageId, StorageReserveCertification]]
+
+ReserveCertification = ThermalReserveCertification | StorageReserveCertification
+ReserveCertificationMapping = Mapping[ReserveDefinitionId, Mapping[AreaAssetId, ReserveCertification]]

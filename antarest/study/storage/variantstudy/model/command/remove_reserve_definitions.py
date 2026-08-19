@@ -17,7 +17,7 @@ from typing_extensions import Self, override
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -40,8 +40,8 @@ class RemoveReserveDefinitions(ICommand):
 
     @model_validator(mode="after")
     def _validate_version(self) -> Self:
-        if self.study_version < STUDY_VERSION_10_0:
-            raise InvalidFieldForVersionError("Reserve definitions are not valid for study version before 10.0")
+        if self.study_version < STUDY_VERSION_10_2:
+            raise InvalidFieldForVersionError("Reserve definitions are not valid for study version before 10.2")
         return self
 
     @override

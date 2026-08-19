@@ -851,7 +851,7 @@ class RenewableClustersNotFound(HTTPException):
 
 class STStoragesNotFound(HTTPException):
     def __init__(self, invalid_sts_ids: dict[str, set[str]]) -> None:
-        msg = f"Short term storages not found: {invalid_sts_ids}"
+        msg = f"Short-term storages not found: {invalid_sts_ids}"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
@@ -864,6 +864,12 @@ class SevenZipNotSupportedOnThisMachine(Exception):
 class ThermalReserveCertificationNotFound(HTTPException):
     def __init__(self, area_id: str, thermal_id: str, reserve_ids: set[str]):
         msg = f"Certifications for reserve(s) '{reserve_ids}' on thermal cluster '{thermal_id}' not found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class ReserveCertificationNotFound(HTTPException):
+    def __init__(self, area_id: str, area_asset_id: str, reserve_ids: set[str]):
+        msg = f"Certifications for reserve(s) '{reserve_ids}' on area asset '{area_asset_id}' not found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
