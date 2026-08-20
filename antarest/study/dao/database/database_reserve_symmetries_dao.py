@@ -44,7 +44,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
         table = reserve_type.db_symmetry_table()
         stmt = select(table).where(table.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
-        return reserve_type.convert_all_rows_to_dict_of_models(rows)
+        return reserve_type.convert_all_rows_to_dict_of_symmetries(rows)
 
     @override
     def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
@@ -60,7 +60,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
         table = reserve_type.db_symmetry_table()
         stmt = select(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id == area_id))
         rows = self._db_session.execute(stmt).fetchall()
-        return reserve_type.convert_all_rows_to_model(rows)
+        return reserve_type.convert_all_rows_to_symmetries(rows)
 
     @override
     def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
@@ -96,7 +96,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
             for object_id, symmetries in value.items():
                 if not (any(symmetry for symmetry in symmetries)):
                     continue
-                values.append(reserve_type.convert_to_row(self._study_data_id, area_id, object_id, symmetries))
+                values.append(reserve_type.convert_symmetry_to_row(self._study_data_id, area_id, object_id, symmetries))
 
         table = reserve_type.db_symmetry_table()
         stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(set(data))))

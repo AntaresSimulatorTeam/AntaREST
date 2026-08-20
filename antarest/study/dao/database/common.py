@@ -21,6 +21,7 @@ from antarest.core.exceptions import AreaNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.area_properties_model import FILTER_OPTIONS, FrequencyFilter, sort_filter_options
+from antarest.study.business.model.reserve_certification_model import ReserveCertification
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.common import AreaSeriesMapping, ReserveSymmetriesMapping
 from antarest.study.dao.database.models.area import AREA_TABLE
@@ -120,7 +121,7 @@ class ReserveObjectType(StrEnum):
         else:
             return ST_STORAGE_RESERVE_SYMMETRIES_TABLE
 
-    def convert_to_row(
+    def convert_symmetry_to_row(
         self, study_data_id: int, area_id: str, object_id: str, symmetries: ReserveSymmetries
     ) -> dict[str, Any]:
         return {
@@ -130,16 +131,27 @@ class ReserveObjectType(StrEnum):
             self._db_key(): object_id,
         }
 
-    def convert_all_rows_to_model(self, rows: Sequence[Row[Any]]) -> dict[str, ReserveSymmetries]:
+    def convert_all_rows_to_symmetries(self, rows: Sequence[Row[Any]]) -> dict[str, ReserveSymmetries]:
         result = {}
         for row in rows:
             row_as_dict = get_row_representation_as_dict(row)
             result[row_as_dict[self._db_key()]] = _convert_row_to_symmetries(row)
         return result
 
-    def convert_all_rows_to_dict_of_models(self, rows: Sequence[Row[Any]]) -> ReserveSymmetriesMapping:
+    def convert_all_rows_to_dict_of_symmetries(self, rows: Sequence[Row[Any]]) -> ReserveSymmetriesMapping:
         result: ReserveSymmetriesMapping = {}
         for row in rows:
             row_as_dict = get_row_representation_as_dict(row)
             result.setdefault(row.area_id, {})[row_as_dict[self._db_key()]] = _convert_row_to_symmetries(row)
         return result
+
+    def convert_certification_to_row(
+        self, study_data_id: int, area_id: str, object_id: str, reserve_id: str, certification: ReserveCertification
+    ) -> dict[str, Any]:
+        return {
+            "study_data_id": study_data_id,
+            "area_id": area_id,
+            "reserve_id": reserve_id,
+            self._db_key(): object_id,
+            **certification.model_dump(),
+        }
