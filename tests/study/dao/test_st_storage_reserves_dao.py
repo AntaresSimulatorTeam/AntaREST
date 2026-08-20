@@ -9,11 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import pytest
 
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.business.model.sts_model import STStorage, initialize_st_storage
 from antarest.study.dao.api.study_dao import StudyDao
 
@@ -95,3 +96,26 @@ def test_deleting_the_last_reserves_removes_their_symmetries(dao_10_2: StudyDao)
 
     symmetries = dao.get_st_storage_reserve_symmetries("fr")
     assert symmetries == {}
+
+
+@pytest.mark.parametrize(
+    "symmetries", [{"sts1": [[]]}, {"sts1": []}, {}], ids=["empty-symmetry", "no-symmetry", "no-storage"]
+)
+def test_clearing_symmetries(dao_10_2: StudyDao, symmetries: dict[str, ReserveSymmetries]) -> None:
+    dao = dao_10_2
+    _set_up(dao)
+
+    dao.save_st_storage_reserve_certifications(
+        {"fr": {"r1": {"sts1": StorageReserveCertification()}, "r2": {"sts1": StorageReserveCertification()}}}
+    )
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]]}})
+
+    # Ensures it's not empty
+    assert dao.get_st_storage_reserve_symmetries("fr") != {}
+
+    # Whatever the way it is expressed, clearing the symmetries references no reserve,
+    # so it must not require any certification.
+    dao.save_st_storage_reserve_symmetries({"fr": symmetries})
+
+    # Ensures it's now empty
+    assert dao.get_st_storage_reserve_symmetries("fr") == {}

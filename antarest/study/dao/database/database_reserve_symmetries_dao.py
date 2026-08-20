@@ -142,7 +142,7 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
         values = []
         for area_id, value in data.items():
             for object_id, symmetries in value.items():
-                if symmetries == [[]]:
+                if not (any(symmetry for symmetry in symmetries)):
                     continue
                 values.append(symmetry_type.convert_to_row(self._study_data_id, area_id, object_id, symmetries))
 
