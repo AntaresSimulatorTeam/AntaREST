@@ -12,7 +12,7 @@
 from collections.abc import Mapping
 from typing import Any, NoReturn
 
-from sqlalchemy import Row, Select, Table, delete, insert, select
+from sqlalchemy import Row, Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
@@ -80,14 +80,6 @@ def _convert_st_storage_model_to_row(
 
 class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     """Database implementation of ReserveCertificationDao."""
-
-    def _select_one(self, area_id: str, thermal_id: str, reserve_id: str) -> Select[Any]:
-        return select(_THERMAL_TABLE).where(
-            (_THERMAL_TABLE.c.study_data_id == self._study_data_id)
-            & (_THERMAL_TABLE.c.area_id == area_id)
-            & (_THERMAL_TABLE.c.thermal_id == thermal_id)
-            & (_THERMAL_TABLE.c.reserve_id == reserve_id)
-        )
 
     @override
     def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
