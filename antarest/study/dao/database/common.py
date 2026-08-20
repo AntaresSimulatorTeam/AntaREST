@@ -27,7 +27,9 @@ from antarest.study.business.model.reserve_certification_model import (
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.common import AreaSeriesMapping, ReserveSymmetriesMapping
 from antarest.study.dao.database.models.area import AREA_TABLE
+from antarest.study.dao.database.models.st_storage_reserve_certification import ST_STORAGE_RESERVE_CERTIFICATION_TABLE
 from antarest.study.dao.database.models.st_storage_reserve_symmetries import ST_STORAGE_RESERVE_SYMMETRIES_TABLE
+from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
 from antarest.study.dao.database.models.thermal_reserve_symmetries import THERMAL_RESERVE_SYMMETRIES_TABLE
 
 if TYPE_CHECKING:
@@ -122,6 +124,12 @@ class ReserveObjectType(StrEnum):
             return THERMAL_RESERVE_SYMMETRIES_TABLE
         else:
             return ST_STORAGE_RESERVE_SYMMETRIES_TABLE
+
+    def db_certification_table(self) -> Table:
+        if self == ReserveObjectType.THERMAL:
+            return THERMAL_RESERVE_CERTIFICATION_TABLE
+        else:
+            return ST_STORAGE_RESERVE_CERTIFICATION_TABLE
 
     def convert_symmetry_to_row(
         self, study_data_id: int, area_id: str, object_id: str, symmetries: ReserveSymmetries

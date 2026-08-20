@@ -35,11 +35,6 @@ from antarest.study.dao.api.reserve_certification_dao import ReserveCertificatio
 from antarest.study.dao.common import AreaId, ThermalId
 from antarest.study.dao.database.common import ReserveObjectType
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
-from antarest.study.dao.database.models.st_storage_reserve_certification import ST_STORAGE_RESERVE_CERTIFICATION_TABLE
-from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
-
-_THERMAL_TABLE = THERMAL_RESERVE_CERTIFICATION_TABLE
-_ST_STORAGE_TABLE = ST_STORAGE_RESERVE_CERTIFICATION_TABLE
 
 
 class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
@@ -47,10 +42,11 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
     @override
     def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
-        stmt = select(_THERMAL_TABLE).where(_THERMAL_TABLE.c.study_data_id == self._study_data_id)
+        reserve_type = ReserveObjectType.THERMAL
+        table = reserve_type.db_certification_table()
+        stmt = select(table).where(table.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: dict[AreaId, ThermalReserveCertificationMapping] = {}
-        reserve_type = ReserveObjectType.THERMAL
         for row in rows:
             certification = ThermalReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
             result.setdefault(row.area_id, {}).setdefault(row.reserve_id, {})[row.thermal_id] = certification
@@ -58,12 +54,11 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
     @override
     def get_thermal_reserve_certifications(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
-        stmt = select(_THERMAL_TABLE).where(
-            (_THERMAL_TABLE.c.study_data_id == self._study_data_id) & (_THERMAL_TABLE.c.area_id == area_id)
-        )
+        reserve_type = ReserveObjectType.THERMAL
+        table = reserve_type.db_certification_table()
+        stmt = select(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id == area_id))
         rows = self._db_session.execute(stmt).fetchall()
         result: ThermalReserveCertificationMapping = {}
-        reserve_type = ReserveObjectType.THERMAL
         for row in rows:
             certification = ThermalReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
             result.setdefault(row.reserve_id, {})[row.thermal_id] = certification
@@ -86,8 +81,9 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                         )
                     )
         try:
-            self._clean_db(_THERMAL_TABLE, new_certifications)
-            self._insert_data_to_table(_THERMAL_TABLE, values)
+            table = reserve_type.db_certification_table()
+            self._clean_db(table, new_certifications)
+            self._insert_data_to_table(table, values)
         except IntegrityError as e:
             self._db_session.rollback()
             self._raise_the_right_thermal_reserve_exception(new_certifications, exc=e)
@@ -118,10 +114,11 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
     @override
     def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
-        stmt = select(_ST_STORAGE_TABLE).where(_ST_STORAGE_TABLE.c.study_data_id == self._study_data_id)
+        reserve_type = ReserveObjectType.ST_STORAGE
+        table = reserve_type.db_certification_table()
+        stmt = select(table).where(table.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: dict[AreaId, StorageReserveCertificationMapping] = {}
-        reserve_type = ReserveObjectType.ST_STORAGE
         for row in rows:
             certification = StorageReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
             result.setdefault(row.area_id, {}).setdefault(row.reserve_id, {})[row.st_storage_id] = certification
@@ -129,12 +126,11 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
     @override
     def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
-        stmt = select(_ST_STORAGE_TABLE).where(
-            (_ST_STORAGE_TABLE.c.study_data_id == self._study_data_id) & (_ST_STORAGE_TABLE.c.area_id == area_id)
-        )
+        reserve_type = ReserveObjectType.ST_STORAGE
+        table = reserve_type.db_certification_table()
+        stmt = select(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id == area_id))
         rows = self._db_session.execute(stmt).fetchall()
         result: StorageReserveCertificationMapping = {}
-        reserve_type = ReserveObjectType.ST_STORAGE
         for row in rows:
             certification = StorageReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
             result.setdefault(row.reserve_id, {})[row.st_storage_id] = certification
@@ -146,10 +142,12 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     ) -> None:
         if not new_certifications:
             return
+        reserve_type = ReserveObjectType.ST_STORAGE
         values = self._convert_st_storages_models_to_rows(new_certifications)
         try:
-            self._clean_db(_ST_STORAGE_TABLE, new_certifications)
-            self._insert_data_to_table(_ST_STORAGE_TABLE, values)
+            table = reserve_type.db_certification_table()
+            self._clean_db(table, new_certifications)
+            self._insert_data_to_table(table, values)
         except IntegrityError as e:
             self._db_session.rollback()
             self._raise_the_right_st_storage_reserve_exception(new_certifications, exc=e)
