@@ -77,6 +77,42 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             self._raise_the_right_thermal_reserve_exception(new_certifications, exc=e)
         self._db_session.commit()
 
+    @override
+    def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
+        reserve_type = ReserveObjectType.ST_STORAGE
+        table = reserve_type.db_certification_table()
+        stmt = select(table).where(table.c.study_data_id == self._study_data_id)
+        rows = self._db_session.execute(stmt).fetchall()
+        result: dict[AreaId, StorageReserveCertificationMapping] = {}
+        for row in rows:
+            certification = StorageReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
+            result.setdefault(row.area_id, {}).setdefault(row.reserve_id, {})[row.st_storage_id] = certification
+        return result
+
+    @override
+    def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
+        reserve_type = ReserveObjectType.ST_STORAGE
+        table = reserve_type.db_certification_table()
+        stmt = select(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id == area_id))
+        rows = self._db_session.execute(stmt).fetchall()
+        result: StorageReserveCertificationMapping = {}
+        for row in rows:
+            certification = StorageReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
+            result.setdefault(row.reserve_id, {})[row.st_storage_id] = certification
+        return result
+
+    @override
+    def save_st_storage_reserve_certifications(
+        self, new_certifications: dict[AreaId, StorageReserveCertificationMapping]
+    ) -> None:
+
+        try:
+            self._save_certifications(ReserveObjectType.ST_STORAGE, new_certifications)
+        except IntegrityError as e:
+            self._db_session.rollback()
+            self._raise_the_right_st_storage_reserve_exception(new_certifications, exc=e)
+        self._db_session.commit()
+
     def _save_certifications(
         self,
         reserve_type: ReserveObjectType,
@@ -120,42 +156,6 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
 
         # All objects exist. It means that the DB table does not contain the information.
         raise ValueError("One of the thermal reserve certification table is not filled as it should") from exc
-
-    @override
-    def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
-        reserve_type = ReserveObjectType.ST_STORAGE
-        table = reserve_type.db_certification_table()
-        stmt = select(table).where(table.c.study_data_id == self._study_data_id)
-        rows = self._db_session.execute(stmt).fetchall()
-        result: dict[AreaId, StorageReserveCertificationMapping] = {}
-        for row in rows:
-            certification = StorageReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
-            result.setdefault(row.area_id, {}).setdefault(row.reserve_id, {})[row.st_storage_id] = certification
-        return result
-
-    @override
-    def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
-        reserve_type = ReserveObjectType.ST_STORAGE
-        table = reserve_type.db_certification_table()
-        stmt = select(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id == area_id))
-        rows = self._db_session.execute(stmt).fetchall()
-        result: StorageReserveCertificationMapping = {}
-        for row in rows:
-            certification = StorageReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
-            result.setdefault(row.reserve_id, {})[row.st_storage_id] = certification
-        return result
-
-    @override
-    def save_st_storage_reserve_certifications(
-        self, new_certifications: dict[AreaId, StorageReserveCertificationMapping]
-    ) -> None:
-
-        try:
-            self._save_certifications(ReserveObjectType.ST_STORAGE, new_certifications)
-        except IntegrityError as e:
-            self._db_session.rollback()
-            self._raise_the_right_st_storage_reserve_exception(new_certifications, exc=e)
-        self._db_session.commit()
 
     def _raise_the_right_st_storage_reserve_exception(
         self,
