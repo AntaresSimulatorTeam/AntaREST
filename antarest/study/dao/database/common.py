@@ -48,6 +48,14 @@ def area_exists(session: Session, study_data_id: int, area_id: str) -> bool:
     return session.execute(stmt).fetchone() is not None
 
 
+def validate_areas_exist(session: Session, study_data_id: int, area_ids: set[str]) -> None:
+    stmt = select(AREA_TABLE.c.area_id).where((AREA_TABLE.c.study_data_id == study_data_id))
+    rows = session.execute(stmt).fetchall()
+    existing_area_ids = {row.area_id for row in rows}
+    if invalid_areas := area_ids - existing_area_ids:
+        raise AreaNotFound(*invalid_areas)
+
+
 def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: Table) -> None:
     session = dao._db_session
     study_data_id = dao._study_data_id

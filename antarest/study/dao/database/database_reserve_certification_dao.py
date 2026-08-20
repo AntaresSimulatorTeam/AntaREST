@@ -10,14 +10,13 @@
 #
 # This file is part of the Antares project.
 from collections.abc import Mapping
-from typing import Any, NoReturn
+from typing import NoReturn
 
-from sqlalchemy import Table, delete, insert, select
+from sqlalchemy import delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    AreaNotFound,
     ReserveDefinitionsNotFound,
     STStoragesNotFound,
     ThermalClustersNotFound,
@@ -33,7 +32,7 @@ from antarest.study.business.model.reserve_certification_model import (
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
 from antarest.study.dao.common import AreaId, ThermalId
-from antarest.study.dao.database.common import ReserveObjectType
+from antarest.study.dao.database.common import ReserveObjectType, validate_areas_exist
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 
 
@@ -70,9 +69,21 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     ) -> None:
         if not new_certifications:
             return
+
+        try:
+            self._save_certifications(ReserveObjectType.THERMAL, new_certifications)
+        except IntegrityError as e:
+            self._db_session.rollback()
+            self._raise_the_right_thermal_reserve_exception(new_certifications, exc=e)
+        self._db_session.commit()
+
+    def _save_certifications(
+        self,
+        reserve_type: ReserveObjectType,
+        certifications: dict[AreaId, dict[ReserveDefinitionId, dict[str, ReserveCertification]]],
+    ) -> None:
         values = []
-        reserve_type = ReserveObjectType.THERMAL
-        for area_id, reserves_dict in new_certifications.items():
+        for area_id, reserves_dict in certifications.items():
             for reserve_id, thermal_dict in reserves_dict.items():
                 for thermal_id, certification in thermal_dict.items():
                     values.append(
@@ -80,21 +91,19 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                             self._study_data_id, area_id, thermal_id, reserve_id, certification
                         )
                     )
-        try:
-            table = reserve_type.db_certification_table()
-            self._clean_db(table, new_certifications)
-            self._insert_data_to_table(table, values)
-        except IntegrityError as e:
-            self._db_session.rollback()
-            self._raise_the_right_thermal_reserve_exception(new_certifications, exc=e)
-        self._db_session.commit()
+        table = reserve_type.db_certification_table()
+        area_ids = set(certifications)
+        stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
+        self._db_session.execute(stmt)
+        if values:
+            self._db_session.execute(insert(table), values)
 
     def _raise_the_right_thermal_reserve_exception(
         self,
         data: dict[AreaId, ThermalReserveCertificationMapping],
         exc: IntegrityError | None = None,
     ) -> NoReturn:
-        self._raise_exception_if_missing_area(data)
+        validate_areas_exist(self._db_session, self._study_data_id, set(data))
         self._raise_exception_if_missing_reserve(data)
 
         # Checks if some thermals are missing
@@ -140,51 +149,20 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     def save_st_storage_reserve_certifications(
         self, new_certifications: dict[AreaId, StorageReserveCertificationMapping]
     ) -> None:
-        if not new_certifications:
-            return
-        reserve_type = ReserveObjectType.ST_STORAGE
-        values = self._convert_st_storages_models_to_rows(new_certifications)
+
         try:
-            table = reserve_type.db_certification_table()
-            self._clean_db(table, new_certifications)
-            self._insert_data_to_table(table, values)
+            self._save_certifications(ReserveObjectType.ST_STORAGE, new_certifications)
         except IntegrityError as e:
             self._db_session.rollback()
             self._raise_the_right_st_storage_reserve_exception(new_certifications, exc=e)
         self._db_session.commit()
-
-    def _convert_st_storages_models_to_rows(
-        self, data: dict[str, dict[ReserveDefinitionId, dict[str, StorageReserveCertification]]]
-    ) -> list[Any]:
-        reserve_type = ReserveObjectType.THERMAL
-        values = []
-        for area_id, reserves_dict in data.items():
-            for reserve_id, storage_dict in reserves_dict.items():
-                for storage_id, certification in storage_dict.items():
-                    values.append(
-                        reserve_type.convert_certification_to_row(
-                            self._study_data_id, area_id, storage_id, reserve_id, certification
-                        )
-                    )
-        return values
-
-    def _clean_db(
-        self, table: Table, data: Mapping[str, Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]]]
-    ) -> None:
-        area_ids = set(data)
-        stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
-        self._db_session.execute(stmt)
-
-    def _insert_data_to_table(self, table: Table, values: list[Any]) -> None:
-        if values:
-            self._db_session.execute(insert(table), values)
 
     def _raise_the_right_st_storage_reserve_exception(
         self,
         data: dict[AreaId, StorageReserveCertificationMapping],
         exc: IntegrityError | None = None,
     ) -> NoReturn:
-        self._raise_exception_if_missing_area(data)
+        validate_areas_exist(self._db_session, self._study_data_id, set(data))
         self._raise_exception_if_missing_reserve(data)
 
         all_existing_st_storage = self.get_impl().get_all_st_storages()
@@ -202,13 +180,6 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         raise ValueError(
             "One of the short-term storage reserve certification table is not filled as it should"
         ) from exc
-
-    def _raise_exception_if_missing_area(
-        self, data: Mapping[str, Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]]]
-    ) -> None:
-        existing_ids = set(self.get_impl().get_all_area_ids())
-        if invalid_areas := set(data) - existing_ids:
-            raise AreaNotFound(*invalid_areas)
 
     def _raise_exception_if_missing_reserve(
         self, data: Mapping[str, Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]]]
