@@ -12,7 +12,7 @@
 from collections.abc import Mapping
 from typing import Any, NoReturn
 
-from sqlalchemy import Row, Table, delete, insert, select
+from sqlalchemy import Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
@@ -22,7 +22,6 @@ from antarest.core.exceptions import (
     STStoragesNotFound,
     ThermalClustersNotFound,
 )
-from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.reserve_certification_model import (
     ReserveCertification,
     StorageId,
@@ -43,20 +42,6 @@ _THERMAL_TABLE = THERMAL_RESERVE_CERTIFICATION_TABLE
 _ST_STORAGE_TABLE = ST_STORAGE_RESERVE_CERTIFICATION_TABLE
 
 
-def _convert_thermal_row_to_model(row: Row[Any]) -> ThermalReserveCertification:
-    data = get_row_representation_as_dict(row)
-    for key in ("study_data_id", "area_id", "thermal_id", "reserve_id"):
-        del data[key]
-    return ThermalReserveCertification.model_validate(data)
-
-
-def _convert_st_storage_row_to_model(row: Row[Any]) -> StorageReserveCertification:
-    data = get_row_representation_as_dict(row)
-    for key in ("study_data_id", "area_id", "st_storage_id", "reserve_id"):
-        del data[key]
-    return StorageReserveCertification.model_validate(data)
-
-
 class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     """Database implementation of ReserveCertificationDao."""
 
@@ -65,8 +50,9 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         stmt = select(_THERMAL_TABLE).where(_THERMAL_TABLE.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: dict[AreaId, ThermalReserveCertificationMapping] = {}
+        reserve_type = ReserveObjectType.THERMAL
         for row in rows:
-            certification = _convert_thermal_row_to_model(row)
+            certification = ThermalReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
             result.setdefault(row.area_id, {}).setdefault(row.reserve_id, {})[row.thermal_id] = certification
         return result
 
@@ -77,8 +63,10 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         )
         rows = self._db_session.execute(stmt).fetchall()
         result: ThermalReserveCertificationMapping = {}
+        reserve_type = ReserveObjectType.THERMAL
         for row in rows:
-            result.setdefault(row.reserve_id, {})[row.thermal_id] = _convert_thermal_row_to_model(row)
+            certification = ThermalReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
+            result.setdefault(row.reserve_id, {})[row.thermal_id] = certification
         return result
 
     @override
@@ -133,8 +121,9 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         stmt = select(_ST_STORAGE_TABLE).where(_ST_STORAGE_TABLE.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: dict[AreaId, StorageReserveCertificationMapping] = {}
+        reserve_type = ReserveObjectType.ST_STORAGE
         for row in rows:
-            certification = _convert_st_storage_row_to_model(row)
+            certification = StorageReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
             result.setdefault(row.area_id, {}).setdefault(row.reserve_id, {})[row.st_storage_id] = certification
         return result
 
@@ -145,8 +134,10 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         )
         rows = self._db_session.execute(stmt).fetchall()
         result: StorageReserveCertificationMapping = {}
+        reserve_type = ReserveObjectType.ST_STORAGE
         for row in rows:
-            result.setdefault(row.reserve_id, {})[row.st_storage_id] = _convert_st_storage_row_to_model(row)
+            certification = StorageReserveCertification.model_validate(reserve_type.convert_row_to_mapping(row))
+            result.setdefault(row.reserve_id, {})[row.st_storage_id] = certification
         return result
 
     @override

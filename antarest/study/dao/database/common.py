@@ -21,7 +21,9 @@ from antarest.core.exceptions import AreaNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.area_properties_model import FILTER_OPTIONS, FrequencyFilter, sort_filter_options
-from antarest.study.business.model.reserve_certification_model import ReserveCertification
+from antarest.study.business.model.reserve_certification_model import (
+    ReserveCertification,
+)
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.common import AreaSeriesMapping, ReserveSymmetriesMapping
 from antarest.study.dao.database.models.area import AREA_TABLE
@@ -155,3 +157,9 @@ class ReserveObjectType(StrEnum):
             self._db_key(): object_id,
             **certification.model_dump(),
         }
+
+    def convert_row_to_mapping(self, row: Row[Any]) -> dict[str, Any]:
+        data = get_row_representation_as_dict(row)
+        for key in ("study_data_id", "area_id", self._db_key(), "reserve_id"):
+            del data[key]
+        return data
