@@ -30,7 +30,6 @@ StStorageConstraintId: TypeAlias = str
 SeriesId: TypeAlias = str
 XpansionFileName: TypeAlias = str
 LayerId: TypeAlias = str
-AreaAssetId: TypeAlias = ThermalId | StStorageId
 
 ThermalSeriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, SeriesId]]
 RenewableSeriesMapping: TypeAlias = dict[AreaId, dict[RenewableId, SeriesId]]
@@ -48,4 +47,4 @@ ReserveDefinitionsMapping: TypeAlias = dict[AreaId, dict[ReserveDefinitionId, Re
 ReserveNeedsMapping: TypeAlias = dict[AreaId, dict[ReserveDefinitionId, SeriesId]]
 ThermalReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, ReserveSymmetries]]
 STStorageReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[StStorageId, ReserveSymmetries]]
-ReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[AreaAssetId, ReserveSymmetries]]
+ReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[ThermalId | StStorageId, ReserveSymmetries]]

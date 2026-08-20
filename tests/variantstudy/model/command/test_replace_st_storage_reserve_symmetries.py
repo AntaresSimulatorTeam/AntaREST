@@ -12,7 +12,11 @@
 import pytest
 
 from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
+from antarest.study.business.model.reserve_definition_model import (
+    ReserveDefinitionCreation,
+    ReserveDefinitionId,
+    ReserveType,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -182,3 +186,28 @@ def test_short_term_storage_should_be_valid(dao_10_2: StudyDao, command_context:
     output = cmd.apply(dao_10_2)
     assert not output.status
     assert "Short-term storage 'fake_storage' not found in area 'fr'" in output.message
+
+
+def test_certification_should_exist(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+    _set_up(dao_10_2, command_context)
+
+    # 1- Removes certifications for reserve "r2", "r3" and "r4" -> Should work
+    cmd = ReplaceStStorageReserveCertifications(
+        area_id="fr",
+        certifications={ReserveDefinitionId("r1"): {"sts1": StorageReserveCertification()}},
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_2,
+    )
+    output = cmd.apply(dao_10_2)
+    assert output.status
+
+    # 2- Try to save a symmetry linking reserve "r1" and "r2" -> Should raise as "r2" is not certified.
+    cmd = ReplaceStStorageReserveSymmetries(
+        area_id="fr",
+        symmetries={"sts1": [["r1", "r2"]]},
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_2,
+    )
+    output = cmd.apply(dao_10_2)
+    assert not output.status
+    assert "Certifications for reserve(s) '{'r2'}' on st-storage 'sts1' not found in area 'fr'" in output.message
