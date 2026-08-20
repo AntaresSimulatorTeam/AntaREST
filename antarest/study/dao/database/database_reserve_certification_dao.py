@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from collections.abc import Mapping
-from typing import NoReturn
+from typing import Any, NoReturn
 
 from sqlalchemy import delete, insert, select
 from sqlalchemy.exc import IntegrityError
@@ -80,7 +80,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     def _save_certifications(
         self,
         reserve_type: ReserveObjectType,
-        certifications: dict[AreaId, dict[ReserveDefinitionId, dict[str, ReserveCertification]]],
+        certifications: dict[AreaId, dict[ReserveDefinitionId, dict[str, Any]]],
     ) -> None:
         values = []
         for area_id, reserves_dict in certifications.items():
