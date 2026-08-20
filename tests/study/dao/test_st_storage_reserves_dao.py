@@ -119,3 +119,36 @@ def test_clearing_symmetries(dao_10_2: StudyDao, symmetries: dict[str, ReserveSy
 
     # Ensures it's now empty
     assert dao.get_st_storage_reserve_symmetries("fr") == {}
+
+
+def test_symmetries_removal_when_deleting_st_storage_or_certification(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _set_up(dao)
+
+    # Both st-storages are certified on both reserves and symmetric on the r1/r2 pair.
+    dao.save_st_storage_reserve_certifications(
+        {
+            "fr": {
+                "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                "r2": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+            }
+        }
+    )
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]], "sts2": [["r1", "r2"]]}})
+
+    # Removes the short-term storage `sts1`.
+    dao.delete_st_storage("fr", STStorage(name="sts1"))
+
+    # The certifications of the deleted st-storage are gone, sts2 is untouched.
+    assert dao.get_st_storage_reserve_certifications("fr") == {
+        "r1": {"sts2": StorageReserveCertification()},
+        "r2": {"sts2": StorageReserveCertification()},
+    }
+
+    # Same for the symmetries.
+    assert dao.get_st_storage_reserve_symmetries("fr") == {"sts2": [["r1", "r2"]]}
+
+    # Removing a certification should also clean the symmetries.
+    dao.save_st_storage_reserve_certifications({"fr": {}})
+
+    assert dao.get_st_storage_reserve_symmetries("fr") == {}
