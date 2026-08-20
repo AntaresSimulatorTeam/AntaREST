@@ -9,17 +9,23 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TYPE_CHECKING
+import json
+from enum import StrEnum
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
-from sqlalchemy import Table, select
+from sqlalchemy import Row, Table, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.area_properties_model import FILTER_OPTIONS, FrequencyFilter, sort_filter_options
-from antarest.study.dao.common import AreaSeriesMapping
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
+from antarest.study.dao.common import AreaSeriesMapping, ReserveSymmetriesMapping
 from antarest.study.dao.database.models.area import AREA_TABLE
+from antarest.study.dao.database.models.st_storage_reserve_symmetries import ST_STORAGE_RESERVE_SYMMETRIES_TABLE
+from antarest.study.dao.database.models.thermal_reserve_symmetries import THERMAL_RESERVE_SYMMETRIES_TABLE
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -87,3 +93,53 @@ def serialize_frequency_filters(encoded_value: set[FrequencyFilter]) -> str:
     if isinstance(encoded_value, str):
         return encoded_value
     return ", ".join(sort_filter_options(encoded_value))
+
+
+"""
+Reserve types
+"""
+
+
+def _convert_row_to_symmetries(row: Row[Any]) -> ReserveSymmetries:
+    return cast(ReserveSymmetries, json.loads(row.symmetries))
+
+
+class ReserveObjectType(StrEnum):
+    THERMAL = "thermal"
+    ST_STORAGE = "st_storage"
+
+    def _db_key(self) -> str:
+        if self == ReserveObjectType.THERMAL:
+            return "thermal_id"
+        else:
+            return "st_storage_id"
+
+    def db_symmetry_table(self) -> Table:
+        if self == ReserveObjectType.THERMAL:
+            return THERMAL_RESERVE_SYMMETRIES_TABLE
+        else:
+            return ST_STORAGE_RESERVE_SYMMETRIES_TABLE
+
+    def convert_to_row(
+        self, study_data_id: int, area_id: str, object_id: str, symmetries: ReserveSymmetries
+    ) -> dict[str, Any]:
+        return {
+            "study_data_id": study_data_id,
+            "area_id": area_id,
+            "symmetries": json.dumps(symmetries),
+            self._db_key(): object_id,
+        }
+
+    def convert_all_rows_to_model(self, rows: Sequence[Row[Any]]) -> dict[str, ReserveSymmetries]:
+        result = {}
+        for row in rows:
+            row_as_dict = get_row_representation_as_dict(row)
+            result[row_as_dict[self._db_key()]] = _convert_row_to_symmetries(row)
+        return result
+
+    def convert_all_rows_to_dict_of_models(self, rows: Sequence[Row[Any]]) -> ReserveSymmetriesMapping:
+        result: ReserveSymmetriesMapping = {}
+        for row in rows:
+            row_as_dict = get_row_representation_as_dict(row)
+            result.setdefault(row.area_id, {})[row_as_dict[self._db_key()]] = _convert_row_to_symmetries(row)
+        return result
