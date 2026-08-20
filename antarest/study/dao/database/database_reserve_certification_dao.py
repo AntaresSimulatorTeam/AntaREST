@@ -105,12 +105,22 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     def save_st_storage_reserve_certifications(
         self, new_certifications: dict[AreaId, StorageReserveCertificationMapping]
     ) -> None:
+        old_certifications = self.get_all_st_storage_reserve_certifications()
 
         try:
             self._save_certifications(ReserveObjectType.ST_STORAGE, new_certifications)
+            # Clean orphan symmetries
+            for area_id, reserves_dict in old_certifications.items():
+                if area_id not in new_certifications:
+                    self.get_impl().delete_orphan_st_storage_symmetries(area_id, set(reserves_dict))
+                    continue
+                if missing_reserves := set(reserves_dict) - set(new_certifications[area_id]):
+                    self.get_impl().delete_orphan_st_storage_symmetries(area_id, missing_reserves)
+
         except IntegrityError as e:
             self._db_session.rollback()
             self._raise_the_right_st_storage_reserve_exception(new_certifications, exc=e)
+
         self._db_session.commit()
 
     def _save_certifications(
