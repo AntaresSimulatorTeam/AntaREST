@@ -39,7 +39,7 @@ def check_thermal_symmetries_integrity(study_dao: "StudyDao", new_symmetries: Th
 
     for area_id, value in new_symmetries.items():
         # Handle the case where no symmetries are given. Means we only want to clear them all.
-        if all(symmetries == [[]] for symmetries in value.values()):
+        if not (any(symmetry for symmetry in value.values())):
             continue
 
         if area_id not in existing_certifications:
@@ -77,7 +77,7 @@ def check_st_storage_symmetries_integrity(
 
     for area_id, value in new_symmetries.items():
         # Handle the case where no symmetries are given. Means we only want to clear them all.
-        if all(symmetries == [[]] for symmetries in value.values()):
+        if not (any(symmetry for symmetry in value.values())):
             continue
 
         if area_id not in existing_certifications:
