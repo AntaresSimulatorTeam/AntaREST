@@ -65,7 +65,7 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: Stu
     assert dao.get_st_storage_reserve_symmetries("fr") == {"sts1": [["r1", "r2"]]}
     assert dao.get_st_storage_reserve_certifications("fr") == {
         "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-        "r2": {"sts2": StorageReserveCertification()},
+        "r2": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
         "r3": {"sts2": StorageReserveCertification()},
     }
 
@@ -74,7 +74,7 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: Stu
 
     assert dao.get_st_storage_reserve_certifications("fr") == {
         "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-        "r2": {"sts2": StorageReserveCertification()},
+        "r2": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
         "r3": {"sts2": StorageReserveCertification()},
     }
     # The symmetry should also be overwritten by the new value.
