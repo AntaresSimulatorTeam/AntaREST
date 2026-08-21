@@ -1,0 +1,55 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+"""
+Retrieving variable-related information from the database
+"""
+
+from typing import Iterable
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from antarest.output.filestudy.model import VariableDescription
+from antarest.output.storage.v2.dbmodel import DbParquetArea, DbParquetVariable, ElementType, ScenarioAggregation
+
+
+class VariablesIndex:
+    def __init__(self, variables: Iterable[DbParquetVariable]) -> None:
+        self._variables: dict[tuple[ScenarioAggregation, ElementType], list[VariableDescription]] = {}
+        for v in variables:
+            self._variables.setdefault((v.scenario_aggregation, v.element_type), []).append(to_var_model(v))
+
+    def get_variables(self, aggregation: ScenarioAggregation, element_type: ElementType) -> list[VariableDescription]:
+        return self._variables.get((aggregation, element_type), [])
+
+
+def to_var_model(db_var: DbParquetVariable) -> VariableDescription:
+    return VariableDescription(db_var.name, db_var.unit, db_var.statistic_type)
+
+
+def get_area_variables(
+    session: Session, output_id: int, aggregation: ScenarioAggregation, area_id: str
+) -> list[VariableDescription]:
+
+    # All variables, should load fast ?
+    output_variables = session.execute(
+        select(DbParquetVariable).where(DbParquetVariable.output_id == output_id)
+    ).scalars()
+    variables_index = VariablesIndex(output_variables)
+
+    # Get area information
+    area = session.execute(select(DbParquetArea).where(DbParquetArea.area_id == area_id)).scalar_one()
+
+    all_areas_vars = variables_index.get_variables(aggregation, "area")
+    cols = area.mc_all_vars if aggregation == "mc-all" else area.mc_ind_vars
+    return [all_areas_vars[c] for c in cols]

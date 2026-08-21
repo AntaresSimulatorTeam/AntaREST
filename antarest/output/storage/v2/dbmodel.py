@@ -9,14 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Iterable, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
-from sqlalchemy import BigInteger, Dialect, ForeignKeyConstraint, SmallInteger, String, select, types
-from sqlalchemy.orm import Mapped, Session, mapped_column
+from sqlalchemy import BigInteger, Dialect, ForeignKeyConstraint, SmallInteger, String, types
+from sqlalchemy.orm import Mapped, mapped_column
 from typing_extensions import override
 
 from antarest.dbmodel import Base
-from antarest.output.filestudy.model import VariableDescription
 
 ElementType: TypeAlias = Literal[
     "area",
@@ -84,35 +83,3 @@ class DbParquetArea(Base):
     area_id: Mapped[str] = mapped_column(primary_key=True)
     mc_all_vars: Mapped[list[int]] = mapped_column(Columns)
     mc_ind_vars: Mapped[list[int]] = mapped_column(Columns)
-
-
-class VariablesIndex:
-    def __init__(self, variables: Iterable[DbParquetVariable]) -> None:
-        self._variables: dict[tuple[ScenarioAggregation, ElementType], list[VariableDescription]] = {}
-        for v in variables:
-            self._variables.setdefault((v.scenario_aggregation, v.element_type), []).append(to_var_model(v))
-
-    def get_variables(self, aggregation: ScenarioAggregation, element_type: ElementType) -> list[VariableDescription]:
-        return self._variables.get((aggregation, element_type), [])
-
-
-def to_var_model(db_var: DbParquetVariable) -> VariableDescription:
-    return VariableDescription(db_var.name, db_var.unit, db_var.statistic_type)
-
-
-def get_area_variables(
-    session: Session, output_id: int, aggregation: ScenarioAggregation, area_id: str
-) -> list[VariableDescription]:
-
-    # All variables, should load fast ?
-    output_variables = session.execute(
-        select(DbParquetVariable).where(DbParquetVariable.output_id == output_id)
-    ).scalars()
-    variables_index = VariablesIndex(output_variables)
-
-    # Get area information
-    area = session.execute(select(DbParquetArea).where(DbParquetArea.area_id == area_id)).scalar_one()
-
-    all_areas_vars = variables_index.get_variables(aggregation, "area")
-    cols = area.mc_all_vars if aggregation == "mc-all" else area.mc_ind_vars
-    return [all_areas_vars[c] for c in cols]
