@@ -31,6 +31,8 @@ ScenarioAggregation: TypeAlias = Literal["mc-ind", "mc-all"]
 
 class DbParquetOutput(Base):
     # TODO: we should merge the existing v2_output_metadata tables into this one
+    #       the integer identifier will be easier and more efficient to use than the couple of strings
+    #       study_id / output_id
 
     __tablename__ = "parquet_output"
 
@@ -38,6 +40,16 @@ class DbParquetOutput(Base):
 
 
 class DbParquetVariable(Base):
+    """
+    Represents one of the variables referenced in an output.
+
+    Those variables are then referenced by elements of the system (areas, links ...), that contain
+    actual data for them.
+
+    Attributes:
+        column: the column offset in the actual parquet file, compared to index columns (starts at 0).
+    """
+
     __tablename__ = "parquet_variable"
 
     __table_args__ = (ForeignKeyConstraint(["output_id"], ["parquet_output.id"]),)  # TODO
@@ -75,6 +87,13 @@ class Columns(types.TypeDecorator[list[int]]):
 
 
 class DbParquetArea(Base):
+    """
+    Information related to an area of an output, in particular which variables it has data for,
+    in mc-ind and in mc-all (they may differ).
+
+    The variables are reference through their column index.
+    """
+
     __tablename__ = "parquet_area"
 
     __table_args__ = (ForeignKeyConstraint(["output_id"], ["parquet_output.id"]),)  # TODO
@@ -83,3 +102,6 @@ class DbParquetArea(Base):
     area_id: Mapped[str] = mapped_column(primary_key=True)
     mc_all_vars: Mapped[list[int]] = mapped_column(Columns)
     mc_ind_vars: Mapped[list[int]] = mapped_column(Columns)
+
+
+# TODO: add tables for other element types: links, thermal clusters, etc
