@@ -26,7 +26,11 @@ from antarest.core.utils.utils import remove_first_match
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, ThermalId, ThermalSeriesMapping
-from antarest.study.dao.file.common import check_area_exists
+from antarest.study.dao.file.common import (
+    check_area_exists,
+    get_thermal_reserve_participations_as_yaml_content,
+    get_thermal_reserve_path,
+)
 from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
@@ -309,19 +313,19 @@ class FileStudyThermalDao(ThermalDao, ABC):
         # Cascade: Remove any reserve certification attached to the deleted cluster.
         # Avoids leaving orphan sections in `input/thermal/clusters/<area>/reserve-participations.yml`.
         """
-        if self.get_file_study().config.version < STUDY_VERSION_10_2:
+        file_study = self.get_file_study()
+        if file_study.config.version < STUDY_VERSION_10_2:
             # Reserves only exist in version 10.2+
             return
 
         thermal_exists = False
-        all_area_certifications = self.get_impl().get_thermal_reserve_certifications(area_id)
-        for reserve_id, thermal_dict in all_area_certifications.items():
-            for cluster_id in thermal_dict:
-                if cluster_id == thermal_id:
-                    del all_area_certifications[reserve_id][thermal_id]
-                    thermal_exists = True
-                    break
+        yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
+        for k, participation in enumerate(yaml_content["participations"]):
+            if participation["cluster"] == thermal_id:
+                thermal_exists = True
+                del yaml_content["participations"][k]
+                break
 
         if thermal_exists:
-            # Avoid performing an empty save if there are no certifications to remove
-            self.get_impl().save_thermal_reserve_certifications({area_id: all_area_certifications})
+            # Avoid performing an empty save if there is no thermal to remove
+            file_study.tree.save(yaml_content, get_thermal_reserve_path(area_id))
