@@ -22,7 +22,7 @@ from sqlalchemy.orm import Session
 
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_headers
 from antarest.output.filestudy.model import FileOutput, MCAllAreasQueryFile, MCIndAreasQueryFile, VariableDescription
-from antarest.output.storage.v2.dbmodel import DbParquetArea, DbParquetVariable, ScenarioAggregation
+from antarest.output.storage.v2.dbmodel import DbParquetArea, DbParquetVariable, ElementType, ScenarioAggregation
 from antarest.study.model import MatrixFrequency
 
 # TODO: Possibly a better naming to find than "parsing results"
@@ -97,6 +97,23 @@ def parse_output_variables(file_output: FileOutput) -> OutputParsingResult:
     )
 
 
+def _convert_to_db_vars(
+    output_id: int, aggregation: ScenarioAggregation, elt_type: ElementType, vars: list[VariableDescription]
+) -> list[DbParquetVariable]:
+    return [
+        DbParquetVariable(
+            output_id=output_id,
+            scenario_aggregation=aggregation,
+            element_type=elt_type,
+            column=c,
+            name=v.name,
+            unit=v.unit,
+            statistic_type=v.statistic_type,
+        )
+        for c, v in enumerate(vars)
+    ]
+
+
 def extract_output_variables_to_database(session: Session, output_id: int, file_output: FileOutput) -> None:
     """
     Parses variables from file output an dump them to database.
@@ -108,30 +125,8 @@ def extract_output_variables_to_database(session: Session, output_id: int, file_
 
     mc_all_areas = parsing_result.mc_all_areas
     mc_ind_areas = parsing_result.mc_ind_areas
-    for c, v in enumerate(mc_all_areas.variables):
-        variables.append(
-            DbParquetVariable(
-                output_id=output_id,
-                scenario_aggregation="mc-all",
-                element_type="area",
-                column=c,
-                name=v.name,
-                unit=v.unit,
-                statistic_type=v.statistic_type,
-            )
-        )
-    for c, v in enumerate(mc_ind_areas.variables):
-        variables.append(
-            DbParquetVariable(
-                output_id=output_id,
-                scenario_aggregation="mc-ind",
-                element_type="area",
-                column=c,
-                name=v.name,
-                unit=v.unit,
-                statistic_type=v.statistic_type,
-            )
-        )
+    variables.extend(_convert_to_db_vars(output_id, "mc-all", "area", mc_all_areas.variables))
+    variables.extend(_convert_to_db_vars(output_id, "mc-ind", "area", mc_ind_areas.variables))
 
     mc_ind_area_vars = mc_ind_areas.area_vars
     mc_all_area_vars = mc_all_areas.area_vars

@@ -78,10 +78,10 @@ class Columns(types.TypeDecorator[list[int]]):
 class DbParquetArea(Base):
     __tablename__ = "parquet_area"
 
-    __table_args__ = ForeignKeyConstraint(["output_id"], ["parquet_output.id"])  # TODO
+    __table_args__ = (ForeignKeyConstraint(["output_id"], ["parquet_output.id"]),)  # TODO
 
-    output_id: Mapped[int] = mapped_column(BigInteger)
-    area_id: Mapped[str]
+    output_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    area_id: Mapped[str] = mapped_column(primary_key=True)
     mc_all_vars: Mapped[list[int]] = mapped_column(Columns)
     mc_ind_vars: Mapped[list[int]] = mapped_column(Columns)
 

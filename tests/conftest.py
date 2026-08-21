@@ -68,6 +68,11 @@ def project_path() -> Path:
     return PROJECT_DIR
 
 
+@pytest.fixture(scope="session")
+def test_root() -> Path:
+    return HERE
+
+
 @pytest.fixture
 def ini_cleaner() -> Callable[[str], str]:
     def cleaner(txt: str) -> str:
