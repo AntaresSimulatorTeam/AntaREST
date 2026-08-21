@@ -123,7 +123,13 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                 if area_id not in new_certifications:
                     self.get_impl().delete_orphan_st_storage_symmetries(area_id, set(reserves_dict))
                     continue
-                if missing_reserves := set(reserves_dict) - set(new_certifications[area_id]):
+                missing_reserves = set(reserves_dict) - set(new_certifications[area_id])
+                for reserve_id, st_storage_dict in old_certifications[area_id].items():
+                    for sts_id in st_storage_dict:
+                        if sts_id not in new_certifications[area_id].get(reserve_id, {}):
+                            missing_reserves.add(reserve_id)
+                            break
+                if missing_reserves:
                     self.get_impl().delete_orphan_st_storage_symmetries(area_id, missing_reserves)
 
         except IntegrityError as e:
