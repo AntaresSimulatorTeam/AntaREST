@@ -9,8 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Any
 
-from sqlalchemy import delete, insert, select
+from sqlalchemy import Table, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
@@ -64,12 +65,16 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
-        # Check foreign keys integrity
-        check_thermal_symmetries_integrity(self.get_impl(), data)
+        reserve_type = ReserveObjectType.THERMAL
+        values = self._build_symmetry_rows(data, reserve_type)
+
+        if values:
+            # Check foreign keys integrity for values to insert
+            check_thermal_symmetries_integrity(self.get_impl(), data)
 
         # Save the new values
         try:
-            self._save_reserve_symmetries(data, ReserveObjectType.THERMAL)
+            self._save_reserve_symmetries(set(data), reserve_type.db_symmetry_table(), values)
         except IntegrityError as e:
             self._db_session.rollback()
             thermals = {area_id: list(thermal_dict) for area_id, thermal_dict in data.items()}
@@ -78,28 +83,35 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
 
     @override
     def save_st_storage_reserve_symmetries(self, data: STStorageReserveSymmetriesMapping) -> None:
-        # Check foreign keys integrity
-        check_st_storage_symmetries_integrity(self.get_impl(), data)
+        reserve_type = ReserveObjectType.ST_STORAGE
+        values = self._build_symmetry_rows(data, reserve_type)
+
+        if values:
+            # Check foreign keys integrity for values to insert
+            check_st_storage_symmetries_integrity(self.get_impl(), data)
 
         # Save the new values
         try:
-            self._save_reserve_symmetries(data, ReserveObjectType.ST_STORAGE)
+            self._save_reserve_symmetries(set(data), reserve_type.db_symmetry_table(), values)
         except IntegrityError as e:
             self._db_session.rollback()
             st_storages = {area_id: list(st_storage_dict) for area_id, st_storage_dict in data.items()}
             self.get_impl().raise_the_right_storage_exception(st_storages, exc=e)
         self._db_session.commit()
 
-    def _save_reserve_symmetries(self, data: ReserveSymmetriesMapping, reserve_type: ReserveObjectType) -> None:
+    def _build_symmetry_rows(
+        self, data: ReserveSymmetriesMapping, reserve_type: ReserveObjectType
+    ) -> list[dict[str, Any]]:
         values = []
         for area_id, value in data.items():
             for object_id, symmetries in value.items():
                 if not (any(symmetry for symmetry in symmetries)):
                     continue
                 values.append(reserve_type.convert_symmetry_to_row(self._study_data_id, area_id, object_id, symmetries))
+        return values
 
-        table = reserve_type.db_symmetry_table()
-        stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(set(data))))
+    def _save_reserve_symmetries(self, area_ids: set[str], table: Table, values: list[dict[str, Any]]) -> None:
+        stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
         self._db_session.execute(stmt)
         if values:
             self._db_session.execute(insert(table), values)
