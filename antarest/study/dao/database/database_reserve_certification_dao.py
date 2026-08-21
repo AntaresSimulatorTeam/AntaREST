@@ -73,17 +73,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         old_certifications = self.get_all_thermal_reserve_certifications()
 
         try:
-            self._save_certifications(ReserveObjectType.THERMAL, new_certifications)
-            # Clean orphan symmetries
-            for area_id, reserves_dict in old_certifications.items():
-                missing_reserves: dict[str, set[ReserveDefinitionId]] = {}
-                for reserve_id, thermal_dict in old_certifications[area_id].items():
-                    for thermal_id in thermal_dict:
-                        if thermal_id not in new_certifications.get(area_id, {}).get(reserve_id, {}):
-                            missing_reserves.setdefault(thermal_id, set()).add(reserve_id)
-                if missing_reserves:
-                    self.get_impl().delete_orphan_st_storage_symmetries(area_id, missing_reserves)
-
+            self._save_certifications(ReserveObjectType.THERMAL, old_certifications, new_certifications)
         except IntegrityError as e:
             self._db_session.rollback()
             self._raise_the_right_thermal_reserve_exception(new_certifications, exc=e)
@@ -120,17 +110,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         old_certifications = self.get_all_st_storage_reserve_certifications()
 
         try:
-            self._save_certifications(ReserveObjectType.ST_STORAGE, new_certifications)
-            # Clean orphan symmetries
-            for area_id, reserves_dict in old_certifications.items():
-                missing_reserves: dict[str, set[ReserveDefinitionId]] = {}
-                for reserve_id, st_storage_dict in old_certifications[area_id].items():
-                    for sts_id in st_storage_dict:
-                        if sts_id not in new_certifications.get(area_id, {}).get(reserve_id, {}):
-                            missing_reserves.setdefault(sts_id, set()).add(reserve_id)
-                if missing_reserves:
-                    self.get_impl().delete_orphan_st_storage_symmetries(area_id, missing_reserves)
-
+            self._save_certifications(ReserveObjectType.ST_STORAGE, old_certifications, new_certifications)
         except IntegrityError as e:
             self._db_session.rollback()
             self._raise_the_right_st_storage_reserve_exception(new_certifications, exc=e)
@@ -140,10 +120,11 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     def _save_certifications(
         self,
         reserve_type: ReserveObjectType,
-        certifications: dict[AreaId, dict[ReserveDefinitionId, dict[str, Any]]],
+        old_certifications: dict[AreaId, dict[ReserveDefinitionId, dict[str, Any]]],
+        new_certifications: dict[AreaId, dict[ReserveDefinitionId, dict[str, Any]]],
     ) -> None:
         values = []
-        for area_id, reserves_dict in certifications.items():
+        for area_id, reserves_dict in new_certifications.items():
             for reserve_id, thermal_dict in reserves_dict.items():
                 for thermal_id, certification in thermal_dict.items():
                     values.append(
@@ -152,11 +133,24 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                         )
                     )
         table = reserve_type.db_certification_table()
-        area_ids = set(certifications)
+        area_ids = set(new_certifications)
         stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
         self._db_session.execute(stmt)
         if values:
             self._db_session.execute(insert(table), values)
+
+        # Clean orphan symmetries
+        for area_id, reserves_dict in old_certifications.items():
+            missing_reserves: dict[str, set[ReserveDefinitionId]] = {}
+            for reserve_id, v in old_certifications[area_id].items():
+                for object_id in v:
+                    if object_id not in new_certifications.get(area_id, {}).get(reserve_id, {}):
+                        missing_reserves.setdefault(object_id, set()).add(reserve_id)
+            if missing_reserves:
+                if reserve_type == ReserveObjectType.THERMAL:
+                    self.get_impl().delete_orphan_thermal_symmetries(area_id, missing_reserves)
+                else:
+                    self.get_impl().delete_orphan_st_storage_symmetries(area_id, missing_reserves)
 
     def _raise_the_right_thermal_reserve_exception(
         self,
