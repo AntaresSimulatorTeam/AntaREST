@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 """
-Extraction of variables metadata from file studies, in order to populate the database
+Parsing of variables metadata from file studies, in order to populate the database
 """
 
 from dataclasses import dataclass

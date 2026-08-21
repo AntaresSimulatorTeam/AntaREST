@@ -222,6 +222,7 @@ class V2OutputStorage(IOutputStorage):
 
             simulation_range = _extract_simulation_range(dir_path)
 
+            # TODO: first, extract variables metadata to database
             variables_target = parquet_output_dir(self._variables_dir, study_id, output_name)
             extract_output_to_parquet(dir_path, variables_target)
 

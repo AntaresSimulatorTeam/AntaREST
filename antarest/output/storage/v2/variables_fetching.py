@@ -11,11 +11,13 @@
 # This file is part of the Antares project.
 
 """
-Retrieving variable-related information from the database
+Fetching variables metadata from the database
 """
 
+from dataclasses import dataclass
 from typing import Iterable
 
+from pyarrow.lib import Sequence
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -23,24 +25,53 @@ from antarest.output.filestudy.model import VariableDescription
 from antarest.output.storage.v2.dbmodel import DbParquetArea, DbParquetVariable, ElementType, ScenarioAggregation
 
 
+@dataclass(frozen=True)
+class VariableColumn:
+    """
+    Attributes:
+        column: offset of the column in the parquet file (actual col will be number of index cols + this offset)
+    """
+
+    column: int
+    name: str
+    unit: str | None
+    statistic_type: str | None
+
+
 class VariablesIndex:
     """
-    Helper class to retrieve variables from DB models.
+    Helper class to retrieve variable info from DB models.
     """
 
     def __init__(self, variables: Iterable[DbParquetVariable]) -> None:
-        self._variables: dict[tuple[ScenarioAggregation, ElementType], list[VariableDescription]] = {}
+        self._variables: dict[tuple[ScenarioAggregation, ElementType], list[DbParquetVariable]] = {}
         for v in variables:
-            self._variables.setdefault((v.scenario_aggregation, v.element_type), []).append(_to_var_model(v))
+            self._variables.setdefault((v.scenario_aggregation, v.element_type), []).append(v)
 
-    def get_variables(self, aggregation: ScenarioAggregation, element_type: ElementType) -> list[VariableDescription]:
+    def _get_db_vars(self, aggregation: ScenarioAggregation, element_type: ElementType) -> Sequence[DbParquetVariable]:
         """
         Get all variables for the specified "mc-ind/mc-all" and element type (areas, links, ...)
         """
         return self._variables.get((aggregation, element_type), [])
 
+    def get_variables(self, aggregation: ScenarioAggregation, element_type: ElementType) -> list[VariableDescription]:
+        """
+        Get all variables for the specified "mc-ind/mc-all" and element type (areas, links, ...)
+        """
+        return [_to_var_desc(v) for v in self._get_db_vars(aggregation, element_type)]
 
-def _to_var_model(db_var: DbParquetVariable) -> VariableDescription:
+    def get_variable_columns(self, aggregation: ScenarioAggregation, element_type: ElementType) -> list[VariableColumn]:
+        """
+        Get all variables for the specified "mc-ind/mc-all" and element type (areas, links, ...)
+        """
+        return [_to_var_col(v) for v in self._get_db_vars(aggregation, element_type)]
+
+
+def _to_var_col(db_var: DbParquetVariable) -> VariableColumn:
+    return VariableColumn(db_var.column, db_var.name, db_var.unit, db_var.statistic_type)
+
+
+def _to_var_desc(db_var: DbParquetVariable) -> VariableDescription:
     return VariableDescription(db_var.name, db_var.unit, db_var.statistic_type)
 
 

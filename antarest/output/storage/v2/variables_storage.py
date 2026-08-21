@@ -23,11 +23,14 @@ import shutil
 import tempfile
 from collections.abc import Iterator, Sequence
 from pathlib import Path
+from typing import Iterable
 
 import polars as pl
+import pyarrow as pa
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.core.serde.parquet_writer import (
+    BatchParquetWriter,
     write_dataframes_in_parquet_format_by_column_sets,
     write_dataframes_stream_parquet,
     yield_dataframes_from_parquet,
@@ -37,15 +40,19 @@ from antarest.output.filestudy.matrixfiles import get_start_column, parse_output
 from antarest.output.filestudy.model import (
     MCYEAR_COL,
     TIME_ID_COL,
+    FileOutput,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
+    OutputDataFrame,
     QueryFileType,
+    VariableDescription,
     find_mode_dir,
     get_output_object_type,
 )
+from antarest.output.storage.v2.variables_fetching import VariablesIndex
 from antarest.study.model import MatrixFrequency
 
 logger = logging.getLogger(__name__)
@@ -125,6 +132,39 @@ def _aggregate_to_parquet(
         _merge_intermediate_parquets(file_paths, new_index, target_path)
 
 
+def _iter_mc_ind_area_files(
+    file_output: FileOutput, freq: MatrixFrequency
+) -> Iterable[OutputDataFrame[VariableDescription]]:
+    start_col = get_start_column(freq)
+    for mc_year in file_output.mc_years:
+        for area_id in file_output.mc_ind_area_ids:
+            if data_file := file_output.get_mc_ind_file(mc_year, MCIndAreasQueryFile.VALUES, area_id, freq):
+                yield parse_output_file(data_file, start_col)
+
+
+def _extract_areas(
+    index: VariablesIndex,
+    file_output: FileOutput,
+    target_dir: Path,
+) -> None:
+
+    variable_cols = index.get_variable_columns("mc-ind", "area")
+
+    index_fields = [pa.field("area", pa.string()), pa.field("mcYear", pa.int32()), pa.field("timeId", pa.int32())]
+    schema = pa.schema(index_fields + [pa.field(str(i), pa.float64()) for i in range(len(variable_cols))])
+
+    for freq in MatrixFrequency:
+        output_file_path = target_dir / f"mc-ind_areas_{freq.value}.parquet"
+        with BatchParquetWriter(output_file_path, schema) as writer:
+            for df in _iter_mc_ind_area_files(file_output, freq):
+                data = df.data
+                # TODO: here we need to reshape the DF to comply with the schema (add index, add missing cols,
+                #  reorder cols)
+                writer.add_table(data.to_arrow())
+
+
+# TODO: see above, this implementation needs to be replaced with one that uses the
+#       column indices that have been determined when parsing variable metadata
 def _extract_areas(
     output_dir: Path,
     base_path: Path,
