@@ -145,7 +145,7 @@ class ReserveObjectType(StrEnum):
         return {
             "study_data_id": study_data_id,
             "area_id": area_id,
-            "symmetries": json.dumps(symmetries),
+            "symmetries": json.dumps([symmetry for symmetry in symmetries if symmetry]),
             self._db_key(): object_id,
         }
 
