@@ -212,15 +212,11 @@ class _AreaAssetParticipationFileData(ABC, AntaresBaseModel, Generic[Participati
                     participation["certifications"] = certification
 
                 if any(symmetry for symmetry in reserve_symmetries):
-                    symmetries_with_certification = []
-                    for symmetry in reserve_symmetries:
-                        symmetry_with_certification = []
-                        for reserve_id in symmetry:
-                            if reserve_id in certifs:
-                                symmetry_with_certification.append(reserve_id)
-                        if len(symmetry_with_certification) > 1:
-                            symmetries_with_certification.append(symmetry_with_certification)
-                    participation["symmetries"] = [{"reserves": s} for s in symmetries_with_certification]
+                    symmetries_with_certification = [
+                        [reserve_id for reserve_id in symmetry if reserve_id in certifs]
+                        for symmetry in reserve_symmetries
+                    ]
+                    participation["symmetries"] = [{"reserves": s} for s in symmetries_with_certification if len(s) > 1]
 
             participations.append(participation)
 
