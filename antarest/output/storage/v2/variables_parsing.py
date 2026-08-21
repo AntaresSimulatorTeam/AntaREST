@@ -16,7 +16,7 @@ Extraction of variables metadata from file studies, in order to populate the dat
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Iterable
 
 from sqlalchemy.orm import Session
 
@@ -55,7 +55,9 @@ def parse_area_variables(file_output: FileOutput, aggregation: ScenarioAggregati
     vars: list[VariableDescription] = []
     area_cols: dict[str, list[int]] = {}
 
+    # data source depends on aggregation type
     get_file: Callable[[str, MatrixFrequency], Path | None]
+    area_ids: Iterable[str]
     match aggregation:
         case "mc-ind":
 
@@ -63,12 +65,16 @@ def parse_area_variables(file_output: FileOutput, aggregation: ScenarioAggregati
                 return file_output.get_mc_ind_file(
                     file_output.first_mc_year, MCIndAreasQueryFile.VALUES, element_id, freq
                 )
+
+            area_ids = file_output.mc_ind_area_ids
         case "mc-all":
 
             def get_file(element_id: str, freq: MatrixFrequency) -> Path | None:
                 return file_output.get_mc_all_file(MCAllAreasQueryFile.VALUES, element_id, freq)
 
-    for element_id in file_output.area_ids:
+            area_ids = file_output.mc_all_area_ids
+
+    for element_id in area_ids:
         # searching for the first existing "frequency"
         for freq in MatrixFrequency:
             if data_file := get_file(element_id, freq):

@@ -212,18 +212,34 @@ class FileOutput:
         return self.mc_ind_dir / f"{year:05d}"
 
     @cached_property
-    def link_ids(self) -> tuple[str, ...]:
+    def mc_ind_link_ids(self) -> tuple[str, ...]:
         """
-        IDs of links that have data in the output directory, sorted.
+        IDs of links that have data in mc-ind, sorted.
         """
         return tuple(sorted(d.name for d in self.iter_links_dir(self.first_mc_year)))
 
     @cached_property
-    def area_ids(self) -> tuple[str, ...]:
+    def mc_ind_area_ids(self) -> tuple[str, ...]:
         """
-        IDs of areas that have data in the output directory, sorted.
+        IDs of areas that have data in mc-ind, sorted.
         """
         return tuple(sorted(d.name for d in self.iter_areas_dir(self.first_mc_year)))
+
+    @cached_property
+    def mc_all_link_ids(self) -> tuple[str, ...]:
+        """
+        IDs of links that have data in mc-all, sorted.
+        """
+        links_dir = self.mc_all_dir / "links"
+        return tuple(sorted(d.name for d in links_dir.iterdir()))
+
+    @cached_property
+    def mc_all_area_ids(self) -> tuple[str, ...]:
+        """
+        IDs of areas that have data in mc-all, sorted.
+        """
+        areas_dir = self.mc_all_dir / "areas"
+        return tuple(sorted(d.name for d in areas_dir.iterdir()))
 
     def iter_areas_dir(self, mc_year: int) -> Iterable[Path]:
         """
