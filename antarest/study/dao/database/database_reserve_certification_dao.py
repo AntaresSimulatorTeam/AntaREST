@@ -76,11 +76,14 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             self._save_certifications(ReserveObjectType.THERMAL, new_certifications)
             # Clean orphan symmetries
             for area_id, reserves_dict in old_certifications.items():
-                if area_id not in new_certifications:
-                    self.get_impl().delete_orphan_thermal_symmetries(area_id, set(reserves_dict))
-                    continue
-                if missing_reserves := set(reserves_dict) - set(new_certifications[area_id]):
-                    self.get_impl().delete_orphan_thermal_symmetries(area_id, missing_reserves)
+                missing_reserves: dict[str, set[ReserveDefinitionId]] = {}
+                for reserve_id, thermal_dict in old_certifications[area_id].items():
+                    for thermal_id in thermal_dict:
+                        if thermal_id not in new_certifications.get(area_id, {}).get(reserve_id, {}):
+                            missing_reserves.setdefault(thermal_id, set()).add(reserve_id)
+                if missing_reserves:
+                    self.get_impl().delete_orphan_st_storage_symmetries(area_id, missing_reserves)
+
         except IntegrityError as e:
             self._db_session.rollback()
             self._raise_the_right_thermal_reserve_exception(new_certifications, exc=e)
