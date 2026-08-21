@@ -202,12 +202,15 @@ class _AreaAssetParticipationFileData(ABC, AntaresBaseModel, Generic[Participati
         Builds a participation entry for every asset that has symmetries, appending it to `participations`.
         """
         for asset_id, reserve_symmetries in symmetries.items():
-            certifs = certifications.pop(asset_id, {})
             participation: dict[str, Any] = cls.initialize_participation(asset_id)
-            if certifs:
-                participation["certifications"] = [{"reserve": r_id, **c.model_dump()} for r_id, c in certifs.items()]
-            if reserve_symmetries != [[]]:
-                participation["symmetries"] = [{"reserves": s} for s in reserve_symmetries]
+
+            # If the symmetry has no associated certifications, we have to silently not write them.
+            if asset_id in certifications:
+                if certifs := certifications.pop(asset_id):
+                    certification = [{"reserve": r_id, **c.model_dump()} for r_id, c in certifs.items()]
+                    participation["certifications"] = certification
+                if reserve_symmetries != [[]]:
+                    participation["symmetries"] = [{"reserves": s} for s in reserve_symmetries]
 
             participations.append(participation)
 
