@@ -246,7 +246,7 @@ class FileOutput:
         """
         Returns the path corresponding to the specified data, if it exists.
         """
-        element_type = "areas" if isinstance(file_type, MCIndAreasQueryFile) else "links"
+        element_type = "areas" if isinstance(file_type, MCAllAreasQueryFile) else "links"
         file_path = self.mc_all_dir / element_type / area_id / f"{file_type}-{frequency}.txt"
         return file_path if file_path.exists() else None
 
