@@ -24,16 +24,23 @@ from antarest.output.storage.v2.dbmodel import DbParquetArea, DbParquetVariable,
 
 
 class VariablesIndex:
+    """
+    Helper class to retrieve variables from DB models.
+    """
+
     def __init__(self, variables: Iterable[DbParquetVariable]) -> None:
         self._variables: dict[tuple[ScenarioAggregation, ElementType], list[VariableDescription]] = {}
         for v in variables:
-            self._variables.setdefault((v.scenario_aggregation, v.element_type), []).append(to_var_model(v))
+            self._variables.setdefault((v.scenario_aggregation, v.element_type), []).append(_to_var_model(v))
 
     def get_variables(self, aggregation: ScenarioAggregation, element_type: ElementType) -> list[VariableDescription]:
+        """
+        Get all variables for the specified "mc-ind/mc-all" and element type (areas, links, ...)
+        """
         return self._variables.get((aggregation, element_type), [])
 
 
-def to_var_model(db_var: DbParquetVariable) -> VariableDescription:
+def _to_var_model(db_var: DbParquetVariable) -> VariableDescription:
     return VariableDescription(db_var.name, db_var.unit, db_var.statistic_type)
 
 
