@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+
+from antarest.core.exceptions import ReserveCertificationsNotFound
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_certification_model import ThermalReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
@@ -113,3 +116,14 @@ def test_symmetries_removal_when_deleting_thermal_cluster_or_certification(dao_1
     dao.save_thermal_reserve_certifications({"fr": {}})
 
     assert dao.get_thermal_reserve_symmetries("fr") == {}
+
+
+def test_save_symmetry_without_certification_or_without_thermal(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _set_up(dao)
+
+    with pytest.raises(ReserveCertificationsNotFound):
+        dao.save_thermal_reserve_symmetries({"fr": {"th1": [["r1", "r2"]]}})
+
+    with pytest.raises(ReserveCertificationsNotFound):
+        dao.save_thermal_reserve_symmetries({"fr": {"fake_thermal": [["r1", "r2"]]}})
