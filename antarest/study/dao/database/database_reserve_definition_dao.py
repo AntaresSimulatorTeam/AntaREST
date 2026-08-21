@@ -135,9 +135,11 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
         self.delete_orphan_st_storage_symmetries(area_id, reserve_ids_to_delete)
         self._db_session.commit()
 
-    def delete_orphan_thermal_symmetries(self, area_id: str, reserve_ids: set[ReserveDefinitionId]) -> None:
+    def delete_orphan_thermal_symmetries(
+        self, area_id: str, reserves: dict[str, set[ReserveDefinitionId]] | set[ReserveDefinitionId]
+    ) -> None:
         thermal_symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
-        new_thermal_symmetries = remove_reserve_symmetries_by_cascade(thermal_symmetries_dict, reserve_ids)
+        new_thermal_symmetries = remove_reserve_symmetries_by_cascade(thermal_symmetries_dict, reserves)
         if new_thermal_symmetries is not None:
             self.get_impl().save_thermal_reserve_symmetries({area_id: new_thermal_symmetries})
 
