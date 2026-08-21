@@ -51,7 +51,7 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: Stu
 
     # Save 2 symmetries. Then 1 certification.
     # As we've removed the certification from `r4` and from `r3` for `sts1`, the relative symmetry should be removed.
-    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"], ["r3", "r4"]]}})
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"], ["r3", "r4"]], "sts2": [["r1", "r3"]]}})
     dao.save_st_storage_reserve_certifications(
         {
             "fr": {
@@ -62,7 +62,7 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: Stu
         }
     )
 
-    assert dao.get_st_storage_reserve_symmetries("fr") == {"sts1": [["r1", "r2"]]}
+    assert dao.get_st_storage_reserve_symmetries("fr") == {"sts1": [["r1", "r2"]], "sts2": [["r1", "r3"]]}
     assert dao.get_st_storage_reserve_certifications("fr") == {
         "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
         "r2": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
