@@ -23,10 +23,13 @@ import shutil
 import tempfile
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
 
 import polars as pl
+import polars.selectors as pls
 import pyarrow as pa
+from polars import Float64
+from pyarrow.lib import Field
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.core.serde.parquet_writer import (
@@ -142,24 +145,43 @@ def _iter_mc_ind_area_files(
                 yield parse_output_file(data_file, start_col)
 
 
+def _adapt_df(variable_cols: list[VariableDescription], df: OutputDataFrame[VariableDescription]) -> pl.DataFrame:
+    """
+    Reshapes the DF so that the column order matches the list of variables, and fills missing variables with null cols
+
+    TODO: create a writer class which encapsulates this plus the writing ?
+    """
+    col_for_variable = {v: i for i, v in enumerate(df.headers)}
+    nulls = pl.lit(None, dtype=Float64())
+    res = df.data.select(
+        [
+            pls.by_index(col_for_variable[v]).alias(str(i)) if v in col_for_variable else nulls.alias(str(i))
+            for i, v in enumerate(variable_cols)
+        ]
+    )
+    return res
+
+
 def _extract_areas(
     index: VariablesIndex,
     file_output: FileOutput,
     target_dir: Path,
 ) -> None:
 
-    variable_cols = index.get_variable_columns("mc-ind", "area")
+    variable_cols = index.get_variables("mc-ind", "area")
 
-    index_fields = [pa.field("area", pa.string()), pa.field("mcYear", pa.int32()), pa.field("timeId", pa.int32())]
+    index_fields: list[Field[Any]] = [
+        pa.field("area", pa.string()),
+        pa.field("mcYear", pa.int32()),
+        pa.field("timeId", pa.int32()),
+    ]
     schema = pa.schema(index_fields + [pa.field(str(i), pa.float64()) for i in range(len(variable_cols))])
 
     for freq in MatrixFrequency:
         output_file_path = target_dir / f"mc-ind_areas_{freq.value}.parquet"
         with BatchParquetWriter(output_file_path, schema) as writer:
             for df in _iter_mc_ind_area_files(file_output, freq):
-                data = df.data
-                # TODO: here we need to reshape the DF to comply with the schema (add index, add missing cols,
-                #  reorder cols)
+                data = _adapt_df(variable_cols, df)
                 writer.add_table(data.to_arrow())
 
 

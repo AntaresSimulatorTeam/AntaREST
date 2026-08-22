@@ -15,9 +15,8 @@ Fetching variables metadata from the database
 """
 
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Sequence
 
-from pyarrow.lib import Sequence
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -44,9 +43,11 @@ class VariablesIndex:
     """
 
     def __init__(self, variables: Iterable[DbParquetVariable]) -> None:
-        self._variables: dict[tuple[ScenarioAggregation, ElementType], list[DbParquetVariable]] = {}
+        vars: dict[tuple[ScenarioAggregation, ElementType], list[DbParquetVariable]] = {}
         for v in variables:
-            self._variables.setdefault((v.scenario_aggregation, v.element_type), []).append(v)
+            vars.setdefault((v.scenario_aggregation, v.element_type), []).append(v)
+
+        self._variables = {k: sorted(v, key=lambda v: v.column) for k, v in vars.items()}  # sort by columns
 
     def _get_db_vars(self, aggregation: ScenarioAggregation, element_type: ElementType) -> Sequence[DbParquetVariable]:
         """
