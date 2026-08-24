@@ -28,7 +28,7 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     # Fetches all user resources. Should be empty
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == []
+    assert res.json() == {"directories": [], "files": []}
 
     # Create a folder
     params = {"path": "my/folder", "resource_type": "folder"}
@@ -38,8 +38,23 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     # Fetch all resources. Should contain the folder
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == ["my/folder"]
-
+    expected_structure = {
+        "directories": [
+            {
+                "name": "my",
+                "files": [],
+                "directories": [
+                    {
+                        "name": "folder",
+                        "files": [],
+                        "directories": [],
+                    }
+                ],
+            }
+        ],
+        "files": [],
+    }
+    assert res.json() == expected_structure
     # Create a file with a specific content
     content = b"specific content"
     res = client.put(
@@ -52,7 +67,22 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     # Fetch all resources. Should contain the file
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == ["my/file", "my/folder"]
+    assert res.json() == {
+        "directories": [
+            {
+                "name": "my",
+                "files": ["file"],
+                "directories": [
+                    {
+                        "name": "folder",
+                        "files": [],
+                        "directories": [],
+                    }
+                ],
+            }
+        ],
+        "files": [],
+    }
 
     # Fetch the content of the created file
     res = client.get(f"/v1/studies/{study_id}/user-resources/content?path=my/file")
@@ -66,14 +96,14 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     # Fetch all resources. Should contain the folder only
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == ["my/folder"]
+    assert res.json() == expected_structure
 
     # Create a folder "my". Should be a no-op as it already exists.
     res = client.put(f"/v1/studies/{study_id}/user-resources", params={"path": "my", "resource_type": "folder"})
     assert res.status_code == 200
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == ["my/folder"]
+    assert res.json() == expected_structure
 
     # Delete the folder
     res = client.delete(f"/v1/studies/{study_id}/user-resources?path=my/folder")
@@ -82,7 +112,7 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     # Fetch all resources. Should still contain the parent folder "my"
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == ["my"]
+    assert res.json() == {"directories": [{"name": "my", "files": [], "directories": []}], "files": []}
 
     ##########################
     # Error cases
@@ -96,6 +126,7 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
 
     # Deletes a fake user resource. Should fail
     res = client.delete(f"/v1/studies/{study_id}/user-resources?path=fake/path/to/file")
+    assert res.status_code == 404
     description = res.json()["description"]
     assert (
         "User resources not found: 'fake/path/to/file'" in description
