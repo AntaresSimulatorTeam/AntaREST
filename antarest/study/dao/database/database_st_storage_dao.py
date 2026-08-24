@@ -45,7 +45,7 @@ from antarest.study.dao.common import (
     StStorageId,
     StStorageSeriesMapping,
 )
-from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.common import validate_area_exists, validate_areas_exist
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.st_storage import (
     COST_INJECTION_TABLE,
@@ -108,9 +108,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
     def _raise_the_right_exc(self, data: dict[AreaId, list[StStorageId]], exc: IntegrityError | None = None) -> None:
         # Checks if some areas are missing
-        existing_ids = set(self.get_impl().get_all_area_ids())
-        if invalid_areas := set(data) - existing_ids:
-            raise AreaNotFound(*invalid_areas)
+        validate_areas_exist(self._db_session, self._study_data_id, set(data))
 
         # Means the issue lies in the short-term storages
         all_existing_storages = self.get_all_st_storages()

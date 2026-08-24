@@ -23,7 +23,6 @@ from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    AreaNotFound,
     RenewableClusterNotFound,
     RenewableClustersNotFound,
 )
@@ -35,7 +34,7 @@ from antarest.study.business.model.renewable_cluster_model import (
 )
 from antarest.study.dao.api.renewable_dao import RenewableDao
 from antarest.study.dao.common import AreaId, RenewableId, RenewableSeriesMapping
-from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.common import validate_area_exists, validate_areas_exist
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
@@ -63,9 +62,7 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
         self, data: dict[AreaId, list[RenewableId]], exc: IntegrityError | None = None
     ) -> NoReturn:
         # Checks if some areas are missing
-        existing_ids = set(self.get_impl().get_all_area_ids())
-        if invalid_areas := set(data) - existing_ids:
-            raise AreaNotFound(*invalid_areas)
+        validate_areas_exist(self._db_session, self._study_data_id, set(data))
 
         # Means the issue lies in the renewables
         all_existing_renewables = self.get_all_renewables()

@@ -130,21 +130,24 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
             if invalid_ids := set(reserve_ids) - existing:
                 raise ReserveDefinitionsNotFound({area_id: invalid_ids})  # type: ignore
 
-        self._delete_symmetries_associated_with_deleted_reserve(area_id, reserve_ids)
+        reserve_ids_to_delete = set(reserve_ids)
+        self.delete_orphan_thermal_symmetries(area_id, reserve_ids_to_delete)
+        self.delete_orphan_st_storage_symmetries(area_id, reserve_ids_to_delete)
         self._db_session.commit()
 
-    def _delete_symmetries_associated_with_deleted_reserve(
-        self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]
+    def delete_orphan_thermal_symmetries(
+        self, area_id: str, reserves: dict[str, set[ReserveDefinitionId]] | set[ReserveDefinitionId]
     ) -> None:
-        reserve_ids_set = set(reserve_ids)
-
         thermal_symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
-        new_thermal_symmetries = remove_reserve_symmetries_by_cascade(thermal_symmetries_dict, reserve_ids_set)
+        new_thermal_symmetries = remove_reserve_symmetries_by_cascade(thermal_symmetries_dict, reserves)
         if new_thermal_symmetries is not None:
             self.get_impl().save_thermal_reserve_symmetries({area_id: new_thermal_symmetries})
 
+    def delete_orphan_st_storage_symmetries(
+        self, area_id: str, reserves: dict[str, set[ReserveDefinitionId]] | set[ReserveDefinitionId]
+    ) -> None:
         st_storage_symmetries_dict = self.get_impl().get_st_storage_reserve_symmetries(area_id)
-        new_st_storage_symmetries = remove_reserve_symmetries_by_cascade(st_storage_symmetries_dict, reserve_ids_set)
+        new_st_storage_symmetries = remove_reserve_symmetries_by_cascade(st_storage_symmetries_dict, reserves)
         if new_st_storage_symmetries is not None:
             self.get_impl().save_st_storage_reserve_symmetries({area_id: new_st_storage_symmetries})
 

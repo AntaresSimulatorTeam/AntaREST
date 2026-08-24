@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
+
+from antarest.core.exceptions import ReserveCertificationsNotFound
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_certification_model import ThermalReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
@@ -37,7 +40,10 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: Stu
     # A cluster can only be symmetric on reserves it is certified for, so certify both clusters first.
     certification = ThermalReserveCertification()
     certifications = {
-        reserve_id: {"th1": certification, "th2": certification} for reserve_id in ["r1", "r2", "r3", "r4"]
+        "r1": {"th1": certification, "th2": certification},
+        "r2": {"th1": certification, "th2": certification},
+        "r3": {"th1": certification, "th2": certification},
+        "r4": {"th1": certification},
     }
     dao.save_thermal_reserve_certifications({"fr": certifications})
 
@@ -56,6 +62,10 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: Stu
     # The symmetry should also be overwritten by the new value.
     assert dao.get_thermal_reserve_symmetries("fr") == {"th2": [["r1", "r2", "r3"]]}
 
+    # Remove a certification. Should remove the related symmetries.
+    dao.save_thermal_reserve_certifications({"fr": {"r3": {"th1": certification}, "r4": {"th1": certification}}})
+    assert dao.get_all_thermal_reserve_symmetries() == {}
+
 
 def test_deleting_the_last_reserves_removes_their_symmetries(dao_10_2: StudyDao) -> None:
     # Deleting a reserve cascades on the certifications and on the symmetries referencing it.
@@ -73,3 +83,47 @@ def test_deleting_the_last_reserves_removes_their_symmetries(dao_10_2: StudyDao)
 
     symmetries = dao.get_thermal_reserve_symmetries("fr")
     assert symmetries == {}
+
+
+def test_symmetries_removal_when_deleting_thermal_cluster_or_certification(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _set_up(dao)
+
+    # Both clusters are certified on both reserves and symmetric on the r1/r2 pair.
+    dao.save_thermal_reserve_certifications(
+        {
+            "fr": {
+                "r1": {"th1": ThermalReserveCertification(), "th2": ThermalReserveCertification()},
+                "r2": {"th1": ThermalReserveCertification(), "th2": ThermalReserveCertification()},
+            }
+        }
+    )
+    dao.save_thermal_reserve_symmetries({"fr": {"th1": [["r1", "r2"]], "th2": [["r1", "r2"]]}})
+
+    # Removes the thermal cluster `th1`.
+    dao.delete_thermal("fr", "th1")
+
+    # The certifications of the deleted cluster are gone, th2 is untouched.
+    assert dao.get_thermal_reserve_certifications("fr") == {
+        "r1": {"th2": ThermalReserveCertification()},
+        "r2": {"th2": ThermalReserveCertification()},
+    }
+
+    # Same for the symmetries.
+    assert dao.get_thermal_reserve_symmetries("fr") == {"th2": [["r1", "r2"]]}
+
+    # Removing a certification should also clean the symmetries.
+    dao.save_thermal_reserve_certifications({"fr": {}})
+
+    assert dao.get_thermal_reserve_symmetries("fr") == {}
+
+
+def test_save_symmetry_without_certification_or_without_thermal(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _set_up(dao)
+
+    with pytest.raises(ReserveCertificationsNotFound):
+        dao.save_thermal_reserve_symmetries({"fr": {"th1": [["r1", "r2"]]}})
+
+    with pytest.raises(ReserveCertificationsNotFound):
+        dao.save_thermal_reserve_symmetries({"fr": {"fake_thermal": [["r1", "r2"]]}})

@@ -39,7 +39,7 @@ def check_thermal_symmetries_integrity(study_dao: "StudyDao", new_symmetries: Th
 
     for area_id, value in new_symmetries.items():
         # Handle the case where no symmetries are given. Means we only want to clear them all.
-        if all(symmetries == [[]] for symmetries in value.values()):
+        if not (any(symmetry for symmetry in value.values())):
             continue
 
         if area_id not in existing_certifications:
@@ -77,7 +77,7 @@ def check_st_storage_symmetries_integrity(
 
     for area_id, value in new_symmetries.items():
         # Handle the case where no symmetries are given. Means we only want to clear them all.
-        if all(symmetries == [[]] for symmetries in value.values()):
+        if not (any(symmetry for symmetry in value.values())):
             continue
 
         if area_id not in existing_certifications:
@@ -102,7 +102,8 @@ def check_st_storage_symmetries_integrity(
 
 
 def remove_reserve_symmetries_by_cascade(
-    symmetries_dict: dict[str, ReserveSymmetries], reserve_ids_to_remove: set[ReserveDefinitionId]
+    symmetries_dict: dict[str, ReserveSymmetries],
+    reserves_to_remove: dict[str, set[ReserveDefinitionId]] | set[ReserveDefinitionId],
 ) -> dict[str, ReserveSymmetries] | None:
     """
     When removing a reserve, we should also remove it from the symmetries.
@@ -111,9 +112,17 @@ def remove_reserve_symmetries_by_cascade(
         The updated symmetries dictionary or None if no symmetries were updated.
     """
     should_update_symmetries = False
-    for symmetries in symmetries_dict.values():
+    for object_id, symmetries in symmetries_dict.items():
         for i, symmetry in enumerate(symmetries):
-            symmetries[i] = [reserve_id for reserve_id in symmetry if reserve_id not in reserve_ids_to_remove]
+            new_symmetry = []
+            for reserve_id in symmetry:
+                if isinstance(reserves_to_remove, set):
+                    if reserve_id not in reserves_to_remove:
+                        new_symmetry.append(reserve_id)
+                else:
+                    if reserve_id not in reserves_to_remove.get(object_id, []):
+                        new_symmetry.append(reserve_id)
+            symmetries[i] = new_symmetry
             if len(symmetries[i]) != len(symmetry):
                 should_update_symmetries = True
             if len(symmetries[i]) == 1:
