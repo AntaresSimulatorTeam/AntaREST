@@ -175,13 +175,15 @@ class ParquetOutputWriter:
     def __init__(self, target_path: Path, index_cols: list[IndexCol], var_cols: Sequence[VariableDescription]) -> None:
         self.index_cols = index_cols
         self.var_cols = var_cols
-        self.writer = BatchParquetWriter(target_path, schema=self._create_schema())
+        self.target_path = target_path
+        self.writer: BatchParquetWriter | None = None
 
     def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *args: Any, **kwargs: Any) -> None:
-        self.writer.close()
+        if self.writer:
+            self.writer.close()
 
     def _create_schema(self) -> pa.Schema:
         return pa.schema(
@@ -218,6 +220,8 @@ class ParquetOutputWriter:
             raise ValueError(
                 f"Dataframe index differs from parquet file index ({output_df.index_cols} != {self.index_cols})"
             )
+        if not self.writer:
+            self.writer = BatchParquetWriter(self.target_path, schema=self._create_schema())
         self.writer.append_table(self._adapt_df(output_df))
 
 

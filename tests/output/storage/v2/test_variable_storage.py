@@ -72,7 +72,6 @@ def test_parquet_writer_adapts_df_to_columns(tmp_path: Path) -> None:
 
 def test_area_parquet_file_creation(output_dir: Path, db_session: Session, tmp_path: Path) -> None:
     # TODO: should probably not need to go to the DB to get variables index ...
-    # TODO: should not get any file for empty frequencies
 
     db_output = DbParquetOutput(id=0)
     db_session.add(db_output)
@@ -90,6 +89,7 @@ def test_area_parquet_file_creation(output_dir: Path, db_session: Session, tmp_p
 
     extract_areas_refacto(index, file_output, target_dir)
 
+    assert len(list(target_dir.iterdir())) == 1
     monthly_file = target_dir / "mc-ind_areas_monthly.parquet"
     assert monthly_file.is_file()
 
