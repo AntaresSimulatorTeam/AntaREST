@@ -38,7 +38,7 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     # Fetch all resources. Should contain the folder
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == {
+    expected_structure = {
         "directories": [
             {
                 "name": "my",
@@ -54,6 +54,7 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
         ],
         "files": [],
     }
+    assert res.json() == expected_structure
     # Create a file with a specific content
     content = b"specific content"
     res = client.put(
@@ -95,14 +96,14 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     # Fetch all resources. Should contain the folder only
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == ["my/folder"]
+    assert res.json() == expected_structure
 
     # Create a folder "my". Should be a no-op as it already exists.
     res = client.put(f"/v1/studies/{study_id}/user-resources", params={"path": "my", "resource_type": "folder"})
     assert res.status_code == 200
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == ["my/folder"]
+    assert res.json() == expected_structure
 
     # Delete the folder
     res = client.delete(f"/v1/studies/{study_id}/user-resources?path=my/folder")
