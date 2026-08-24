@@ -66,7 +66,22 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     # Fetch all resources. Should contain the file
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == ["my/file", "my/folder"]
+    assert res.json() == {
+        "directories": [
+            {
+                "name": "my",
+                "files": ["file"],
+                "directories": [
+                    {
+                        "name": "folder",
+                        "files": [],
+                        "directories": [],
+                    }
+                ],
+            }
+        ],
+        "files": [],
+    }
 
     # Fetch the content of the created file
     res = client.get(f"/v1/studies/{study_id}/user-resources/content?path=my/file")
