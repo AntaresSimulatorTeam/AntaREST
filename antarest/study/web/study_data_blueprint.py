@@ -128,7 +128,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterUpdate,
 )
-from antarest.study.business.model.user_model import ResourceType
+from antarest.study.business.model.user_model import ResourceType, UserResourcesTree
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.model import CommentsDto
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -2366,8 +2366,8 @@ def create_study_data_routes() -> APIRouter:
         """
         return study_service.get_study_data(study_id)
 
-    @bp.get("/studies/{uuid}/user-resources", summary="Fetches paths of all user resources for a given study")
-    def get_all_user_resources(study_service: StudyServiceDep, uuid: UuidStr) -> list[str]:
+    @bp.get("/studies/{uuid}/user-resources", summary="Fetches tree structure of all user resources for a given study")
+    def get_all_user_resources(study_service: StudyServiceDep, uuid: UuidStr) -> UserResourcesTree:
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.user_resources_manager.get_all_user_resources_paths(study_interface)

@@ -11,7 +11,12 @@
 # This file is part of the Antares project.
 from pathlib import PurePosixPath
 
-from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
+from antarest.study.business.model.user_model import (
+    ResourceType,
+    UserResourceDataCreation,
+    UserResourceDataRemoval,
+    UserResourcesTree,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.replace_user_resource import ReplaceUserResource
@@ -22,8 +27,22 @@ class UserResourcesManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_all_user_resources_paths(self, study: StudyInterface) -> list[str]:
+    def get_all_user_resources_paths(self, study: StudyInterface) -> UserResourcesTree:
         user_resources = study.get_study_dao().get_all_user_resources()
+        # result = {}
+
+        """"
+        class FolderTree(AntaresBaseModel):
+            name: str
+            directories: list["FolderTree"]
+            files: list[str]
+        
+        class UserResourcesTree(AntaresBaseModel):
+            directories: list[FolderTree]
+            files: list[str]
+
+        """
+
         sorted_resources = sorted(user_resources, key=lambda res: res.path)
         return [res.path.as_posix() for res in sorted_resources]
 
