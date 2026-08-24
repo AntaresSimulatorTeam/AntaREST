@@ -29,6 +29,29 @@ ElementType: TypeAlias = Literal[
 ScenarioAggregation: TypeAlias = Literal["mc-ind", "mc-all"]
 
 
+class IntList(types.TypeDecorator[list[int]]):
+    """
+    Stores a list of integers as a comma separated string.
+
+    Can avoid many to many relationships which would not be useful.
+    """
+
+    impl = String
+    cache_ok = True
+
+    @override
+    def process_bind_param(self, value: list[int] | None, dialect: Dialect) -> str:
+        if not isinstance(value, list):
+            raise ValueError("Expected a list of int")
+        return ",".join(str(c) for c in value)
+
+    @override
+    def process_result_value(self, value: Any | None, dialect: Dialect) -> list[int]:
+        if not isinstance(value, str):
+            raise ValueError("Expected a string.")
+        return [int(c) for c in value.split(",")]
+
+
 class DbParquetOutput(Base):
     # TODO: we should merge the existing v2_output_metadata tables into this one
     #       the integer identifier will be easier and more efficient to use than the couple of strings
@@ -37,6 +60,7 @@ class DbParquetOutput(Base):
     __tablename__ = "parquet_output"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    playlist: Mapped[list[int]] = mapped_column(IntList)
 
 
 class DbParquetVariable(Base):
@@ -63,29 +87,6 @@ class DbParquetVariable(Base):
     statistic_type: Mapped[str | None]
 
 
-class Columns(types.TypeDecorator[list[int]]):
-    """
-    Stores a list of columns as a comma separated string.
-
-    Avoids a many to many relationship which would not be useful.
-    """
-
-    impl = String
-    cache_ok = True
-
-    @override
-    def process_bind_param(self, value: list[int] | None, dialect: Dialect) -> str:
-        if not isinstance(value, list):
-            raise ValueError("Expected a list of int for variable columns")
-        return ",".join(str(c) for c in value)
-
-    @override
-    def process_result_value(self, value: Any | None, dialect: Dialect) -> list[int]:
-        if not isinstance(value, str):
-            raise ValueError("Expected a string in variable columns.")
-        return [int(c) for c in value.split(",")]
-
-
 class DbParquetArea(Base):
     """
     Information related to an area of an output, in particular which variables it has data for,
@@ -100,8 +101,8 @@ class DbParquetArea(Base):
 
     output_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     area_id: Mapped[str] = mapped_column(primary_key=True)
-    mc_all_vars: Mapped[list[int]] = mapped_column(Columns)
-    mc_ind_vars: Mapped[list[int]] = mapped_column(Columns)
+    mc_all_vars: Mapped[list[int]] = mapped_column(IntList)
+    mc_ind_vars: Mapped[list[int]] = mapped_column(IntList)
 
 
 # TODO: add tables for other element types: links, thermal clusters, etc

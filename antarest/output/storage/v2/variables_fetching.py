@@ -17,6 +17,7 @@ Fetching variables metadata from the database
 from dataclasses import dataclass
 from typing import Iterable, Sequence
 
+from polars import DataFrame
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -35,6 +36,12 @@ class VariableColumn:
     name: str
     unit: str | None
     statistic_type: str | None
+
+
+@dataclass(frozen=True)
+class AreaVariables:
+    area_id: str
+    variables: Sequence[VariableColumn]
 
 
 class VariablesIndex:
