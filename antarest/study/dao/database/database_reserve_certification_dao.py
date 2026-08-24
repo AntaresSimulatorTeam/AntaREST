@@ -140,9 +140,9 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             self._db_session.execute(insert(table), values)
 
         # Clean orphan symmetries
-        for area_id, reserves_dict in old_certifications.items():
+        for area_id in area_ids:
             missing_reserves: dict[str, set[ReserveDefinitionId]] = {}
-            for reserve_id, v in old_certifications[area_id].items():
+            for reserve_id, v in old_certifications.get(area_id, {}).items():
                 for object_id in v:
                     if object_id not in new_certifications.get(area_id, {}).get(reserve_id, {}):
                         missing_reserves.setdefault(object_id, set()).add(reserve_id)
