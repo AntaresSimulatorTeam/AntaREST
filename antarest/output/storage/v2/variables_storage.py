@@ -24,7 +24,7 @@ import tempfile
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal, Self, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, Self, TypeAlias
 
 import polars as pl
 import polars.selectors as pls
@@ -137,8 +137,13 @@ def _aggregate_to_parquet(
 
 IndexCol: TypeAlias = Literal["mcYear", "area", "timeId"]
 
+if TYPE_CHECKING:
+    Field = pa.Field[Any]
+else:
+    Field = pa.Field
+
 # Mapping to pyarrow fields
-INDEX_FIELDS: dict[IndexCol, pa.Field[Any]] = {
+INDEX_FIELDS: dict[IndexCol, Field] = {
     "mcYear": pa.field("mcYear", pa.int32()),
     "area": pa.field("area", pa.large_string()),  # polars uses large_string and not just string
     "timeId": pa.field("timeId", pa.int32()),
