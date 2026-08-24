@@ -28,7 +28,7 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     # Fetches all user resources. Should be empty
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == []
+    assert res.json() == {"directories": [], "files": []}
 
     # Create a folder
     params = {"path": "my/folder", "resource_type": "folder"}
