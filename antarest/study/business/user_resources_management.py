@@ -12,6 +12,7 @@
 from pathlib import PurePosixPath
 from typing import Any
 
+from antarest.core.exceptions import UserResourceNotFound
 from antarest.study.business.model.user_model import (
     ResourceType,
     UserResourceDataCreation,
@@ -52,7 +53,7 @@ class UserResourcesManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_all_user_resources_paths(self, study: StudyInterface) -> UserResourcesTree:
+    def get_all_user_resources(self, study: StudyInterface) -> UserResourcesTree:
         user_resources = study.get_study_dao().get_all_user_resources()
         return _build_tree(user_resources)
 
@@ -60,12 +61,18 @@ class UserResourcesManager:
         return study.get_study_dao().get_user_resource(path)
 
     def delete_user_resource(self, study: StudyInterface, path: PurePosixPath) -> None:
-        command = RemoveUserResource(
-            data=UserResourceDataRemoval(path=path.as_posix()),
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-        study.add_commands([command])
+        # First, we need to check if the resource exists
+        for resource in study.get_study_dao().get_all_user_resources():
+            if resource.path.is_relative_to(path):
+                # Remove the existing resource
+                command = RemoveUserResource(
+                    data=UserResourceDataRemoval(path=path.as_posix()),
+                    command_context=self._command_context,
+                    study_version=study.version,
+                )
+                study.add_commands([command])
+                return
+        raise UserResourceNotFound(path.as_posix())
 
     def replace_user_resource(
         self, study: StudyInterface, resource_type: ResourceType, path: PurePosixPath, content: bytes | None

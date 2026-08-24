@@ -2370,7 +2370,7 @@ def create_study_data_routes() -> APIRouter:
     def get_all_user_resources(study_service: StudyServiceDep, uuid: UuidStr) -> UserResourcesTree:
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
-        return study_service.user_resources_manager.get_all_user_resources_paths(study_interface)
+        return study_service.user_resources_manager.get_all_user_resources(study_interface)
 
     @bp.get(
         "/studies/{uuid}/user-resources/content",

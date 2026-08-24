@@ -126,6 +126,7 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
 
     # Deletes a fake user resource. Should fail
     res = client.delete(f"/v1/studies/{study_id}/user-resources?path=fake/path/to/file")
+    assert res.status_code == 404
     description = res.json()["description"]
     assert (
         "User resources not found: 'fake/path/to/file'" in description
