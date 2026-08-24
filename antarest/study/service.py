@@ -991,7 +991,7 @@ class StudyService:
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=str(study_path),
+            path=str(study_path) if storage_mode == StorageMode.FILESYSTEM else None,
             author=author,
             editor=author,
             created_at=now_utc,

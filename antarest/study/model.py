@@ -280,6 +280,7 @@ class Study(Base):
         path: The path to a study directory on the file system. Note that depending on the type of study, this may
               represent different things. In particular, this is generally speaking not a valid study for the simulator.
               (for example, variants will generate snapshots in "<path> / snapshot").
+              In addition, this field is empty (None) for database studies.
         folder: Where the study is located in the workspace, from the user point of view.
                 Note that generally speaking, this will not correspond to a valid folder on disk, this is only a logical
                 folder presented to the user, not the way we organize data internally.
