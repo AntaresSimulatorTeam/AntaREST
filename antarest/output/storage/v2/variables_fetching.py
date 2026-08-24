@@ -17,7 +17,6 @@ Fetching variables metadata from the database
 from dataclasses import dataclass
 from typing import Iterable, Sequence
 
-from polars import DataFrame
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
