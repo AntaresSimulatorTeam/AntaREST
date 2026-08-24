@@ -112,7 +112,7 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
     # Fetch all resources. Should still contain the parent folder "my"
     res = client.get(f"/v1/studies/{study_id}/user-resources")
     assert res.status_code == 200
-    assert res.json() == ["my"]
+    assert res.json() == {"directories": [{"name": "my", "files": [], "directories": []}], "files": []}
 
     ##########################
     # Error cases
