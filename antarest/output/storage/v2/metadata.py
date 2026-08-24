@@ -123,7 +123,7 @@ class ParquetOuputMetadataImpl(IParquetOutputMetadata):
     @override
     @property
     def mc_years(self) -> list[int]:
-        return self.db_output.playlist
+        return self.db_output.mc_years
 
     @override
     def get_time_index(self, frequency: MatrixFrequency) -> MatrixIndex:

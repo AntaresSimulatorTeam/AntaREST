@@ -60,7 +60,7 @@ class DbParquetOutput(Base):
     __tablename__ = "parquet_output"
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    playlist: Mapped[list[int]] = mapped_column(IntList)
+    mc_years: Mapped[list[int]] = mapped_column(IntList)
 
 
 class DbParquetVariable(Base):
