@@ -22,14 +22,14 @@ import logging
 import shutil
 import tempfile
 from collections.abc import Iterator, Sequence
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Literal, Self, TypeAlias
 
 import polars as pl
 import polars.selectors as pls
 import pyarrow as pa
 from polars import Float64
-from pyarrow.lib import Field
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
 from antarest.core.serde.parquet_writer import (
@@ -39,6 +39,7 @@ from antarest.core.serde.parquet_writer import (
     yield_dataframes_from_parquet,
 )
 from antarest.output.filestudy.aggregation import AggregatorManager
+from antarest.output.filestudy.iteration import OutputFileData, iterate_output_data
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file
 from antarest.output.filestudy.model import (
     MCYEAR_COL,
@@ -49,7 +50,6 @@ from antarest.output.filestudy.model import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
-    OutputDataFrame,
     QueryFileType,
     VariableDescription,
     find_mode_dir,
@@ -135,34 +135,130 @@ def _aggregate_to_parquet(
         _merge_intermediate_parquets(file_paths, new_index, target_path)
 
 
-def _iter_mc_ind_area_files(
-    file_output: FileOutput, freq: MatrixFrequency
-) -> Iterable[OutputDataFrame[VariableDescription]]:
-    start_col = get_start_column(freq)
-    for mc_year in file_output.mc_years:
-        for area_id in file_output.mc_ind_area_ids:
-            if data_file := file_output.get_mc_ind_file(mc_year, MCIndAreasQueryFile.VALUES, area_id, freq):
-                yield parse_output_file(data_file, start_col)
+IndexCol: TypeAlias = Literal["mcYear", "area", "timeId"]
+
+# Mapping to pyarrow fields
+INDEX_FIELDS: dict[IndexCol, pa.Field[Any]] = {
+    "mcYear": pa.field("mcYear", pa.int32()),
+    "area": pa.field("area", pa.large_string()),  # polars uses large_string and not just string
+    "timeId": pa.field("timeId", pa.int32()),
+}
 
 
-def _adapt_df(variable_cols: list[VariableDescription], df: OutputDataFrame[VariableDescription]) -> pl.DataFrame:
+@dataclass(frozen=True)
+class IndexedOutputDataFrame:
     """
-    Reshapes the DF so that the column order matches the list of variables, and fills missing variables with null cols
-
-    TODO: create a writer class which encapsulates this plus the writing ?
+    An output dataframe with columns for variables AND for "index" data such as the timestep, the element ID,
+    the MC year.
     """
-    col_for_variable = {v: i for i, v in enumerate(df.headers)}
-    nulls = pl.lit(None, dtype=Float64())
-    res = df.data.select(
-        [
-            pls.by_index(col_for_variable[v]).alias(str(i)) if v in col_for_variable else nulls.alias(str(i))
-            for i, v in enumerate(variable_cols)
+
+    index_cols: Sequence[IndexCol]
+    var_cols: Sequence[VariableDescription]
+
+    data: pl.DataFrame
+
+
+class ParquetOutputWriter:
+    """
+    Utility class to append polars DF to a parquet file, taking care of adapting it to the required schema
+    (list of columns), and grouping them in not too small row groups (through batch parquet writer).
+
+    Columns are named after variables but mainly for debugging purpose: the source of truth for variable columns
+    metadata remains the information stored in database.
+    """
+
+    def __init__(self, target_path: Path, index_cols: list[IndexCol], var_cols: Sequence[VariableDescription]) -> None:
+        self.index_cols = index_cols
+        self.var_cols = var_cols
+        self.writer = BatchParquetWriter(target_path, schema=self._create_schema())
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: Any, **kwargs: Any) -> None:
+        self.writer.close()
+
+    def _create_schema(self) -> pa.Schema:
+        return pa.schema(
+            [INDEX_FIELDS[c] for c in self.index_cols]
+            + [pa.field(self._col_name(i), pa.float64()) for i in range(len(self.var_cols))]
+        )
+
+    def _col_name(self, index: int) -> str:
+        """
+        Trying to have a meaningful naming mainly for debugging purpose.
+        For business logic, the code MUST rely on database metadata instead.
+        """
+        var = self.var_cols[index]
+        return f"{var.name} {var.statistic_type}" if var.statistic_type else var.name
+
+    def _adapt_df(self, output_df: IndexedOutputDataFrame) -> pa.Table:
+        offset = len(self.index_cols)
+        col_for_variable = {v: offset + i for i, v in enumerate(output_df.var_cols)}
+        nulls = pl.lit(None, dtype=Float64())
+        # just keep the index cols as is (just enforcing the "right" name here
+        index_cols = [pls.by_index(i).alias(name) for i, name in enumerate(self.index_cols)]
+        # reorder var cols and insert nulls where missing
+        var_cols = [
+            pls.by_index(col_for_variable[v]).alias(self._col_name(i))
+            if v in col_for_variable
+            else nulls.alias(self._col_name(i))
+            for i, v in enumerate(self.var_cols)
         ]
-    )
-    return res
+        adapted = output_df.data.select(index_cols + var_cols)
+        return adapted.to_arrow()
+
+    def append_output_df(self, output_df: IndexedOutputDataFrame) -> None:
+        if output_df.index_cols != self.index_cols:
+            raise ValueError(
+                f"Dataframe index differs from parquet file index ({output_df.index_cols} != {self.index_cols})"
+            )
+        self.writer.append_table(self._adapt_df(output_df))
 
 
-def _extract_areas(
+_TIME_COL = pl.int_range(pl.len(), dtype=pl.Int32())
+
+
+def time_col() -> pl.Expr:
+    return _TIME_COL
+
+
+def element_id_col(element_id: str) -> pl.Expr:
+    return pl.lit(element_id, dtype=pl.String())
+
+
+def mc_year_col(mc_year: int | Literal["mc-all"]) -> pl.Expr:
+    if mc_year == "mc-all":
+        raise ValueError("Should not created time id col for mc-all dataframe")
+    return pl.lit(mc_year, dtype=pl.Int32())
+
+
+def index_df(data: OutputFileData) -> IndexedOutputDataFrame:
+    """
+    Adds index columns (mc year, element identifier(s), ) to raw variables dataframes
+    """
+    metadata = data.file.metadata
+    df = data.data
+    match metadata.file_type:
+        case MCIndAreasQueryFile.VALUES:
+            return IndexedOutputDataFrame(
+                index_cols=["mcYear", "area", "timeId"],
+                var_cols=df.headers,
+                data=df.data.select(
+                    mc_year_col(metadata.year), element_id_col(metadata.element_id), time_col(), pl.all()
+                ),
+            )
+        case MCAllAreasQueryFile.VALUES:
+            return IndexedOutputDataFrame(
+                index_cols=["area", "timeId"],
+                var_cols=df.headers,
+                data=df.data.select(element_id_col(metadata.element_id), time_col(), pl.all()),
+            )
+
+    raise NotImplementedError(f"Not yet implemented: {metadata.file_type}")
+
+
+def _extract_areas_refacto(
     index: VariablesIndex,
     file_output: FileOutput,
     target_dir: Path,
@@ -170,19 +266,15 @@ def _extract_areas(
 
     variable_cols = index.get_variables("mc-ind", "area")
 
-    index_fields: list[Field[Any]] = [
-        pa.field("area", pa.string()),
-        pa.field("mcYear", pa.int32()),
-        pa.field("timeId", pa.int32()),
-    ]
-    schema = pa.schema(index_fields + [pa.field(str(i), pa.float64()) for i in range(len(variable_cols))])
-
     for freq in MatrixFrequency:
         output_file_path = target_dir / f"mc-ind_areas_{freq.value}.parquet"
-        with BatchParquetWriter(output_file_path, schema) as writer:
-            for df in _iter_mc_ind_area_files(file_output, freq):
-                data = _adapt_df(variable_cols, df)
-                writer.add_table(data.to_arrow())
+        with ParquetOutputWriter(
+            output_file_path, index_cols=["area", "mcYear", "timeId"], var_cols=variable_cols
+        ) as writer:
+            file_data = iterate_output_data(file_output.output_dir, MCIndAreasQueryFile.VALUES, freq, [], [])
+            indexed_dfs = map(index_df, file_data)
+            for df in indexed_dfs:
+                writer.append_output_df(df)
 
 
 # TODO: see above, this implementation needs to be replaced with one that uses the
