@@ -125,11 +125,11 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     ) -> None:
         values = []
         for area_id, reserves_dict in new_certifications.items():
-            for reserve_id, thermal_dict in reserves_dict.items():
-                for thermal_id, certification in thermal_dict.items():
+            for reserve_id, value in reserves_dict.items():
+                for object_id, certification in value.items():
                     values.append(
                         reserve_type.convert_certification_to_row(
-                            self._study_data_id, area_id, thermal_id, reserve_id, certification
+                            self._study_data_id, area_id, object_id, reserve_id, certification
                         )
                     )
         table = reserve_type.db_certification_table()
