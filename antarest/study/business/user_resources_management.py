@@ -32,10 +32,7 @@ def _build_tree(resources: list[UserResourceDataCreation]) -> UserResourcesTree:
         current = root
 
         for part in parts[:-1]:
-            directory = next(
-                (d for d in current["directories"] if d["name"] == part),
-                None,
-            )
+            directory = next((d for d in current["directories"] if d["name"] == part), None)
             if directory is None:
                 directory = {"name": part, "directories": [], "files": []}
                 current["directories"].append(directory)
