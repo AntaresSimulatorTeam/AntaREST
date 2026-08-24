@@ -76,15 +76,19 @@ def _to_var_desc(db_var: DbParquetVariable) -> VariableDescription:
     return VariableDescription(db_var.name, db_var.unit, db_var.statistic_type)
 
 
+def get_variables_index(session: Session, output_id: int) -> VariablesIndex:
+    output_variables = session.execute(
+        select(DbParquetVariable).where(DbParquetVariable.output_id == output_id)
+    ).scalars()
+    return VariablesIndex(output_variables)
+
+
 def get_area_variables(
     session: Session, output_id: int, aggregation: ScenarioAggregation, area_id: str
 ) -> list[VariableDescription]:
 
     # All variables, should load fast ?
-    output_variables = session.execute(
-        select(DbParquetVariable).where(DbParquetVariable.output_id == output_id)
-    ).scalars()
-    variables_index = VariablesIndex(output_variables)
+    variables_index = get_variables_index(session, output_id)
 
     # Get area information
     area = session.execute(select(DbParquetArea).where(DbParquetArea.area_id == area_id)).scalar_one()

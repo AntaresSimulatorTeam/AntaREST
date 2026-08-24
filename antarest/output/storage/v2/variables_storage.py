@@ -195,17 +195,17 @@ class ParquetOutputWriter:
         For business logic, the code MUST rely on database metadata instead.
         """
         var = self.var_cols[index]
-        return f"{var.name} {var.statistic_type}" if var.statistic_type else var.name
+        return "__".join((p for p in (var.name, var.unit, var.statistic_type) if p))
 
     def _adapt_df(self, output_df: IndexedOutputDataFrame) -> pa.Table:
         offset = len(self.index_cols)
         col_for_variable = {v: offset + i for i, v in enumerate(output_df.var_cols)}
-        nulls = pl.lit(None, dtype=Float64())
+        nulls = pl.lit(None, dtype=Float64)
         # just keep the index cols as is (just enforcing the "right" name here
         index_cols = [pls.by_index(i).alias(name) for i, name in enumerate(self.index_cols)]
         # reorder var cols and insert nulls where missing
         var_cols = [
-            pls.by_index(col_for_variable[v]).alias(self._col_name(i))
+            pls.by_index(col_for_variable[v]).cast(dtype=Float64).alias(self._col_name(i))
             if v in col_for_variable
             else nulls.alias(self._col_name(i))
             for i, v in enumerate(self.var_cols)
@@ -221,26 +221,26 @@ class ParquetOutputWriter:
         self.writer.append_table(self._adapt_df(output_df))
 
 
-_TIME_COL = pl.int_range(pl.len(), dtype=pl.Int32())
+_TIME_COL = pl.int_range(pl.len(), dtype=pl.Int32()).alias("timeId")
 
 
 def time_col() -> pl.Expr:
     return _TIME_COL
 
 
-def element_id_col(element_id: str) -> pl.Expr:
-    return pl.lit(element_id, dtype=pl.String())
+def element_id_col(colname: str, element_id: str) -> pl.Expr:
+    return pl.lit(element_id, dtype=pl.String()).alias(colname)
 
 
 def mc_year_col(mc_year: int | Literal["mc-all"]) -> pl.Expr:
     if mc_year == "mc-all":
         raise ValueError("Should not created time id col for mc-all dataframe")
-    return pl.lit(mc_year, dtype=pl.Int32())
+    return pl.lit(mc_year, dtype=pl.Int32()).alias("mcYear")
 
 
 def index_df(data: OutputFileData) -> IndexedOutputDataFrame:
     """
-    Adds index columns (mc year, element identifier(s), ) to raw variables dataframes
+    Adds index columns (mc year, element identifier(s), ) to dataframes containing only variables values
     """
     metadata = data.file.metadata
     df = data.data
@@ -250,20 +250,20 @@ def index_df(data: OutputFileData) -> IndexedOutputDataFrame:
                 index_cols=["mcYear", "area", "timeId"],
                 var_cols=df.headers,
                 data=df.data.select(
-                    mc_year_col(metadata.year), element_id_col(metadata.element_id), time_col(), pl.all()
+                    mc_year_col(metadata.year), element_id_col("area", metadata.element_id), time_col(), pl.all()
                 ),
             )
         case MCAllAreasQueryFile.VALUES:
             return IndexedOutputDataFrame(
                 index_cols=["area", "timeId"],
                 var_cols=df.headers,
-                data=df.data.select(element_id_col(metadata.element_id), time_col(), pl.all()),
+                data=df.data.select(element_id_col("area", metadata.element_id), time_col(), pl.all()),
             )
 
     raise NotImplementedError(f"Not yet implemented: {metadata.file_type}")
 
 
-def _extract_areas_refacto(
+def extract_areas_refacto(
     index: VariablesIndex,
     file_output: FileOutput,
     target_dir: Path,
@@ -274,7 +274,7 @@ def _extract_areas_refacto(
     for freq in MatrixFrequency:
         output_file_path = target_dir / f"mc-ind_areas_{freq.value}.parquet"
         with ParquetOutputWriter(
-            output_file_path, index_cols=["area", "mcYear", "timeId"], var_cols=variable_cols
+            output_file_path, index_cols=["mcYear", "area", "timeId"], var_cols=variable_cols
         ) as writer:
             file_data = iterate_output_data(file_output.output_dir, MCIndAreasQueryFile.VALUES, freq, [], [])
             indexed_dfs = map(index_df, file_data)
