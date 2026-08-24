@@ -39,9 +39,12 @@ def _build_tree(resources: list[UserResourceDataCreation]) -> UserResourcesTree:
 
             current = directory
 
-        if resource.resource_type == ResourceType.FILE:
-            current["files"].append(parts[-1])
+        name = parts[-1]
 
+        if resource.resource_type == ResourceType.FILE:
+            current["files"].append(name)
+        else:
+            current["directories"].append({"name": name, "directories": [], "files": []})
     return UserResourcesTree.model_validate(root)
 
 

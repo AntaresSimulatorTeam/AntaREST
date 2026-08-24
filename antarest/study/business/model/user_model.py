@@ -45,10 +45,10 @@ class UserResourceDataRemoval(AntaresBaseModel):
 
 class FolderTree(AntaresBaseModel):
     name: str
-    directories: list["FolderTree"]
     files: list[str]
+    directories: list["FolderTree"]
 
 
 class UserResourcesTree(AntaresBaseModel):
-    directories: list[FolderTree]
     files: list[str]
+    directories: list[FolderTree]
