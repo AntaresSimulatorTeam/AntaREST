@@ -43,11 +43,13 @@ def test_nominal_case(client: TestClient, user_access_token: str, storage_mode: 
             {
                 "name": "my",
                 "files": [],
-                "directories": {
-                    "name": "folder",
-                    "files": [],
-                    "directories": [],
-                },
+                "directories": [
+                    {
+                        "name": "folder",
+                        "files": [],
+                        "directories": [],
+                    }
+                ],
             }
         ],
         "files": [],
