@@ -547,9 +547,7 @@ def test_import_output_directory(output_storage: IOutputStorage, tmp_path: Path)
     assert output_storage.get_logs("my-study", f"{expected_date}eco-other", LogType.STDERR) == "some error"
 
 
-def test_import_output_zip_should_import_it_as_archived(
-    output_storage: IOutputStorage, tmp_path: Path, sta_mini_zip_path: Path
-) -> None:
+def test_import_output_zip_should_import_it_as_archived(output_storage: IOutputStorage, tmp_path: Path) -> None:
     # Checks the "optimized path" for zipped outputs, see TODOs
 
     # Use the `20201014-1430adq-2` output as it's already zipped
