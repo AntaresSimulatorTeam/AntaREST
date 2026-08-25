@@ -54,6 +54,7 @@ from antarest.output.storage.output_storage import (
     OutputMetadata,
     OutputStorageType,
 )
+from antarest.output.storage.v2.download import build_matrix_aggregation_result
 from antarest.output.storage.v2.metadata import ParquetOuputMetadataImpl
 from antarest.output.storage.v2.repository import (
     DbOutputMetadataV2,
@@ -459,4 +460,8 @@ class V2OutputStorage(IOutputStorage):
     def get_matrix_aggregation_result(
         self, study_id: str, output_id: str, data_selection: StudyDownloadDTO
     ) -> MatrixAggregationResultDTO:
-        raise NotImplementedError()
+        metadata = self._require_metadata(study_id, output_id)
+        db_id = 0  # TODO: get from metadata
+        parquet_metadata = ParquetOuputMetadataImpl(db.session, db_id)
+        output_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
+        return build_matrix_aggregation_result(parquet_metadata, output_dir, data_selection)
