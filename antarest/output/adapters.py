@@ -36,8 +36,13 @@ def study_service_as_in_study_file_outputs_provider(study_service: StudyService)
         @override
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             metadata = study_service.get_study(study_id)
+            if metadata.path is None:
+                # Point to a path that is guaranteed not to exist for database studies
+                outputs_path = study_service.config.storage.tmp_dir / "no-file-outputs-for-database-studies" / study_id
+            else:
+                outputs_path = Path(check_study_path(metadata)) / "output"
             return FileStudyOutputs(
-                outputs_path=Path(check_study_path(metadata)) / "output",
+                outputs_path=outputs_path,
                 study_workspace=getattr(metadata, "workspace", DEFAULT_WORKSPACE_NAME),
             )
 
