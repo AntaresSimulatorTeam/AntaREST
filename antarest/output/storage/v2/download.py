@@ -32,8 +32,6 @@ def build_matrix_aggregation_result(
     output_metadata: IParquetOutputMetadata, parquet_dir: Path, data_selection: StudyDownloadDTO
 ) -> MatrixAggregationResultDTO:
 
-    area_vars = output_metadata.get_variables("mc-ind", "area")
-
     element_results: dict[str, TimeSeriesData] = {}  # one TimeSeriesData for each element of the system
 
     if data_selection.type in {StudyDownloadType.AREA, StudyDownloadType.DISTRICT}:
@@ -46,12 +44,11 @@ def build_matrix_aggregation_result(
             data_selection.columns,
         )
         for area_df in area_dfs:
-            year, area_id, df = area_df.year, area_df.area_id, area_df.data
+            year, area_id, df, vars = area_df.year, area_df.area_id, area_df.data, area_df.variables
             ts_data = element_results.setdefault(
                 area_id, TimeSeriesData(type=data_selection.type, name=area_id, data={})
             )
-            for var_index, var in enumerate(area_df.variables):
-                var = area_vars[var_index]
+            for var_index, var in enumerate(vars):
                 numerical_data = df.to_series(var_index).cast(float).to_list()
                 ts_data.data.setdefault(str(year), []).append(
                     TimeSerie(name=var.name, unit=var.unit_repr(), data=numerical_data)

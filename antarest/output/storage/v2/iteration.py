@@ -59,12 +59,22 @@ def iterate_areas_df(
     """
     Yields dataframes for the selected years and areas, in sorted order, years moving last.
 
+    Note that each area may have different variables and hence different dataframe shapes.
+    For example, if 2 areas have different thermal cluster groups, that will be the case.
+
     Implementation first scans the parquet file for the selected rows and columns,
     then iterate on each couple year/area to yield the corresponding dataframe.
     We take care of selecting, for each area, only the variables of that area.
+
+    Note on performance:
+    we scan from the parquet file for each area, which is likely sub-optimal.
+    Implementation may be tuned if considered useful later, for example by collecting a DataFrame
+    with all necessary data first (but that can cause out of memory errors).
     """
     all_area_vars = output_metadata.get_variables("mc-ind", "area")
     parquet_file = _parquet_file(parquet_dir, "area", frequency)
+
+    # Using polars lazy frame API to define the query into the underlying parquet file
     areas_df = scan_parquet(parquet_file)
     if years:
         areas_df = areas_df.filter(col("mcYear").is_in(years))
@@ -87,7 +97,6 @@ def iterate_areas_df(
         vars_indices = area_vars[area.area_id].variables
         if selected_cols:
             vars_indices = [v for v in vars_indices if v in selected_cols]
-        vars = [all_area_vars[i] for i in vars_indices]
         df = (
             areas_df.filter(col("area") == area.area_id)
             .filter(col("mcYear") == year)
@@ -95,4 +104,5 @@ def iterate_areas_df(
             .collect()
         )
 
+        vars = [all_area_vars[i] for i in vars_indices]
         yield AreaDataFrame(year=year, area_id=area.area_id, variables=vars, data=df)

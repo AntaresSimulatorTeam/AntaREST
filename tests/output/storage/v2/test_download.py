@@ -11,57 +11,18 @@
 # This file is part of the Antares project.
 from pathlib import Path
 
-import pytest
-from sqlalchemy.orm import Session
-
-from antarest.output.filestudy.model import FileOutput
 from antarest.output.model import StudyDownloadDTO, StudyDownloadType
-from antarest.output.storage.v2.dbmodel import DbParquetOutput
 from antarest.output.storage.v2.download import (
     build_matrix_aggregation_result,
 )
-from antarest.output.storage.v2.metadata import ParquetOuputMetadataImpl
-from antarest.output.storage.v2.variables_fetching import get_variables_index
-from antarest.output.storage.v2.variables_parsing import extract_output_variables_to_database
-from antarest.output.storage.v2.variables_storage import extract_areas_refacto
+from antarest.output.storage.v2.metadata import IParquetOutputMetadata
 from antarest.study.model import MatrixFrequency
 
 
-@pytest.fixture
-def output_dir(data_dir: Path) -> Path:
-    return data_dir / "20260810-1420eco-thermal_groups"
+def test_download_areas(parquet_dir: Path, parquet_metadata: IParquetOutputMetadata) -> None:
 
-
-def test_download_areas(output_dir: Path, db_session: Session, tmp_path: Path) -> None:
-    # TODO: simplify setup
-
-    # Setup
-
-    db_output = DbParquetOutput(id=0, playlist=[1, 2])
-    db_session.add(db_output)
-    db_session.flush()
-
-    file_output = FileOutput(output_dir)
-    extract_output_variables_to_database(db_session, db_output.id, file_output)
-    db_session.flush()
-
-    extract_output_variables_to_database(db_session, 0, file_output)
-    index = get_variables_index(db_session, 0)
-
-    target_dir = tmp_path / "output"
-    target_dir.mkdir()
-
-    extract_areas_refacto(index, file_output, target_dir)
-
-    assert len(list(target_dir.iterdir())) == 1
-    monthly_file = target_dir / "mc-ind_areas_monthly.parquet"
-    assert monthly_file.is_file()
-
-    # Actual test
-
-    output_metadata = ParquetOuputMetadataImpl(db_session, db_output.id)
     data_selection = StudyDownloadDTO(type=StudyDownloadType.AREA, years=[], level=MatrixFrequency.MONTHLY, filter=[])
-    aggregate = build_matrix_aggregation_result(output_metadata, target_dir, data_selection)
+    aggregate = build_matrix_aggregation_result(parquet_metadata, parquet_dir, data_selection)
 
     year1_st_by_area = {data.name: data.data["1"] for data in aggregate.data}
     es_variables = [ts.name for ts in year1_st_by_area["es"]]
@@ -90,38 +51,12 @@ def test_download_areas(output_dir: Path, db_session: Session, tmp_path: Path) -
     ]
 
 
-def test_download_district(output_dir: Path, db_session: Session, tmp_path: Path) -> None:
-    # TODO: simplify setup
-    # TODO: make it pass
+def test_download_district(parquet_dir: Path, parquet_metadata: IParquetOutputMetadata) -> None:
 
-    # Setup
-
-    db_output = DbParquetOutput(id=0, playlist=[1, 2])
-    db_session.add(db_output)
-    db_session.flush()
-
-    file_output = FileOutput(output_dir)
-    extract_output_variables_to_database(db_session, db_output.id, file_output)
-    db_session.flush()
-
-    extract_output_variables_to_database(db_session, 0, file_output)
-    index = get_variables_index(db_session, 0)
-
-    target_dir = tmp_path / "output"
-    target_dir.mkdir()
-
-    extract_areas_refacto(index, file_output, target_dir)
-
-    assert len(list(target_dir.iterdir())) == 1
-    monthly_file = target_dir / "mc-ind_areas_monthly.parquet"
-    assert monthly_file.is_file()
-
-    # Actual test
-
-    output_metadata = ParquetOuputMetadataImpl(db_session, db_output.id)
+    # Like in filesystem implementation, DISTRICT is handled identically to AREA ...
 
     data_selection = StudyDownloadDTO(type=StudyDownloadType.DISTRICT, years=[1], level=MatrixFrequency.MONTHLY)
-    aggregate = build_matrix_aggregation_result(output_metadata, target_dir, data_selection)
+    aggregate = build_matrix_aggregation_result(parquet_metadata, parquet_dir, data_selection)
 
     year1_st_by_area = {data.name: data.data["1"] for data in aggregate.data}
     all_areas_variables = [ts.name for ts in year1_st_by_area["@ all areas"]]
