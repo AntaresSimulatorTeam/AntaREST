@@ -67,7 +67,7 @@ from antarest.output.service import OutputService
 from antarest.study.model import Study
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
-from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
+from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path, is_managed
 
 logger = logging.getLogger(__name__)
 
@@ -538,23 +538,22 @@ class LauncherService:
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
             output_true_path = find_single_output_path(output_path)
+            if not output_true_path.is_dir() and not is_zip(output_true_path):
+                raise NoValidOutputError(f"No valid output for job {job_id}: {output_true_path}")
 
             study_id = job_result.study_id
             study = db.session.get(Study, study_id)
             if study is None:
                 return self._import_fallback_output(job_id, output_true_path, job_launch_params.output_suffix)
-
-            if not output_true_path.is_dir() and not is_zip(output_true_path):
-                raise NoValidOutputError(f"No valid output for job {job_id}: {output_true_path}")
+            is_study_managed = is_managed(study)
 
             self._save_solver_stats(job_result, output_true_path)
 
         zip_path: Path | None = None
-        # Optimized path for studies stored on external devices, that will then be unarchived there.
-        # TODO: that whole optimization path should be refactored to:
-        #       - be more explicit
-        #       - not affect internal studies
-        if job_launch_params.archive_output:
+        if not is_study_managed:
+            # Optimized path for studies stored on external devices, that will then be unarchived there.
+            # TODO: that whole optimization path should be refactored to:
+            #       - be more explicit
             stopwatch = StopWatch()
             logger.info("Re zipping output for transfer")
             zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
