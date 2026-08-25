@@ -34,6 +34,7 @@ from antarest.core.utils.archives import (
     extract_archive_from_path,
     extract_archive_from_stream,
 )
+from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.sqlalchemy import clone_orm_object
 from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
@@ -43,7 +44,7 @@ from antarest.output.filestudy.logs import find_simulation_log
 from antarest.output.filestudy.metadata import (
     extract_output_details,
 )
-from antarest.output.filestudy.model import QueryFileType
+from antarest.output.filestudy.model import FileOutput, QueryFileType
 from antarest.output.filestudy.variables import extract_variables_list
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
@@ -53,11 +54,14 @@ from antarest.output.storage.output_storage import (
     OutputMetadata,
     OutputStorageType,
 )
+from antarest.output.storage.v2.metadata import ParquetOuputMetadataImpl
 from antarest.output.storage.v2.repository import (
     DbOutputMetadataV2,
     OutputV2Repository,
 )
+from antarest.output.storage.v2.variables_parsing import extract_output_variables_to_database
 from antarest.output.storage.v2.variables_storage import (
+    create_parquet_files,
     extract_output_to_parquet,
     parquet_output_dir,
     read_output_from_parquet,
@@ -222,10 +226,6 @@ class V2OutputStorage(IOutputStorage):
 
             simulation_range = _extract_simulation_range(dir_path)
 
-            # TODO: first, extract variables metadata to database
-            variables_target = parquet_output_dir(self._variables_dir, study_id, output_name)
-            extract_output_to_parquet(dir_path, variables_target)
-
             self._repository.save_output_metadata(
                 DbOutputMetadataV2(
                     study_id=study_id,
@@ -243,6 +243,15 @@ class V2OutputStorage(IOutputStorage):
                     first_weekday=simulation_range.first_weekday,
                 )
             )
+
+            # TODO: first, extract variables metadata to database
+            file_output = FileOutput(dir_path)
+            output_id = 0  # TODO: create it first with the metadata above
+            extract_output_variables_to_database(db.session, output_id, file_output)
+
+            variables_target = parquet_output_dir(self._variables_dir, study_id, output_name)
+            metadata = ParquetOuputMetadataImpl(db.session, output_id)
+            create_parquet_files(metadata, file_output, variables_target)  # TODO: complete implementation
 
             self._save_logs(study_id, output_name, logs, dir_path)
 

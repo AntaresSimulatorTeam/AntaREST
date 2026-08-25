@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 from collections.abc import Iterator
+from typing import Iterable
 
 from sqlalchemy import Boolean, Column, ForeignKeyConstraint, Integer, String, Table, delete, select
 from sqlalchemy.orm import Mapped, Session, mapped_column
@@ -19,6 +20,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.sql_utils import upsert_one
 from antarest.launcher.model import LogType
 from antarest.output.model import OutputVariablesList
+from antarest.output.storage.v2.dbmodel import DbParquetArea, DbParquetVariable
 
 
 class DbOutputMetadataV2(Base):
@@ -174,3 +176,9 @@ class OutputV2Repository:
         db_model = DbOutputVariablesV2.from_model(study_id, output_id, variables_list)
         self.session.add(db_model)
         self.session.commit()
+
+    def save_variables(self, variables: Iterable[DbParquetVariable]) -> None:
+        self.session.add_all(variables)
+
+    def save_areas(self, areas: Iterable[DbParquetArea]) -> None:
+        self.session.add_all(areas)
