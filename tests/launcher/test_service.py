@@ -16,7 +16,7 @@ import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from unittest.mock import Mock, call
+from unittest.mock import Mock, call, patch
 from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -1164,7 +1164,7 @@ class TestLauncherService:
 
         # Create a study in DB
         study_id = str(uuid.uuid4())
-        study = create_raw_study(study_id, "study-test", path=str(tmp_path))
+        study = create_raw_study(study_id, "study-test", path="")
         if managed:
             study.workspace = DEFAULT_WORKSPACE_NAME
         else:
@@ -1199,7 +1199,8 @@ class TestLauncherService:
         ##########################
 
         # todo: We should test that if it is managed we do not go through archive_dir.
-        launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
+        with patch("os.scandir", side_effect=FileNotFoundError("File doesn't exist")):
+            launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
 
 
 class TestNormalizeScheduledAt:
