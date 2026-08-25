@@ -1198,9 +1198,16 @@ class TestLauncherService:
         # Test
         ##########################
 
-        # todo: We should test that if it is managed we do not go through archive_dir.
-        with patch("os.scandir", side_effect=FileNotFoundError("File doesn't exist")):
-            launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
+        # We patch the `archive_dir` function to always raise.
+        # This way we can check if it was called or not.
+        with patch("antarest.launcher.service.archive_dir", side_effect=ValueError("Output archiving failed for test")):
+            if managed:
+                # We should not raise here as we do not need to archive the output.
+                launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
+            else:
+                # Here we expect the method to raise as we need to archive the output in order to unarchive it later on the Windows VM.
+                with pytest.raises(ValueError, match="Output archiving failed for test"):
+                    launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
 
 
 class TestNormalizeScheduledAt:
