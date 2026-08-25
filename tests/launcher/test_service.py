@@ -777,6 +777,7 @@ class TestLauncherService:
         )
 
     @with_admin_user
+    @with_db_context
     def test_manage_output(self, tmp_path: Path) -> None:
         # TODO: finish adaptation
         study_service = Mock()
@@ -813,7 +814,12 @@ class TestLauncherService:
             output_data.writestr("some output", "0\n1")
         job_id = "job_id"
         zipped_job_id = "zipped_job_id"
-        study_id = "study_id"
+        study_id = str(uuid.uuid4())
+        # Adds the study linked to the job inside DB
+        study = create_raw_study(study_id, "study-test", tmp_path)
+        db.session.add(study)
+        db.session.commit()
+        # Defines the side effects
         launcher_service.job_result_repository.get.side_effect = [
             None,
             JobResult(id=job_id, study_id=study_id),
@@ -1015,7 +1021,7 @@ class TestLauncherService:
         job_result = JobResult(study_id=study_id, owner_id=jwt_user.id)
         job_repository = Mock()
         job_repository.get.return_value = job_result
-        # Adds the study to DB
+        # Adds the study linked to the job inside DB
         study = create_raw_study(study_id, "study-test", tmp_path)
         db.session.add(study)
         db.session.commit()
