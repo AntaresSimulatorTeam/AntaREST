@@ -13,6 +13,7 @@
 import json
 import os
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import Mock, call
@@ -39,7 +40,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
+from antarest.core.utils.fastapi_sqlalchemy.middleware import db, init_db_singleton
 from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
@@ -83,7 +84,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import with_admin_user
+from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 class TestLauncherService:
@@ -1002,6 +1003,7 @@ class TestLauncherService:
         )
         assert actual_obj.to_dto().model_dump() == expected_obj.to_dto().model_dump()
 
+    @with_db_context
     def test_import_output_is_called_with_the_right_user(self, tmp_path: Path) -> None:
         # Create user
         jwt_user = JWTUser(id=2, impersonator=2, type="users")
@@ -1009,9 +1011,14 @@ class TestLauncherService:
         login_service = Mock()
         login_service.get_jwt.return_value = jwt_user
         # Put this user as the job owner
-        job_result = JobResult(study_id="study_id", owner_id=jwt_user.id)
+        study_id = str(uuid.uuid4())
+        job_result = JobResult(study_id=study_id, owner_id=jwt_user.id)
         job_repository = Mock()
         job_repository.get.return_value = job_result
+        # Adds the study to DB
+        study = create_raw_study(study_id, "study-test", tmp_path)
+        db.session.add(study)
+        db.session.commit()
 
         # fake import_output function that checks the current user
         def fake_import_output(
@@ -1039,6 +1046,7 @@ class TestLauncherService:
 
         # Ensures the output_service.import_output method was called with the right user
         launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
+        launcher_service.output_service.import_output.assert_called_once()
 
     @with_admin_user
     def test_run_study_with_solver_presets(self) -> None:
