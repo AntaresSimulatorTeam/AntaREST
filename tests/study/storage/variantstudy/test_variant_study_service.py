@@ -220,7 +220,6 @@ class TestVariantStudyService:
         variant_study_service: VariantStudyService,
         raw_study_service: RawStudyService,
         fs_dao: FileStudyTreeDao,
-        monkeypatch: pytest.MonkeyPatch,
     ) -> None:
         """
         - Test return value in case the user is not allowed to call the function,
