@@ -71,6 +71,7 @@ from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.output.service import OutputService
 from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     OwnerInfo,
@@ -1154,8 +1155,51 @@ class TestLauncherService:
         with pytest.raises(IncompatibleSolverPresets):
             launcher_service.run_study("study_uuid", "local", params_with_other_options, "config-1", "8.0")
 
-    def test_import_output_for_different_workspaces(self) -> None:
-        pass
+    @with_db_context
+    @pytest.mark.parametrize("managed", [True, False])
+    def test_import_output_for_different_workspaces(self, tmp_path: Path, managed: bool) -> None:
+        ##########################
+        # Set Up
+        ##########################
+
+        # Create a study in DB
+        study_id = str(uuid.uuid4())
+        study = create_raw_study(study_id, "study-test", path=str(tmp_path))
+        if managed:
+            study.workspace = DEFAULT_WORKSPACE_NAME
+        else:
+            study.workspace = "other-workspace"
+        db.session.add(study)
+        db.session.commit()
+
+        # Create a fake job
+        job_result = JobResult(study_id=study_id, owner_id=1)
+        job_repository = Mock()
+        job_repository.get.return_value = job_result
+
+        # Builds the service
+        output_service = Mock()
+        output_service.import_output.side_effect = None
+        launcher_service = LauncherService(
+            config=Mock(),
+            study_service=Mock(),
+            output_service=output_service,
+            login_service=Mock(),
+            job_result_repository=job_repository,
+            solver_presets_repository=Mock(),
+            event_bus=Mock(),
+            factory_launcher=Mock(),
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+
+        ##########################
+        # Test
+        ##########################
+
+        # todo: We should test that if it is managed we do not go through archive_dir.
+        launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
 
 
 class TestNormalizeScheduledAt:
