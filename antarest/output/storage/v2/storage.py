@@ -245,7 +245,6 @@ class V2OutputStorage(IOutputStorage):
                 )
             )
 
-            # TODO: first, extract variables metadata to database
             file_output = FileOutput(dir_path)
             output_id = 0  # TODO: create it first with the metadata above
             extract_output_variables_to_database(db.session, output_id, file_output)
