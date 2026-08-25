@@ -47,6 +47,9 @@ class IParquetOutputMetadata(ABC):
     """
     Centralizes access to all kind of metadata for one parquet output:
     MC years, areas, variables ...
+
+    Probably interesting to keep it as an interface for now, because if we want to create it in
+    a separate process at computation time, implementation will not rely on the database.
     """
 
     @property
