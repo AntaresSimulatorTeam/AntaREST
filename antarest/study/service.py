@@ -1095,7 +1095,7 @@ class StudyService:
 
         # Database-mode studies (workspace == DEFAULT_WORKSPACE_NAME) have no path on disk (path is None),
         # so they must be excluded before any Path(raw_study.path) is computed below.
-        all_studies = [study for study in all_studies if study.workspace != DEFAULT_WORKSPACE_NAME]
+        all_studies = [study for study in all_studies if not is_managed(study)]
         if directory:
             if recursive:
                 all_studies = [

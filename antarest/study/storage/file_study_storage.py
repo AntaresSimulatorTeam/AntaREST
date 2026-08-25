@@ -18,7 +18,6 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.exceptions import IncorrectPathError
 from antarest.matrixstore.model import MatrixReference
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import RawStudy, Study, StudyMetadataCopy
@@ -64,11 +63,10 @@ class FileStudyStorage(IStudyStorage):
     def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
         new_study = build_raw_study_from_source(src_study, self._config.get_workspace_path(), metadata)
 
-        if not new_study.path:
-            raise IncorrectPathError(f"Filesystem studies must have a defined path, but study {new_study.id} does not")
+        new_study_path = check_study_path(new_study)
 
         src_path = get_study_path(src_study)
-        dest_path = Path(new_study.path)
+        dest_path = Path(new_study_path)
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
 
