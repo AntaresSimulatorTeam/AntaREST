@@ -12,7 +12,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import cached_property
-from typing import Sequence
+from typing import Iterable, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -27,7 +27,6 @@ from antarest.output.storage.v2.dbmodel import (
     ElementType,
     ScenarioAggregation,
 )
-from antarest.output.storage.v2.variables_fetching import VariablesIndex
 from antarest.study.model import MatrixFrequency
 
 
@@ -80,6 +79,35 @@ class IParquetOutputMetadata(ABC):
         """
         The list of areas for mc-ind results, and the corresponding variables for which they have data.
         """
+
+
+class VariablesIndex:
+    """
+    Helper class to retrieve variable info from DB models.
+    """
+
+    def __init__(self, variables: Iterable[DbParquetVariable]) -> None:
+        vars: dict[tuple[ScenarioAggregation, ElementType], list[DbParquetVariable]] = {}
+        for v in variables:
+            vars.setdefault((v.scenario_aggregation, v.element_type), []).append(v)
+
+        self._variables = {k: sorted(v, key=lambda v: v.column) for k, v in vars.items()}  # sort by columns
+
+    def _get_db_vars(self, aggregation: ScenarioAggregation, element_type: ElementType) -> Sequence[DbParquetVariable]:
+        """
+        Get all variables for the specified "mc-ind/mc-all" and element type (areas, links, ...)
+        """
+        return self._variables.get((aggregation, element_type), [])
+
+    def get_variables(self, aggregation: ScenarioAggregation, element_type: ElementType) -> list[VariableDescription]:
+        """
+        Get all variables for the specified "mc-ind/mc-all" and element type (areas, links, ...)
+        """
+        return [_to_var_desc(v) for v in self._get_db_vars(aggregation, element_type)]
+
+
+def _to_var_desc(db_var: DbParquetVariable) -> VariableDescription:
+    return VariableDescription(db_var.name, db_var.unit, db_var.statistic_type)
 
 
 class ParquetOuputMetadataImpl(IParquetOutputMetadata):
