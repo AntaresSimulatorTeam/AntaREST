@@ -14,7 +14,6 @@
 Fetching variables metadata from the database
 """
 
-from dataclasses import dataclass
 from typing import Iterable, Sequence
 
 from sqlalchemy import select
@@ -22,25 +21,6 @@ from sqlalchemy.orm import Session
 
 from antarest.output.filestudy.model import VariableDescription
 from antarest.output.storage.v2.dbmodel import DbParquetArea, DbParquetVariable, ElementType, ScenarioAggregation
-
-
-@dataclass(frozen=True)
-class VariableColumn:
-    """
-    Attributes:
-        column: offset of the column in the parquet file (actual col will be number of index cols + this offset)
-    """
-
-    column: int
-    name: str
-    unit: str | None
-    statistic_type: str | None
-
-
-@dataclass(frozen=True)
-class AreaVariables:
-    area_id: str
-    variables: Sequence[VariableColumn]
 
 
 class VariablesIndex:
@@ -66,16 +46,6 @@ class VariablesIndex:
         Get all variables for the specified "mc-ind/mc-all" and element type (areas, links, ...)
         """
         return [_to_var_desc(v) for v in self._get_db_vars(aggregation, element_type)]
-
-    def get_variable_columns(self, aggregation: ScenarioAggregation, element_type: ElementType) -> list[VariableColumn]:
-        """
-        Get all variables for the specified "mc-ind/mc-all" and element type (areas, links, ...)
-        """
-        return [_to_var_col(v) for v in self._get_db_vars(aggregation, element_type)]
-
-
-def _to_var_col(db_var: DbParquetVariable) -> VariableColumn:
-    return VariableColumn(db_var.column, db_var.name, db_var.unit, db_var.statistic_type)
 
 
 def _to_var_desc(db_var: DbParquetVariable) -> VariableDescription:
