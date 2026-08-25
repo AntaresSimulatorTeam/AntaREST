@@ -189,7 +189,7 @@ def _import_zip_as_archived(
     output_full_name = extract_output_name(output_zip_path, output_name_suffix)
     final_path = _archived_output_path(study_outputs_path, output_full_name)
     study_outputs_path.mkdir(exist_ok=True)
-    shutil.copyfile(output_zip_path, final_path)
+    shutil.move(output_zip_path, final_path)
 
     _add_logs(final_path, logs)
 
