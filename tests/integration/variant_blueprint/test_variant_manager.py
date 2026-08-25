@@ -372,11 +372,7 @@ def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, t
 
 
 def test_clear_snapshots(
-    client: TestClient,
-    admin_access_token: str,
-    tmp_path: Path,
-    generate_snapshots: t.List[str],
-    monkeypatch: pytest.MonkeyPatch,
+    client: TestClient, admin_access_token: str, tmp_path: Path, generate_snapshots: list[str]
 ) -> None:
     """
     The `snapshot/` directory must not exist after a call to `clear-snapshot`.

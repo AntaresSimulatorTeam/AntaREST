@@ -1154,6 +1154,9 @@ class TestLauncherService:
         with pytest.raises(IncompatibleSolverPresets):
             launcher_service.run_study("study_uuid", "local", params_with_other_options, "config-1", "8.0")
 
+    def test_import_output_for_different_workspaces(self) -> None:
+        pass
+
 
 class TestNormalizeScheduledAt:
     NOW = datetime(2026, 7, 7, 12, 0, 0)
