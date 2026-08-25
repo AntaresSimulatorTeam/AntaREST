@@ -49,9 +49,7 @@ def variant_id_fixture(client: TestClient, admin_access_token: str, base_study_i
 
 
 @pytest.fixture(name="generate_snapshots")
-def generate_snapshot_fixture(
-    client: TestClient, admin_access_token: str, base_study_id: str, monkeypatch: pytest.MonkeyPatch
-) -> t.List[str]:
+def generate_snapshot_fixture(client: TestClient, admin_access_token: str, base_study_id: str) -> list[str]:
     """Generate some snapshots with different date of update and last access"""
 
     # Initialize variant_ids list
