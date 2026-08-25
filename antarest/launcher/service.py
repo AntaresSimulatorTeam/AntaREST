@@ -64,6 +64,7 @@ from antarest.launcher.repository import (
 from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context, get_current_user, require_current_user
 from antarest.output.service import OutputService
+from antarest.study.model import Study
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.utils import assert_permission, extract_output_name, find_single_output_path
@@ -532,11 +533,16 @@ class LauncherService:
             job_result = self.job_result_repository.get(job_id)
             if not job_result:
                 raise JobNotFound()
-            study_id = job_result.study_id
+
             job_owner_id = job_result.owner_id
             job_launch_params = LauncherParametersDTO.from_launcher_params(job_result.launcher_params)
 
             output_true_path = find_single_output_path(output_path)
+
+            study_id = job_result.study_id
+            study = db.session.get(Study, study_id)
+            if study is None:
+                return self._import_fallback_output(job_id, output_true_path, job_launch_params.output_suffix)
 
             if not output_true_path.is_dir() and not is_zip(output_true_path):
                 raise NoValidOutputError(f"No valid output for job {job_id}: {output_true_path}")
@@ -575,11 +581,7 @@ class LauncherService:
                         logs=additional_logs,
                     )
             except StudyNotFoundError:
-                return self._import_fallback_output(
-                    job_id,
-                    final_output_path,
-                    job_launch_params.output_suffix,
-                )
+                return self._import_fallback_output(job_id, final_output_path, job_launch_params.output_suffix)
             finally:
                 # Delete the temporary zip file, which now has been imported
                 if zip_path:
