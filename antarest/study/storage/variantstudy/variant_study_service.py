@@ -174,7 +174,7 @@ class VariantStudyService(AbstractStudyService):
             sanitized = str(escape(study_id))
             logger.warning("Study %s not found in metadata db", sanitized)
             raise StudyNotFoundError(study_id)
-        return ResourcePaths(study_path=get_study_path(study), output_path=Path(check_study_path(study)) / "output")
+        return ResourcePaths(study_path=get_study_path(study), output_path=check_study_path(study) / "output")
 
     def invalidate_snapshot(self, variant_study: VariantStudy) -> None:
         """

@@ -13,8 +13,6 @@
 Adapts other packages components to provide the necessary interface for the output service.
 """
 
-from pathlib import Path
-
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -40,7 +38,7 @@ def study_service_as_in_study_file_outputs_provider(study_service: StudyService)
                 # Point to a path that is guaranteed not to exist for database studies
                 outputs_path = study_service.config.storage.tmp_dir / "no-file-outputs-for-database-studies" / study_id
             else:
-                outputs_path = Path(check_study_path(metadata)) / "output"
+                outputs_path = check_study_path(metadata) / "output"
             return FileStudyOutputs(
                 outputs_path=outputs_path,
                 study_workspace=getattr(metadata, "workspace", DEFAULT_WORKSPACE_NAME),

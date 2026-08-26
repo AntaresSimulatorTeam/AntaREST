@@ -1098,11 +1098,11 @@ class StudyService:
         if directory:
             if recursive:
                 all_studies = [
-                    raw_study for raw_study in all_studies if directory in Path(check_study_path(raw_study)).parents
+                    raw_study for raw_study in all_studies if directory in check_study_path(raw_study).parents
                 ]
             else:
                 all_studies = [
-                    raw_study for raw_study in all_studies if directory == Path(check_study_path(raw_study)).parent
+                    raw_study for raw_study in all_studies if directory == check_study_path(raw_study).parent
                 ]
         folders = [folder for folder in folders if folder.workspace != DEFAULT_WORKSPACE_NAME]
         studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}

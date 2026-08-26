@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import logging
 import shutil
-from pathlib import Path
 
 from typing_extensions import override
 
@@ -40,7 +39,7 @@ class FileSnapshotManager(ISnapshotManager):
             snapshot_dir.parent.mkdir(parents=True, exist_ok=True)
             export_study_to_flat_directory(get_snapshot_dir(ref_study), snapshot_dir)
         elif isinstance(ref_study, RawStudy):
-            export_study_to_flat_directory(Path(check_study_path(ref_study)), snapshot_dir)
+            export_study_to_flat_directory(check_study_path(ref_study), snapshot_dir)
 
     @override
     def clear_snapshot(self, variant_study: VariantStudy) -> None:

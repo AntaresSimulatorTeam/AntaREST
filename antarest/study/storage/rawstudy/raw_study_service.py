@@ -116,7 +116,7 @@ class RawStudyService(AbstractStudyService):
             sanitized = str(escape(study_id))
             logger.warning("Study %s not found in metadata db", sanitized)
             raise StudyNotFoundError(study_id)
-        return ResourcePaths(study_path=Path(check_study_path(study)), output_path=None)
+        return ResourcePaths(study_path=check_study_path(study), output_path=None)
 
     def create_study_dao(self, study: RawStudy) -> None:
         metadata = StudyMetadataCreation(

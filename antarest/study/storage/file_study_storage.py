@@ -64,7 +64,7 @@ class FileStudyStorage(IStudyStorage):
         new_study = build_raw_study_from_source(src_study, self._config.get_workspace_path(), metadata)
 
         src_path = get_study_path(src_study)
-        dest_path = Path(check_study_path(new_study))
+        dest_path = check_study_path(new_study)
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
 
@@ -80,17 +80,17 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def write_study_for_archive(self, study: RawStudy, dst_path: Path) -> None:
-        shutil.copytree(src=Path(check_study_path(study)), dst=dst_path)
+        shutil.copytree(src=check_study_path(study), dst=dst_path)
         file_study = self._get_file_study(dst_path, False)
         self._denormalize_file_study(file_study)
 
     @override
     def remove_study_data(self, study: Study) -> None:
-        shutil.rmtree(Path(check_study_path(study)), ignore_errors=True)
+        shutil.rmtree(check_study_path(study), ignore_errors=True)
 
     @override
     def unarchive(self, study: RawStudy, archive_path: Path) -> None:
-        extract_data_to_dir(Path(check_study_path(study)), archive_path, self._config.storage.tmp_dir)
+        extract_data_to_dir(check_study_path(study), archive_path, self._config.storage.tmp_dir)
         self.update_from_raw_metadata(study)
 
     @override
@@ -120,7 +120,7 @@ class FileStudyStorage(IStudyStorage):
     @override
     def get_disk_usage(self, study: Study) -> int:
         # We need to exclude the output folder
-        study_path = Path(check_study_path(study))
+        study_path = check_study_path(study)
 
         if not study_path.exists():
             # Could be the case for a variant that was not generated yet
@@ -134,7 +134,7 @@ class FileStudyStorage(IStudyStorage):
 
     @override
     def normalize_study(self, study: Study) -> None:
-        file_study = self._get_file_study(Path(check_study_path(study)), is_managed(study), study.id)
+        file_study = self._get_file_study(check_study_path(study), is_managed(study), study.id)
         self.normalize_file_study(file_study)
 
     def normalize_file_study(self, file_study: FileStudy) -> None:
@@ -149,7 +149,7 @@ class FileStudyStorage(IStudyStorage):
     @override
     def import_study(self, study: RawStudy, study_dir: Path) -> None:
         # Move the study data to the Study `path` directory
-        study_path = Path(check_study_path(study))
+        study_path = check_study_path(study)
         study_dir.rename(study_path)
 
         # Move the "output" subfolder back to its original location as we only want to import the inputs here
@@ -159,7 +159,7 @@ class FileStudyStorage(IStudyStorage):
             outputs_path.rename(study_dir / "output")
 
         # As we don't know yet how outputs will be handled, we don't want to fill the cache with wrong data
-        file_study = self._get_file_study(Path(check_study_path(study)), is_managed(study), use_cache=False)
+        file_study = self._get_file_study(check_study_path(study), is_managed(study), use_cache=False)
         update_study_from_raw_metadata(study, file_study)
         self.normalize_file_study(file_study)
 
@@ -167,7 +167,7 @@ class FileStudyStorage(IStudyStorage):
     def upgrade_study(self, study: Study, version: StudyVersion) -> None:
         is_study_denormalized = False
         try:
-            study_path = Path(check_study_path(study))
+            study_path = check_study_path(study)
             study_upgrader = StudyUpgrader(study_path, version)
             if is_managed(study) and study_upgrader.should_denormalize_study():
                 # We have to denormalize the study because the upgrade impacts study matrices
@@ -177,18 +177,18 @@ class FileStudyStorage(IStudyStorage):
         finally:
             if is_study_denormalized:
                 # We don't want to use the cache as the study was upgraded
-                file_study = self._get_file_study(Path(check_study_path(study)), managed=True, use_cache=False)
+                file_study = self._get_file_study(check_study_path(study), managed=True, use_cache=False)
                 self.normalize_file_study(file_study)
 
     def update_from_raw_metadata(self, study: Study) -> None:
         """
         The given `study` object needs to be updated according to the real filesystem data
         """
-        file_study = self._get_file_study(Path(check_study_path(study)), is_managed(study))
+        file_study = self._get_file_study(check_study_path(study), is_managed(study))
         update_study_from_raw_metadata(study, file_study)
 
     def update_name_and_version_from_raw_meta(self, study: RawStudy) -> bool:
-        path = Path(check_study_path(study))
+        path = check_study_path(study)
         try:
             file_study = self._get_file_study(path, is_managed(study))
             raw_meta = file_study.tree.get(["study", "antares"])
@@ -209,7 +209,7 @@ class FileStudyStorage(IStudyStorage):
         return self._study_factory.create_from_fs(study_path, managed, study_id=study_id, use_cache=use_cache)
 
     def denormalize_study(self, study: Study) -> None:
-        file_study = self._get_file_study(Path(check_study_path(study)), is_managed(study), study.id)
+        file_study = self._get_file_study(check_study_path(study), is_managed(study), study.id)
         self._denormalize_file_study(file_study)
 
     def _denormalize_file_study(self, file_study: FileStudy) -> None:

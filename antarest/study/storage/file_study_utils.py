@@ -27,14 +27,14 @@ logger = logging.getLogger(__name__)
 def get_study_path(study: Study) -> Path:
     if isinstance(study, VariantStudy):
         return get_snapshot_dir(study)
-    return Path(check_study_path(study))
+    return check_study_path(study)
 
 
 def get_snapshot_dir(study: VariantStudy) -> Path:
-    return Path(check_study_path(study)) / "snapshot"
+    return check_study_path(study) / "snapshot"
 
 
-def check_study_path(study: Study) -> str:
+def check_study_path(study: Study) -> Path:
     """
     Ensures the given study has a path on disk and returns it.
 
@@ -43,7 +43,7 @@ def check_study_path(study: Study) -> str:
     """
     if not study.path:
         raise IncorrectPathError(f"Filesystem studies must have a defined path, but study {study.id} does not")
-    return study.path
+    return Path(study.path)
 
 
 def export_study_to_flat_directory(study_dir: Path, dest: Path) -> None:
