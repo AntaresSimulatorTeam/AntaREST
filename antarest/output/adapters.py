@@ -36,7 +36,7 @@ def study_service_as_in_study_file_outputs_provider(study_service: StudyService)
             metadata = study_service.get_study(study_id)
             if metadata.path is None:
                 # Point to a path that is guaranteed not to exist for database studies
-                outputs_path = study_service.config.storage.tmp_dir / "no-file-outputs-for-database-studies" / study_id
+                outputs_path = study_service.config.storage.output.out_of_study.storage_dir / study_id
             else:
                 outputs_path = check_study_path(metadata) / "output"
             return FileStudyOutputs(

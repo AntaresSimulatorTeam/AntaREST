@@ -13,6 +13,9 @@ import pytest
 from antares.study.version import StudyVersion
 from starlette.testclient import TestClient
 
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.service import StudyService
+
 
 class TestCreateStudy:
     @pytest.mark.parametrize(
@@ -81,10 +84,9 @@ class TestCreateStudy:
             "exception": "HTTPException",
         }
 
+    @pytest.mark.parametrize("storage_mode", ["database", "filesystem"])
     def test_create_study_with_path(
-        self,
-        client: TestClient,
-        admin_access_token: str,
+        self, client: TestClient, admin_access_token: str, storage_mode: str, study_service: StudyService
     ) -> None:
         client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
@@ -97,7 +99,7 @@ class TestCreateStudy:
         assert res.status_code == 201
 
         # Create study in the directory path
-        res = client.post("/v1/studies?name=test-study&directory=project/subfolder")
+        res = client.post(f"/v1/studies?name=test-study&directory=project/subfolder&storage_mode={storage_mode}")
         assert res.status_code == 201
         study_id = res.json()
 
@@ -106,6 +108,12 @@ class TestCreateStudy:
         assert res.status_code == 200
         study = res.json()
         assert study["name"] == "test-study"
+        assert study["folder"] == f"project/subfolder/{study_id}"
+
+        if storage_mode == "database":
+            with db():
+                study = study_service.get_study(study_id)
+                assert study.path is None
 
     def test_create_study_with_auto_directory_creation(
         self,
