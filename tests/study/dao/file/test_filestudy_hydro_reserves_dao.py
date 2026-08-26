@@ -48,13 +48,7 @@ def filestudy_dao_v10_2(empty_study_930: FileStudy, matrix_service: ISimpleMatri
 
 def _hydro_reserve_file(dao: FileStudyTreeDao, area_id: str):
     return (
-        dao.get_file_study().config.study_path
-        / "input"
-        / "hydro"
-        / "common"
-        / "reserves"
-        / area_id
-        / "reserve-participations.yml"
+        dao.get_file_study().config.study_path / "input" / "hydro" / "reserves" / area_id / "reserve-participations.yml"
     )
 
 
@@ -132,9 +126,7 @@ def _save_existing_content_with_a_symmetry(dao: FileStudyTreeDao) -> None:
             "symmetries": [{"reserves": ["r1", "r2"]}],
         }
     }
-    dao.get_file_study().tree.save(
-        existing_content, ["input", "hydro", "common", "reserves", "paris", "reserve-participations"]
-    )
+    dao.get_file_study().tree.save(existing_content, ["input", "hydro", "reserves", "paris", "reserve-participations"])
 
 
 def test_saving_certifications_preserves_the_symmetries(filestudy_dao_v10_2: FileStudyTreeDao) -> None:

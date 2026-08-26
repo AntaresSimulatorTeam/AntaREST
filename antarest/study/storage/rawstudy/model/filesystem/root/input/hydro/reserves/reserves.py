@@ -13,11 +13,14 @@ from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLFileNode
+from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.reserves.area import InputHydroReservesArea
 
 
-class InputHydroCommonReservesArea(FolderNode):
+class InputHydroReserves(FolderNode):
+    # Each area has its own folder named after the area id.
     @override
     def build(self) -> TREE:
-        # Reserve participations of the long-term storage owned by this area.
-        return {"reserve-participations": YAMLFileNode(self.config.next_file("reserve-participations.yml"))}
+        return {
+            area_id: InputHydroReservesArea(self.matrix_storage_context, self.config.next_file(area_id))
+            for area_id in self.config.area_names()
+        }

@@ -91,7 +91,7 @@ def get_thermal_reserve_participations_as_yaml_content(area_id: AreaId, file_stu
 
 
 def get_hydro_reserve_path(area_id: str) -> list[str]:
-    return ["input", "hydro", "common", "reserves", area_id, "reserve-participations"]
+    return ["input", "hydro", "reserves", area_id, "reserve-participations"]
 
 
 def get_hydro_reserve_participations_as_yaml_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
