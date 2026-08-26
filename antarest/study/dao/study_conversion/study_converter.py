@@ -274,6 +274,11 @@ class StudyConverter:
         if st_storage_certitifcations:
             self._new_dao.save_st_storage_reserve_certifications(st_storage_certitifcations)
 
+        # Hydro (long-term storage) certifications
+        hydro_certifications = self._source_dao.get_all_hydro_reserve_certifications()
+        if hydro_certifications:
+            self._new_dao.save_hydro_reserve_certifications(hydro_certifications)
+
     def _convert_resvers_symmetries(self) -> None:
         # Thermal symmetries
         thermal_symmetries = self._source_dao.get_all_thermal_reserve_symmetries()

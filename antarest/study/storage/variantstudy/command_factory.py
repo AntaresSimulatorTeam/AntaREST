@@ -65,6 +65,9 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource 
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation import ReplaceHydroAllocation
 from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
+from antarest.study.storage.variantstudy.model.command.replace_hydro_reserve_certifications import (
+    ReplaceHydroReserveCertifications,
+)
 from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_certifications import (
@@ -196,6 +199,7 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.REPLACE_THERMAL_RESERVE_CERTIFICATIONS.value: ReplaceThermalReserveCertifications,
     CommandName.REPLACE_ST_STORAGE_RESERVE_SYMMETRIES.value: ReplaceStStorageReserveSymmetries,
     CommandName.REPLACE_ST_STORAGE_RESERVE_CERTIFICATIONS.value: ReplaceStStorageReserveCertifications,
+    CommandName.REPLACE_HYDRO_RESERVE_CERTIFICATIONS.value: ReplaceHydroReserveCertifications,
 }
 
 

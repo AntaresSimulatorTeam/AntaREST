@@ -97,6 +97,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterUpdate,
 )
 from antarest.study.business.model.reserve_certification_model import (
+    HydroReserveCertificationMapping,
     StorageId,
     StorageReserveCertificationMapping,
     ThermalId,
@@ -1757,6 +1758,30 @@ def create_study_data_routes() -> APIRouter:
         return study_service.reserve_certifications_manager.set_st_storage_certifications(
             study_interface, area_id, data
         )
+
+    @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves/certifications/hydro",
+        summary="Fetch all hydro reserve certifications for a given area",
+    )
+    def get_hydro_reserve_certifications(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
+    ) -> HydroReserveCertificationMapping:
+        logger.info("Fetching hydro reserve certifications for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_certifications_manager.get_hydro_certifications(study_interface, area_id)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/reserves/certifications/hydro",
+        summary="Saves new hydro reserve certifications for a given area",
+    )
+    def save_hydro_reserve_certifications(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: HydroReserveCertificationMapping
+    ) -> HydroReserveCertificationMapping:
+        logger.info("Saving hydro reserve certifications for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_certifications_manager.set_hydro_certifications(study_interface, area_id, data)
 
     @bp.get(
         path="/studies/{uuid}/areas/{area_id}/clusters/renewable",

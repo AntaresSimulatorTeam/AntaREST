@@ -173,6 +173,7 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
     def _remove_reserve_from_certifications(self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
         self._remove_thermal_reserve_from_certifications(area_id, reserve_ids)
         self._remove_st_storage_reserve_from_certifications(area_id, reserve_ids)
+        self._remove_hydro_reserve_from_certifications(area_id, reserve_ids)
 
     def _remove_thermal_reserve_from_certifications(
         self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]
@@ -197,6 +198,18 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
                 should_update_certifications = True
         if should_update_certifications:
             self.get_impl().save_st_storage_reserve_certifications({area_id: certifications})
+
+    def _remove_hydro_reserve_from_certifications(
+        self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]
+    ) -> None:
+        certifications = self.get_impl().get_hydro_reserve_certifications(area_id)
+        should_update_certifications = False
+        for reserve_id in reserve_ids:
+            if reserve_id in certifications:
+                del certifications[reserve_id]
+                should_update_certifications = True
+        if should_update_certifications:
+            self.get_impl().save_hydro_reserve_certifications({area_id: certifications})
 
     @override
     def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:

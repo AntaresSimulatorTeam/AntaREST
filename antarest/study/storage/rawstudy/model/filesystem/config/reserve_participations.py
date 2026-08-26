@@ -21,6 +21,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.reserve_certification_model import (
     Cost,
+    HydroReserveCertificationMapping,
     Power,
     ReserveCertification,
     StorageReserveCertification,
@@ -299,3 +300,81 @@ def serialize_st_storage_reserve_participations(
 
 def parse_st_storage_reserves_symmetries(data: dict[str, Any]) -> dict[str, ReserveSymmetries]:
     return STStorageReserveParticipationsFileData.model_validate(data).get_symmetries()
+
+
+##########################
+# Hydro part
+##########################
+
+
+class HydroParticipation(AntaresBaseModel):
+    """
+    Participation of the long-term storage (hydro) of an area to the reserves.
+
+    Design notes:
+    - An area owns exactly one long-term storage, so there is no asset id to key the participation on.
+    - Symmetries are modelled here only so that they survive a certifications save. They are not
+      exposed through the DAOs nor the API yet.
+    """
+
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    certifications: list[_StorageCertification] = []
+    symmetries: list[Symmetry] = []
+
+    @model_validator(mode="after")
+    def _validate_model(self) -> Self:
+        # Forbid reserve duplication
+        if len(self.certifications) != len({certification.reserve for certification in self.certifications}):
+            raise ValueError("Some reserves are duplicated for the long-term storage")
+
+        return self
+
+
+class HydroReserveParticipationsFileData(AntaresBaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+
+    participations: HydroParticipation = HydroParticipation()
+
+    def get_certifications(self) -> HydroReserveCertificationMapping:
+        result: HydroReserveCertificationMapping = {}
+        for certification in self.participations.certifications:
+            reserve_id = ReserveDefinitionId(transform_name_to_id(certification.reserve))
+            result[reserve_id] = certification.to_model()
+        return result
+
+    def get_symmetries(self) -> ReserveSymmetries:
+        return [symmetry.reserves for symmetry in self.participations.symmetries]
+
+    @classmethod
+    def from_model(cls, symmetries: ReserveSymmetries, certifications: HydroReserveCertificationMapping) -> Self:
+        participation: dict[str, Any] = {}
+        if certifications:
+            participation["certifications"] = [
+                {"reserve": reserve_id, **certification.model_dump()}
+                for reserve_id, certification in certifications.items()
+            ]
+            # Drop symmetries whose reserves lost their certification. Same filtering rule as
+            # `_build_participations_from_symmetries`, except that the key is left out entirely
+            # when nothing survives, instead of being written as an empty list.
+            kept = [[r for r in symmetry if r in certifications] for symmetry in symmetries]
+            if surviving := [s for s in kept if len(s) > 1]:
+                participation["symmetries"] = [{"reserves": s} for s in surviving]
+
+        return cls.model_validate({"participations": participation})
+
+
+def parse_hydro_reserves_certifications(data: dict[str, Any]) -> HydroReserveCertificationMapping:
+    return HydroReserveParticipationsFileData.model_validate(data).get_certifications()
+
+
+def parse_hydro_reserves_symmetries(data: dict[str, Any]) -> ReserveSymmetries:
+    return HydroReserveParticipationsFileData.model_validate(data).get_symmetries()
+
+
+def serialize_hydro_reserve_participations(
+    symmetries: ReserveSymmetries, certifications: HydroReserveCertificationMapping
+) -> dict[str, Any]:
+    model = HydroReserveParticipationsFileData.from_model(symmetries, certifications)
+    # `exclude_unset` allows us to remove empty lists as they won't be written correctly in the file.
+    return model.model_dump(mode="json", by_alias=True, exclude_unset=True)
