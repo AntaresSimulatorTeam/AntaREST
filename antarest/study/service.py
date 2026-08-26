@@ -149,6 +149,7 @@ from antarest.study.repository import (
     StudyPagination,
     StudySortBy,
 )
+from antarest.study.storage.file_study_utils import check_study_path
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -1093,21 +1094,15 @@ class StudyService:
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
         all_studies = self.repository.get_all_raw()
 
-        # Database-mode studies (workspace == DEFAULT_WORKSPACE_NAME) have no path on disk (path is None),
-        # so they must be excluded before any Path(raw_study.path) is computed below.
         all_studies = [study for study in all_studies if not is_managed(study)]
         if directory:
             if recursive:
                 all_studies = [
-                    raw_study
-                    for raw_study in all_studies
-                    if raw_study.path and directory in Path(raw_study.path).parents
+                    raw_study for raw_study in all_studies if directory in Path(check_study_path(raw_study)).parents
                 ]
             else:
                 all_studies = [
-                    raw_study
-                    for raw_study in all_studies
-                    if raw_study.path and directory == Path(raw_study.path).parent
+                    raw_study for raw_study in all_studies if directory == Path(check_study_path(raw_study)).parent
                 ]
         folders = [folder for folder in folders if folder.workspace != DEFAULT_WORKSPACE_NAME]
         studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}

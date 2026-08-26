@@ -63,10 +63,8 @@ class FileStudyStorage(IStudyStorage):
     def copy(self, src_study: Study, metadata: StudyMetadataCopy) -> RawStudy:
         new_study = build_raw_study_from_source(src_study, self._config.get_workspace_path(), metadata)
 
-        new_study_path = check_study_path(new_study)
-
         src_path = get_study_path(src_study)
-        dest_path = Path(new_study_path)
+        dest_path = Path(check_study_path(new_study))
 
         shutil.copytree(src_path, dest_path, ignore=shutil.ignore_patterns("output"))
 

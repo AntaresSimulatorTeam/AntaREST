@@ -516,7 +516,7 @@ def test_partial_sync_studies_from_disk() -> None:
 
 
 # noinspection PyArgumentList
-def test_partial_sync_studies_from_disk_ignores_database_mode_studies() -> None:
+def test_partial_sync_studies_from_disk_ignores_managed_studies() -> None:
     """
     Non-regression test: a study stored in "database" mode has no path on disk (path is None) and
     lives in the default workspace. A directory-scoped scan must not attempt to build a `Path` out
