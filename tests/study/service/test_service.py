@@ -514,6 +514,50 @@ def test_partial_sync_studies_from_disk() -> None:
     )
 
 
+# noinspection PyArgumentList
+def test_sync_studies_from_disk_ignores_managed_studies() -> None:
+    """
+    Non-regression test: a study stored in "database" mode has no path on disk (path is None) and
+    lives in the default workspace. A directory-scoped scan must not attempt to build a `Path` out
+    of that `None` value, and such studies must be entirely ignored by the scan/sync logic.
+    """
+    unmanaged_study = create_raw_study(
+        id="c",
+        path=f"directory{os.sep}c",
+        name="c",
+        workspace="workspace1",
+    )
+    managed_fs_study = create_raw_study(
+        id="managed-fs-study",
+        path=f"directory{os.sep}c",
+        name="my-managed-fs-study",
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+    db_study = create_raw_study(
+        id="db-study",
+        name="my-db-study",
+        storage_mode=StorageMode.DATABASE,
+        workspace=DEFAULT_WORKSPACE_NAME,
+    )
+    db_study.path = None
+
+    fc = StudyFolder(path=Path("directory/c"), workspace="workspace1", groups=[])
+
+    repository = Mock()
+    repository.get_all_raw.side_effect = [[unmanaged_study, db_study, managed_fs_study]]
+    config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
+    service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
+
+    # Should not raise, even though `db_study.path` is None.
+    service.sync_studies_on_disk([fc], directory=Path("directory"))
+
+    # Managed studies study should never be touched (not deleted, and never referenced in a save call).
+    repository.delete.assert_not_called()
+    saved_ids = [call.args[0].id for call in repository.save.call_args_list]
+    assert db_study.id not in saved_ids
+    assert managed_fs_study.id not in saved_ids
+
+
 def test_delete_missing_studies_desktop(study_tree: Path) -> None:
     ma = create_raw_study(id="a", folder="folder/studyA", workspace="workspace1")
     mb = create_raw_study(id="b", folder="folder/studyB", workspace="workspace1")

@@ -64,7 +64,7 @@ from antarest.study.model import (
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
-from antarest.study.storage.file_study_utils import get_study_path
+from antarest.study.storage.file_study_utils import check_study_path, get_study_path
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.utils import (
@@ -174,7 +174,7 @@ class VariantStudyService(AbstractStudyService):
             sanitized = str(escape(study_id))
             logger.warning("Study %s not found in metadata db", sanitized)
             raise StudyNotFoundError(study_id)
-        return ResourcePaths(study_path=get_study_path(study), output_path=Path(study.path) / "output")
+        return ResourcePaths(study_path=get_study_path(study), output_path=check_study_path(study) / "output")
 
     def invalidate_snapshot(self, variant_study: VariantStudy) -> None:
         """

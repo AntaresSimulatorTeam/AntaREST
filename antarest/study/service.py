@@ -149,6 +149,7 @@ from antarest.study.repository import (
     StudyPagination,
     StudySortBy,
 )
+from antarest.study.storage.file_study_utils import check_study_path
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -991,7 +992,7 @@ class StudyService:
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=str(study_path),
+            path=str(study_path) if storage_mode == StorageMode.FILESYSTEM else None,
             author=author,
             editor=author,
             created_at=now_utc,
@@ -1092,12 +1093,17 @@ class StudyService:
         now = current_time()
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
         all_studies = self.repository.get_all_raw()
+
+        all_studies = [study for study in all_studies if not is_managed(study)]
         if directory:
             if recursive:
-                all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
+                all_studies = [
+                    raw_study for raw_study in all_studies if directory in check_study_path(raw_study).parents
+                ]
             else:
-                all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
-        all_studies = [study for study in all_studies if study.workspace != DEFAULT_WORKSPACE_NAME]
+                all_studies = [
+                    raw_study for raw_study in all_studies if directory == check_study_path(raw_study).parent
+                ]
         folders = [folder for folder in folders if folder.workspace != DEFAULT_WORKSPACE_NAME]
         studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}
 
@@ -1384,7 +1390,7 @@ class StudyService:
         Returns:
             Path to the archive file containing the study files compressed inside.
         """
-        path_study = Path(metadata.path)
+        study_name = metadata.name
         with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
             logger.info(f"Exporting study {metadata.id} to temporary path {tmpdir}")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
@@ -1397,7 +1403,7 @@ class StudyService:
                     )
             stopwatch = StopWatch()
             archive_dir(tmp_study_path, target, archive_format=archive_format)
-            logger.info(f"Study {path_study} exported ({target.suffix} format) in {stopwatch}s")
+            logger.info(f"Study {study_name} exported ({target.suffix} format) in {stopwatch}s")
         return target
 
     def export_study_flat(
@@ -2125,7 +2131,7 @@ class StudyService:
         with contextlib.suppress(FileNotFoundError):
             archive_exists = self.storage_service.raw_study_service.find_archive_path(study).is_file()
 
-        study_exists = Path(study.path).joinpath("study.antares").is_file()
+        study_exists = study.path is not None and Path(study.path).joinpath("study.antares").is_file()
         state = get_archive_consistency_state(
             archived_in_db=study.archived,
             archive_exists=archive_exists,
