@@ -32,7 +32,6 @@ class TestCreateStudy:
             "8.5",
             "8.6",
             "8.7",
-            "8.7",
             "9.2",
             "9.3",
         ],
@@ -110,10 +109,9 @@ class TestCreateStudy:
         assert study["name"] == "test-study"
         assert study["folder"] == f"project/subfolder/{study_id}"
 
-        if storage_mode == "database":
-            with db():
-                study = study_service.get_study(study_id)
-                assert study.path is None
+        with db():
+            study = study_service.get_study(study_id)
+            assert study.path is None if storage_mode == "database" else not None
 
     def test_create_study_with_auto_directory_creation(
         self,

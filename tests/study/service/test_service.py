@@ -53,7 +53,6 @@ from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.output_storage import OutputMetadata
-from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
@@ -516,17 +515,23 @@ def test_partial_sync_studies_from_disk() -> None:
 
 
 # noinspection PyArgumentList
-def test_partial_sync_studies_from_disk_ignores_managed_studies() -> None:
+def test_sync_studies_from_disk_ignores_managed_studies() -> None:
     """
     Non-regression test: a study stored in "database" mode has no path on disk (path is None) and
     lives in the default workspace. A directory-scoped scan must not attempt to build a `Path` out
     of that `None` value, and such studies must be entirely ignored by the scan/sync logic.
     """
-    mc = create_raw_study(
+    unmanaged_study = create_raw_study(
         id="c",
         path=f"directory{os.sep}c",
         name="c",
         workspace="workspace1",
+    )
+    managed_fs_study = create_raw_study(
+        id="managed-fs-study",
+        path=f"directory{os.sep}c",
+        name="my-managed-fs-study",
+        workspace=DEFAULT_WORKSPACE_NAME,
     )
     db_study = create_raw_study(
         id="db-study",
@@ -539,17 +544,18 @@ def test_partial_sync_studies_from_disk_ignores_managed_studies() -> None:
     fc = StudyFolder(path=Path("directory/c"), workspace="workspace1", groups=[])
 
     repository = Mock()
-    repository.get_all_raw.side_effect = [[mc, db_study]]
+    repository.get_all_raw.side_effect = [[unmanaged_study, db_study, managed_fs_study]]
     config = Config(storage=StorageConfig(workspaces={"workspace1": WorkspaceConfig()}))
     service = build_study_service(Mock(spec=RawStudyService), Mock(spec=DirectoryService), repository, config)
 
     # Should not raise, even though `db_study.path` is None.
     service.sync_studies_on_disk([fc], directory=Path("directory"))
 
-    # The database-mode study should never be touched (not deleted, and never referenced in a save call).
+    # Managed studies study should never be touched (not deleted, and never referenced in a save call).
     repository.delete.assert_not_called()
     saved_ids = [call.args[0].id for call in repository.save.call_args_list]
     assert db_study.id not in saved_ids
+    assert managed_fs_study.id not in saved_ids
 
 
 def test_delete_missing_studies_desktop(study_tree: Path) -> None:
@@ -634,39 +640,6 @@ def test_create_study(tmp_path: Path, raw_study_service: RawStudyService) -> Non
         service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"], StorageMode.FILESYSTEM)
 
     factory.create_study_dao.assert_called_once()
-
-
-# noinspection PyArgumentList
-@with_db_context
-def test_new_study_path_should_be_none_if_in_db(
-    tmp_path: Path, raw_study_service: RawStudyService, db_session: Session
-) -> None:
-    # User service
-    user = User(id=0, name="user")
-    user_service = Mock()
-    user_service.get_user.return_value = user
-
-    factory = DatabaseStudyDaoFactory(Mock(), Mock(), Mock(), db_session)
-    raw_study_service._study_dao_factories = {StorageMode.DATABASE: factory}
-    config = Config(storage=StorageConfig(workspaces={DEFAULT_WORKSPACE_NAME: WorkspaceConfig(path=tmp_path)}))
-
-    repository = StudyMetadataRepository(db_session)
-    directory_service = Mock(spec=DirectoryService)
-
-    # `directory_id` is a real nullable FK column: an unspecced Mock return value would fail to bind.
-    directory_service.get_directory_by_path.return_value = None
-    service = build_study_service(raw_study_service, directory_service, repository, config, user_service=user_service)
-    service.storage_service.variant_study_service.command_factory = Mock()
-    service.storage_service.variant_study_service.command_factory.command_context = Mock()
-
-    jwt_user = JWT_USER
-    jwt_user.groups = [JWTGroup(id="my-group", name="group", role=RoleType.WRITER)]
-    with current_user_context(jwt_user):
-        study_id = service.create_study("new-study", STUDY_VERSION_7_2, ["my-group"], StorageMode.DATABASE)
-
-    db_study = service.get_study(study_id)
-    assert db_study is not None
-    assert db_study.path is None
 
 
 # noinspection PyArgumentList

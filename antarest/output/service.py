@@ -401,7 +401,6 @@ class OutputService:
         # for now we just check after the fact that this output_id was actually not conflicting,
         # should be improved in the future so that all storages have access to the already existing IDs.
         for other_storage in [s for s in self._storages if s is not storage]:
-            # TODO: Ignore OutputStorageType.IN_STUDY_FILE_TREE storage for db studies as they do not have a file tree
             if other_storage.output_exists(uuid, output_id):
                 logger.warning(
                     f"Output {output_id} already exists in storage {other_storage.storage_type}, removing it from storage {storage.storage_type}"
