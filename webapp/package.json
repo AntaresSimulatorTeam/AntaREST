@@ -61,6 +61,7 @@
     "react-dropzone": "14.2.3",
     "react-hook-form": "7.71.1",
     "react-i18next": "15.0.2",
+    "react-markdown": "10.1.0",
     "react-plotly.js": "2.6.0",
     "react-redux": "9.2.0",
     "react-split": "2.0.14",

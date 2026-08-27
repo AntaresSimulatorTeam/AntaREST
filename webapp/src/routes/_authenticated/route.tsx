@@ -12,7 +12,16 @@
  * This file is part of the Antares project.
  */
 
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import { logout } from "@/redux/ducks/auth";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import storage from "@/services/utils/localStorage";
+import PolicyIcon from "@mui/icons-material/Policy";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import Markdown from "react-markdown";
+import RGPD from "../../../../docs/RGPD.md?raw";
 import Container from "./-components/Container";
 import MaintenanceMode from "./-components/MaintenanceMode";
 
@@ -32,11 +41,47 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
+  const { t } = useTranslation();
+  const dispatch = useAppDispatch();
+  const [openGdprDialog, setOpenGdprDialog] = useState(() => !storage.getItem("gdprAccepted"));
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleAcceptGdpr = () => {
+    storage.setItem("gdprAccepted", true);
+    setOpenGdprDialog(false);
+  };
+
+  const handleRejectGdpr = () => {
+    dispatch(logout());
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
-    <MaintenanceMode>
-      <Container>
-        <Outlet />
-      </Container>
-    </MaintenanceMode>
+    <>
+      <MaintenanceMode>
+        <Container>
+          <Outlet />
+        </Container>
+      </MaintenanceMode>
+      <ConfirmationDialog
+        open={openGdprDialog}
+        title={t("gdpr.title")}
+        titleIcon={PolicyIcon}
+        confirmButtonText={t("global.accept")}
+        cancelButtonText={t("global.signOut")}
+        onConfirm={handleAcceptGdpr}
+        onCancel={handleRejectGdpr}
+        onlyCloseOnCancel
+        fullScreen
+      >
+        <Markdown>{RGPD}</Markdown>
+      </ConfirmationDialog>
+    </>
   );
 }

@@ -22,6 +22,7 @@ import packages from "../../../package.json";
 
 export const StorageKey = {
   AuthUser: "authUser",
+  GdprAccepted: "gdprAccepted",
   // Studies
   StudiesSort: "studies.sort",
   StudiesFilters: "studies.filters",
@@ -40,6 +41,7 @@ const SHARED_KEYS = [StorageKey.AuthUser];
 
 interface TypeFromKey {
   [StorageKey.AuthUser]: UserInfo;
+  [StorageKey.GdprAccepted]: boolean;
   [StorageKey.StudiesSort]: Partial<StudySortConfig>;
   [StorageKey.StudiesFilters]: Partial<StudyFilters>;
   [StorageKey.StudiesViewMode]: ViewMode;
