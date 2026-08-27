@@ -13,6 +13,9 @@
 Adapts other packages components to provide the necessary interface for the output service.
 """
 
+import tempfile
+from pathlib import Path
+
 from typing_extensions import override
 
 from antarest.core.config import Config
@@ -35,8 +38,11 @@ def study_service_as_in_study_file_outputs_provider(study_service: StudyService)
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             metadata = study_service.get_study(study_id)
             if metadata.path is None:
-                # Point to a path that is guaranteed not to exist for database studies
-                outputs_path = study_service.config.storage.output.out_of_study.storage_dir / study_id
+                # TODO: Refactor this after the refactor of OutoutService::import_output
+                # Create a temporary directory for database-mode studies to store their outputs.
+                # This folder must not contain any other file, otherwise it could be seen as an existing output and collide real ones
+                tmp_dir: Path = Path(tempfile.gettempdir())
+                outputs_path = tmp_dir / study_id
             else:
                 outputs_path = check_study_path(metadata) / "output"
             return FileStudyOutputs(
