@@ -49,14 +49,14 @@ Le présent Traitement de DCP revêt un caractère facultatif. Vous êtes inform
 
 ### 2.7. Durée de conservation des données
 
-Les données sont concernées pour une durée de :
+Les données sont conservées pour une durée de :
 
 - 1 semaine pour les logs texte (horodatage de connexion/déconnexion par NNI) ;
 - jusqu'à suppression de l'habilitation du rôle de ANTARES dans Gaia dans la base de données.
 
 ## 3. Vos droits sur les DCP vous concernant
 
-Toute personne concernée dispose du droits d'effacement des données, ou de retrait du son consentement sur ses DCP. Pour toute demande relative à l'exercice de ces droits, vous pouvez contactez le Délégué à la Protection des Données (DPO/DPD) de RTE, en justifiant de votre identité (copie d'une pièce d'identité en cours de validité), à l'adresse suivante :
+Toute personne concernée dispose du droit d'effacement des données, ou de retrait de son consentement sur ses DCP. Pour toute demande relative à l'exercice de ces droits, vous pouvez contacter le Délégué à la Protection des Données (DPO/DPD) de RTE, en justifiant de votre identité (copie d'une pièce d'identité en cours de validité), à l'adresse suivante :
 
 Ou par messagerie électronique à : **rte-informatique-et-libertes@rte-france.com**
 

@@ -12,16 +12,16 @@
  * This file is part of the Antares project.
  */
 
+import rgpd from "@/assets/md/rgpd.md?raw";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import { logout } from "@/redux/ducks/auth";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import storage from "@/services/utils/localStorage";
+import storage, { StorageKey } from "@/services/utils/localStorage";
 import PolicyIcon from "@mui/icons-material/Policy";
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
-import RGPD from "../../../../docs/RGPD.md?raw";
 import Container from "./-components/Container";
 import MaintenanceMode from "./-components/MaintenanceMode";
 
@@ -43,14 +43,16 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const [openGdprDialog, setOpenGdprDialog] = useState(() => !storage.getItem("gdprAccepted"));
+  const [openGdprDialog, setOpenGdprDialog] = useState(
+    () => !storage.getItem(StorageKey.GdprAccepted),
+  );
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleAcceptGdpr = () => {
-    storage.setItem("gdprAccepted", true);
+    storage.setItem(StorageKey.GdprAccepted, true);
     setOpenGdprDialog(false);
   };
 
@@ -80,7 +82,7 @@ function AuthenticatedLayout() {
         onlyCloseOnCancel
         fullScreen
       >
-        <Markdown>{RGPD}</Markdown>
+        <Markdown>{rgpd}</Markdown>
       </ConfirmationDialog>
     </>
   );
