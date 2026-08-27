@@ -550,18 +550,25 @@ class LauncherService:
             is_study_managed = is_managed(study)
 
         zip_path: Path | None = None
-        if not is_study_managed:
-            # Optimized path for studies stored on external devices, that will then be unarchived there.
-            # TODO: that whole optimization path should be refactored to:
-            #       - be more explicit
-            stopwatch = StopWatch()
-            logger.info("Re zipping output for transfer")
-            zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
-            archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
-            logger.info(f"Zipped output for job {job_id} in {stopwatch}s")
-            final_output_path = zip_path
-        else:
+
+        if is_zip(output_true_path):
+            # Possible if the option `-z` was used to run the solver.
             final_output_path = output_true_path
+
+        else:
+            if is_study_managed and job_launch_params.auto_unzip:
+                # Nothing to do, the output is already unarchived.
+                final_output_path = output_true_path
+            else:
+                # For studies stored on external devices, it's faster to re-zip the output for transfer and unarchive it there.
+                # Also, for managed studies when the user did not ask for auto-unzip, we'd better re-zip the output here instead of copying the tree and then zip it.
+                # TODO: that whole optimization should be refactored to be more explicit
+                stopwatch = StopWatch()
+                logger.info("Re zipping output for transfer")
+                zip_path = output_true_path.parent / f"{output_true_path.name}.zip"
+                archive_dir(output_true_path, target_archive_path=zip_path, archive_format=ArchiveFormat.ZIP)
+                logger.info(f"Zipped output for job {job_id} in {stopwatch}s")
+                final_output_path = zip_path
 
         with db():
             try:
