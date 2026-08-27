@@ -541,13 +541,13 @@ class LauncherService:
             if not output_true_path.is_dir() and not is_zip(output_true_path):
                 raise NoValidOutputError(f"No valid output for job {job_id}: {output_true_path}")
 
+            self._save_solver_stats(job_result, output_true_path)
+
             study_id = job_result.study_id
             study = db.session.get(Study, study_id)
             if study is None:
                 return self._import_fallback_output(job_id, output_true_path, job_launch_params.output_suffix)
             is_study_managed = is_managed(study)
-
-            self._save_solver_stats(job_result, output_true_path)
 
         zip_path: Path | None = None
         if not is_study_managed:
@@ -584,7 +584,7 @@ class LauncherService:
             finally:
                 # Delete the temporary zip file, which now has been imported
                 if zip_path:
-                    os.unlink(zip_path)
+                    zip_path.unlink(missing_ok=True)
 
     def _download_fallback_output(self, job_id: str) -> FileDownloadTaskDTO:
         output_path = self._get_job_output_fallback_path(job_id)

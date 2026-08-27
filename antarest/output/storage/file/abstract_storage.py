@@ -182,7 +182,7 @@ def _output_exists(outputs_root: Path, output_id: str) -> bool:
 def _import_zip_as_archived(
     study_id: str, output_zip_path: Path, study_outputs_path: Path, output_name_suffix: str | None, logs: SimulationLogs
 ) -> str:
-    """Simply copies the zip to destination study/output/<output_name>.zip, with the right name extracted from output
+    """Simply moves the zip to destination study/output/<output_name>.zip, with the right name extracted from output
     files."""
     t = StopWatch()
 
