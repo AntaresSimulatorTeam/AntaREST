@@ -1,4 +1,4 @@
-"""add_hydro_reserve_certifications_table
+"""add_hydro_reserve_tables
 
 Revision ID: c7e21b9f4a83
 Revises: 40f4391430e7
@@ -34,6 +34,19 @@ def upgrade():
         ),
     )
 
+    op.create_table(
+        "hydro_reserve_symmetries",
+        study_data_id_col(),
+        Column("area_id", String(255), nullable=False, primary_key=True),
+        Column("symmetries", String(), nullable=False),
+        ForeignKeyConstraint(
+            ["study_data_id", "area_id"],
+            ["area.study_data_id", "area.area_id"],
+            ondelete="CASCADE",
+        ),
+    )
+
 
 def downgrade() -> None:
+    op.drop_table("hydro_reserve_symmetries")
     op.drop_table("hydro_reserve_certifications")

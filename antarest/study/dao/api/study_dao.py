@@ -109,6 +109,7 @@ from antarest.study.dao.common import (
     AreaId,
     AreaSeriesMapping,
     BindingConstraintSeriesMapping,
+    HydroReserveSymmetriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ReserveDefinitionsMapping,
@@ -951,3 +952,11 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_hydro_reserve_certifications(self) -> dict[AreaId, HydroReserveCertificationMapping]:
         return self._adaptee.get_all_hydro_reserve_certifications()
+
+    @override
+    def get_hydro_reserve_symmetries(self, area_id: AreaId) -> ReserveSymmetries:
+        return self._adaptee.get_hydro_reserve_symmetries(area_id)
+
+    @override
+    def get_all_hydro_reserve_symmetries(self) -> HydroReserveSymmetriesMapping:
+        return self._adaptee.get_all_hydro_reserve_symmetries()

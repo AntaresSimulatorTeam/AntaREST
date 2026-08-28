@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.dao.common import (
     AreaId,
+    HydroReserveSymmetriesMapping,
     StStorageId,
     STStorageReserveSymmetriesMapping,
     ThermalId,
@@ -54,6 +55,22 @@ class ReadOnlyReserveSymmetriesDao(ABC):
     def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[StStorageId, ReserveSymmetries]:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_hydro_reserve_symmetries(self) -> HydroReserveSymmetriesMapping:
+        """
+        Returns the hydro reserve symmetries of the whole study.
+
+        Design notes:
+        - If an area has no symmetries, it won't be present in the returned data.
+        - An area owns exactly one long-term storage, so symmetries are not keyed by asset.
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_reserve_symmetries(self, area_id: AreaId) -> ReserveSymmetries:
+        raise NotImplementedError()
+
 
 class ReserveSymmetriesDao(ReadOnlyReserveSymmetriesDao):
     @abstractmethod
@@ -76,6 +93,18 @@ class ReserveSymmetriesDao(ReadOnlyReserveSymmetriesDao):
         Design notes:
         - If an area is absent from the given data, its symmetries are not modified.
         - If a short-term storage is absent from in the given data, its symmetries will be removed.
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_reserve_symmetries(self, data: HydroReserveSymmetriesMapping) -> None:
+        """
+        Replace the hydro reserve symmetries with the given one.
+
+        Design notes:
+        - If an area is absent from the given data, its symmetries are not modified.
+        - Giving an area an empty list removes all its symmetries.
 
         """
         raise NotImplementedError()

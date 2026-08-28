@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import json
 from typing import Any
 
 from sqlalchemy import Table, delete, insert, select
@@ -16,18 +17,24 @@ from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
-from antarest.study.dao.api.common import check_st_storage_symmetries_integrity, check_thermal_symmetries_integrity
+from antarest.study.dao.api.common import (
+    check_hydro_symmetries_integrity,
+    check_st_storage_symmetries_integrity,
+    check_thermal_symmetries_integrity,
+)
 from antarest.study.dao.api.reserve_symmetries_dao import ReserveSymmetriesDao
 from antarest.study.dao.common import (
     AreaId,
+    HydroReserveSymmetriesMapping,
     ReserveSymmetriesMapping,
     StStorageId,
     STStorageReserveSymmetriesMapping,
     ThermalId,
     ThermalReserveSymmetriesMapping,
 )
-from antarest.study.dao.database.common import ReserveObjectType
+from antarest.study.dao.database.common import ReserveObjectType, convert_row_to_symmetries, validate_areas_exist
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
+from antarest.study.dao.database.models.hydro_reserve_symmetries import HYDRO_RESERVE_SYMMETRIES_TABLE
 
 
 class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
@@ -115,3 +122,44 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
         self._db_session.execute(stmt)
         if values:
             self._db_session.execute(insert(table), values)
+
+    @override
+    def get_all_hydro_reserve_symmetries(self) -> HydroReserveSymmetriesMapping:
+        table = HYDRO_RESERVE_SYMMETRIES_TABLE
+        stmt = select(table).where(table.c.study_data_id == self._study_data_id)
+        rows = self._db_session.execute(stmt).fetchall()
+        return {row.area_id: convert_row_to_symmetries(row) for row in rows}
+
+    @override
+    def get_hydro_reserve_symmetries(self, area_id: AreaId) -> ReserveSymmetries:
+        table = HYDRO_RESERVE_SYMMETRIES_TABLE
+        stmt = select(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id == area_id))
+        row = self._db_session.execute(stmt).fetchone()
+        return convert_row_to_symmetries(row) if row is not None else []
+
+    @override
+    def save_hydro_reserve_symmetries(self, data: HydroReserveSymmetriesMapping) -> None:
+        values = []
+        for area_id, symmetries in data.items():
+            if not (any(symmetry for symmetry in symmetries)):
+                continue
+            values.append(
+                {
+                    "study_data_id": self._study_data_id,
+                    "area_id": area_id,
+                    "symmetries": json.dumps([symmetry for symmetry in symmetries if symmetry]),
+                }
+            )
+
+        if values:
+            # Check foreign keys integrity for values to insert
+            check_hydro_symmetries_integrity(self.get_impl(), data)
+
+        try:
+            self._save_reserve_symmetries(set(data), HYDRO_RESERVE_SYMMETRIES_TABLE, values)
+        except IntegrityError as e:
+            self._db_session.rollback()
+            # There is no asset to blame here: the area is the only foreign key.
+            validate_areas_exist(self._db_session, self._study_data_id, set(data))
+            raise ValueError("The hydro reserve symmetries table is not filled as it should") from e
+        self._db_session.commit()

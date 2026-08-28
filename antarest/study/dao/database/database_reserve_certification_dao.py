@@ -200,6 +200,9 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
     ) -> None:
         if not new_certifications:
             return
+
+        old_certifications = self.get_all_hydro_reserve_certifications()
+
         values = []
         for area_id, reserves_dict in new_certifications.items():
             for reserve_id, certification in reserves_dict.items():
@@ -215,6 +218,17 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         except IntegrityError as e:
             self._db_session.rollback()
             self._raise_the_right_hydro_reserve_exception(new_certifications, exc=e)
+
+        # Clean orphan symmetries
+        for area_id in area_ids:
+            missing_reserves = {
+                reserve_id
+                for reserve_id in old_certifications.get(area_id, {})
+                if reserve_id not in new_certifications.get(area_id, {})
+            }
+            if missing_reserves:
+                self.get_impl().delete_orphan_hydro_symmetries(area_id, missing_reserves)
+
         self._db_session.commit()
 
     def _raise_the_right_hydro_reserve_exception(

@@ -68,6 +68,9 @@ from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation
 from antarest.study.storage.variantstudy.model.command.replace_hydro_reserve_certifications import (
     ReplaceHydroReserveCertifications,
 )
+from antarest.study.storage.variantstudy.model.command.replace_hydro_reserve_symmetries import (
+    ReplaceHydroReserveSymmetries,
+)
 from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_certifications import (
@@ -200,6 +203,7 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.REPLACE_ST_STORAGE_RESERVE_SYMMETRIES.value: ReplaceStStorageReserveSymmetries,
     CommandName.REPLACE_ST_STORAGE_RESERVE_CERTIFICATIONS.value: ReplaceStStorageReserveCertifications,
     CommandName.REPLACE_HYDRO_RESERVE_CERTIFICATIONS.value: ReplaceHydroReserveCertifications,
+    CommandName.REPLACE_HYDRO_RESERVE_SYMMETRIES.value: ReplaceHydroReserveSymmetries,
 }
 
 

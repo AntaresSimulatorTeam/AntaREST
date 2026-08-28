@@ -1760,6 +1760,30 @@ def create_study_data_routes() -> APIRouter:
         )
 
     @bp.get(
+        path="/studies/{uuid}/areas/{area_id}/reserves/symmetries/hydro",
+        summary="Fetch the hydro reserve symmetries for a given area",
+    )
+    def get_hydro_reserve_symmetries(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr
+    ) -> ReserveSymmetries:
+        logger.info("Fetching hydro reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_symmetries_manager.get_hydro_symmetries(study_interface, area_id)
+
+    @bp.put(
+        path="/studies/{uuid}/areas/{area_id}/reserves/symmetries/hydro",
+        summary="Saves new hydro reserve symmetries for a given area",
+    )
+    def save_hydro_reserve_symmetries(
+        study_service: StudyServiceDep, uuid: UuidStr, area_id: SanitizedStr, data: ReserveSymmetries
+    ) -> ReserveSymmetries:
+        logger.info("Saving hydro reserve symmetries for study '%s' and area '%s'", uuid, area_id)
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.reserve_symmetries_manager.set_hydro_symmetries(study_interface, area_id, data)
+
+    @bp.get(
         path="/studies/{uuid}/areas/{area_id}/reserves/certifications/hydro",
         summary="Fetch all hydro reserve certifications for a given area",
     )

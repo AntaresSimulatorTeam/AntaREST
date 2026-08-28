@@ -22,7 +22,10 @@ from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, Re
 from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
-from antarest.study.dao.api.common import remove_reserve_symmetries_by_cascade
+from antarest.study.dao.api.common import (
+    remove_reserves_from_symmetries,
+    remove_reserves_from_symmetries_dict,
+)
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
 from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
 from antarest.study.dao.database.common import area_exists, validate_area_exists
@@ -133,13 +136,20 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
         reserve_ids_to_delete = set(reserve_ids)
         self.delete_orphan_thermal_symmetries(area_id, reserve_ids_to_delete)
         self.delete_orphan_st_storage_symmetries(area_id, reserve_ids_to_delete)
+        self.delete_orphan_hydro_symmetries(area_id, reserve_ids_to_delete)
         self._db_session.commit()
+
+    def delete_orphan_hydro_symmetries(self, area_id: str, reserves: set[ReserveDefinitionId]) -> None:
+        # An area owns exactly one long-term storage, so there is no asset to iterate over.
+        symmetries = self.get_impl().get_hydro_reserve_symmetries(area_id)
+        if remove_reserves_from_symmetries(symmetries, reserves):
+            self.get_impl().save_hydro_reserve_symmetries({area_id: symmetries})
 
     def delete_orphan_thermal_symmetries(
         self, area_id: str, reserves: dict[str, set[ReserveDefinitionId]] | set[ReserveDefinitionId]
     ) -> None:
         thermal_symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
-        new_thermal_symmetries = remove_reserve_symmetries_by_cascade(thermal_symmetries_dict, reserves)
+        new_thermal_symmetries = remove_reserves_from_symmetries_dict(thermal_symmetries_dict, reserves)
         if new_thermal_symmetries is not None:
             self.get_impl().save_thermal_reserve_symmetries({area_id: new_thermal_symmetries})
 
@@ -147,7 +157,7 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
         self, area_id: str, reserves: dict[str, set[ReserveDefinitionId]] | set[ReserveDefinitionId]
     ) -> None:
         st_storage_symmetries_dict = self.get_impl().get_st_storage_reserve_symmetries(area_id)
-        new_st_storage_symmetries = remove_reserve_symmetries_by_cascade(st_storage_symmetries_dict, reserves)
+        new_st_storage_symmetries = remove_reserves_from_symmetries_dict(st_storage_symmetries_dict, reserves)
         if new_st_storage_symmetries is not None:
             self.get_impl().save_st_storage_reserve_symmetries({area_id: new_st_storage_symmetries})
 

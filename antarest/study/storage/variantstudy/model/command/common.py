@@ -113,6 +113,7 @@ class CommandName(Enum):
     REPLACE_ST_STORAGE_RESERVE_CERTIFICATIONS = "replace_st_storage_reserve_certifications"
     REPLACE_ST_STORAGE_RESERVE_SYMMETRIES = "replace_st_storage_reserve_symmetries"
     REPLACE_HYDRO_RESERVE_CERTIFICATIONS = "replace_hydro_reserve_certifications"
+    REPLACE_HYDRO_RESERVE_SYMMETRIES = "replace_hydro_reserve_symmetries"
 
 
 @dataclass(frozen=True)
