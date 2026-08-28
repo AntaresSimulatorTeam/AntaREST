@@ -215,6 +215,8 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             self._db_session.execute(stmt)
             if values:
                 self._db_session.execute(insert(_HYDRO_TABLE), values)
+            else:
+                validate_areas_exist(self._db_session, self._study_data_id, set(new_certifications))
         except IntegrityError as e:
             self._db_session.rollback()
             self._raise_the_right_hydro_reserve_exception(new_certifications, exc=e)

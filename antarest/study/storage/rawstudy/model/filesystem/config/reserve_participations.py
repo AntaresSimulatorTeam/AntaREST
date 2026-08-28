@@ -308,15 +308,6 @@ def parse_st_storage_reserves_symmetries(data: dict[str, Any]) -> dict[str, Rese
 
 
 class HydroParticipation(AntaresBaseModel):
-    """
-    Participation of the long-term storage (hydro) of an area to the reserves.
-
-    Design notes:
-    - An area owns exactly one long-term storage, so there is no asset id to key the participation on.
-    - Symmetries are modelled here only so that they survive a certifications save. They are not
-      exposed through the DAOs nor the API yet.
-    """
-
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     certifications: list[_StorageCertification] = []

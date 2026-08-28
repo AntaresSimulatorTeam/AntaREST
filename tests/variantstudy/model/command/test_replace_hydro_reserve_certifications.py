@@ -102,7 +102,9 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     assert dao_10_2.get_hydro_reserve_certifications("fr") == {}
 
 
-def test_study_version_sould_be_at_least_10_2_for_reserves(dao_10_2: StudyDao, command_context: CommandContext) -> None:
+def test_study_version_should_be_at_least_10_2_for_reserves(
+    dao_10_2: StudyDao, command_context: CommandContext
+) -> None:
     _set_up(dao_10_2, command_context)
 
     # Wrong version

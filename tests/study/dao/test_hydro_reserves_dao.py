@@ -83,6 +83,15 @@ def test_save_raises_on_unknown_area(dao_10_2: StudyDao) -> None:
         dao.save_hydro_reserve_certifications({"unknown": {"r1": StorageReserveCertification()}})
 
 
+def test_saving_empty_certifications_raises_on_unknown_area(dao_10_2: StudyDao) -> None:
+    # Clearing produces no row to insert, so the area must be checked before the rows are built.
+    dao = dao_10_2
+    _set_up(dao)
+
+    with pytest.raises(AreaNotFound):
+        dao.save_hydro_reserve_certifications({"unknown": {}})
+
+
 def test_save_raises_on_unknown_reserve(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     _set_up(dao)
@@ -219,6 +228,15 @@ def test_save_symmetries_raises_on_unknown_area(dao_10_2: StudyDao) -> None:
 
     with pytest.raises(AreaNotFound):
         dao.save_hydro_reserve_symmetries({"unknown": [["r1", "r2"]]})
+
+
+def test_clearing_symmetries_raises_on_unknown_area(dao_10_2: StudyDao) -> None:
+    # Clearing produces no row to insert, so the area must be checked before the rows are built.
+    dao = dao_10_2
+    _set_up(dao)
+
+    with pytest.raises(AreaNotFound):
+        dao.save_hydro_reserve_symmetries({"unknown": []})
 
 
 def test_deleting_a_reserve_cascades_on_symmetries(dao_10_2: StudyDao) -> None:

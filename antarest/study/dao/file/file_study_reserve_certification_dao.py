@@ -179,8 +179,6 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
             # An area always owns its long-term storage, so there is no asset existence to check here.
 
             yaml_content = get_hydro_reserve_participations_as_yaml_content(area_id, file_study)
-            # Symmetries are not handled by this DAO yet, but they live in the same file so they
-            # must be read back and rewritten, otherwise saving certifications would drop them.
             symmetries = parse_hydro_reserves_symmetries(yaml_content)
             new_content = serialize_hydro_reserve_participations(symmetries, reserves_dict)
 

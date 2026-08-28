@@ -154,12 +154,15 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
         if values:
             # Check foreign keys integrity for values to insert
             check_hydro_symmetries_integrity(self.get_impl(), data)
+        else:
+            # We need this check to avoid performing a silent no-op
+            # User should know when they send an invalid area
+            validate_areas_exist(self._db_session, self._study_data_id, set(data))
 
         try:
             self._save_reserve_symmetries(set(data), HYDRO_RESERVE_SYMMETRIES_TABLE, values)
         except IntegrityError as e:
             self._db_session.rollback()
-            # There is no asset to blame here: the area is the only foreign key.
             validate_areas_exist(self._db_session, self._study_data_id, set(data))
             raise ValueError("The hydro reserve symmetries table is not filled as it should") from e
         self._db_session.commit()
