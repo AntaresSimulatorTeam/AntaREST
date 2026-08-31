@@ -129,6 +129,7 @@
   "global.home": "Accueil",
   "global.columns": "Colonnes",
   "global.retry": "Réessayer",
+  "global.accept": "Accepter",
   "date": {
     "monday": "Lundi",
     "tuesday": "Mardi",
@@ -180,6 +181,7 @@
   "api.title": "API",
   "documentation.title": "Documentation",
   "github.title": "Github",
+  "gdpr.title": "Mentions RGPD",
   "recentStudy.title": "Étude récente",
   "studies.title": "Études",
   "settings.title": "Paramètres",
