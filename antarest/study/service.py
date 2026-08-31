@@ -1573,7 +1573,7 @@ class StudyService:
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=path,
+            path=path if storage_mode == StorageMode.FILESYSTEM else None,
             editor=self.get_user_name(),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             owner=owner,
