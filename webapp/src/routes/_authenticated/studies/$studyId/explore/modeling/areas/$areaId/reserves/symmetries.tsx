@@ -12,15 +12,24 @@
  * This file is part of the Antares project.
  */
 
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useFormBlocker from "@/hooks/useFormBlocker";
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
 import { thermalQueries } from "@/queries/thermals/queries";
-import type { SymmetryProductionType } from "@/services/api/studies/areas/reserves/types";
+import {
+  adaptClusterGroupsToReservesSymmetriesDto,
+  adaptReservesSymmetriesDtoToClusterGroups,
+} from "@/services/api/studies/areas/reserves/adapters";
+import type {
+  ClusterGroup,
+  SymmetryProductionType,
+} from "@/services/api/studies/areas/reserves/types";
+import { toError } from "@/utils/fnUtils";
 import { Alert } from "@mui/material";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useUndo from "use-undo";
 import SymmetriesTable from "./-components/SymmetriesTable";
@@ -28,11 +37,8 @@ import {
   addSymmetries,
   deleteSymmetryRows,
   duplicateSymmetryRow,
-  fromApi,
-  toApi,
   toggleReserve,
   validateGroups,
-  type ClusterGroup,
 } from "./-components/SymmetriesTable/utils";
 
 export const Route = createFileRoute(
@@ -47,9 +53,18 @@ export const Route = createFileRoute(
 const PRODUCTION_TYPE: SymmetryProductionType = "thermals";
 
 function ReservesSymmetries() {
+  const { studyId, areaId } = Route.useParams();
+
+  // The router doesn't remount on param-only changes: the key re-seeds the
+  // editable state (undo history, `lastSaved`) when the area/study changes.
+  return <SymmetriesView key={`${studyId}-${areaId}`} />;
+}
+
+function SymmetriesView() {
   const { t } = useTranslation();
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
   const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
 
@@ -57,13 +72,15 @@ function ReservesSymmetries() {
     reserveQueries.list(studyId, areaId),
   );
 
-  const { data: thermalClusters } = useSuspenseQuery(thermalQueries.list(studyId, areaId));
+  const { data: thermalClusters, isFetching: isThermalsFetching } = useSuspenseQuery(
+    thermalQueries.list(studyId, areaId),
+  );
 
-  const { data: thermalCertifications } = useSuspenseQuery(
+  const { data: thermalCertifications, isFetching: isCertificationsFetching } = useSuspenseQuery(
     reserveQueries.certifications(studyId, areaId, "thermals"),
   );
 
-  const { data: symmetriesData } = useSuspenseQuery(
+  const { data: symmetriesData, isFetching: isSymmetriesFetching } = useSuspenseQuery(
     reserveQueries.symmetries(studyId, areaId, PRODUCTION_TYPE),
   );
 
@@ -85,12 +102,14 @@ function ReservesSymmetries() {
   }, [thermalCertifications]);
 
   const initialGroups = useMemo(
-    () => fromApi(thermalClusters, symmetriesData),
+    () => adaptReservesSymmetriesDtoToClusterGroups(thermalClusters, symmetriesData),
     [thermalClusters, symmetriesData],
   );
 
-  const [{ present: groups }, { set: setGroups, undo, redo, canUndo, canRedo }] =
-    useUndo<ClusterGroup[]>(initialGroups);
+  const [
+    { present: groups },
+    { set: setGroups, reset: resetGroups, undo, redo, canUndo, canRedo },
+  ] = useUndo<ClusterGroup[]>(initialGroups);
 
   const [lastSaved, setLastSaved] = useState(initialGroups);
   const [isSaving, setIsSaving] = useState(false);
@@ -98,6 +117,16 @@ function ReservesSymmetries() {
   // Reference comparison, same rationale as `DataGridForm`: deep comparison
   // would work too but doesn't scale to a large matrix.
   const isDirty = lastSaved !== groups;
+
+  // The queries refetch on every mount and window focus (EXTERNALLY_MUTATED):
+  // adopt fresh data while there's no unsaved edit, so Save never re-PUTs a
+  // stale snapshot.
+  useEffect(() => {
+    if (!isDirty && groups !== initialGroups) {
+      resetGroups(initialGroups);
+      setLastSaved(initialGroups);
+    }
+  }, [groups, initialGroups, isDirty, resetGroups]);
 
   const validationErrors = useMemo(() => validateGroups(groups), [groups]);
 
@@ -135,21 +164,23 @@ function ReservesSymmetries() {
     setIsSaving(true);
 
     try {
-      const data = toApi(groups);
-
-      await updateSymmetriesMutation.mutateAsync({
+      const updatedSymmetries = await updateSymmetriesMutation.mutateAsync({
         studyId,
         areaId,
         productionType: PRODUCTION_TYPE,
-        data,
+        data: adaptClusterGroupsToReservesSymmetriesDto(groups),
       });
 
+      // The response is the server-normalized payload; the resync effect
+      // adopts it once `lastSaved` marks the form pristine.
       queryClient.setQueryData(
         reserveQueries.symmetries(studyId, areaId, PRODUCTION_TYPE).queryKey,
-        data,
+        updatedSymmetries,
       );
 
       setLastSaved(groups);
+    } catch (err) {
+      enqueueErrorSnackbar(t("form.submit.error"), toError(err));
     } finally {
       setIsSaving(false);
     }
@@ -172,7 +203,12 @@ function ReservesSymmetries() {
         certifiedReservesByCluster={certifiedReservesByCluster}
         validationErrors={validationErrors}
         readOnly={!reservesEnabled}
-        isLoading={isReservesFetching}
+        isFetching={
+          isReservesFetching ||
+          isThermalsFetching ||
+          isCertificationsFetching ||
+          isSymmetriesFetching
+        }
         canUndo={canUndo}
         canRedo={canRedo}
         canSave={isDirty}

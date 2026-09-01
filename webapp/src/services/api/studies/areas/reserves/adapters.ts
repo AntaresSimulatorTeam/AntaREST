@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { SymmetryRow } from "./types";
+import type { ClusterGroup, ReservesSymmetries, SymmetryRow } from "./types";
 
 export function createSymmetryRow(
   clusterId: string,
@@ -56,4 +56,45 @@ export function adaptSymmetryRowsToReservesSymmetriesEntry(
   rows: readonly SymmetryRow[],
 ): string[][] {
   return rows.map((row) => [...row.reserves]);
+}
+
+/**
+ * Builds the UI domain model from the API payload, merged against the full
+ * cluster list of the area so every cluster gets a row group, even with no
+ * symmetries.
+ *
+ * @param clusters - All clusters of the area.
+ * @param data - The API's symmetries payload.
+ * @returns The domain model, one group per cluster.
+ */
+export function adaptReservesSymmetriesDtoToClusterGroups(
+  clusters: ReadonlyArray<{ id: string; name: string }>,
+  data: ReservesSymmetries,
+): ClusterGroup[] {
+  return clusters.map((cluster) => ({
+    clusterId: cluster.id,
+    clusterName: cluster.name,
+    symmetries: adaptReservesSymmetriesDtoToRows(cluster.id, data[cluster.id]),
+  }));
+}
+
+/**
+ * Serializes the UI domain model back to the API payload. Clusters with no
+ * symmetries are omitted (equivalent to an absent/empty entry).
+ *
+ * @param groups - The current domain model.
+ * @returns The full API payload to PUT.
+ */
+export function adaptClusterGroupsToReservesSymmetriesDto(
+  groups: readonly ClusterGroup[],
+): ReservesSymmetries {
+  const result: ReservesSymmetries = {};
+
+  for (const group of groups) {
+    if (group.symmetries.length > 0) {
+      result[group.clusterId] = adaptSymmetryRowsToReservesSymmetriesEntry(group.symmetries);
+    }
+  }
+
+  return result;
 }

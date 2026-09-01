@@ -12,10 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import NumberFE from "@/components/fieldEditors/NumberFE";
 import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/GroupedDataTable/utils";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { Reserve } from "@/services/api/studies/areas/reserves/types";
+import type { ClusterGroup, Reserve } from "@/services/api/studies/areas/reserves/types";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AddIcon from "@mui/icons-material/Add";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -25,7 +24,7 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import SaveIcon from "@mui/icons-material/Save";
 import UndoIcon from "@mui/icons-material/Undo";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import { Alert, Box, Button, Checkbox, IconButton, Stack, Tooltip } from "@mui/material";
+import { Alert, Box, Button, Checkbox, IconButton, Stack, TextField, Tooltip } from "@mui/material";
 import {
   createMRTColumnHelper,
   MaterialReactTable,
@@ -38,7 +37,7 @@ import {
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { ClusterGroup, SymmetryValidationError } from "./utils";
+import type { SymmetryValidationError } from "./utils";
 
 interface SymmetryDataRow {
   kind: "symmetry";
@@ -65,7 +64,7 @@ interface Props {
   certifiedReservesByCluster: Map<string, Set<string>>;
   validationErrors: SymmetryValidationError[];
   readOnly?: boolean;
-  isLoading?: boolean;
+  isFetching?: boolean;
   canUndo: boolean;
   canRedo: boolean;
   canSave: boolean;
@@ -90,7 +89,7 @@ function SymmetriesTable({
   certifiedReservesByCluster,
   validationErrors,
   readOnly,
-  isLoading,
+  isFetching,
   canUndo,
   canRedo,
   canSave,
@@ -106,7 +105,10 @@ function SymmetriesTable({
   const { t } = useTranslation();
   const { isDarkMode } = useThemeColorScheme();
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
-  const [symmetryCount, setSymmetryCount] = useState(1);
+  // Raw input string, clamping on each keystroke would fight typing;
+  // `symmetryCount` is the normalized value actually used.
+  const [symmetryCountInput, setSymmetryCountInput] = useState("1");
+  const symmetryCount = R.clamp(1, 100, Math.floor(Number(symmetryCountInput)) || 1);
 
   const rows = useMemo<ClusterHeaderRow[]>(
     () =>
@@ -215,7 +217,9 @@ function SymmetriesTable({
       expanded: true,
       columnVisibility: { "mrt-row-expand": false },
     },
-    state: { isLoading, rowSelection },
+    // Data is always present (suspense queries): refetches show progress
+    // bars, not a blanking skeleton.
+    state: { showProgressBars: isFetching, rowSelection },
     onRowSelectionChange: setRowSelection,
     enableStickyHeader: true,
     enableColumnDragging: false,
@@ -245,21 +249,24 @@ function SymmetriesTable({
             <IconButton
               size="small"
               disabled={isCountDisabled || symmetryCount <= 1}
-              onClick={() => setSymmetryCount((count) => R.clamp(1, 100, count - 1))}
+              onClick={() => setSymmetryCountInput(String(symmetryCount - 1))}
             >
               <RemoveIcon fontSize="small" />
             </IconButton>
-            <NumberFE
+            <TextField
               size="small"
-              value={symmetryCount}
-              onChange={(e) => setSymmetryCount(R.clamp(1, 100, Number(e.target.value)))}
+              type="number"
+              value={symmetryCountInput}
+              onChange={(e) => setSymmetryCountInput(e.target.value)}
+              onBlur={() => setSymmetryCountInput(String(symmetryCount))}
+              slotProps={{ htmlInput: { min: 1, max: 100 } }}
               disabled={isCountDisabled}
               sx={{ width: 70 }}
             />
             <IconButton
               size="small"
               disabled={isCountDisabled || symmetryCount >= 100}
-              onClick={() => setSymmetryCount((count) => R.clamp(1, 100, count + 1))}
+              onClick={() => setSymmetryCountInput(String(symmetryCount + 1))}
             >
               <AddIcon fontSize="small" />
             </IconButton>

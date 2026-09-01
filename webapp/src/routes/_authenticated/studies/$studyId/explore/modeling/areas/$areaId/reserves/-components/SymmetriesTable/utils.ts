@@ -13,67 +13,20 @@
  */
 
 import {
-  adaptReservesSymmetriesDtoToRows,
-  adaptSymmetryRowsToReservesSymmetriesEntry,
   createSymmetryRow,
   reindexSymmetryRows,
 } from "@/services/api/studies/areas/reserves/adapters";
-import type { ReservesSymmetries, SymmetryRow } from "@/services/api/studies/areas/reserves/types";
+import type { ClusterGroup } from "@/services/api/studies/areas/reserves/types";
 
 // The backend requires at least 2 distinct reserve IDs per symmetry. Enforced
 // here (not in the API schema) so a violation can be tied to a specific row.
 export const MIN_RESERVES_PER_SYMMETRY = 2;
-
-export interface ClusterGroup {
-  clusterId: string;
-  clusterName: string;
-  symmetries: SymmetryRow[];
-}
 
 export interface SymmetryValidationError {
   uiId: string;
   clusterId: string;
   clusterName: string;
   index: number;
-}
-
-/**
- * Builds the UI domain model from the API payload, merged against the full
- * cluster list of the area so every cluster gets a row group, even with no
- * symmetries.
- *
- * @param clusters - All clusters of the area.
- * @param data - The API's symmetries payload.
- * @returns The domain model, one group per cluster.
- */
-export function fromApi(
-  clusters: ReadonlyArray<{ id: string; name: string }>,
-  data: ReservesSymmetries,
-): ClusterGroup[] {
-  return clusters.map((cluster) => ({
-    clusterId: cluster.id,
-    clusterName: cluster.name,
-    symmetries: adaptReservesSymmetriesDtoToRows(cluster.id, data[cluster.id]),
-  }));
-}
-
-/**
- * Serializes the UI domain model back to the API payload. Clusters with no
- * symmetries are omitted (equivalent to an absent/empty entry).
- *
- * @param groups - The current domain model.
- * @returns The full API payload to PUT.
- */
-export function toApi(groups: readonly ClusterGroup[]): ReservesSymmetries {
-  const result: ReservesSymmetries = {};
-
-  for (const group of groups) {
-    if (group.symmetries.length > 0) {
-      result[group.clusterId] = adaptSymmetryRowsToReservesSymmetriesEntry(group.symmetries);
-    }
-  }
-
-  return result;
 }
 
 /**
