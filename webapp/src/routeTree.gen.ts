@@ -75,6 +75,7 @@ import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdPropertie
 import { Route as AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdTimeSeriesRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/wind'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/solar'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/misc-gen'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/load'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/route'
@@ -598,6 +599,15 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute =
     getParentRoute: () =>
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute,
   } as any)
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRouteImport.update(
+    {
+      id: '/reserves-legacy',
+      path: '/reserves-legacy',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute,
+    } as any,
+  )
 const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute =
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRouteImport.update(
     {
@@ -1200,6 +1210,7 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/modeling/links/$linkId/time-series': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRouteWithChildren
   '/studies/$studyId/explore/modeling/areas/$areaId/load': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/misc-gen': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/solar': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/wind': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute
   '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdTimeSeriesRoute
@@ -1311,6 +1322,7 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/xpansion/settings': typeof AuthenticatedStudiesStudyIdExploreXpansionSettingsIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/load': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/misc-gen': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/solar': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/wind': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute
   '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdTimeSeriesRoute
@@ -1434,6 +1446,7 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/load': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/misc-gen': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/solar': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/wind': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute
   '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdTimeSeriesRoute
@@ -1563,6 +1576,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series'
     | '/studies/$studyId/explore/modeling/areas/$areaId/load'
     | '/studies/$studyId/explore/modeling/areas/$areaId/misc-gen'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
     | '/studies/$studyId/explore/modeling/areas/$areaId/solar'
     | '/studies/$studyId/explore/modeling/areas/$areaId/wind'
     | '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series'
@@ -1674,6 +1688,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/xpansion/settings'
     | '/studies/$studyId/explore/modeling/areas/$areaId/load'
     | '/studies/$studyId/explore/modeling/areas/$areaId/misc-gen'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
     | '/studies/$studyId/explore/modeling/areas/$areaId/solar'
     | '/studies/$studyId/explore/modeling/areas/$areaId/wind'
     | '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series'
@@ -1796,6 +1811,7 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/load'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/misc-gen'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/solar'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/wind'
     | '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series'
@@ -2328,6 +2344,13 @@ declare module '@tanstack/react-router' {
       path: '/solar'
       fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/solar'
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
+      path: '/reserves-legacy'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/misc-gen': {
@@ -3099,6 +3122,7 @@ interface AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRouteChildre
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteWithChildren
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdIndexRoute
@@ -3121,6 +3145,8 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRouteChildren: A
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute:
