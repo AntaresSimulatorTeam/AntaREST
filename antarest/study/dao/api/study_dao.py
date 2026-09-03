@@ -36,6 +36,7 @@ from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_certification_model import (
+    HydroReserveCertificationMapping,
     StorageReserveCertificationMapping,
     ThermalReserveCertificationMapping,
 )
@@ -108,6 +109,7 @@ from antarest.study.dao.common import (
     AreaId,
     AreaSeriesMapping,
     BindingConstraintSeriesMapping,
+    HydroReserveSymmetriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ReserveDefinitionsMapping,
@@ -942,3 +944,19 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
         return self._adaptee.get_all_st_storage_reserve_certifications()
+
+    @override
+    def get_hydro_reserve_certifications(self, area_id: AreaId) -> HydroReserveCertificationMapping:
+        return self._adaptee.get_hydro_reserve_certifications(area_id)
+
+    @override
+    def get_all_hydro_reserve_certifications(self) -> dict[AreaId, HydroReserveCertificationMapping]:
+        return self._adaptee.get_all_hydro_reserve_certifications()
+
+    @override
+    def get_hydro_reserve_symmetries(self, area_id: AreaId) -> ReserveSymmetries:
+        return self._adaptee.get_hydro_reserve_symmetries(area_id)
+
+    @override
+    def get_all_hydro_reserve_symmetries(self) -> HydroReserveSymmetriesMapping:
+        return self._adaptee.get_all_hydro_reserve_symmetries()

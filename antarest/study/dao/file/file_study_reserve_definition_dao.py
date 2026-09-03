@@ -24,7 +24,10 @@ from antarest.study.business.model.reserve_definition_model import (
     ReserveDefinition,
     ReserveDefinitionId,
 )
-from antarest.study.dao.api.common import remove_reserve_symmetries_by_cascade
+from antarest.study.dao.api.common import (
+    remove_reserves_from_symmetries,
+    remove_reserves_from_symmetries_dict,
+)
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
 from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
 from antarest.study.dao.file.common import check_area_exists
@@ -157,22 +160,30 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
     def _remove_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]) -> None:
         self._remove_thermal_reserve_from_symmetries(area_id, ids_to_remove)
         self._remove_st_storage_reserve_from_symmetries(area_id, ids_to_remove)
+        self._remove_hydro_reserve_from_symmetries(area_id, ids_to_remove)
+
+    def _remove_hydro_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]) -> None:
+        # An area owns exactly one long-term storage, so there is no asset to iterate over.
+        symmetries = self.get_impl().get_hydro_reserve_symmetries(area_id)
+        if remove_reserves_from_symmetries(symmetries, ids_to_remove):
+            self.get_impl().save_hydro_reserve_symmetries({area_id: symmetries})
 
     def _remove_thermal_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]) -> None:
         symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
-        new_symmetries = remove_reserve_symmetries_by_cascade(symmetries_dict, ids_to_remove)
+        new_symmetries = remove_reserves_from_symmetries_dict(symmetries_dict, ids_to_remove)
         if new_symmetries is not None:
             self.get_impl().save_thermal_reserve_symmetries({area_id: new_symmetries})
 
     def _remove_st_storage_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]) -> None:
         symmetries_dict = self.get_impl().get_st_storage_reserve_symmetries(area_id)
-        new_symmetries = remove_reserve_symmetries_by_cascade(symmetries_dict, ids_to_remove)
+        new_symmetries = remove_reserves_from_symmetries_dict(symmetries_dict, ids_to_remove)
         if new_symmetries is not None:
             self.get_impl().save_st_storage_reserve_symmetries({area_id: new_symmetries})
 
     def _remove_reserve_from_certifications(self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]) -> None:
         self._remove_thermal_reserve_from_certifications(area_id, reserve_ids)
         self._remove_st_storage_reserve_from_certifications(area_id, reserve_ids)
+        self._remove_hydro_reserve_from_certifications(area_id, reserve_ids)
 
     def _remove_thermal_reserve_from_certifications(
         self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]
@@ -197,6 +208,18 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
                 should_update_certifications = True
         if should_update_certifications:
             self.get_impl().save_st_storage_reserve_certifications({area_id: certifications})
+
+    def _remove_hydro_reserve_from_certifications(
+        self, area_id: str, reserve_ids: Sequence[ReserveDefinitionId]
+    ) -> None:
+        certifications = self.get_impl().get_hydro_reserve_certifications(area_id)
+        should_update_certifications = False
+        for reserve_id in reserve_ids:
+            if reserve_id in certifications:
+                del certifications[reserve_id]
+                should_update_certifications = True
+        if should_update_certifications:
+            self.get_impl().save_hydro_reserve_certifications({area_id: certifications})
 
     @override
     def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:

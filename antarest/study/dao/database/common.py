@@ -113,7 +113,7 @@ Reserve types
 """
 
 
-def _convert_row_to_symmetries(row: Row[Any]) -> ReserveSymmetries:
+def convert_row_to_symmetries(row: Row[Any]) -> ReserveSymmetries:
     return cast(ReserveSymmetries, json.loads(row.symmetries))
 
 
@@ -153,14 +153,14 @@ class ReserveObjectType(StrEnum):
         result = {}
         for row in rows:
             row_as_dict = get_row_representation_as_dict(row)
-            result[row_as_dict[self._db_key()]] = _convert_row_to_symmetries(row)
+            result[row_as_dict[self._db_key()]] = convert_row_to_symmetries(row)
         return result
 
     def convert_all_rows_to_dict_of_symmetries(self, rows: Sequence[Row[Any]]) -> ReserveSymmetriesMapping:
         result: ReserveSymmetriesMapping = {}
         for row in rows:
             row_as_dict = get_row_representation_as_dict(row)
-            result.setdefault(row.area_id, {})[row_as_dict[self._db_key()]] = _convert_row_to_symmetries(row)
+            result.setdefault(row.area_id, {})[row_as_dict[self._db_key()]] = convert_row_to_symmetries(row)
         return result
 
     def convert_certification_to_row(

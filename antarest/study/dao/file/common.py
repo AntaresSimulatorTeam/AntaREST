@@ -88,3 +88,16 @@ def get_st_storage_reserve_participations_as_yaml_content(area_id: AreaId, file_
 
 def get_thermal_reserve_participations_as_yaml_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
     return _get_participations(area_id, file_study, get_thermal_reserve_path)
+
+
+def get_hydro_reserve_path(area_id: str) -> list[str]:
+    return ["input", "hydro", "reserves", area_id, "reserve-participations"]
+
+
+def get_hydro_reserve_participations_as_yaml_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
+    if area_id not in file_study.config.areas:
+        raise AreaNotFound(area_id)
+    data = file_study.tree.get(get_hydro_reserve_path(area_id))
+    if not data:
+        return {"participations": {}}
+    return data

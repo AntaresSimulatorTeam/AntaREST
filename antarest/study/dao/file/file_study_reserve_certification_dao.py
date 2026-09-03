@@ -10,13 +10,14 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, cast
+from collections.abc import Collection, Mapping
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
 from antarest.core.exceptions import ReserveDefinitionsNotFound, STStorageNotFound, ThermalClusterNotFound
 from antarest.study.business.model.reserve_certification_model import (
+    HydroReserveCertificationMapping,
     ReserveCertification,
     StorageReserveCertificationMapping,
     ThermalReserveCertification,
@@ -27,16 +28,21 @@ from antarest.study.dao.api.reserve_certification_dao import ReserveCertificatio
 from antarest.study.dao.common import AreaId
 from antarest.study.dao.file.common import (
     check_area_exists,
+    get_hydro_reserve_participations_as_yaml_content,
+    get_hydro_reserve_path,
     get_st_storage_reserve_participations_as_yaml_content,
     get_st_storage_reserve_path,
     get_thermal_reserve_participations_as_yaml_content,
     get_thermal_reserve_path,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.reserve_participations import (
+    parse_hydro_reserves_certifications,
+    parse_hydro_reserves_symmetries,
     parse_st_storage_reserves_certifications,
     parse_st_storage_reserves_symmetries,
     parse_thermal_reserves_certifications,
     parse_thermal_reserves_symmetries,
+    serialize_hydro_reserve_participations,
     serialize_st_storage_reserve_participations,
     serialize_thermal_reserve_participations,
 )
@@ -49,11 +55,10 @@ if TYPE_CHECKING:
 def _check_reserves_exist(
     area_id: str,
     file_study: FileStudy,
-    reserves_dict: Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]],
+    reserve_ids: Collection[ReserveDefinitionId],
 ) -> None:
     existing_reserve_ids = file_study.config.areas[area_id].reserves
-    invalid_reserves: set[str] = cast(set[str], set(reserves_dict) - set(existing_reserve_ids))
-    if invalid_reserves:
+    if invalid_reserves := set[str](reserve_ids) - set(existing_reserve_ids):
         raise ReserveDefinitionsNotFound({area_id: invalid_reserves})
 
 
@@ -147,3 +152,35 @@ class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
     def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
         data = get_st_storage_reserve_participations_as_yaml_content(area_id, self.get_file_study())
         return parse_st_storage_reserves_certifications(data)
+
+    @override
+    def get_all_hydro_reserve_certifications(self) -> dict[AreaId, HydroReserveCertificationMapping]:
+        result = {}
+        for area in self.get_file_study().config.areas:
+            certifications = self.get_hydro_reserve_certifications(area)
+            if certifications:
+                result[area] = certifications
+        return result
+
+    @override
+    def get_hydro_reserve_certifications(self, area_id: AreaId) -> HydroReserveCertificationMapping:
+        data = get_hydro_reserve_participations_as_yaml_content(area_id, self.get_file_study())
+        return parse_hydro_reserves_certifications(data)
+
+    @override
+    def save_hydro_reserve_certifications(
+        self, new_certifications: dict[AreaId, HydroReserveCertificationMapping]
+    ) -> None:
+        file_study = self.get_file_study()
+
+        for area_id, reserves_dict in new_certifications.items():
+            check_area_exists(file_study.config, area_id)
+            _check_reserves_exist(area_id, file_study, reserves_dict)
+            # An area always owns its long-term storage, so there is no asset existence to check here.
+
+            yaml_content = get_hydro_reserve_participations_as_yaml_content(area_id, file_study)
+            symmetries = parse_hydro_reserves_symmetries(yaml_content)
+            new_content = serialize_hydro_reserve_participations(symmetries, reserves_dict)
+
+            # Saves the content into the YAML file
+            file_study.tree.save(new_content, get_hydro_reserve_path(area_id))

@@ -47,4 +47,6 @@ ReserveDefinitionsMapping: TypeAlias = dict[AreaId, dict[ReserveDefinitionId, Re
 ReserveNeedsMapping: TypeAlias = dict[AreaId, dict[ReserveDefinitionId, SeriesId]]
 ThermalReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, ReserveSymmetries]]
 STStorageReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[StStorageId, ReserveSymmetries]]
+# The long-term storage (hydro) is modelled per area, so its symmetries have no asset dimension.
+HydroReserveSymmetriesMapping: TypeAlias = dict[AreaId, ReserveSymmetries]
 ReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[ThermalId | StStorageId, ReserveSymmetries]]

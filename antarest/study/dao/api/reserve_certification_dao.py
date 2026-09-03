@@ -12,6 +12,7 @@
 from abc import ABC, abstractmethod
 
 from antarest.study.business.model.reserve_certification_model import (
+    HydroReserveCertificationMapping,
     StorageReserveCertificationMapping,
     ThermalReserveCertificationMapping,
 )
@@ -43,6 +44,22 @@ class ReadOnlyReserveCertificationDao(ABC):
     def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_hydro_reserve_certifications(self) -> dict[AreaId, HydroReserveCertificationMapping]:
+        """
+        Returns the hydro reserve certifications of the whole study.
+
+        Design notes:
+        - If an area has no certification, it won't be present in the returned data.
+        - An area owns exactly one long-term storage, so certifications are keyed by reserve only.
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_reserve_certifications(self, area_id: AreaId) -> HydroReserveCertificationMapping:
+        raise NotImplementedError()
+
 
 class ReserveCertificationDao(ReadOnlyReserveCertificationDao):
     @abstractmethod
@@ -63,4 +80,18 @@ class ReserveCertificationDao(ReadOnlyReserveCertificationDao):
     def save_st_storage_reserve_certifications(
         self, new_certifications: dict[AreaId, StorageReserveCertificationMapping]
     ) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_reserve_certifications(
+        self, new_certifications: dict[AreaId, HydroReserveCertificationMapping]
+    ) -> None:
+        """
+        Replace the hydro reserve certifications with the given one.
+
+        Design notes:
+        - If an area is absent from the given data, its certifications are not modified.
+        - If a reserve is absent from the given data, its certification will be removed.
+
+        """
         raise NotImplementedError()
