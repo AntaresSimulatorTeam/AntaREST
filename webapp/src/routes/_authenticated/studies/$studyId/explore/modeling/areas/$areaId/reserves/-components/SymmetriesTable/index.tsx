@@ -14,7 +14,7 @@
 
 import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/GroupedDataTable/utils";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { ClusterGroup, Reserve } from "@/services/api/studies/areas/reserves/types";
+import type { Reserve } from "@/services/api/studies/areas/reserves/types";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AddIcon from "@mui/icons-material/Add";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -37,6 +37,7 @@ import {
 import * as R from "ramda";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { ClusterGroup } from "./types";
 import type { SymmetryValidationError } from "./utils";
 
 interface SymmetryDataRow {

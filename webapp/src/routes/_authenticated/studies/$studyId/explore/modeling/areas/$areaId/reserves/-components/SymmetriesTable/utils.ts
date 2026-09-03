@@ -12,11 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import {
-  createSymmetryRow,
-  reindexSymmetryRows,
-} from "@/services/api/studies/areas/reserves/adapters";
-import type { ClusterGroup } from "@/services/api/studies/areas/reserves/types";
+import type { ClusterGroup, SymmetryRow } from "./types";
 
 // The backend requires at least 2 distinct reserve IDs per symmetry. Enforced
 // here (not in the API schema) so a violation can be tied to a specific row.
@@ -27,6 +23,19 @@ export interface SymmetryValidationError {
   clusterId: string;
   clusterName: string;
   index: number;
+}
+
+function createSymmetryRow(clusterId: string, reserveIds: Iterable<string> = []): SymmetryRow {
+  return {
+    uiId: crypto.randomUUID(),
+    clusterId,
+    index: 0, // Overwritten by `reindexSymmetryRows`.
+    reserves: new Set(reserveIds),
+  };
+}
+
+function reindexSymmetryRows(rows: SymmetryRow[]): SymmetryRow[] {
+  return rows.map((row, i) => (row.index === i + 1 ? row : { ...row, index: i + 1 }));
 }
 
 /**

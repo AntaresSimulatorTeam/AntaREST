@@ -16,7 +16,8 @@ import {
   adaptClusterGroupsToReservesSymmetriesDto,
   adaptReservesSymmetriesDtoToClusterGroups,
 } from "@/services/api/studies/areas/reserves/adapters";
-import type { ClusterGroup, ReservesSymmetries } from "@/services/api/studies/areas/reserves/types";
+import type { ReservesSymmetries } from "@/services/api/studies/areas/reserves/types";
+import type { ClusterGroup } from "../types";
 import {
   addSymmetries,
   deleteSymmetryRows,

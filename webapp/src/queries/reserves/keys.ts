@@ -52,7 +52,7 @@ export const reserveKeys = {
     areaId: AreaWithId["id"],
     productionType: CertificationProductionType,
   ) => {
-    return [...reserveKeys.all(), "certifications", { studyId, areaId, productionType }];
+    return [...reserveKeys.all(), "reserveCertifications", { studyId, areaId, productionType }];
   },
   updateCertifications: (
     studyId: Study["id"],
@@ -69,7 +69,7 @@ export const reserveKeys = {
     areaId: AreaWithId["id"],
     productionType: SymmetryProductionType,
   ) => {
-    return [...reserveKeys.all(), "symmetries", { studyId, areaId, productionType }];
+    return [...reserveKeys.all(), "reserveSymmetries", { studyId, areaId, productionType }];
   },
   updateSymmetries: (
     studyId: Study["id"],

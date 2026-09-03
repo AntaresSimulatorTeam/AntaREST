@@ -21,18 +21,16 @@ import {
   adaptClusterGroupsToReservesSymmetriesDto,
   adaptReservesSymmetriesDtoToClusterGroups,
 } from "@/services/api/studies/areas/reserves/adapters";
-import type {
-  ClusterGroup,
-  SymmetryProductionType,
-} from "@/services/api/studies/areas/reserves/types";
+import type { SymmetryProductionType } from "@/services/api/studies/areas/reserves/types";
 import { toError } from "@/utils/fnUtils";
 import { Alert } from "@mui/material";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useUndo from "use-undo";
 import SymmetriesTable from "./-components/SymmetriesTable";
+import type { ClusterGroup } from "./-components/SymmetriesTable/types";
 import {
   addSymmetries,
   deleteSymmetryRows,
@@ -66,23 +64,23 @@ function SymmetriesView() {
   const queryClient = useQueryClient();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
 
-  const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
-
-  const { data: reserves, isFetching: isReservesFetching } = useSuspenseQuery(
-    reserveQueries.list(studyId, areaId),
-  );
-
-  const { data: thermalClusters, isFetching: isThermalsFetching } = useSuspenseQuery(
-    thermalQueries.list(studyId, areaId),
-  );
-
-  const { data: thermalCertifications, isFetching: isCertificationsFetching } = useSuspenseQuery(
-    reserveQueries.certifications(studyId, areaId, "thermals"),
-  );
-
-  const { data: symmetriesData, isFetching: isSymmetriesFetching } = useSuspenseQuery(
-    reserveQueries.symmetries(studyId, areaId, PRODUCTION_TYPE),
-  );
+  // Run all five queries in parallel instead of suspending on them one after
+  // another: the parent route's loader only prefetches `enabled` and `list`.
+  const [
+    { data: reservesEnabled },
+    { data: reserves, isFetching: isReservesFetching },
+    { data: thermalClusters, isFetching: isThermalsFetching },
+    { data: thermalCertifications, isFetching: isCertificationsFetching },
+    { data: symmetriesData, isFetching: isSymmetriesFetching },
+  ] = useSuspenseQueries({
+    queries: [
+      reserveQueries.enabled(studyId),
+      reserveQueries.list(studyId, areaId),
+      thermalQueries.list(studyId, areaId),
+      reserveQueries.certifications(studyId, areaId, "thermals"),
+      reserveQueries.symmetries(studyId, areaId, PRODUCTION_TYPE),
+    ],
+  });
 
   // Inverted from { reserveId: { clusterId: ... } } to { clusterId: Set<reserveId> },
   // used to gate which checkboxes are checkable: a cluster can only be marked

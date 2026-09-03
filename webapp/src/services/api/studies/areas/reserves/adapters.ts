@@ -12,23 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import type { ClusterGroup, ReservesSymmetries, SymmetryRow } from "./types";
-
-export function createSymmetryRow(
-  clusterId: string,
-  reserveIds: Iterable<string> = [],
-): SymmetryRow {
-  return {
-    uiId: crypto.randomUUID(),
-    clusterId,
-    index: 0, // Overwritten by `reindexSymmetryRows`.
-    reserves: new Set(reserveIds),
-  };
-}
-
-export function reindexSymmetryRows(rows: SymmetryRow[]): SymmetryRow[] {
-  return rows.map((row, i) => (row.index === i + 1 ? row : { ...row, index: i + 1 }));
-}
+import type {
+  ClusterGroup,
+  SymmetryRow,
+} from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/-components/SymmetriesTable/types";
+import type { ReservesSymmetries } from "./types";
 
 /**
  * Converts one cluster's raw symmetries entry from the API payload into UI rows.
@@ -41,9 +29,12 @@ export function adaptReservesSymmetriesDtoToRows(
   clusterId: string,
   symmetries: string[][] = [],
 ): SymmetryRow[] {
-  return reindexSymmetryRows(
-    symmetries.map((reserveIds) => createSymmetryRow(clusterId, reserveIds)),
-  );
+  return symmetries.map((reserveIds, i) => ({
+    uiId: crypto.randomUUID(),
+    clusterId,
+    index: i + 1,
+    reserves: new Set(reserveIds),
+  }));
 }
 
 /**
