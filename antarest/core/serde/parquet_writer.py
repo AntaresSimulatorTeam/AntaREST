@@ -55,7 +55,7 @@ class BatchParquetWriter:
     def __exit__(self, *args: Any, **kwargs: Any) -> None:
         self.close()
 
-    def add_table(self, table: pa.Table) -> None:
+    def append_table(self, table: pa.Table) -> None:
         if self._closed:
             raise ValueError("Writer is closed")
         self._current_batch.append(table)
@@ -115,7 +115,7 @@ def write_dataframes_in_parquet_format_by_column_sets(
         first_df = _adapt_polars_schema(first_df)
         table = first_df.to_arrow()
         current_writer = BatchParquetWriter(file_path, table.schema)
-        current_writer.add_table(table)
+        current_writer.append_table(table)
 
         while True:
             try:
@@ -143,7 +143,7 @@ def write_dataframes_in_parquet_format_by_column_sets(
 
                     current_writer = BatchParquetWriter(file_path, table.schema)
 
-                current_writer.add_table(table)
+                current_writer.append_table(table)
 
             except StopIteration:
                 return file_paths, new_index
@@ -181,7 +181,7 @@ def write_dataframes_stream_parquet(path: Path, dataframes: Iterator[pd.DataFram
         raise ValueError("No dataframe provided")
 
     with BatchParquetWriter(path, schema) as writer:
-        writer.add_table(first_table)
+        writer.append_table(first_table)
         for df in dataframes:
             table = pa.Table.from_pandas(df)
-            writer.add_table(table)
+            writer.append_table(table)
