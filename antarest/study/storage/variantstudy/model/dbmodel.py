@@ -11,10 +11,13 @@
 # This file is part of the Antares project.
 
 import datetime
+import itertools
 import uuid
+from dataclasses import dataclass
 from typing import Any
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from pydantic import TypeAdapter
+from sqlalchemy import DateTime, Dialect, ForeignKey, Integer, String, TypeDecorator
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
@@ -26,34 +29,92 @@ from antarest.study.storage.variantstudy.model.model import CommandDTO
 metadata = Base.metadata
 
 
+VERSIONS_ADAPTER = TypeAdapter(list[tuple[str, int]])
+
+
+@dataclass(frozen=True)
+class LineageVersions:
+    """
+    Carries the versioning information of all variant ancestors of a study.
+
+    Attributes:
+        versions: one tuple (study id, data version) for each ancestor excluding root and including self
+    """
+
+    versions: list[tuple[str, int]]
+
+    def is_up_to_date_with(self, current_versions: "LineageVersions") -> bool:
+        """
+        Up to date if lineage has not changed and all versions are equal or greater than current versions
+        """
+        for self_study, current_study in itertools.zip_longest(self.versions, current_versions.versions):
+            if self_study is None or current_study is None:
+                return False
+            self_study_id, self_study_version = self_study
+            current_study_id, current_study_version = current_study
+            if self_study_id != current_study_id:
+                return False
+            if self_study_version < current_study_version:
+                return False
+        return True
+
+    def to_json(self) -> str:
+        return VERSIONS_ADAPTER.dump_json(self.versions).decode("utf-8")
+
+    @classmethod
+    def from_json(cls, json_repr: str) -> "LineageVersions":
+        data = VERSIONS_ADAPTER.validate_json(json_repr)
+        return cls(data)
+
+    def get_parent_lineage_versions(self) -> "LineageVersions":
+        return LineageVersions(self.versions[:-1])
+
+
+class LineageVersionsType(TypeDecorator[LineageVersions]):
+    """
+    Defines a type to store lineage versions as a JSON string [["study-id", 3], ...]
+    """
+
+    impl = String
+    cache_ok = True
+
+    @override
+    def process_result_value(self, value: str | None, dialect: Dialect) -> LineageVersions | None:
+        return LineageVersions.from_json(value) if value is not None else None
+
+    @override
+    def process_bind_param(self, value: LineageVersions | None, dialect: Dialect) -> str | None:
+        return value.to_json() if value is not None else None
+
+
 class VariantStudySnapshot(Base):
     """
     Metadata about a variant snapshot.
 
     Attributes:
         id: the variant study ID.
-        created_at: the timestamp at which the snapshot was generated.
         last_executed_command: the ID of the last command applied when the snapshot has been generated.
                                This information can be useful to not re-generate the snapshot from scratch
                                (starting from the parent study), when some commands are simply appended
                                to the list of commands.
+        lineage_versions: tracks the command list versions of all parent studies at time of generation, to be able to
+                          correctly identify when the snapshot needs to be updated.
     """
 
     __tablename__ = "variant_study_snapshot"
+    __mapper_args__ = {"polymorphic_identity": "variant_study_snapshot"}
 
     id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("variantstudy.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    version: Mapped[int] = mapped_column(Integer)
     last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
-
-    __mapper_args__ = {"polymorphic_identity": "variant_study_snapshot"}
+    lineage_versions: Mapped[LineageVersions] = mapped_column(LineageVersionsType())
 
     @override
     def __str__(self) -> str:
-        return f"[Snapshot] id={self.id}, version={self.version}"
+        return f"[Snapshot] id={self.id}, lineag_versions={self.lineage_versions}"
 
 
 class CommandBlock(Base):
@@ -137,6 +198,16 @@ class CommandBlock(Base):
 
 
 class CommandsListVersion(Base):
+    """
+    Versions the list of commands of a variant study with an incremental counter.
+
+    The version also serves as a lock to prevent concurrent modifications of the commands list,
+    through "SELECT version FOR UPDATE".
+
+    This is an important piece to guarantee the consistency of variant snapshots with the lists of commands defined
+    in their parents.
+    """
+
     __tablename__ = "commands_list_version"
 
     variant_id: Mapped[str] = mapped_column(
@@ -174,18 +245,18 @@ class VariantStudy(Study):
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
     }
-    snapshot = relationship(
+    snapshot: Mapped[VariantStudySnapshot | None] = relationship(
         VariantStudySnapshot,
         uselist=False,
         cascade="all, delete, delete-orphan",
     )
-    commands = relationship(
+    commands: Mapped[list[CommandBlock]] = relationship(
         CommandBlock,
         uselist=True,
         order_by="CommandBlock.index",
         cascade="all, delete, delete-orphan",
     )
-    commands_version = relationship(CommandsListVersion, uselist=False)
+    commands_version: Mapped[CommandsListVersion] = relationship(CommandsListVersion, uselist=False)
 
     @override
     def __str__(self) -> str:
