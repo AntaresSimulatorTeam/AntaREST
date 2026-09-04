@@ -324,7 +324,10 @@ function SymmetriesTable({
         },
       },
     },
-    muiTablePaperProps: { sx: { display: "flex", flexDirection: "column" } },
+    muiTablePaperProps: {
+      sx: { display: "flex", flexDirection: "column", flex: "1 1 auto", minHeight: 0 },
+    },
+    muiTableContainerProps: { sx: { flex: 1, overflow: "auto" } },
     ...getTableOptionsForAlign("center"),
     ...getDarkModeFixStyles(isDarkMode),
   });
