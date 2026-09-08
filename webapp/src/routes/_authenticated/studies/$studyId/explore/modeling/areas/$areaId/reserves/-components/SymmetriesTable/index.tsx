@@ -33,6 +33,7 @@ import {
   MRT_ToggleGlobalFilterButton,
   useMaterialReactTable,
   type MRT_RowSelectionState,
+  type MRT_Updater,
 } from "material-react-table";
 import * as R from "ramda";
 import { useMemo, useState } from "react";
@@ -135,6 +136,39 @@ function SymmetriesTable({
     [validationErrors],
   );
 
+  const rowKindById = useMemo(() => {
+    const map = new Map<string, SymmetriesTableRow["kind"]>();
+    for (const cluster of rows) {
+      map.set(cluster.id, cluster.kind);
+      for (const symmetry of cluster.subRows) {
+        map.set(symmetry.id, symmetry.kind);
+      }
+    }
+    return map;
+  }, [rows]);
+
+  // Clusters and symmetries are acted on by different buttons (add symmetries
+  // vs. duplicate/delete), so selecting one kind clears any selection of the
+  // other instead of leaving a mixed, actionless selection.
+  const handleRowSelectionChange = (updater: MRT_Updater<MRT_RowSelectionState>) => {
+    setRowSelection((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      const addedIds = Object.keys(next).filter((id) => next[id] && !prev[id]);
+
+      if (addedIds.length === 0) {
+        return next;
+      }
+
+      const addedKind = rowKindById.get(addedIds[0]);
+
+      return Object.fromEntries(
+        Object.entries(next).filter(
+          ([id, selected]) => selected && rowKindById.get(id) === addedKind,
+        ),
+      );
+    });
+  };
+
   const columns = useMemo(
     () => [
       columnHelper.accessor(
@@ -209,8 +243,7 @@ function SymmetriesTable({
     enableExpanding: true,
     enableRowSelection: true,
     enableMultiRowSelection: true,
-    // Cluster and symmetry rows are two independent selection states
-    // selecting a cluster row must not implicitly select its symmetries.
+    // Selecting a cluster row must not implicitly select its symmetries.
     enableSubRowSelection: false,
     filterFromLeafRows: true,
     initialState: {
@@ -221,7 +254,7 @@ function SymmetriesTable({
     // Data is always present (suspense queries): refetches show progress
     // bars, not a blanking skeleton.
     state: { showProgressBars: isFetching, rowSelection },
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: handleRowSelectionChange,
     enableStickyHeader: true,
     enableColumnDragging: false,
     enableColumnActions: false,
@@ -230,7 +263,7 @@ function SymmetriesTable({
     positionToolbarAlertBanner: "none",
     positionToolbarDropZone: "none",
     renderTopToolbarCustomActions: ({ table }) => {
-      const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
+      const selectedRows = table.getSelectedRowModel().flatRows.map((row) => row.original);
       const selectedClusters = selectedRows.filter(
         (row): row is ClusterHeaderRow => row.kind === "cluster",
       );
