@@ -68,7 +68,7 @@ adding powerful features for collaboration, storage optimization, and advanced e
 Before you begin, ensure you have the following installed:
 
 - **Python**: 3.11.x ([Download](https://www.python.org/downloads/))
-- **Node.js**: 22.13.0 ([Download](https://nodejs.org/))
+- **Node.js**: 22.23.2 ([Download](https://nodejs.org/))
 - **Git**: Latest version ([Download](https://git-scm.com/))
 
 Optional (for specific deployment modes):

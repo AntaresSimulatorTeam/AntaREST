@@ -133,7 +133,7 @@
     "vitest": "2.1.1"
   },
   "engines": {
-    "node": "22.13.0"
+    "node": "22.23.2"
   },
   "overrides": {
     "@glideapps/glide-data-grid": {
