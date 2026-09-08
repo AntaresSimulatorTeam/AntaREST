@@ -77,7 +77,7 @@ const subMenuItems: SidebarItemProps[] = [
   {
     label: (t) => t("documentation.title"),
     linkOptions: {
-      href: "https://antares-web.readthedocs.io",
+      href: "https://antares-doc.readthedocs.io/en/latest/getting-started/first-steps/",
     },
     icon: <ClassOutlinedIcon />,
   },
