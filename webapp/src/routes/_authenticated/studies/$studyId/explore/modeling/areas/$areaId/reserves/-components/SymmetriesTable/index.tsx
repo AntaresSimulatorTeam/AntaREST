@@ -114,21 +114,26 @@ function SymmetriesTable({
 
   const rows = useMemo<ClusterHeaderRow[]>(
     () =>
-      groups.map((group) => ({
-        kind: "cluster",
-        id: group.clusterId,
-        clusterId: group.clusterId,
-        clusterName: group.clusterName,
-        subRows: group.symmetries.map((row) => ({
-          kind: "symmetry",
-          id: row.uiId,
-          uiId: row.uiId,
+      groups
+        // Only clusters certified for at least one reserve can be made
+        // symmetric; uncertified clusters are hidden here but kept in
+        // `groups` so any of their saved symmetries survive a Save.
+        .filter((group) => certifiedReservesByCluster.has(group.clusterId))
+        .map((group) => ({
+          kind: "cluster",
+          id: group.clusterId,
           clusterId: group.clusterId,
-          index: row.index,
-          reserves: row.reserves,
+          clusterName: group.clusterName,
+          subRows: group.symmetries.map((row) => ({
+            kind: "symmetry",
+            id: row.uiId,
+            uiId: row.uiId,
+            clusterId: group.clusterId,
+            index: row.index,
+            reserves: row.reserves,
+          })),
         })),
-      })),
-    [groups],
+    [groups, certifiedReservesByCluster],
   );
 
   const invalidUiIds = useMemo(
@@ -243,6 +248,9 @@ function SymmetriesTable({
     enableExpanding: true,
     enableRowSelection: true,
     enableMultiRowSelection: true,
+    // A "select all" checkbox would mix cluster and symmetry rows, which no
+    // bulk action supports.
+    enableSelectAll: false,
     // Selecting a cluster row must not implicitly select its symmetries.
     enableSubRowSelection: false,
     filterFromLeafRows: true,
