@@ -22,5 +22,5 @@ class InputHydroReserves(FolderNode):
     def build(self) -> TREE:
         return {
             area_id: InputHydroReservesArea(self.matrix_storage_context, self.config.next_file(area_id))
-            for area_id in self.config.area_names()
+            for area_id in self.config.areas
         }

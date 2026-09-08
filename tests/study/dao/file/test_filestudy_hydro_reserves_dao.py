@@ -130,8 +130,6 @@ def _save_existing_content_with_a_symmetry(dao: FileStudyTreeDao) -> None:
 
 
 def test_saving_certifications_preserves_the_symmetries(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
-    # Symmetries are not handled by the DAO yet, but they share the file with the certifications,
-    # so saving certifications must not drop the ones that are still certified.
     dao = filestudy_dao_v10_2
     _set_up(dao)
     _save_existing_content_with_a_symmetry(dao)
@@ -186,3 +184,24 @@ def test_saving_empty_certifications_removes_the_symmetries(filestudy_dao_v10_2:
 
     content = YAMLReader().read(_hydro_reserve_file(dao, "paris"))
     assert content == {"participations": {}}
+
+
+def test_deleting_an_area_removes_its_reserve_participations(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    # The file lives under `input/hydro/reserves/<area>`, which no other area deletion covers.
+    dao = filestudy_dao_v10_2
+    _set_up(dao)
+    dao.save_hydro_reserve_certifications({"paris": {"r1": StorageReserveCertification(max_release=1.0)}})
+    assert _hydro_reserve_file(dao, "paris").exists()
+
+    dao.delete_area("paris")
+
+    assert not _hydro_reserve_file(dao, "paris").parent.exists()
+
+
+def test_deleting_an_area_without_reserve_participations(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    # The folder is only created on the first save, so deleting an area without one must not raise.
+    dao = filestudy_dao_v10_2
+    _set_up(dao)
+    assert not _hydro_reserve_file(dao, "paris").exists()
+
+    dao.delete_area("paris")

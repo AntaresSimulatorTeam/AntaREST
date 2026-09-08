@@ -162,4 +162,4 @@ def test_reserve_should_be_certified(dao_10_2: StudyDao, command_context: Comman
     )
     output = cmd.apply(dao_10_2)
     assert not output.status
-    assert "r3" in output.message
+    assert "'{'r3'}' on hydro not found in area 'fr'" in output.message

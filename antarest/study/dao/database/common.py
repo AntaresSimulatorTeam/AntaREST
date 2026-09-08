@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import json
+from collections.abc import Mapping
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
@@ -54,6 +55,20 @@ def validate_areas_exist(session: Session, study_data_id: int, area_ids: set[str
     existing_area_ids = {row.area_id for row in rows}
     if invalid_areas := area_ids - existing_area_ids:
         raise AreaNotFound(*invalid_areas)
+
+
+def validate_areas_without_rows_exist(
+    session: Session, study_data_id: int, area_ids: set[str], values: Sequence[Mapping[str, Any]]
+) -> None:
+    """
+    Checks the areas that are about to be cleared rather than written.
+
+    An area contributing at least one row is validated by the foreign keys when it is inserted.
+    An area contributing none only triggers a `DELETE`, which succeeds even when the area does not
+    exist: without this check, an invalid area would be a silent no-op instead of an error.
+    """
+    if unchecked_area_ids := area_ids - {value["area_id"] for value in values}:
+        validate_areas_exist(session, study_data_id, unchecked_area_ids)
 
 
 def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: Table) -> None:
@@ -117,6 +132,14 @@ def convert_row_to_symmetries(row: Row[Any]) -> ReserveSymmetries:
     return cast(ReserveSymmetries, json.loads(row.symmetries))
 
 
+def serialize_symmetries(symmetries: ReserveSymmetries) -> str:
+    """
+    Encodes the symmetries into the `symmetries` column, dropping the empty ones as they carry
+    no information.
+    """
+    return json.dumps([symmetry for symmetry in symmetries if symmetry])
+
+
 class ReserveObjectType(StrEnum):
     THERMAL = "thermal"
     ST_STORAGE = "st_storage"
@@ -145,7 +168,7 @@ class ReserveObjectType(StrEnum):
         return {
             "study_data_id": study_data_id,
             "area_id": area_id,
-            "symmetries": json.dumps([symmetry for symmetry in symmetries if symmetry]),
+            "symmetries": serialize_symmetries(symmetries),
             self._db_key(): object_id,
         }
 

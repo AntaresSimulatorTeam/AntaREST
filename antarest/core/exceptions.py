@@ -870,6 +870,6 @@ class ReserveCertificationNotFound(HTTPException):
 
 
 class ReserveCertificationsNotFound(HTTPException):
-    def __init__(self, area_id: str, objet_type: str):
-        msg = f"No {objet_type} reserve certifications found in area '{area_id}'"
+    def __init__(self, area_id: str, object_type: str):
+        msg = f"No {object_type} reserve certifications found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)

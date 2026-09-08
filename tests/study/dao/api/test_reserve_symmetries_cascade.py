@@ -12,12 +12,9 @@
 from antarest.study.dao.api.common import remove_reserves_from_symmetries_dict
 
 
-class TestRemoveReserveSymmetriesDictByCascade:
+class TestRemoveReservesFromSymmetriesDict:
     """
     Cascade a reserve removal over every asset of an area.
-
-    This is the only entry point in use, so it also covers the per-asset behaviour of
-    `remove_reserve_symmetries_by_cascade`, which it delegates to.
     """
 
     def test_returns_none_when_nothing_changed(self) -> None:

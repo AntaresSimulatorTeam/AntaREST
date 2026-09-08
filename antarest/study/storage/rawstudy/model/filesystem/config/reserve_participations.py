@@ -217,7 +217,9 @@ class _AreaAssetParticipationFileData(ABC, AntaresBaseModel, Generic[Participati
                         [reserve_id for reserve_id in symmetry if reserve_id in certifs]
                         for symmetry in reserve_symmetries
                     ]
-                    participation["symmetries"] = [{"reserves": s} for s in symmetries_with_certification if len(s) > 1]
+                    # Drop symmetries whose reserves lost their certification.
+                    if surviving := [s for s in symmetries_with_certification if len(s) > 1]:
+                        participation["symmetries"] = [{"reserves": s} for s in surviving]
 
             participations.append(participation)
 
@@ -345,9 +347,7 @@ class HydroReserveParticipationsFileData(AntaresBaseModel):
                 {"reserve": reserve_id, **certification.model_dump()}
                 for reserve_id, certification in certifications.items()
             ]
-            # Drop symmetries whose reserves lost their certification. Same filtering rule as
-            # `_build_participations_from_symmetries`, except that the key is left out entirely
-            # when nothing survives, instead of being written as an empty list.
+            # Drop symmetries whose reserves lost their certification.
             kept = [[r for r in symmetry if r in certifications] for symmetry in symmetries]
             if surviving := [s for s in kept if len(s) > 1]:
                 participation["symmetries"] = [{"reserves": s} for s in surviving]

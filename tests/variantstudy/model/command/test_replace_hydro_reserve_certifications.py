@@ -15,7 +15,6 @@ from antarest.study.business.model.reserve_certification_model import StorageRes
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
-from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
 from antarest.study.storage.variantstudy.model.command.replace_hydro_reserve_certifications import (
@@ -143,27 +142,3 @@ def test_reserve_should_be_valid(dao_10_2: StudyDao, command_context: CommandCon
     output = cmd.apply(dao_10_2)
     assert not output.status
     assert "Reserve definitions not found: {'fr': {'fake_reserve'}}" in output.message
-
-
-def test_command_dto_round_trip(command_context: CommandContext) -> None:
-    cmd = ReplaceHydroReserveCertifications(
-        area_id="fr",
-        certifications={"r1": StorageReserveCertification(participation_cost=2.0, max_release=3.0, max_store=4.0)},
-        command_context=command_context,
-        study_version=STUDY_VERSION_10_2,
-    )
-
-    dto = cmd.to_dto()
-    assert dto.action == "replace_hydro_reserve_certifications"
-    assert dto.args == {
-        "area_id": "fr",
-        "certifications": {"r1": {"participation_cost": 2.0, "max_release": 3.0, "max_store": 4.0}},
-    }
-
-    # The factory must be able to rebuild the exact same command from the DTO
-    rebuilt = CommandFactory(
-        generator_matrix_constants=command_context.generator_matrix_constants,
-        matrix_service=command_context.matrix_service,
-        blob_service=command_context.blob_service,
-    ).to_command(dto)
-    assert rebuilt == [cmd]

@@ -32,6 +32,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_2,
     STUDY_VERSION_8_6,
     STUDY_VERSION_9_2,
+    STUDY_VERSION_10_2,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, FileStudyTreeConfig
@@ -400,6 +401,11 @@ class FileStudyAreaDao(AreaDao):
         if study_version >= STUDY_VERSION_8_6:
             study_data.tree.delete(["input", "st-storage", "clusters", area_id])
             study_data.tree.delete(["input", "st-storage", "series", area_id])
+
+        if study_version >= STUDY_VERSION_10_2:
+            # The folder is only created when reserve participations are saved, so it may not exist.
+            with contextlib.suppress(ChildNotFoundError):
+                study_data.tree.delete(["input", "hydro", "reserves", area_id])
 
         if study_version > STUDY_VERSION_9_2:
             study_data.tree.delete(["input", "hydro", "hydro", "overflow spilled cost difference", area_id])

@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import json
 from typing import Any
 
 from sqlalchemy import Table, delete, insert, select
@@ -32,7 +31,13 @@ from antarest.study.dao.common import (
     ThermalId,
     ThermalReserveSymmetriesMapping,
 )
-from antarest.study.dao.database.common import ReserveObjectType, convert_row_to_symmetries, validate_areas_exist
+from antarest.study.dao.database.common import (
+    ReserveObjectType,
+    convert_row_to_symmetries,
+    serialize_symmetries,
+    validate_areas_exist,
+    validate_areas_without_rows_exist,
+)
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.hydro_reserve_symmetries import HYDRO_RESERVE_SYMMETRIES_TABLE
 
@@ -79,6 +84,10 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
             # Check foreign keys integrity for values to insert
             check_thermal_symmetries_integrity(self.get_impl(), data)
 
+        # An asset whose symmetries are only cleared produces no row, so its area never reaches the
+        # foreign keys: it is checked here to avoid turning an invalid area into a silent no-op.
+        validate_areas_without_rows_exist(self._db_session, self._study_data_id, set(data), values)
+
         # Save the new values
         try:
             self._save_reserve_symmetries(set(data), reserve_type.db_symmetry_table(), values)
@@ -96,6 +105,10 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
         if values:
             # Check foreign keys integrity for values to insert
             check_st_storage_symmetries_integrity(self.get_impl(), data)
+
+        # An asset whose symmetries are only cleared produces no row, so its area never reaches the
+        # foreign keys: it is checked here to avoid turning an invalid area into a silent no-op.
+        validate_areas_without_rows_exist(self._db_session, self._study_data_id, set(data), values)
 
         # Save the new values
         try:
@@ -147,17 +160,17 @@ class DatabaseReserveSymmetriesDao(ReserveSymmetriesDao, DatabaseDaoBase):
                 {
                     "study_data_id": self._study_data_id,
                     "area_id": area_id,
-                    "symmetries": json.dumps([symmetry for symmetry in symmetries if symmetry]),
+                    "symmetries": serialize_symmetries(symmetries),
                 }
             )
 
         if values:
             # Check foreign keys integrity for values to insert
             check_hydro_symmetries_integrity(self.get_impl(), data)
-        else:
-            # We need this check to avoid performing a silent no-op
-            # User should know when they send an invalid area
-            validate_areas_exist(self._db_session, self._study_data_id, set(data))
+
+        # An area whose symmetries are only cleared produces no row, so it never reaches the foreign
+        # keys: it is checked here to avoid turning an invalid area into a silent no-op.
+        validate_areas_without_rows_exist(self._db_session, self._study_data_id, set(data), values)
 
         try:
             self._save_reserve_symmetries(set(data), HYDRO_RESERVE_SYMMETRIES_TABLE, values)

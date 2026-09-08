@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import pytest
 
+from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
@@ -153,3 +154,33 @@ def test_symmetries_removal_when_deleting_st_storage_or_certification(dao_10_2: 
     dao.save_st_storage_reserve_certifications({"fr": {}})
 
     assert dao.get_st_storage_reserve_symmetries("fr") == {}
+
+
+def test_saving_certifications_raises_on_unknown_area(dao_10_2: StudyDao) -> None:
+    # Clearing produces no row to insert, so the area must be checked before the rows are built.
+    dao = dao_10_2
+    _set_up(dao)
+
+    with pytest.raises(AreaNotFound):
+        dao.save_st_storage_reserve_certifications({"unknown": {}})
+
+    with pytest.raises(AreaNotFound):
+        # The valid area produces rows, the invalid one only a `DELETE`: the check must still catch it.
+        dao.save_st_storage_reserve_certifications(
+            {"fr": {"r1": {"sts1": StorageReserveCertification()}}, "unknown": {}}
+        )
+
+
+def test_saving_symmetries_raises_on_unknown_area(dao_10_2: StudyDao) -> None:
+    # Clearing produces no row to insert, so the area must be checked before the rows are built.
+    dao = dao_10_2
+    _set_up(dao)
+    dao.save_st_storage_reserve_certifications(
+        {"fr": {"r1": {"sts1": StorageReserveCertification()}, "r2": {"sts1": StorageReserveCertification()}}}
+    )
+
+    with pytest.raises(AreaNotFound):
+        dao.save_st_storage_reserve_symmetries({"unknown": {}})
+
+    with pytest.raises(AreaNotFound):
+        dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]]}, "unknown": {}})

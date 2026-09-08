@@ -292,3 +292,22 @@ def test_symmetries_of_areas_are_independent(dao_10_2: StudyDao) -> None:
 
     dao.save_hydro_reserve_symmetries({"de": []})
     assert dao.get_all_hydro_reserve_symmetries() == {"fr": [["r1", "r2"]]}
+
+
+def test_saving_certifications_raises_on_unknown_area_mixed_with_a_valid_one(dao_10_2: StudyDao) -> None:
+    # The valid area produces rows, the invalid one only a `DELETE`: the check must still catch it.
+    dao = dao_10_2
+    _set_up(dao)
+
+    with pytest.raises(AreaNotFound):
+        dao.save_hydro_reserve_certifications({"fr": {"r1": StorageReserveCertification()}, "unknown": {}})
+
+
+def test_saving_symmetries_raises_on_unknown_area_mixed_with_a_valid_one(dao_10_2: StudyDao) -> None:
+    # The valid area produces rows, the invalid one only a `DELETE`: the check must still catch it.
+    dao = dao_10_2
+    _set_up(dao)
+    _certify(dao, "r1", "r2")
+
+    with pytest.raises(AreaNotFound):
+        dao.save_hydro_reserve_symmetries({"fr": [["r1", "r2"]], "unknown": []})

@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import pytest
 
-from antarest.core.exceptions import ReserveCertificationsNotFound
+from antarest.core.exceptions import AreaNotFound, ReserveCertificationsNotFound
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_certification_model import ThermalReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
@@ -127,3 +127,31 @@ def test_save_symmetry_without_certification_or_without_thermal(dao_10_2: StudyD
 
     with pytest.raises(ReserveCertificationsNotFound):
         dao.save_thermal_reserve_symmetries({"fr": {"fake_thermal": [["r1", "r2"]]}})
+
+
+def test_saving_certifications_raises_on_unknown_area(dao_10_2: StudyDao) -> None:
+    # Clearing produces no row to insert, so the area must be checked before the rows are built.
+    dao = dao_10_2
+    _set_up(dao)
+
+    with pytest.raises(AreaNotFound):
+        dao.save_thermal_reserve_certifications({"unknown": {}})
+
+    with pytest.raises(AreaNotFound):
+        # The valid area produces rows, the invalid one only a `DELETE`: the check must still catch it.
+        dao.save_thermal_reserve_certifications({"fr": {"r1": {"th1": ThermalReserveCertification()}}, "unknown": {}})
+
+
+def test_saving_symmetries_raises_on_unknown_area(dao_10_2: StudyDao) -> None:
+    # Clearing produces no row to insert, so the area must be checked before the rows are built.
+    dao = dao_10_2
+    _set_up(dao)
+    dao.save_thermal_reserve_certifications(
+        {"fr": {"r1": {"th1": ThermalReserveCertification()}, "r2": {"th1": ThermalReserveCertification()}}}
+    )
+
+    with pytest.raises(AreaNotFound):
+        dao.save_thermal_reserve_symmetries({"unknown": {}})
+
+    with pytest.raises(AreaNotFound):
+        dao.save_thermal_reserve_symmetries({"fr": {"th1": [["r1", "r2"]]}, "unknown": {}})

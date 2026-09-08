@@ -163,7 +163,6 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         self._remove_hydro_reserve_from_symmetries(area_id, ids_to_remove)
 
     def _remove_hydro_reserve_from_symmetries(self, area_id: str, ids_to_remove: set[ReserveDefinitionId]) -> None:
-        # An area owns exactly one long-term storage, so there is no asset to iterate over.
         symmetries = self.get_impl().get_hydro_reserve_symmetries(area_id)
         if remove_reserves_from_symmetries(symmetries, ids_to_remove):
             self.get_impl().save_hydro_reserve_symmetries({area_id: symmetries})

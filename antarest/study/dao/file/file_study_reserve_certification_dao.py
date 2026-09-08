@@ -62,7 +62,7 @@ def _check_reserves_exist(
         raise ReserveDefinitionsNotFound({area_id: invalid_reserves})
 
 
-class FileStudyThermalReserveCertificationDao(ReserveCertificationDao, ABC):
+class FileStudyReserveCertificationDao(ReserveCertificationDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
         pass

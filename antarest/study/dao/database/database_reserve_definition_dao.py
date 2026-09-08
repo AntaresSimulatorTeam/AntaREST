@@ -140,7 +140,6 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
         self._db_session.commit()
 
     def delete_orphan_hydro_symmetries(self, area_id: str, reserves: set[ReserveDefinitionId]) -> None:
-        # An area owns exactly one long-term storage, so there is no asset to iterate over.
         symmetries = self.get_impl().get_hydro_reserve_symmetries(area_id)
         if remove_reserves_from_symmetries(symmetries, reserves):
             self.get_impl().save_hydro_reserve_symmetries({area_id: symmetries})

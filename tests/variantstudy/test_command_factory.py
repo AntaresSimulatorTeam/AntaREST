@@ -1131,6 +1131,58 @@ COMMANDS = [
         None,
         id="replace_thermal_reserve_symmetries",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_ST_STORAGE_RESERVE_CERTIFICATIONS.value,
+            args={
+                "area_id": "fr",
+                "certifications": {
+                    "r1": {
+                        "sts1": {"participation_cost": 2.5, "max_release": 3.2, "max_store": 1.2},
+                        "sts2": {"participation_cost": 0.0, "max_release": 0.0, "max_store": 0.0},
+                    }
+                },
+            },
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="replace_st_storage_reserve_certifications",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_ST_STORAGE_RESERVE_SYMMETRIES.value,
+            args={"area_id": "paris", "symmetries": {"sts1": [["r1", "r2", "r3"]]}},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="replace_st_storage_reserve_symmetries",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_HYDRO_RESERVE_CERTIFICATIONS.value,
+            # An area owns exactly one long-term storage, so the mapping is keyed by reserve only.
+            args={
+                "area_id": "fr",
+                "certifications": {
+                    "r1": {"participation_cost": 2.5, "max_release": 3.2, "max_store": 1.2},
+                    "r2": {"participation_cost": 0.0, "max_release": 0.0, "max_store": 0.0},
+                },
+            },
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="replace_hydro_reserve_certifications",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_HYDRO_RESERVE_SYMMETRIES.value,
+            # Same reason: the symmetries are a plain list, not a mapping keyed by asset.
+            args={"area_id": "paris", "symmetries": [["r1", "r2", "r3"], ["r2", "r4"]]},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="replace_hydro_reserve_symmetries",
+    ),
 ]
 
 
