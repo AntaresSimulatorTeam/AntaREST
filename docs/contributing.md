@@ -10,7 +10,7 @@ This document provides guidelines and instructions for contributing to the proje
 Before contributing, make sure you have the following installed:
 
 - Python 3.11.x
-- Node.js 22.13.0
+- Node.js 22.23.2
 - Git
 
 ### Setting Up Your Development Environment
