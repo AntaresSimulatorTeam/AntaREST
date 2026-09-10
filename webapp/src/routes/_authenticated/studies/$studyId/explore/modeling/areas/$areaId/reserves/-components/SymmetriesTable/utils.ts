@@ -39,24 +39,27 @@ function reindexSymmetryRows(rows: SymmetryRow[]): SymmetryRow[] {
 }
 
 /**
- * Appends `count` new, fully unchecked symmetries to the given cluster.
+ * Appends `count` new, fully unchecked symmetries to each of the given
+ * clusters.
  *
  * @param groups - The current domain model.
- * @param clusterId - The cluster to add symmetries to.
- * @param count - How many symmetries to add.
+ * @param clusterIds - The clusters to add symmetries to.
+ * @param count - How many symmetries to add per cluster.
  * @returns The updated domain model.
  */
 export function addSymmetries(
   groups: readonly ClusterGroup[],
-  clusterId: string,
+  clusterIds: readonly string[],
   count: number,
 ): ClusterGroup[] {
+  const targetIds = new Set(clusterIds);
+
   return groups.map((group) => {
-    if (group.clusterId !== clusterId) {
+    if (!targetIds.has(group.clusterId)) {
       return group;
     }
 
-    const newRows = Array.from({ length: count }, () => createSymmetryRow(clusterId));
+    const newRows = Array.from({ length: count }, () => createSymmetryRow(group.clusterId));
 
     return { ...group, symmetries: reindexSymmetryRows([...group.symmetries, ...newRows]) };
   });

@@ -71,7 +71,7 @@ interface Props {
   canRedo: boolean;
   canSave: boolean;
   isSaving?: boolean;
-  onAddSymmetries: (clusterId: string, count: number) => void;
+  onAddSymmetries: (clusterIds: string[], count: number) => void;
   onDeleteRows: (uiIds: Set<string>) => void;
   onDuplicateRow: (uiId: string) => void;
   onToggleReserve: (uiId: string, reserveId: string) => void;
@@ -179,7 +179,7 @@ function SymmetriesTable({
       columnHelper.accessor(
         (row) =>
           row.kind === "cluster"
-            ? row.clusterName
+            ? `${row.clusterName} (${row.subRows.length})`
             : t("study.modeling.reserves.symmetries.symmetryName", { index: row.index }),
         {
           id: "name",
@@ -278,12 +278,13 @@ function SymmetriesTable({
       const selectedSymmetries = selectedRows.filter(
         (row): row is SymmetryDataRow => row.kind === "symmetry",
       );
-      const isSingleClusterSelected = selectedRows.length === 1 && selectedClusters.length === 1;
+      const isOnlyClustersSelected =
+        selectedRows.length > 0 && selectedClusters.length === selectedRows.length;
       const isSingleSymmetrySelected = selectedRows.length === 1 && selectedSymmetries.length === 1;
       const isOnlySymmetriesSelected =
         selectedRows.length > 0 && selectedSymmetries.length === selectedRows.length;
 
-      const isCountDisabled = readOnly || !isSingleClusterSelected;
+      const isCountDisabled = readOnly || !isOnlyClustersSelected;
 
       return (
         <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap">
@@ -316,8 +317,13 @@ function SymmetriesTable({
           <Button
             startIcon={<AddCircleOutlineIcon />}
             variant="contained"
-            disabled={readOnly || !isSingleClusterSelected}
-            onClick={() => onAddSymmetries(selectedClusters[0].clusterId, symmetryCount)}
+            disabled={readOnly || !isOnlyClustersSelected}
+            onClick={() =>
+              onAddSymmetries(
+                selectedClusters.map((cluster) => cluster.clusterId),
+                symmetryCount,
+              )
+            }
           >
             {t("study.modeling.reserves.symmetries.add")}
           </Button>
