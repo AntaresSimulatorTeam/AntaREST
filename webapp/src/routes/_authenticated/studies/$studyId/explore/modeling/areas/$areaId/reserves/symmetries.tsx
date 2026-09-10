@@ -138,8 +138,8 @@ function SymmetriesView() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleAddSymmetries = (clusterId: string, count: number) => {
-    setGroups(addSymmetries(groups, clusterId, count));
+  const handleAddSymmetries = (clusterIds: string[], count: number) => {
+    setGroups(addSymmetries(groups, clusterIds, count));
   };
 
   const handleDeleteRows = (uiIds: Set<string>) => {
