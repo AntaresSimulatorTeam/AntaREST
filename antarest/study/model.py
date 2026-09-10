@@ -280,10 +280,12 @@ class Study(Base):
         path: The path to a study directory on the file system. Note that depending on the type of study, this may
               represent different things. In particular, this is generally speaking not a valid study for the simulator.
               (for example, variants will generate snapshots in "<path> / snapshot").
+              In addition, this field is empty (None) for database studies.
         folder: Where the study is located in the workspace, from the user point of view.
                 Note that generally speaking, this will not correspond to a valid folder on disk, this is only a logical
                 folder presented to the user, not the way we organize data internally.
                 This field is kept for backward compatibility but will be progressively replaced by directory_id.
+                Note that this field is empty for database studies
         directory_id: The ID of the directory containing this study. Only for managed studies.
         parent_id: The ID of the parent study, if any. Only makes sense for variant studies.
         public_mode: Defines the actions any user logged in is allowed to take on the study.
@@ -312,7 +314,7 @@ class Study(Base):
     created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     last_access: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    path: Mapped[str] = mapped_column(String())
+    path: Mapped[str | None] = mapped_column(String(), nullable=True)
     folder: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     directory_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("directory.id", ondelete="SET NULL"), nullable=True, index=True

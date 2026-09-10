@@ -410,9 +410,10 @@ class OutputService:
 
         logger.info(f"output added to study {uuid}")
 
-        # Optimized path for studies stored on external devices, that will then be unarchived there.
         # TODO: as commented elsewhere, that workflow should be refactored to not span multiple files
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
+            # Always the case for studies stored on external devices, as they will be unarchived there for performance reasons.
+            # It is also possible for managed studies if the option `-z` was used to run the solver.
             self.unarchive_output(uuid, output_id)
 
         return output_id

@@ -152,33 +152,39 @@ function Optimization() {
               />
             </Fieldset>
             <Fieldset legend={t("study.configuration.optimization.legend.reserve")}>
-              {semver.gte(study.version, "10.0.0") && (
-                <SwitchFE
-                  label={t("study.configuration.optimization.includeReserves")}
-                  name="includeReserves"
-                  control={control}
-                />
+              {semver.gte(study.version, "10.2.0") ? (
+                // The new reserve management system (since v10.2) makes the other options obsolete
+                <>
+                  <SwitchFE
+                    label={t("study.configuration.optimization.includeReserves")}
+                    name="includeReserves"
+                    control={control}
+                  />
+                  <SwitchFE
+                    label={t("study.configuration.optimization.spinningReserve")}
+                    name="spinningReserve"
+                    control={control}
+                  />
+                </>
+              ) : (
+                <>
+                  <SwitchFE
+                    label={t("study.configuration.optimization.dayAheadReserve")}
+                    name="dayAheadReserve"
+                    control={control}
+                  />
+                  <SwitchFE
+                    label={t("study.configuration.optimization.primaryReserve")}
+                    name="primaryReserve"
+                    control={control}
+                  />
+                  <SwitchFE
+                    label={t("study.configuration.optimization.strategicReserve")}
+                    name="strategicReserve"
+                    control={control}
+                  />
+                </>
               )}
-              <SwitchFE
-                label={t("study.configuration.optimization.dayAheadReserve")}
-                name="dayAheadReserve"
-                control={control}
-              />
-              <SwitchFE
-                label={t("study.configuration.optimization.primaryReserve")}
-                name="primaryReserve"
-                control={control}
-              />
-              <SwitchFE
-                label={t("study.configuration.optimization.strategicReserve")}
-                name="strategicReserve"
-                control={control}
-              />
-              <SwitchFE
-                label={t("study.configuration.optimization.spinningReserve")}
-                name="spinningReserve"
-                control={control}
-              />
             </Fieldset>
           </>
         )}

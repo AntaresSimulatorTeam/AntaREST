@@ -14,12 +14,15 @@ import os
 import zipfile
 from pathlib import Path
 
+import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 from starlette.testclient import TestClient
 
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
 
@@ -168,6 +171,34 @@ def test_import(client: TestClient, admin_access_token: str, internal_study_id: 
     # Asserts the import success
     res = client.post("/v1/studies/_import", files={"study": io.BytesIO(archive_path.read_bytes())})
     assert res.status_code == 201
+
+
+@pytest.mark.parametrize("storage_mode", ["database", "filesystem"])
+def test_import_studies_with_path(
+    client: TestClient,
+    admin_access_token: str,
+    storage_mode: str,
+    study_service: StudyService,
+) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    zip_path = ASSETS_DIR / "STA-mini.zip"
+
+    # Admin who belongs to a group imports a study
+    study_id = client.post(
+        "/v1/studies/_import",
+        params={"storage_mode": storage_mode},
+        files={
+            "study": io.BytesIO(zip_path.read_bytes()),
+        },
+    ).json()
+
+    with db():
+        study = study_service.get_study(study_id)
+        if storage_mode == "database":
+            assert study.path is None
+        else:
+            assert study.path is not None
 
 
 def test_import_with_editor(

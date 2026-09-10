@@ -22,6 +22,7 @@ export interface ConfirmationDialogProps extends Omit<BasicDialogProps, "actions
   onConfirm: VoidFunction;
   onCancel: VoidFunction;
   disableConfirm?: boolean;
+  onlyCloseOnCancel?: boolean;
 }
 
 function ConfirmationDialog({
@@ -31,6 +32,7 @@ function ConfirmationDialog({
   onCancel,
   onClose,
   disableConfirm,
+  onlyCloseOnCancel,
   ...basicDialogProps
 }: ConfirmationDialogProps) {
   const { t } = useTranslation();
@@ -52,7 +54,7 @@ function ConfirmationDialog({
   return (
     <BasicDialog
       title={t("dialog.title.confirmation")}
-      onClose={handleClose}
+      onClose={onlyCloseOnCancel ? undefined : handleClose}
       {...basicDialogProps}
       actions={
         <>

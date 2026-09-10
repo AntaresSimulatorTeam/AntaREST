@@ -79,9 +79,12 @@ class FileStudyDaoFactory(StudyFactoryDao):
         self, metadata: StudyMetadataCreation, study_path: Path | None = None, use_cache: bool = True
     ) -> FileStudyTreeDao:
         study_id = metadata.id
-        paths = self._paths_getter(study_id)
-        output_path = paths.output_path
-        study_path = study_path or paths.study_path
+        output_path = None
+        if study_path is None:
+            # Only resolve the study's own on-disk paths when the caller didn't already provide one
+            paths = self._paths_getter(study_id)
+            output_path = paths.output_path
+            study_path = paths.study_path
 
         create_new_empty_study(version=metadata.version, path_study=study_path)
 

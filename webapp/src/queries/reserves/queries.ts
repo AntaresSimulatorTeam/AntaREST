@@ -17,10 +17,12 @@ import {
   getReserveGlobalParameters,
   getReserves,
   getReservesCertifications,
+  getReservesSymmetries,
 } from "@/services/api/studies/areas/reserves";
 import type {
   CertificationProductionType,
   Reserve,
+  SymmetryProductionType,
 } from "@/services/api/studies/areas/reserves/types";
 import { getOptimization } from "@/services/api/studies/config/optimization";
 import type { AreaWithId } from "@/types/types";
@@ -64,6 +66,19 @@ export const reserveQueries = {
       queryFn: () => getReservesCertifications({ studyId, areaId, productionType }),
       // Deleting a cluster elsewhere (Thermals page, table mode) cascades to its
       // certifications server-side without invalidating this cache.
+      ...EXTERNALLY_MUTATED,
+    });
+  },
+  symmetries: (
+    studyId: Study["id"],
+    areaId: AreaWithId["id"],
+    productionType: SymmetryProductionType,
+  ) => {
+    return queryOptions({
+      queryKey: reserveKeys.symmetries(studyId, areaId, productionType),
+      queryFn: () => getReservesSymmetries({ studyId, areaId, productionType }),
+      // Deleting a cluster or a reserve elsewhere cascades to its symmetries
+      // server-side without invalidating this cache.
       ...EXTERNALLY_MUTATED,
     });
   },

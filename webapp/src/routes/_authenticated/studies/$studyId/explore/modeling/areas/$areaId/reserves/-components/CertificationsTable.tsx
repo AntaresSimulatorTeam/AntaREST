@@ -231,7 +231,11 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
       },
     },
     // Styles
-    muiTablePaperProps: { sx: { display: "flex", flexDirection: "column" } }, // Allow to have scroll
+    // `height: 1` bounds the Paper to its scrollable parent panel so
+    // `muiTableContainerProps` below can scroll the rows internally,
+    // keeping the toolbar and sticky header always in view.
+    muiTablePaperProps: { sx: { display: "flex", flexDirection: "column", height: 1 } },
+    muiTableContainerProps: { sx: { flex: 1, overflow: "auto" } },
     ...getTableOptionsForAlign("right"),
     ...getDarkModeFixStyles(isDarkMode),
   });
