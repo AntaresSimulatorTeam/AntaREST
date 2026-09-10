@@ -13,7 +13,7 @@ from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = "c7e21b9f4a83"
-down_revision = "40f4391430e7"
+down_revision = "1bb1c26c70d8"
 branch_labels = None
 depends_on = None
 
