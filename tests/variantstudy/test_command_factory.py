@@ -1160,7 +1160,6 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.REPLACE_HYDRO_RESERVE_CERTIFICATIONS.value,
-            # An area owns exactly one long-term storage, so the mapping is keyed by reserve only.
             args={
                 "area_id": "fr",
                 "certifications": {
@@ -1176,7 +1175,6 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.REPLACE_HYDRO_RESERVE_SYMMETRIES.value,
-            # Same reason: the symmetries are a plain list, not a mapping keyed by asset.
             args={"area_id": "paris", "symmetries": [["r1", "r2", "r3"], ["r2", "r4"]]},
             study_version=STUDY_VERSION_10_2,
         ),

@@ -17,8 +17,7 @@ from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
-# An area owns exactly one long-term storage, so there is no asset column here: a row is
-# identified by the area and the reserve alone. Deleting an area cascades through
+# A row is identified by the area and the reserve alone. Deleting an area cascades through
 # `reserve_definition`, which is why a single foreign key is enough.
 HYDRO_RESERVE_CERTIFICATION_TABLE = Table(
     "hydro_reserve_certifications",

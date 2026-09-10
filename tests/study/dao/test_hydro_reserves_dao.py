@@ -24,7 +24,7 @@ from tests.study.dao.utils import save_area
 
 
 def _set_up(dao: StudyDao) -> None:
-    # Create 1 area with 3 reserves. Hydro needs no asset: an area owns exactly one long-term storage.
+    # Create 1 area with 3 reserves. Hydro needs no asset.
     save_area(dao, "fr")
     dao.save_reserve_definitions(
         {"fr": [ReserveDefinition(name=name, type=ReserveType.UP) for name in ["r1", "r2", "r3"]]}

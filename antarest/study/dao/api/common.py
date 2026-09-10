@@ -129,7 +129,6 @@ def check_hydro_symmetries_integrity(study_dao: "StudyDao", new_symmetries: Hydr
             raise ReserveCertificationsNotFound(area_id, "hydro")
 
         # Verify that the long-term storage is certified on the reserves it is symmetric on.
-        # There is no asset id here: an area owns exactly one long-term storage.
         for symmetry in symmetries:
             for reserve_id in symmetry:
                 if reserve_id not in existing_certifications[area_id]:

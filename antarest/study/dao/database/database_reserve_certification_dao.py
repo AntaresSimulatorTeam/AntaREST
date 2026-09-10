@@ -242,8 +242,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
         data: dict[AreaId, HydroReserveCertificationMapping],
         exc: IntegrityError | None = None,
     ) -> NoReturn:
-        # Hydro certifications have no asset dimension, so the area and the reserve are the only
-        # things that can be missing.
+        # Only the area and the reserve can be missing here.
         validate_areas_exist(self._db_session, self._study_data_id, set(data))
         self._raise_exception_if_missing_reserve(data)
 

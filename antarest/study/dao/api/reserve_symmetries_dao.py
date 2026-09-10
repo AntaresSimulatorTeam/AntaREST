@@ -62,7 +62,6 @@ class ReadOnlyReserveSymmetriesDao(ABC):
 
         Design notes:
         - If an area has no symmetries, it won't be present in the returned data.
-        - An area owns exactly one long-term storage, so symmetries are not keyed by asset.
 
         """
         raise NotImplementedError()

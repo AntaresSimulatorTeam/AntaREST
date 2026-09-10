@@ -25,7 +25,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 
 def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
     version = dao.get_version()
-    # Create area `fr`. It owns its long-term storage, so there is no asset to create.
+    # Create area `fr`. Hydro needs no asset to be created.
     cmd1 = CreateArea(area_name="FR", command_context=command_context, study_version=version)
     output = cmd1.apply(dao)
     assert output.status

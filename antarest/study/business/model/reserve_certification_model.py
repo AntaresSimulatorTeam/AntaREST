@@ -63,8 +63,8 @@ StorageReserveCertificationMapping = dict[ReserveDefinitionId, dict[StorageId, S
 # Hydro part
 ##########################
 
-# The long-term storage (hydro) is modelled per area: an area owns exactly one of them.
-# Its certifications therefore have no asset dimension, unlike the thermal and short-term storage ones.
+# An area owns exactly one long-term storage (hydro). Unlike thermal and short-term storage, its
+# certifications and symmetries therefore carry no asset dimension: they are keyed by reserve alone.
 HydroReserveCertificationMapping = dict[ReserveDefinitionId, StorageReserveCertification]
 
 ReserveCertification = ThermalReserveCertification | StorageReserveCertification

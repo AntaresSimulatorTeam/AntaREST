@@ -176,7 +176,6 @@ class FileStudyReserveCertificationDao(ReserveCertificationDao, ABC):
         for area_id, reserves_dict in new_certifications.items():
             check_area_exists(file_study.config, area_id)
             _check_reserves_exist(area_id, file_study, reserves_dict)
-            # An area always owns its long-term storage, so there is no asset existence to check here.
 
             yaml_content = get_hydro_reserve_participations_as_yaml_content(area_id, file_study)
             symmetries = parse_hydro_reserves_symmetries(yaml_content)

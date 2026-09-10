@@ -17,8 +17,7 @@ from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
-# An area owns exactly one long-term storage, so there is no asset column here: a row is
-# identified by the area alone, and holds every symmetry of that area's hydro participation.
+# A row is identified by the area alone, and holds every symmetry of that area's hydro participation.
 HYDRO_RESERVE_SYMMETRIES_TABLE = Table(
     "hydro_reserve_symmetries",
     metadata,

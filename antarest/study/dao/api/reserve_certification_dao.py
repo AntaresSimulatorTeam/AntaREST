@@ -51,7 +51,6 @@ class ReadOnlyReserveCertificationDao(ABC):
 
         Design notes:
         - If an area has no certification, it won't be present in the returned data.
-        - An area owns exactly one long-term storage, so certifications are keyed by reserve only.
 
         """
         raise NotImplementedError()
