@@ -372,6 +372,7 @@
   "study.debug.folder.upload.error.replaceFolder": "A folder with the same name already exists and cannot be replaced by a file",
   "study.debug.folder.deleteConfirm.title": "Delete folder?",
   "study.debug.folder.deleteConfirm.message": "Are you sure you want to delete the folder '{{folderName}}' and its contents?",
+  "study.userResources": "User Resources",
   "study.failtofetchlogs": "Failed to fetch logs",
   "study.failtokilltask": "Failed to kill task",
   "study.publicMode": "Public mode",
