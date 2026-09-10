@@ -372,6 +372,7 @@
   "study.debug.folder.upload.error.replaceFolder": "Un dossier du même nom existe déjà et ne peut pas être remplacé par un fichier",
   "study.debug.folder.deleteConfirm.title": "Supprimer le dossier ?",
   "study.debug.folder.deleteConfirm.message": "Êtes-vous sûr de vouloir supprimer le dossier '{{folderName}}' et son contenu ?",
+  "study.userResources": "Ressources utilisateur",
   "study.failtofetchlogs": "Échec du chargement des logs",
   "study.failtokilltask": "Échec de l'annulation de l'étude",
   "study.publicMode": "Mode public",
