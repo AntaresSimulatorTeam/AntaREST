@@ -1,0 +1,19 @@
+fr	area	de	monthly
+	VARIABLES	BEGIN	END
+	5	1	12
+
+fr	monthly		fr_nuclear	fr_nuclear	fr_nuclear	fr_nuclear	fr_nuclear
+			MWh	MIN GEN - MWh	NP Cost - Euro	NODU	Profit - Euro
+	index	month	EXP	EXP	EXP	EXP	EXP
+	1	JAN	669600	0	0	744	-347
+	2	FEB	604800	0	0	672	-313
+	3	MAR	669600	0	0	744	-347
+	4	APR	648000	0	0	720	-336
+	5	MAY	669600	0	0	744	-347
+	6	JUN	648000	0	0	720	-336
+	7	JUL	669600	0	0	744	-347
+	8	AUG	669600	0	0	744	-347
+	9	SEP	648000	0	0	720	-336
+	10	OCT	669600	0	0	744	-347
+	11	NOV	648000	0	0	720	-336
+	12	DEC	648000	0	0	720	-336
