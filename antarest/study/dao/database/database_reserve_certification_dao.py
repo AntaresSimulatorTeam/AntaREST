@@ -12,7 +12,7 @@
 from collections.abc import Mapping
 from typing import Any, NoReturn
 
-from sqlalchemy import delete, insert, select
+from sqlalchemy import Row, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
@@ -21,6 +21,7 @@ from antarest.core.exceptions import (
     STStoragesNotFound,
     ThermalClustersNotFound,
 )
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.reserve_certification_model import (
     HydroReserveCertificationMapping,
     StorageId,
@@ -34,8 +35,8 @@ from antarest.study.dao.api.reserve_certification_dao import ReserveCertificatio
 from antarest.study.dao.common import AreaId, ThermalId
 from antarest.study.dao.database.common import (
     ReserveObjectType,
+    delete_by_area_id,
     validate_areas_exist,
-    validate_areas_without_rows_exist,
 )
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.hydro_reserve_certification import HYDRO_RESERVE_CERTIFICATION_TABLE
@@ -43,8 +44,8 @@ from antarest.study.dao.database.models.hydro_reserve_certification import HYDRO
 _HYDRO_TABLE = HYDRO_RESERVE_CERTIFICATION_TABLE
 
 
-def _convert_hydro_row_to_model(row: Any) -> StorageReserveCertification:
-    values = row._mapping
+def _convert_hydro_row_to_model(row: Row[Any]) -> StorageReserveCertification:
+    values = get_row_representation_as_dict(row)
     return StorageReserveCertification(
         participation_cost=values["participation_cost"],
         max_release=values["max_release"],
@@ -160,11 +161,9 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                     )
         table = reserve_type.db_certification_table()
         area_ids = set(new_certifications)
-        # An area whose certifications are only cleared never reaches the foreign keys, so it is
-        # checked here to avoid turning an invalid area into a silent no-op.
-        validate_areas_without_rows_exist(self._db_session, self._study_data_id, area_ids, values)
-        stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
-        self._db_session.execute(stmt)
+        delete_by_area_id(
+            self._db_session, self._study_data_id, table, area_ids, {value["area_id"] for value in values}
+        )
         if values:
             self._db_session.execute(insert(table), values)
 
@@ -215,15 +214,11 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             for reserve_id, certification in reserves_dict.items():
                 values.append(_convert_hydro_model_to_row(self._study_data_id, area_id, reserve_id, certification))
         area_ids = set(new_certifications)
-        # An area whose certifications are only cleared never reaches the foreign keys, so it is
-        # checked here to avoid turning an invalid area into a silent no-op.
-        validate_areas_without_rows_exist(self._db_session, self._study_data_id, area_ids, values)
 
         try:
-            stmt = delete(_HYDRO_TABLE).where(
-                (_HYDRO_TABLE.c.study_data_id == self._study_data_id) & (_HYDRO_TABLE.c.area_id.in_(area_ids))
+            delete_by_area_id(
+                self._db_session, self._study_data_id, _HYDRO_TABLE, area_ids, {value["area_id"] for value in values}
             )
-            self._db_session.execute(stmt)
             if values:
                 self._db_session.execute(insert(_HYDRO_TABLE), values)
         except IntegrityError as e:

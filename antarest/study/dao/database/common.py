@@ -10,11 +10,10 @@
 #
 # This file is part of the Antares project.
 import json
-from collections.abc import Mapping
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
-from sqlalchemy import Row, Table, select
+from sqlalchemy import Row, Table, delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -57,18 +56,31 @@ def validate_areas_exist(session: Session, study_data_id: int, area_ids: set[str
         raise AreaNotFound(*invalid_areas)
 
 
-def validate_areas_without_rows_exist(
-    session: Session, study_data_id: int, area_ids: set[str], values: Sequence[Mapping[str, Any]]
+def delete_by_area_id(
+    session: Session, study_data_id: int, table: Table, area_ids: set[str], inserted_area_ids: set[str]
 ) -> None:
     """
-    Checks the areas that are about to be cleared rather than written.
+    Deletes every row of `table` belonging to `area_ids`.
 
-    An area contributing at least one row is validated by the foreign keys when it is inserted.
-    An area contributing none only triggers a `DELETE`, which succeeds even when the area does not
-    exist: without this check, an invalid area would be a silent no-op instead of an error.
+    `inserted_area_ids` are the areas the caller is about to insert rows for. They are excluded from
+    the check below: the foreign keys will validate them on insert, so checking them here would cost
+    a query for nothing.
     """
-    if unchecked_area_ids := area_ids - {value["area_id"] for value in values}:
-        validate_areas_exist(session, study_data_id, unchecked_area_ids)
+    stmt = (
+        delete(table)
+        .where((table.c.study_data_id == study_data_id) & (table.c.area_id.in_(area_ids)))
+        .returning(table.c.area_id)
+    )
+    deleted_area_ids = {row.area_id for row in session.execute(stmt)}
+
+    # An area that deletes nothing and inserts nothing may simply not exist: check it, otherwise
+    # the save silently does nothing at all.
+    if untouched_area_ids := area_ids - deleted_area_ids - inserted_area_ids:
+        try:
+            validate_areas_exist(session, study_data_id, untouched_area_ids)
+        except AreaNotFound:
+            session.rollback()
+            raise
 
 
 def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: Table) -> None:
