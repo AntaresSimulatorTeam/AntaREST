@@ -75,7 +75,7 @@ describe("SymmetriesTable/utils", () => {
   describe("addSymmetries", () => {
     test("appends unchecked symmetries with sequential indices", () => {
       const groups = adaptReservesSymmetriesDtoToClusterGroups(CLUSTERS, {});
-      const next = addSymmetries(groups, "cluster_1", 3);
+      const next = addSymmetries(groups, ["cluster_1"], 3);
 
       const rows = getGroup(next, "cluster_1").symmetries;
       expect(rows.map((r) => r.index)).toEqual([1, 2, 3]);
@@ -84,9 +84,17 @@ describe("SymmetriesTable/utils", () => {
 
     test("does not affect other clusters", () => {
       const groups = adaptReservesSymmetriesDtoToClusterGroups(CLUSTERS, {});
-      const next = addSymmetries(groups, "cluster_1", 1);
+      const next = addSymmetries(groups, ["cluster_1"], 1);
 
       expect(getGroup(next, "cluster_2").symmetries).toHaveLength(0);
+    });
+
+    test("adds symmetries to every given cluster", () => {
+      const groups = adaptReservesSymmetriesDtoToClusterGroups(CLUSTERS, {});
+      const next = addSymmetries(groups, ["cluster_1", "cluster_2"], 2);
+
+      expect(getGroup(next, "cluster_1").symmetries).toHaveLength(2);
+      expect(getGroup(next, "cluster_2").symmetries).toHaveLength(2);
     });
   });
 
