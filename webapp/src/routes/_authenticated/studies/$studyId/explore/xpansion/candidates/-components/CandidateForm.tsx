@@ -274,12 +274,12 @@ function CandidateForm(props: PropType) {
               <Box sx={{ display: "flex", width: "100%" }}>
                 <SelectFields>
                   <SelectSingle
-                    name="direct-already-installed-link-profile"
+                    name="already-installed-direct-link-profile"
                     label={t("xpansion.directAlreadyLinkProfile")}
                     list={capacities.map((item) => {
                       return { id: item, name: item };
                     })}
-                    data={currentCandidate?.["direct-already-installed-link-profile"] || ""}
+                    data={currentCandidate?.["already-installed-direct-link-profile"] || ""}
                     handleChange={handleChange}
                     variant="outlined"
                     sx={{
@@ -289,19 +289,19 @@ function CandidateForm(props: PropType) {
                   />
                   <StyledVisibilityIcon
                     onClick={() =>
-                      currentCandidate?.["direct-already-installed-link-profile"] &&
-                      onRead(currentCandidate?.["direct-already-installed-link-profile"] || "")
+                      currentCandidate?.["already-installed-direct-link-profile"] &&
+                      onRead(currentCandidate?.["already-installed-direct-link-profile"] || "")
                     }
                   />
                 </SelectFields>
                 <SelectFields>
                   <SelectSingle
-                    name="indirect-already-installed-link-profile"
+                    name="already-installed-indirect-link-profile"
                     label={t("xpansion.indirectAlreadyLinkProfile")}
                     list={capacities.map((item) => {
                       return { id: item, name: item };
                     })}
-                    data={currentCandidate?.["indirect-already-installed-link-profile"] || ""}
+                    data={currentCandidate?.["already-installed-indirect-link-profile"] || ""}
                     handleChange={handleChange}
                     variant="outlined"
                     sx={{
@@ -311,8 +311,8 @@ function CandidateForm(props: PropType) {
                   />
                   <StyledVisibilityIcon
                     onClick={() =>
-                      currentCandidate?.["indirect-already-installed-link-profile"] &&
-                      onRead(currentCandidate?.["indirect-already-installed-link-profile"] || "")
+                      currentCandidate?.["already-installed-indirect-link-profile"] &&
+                      onRead(currentCandidate?.["already-installed-indirect-link-profile"] || "")
                     }
                   />
                 </SelectFields>
