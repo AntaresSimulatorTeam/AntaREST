@@ -58,4 +58,13 @@ class StorageReserveCertification(
 StorageId: TypeAlias = str
 StorageReserveCertificationMapping = dict[ReserveDefinitionId, dict[StorageId, StorageReserveCertification]]
 
+
+##########################
+# Hydro part
+##########################
+
+# An area owns exactly one long-term storage (hydro). Unlike thermal and short-term storage, its
+# certifications and symmetries therefore carry no asset dimension: they are keyed by reserve alone.
+HydroReserveCertificationMapping = dict[ReserveDefinitionId, StorageReserveCertification]
+
 ReserveCertification = ThermalReserveCertification | StorageReserveCertification

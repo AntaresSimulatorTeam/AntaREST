@@ -72,19 +72,30 @@ def get_st_storage_reserve_path(area_id: str) -> list[str]:
     return ["input", "st-storage", "clusters", area_id, "reserve-participations"]
 
 
-def _get_participations(area_id: AreaId, file_study: FileStudy, func: Callable[[str], list[str]]) -> dict[str, Any]:
+def _get_participations(
+    area_id: AreaId, file_study: FileStudy, func: Callable[[str], list[str]], empty_participations: Any
+) -> dict[str, Any]:
     if area_id not in file_study.config.areas:
         raise AreaNotFound(area_id)
     data = file_study.tree.get(func(area_id))
     if not data:
-        # Adds the first key to simplify handling of key errors in the rest of the code
-        return {"participations": []}
+        # Adds the first key to simplify handling of key errors in the rest of the code.
+        # Thermal and short-term storages hold a list of participations, hydro holds an object.
+        return {"participations": empty_participations}
     return data
 
 
 def get_st_storage_reserve_participations_as_yaml_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
-    return _get_participations(area_id, file_study, get_st_storage_reserve_path)
+    return _get_participations(area_id, file_study, get_st_storage_reserve_path, [])
 
 
 def get_thermal_reserve_participations_as_yaml_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
-    return _get_participations(area_id, file_study, get_thermal_reserve_path)
+    return _get_participations(area_id, file_study, get_thermal_reserve_path, [])
+
+
+def get_hydro_reserve_path(area_id: str) -> list[str]:
+    return ["input", "hydro", "reserves", area_id, "reserve-participations"]
+
+
+def get_hydro_reserve_participations_as_yaml_content(area_id: AreaId, file_study: FileStudy) -> dict[str, Any]:
+    return _get_participations(area_id, file_study, get_hydro_reserve_path, {})

@@ -862,12 +862,13 @@ class SevenZipNotSupportedOnThisMachine(Exception):
 
 
 class ReserveCertificationNotFound(HTTPException):
-    def __init__(self, area_id: str, object_type: str, object_id: str, reserve_ids: set[str]):
-        msg = f"Certifications for reserve(s) '{reserve_ids}' on {object_type} '{object_id}' not found in area '{area_id}'"
+    def __init__(self, area_id: str, object_type: str, object_id: str | None, reserve_ids: set[str]):
+        target = f"{object_type} '{object_id}'" if object_id else object_type
+        msg = f"Certifications for reserve(s) '{reserve_ids}' on {target} not found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
 class ReserveCertificationsNotFound(HTTPException):
-    def __init__(self, area_id: str, objet_type: str):
-        msg = f"No {objet_type} reserve certifications found in area '{area_id}'"
+    def __init__(self, area_id: str, object_type: str):
+        msg = f"No {object_type} reserve certifications found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)

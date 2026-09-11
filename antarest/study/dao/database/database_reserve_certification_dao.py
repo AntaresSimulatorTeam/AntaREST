@@ -12,7 +12,7 @@
 from collections.abc import Mapping
 from typing import Any, NoReturn
 
-from sqlalchemy import delete, insert, select
+from sqlalchemy import Row, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
@@ -21,8 +21,9 @@ from antarest.core.exceptions import (
     STStoragesNotFound,
     ThermalClustersNotFound,
 )
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.reserve_certification_model import (
-    ReserveCertification,
+    HydroReserveCertificationMapping,
     StorageId,
     StorageReserveCertification,
     StorageReserveCertificationMapping,
@@ -32,8 +33,34 @@ from antarest.study.business.model.reserve_certification_model import (
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.dao.api.reserve_certification_dao import ReserveCertificationDao
 from antarest.study.dao.common import AreaId, ThermalId
-from antarest.study.dao.database.common import ReserveObjectType, validate_areas_exist
+from antarest.study.dao.database.common import (
+    ReserveObjectType,
+    delete_by_area_id,
+    validate_areas_exist,
+)
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
+from antarest.study.dao.database.models.hydro_reserve_certification import HYDRO_RESERVE_CERTIFICATION_TABLE
+
+_HYDRO_TABLE = HYDRO_RESERVE_CERTIFICATION_TABLE
+
+
+def _convert_hydro_row_to_model(row: Row[Any]) -> StorageReserveCertification:
+    values = get_row_representation_as_dict(row)
+    return StorageReserveCertification(
+        participation_cost=values["participation_cost"],
+        max_release=values["max_release"],
+        max_store=values["max_store"],
+    )
+
+
+def _convert_hydro_model_to_row(
+    study_data_id: int, area_id: str, reserve_id: str, certification: StorageReserveCertification
+) -> dict[str, Any]:
+    values = certification.model_dump()
+    values["study_data_id"] = study_data_id
+    values["area_id"] = area_id
+    values["reserve_id"] = reserve_id
+    return values
 
 
 class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
@@ -134,8 +161,9 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                     )
         table = reserve_type.db_certification_table()
         area_ids = set(new_certifications)
-        stmt = delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.area_id.in_(area_ids)))
-        self._db_session.execute(stmt)
+        delete_by_area_id(
+            self._db_session, self._study_data_id, table, area_ids, {value["area_id"] for value in values}
+        )
         if values:
             self._db_session.execute(insert(table), values)
 
@@ -151,6 +179,75 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
                     self.get_impl().delete_orphan_thermal_symmetries(area_id, missing_reserves)
                 else:
                     self.get_impl().delete_orphan_st_storage_symmetries(area_id, missing_reserves)
+
+    @override
+    def get_all_hydro_reserve_certifications(self) -> dict[AreaId, HydroReserveCertificationMapping]:
+        stmt = select(_HYDRO_TABLE).where(_HYDRO_TABLE.c.study_data_id == self._study_data_id)
+        rows = self._db_session.execute(stmt).fetchall()
+        result: dict[AreaId, HydroReserveCertificationMapping] = {}
+        for row in rows:
+            result.setdefault(row.area_id, {})[row.reserve_id] = _convert_hydro_row_to_model(row)
+        return result
+
+    @override
+    def get_hydro_reserve_certifications(self, area_id: AreaId) -> HydroReserveCertificationMapping:
+        stmt = select(_HYDRO_TABLE).where(
+            (_HYDRO_TABLE.c.study_data_id == self._study_data_id) & (_HYDRO_TABLE.c.area_id == area_id)
+        )
+        rows = self._db_session.execute(stmt).fetchall()
+        result: HydroReserveCertificationMapping = {}
+        for row in rows:
+            result[row.reserve_id] = _convert_hydro_row_to_model(row)
+        return result
+
+    @override
+    def save_hydro_reserve_certifications(
+        self, new_certifications: dict[AreaId, HydroReserveCertificationMapping]
+    ) -> None:
+        if not new_certifications:
+            return
+
+        old_certifications = self.get_all_hydro_reserve_certifications()
+
+        values = []
+        for area_id, reserves_dict in new_certifications.items():
+            for reserve_id, certification in reserves_dict.items():
+                values.append(_convert_hydro_model_to_row(self._study_data_id, area_id, reserve_id, certification))
+        area_ids = set(new_certifications)
+
+        try:
+            delete_by_area_id(
+                self._db_session, self._study_data_id, _HYDRO_TABLE, area_ids, {value["area_id"] for value in values}
+            )
+            if values:
+                self._db_session.execute(insert(_HYDRO_TABLE), values)
+        except IntegrityError as e:
+            self._db_session.rollback()
+            self._raise_the_right_hydro_reserve_exception(new_certifications, exc=e)
+
+        # Clean orphan symmetries
+        for area_id in area_ids:
+            missing_reserves = {
+                reserve_id
+                for reserve_id in old_certifications.get(area_id, {})
+                if reserve_id not in new_certifications.get(area_id, {})
+            }
+            if missing_reserves:
+                self.get_impl().delete_orphan_hydro_symmetries(area_id, missing_reserves)
+
+        self._db_session.commit()
+
+    def _raise_the_right_hydro_reserve_exception(
+        self,
+        data: dict[AreaId, HydroReserveCertificationMapping],
+        exc: IntegrityError | None = None,
+    ) -> NoReturn:
+        # Only the area and the reserve can be missing here.
+        validate_areas_exist(self._db_session, self._study_data_id, set(data))
+        self._raise_exception_if_missing_reserve(data)
+
+        # All objects exist. It means that the DB table does not contain the information.
+        raise ValueError("The hydro reserve certification table is not filled as it should") from exc
 
     def _raise_the_right_thermal_reserve_exception(
         self,
@@ -199,9 +296,7 @@ class DatabaseReserveCertificationDao(ReserveCertificationDao, DatabaseDaoBase):
             "One of the short-term storage reserve certification table is not filled as it should"
         ) from exc
 
-    def _raise_exception_if_missing_reserve(
-        self, data: Mapping[str, Mapping[ReserveDefinitionId, Mapping[str, ReserveCertification]]]
-    ) -> None:
+    def _raise_exception_if_missing_reserve(self, data: Mapping[str, Mapping[ReserveDefinitionId, Any]]) -> None:
         all_existing_reserves = self.get_impl().get_all_reserve_definitions()
         invalid_reserves_dict = {}
         for area_id, reserves_dict in data.items():

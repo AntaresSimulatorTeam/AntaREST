@@ -13,7 +13,7 @@ import json
 from enum import StrEnum
 from typing import TYPE_CHECKING, Any, Sequence, cast
 
-from sqlalchemy import Row, Table, select
+from sqlalchemy import Row, Table, delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -54,6 +54,33 @@ def validate_areas_exist(session: Session, study_data_id: int, area_ids: set[str
     existing_area_ids = {row.area_id for row in rows}
     if invalid_areas := area_ids - existing_area_ids:
         raise AreaNotFound(*invalid_areas)
+
+
+def delete_by_area_id(
+    session: Session, study_data_id: int, table: Table, area_ids: set[str], inserted_area_ids: set[str]
+) -> None:
+    """
+    Deletes every row of `table` belonging to `area_ids`.
+
+    `inserted_area_ids` are the areas the caller is about to insert rows for. They are excluded from
+    the check below: the foreign keys will validate them on insert, so checking them here would cost
+    a query for nothing.
+    """
+    stmt = (
+        delete(table)
+        .where((table.c.study_data_id == study_data_id) & (table.c.area_id.in_(area_ids)))
+        .returning(table.c.area_id)
+    )
+    deleted_area_ids = {row.area_id for row in session.execute(stmt)}
+
+    # An area that deletes nothing and inserts nothing may simply not exist: check it, otherwise
+    # the save silently does nothing at all.
+    if untouched_area_ids := area_ids - deleted_area_ids - inserted_area_ids:
+        try:
+            validate_areas_exist(session, study_data_id, untouched_area_ids)
+        except AreaNotFound:
+            session.rollback()
+            raise
 
 
 def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: Table) -> None:
@@ -113,8 +140,16 @@ Reserve types
 """
 
 
-def _convert_row_to_symmetries(row: Row[Any]) -> ReserveSymmetries:
+def convert_row_to_symmetries(row: Row[Any]) -> ReserveSymmetries:
     return cast(ReserveSymmetries, json.loads(row.symmetries))
+
+
+def serialize_symmetries(symmetries: ReserveSymmetries) -> str:
+    """
+    Encodes the symmetries into the `symmetries` column, dropping the empty ones as they carry
+    no information.
+    """
+    return json.dumps([symmetry for symmetry in symmetries if symmetry])
 
 
 class ReserveObjectType(StrEnum):
@@ -145,7 +180,7 @@ class ReserveObjectType(StrEnum):
         return {
             "study_data_id": study_data_id,
             "area_id": area_id,
-            "symmetries": json.dumps([symmetry for symmetry in symmetries if symmetry]),
+            "symmetries": serialize_symmetries(symmetries),
             self._db_key(): object_id,
         }
 
@@ -153,14 +188,14 @@ class ReserveObjectType(StrEnum):
         result = {}
         for row in rows:
             row_as_dict = get_row_representation_as_dict(row)
-            result[row_as_dict[self._db_key()]] = _convert_row_to_symmetries(row)
+            result[row_as_dict[self._db_key()]] = convert_row_to_symmetries(row)
         return result
 
     def convert_all_rows_to_dict_of_symmetries(self, rows: Sequence[Row[Any]]) -> ReserveSymmetriesMapping:
         result: ReserveSymmetriesMapping = {}
         for row in rows:
             row_as_dict = get_row_representation_as_dict(row)
-            result.setdefault(row.area_id, {})[row_as_dict[self._db_key()]] = _convert_row_to_symmetries(row)
+            result.setdefault(row.area_id, {})[row_as_dict[self._db_key()]] = convert_row_to_symmetries(row)
         return result
 
     def convert_certification_to_row(
