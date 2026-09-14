@@ -108,10 +108,6 @@ class DatabaseStudySettingsDao(
 
         data = get_row_representation_as_dict(row)
         del data["study_data_id"]
-        # Handle `export_mps` differently as it is stored as String in DB, but its value can either be a string or a boolean.
-        raw_mps: str = row.export_mps
-        data["export_mps"] = {"true": True, "false": False}.get(raw_mps.lower(), raw_mps)
-
         return OptimizationPreferences(**data)
 
     @override
