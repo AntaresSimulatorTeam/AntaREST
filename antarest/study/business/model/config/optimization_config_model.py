@@ -43,6 +43,20 @@ class SimplexOptimizationRange(EnumIgnoreCase):
     WEEK = "week"
 
 
+class ExportMPS(EnumIgnoreCase):
+    """Allow to export the optimization problem in MPS format.
+
+    Before study version 8.3 only boolean values were allowed.
+    Since 8.3, these values are allowed in addition to boolean ones:
+    `True` is equivalent to `BOTH_OPTIMS` and `False` is equivalent to `NONE`.
+    """
+
+    NONE = "none"
+    OPTIM1 = "optim-1"
+    OPTIM2 = "optim-2"
+    BOTH_OPTIMS = "both-optims"
+
+
 class OptimizationPreferences(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
@@ -55,7 +69,7 @@ class OptimizationPreferences(AntaresBaseModel):
     primary_reserve: bool = True
     strategic_reserve: bool = True
     spinning_reserve: bool = True
-    export_mps: bool | str = False
+    export_mps: bool | ExportMPS = False
     unfeasible_problem_behavior: UnfeasibleProblemBehavior = UnfeasibleProblemBehavior.ERROR_VERBOSE
     simplex_optimization_range: SimplexOptimizationRange = SimplexOptimizationRange.WEEK
     # Since v10.0
@@ -74,7 +88,7 @@ class OptimizationPreferencesUpdate(AntaresBaseModel):
     primary_reserve: bool | None = None
     strategic_reserve: bool | None = None
     spinning_reserve: bool | None = None
-    export_mps: bool | str | None = None
+    export_mps: bool | ExportMPS | None = None
     unfeasible_problem_behavior: UnfeasibleProblemBehavior | None = None
     simplex_optimization_range: SimplexOptimizationRange | None = None
     include_reserves: bool | None = None
