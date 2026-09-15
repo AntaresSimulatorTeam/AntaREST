@@ -12,13 +12,24 @@
  * This file is part of the Antares project.
  */
 
+import { getStorages } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/-utils";
 import { getStorageConstraints } from "@/services/api/studies/areas/storages";
 import type { StorageParams } from "@/services/api/studies/areas/storages/types";
 import type { AreaWithId, StudyMetadata } from "@/types/types";
-import { queryListOptions } from "../utils";
+import { queryOptions } from "@tanstack/react-query";
+import { EXTERNALLY_MUTATED, queryListOptions } from "../utils";
 import { storageKeys } from "./keys";
 
 export const storageQueries = {
+  list: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
+    return queryOptions({
+      queryKey: storageKeys.list(studyId, areaId),
+      queryFn: () => getStorages(studyId, areaId),
+      // Storages are mutated by the legacy Storages pages and table mode, none of
+      // which invalidate this cache.
+      ...EXTERNALLY_MUTATED,
+    });
+  },
   constraintList: (
     studyId: StudyMetadata["id"],
     areaId: AreaWithId["id"],
