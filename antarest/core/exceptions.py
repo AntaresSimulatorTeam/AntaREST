@@ -872,3 +872,8 @@ class ReserveCertificationsNotFound(HTTPException):
     def __init__(self, area_id: str, object_type: str):
         msg = f"No {object_type} reserve certifications found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class GemsLibraryAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)

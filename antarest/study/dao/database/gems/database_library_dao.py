@@ -12,7 +12,7 @@
 import json
 from typing import Any
 
-from sqlalchemy import delete, insert, select
+from sqlalchemy import insert, select
 
 # Copyright (c) 2026, RTE (https://www.rte-france.com)
 #
@@ -27,6 +27,7 @@ from sqlalchemy import delete, insert, select
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.core.exceptions import GemsLibraryAlreadyExists
 from antarest.core.utils.sql_utils import upsert_one
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao
@@ -131,8 +132,17 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
 
     @override
     def save_library(self, library: GemsLibrary) -> None:
+        """
+        For the moment, this method can only be used to add a library to a study, not to replace it.
+        """
         study_data_id = self._study_data_id
         session = self._db_session
+
+        stmt = select(GEMS_LIBRARY_METADATA_TABLE).where(GEMS_LIBRARY_METADATA_TABLE.c.study_data_id == study_data_id)
+
+        row = session.execute(stmt).fetchone()
+        if row:
+            raise GemsLibraryAlreadyExists(f"A library already exists for study {self._study_id}")
 
         metadata_values = {
             "study_data_id": study_data_id,
@@ -142,7 +152,6 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
         }
         upsert_one(session, GEMS_LIBRARY_METADATA_TABLE, metadata_values)
 
-        session.execute(delete(GEMS_PORT_TYPES_TABLE).where(GEMS_PORT_TYPES_TABLE.c.study_data_id == study_data_id))
         port_type_values = [
             {
                 "study_data_id": study_data_id,
@@ -154,12 +163,6 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
         ]
         if port_type_values:
             session.execute(insert(GEMS_PORT_TYPES_TABLE), port_type_values)
-
-        session.execute(delete(GEMS_MODELS_PORTS_TABLE).where(GEMS_MODELS_PORTS_TABLE.c.study_data_id == study_data_id))
-        session.execute(
-            delete(GEMS_MODELS_PARAMETERS_TABLE).where(GEMS_MODELS_PARAMETERS_TABLE.c.study_data_id == study_data_id)
-        )
-        session.execute(delete(GEMS_MODELS_TABLE).where(GEMS_MODELS_TABLE.c.study_data_id == study_data_id))
 
         model_values = []
         model_port_values = []
