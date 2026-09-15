@@ -38,7 +38,7 @@ class _GemsThermalCapacityConnection(AntaresBaseModel):
 
 
 class _GemsPortType(AntaresBaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
     description: str | None = None
@@ -72,10 +72,10 @@ class _GemsModels(AntaresBaseModel):
 
 
 class GemsLibrary(AntaresBaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
     description: str | None = None
     version: str | None = None
-    port_types: list[_GemsPortType] = Field(alias="port-types", default_factory=list)
+    port_types: list[_GemsPortType] = Field(default_factory=list)
     models: list[_GemsModels] = Field(default_factory=list)
