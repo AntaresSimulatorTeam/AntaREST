@@ -26,9 +26,9 @@ class _GemsPortTypeField(AntaresBaseModel):
 class _GemsAreaConnection(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
-    injection_to_balance: str
-    spillage_bound: str
-    unsupplied_energy_bound: str
+    injection_to_balance: str | None = None
+    spillage_bound: str | None = None
+    unsupplied_energy_bound: str | None = None
 
 
 class _GemsThermalCapacityConnection(AntaresBaseModel):
