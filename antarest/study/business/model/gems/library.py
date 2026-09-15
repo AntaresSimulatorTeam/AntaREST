@@ -17,33 +17,49 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 
 
-class GemsPortTypeField(AntaresBaseModel):
+class _GemsPortTypeField(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     id: str
 
 
-class GemsPortType(AntaresBaseModel):
+class _GemsAreaConnection(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
+
+    injection_to_balance: str
+    spillage_bound: str
+    unsupplied_energy_bound: str
+
+
+class _GemsThermalCapacityConnection(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
+
+    capacity_field: str
+
+
+class _GemsPortType(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     id: str
     description: str | None = None
-    fields: list[GemsPortTypeField] = Field(default_factory=list)
+    fields: list[_GemsPortTypeField] = Field(default_factory=list)
+    area_connection: _GemsAreaConnection | None = None
+    thermal_capacity_connection: _GemsThermalCapacityConnection | None = None
 
 
-class GemsModelProperties(AntaresBaseModel):
+class _GemsModelProperties(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     id: str
 
 
-class GemsModels(AntaresBaseModel):
+class _GemsModels(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
     description: str | None = None
     taxonomy_category: str | None = None
-    properties: list[GemsModelProperties] = Field(default_factory=list)
+    properties: list[_GemsModelProperties] = Field(default_factory=list)
 
     # These fields are not used in the current implementation
     # That's why they are treated as unknown data
@@ -61,5 +77,5 @@ class GemsLibrary(AntaresBaseModel):
     id: str
     description: str | None = None
     version: str | None = None
-    port_types: list[GemsPortType] = Field(alias="port-types", default_factory=list)
-    models: list[GemsModels] = Field(default_factory=list)
+    port_types: list[_GemsPortType] = Field(alias="port-types", default_factory=list)
+    models: list[_GemsModels] = Field(default_factory=list)
