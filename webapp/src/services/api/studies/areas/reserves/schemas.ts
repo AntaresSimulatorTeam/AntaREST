@@ -40,33 +40,120 @@ export const reserveGlobalParametersSchema = z.object({
   energyActivationRatioDown: z.number(),
 });
 
-// Production types with released certification endpoints.
-// "storages" and "hydro" are coming soon: add them here once their endpoints are released.
-export const certificationProductionTypeSchema = z.enum(["thermals"]);
+////////////////////////////////////////////////////////////////
+// Production Types
+////////////////////////////////////////////////////////////////
 
-export const reserveCertificationSchema = z.object({
+// The production types that can participate in reserves. Each one has its own
+// certifications and symmetries endpoints (`.../reserves/{certifications|symmetries}/{type}`).
+// To add a new type: add it here, give it a certification schema below, a wire codec if its
+// payload isn't asset-keyed, and an entry in the UI registry (see `-productionTypes.ts`).
+export const productionTypeSchema = z.enum(["thermals", "storages", "hydro"]);
+
+// Hydro has no asset dimension on the wire: an area owns exactly one long-term storage, so
+// its certifications and symmetries are keyed by reserve alone. The UI models it as a single
+// asset with this ID so every production type shares the same normalized shape.
+export const HYDRO_ASSET_ID = "hydro";
+
+////////////////////////////////////////////////////////////////
+// Certifications
+////////////////////////////////////////////////////////////////
+
+export const thermalReserveCertificationSchema = z.object({
   maxPower: z.number(),
   maxPowerOff: z.number(),
   participationCost: z.number(),
   participationCostOff: z.number(),
 });
 
-// Shape: { [reserveId]: { [clusterId]: certification } }.
-// A cluster absent from a reserve's record has no active certification for it.
+// Shared by short-term storages and hydro (long-term storage).
+export const storageReserveCertificationSchema = z.object({
+  participationCost: z.number(),
+  maxRelease: z.number(),
+  maxStore: z.number(),
+});
+
+export const reserveCertificationSchema = z.union([
+  thermalReserveCertificationSchema,
+  storageReserveCertificationSchema,
+]);
+
+// Normalized shape, shared by every production type:
+// { [reserveId]: { [assetId]: certification } }.
+// An asset absent from a reserve's record has no active certification for it.
 export const reservesCertificationsSchema = z.record(
   z.string(),
   z.record(z.string(), reserveCertificationSchema),
 );
 
-// Production types with released symmetries endpoints.
-// "storages" and "hydro" are coming soon: add them here once their endpoints are released.
-export const symmetryProductionTypeSchema = z.enum(["thermals"]);
+function assetKeyedCertificationsSchema<T extends z.ZodType>(certificationSchema: T) {
+  return z.record(z.string(), z.record(z.string(), certificationSchema));
+}
 
-// Shape: { [clusterId]: [reserveId, ...][] }. Each inner array is one symmetry
-// (the reserves it participates in); array index + 1 is its symmetry number.
-// The backend requires each symmetry to have at least 2 distinct reserve IDs,
-// enforced client-side (not here) so validation errors can be tied to a row.
-export const reservesSymmetriesSchema = z.record(z.string(), z.array(z.array(z.string())));
+const hydroReservesCertificationsWireSchema = z.record(
+  z.string(),
+  storageReserveCertificationSchema,
+);
+
+// Wire <-> normalized: { [reserveId]: certification } <-> { [reserveId]: { hydro: certification } }.
+const hydroReservesCertificationsCodec = z.codec(
+  hydroReservesCertificationsWireSchema,
+  assetKeyedCertificationsSchema(storageReserveCertificationSchema),
+  {
+    decode: (wire) =>
+      Object.fromEntries(
+        Object.entries(wire).map(([reserveId, certification]) => [
+          reserveId,
+          { [HYDRO_ASSET_ID]: certification },
+        ]),
+      ),
+    encode: (data) =>
+      Object.fromEntries(
+        Object.entries(data).flatMap(([reserveId, certifications]) => {
+          const certification = certifications[HYDRO_ASSET_ID];
+          return certification ? [[reserveId, certification]] : [];
+        }),
+      ),
+  },
+);
+
+// One codec per production type, from the wire payload to the normalized shape.
+// `codec.parse(wire)` decodes, `z.encode(codec, data)` re-encodes for a PUT.
+export const reservesCertificationsCodecs: Record<
+  z.infer<typeof productionTypeSchema>,
+  z.ZodType<z.infer<typeof reservesCertificationsSchema>>
+> = {
+  thermals: assetKeyedCertificationsSchema(thermalReserveCertificationSchema),
+  storages: assetKeyedCertificationsSchema(storageReserveCertificationSchema),
+  hydro: hydroReservesCertificationsCodec,
+};
+
+////////////////////////////////////////////////////////////////
+// Symmetries
+////////////////////////////////////////////////////////////////
+
+// One symmetry is the list of reserves it participates in. The backend requires at least 2
+// distinct reserve IDs per symmetry
+const symmetriesListSchema = z.array(z.array(z.string()));
+
+// Normalized shape, shared by every production type:
+// { [assetId]: [reserveId, ...][] }.
+export const reservesSymmetriesSchema = z.record(z.string(), symmetriesListSchema);
+
+// Wire <-> normalized: [reserveId, ...][] <-> { hydro: [reserveId, ...][] }.
+const hydroReservesSymmetriesCodec = z.codec(symmetriesListSchema, reservesSymmetriesSchema, {
+  decode: (wire): Record<string, string[][]> => (wire.length > 0 ? { [HYDRO_ASSET_ID]: wire } : {}),
+  encode: (data) => data[HYDRO_ASSET_ID] ?? [],
+});
+
+export const reservesSymmetriesCodecs: Record<
+  z.infer<typeof productionTypeSchema>,
+  z.ZodType<z.infer<typeof reservesSymmetriesSchema>>
+> = {
+  thermals: reservesSymmetriesSchema,
+  storages: reservesSymmetriesSchema,
+  hydro: hydroReservesSymmetriesCodec,
+};
 
 ////////////////////////////////////////////////////////////////
 // Input Schemas

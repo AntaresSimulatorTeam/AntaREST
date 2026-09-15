@@ -20,10 +20,7 @@ import {
   updateReservesCertifications,
   updateReservesSymmetries,
 } from "@/services/api/studies/areas/reserves";
-import type {
-  CertificationProductionType,
-  SymmetryProductionType,
-} from "@/services/api/studies/areas/reserves/types";
+import type { ProductionType } from "@/services/api/studies/areas/reserves/types";
 import type { AreaWithId } from "@/types/types";
 import { mutationOptions } from "@tanstack/react-query";
 import { reserveKeys } from "./keys";
@@ -57,7 +54,7 @@ export const reserveMutations = {
   updateCertifications: (
     studyId: Study["id"],
     areaId: AreaWithId["id"],
-    productionType: CertificationProductionType,
+    productionType: ProductionType,
   ) => {
     return mutationOptions({
       mutationKey: reserveKeys.updateCertifications(studyId, areaId, productionType),
@@ -67,7 +64,7 @@ export const reserveMutations = {
   updateSymmetries: (
     studyId: Study["id"],
     areaId: AreaWithId["id"],
-    productionType: SymmetryProductionType,
+    productionType: ProductionType,
   ) => {
     return mutationOptions({
       mutationKey: reserveKeys.updateSymmetries(studyId, areaId, productionType),
