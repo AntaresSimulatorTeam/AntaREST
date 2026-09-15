@@ -43,6 +43,7 @@ GEMS_MODELS_TABLE = Table(
     Column("id", String(255), primary_key=True),
     Column("description", String(), nullable=True),
     Column("taxonomy_category", String(), nullable=True),
+    Column("properties", String(), nullable=True),
     Column("variables", String(), nullable=False),
     Column("binding_constraints", String(), nullable=False),
     Column("constraints", String(), nullable=False),
