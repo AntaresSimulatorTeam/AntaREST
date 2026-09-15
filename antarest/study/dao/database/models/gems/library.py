@@ -26,8 +26,8 @@ GEMS_LIBRARY_METADATA_TABLE = Table(
     ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
 )
 
-GEMS_LIBRARY_PORT_TYPES_TABLE = Table(
-    "gems_library_port_types",
+GEMS_PORT_TYPES_TABLE = Table(
+    "gems_port_types",
     metadata,
     study_data_id_col(),
     Column("id", String(255), primary_key=True),
@@ -36,8 +36,8 @@ GEMS_LIBRARY_PORT_TYPES_TABLE = Table(
     ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], ondelete="CASCADE"),
 )
 
-GEMS_LIBRARY_MODELS_TABLE = Table(
-    "gems_library_models",
+GEMS_MODELS_TABLE = Table(
+    "gems_models",
     metadata,
     study_data_id_col(),
     Column("id", String(255), primary_key=True),
@@ -51,8 +51,8 @@ GEMS_LIBRARY_MODELS_TABLE = Table(
     ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], ondelete="CASCADE"),
 )
 
-GEMS_LIBRARY_MODELS_PORTS_TABLE = Table(
-    "gems_library_models_ports",
+GEMS_MODELS_PORTS_TABLE = Table(
+    "gems_models_ports",
     metadata,
     study_data_id_col(),
     Column("model_id", String(255), primary_key=True),
@@ -60,13 +60,13 @@ GEMS_LIBRARY_MODELS_PORTS_TABLE = Table(
     Column("type", String(), nullable=False),
     ForeignKeyConstraint(
         ["study_data_id", "model_id"],
-        ["gems_library_models.study_data_id", "gems_library_models.id"],
+        ["gems_models.study_data_id", "gems_models.id"],
         ondelete="CASCADE",
     ),
 )
 
-GEMS_LIBRARY_MODELS_PARAMETERS_TABLE = Table(
-    "gems_library_models_parameters",
+GEMS_MODELS_PARAMETERS_TABLE = Table(
+    "gems_models_parameters",
     metadata,
     study_data_id_col(),
     Column("model_id", String(255), primary_key=True),
@@ -75,7 +75,7 @@ GEMS_LIBRARY_MODELS_PARAMETERS_TABLE = Table(
     Column("scenario_dependent", Boolean(), nullable=False),
     ForeignKeyConstraint(
         ["study_data_id", "model_id"],
-        ["gems_library_models.study_data_id", "gems_library_models.id"],
+        ["gems_models.study_data_id", "gems_models.id"],
         ondelete="CASCADE",
     ),
 )

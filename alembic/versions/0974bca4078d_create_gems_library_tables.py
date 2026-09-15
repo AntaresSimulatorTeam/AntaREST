@@ -28,7 +28,7 @@ def upgrade():
     )
 
     op.create_table(
-        "gems_library_port_types",
+        "gems_port_types",
         study_data_id_col(),
         Column("id", String(255), primary_key=True),
         Column("description", String(), nullable=True),
@@ -37,7 +37,7 @@ def upgrade():
     )
 
     op.create_table(
-        "gems_library_models",
+        "gems_models",
         study_data_id_col(),
         Column("id", String(255), primary_key=True),
         Column("description", String(), nullable=True),
@@ -51,33 +51,33 @@ def upgrade():
     )
 
     op.create_table(
-        "gems_library_models_ports",
+        "gems_models_ports",
         study_data_id_col(),
         Column("model_id", String(255), primary_key=True),
         Column("port_id", String(255), primary_key=True),
         Column("type", String(), nullable=False),
         ForeignKeyConstraint(["study_data_id", "model_id"],
-            ["gems_library_models.study_data_id", "gems_library_models.id"],
+            ["gems_models.study_data_id", "gems_models.id"],
             ondelete="CASCADE"
         ),
     )
 
     op.create_table(
-        "gems_library_models_parameters",
+        "gems_models_parameters",
         study_data_id_col(),
         Column("model_id", String(255), primary_key=True),
         Column("parameter_id", String(255), primary_key=True),
         Column("time_dependent", Boolean(), nullable=False),
         Column("scenario_dependent", Boolean(), nullable=False),
         ForeignKeyConstraint(["study_data_id", "model_id"],
-            ["gems_library_models.study_data_id", "gems_library_models.id"],
+            ["gems_models.study_data_id", "gems_models.id"],
             ondelete="CASCADE"
         ),
     )
 
 def downgrade():
     op.drop_table("gems_library_metadata")
-    op.drop_table("gems_library_port_types")
-    op.drop_table("gems_library_models")
-    op.drop_table("gems_library_models_ports")
-    op.drop_table("gems_library_models_parameters")
+    op.drop_table("gems_port_types")
+    op.drop_table("gems_models")
+    op.drop_table("gems_models_ports")
+    op.drop_table("gems_models_parameters")
