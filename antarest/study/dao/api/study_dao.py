@@ -966,5 +966,5 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_hydro_reserve_symmetries()
 
     @override
-    def get_library(self) -> GemsLibrary:
+    def get_library(self) -> GemsLibrary | None:
         return self._adaptee.get_library()

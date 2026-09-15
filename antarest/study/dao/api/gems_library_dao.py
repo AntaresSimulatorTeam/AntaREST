@@ -28,7 +28,7 @@ from antarest.study.business.model.gems.library import GemsLibrary
 
 class ReadOnlyGemsLibraryDao(ABC):
     @abstractmethod
-    def get_library(self) -> GemsLibrary:
+    def get_library(self) -> GemsLibrary | None:
         raise NotImplementedError()
 
 
