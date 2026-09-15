@@ -35,4 +35,7 @@ class ReadOnlyGemsLibraryDao(ABC):
 class GemsLibraryDao(ReadOnlyGemsLibraryDao):
     @abstractmethod
     def save_library(self, library: GemsLibrary) -> None:
+        """
+        This method can only be used to add a library to a study, not to replace it.
+        """
         raise NotImplementedError()

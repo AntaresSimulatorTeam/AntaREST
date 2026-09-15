@@ -131,9 +131,6 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
 
     @override
     def save_library(self, library: GemsLibrary) -> None:
-        """
-        For the moment, this method can only be used to add a library to a study, not to replace it.
-        """
         study_data_id = self._study_data_id
         session = self._db_session
 
