@@ -53,6 +53,21 @@ class _GemsModelsProperties(AntaresBaseModel):
     id: str
 
 
+class _GemsModelsParameters(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
+
+    id: str
+    time_dependent: bool
+    scenario_dependent: bool
+
+
+class _GemsModelsPorts(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    id: str
+    type: str
+
+
 class _GemsModels(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
@@ -60,6 +75,8 @@ class _GemsModels(AntaresBaseModel):
     description: str | None = None
     taxonomy_category: str | None = None
     properties: list[_GemsModelsProperties] = Field(default_factory=list)
+    parameters: list[_GemsModelsParameters] = Field(default_factory=list)
+    ports: list[_GemsModelsPorts] = Field(default_factory=list)
 
     # These fields are not used in the current implementation
     # That's why they are treated as unknown data
