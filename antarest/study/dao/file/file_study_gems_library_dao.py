@@ -17,7 +17,7 @@ from typing_extensions import override
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader, YAMLWriter
 
 
 def _get_gems_library_folder_path(study_path: Path) -> Path:
@@ -32,8 +32,7 @@ class FileStudyGemsLibraryDao(GemsLibraryDao, ABC):
     @override
     def get_library(self) -> GemsLibrary | None:
         file_study = self.get_file_study()
-        study_path = file_study.config.study_path
-        library_folder_path = _get_gems_library_folder_path(study_path)
+        library_folder_path = _get_gems_library_folder_path(file_study.config.study_path)
         if not library_folder_path.exists() or not list(library_folder_path.iterdir()):
             return None
 
@@ -47,4 +46,11 @@ class FileStudyGemsLibraryDao(GemsLibraryDao, ABC):
 
     @override
     def save_library(self, library: GemsLibrary) -> None:
-        raise NotImplementedError()
+        file_study = self.get_file_study()
+
+        library_folder_path = _get_gems_library_folder_path(file_study.config.study_path)
+        if library_folder_path.exists() and len(list(library_folder_path.iterdir())) > 0:
+            raise ValueError(f"Found more than one gems library file for study {file_study.config.study_id}")
+
+        yaml_content = library.model_dump(mode="json", exclude_unset=True, by_alias=True)
+        YAMLWriter().write(yaml_content, library_folder_path / "library.yaml")
