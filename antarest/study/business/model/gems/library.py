@@ -47,7 +47,7 @@ class _GemsPortType(AntaresBaseModel):
     thermal_capacity_connection: _GemsThermalCapacityConnection | None = None
 
 
-class _GemsModelProperties(AntaresBaseModel):
+class _GemsModelsProperties(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     id: str
@@ -59,16 +59,16 @@ class _GemsModels(AntaresBaseModel):
     id: str
     description: str | None = None
     taxonomy_category: str | None = None
-    properties: list[_GemsModelProperties] = Field(default_factory=list)
+    properties: list[_GemsModelsProperties] = Field(default_factory=list)
 
     # These fields are not used in the current implementation
     # That's why they are treated as unknown data
-    variables: Any
-    binding_constraints: Any
-    constraints: Any
-    objective_contributions: Any
-    extra_outputs: Any
-    port_field_definitions: Any
+    variables: Any | None = None
+    binding_constraints: Any | None = None
+    constraints: Any | None = None
+    objective_contributions: Any | None = None
+    extra_outputs: Any | None = None
+    port_field_definitions: Any | None = None
 
 
 class GemsLibrary(AntaresBaseModel):
