@@ -16,6 +16,7 @@ from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
 def test_default_case(dao_10_2: StudyDao) -> None:
+    # We should not have a library for default studies
     library = dao_10_2.get_library()
     assert library is None
 
