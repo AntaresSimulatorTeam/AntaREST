@@ -28,7 +28,6 @@ from sqlalchemy import insert, select
 from typing_extensions import override
 
 from antarest.core.exceptions import GemsLibraryAlreadyExists
-from antarest.core.utils.sql_utils import upsert_one
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -150,7 +149,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
             "description": library.description,
             "version": library.version,
         }
-        upsert_one(session, GEMS_LIBRARY_METADATA_TABLE, metadata_values)
+        session.execute(insert(GEMS_LIBRARY_METADATA_TABLE), metadata_values)
 
         port_type_values = [
             {
