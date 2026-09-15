@@ -9,10 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import shutil
+from pathlib import Path
 
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
+ASSETS_PATH = Path(__file__).parent.parent / "assets"
 
 
 def test_default_case(dao_10_2: StudyDao) -> None:
@@ -21,7 +24,11 @@ def test_default_case(dao_10_2: StudyDao) -> None:
     assert library is None
 
 
-def test_conversion(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+def test_library_reading_succeeds(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     dao = filestudy_dao_v10_2
+    lib_folder = dao.get_file_study().config.study_path / "input" / "model-libraries"
+    lib_folder.mkdir(exist_ok=True)
+    shutil.copy(ASSETS_PATH / "gems" / "libraries" / "8_1_simulator_nr_tests.yml", lib_folder / "my_library.yml")
+
     library = dao.get_library()
-    assert library is None
+    assert library is not None
