@@ -33,6 +33,8 @@ GEMS_PORT_TYPES_TABLE = Table(
     Column("id", String(255), primary_key=True),
     Column("description", String(), nullable=True),
     Column("fields", String(), nullable=False),
+    Column("area_connection", String(), nullable=True),
+    Column("thermal_capacity_connection", String(), nullable=True),
     ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], ondelete="CASCADE"),
 )
 
