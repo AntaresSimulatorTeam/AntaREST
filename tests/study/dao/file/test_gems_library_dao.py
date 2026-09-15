@@ -50,6 +50,36 @@ def _checks_library_integrity(library: GemsLibrary) -> None:
     assert len(library.models) == 2
     first_model = library.models[0]
     assert first_model.id == "dsr"
+    assert first_model.description is None
+    assert first_model.taxonomy_category is None
+    assert first_model.properties == []
+    assert len(first_model.parameters) == 2
+    assert first_model.parameters[0].id == "max_load"
+    assert first_model.parameters[0].time_dependent is True
+    assert first_model.parameters[0].scenario_dependent is True
+    assert first_model.parameters[1].id == "curtailment_price"
+    assert first_model.parameters[1].time_dependent is False
+    assert first_model.parameters[1].scenario_dependent is False
+    assert len(first_model.ports) == 1
+    assert first_model.ports[0].id == "balance_port"
+    assert first_model.ports[0].type == "flow"
+    second_model = library.models[1]
+    assert second_model.id == "electrolyser"
+    assert second_model.description is None
+    assert second_model.taxonomy_category is None
+    assert second_model.properties == []
+    assert len(second_model.parameters) == 2
+    assert second_model.parameters[0].id == "efficiency"
+    assert second_model.parameters[0].time_dependent is False
+    assert second_model.parameters[0].scenario_dependent is False
+    assert second_model.parameters[1].id == "p_max"
+    assert second_model.parameters[1].time_dependent is True
+    assert second_model.parameters[1].scenario_dependent is True
+    assert len(second_model.ports) == 2
+    assert second_model.ports[0].id == "power_port"
+    assert second_model.ports[0].type == "flow"
+    assert second_model.ports[1].id == "hydrogen_port"
+    assert second_model.ports[1].type == "flow"
 
 
 def test_library_reading_succeeds(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
