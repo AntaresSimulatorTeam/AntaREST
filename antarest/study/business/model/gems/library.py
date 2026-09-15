@@ -61,5 +61,5 @@ class GemsLibrary(AntaresBaseModel):
     id: str
     description: str | None = None
     version: str | None = None
-    port_types: list[GemsPortTypeField] = Field(alias="port-types", default_factory=list)
+    port_types: list[GemsPortType] = Field(alias="port-types", default_factory=list)
     models: list[GemsModels] = Field(default_factory=list)
