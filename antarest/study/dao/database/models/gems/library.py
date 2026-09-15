@@ -45,9 +45,9 @@ GEMS_MODELS_TABLE = Table(
     Column("variables", String(), nullable=False),
     Column("binding_constraints", String(), nullable=False),
     Column("constraints", String(), nullable=False),
-    Column("objective_contribution", String(), nullable=False),
+    Column("objective_contributions", String(), nullable=False),
     Column("extra_outputs", String(), nullable=False),
-    Column("port_field_definition", String(), nullable=False),
+    Column("port_field_definitions", String(), nullable=False),
     ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], ondelete="CASCADE"),
 )
 
