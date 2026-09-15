@@ -31,12 +31,19 @@ class GemsPortType(AntaresBaseModel):
     fields: list[GemsPortTypeField] = Field(default_factory=list)
 
 
+class GemsModelProperties(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    id: str
+
+
 class GemsModels(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
     description: str | None = None
     taxonomy_category: str | None = None
+    properties: list[GemsModelProperties] = Field(default_factory=list)
 
     # These fields are not used in the current implementation
     # That's why they are treated as unknown data
