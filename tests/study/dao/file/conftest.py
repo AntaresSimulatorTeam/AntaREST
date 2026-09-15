@@ -21,7 +21,7 @@ from antarest.blobstore.service import IBlobService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
@@ -59,3 +59,18 @@ def filestudy_dao(file_study: FileStudy, matrix_service, blob_service) -> FileSt
     constants = GeneratorMatrixConstants(matrix_service)
     constants.init_constant_matrices()
     return FileStudyTreeDao(file_study, False, constants, blob_service, matrix_service, Mock())
+
+
+@pytest.fixture
+def filestudy_dao_v10_2(empty_study_930: FileStudy, matrix_service: ISimpleMatrixService) -> FileStudyTreeDao:
+    empty_study_930.config.version = STUDY_VERSION_10_2
+    constants = GeneratorMatrixConstants(matrix_service)
+    constants.init_constant_matrices()
+    return FileStudyTreeDao(
+        empty_study_930,
+        False,
+        constants,
+        InMemoryBlobService(),
+        matrix_service,
+        Mock(),
+    )
