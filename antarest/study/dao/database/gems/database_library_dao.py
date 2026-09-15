@@ -167,7 +167,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
         model_port_values = []
         model_parameter_values = []
         for model in library.models:
-            model_dump = model.model_dump(by_alias=True, mode="json")
+            model_dump = model.model_dump(mode="json")
             model_values.append(
                 {
                     "study_data_id": study_data_id,
@@ -176,11 +176,11 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                     "taxonomy_category": model.taxonomy_category,
                     "properties": json.dumps(model_dump["properties"]),
                     "variables": json.dumps(model_dump["variables"]),
-                    "binding_constraints": json.dumps(model_dump["binding-constraints"]),
+                    "binding_constraints": json.dumps(model_dump["binding_constraints"]),
                     "constraints": json.dumps(model_dump["constraints"]),
-                    "objective_contributions": json.dumps(model_dump["objective-contributions"]),
-                    "extra_outputs": json.dumps(model_dump["extra-outputs"]),
-                    "port_field_definitions": json.dumps(model_dump["port-field-definitions"]),
+                    "objective_contributions": json.dumps(model_dump["objective_contributions"]),
+                    "extra_outputs": json.dumps(model_dump["extra_outputs"]),
+                    "port_field_definitions": json.dumps(model_dump["port_field_definitions"]),
                 }
             )
 
@@ -200,8 +200,8 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                         "study_data_id": study_data_id,
                         "model_id": model.id,
                         "parameter_id": model_parameter["id"],
-                        "time_dependent": model_parameter["time-dependent"],
-                        "scenario_dependent": model_parameter["scenario-dependent"],
+                        "time_dependent": model_parameter["time_dependent"],
+                        "scenario_dependent": model_parameter["scenario_dependent"],
                     }
                 )
 
