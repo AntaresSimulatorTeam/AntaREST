@@ -41,7 +41,7 @@ class FileStudyGemsLibraryDao(GemsLibraryDao, ABC):
             raise ValueError(f"Found more than one gems library file for study {file_study.config.study_id}")
 
         library_file = all_library_files[0]
-        yaml_content = YAMLReader().read(library_file)
+        yaml_content = YAMLReader().read(library_file)["library"]
         return GemsLibrary.model_validate(yaml_content)
 
     @override
@@ -53,4 +53,4 @@ class FileStudyGemsLibraryDao(GemsLibraryDao, ABC):
             raise ValueError(f"Found more than one gems library file for study {file_study.config.study_id}")
 
         yaml_content = library.model_dump(mode="json", exclude_unset=True, by_alias=True)
-        YAMLWriter().write(yaml_content, library_folder_path / "library.yaml")
+        YAMLWriter().write({"library": yaml_content}, library_folder_path / "library.yaml")
