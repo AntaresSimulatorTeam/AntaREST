@@ -36,7 +36,7 @@ class GemsModels(AntaresBaseModel):
 
     id: str
     description: str | None = None
-
+    taxonomy_category: str | None = None
 
     # These fields are not used in the current implementation
     # That's why they are treated as unknown data
