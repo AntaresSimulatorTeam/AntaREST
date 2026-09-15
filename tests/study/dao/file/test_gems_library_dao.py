@@ -12,6 +12,7 @@
 import shutil
 from pathlib import Path
 
+from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
@@ -24,6 +25,33 @@ def test_default_case(dao_10_2: StudyDao) -> None:
     assert library is None
 
 
+def _checks_library_integrity(library: GemsLibrary) -> None:
+    # Metadata
+    assert library is not None
+    assert library.id == "andromede-v1-models-weo-hybrid"
+    assert (
+        library.description
+        == "Andromede V1 model library - without expectation operators - allows hybrid connections (i.e. connections between Andromede models and Antares legacy area)"
+    )
+    assert library.version is None
+    # Port types
+    assert len(library.port_types) == 1
+    port_type = library.port_types[0]
+    assert port_type.id == "flow"
+    assert port_type.description == "A port which transfers power flow"
+    assert len(port_type.fields) == 1
+    assert port_type.fields[0].id == "flow"
+    assert port_type.thermal_capacity_connection is None
+    assert port_type.area_connection is not None
+    assert port_type.area_connection.spillage_bound is None
+    assert port_type.area_connection.injection_to_balance == "flow"
+    assert port_type.area_connection.unsupplied_energy_bound is None
+    # Models
+    assert len(library.models) == 2
+    first_model = library.models[0]
+    assert first_model.id == "dsr"
+
+
 def test_library_reading_succeeds(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     dao = filestudy_dao_v10_2
     lib_folder = dao.get_file_study().config.study_path / "input" / "model-libraries"
@@ -32,3 +60,4 @@ def test_library_reading_succeeds(filestudy_dao_v10_2: FileStudyTreeDao) -> None
 
     library = dao.get_library()
     assert library is not None
+    _checks_library_integrity(library)
