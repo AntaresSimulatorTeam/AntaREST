@@ -15,12 +15,12 @@ library:
   models:
     - id: dsr
       parameters:
-        - id: max_load
-          time-dependent: true
-          scenario-dependent: true
         - id: curtailment_price
           time-dependent: false
           scenario-dependent: false
+        - id: max_load
+          time-dependent: true
+          scenario-dependent: true
       variables:
         - id: curtailment
           lower-bound: 0
@@ -57,9 +57,9 @@ library:
         - id: hydrogen_port
           type: flow
       port-field-definitions:
-        - port: power_port
-          field: flow
-          definition: -power
         - port: hydrogen_port
           field: flow
           definition: efficiency * power
+        - port: power_port
+          field: flow
+          definition: -power

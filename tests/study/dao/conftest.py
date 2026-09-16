@@ -401,12 +401,12 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert first_model.taxonomy_category is None
     assert first_model.properties == []
     assert len(first_model.parameters) == 2
-    assert first_model.parameters[0].id == "max_load"
-    assert first_model.parameters[0].time_dependent is True
-    assert first_model.parameters[0].scenario_dependent is True
-    assert first_model.parameters[1].id == "curtailment_price"
-    assert first_model.parameters[1].time_dependent is False
-    assert first_model.parameters[1].scenario_dependent is False
+    assert first_model.parameters[0].id == "curtailment_price"
+    assert first_model.parameters[0].time_dependent is False
+    assert first_model.parameters[0].scenario_dependent is False
+    assert first_model.parameters[1].id == "max_load"
+    assert first_model.parameters[1].time_dependent is True
+    assert first_model.parameters[1].scenario_dependent is True
     assert len(first_model.ports) == 1
     assert first_model.ports[0].id == "balance_port"
     assert first_model.ports[0].type == "flow"
@@ -423,7 +423,7 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert second_model.parameters[1].time_dependent is True
     assert second_model.parameters[1].scenario_dependent is True
     assert len(second_model.ports) == 2
-    assert second_model.ports[0].id == "power_port"
+    assert second_model.ports[0].id == "hydrogen_port"
     assert second_model.ports[0].type == "flow"
-    assert second_model.ports[1].id == "hydrogen_port"
+    assert second_model.ports[1].id == "power_port"
     assert second_model.ports[1].type == "flow"
