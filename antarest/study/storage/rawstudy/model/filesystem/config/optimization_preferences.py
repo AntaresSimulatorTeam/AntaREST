@@ -16,6 +16,7 @@ from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.config.optimization_config_model import (
+    ExportMPS,
     LegacyTransmissionCapacities,
     OptimizationPreferences,
     SimplexOptimizationRange,
@@ -39,7 +40,7 @@ class OptimizationPreferencesFileData(AntaresBaseModel):
     primary_reserve: bool | None = Field(default=None, alias="include-primaryreserve")
     strategic_reserve: bool | None = Field(default=None, alias="include-strategicreserve")
     spinning_reserve: bool | None = Field(default=None, alias="include-spinningreserve")
-    export_mps: bool | str | None = Field(default=None, alias="include-exportmps")
+    export_mps: bool | ExportMPS | None = Field(default=None, alias="include-exportmps")
     unfeasible_problem_behavior: UnfeasibleProblemBehavior | None = Field(
         default=None, alias="include-unfeasible-problem-behavior"
     )
