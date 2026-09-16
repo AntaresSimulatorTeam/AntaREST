@@ -134,6 +134,7 @@ function Table({ config, type, areaId }: Props) {
       getCellContent={getCellContent}
       transformCellValue={transformCellValue}
       onSubmit={handleSubmit}
+      allowedFillDirections="any"
       rowMarkers={{
         kind: "clickable-string",
         getTitle: (index) => rowNames[index],
