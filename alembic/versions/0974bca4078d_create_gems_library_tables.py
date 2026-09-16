@@ -80,8 +80,8 @@ def upgrade():
     )
 
 def downgrade():
-    op.drop_table("gems_library_metadata")
-    op.drop_table("gems_port_types")
-    op.drop_table("gems_models")
     op.drop_table("gems_models_ports")
     op.drop_table("gems_models_parameters")
+    op.drop_table("gems_models")
+    op.drop_table("gems_port_types")
+    op.drop_table("gems_library_metadata")
