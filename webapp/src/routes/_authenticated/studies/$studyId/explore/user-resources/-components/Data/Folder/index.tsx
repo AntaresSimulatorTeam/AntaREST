@@ -78,9 +78,9 @@ function Folder({ name, path: folderPath, data, studyId }: DataCompProps) {
   ////////////////////////////////////////////////////////////////
 
   const handleValidateUpload = (file: File) => {
-    const childWithSameName = folder.files.find((filename) => filename === file.name);
-    if (childWithSameName) {
-      if (isTreeItemFolder(childWithSameName)) {
+    const hasFileWithSameName = folder.files.find((filename) => filename === file.name);
+    if (hasFileWithSameName) {
+      if (isTreeItemFolder(hasFileWithSameName)) {
         throw new Error(t("study.fileExplorer.folder.upload.error.replaceFolder"));
       }
 

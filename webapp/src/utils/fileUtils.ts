@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import { getLastPathSegment } from "./pathUtils";
+
 /**
  * Triggers the download of a file with the given data and name.
  *
@@ -27,12 +29,13 @@ export function downloadFile(fileData: BlobPart, fileName: string) {
 }
 
 /**
- * Gets the file extension from a filename.
+ * Gets the file extension from a filename/path.
  *
- * @param filename - The name of the file.
+ * @param file - The name/path of the file.
  * @returns The file extension in lowercase, or an empty string if none exists.
  */
-export function getFileExtension(filename: string): string {
-  const parts = filename.split(".");
+export function getFileExtension(file: string): string {
+  const basename = getLastPathSegment(file);
+  const parts = basename.split(".");
   return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
 }

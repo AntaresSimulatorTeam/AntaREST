@@ -47,7 +47,7 @@ export async function createOrReplaceUserResource({
   file,
 }: CreateOrReplaceUserResourceParams) {
   const url = format(BASE_URL, { studyId });
-  const body = { file };
+  const body = resourceType === "file" ? { file } : {};
 
   await client.putForm(url, body, {
     params: { path, resource_type: resourceType },

@@ -250,8 +250,6 @@ function parseResponse(res: string | MatrixDataDTO): string {
 export function parseContent(content: string, options: ContentParsingOptions): string {
   const { filePath, fileType } = options;
 
-  console.log(content);
-
   if (isInOutputFolder(filePath) && fileType === "matrix") {
     // Apply special handling for matrices in output folders
     return parseResponse(content);
