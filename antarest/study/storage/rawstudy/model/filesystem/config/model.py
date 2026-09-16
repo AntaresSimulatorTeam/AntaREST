@@ -244,7 +244,7 @@ class FileStudyTreeConfig(DTO):
         """
 
         lower_groups = {bc.group: bc.group for bc in self.bindings if bc.group is not None}
-        return [grp for _, grp in sorted(lower_groups.items())]  # type: ignore
+        return [grp for _, grp in sorted(lower_groups.items())]
 
     def get_sts_constraint_ids(self, area: str, storage: str) -> list[str]:
         if self.version >= STUDY_VERSION_9_2:
