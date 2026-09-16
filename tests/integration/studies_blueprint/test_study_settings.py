@@ -446,7 +446,7 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
     assert res.status_code == 200
     assert res.json() == {"hydroPmax": "hourly"}
 
-    # reserves_enabled should be rejected on a study < 10.0
+    # reserves_enabled should be rejected on a study < 10.2
     res = client.put(
         f"/v1/studies/{study_id}/config/compatibility/form",
         json={"reservesEnabled": True},

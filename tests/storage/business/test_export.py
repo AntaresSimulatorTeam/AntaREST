@@ -16,6 +16,7 @@ from zipfile import ZipFile
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import InternalMatrixFormat
+from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixRepository
@@ -59,7 +60,7 @@ def test_export_flat_export_all_files_except_output(
 
 
 @with_db_context
-def test_normalize_denormalized_methods(tmp_path: Path, study_factory: StudyFactory) -> None:
+def test_normalize_denormalized_methods(tmp_path: Path, core_cache: ICache) -> None:
     # Create a real matrix_service with a db connection to test DB queries
     db_session = db.session
     buket_dir = tmp_path / "matrixstore_bucket"
@@ -81,7 +82,7 @@ def test_normalize_denormalized_methods(tmp_path: Path, study_factory: StudyFact
     command_context = CommandContext(
         generator_matrix_constants=matrix_constants, matrix_service=matrix_service, blob_service=blob_service
     )
-    study_factory._matrix_service = matrix_service
+    study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
     raw_study_service = RawStudyService(Mock(), study_factory, Mock(), command_context, Mock())
     dao = build_dao_from_file_study(file_study, command_context, True)
 
