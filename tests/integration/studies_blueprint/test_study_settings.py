@@ -72,6 +72,17 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
         "simplexOptimizationRange": SimplexOptimizationRange.DAY.value,
     }
 
+    # `exportMps` accepts booleans and the v8.3+ string values, nothing else
+    for value in [True, "none", "optim-1", "optim-2", "both-optims"]:
+        res = client.put(f"/v1/studies/{study_id}/config/optimization/form", json={"exportMps": value})
+        res.raise_for_status()
+        res = client.get(f"/v1/studies/{study_id}/config/optimization/form")
+        assert res.json()["exportMps"] == value
+
+    res = client.put(f"/v1/studies/{study_id}/config/optimization/form", json={"exportMps": "random"})
+    assert res.status_code == 422
+    assert res.json()["exception"] == "RequestValidationError"
+
     # Adequacy patch form
 
     res_adequacy_patch_config = client.get(f"/v1/studies/{study_id}/config/adequacypatch/form")

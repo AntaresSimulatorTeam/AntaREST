@@ -89,7 +89,6 @@ class DatabaseStudySettingsDao(
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
         values = dict(study_data_id=self._study_data_id, **config.model_dump(exclude={"export_mps"}))
-        # Handle `export_mps` differently as it can either be an enum or a boolean but will be stored as String in DB.
         values["export_mps"] = str(config.export_mps)
 
         session = self._db_session
