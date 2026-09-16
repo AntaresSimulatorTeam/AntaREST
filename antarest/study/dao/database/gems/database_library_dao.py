@@ -60,16 +60,18 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
 
         # Port Types
         port_types_stmt = select(GEMS_PORT_TYPES_TABLE).where(GEMS_PORT_TYPES_TABLE.c.study_data_id == study_data_id)
-        port_types = [
-            {
+        port_types = []
+        for port_type_row in session.execute(port_types_stmt).fetchall():
+            port_type = {
                 "id": port_type_row.id,
                 "description": port_type_row.description,
                 "fields": json.loads(port_type_row.fields),
-                "area_connection": json.loads(port_type_row.area_connection),
-                "thermal_capacity_connection": json.loads(port_type_row.thermal_capacity_connection),
             }
-            for port_type_row in session.execute(port_types_stmt).fetchall()
-        ]
+            if port_type_row.area_connection is not None:
+                port_type["area_connection"] = json.loads(port_type_row.area_connection)
+            if port_type_row.thermal_capacity_connection is not None:
+                port_type["thermal_capacity_connection"] = json.loads(port_type_row.thermal_capacity_connection)
+            port_types.append(port_type)
 
         # Models
         ## Ports
@@ -156,7 +158,9 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                 "id": port_type.id,
                 "description": port_type.description,
                 "fields": json.dumps([field.model_dump(mode="json") for field in port_type.fields]),
-                "area_connection": port_type.area_connection.model_dump_json() if port_type.area_connection else None,
+                "area_connection": port_type.area_connection.model_dump_json(exclude_none=True)
+                if port_type.area_connection
+                else None,
                 "thermal_capacity_connection": port_type.thermal_capacity_connection.model_dump_json()
                 if port_type.thermal_capacity_connection
                 else None,
