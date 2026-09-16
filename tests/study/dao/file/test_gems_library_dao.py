@@ -12,6 +12,8 @@
 import shutil
 from pathlib import Path
 
+import pytest
+
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -101,3 +103,14 @@ def test_library_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     library = dao.get_library()
     assert library is not None
     _checks_library_integrity(library)
+
+
+def test_several_libraries(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    dao = filestudy_dao_v10_2
+    lib_folder = dao.get_file_study().config.study_path / "input" / "model-libraries"
+    lib_folder.mkdir(exist_ok=True)
+    for file_name in ["library1.yml", "library2.yml", "library3.yml"]:
+        shutil.copy(ASSETS_PATH / "gems" / "libraries" / "8_1_simulator_nr_tests.yml", lib_folder / file_name)
+
+    with pytest.raises(ValueError, match="Found more than one gems library file for study"):
+        dao.get_library()
