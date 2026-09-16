@@ -113,7 +113,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                     "properties": json.loads(model_row.properties) if model_row.properties is not None else [],
                     "ports": model_ports.get(model_row.id, []),
                     "parameters": model_parameters.get(model_row.id, []),
-                    # These fields are dumped, and we do not care about their content for the moment
+                    # These fields were dumped as is, we simply reload them.
                     "variables": json.loads(model_row.variables),
                     "binding_constraints": json.loads(model_row.binding_constraints),
                     "constraints": json.loads(model_row.constraints),
@@ -158,7 +158,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                 "study_data_id": study_data_id,
                 "id": port_type.id,
                 "description": port_type.description,
-                "fields": json.dumps([field.model_dump(mode="json") for field in port_type.fields]),
+                "fields": json.dumps([field.model_dump() for field in port_type.fields]),
                 "area_connection": port_type.area_connection.model_dump_json(exclude_none=True)
                 if port_type.area_connection
                 else None,
@@ -183,6 +183,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                     "description": model.description,
                     "taxonomy_category": model.taxonomy_category,
                     "properties": json.dumps(model_dump["properties"]),
+                    # These fields are dumped as is as we do not care about them for the moment.
                     "variables": json.dumps(model_dump["variables"]),
                     "binding_constraints": json.dumps(model_dump["binding_constraints"]),
                     "constraints": json.dumps(model_dump["constraints"]),
