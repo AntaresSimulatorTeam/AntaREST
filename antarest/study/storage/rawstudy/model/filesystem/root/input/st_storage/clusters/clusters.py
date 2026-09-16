@@ -17,11 +17,11 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.st_storage.clus
 
 
 class InputSTStorageClusters(FolderNode):
-    # Each area has it own folder named after the area id.
+    # Each area has its own folder named after the area id.
     @override
     def build(self) -> TREE:
         children: TREE = {
-            a: InputSTStorageArea(self.matrix_storage_context, self.config.next_file(a), area=a)
+            a: InputSTStorageArea(self.matrix_storage_context, self.config.next_file(a))
             for a in self.config.area_names()
         }
         return children

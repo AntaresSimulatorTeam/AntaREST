@@ -25,14 +25,46 @@ Power = Annotated[float, Field(ge=0)]
 ##########################
 
 
-class ThermalReserveCertification(AntaresBaseModel):
+class ThermalReserveCertification(
+    AntaresBaseModel,
+):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     max_power: Power = 0.0
     max_power_off: Power = 0.0
-    participation_cost: Cost = 0.0
     participation_cost_off: Cost = 0.0
+    participation_cost: Cost = 0.0
 
 
 ThermalId: TypeAlias = str
 ThermalReserveCertificationMapping = dict[ReserveDefinitionId, dict[ThermalId, ThermalReserveCertification]]
+
+
+##########################
+# Storage part
+##########################
+
+
+class StorageReserveCertification(
+    AntaresBaseModel,
+):
+    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+
+    participation_cost: Cost = 0.0
+    max_release: Power = 0.0
+    max_store: Power = 0.0
+
+
+StorageId: TypeAlias = str
+StorageReserveCertificationMapping = dict[ReserveDefinitionId, dict[StorageId, StorageReserveCertification]]
+
+
+##########################
+# Hydro part
+##########################
+
+# An area owns exactly one long-term storage (hydro). Unlike thermal and short-term storage, its
+# certifications and symmetries therefore carry no asset dimension: they are keyed by reserve alone.
+HydroReserveCertificationMapping = dict[ReserveDefinitionId, StorageReserveCertification]
+
+ReserveCertification = ThermalReserveCertification | StorageReserveCertification

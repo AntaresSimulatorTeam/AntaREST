@@ -9,15 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum, StrEnum
-from typing import Literal, TypeAlias
+from pathlib import Path
+from typing import Callable, Generic, Literal, Sequence, TypeAlias, TypeVar
 
-import pandas as pd
 import polars as pl
 
-from antarest.output.model.download import TimeSerie
+from antarest.core.exceptions import OutputSubFolderNotFound
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
@@ -57,8 +56,58 @@ class MCAllLinksQueryFile(StrEnum):
 
 QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile
 
-SingleOutputHeaders: TypeAlias = list[str]
-MultipleOutputHeaders: TypeAlias = list[list[str]]
+AggregationType: TypeAlias = Literal["mc-all", "mc-ind"]
+
+
+@dataclass(frozen=True, slots=True)
+class VariableDescription:
+    """
+    Represents the metadata of an output file column.
+
+    Could probably be refined, see descriptions below, to better represent the actual usage (mc-all/mc-ind, details/values ...)
+
+    Attributes:
+        name: the name of the variable. Sometimes, used for an element name such as a cluster name (for example in
+              "details" files).
+        unit: unit of the variable. In output files ("details" files), this is actually sometimes used as a substitute
+              for the name (NP COST - Euro for example), because the variable name is actually used for the cluster name.
+        statistic_type: for mc-all outputs, this defines what statistic this represents: expectations, standard dev,
+                        min, max ...
+    """
+
+    name: str
+    unit: str | None
+    statistic_type: str | None
+
+    def to_tuple(self) -> tuple[str, str, str]:
+        # Follows convention of output files ... maybe better keep it instead of None after all ?
+        return self.name, self.unit_repr(), self.statistic_type_repr()
+
+    def unit_repr(self) -> str:
+        """
+        Representation of the unit as in output files, never None.
+        """
+        return self.unit or " "
+
+    def statistic_type_repr(self) -> str:
+        """
+        Representation of the statistic type as in output files, never None.
+        """
+        return self.statistic_type or ""
+
+    def normal_repr(self) -> str:
+        """
+        That "normal form" is :
+         - for mc-ind, only the variable name "Var"
+         - for mc-all, the concatenation of variable name and stat type in upper case ... "VAR EXP"
+
+        Cannot see any justification for that convention, it's inherited implicit choices from the past,
+        could be changed in the future.
+        """
+        mc_ind = self.statistic_type is None
+        if mc_ind:
+            return self.name
+        return f"{self.name} {self.statistic_type_repr()}".upper().strip()
 
 
 def get_output_object_type(
@@ -78,39 +127,39 @@ def get_output_object_type(
             return "areas"
 
 
-@dataclass
-class OutputDataFrame:
+C = TypeVar("C")
+C2 = TypeVar("C2")
+
+
+@dataclass(frozen=True)
+class OutputDataFrame(Generic[C]):
     """
     We separate the polars dataframe and its headers as polars does not handle multi-headers columns.
+
+    Attributes:
+        C: Type holding columns metadata
     """
 
     data: pl.DataFrame
-    headers: SingleOutputHeaders | MultipleOutputHeaders
+    headers: Sequence[C]
+
+    def __post_init__(self) -> None:
+        if len(self.headers) != len(self.data.columns):
+            raise ValueError("The number of headers must match the number of columns in the dataframe")
+
+    def map_metadata(self, func: Callable[[C], C2]) -> "OutputDataFrame[C2]":
+        return OutputDataFrame(self.data, [func(col) for col in self.headers])
 
 
-def normalize_df_column_names(mc_root: MCRoot, output_headers: list[list[str]]) -> list[str]:
+def find_mode_dir(output_dir: Path) -> Path:
     """
-    That "normal form" is :
-     - for mc-ind, only the variable name "Var"
-     - for mc-all, the concatenation of variable name and stat type in upper case ... "VAR EXP"
-    """
-    if mc_root == MCRoot.MC_IND:
-        return [col[0] for col in output_headers]
-    return [" ".join([col[0], col[2]]).upper().strip() for col in output_headers]
+    Identifies economy or adequacy dir
 
-
-def concatenate_dataframe_multi_indexed_columns(data: OutputDataFrame) -> None:
+    Raises:
+        OutputSubFolderNotFound: when no folder matches.
     """
-    Serializes multi-indexed column headers into a single string, concatenating with " % " as a separator.
-    """
-    data.headers = [" % ".join(col) for col in data.headers]
-
-
-def split_concatenated_columns_from_dataframe(df: pd.DataFrame) -> Iterator[TimeSerie]:
-    """
-    Performs the inverse transformation compared to the concatenate method. Also used inside Imagrid endpoint.
-    """
-    for column in df.columns:
-        splitted_col = column.split(" % ")
-        name, unit = splitted_col[0], splitted_col[1]
-        yield TimeSerie(name=name, unit=unit or " ", data=df[column].to_list())
+    for mode_name in ("economy", "adequacy"):
+        mode_dir = output_dir / mode_name
+        if mode_dir.exists():
+            return mode_dir
+    raise OutputSubFolderNotFound(output_dir.name, "economy|adequacy")

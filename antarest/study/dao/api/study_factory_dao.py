@@ -17,10 +17,23 @@ from antarest.study.model import StudyMetadataCreation
 
 
 class StudyFactoryDao(ABC):
+    """
+    In charge of creating DAO instances
+    """
+
     @abstractmethod
     def create_study_dao(self, metadata: StudyMetadataCreation) -> StudyDao:
+        """
+        Initializes data for that study and returns the corresponding DAO instance.
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def get_study_dao(self, study_id: str, is_study_managed: bool) -> StudyDao:
+        """
+        Creates a DAO instance for a study which already contains data.
+
+        Raises:
+            StudyNotFoundError: if there is no existing data for that study
+        """
         raise NotImplementedError()

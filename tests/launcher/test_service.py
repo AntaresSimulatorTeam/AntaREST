@@ -13,9 +13,10 @@
 import json
 import os
 import time
+import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from unittest.mock import Mock, call
+from unittest.mock import Mock, call, patch
 from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -39,7 +40,7 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
+from antarest.core.utils.fastapi_sqlalchemy.middleware import db, init_db_singleton
 from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
@@ -70,6 +71,7 @@ from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.output.service import OutputService
 from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     OwnerInfo,
@@ -83,7 +85,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import with_admin_user
+from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 class TestLauncherService:
@@ -776,6 +778,7 @@ class TestLauncherService:
         )
 
     @with_admin_user
+    @with_db_context
     def test_manage_output(self, tmp_path: Path) -> None:
         # TODO: finish adaptation
         study_service = Mock()
@@ -812,7 +815,12 @@ class TestLauncherService:
             output_data.writestr("some output", "0\n1")
         job_id = "job_id"
         zipped_job_id = "zipped_job_id"
-        study_id = "study_id"
+        study_id = str(uuid.uuid4())
+        # Adds the study linked to the job inside DB
+        study = create_raw_study(study_id, "study-test", tmp_path)
+        db.session.add(study)
+        db.session.commit()
+        # Defines the side effects
         launcher_service.job_result_repository.get.side_effect = [
             None,
             JobResult(id=job_id, study_id=study_id),
@@ -1002,6 +1010,7 @@ class TestLauncherService:
         )
         assert actual_obj.to_dto().model_dump() == expected_obj.to_dto().model_dump()
 
+    @with_db_context
     def test_import_output_is_called_with_the_right_user(self, tmp_path: Path) -> None:
         # Create user
         jwt_user = JWTUser(id=2, impersonator=2, type="users")
@@ -1009,9 +1018,14 @@ class TestLauncherService:
         login_service = Mock()
         login_service.get_jwt.return_value = jwt_user
         # Put this user as the job owner
-        job_result = JobResult(study_id="study_id", owner_id=jwt_user.id)
+        study_id = str(uuid.uuid4())
+        job_result = JobResult(study_id=study_id, owner_id=jwt_user.id)
         job_repository = Mock()
         job_repository.get.return_value = job_result
+        # Adds the study linked to the job inside DB
+        study = create_raw_study(study_id, "study-test", tmp_path)
+        db.session.add(study)
+        db.session.commit()
 
         # fake import_output function that checks the current user
         def fake_import_output(
@@ -1039,6 +1053,7 @@ class TestLauncherService:
 
         # Ensures the output_service.import_output method was called with the right user
         launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
+        launcher_service.output_service.import_output.assert_called_once()
 
     @with_admin_user
     def test_run_study_with_solver_presets(self) -> None:
@@ -1139,6 +1154,60 @@ class TestLauncherService:
         params_with_other_options = LauncherParametersDTO(other_options="--some-option")
         with pytest.raises(IncompatibleSolverPresets):
             launcher_service.run_study("study_uuid", "local", params_with_other_options, "config-1", "8.0")
+
+    @with_db_context
+    @pytest.mark.parametrize("managed", [True, False])
+    def test_import_output_for_different_workspaces(self, tmp_path: Path, managed: bool) -> None:
+        ##########################
+        # Set Up
+        ##########################
+
+        # Create a study in DB
+        study_id = str(uuid.uuid4())
+        study = create_raw_study(study_id, "study-test", path="")
+        if managed:
+            study.workspace = DEFAULT_WORKSPACE_NAME
+        else:
+            study.workspace = "other-workspace"
+        db.session.add(study)
+        db.session.commit()
+
+        # Create a fake job
+        job_result = JobResult(study_id=study_id, owner_id=1)
+        job_repository = Mock()
+        job_repository.get.return_value = job_result
+
+        # Builds the service
+        output_service = Mock()
+        output_service.import_output.side_effect = None
+        launcher_service = LauncherService(
+            config=Mock(),
+            study_service=Mock(),
+            output_service=output_service,
+            login_service=Mock(),
+            job_result_repository=job_repository,
+            solver_presets_repository=Mock(),
+            event_bus=Mock(),
+            factory_launcher=Mock(),
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+
+        ##########################
+        # Test
+        ##########################
+
+        # We patch the `archive_dir` function to always raise.
+        # This way we can check if it was called or not.
+        with patch("antarest.launcher.service.archive_dir", side_effect=ValueError("Output archiving failed for test")):
+            if managed:
+                # We should not raise here as we do not need to archive the output.
+                launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
+            else:
+                # Here we expect the method to raise as we need to archive the output in order to unarchive it later on the Windows VM.
+                with pytest.raises(ValueError, match="Output archiving failed for test"):
+                    launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
 
 
 class TestNormalizeScheduledAt:

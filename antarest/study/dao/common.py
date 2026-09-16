@@ -46,3 +46,6 @@ ReservesGlobalParametersMapping: TypeAlias = dict[AreaId, ReservesGlobalParamete
 ReserveDefinitionsMapping: TypeAlias = dict[AreaId, dict[ReserveDefinitionId, ReserveDefinition]]
 ReserveNeedsMapping: TypeAlias = dict[AreaId, dict[ReserveDefinitionId, SeriesId]]
 ThermalReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[ThermalId, ReserveSymmetries]]
+STStorageReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[StStorageId, ReserveSymmetries]]
+HydroReserveSymmetriesMapping: TypeAlias = dict[AreaId, ReserveSymmetries]
+ReserveSymmetriesMapping: TypeAlias = dict[AreaId, dict[ThermalId | StStorageId, ReserveSymmetries]]

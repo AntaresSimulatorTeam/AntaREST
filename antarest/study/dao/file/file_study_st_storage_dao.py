@@ -25,8 +25,12 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.dao.common import AreaId, StStorageConstraintSeriesMapping, StStorageId, StStorageSeriesMapping
-from antarest.study.dao.file.common import check_area_exists
-from antarest.study.model import STUDY_VERSION_9_2
+from antarest.study.dao.file.common import (
+    check_area_exists,
+    get_st_storage_reserve_participations_as_yaml_content,
+    get_st_storage_reserve_path,
+)
+from antarest.study.model import STUDY_VERSION_9_2, STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
     parse_st_storage_additional_constraint,
@@ -345,6 +349,7 @@ class FileStudySTStorageDao(STStorageDao, ABC):
             study_data.tree.delete(path)
 
         self._remove_st_storage_from_scenario_builder(area_id, storage_id)
+        self._remove_st_storage_reserve_certifications(area_id, storage_id)
 
         # Deleting the short-term storage in the configuration must be done AFTER deleting the files and folders.
         st_storages = study_data.config.areas[area_id].st_storages
@@ -553,3 +558,25 @@ class FileStudySTStorageDao(STStorageDao, ABC):
                     del ruleset[key]
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
+    def _remove_st_storage_reserve_certifications(self, area_id: str, storage_id: str) -> None:
+        """
+        # Cascade: Remove any reserve certification attached to the deleted storage.
+        # Avoids leaving orphan sections in `input/st-storage/clusters/<area>/reserve-participations.yml`.
+        """
+        file_study = self.get_file_study()
+        if file_study.config.version < STUDY_VERSION_10_2:
+            # Reserves only exist in version 10.2+
+            return
+
+        st_storage_exists = False
+        yaml_content = get_st_storage_reserve_participations_as_yaml_content(area_id, file_study)
+        for k, participation in enumerate(yaml_content["participations"]):
+            if participation["storage"] == storage_id:
+                st_storage_exists = True
+                del yaml_content["participations"][k]
+                break
+
+        if st_storage_exists:
+            # Avoid performing an empty save if there is no st-storage to remove
+            file_study.tree.save(yaml_content, get_st_storage_reserve_path(area_id))

@@ -28,7 +28,8 @@ def test_study_data_cleaning(db_dao_920: DatabaseStudyDao, db_session: Session) 
 
     # Check the content of the different tables
     with db_session:
-        study_data_rows = db_session.execute(select(STUDY_DATA_TABLE)).fetchall()
+        # Only the study ID is asserted: `study_data_id` is a generated surrogate key.
+        study_data_rows = db_session.execute(select(STUDY_DATA_TABLE.c.study_id)).fetchall()
         assert study_data_rows == [(dao.get_study_id(),)]
 
         area_properties_rows = db_session.execute(select(AREA_TABLE)).fetchall()

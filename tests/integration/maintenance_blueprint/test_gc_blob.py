@@ -122,10 +122,12 @@ class TestCleanBlobsIntegration:
         with db():
             db.session.add(create_study(id=study_id, name="Test Study", version="880"))
             db.session.flush()
-            db.session.execute(STUDY_DATA_TABLE.insert().values({"study_id": study_id}))
+            study_data_id = db.session.execute(
+                STUDY_DATA_TABLE.insert().values({"study_id": study_id}).returning(STUDY_DATA_TABLE.c.study_data_id)
+            ).scalar_one()
             db.session.execute(
                 USER_RESOURCES_TABLE.insert().values(
-                    study_id=study_id,
+                    study_data_id=study_data_id,
                     id=str(uuid.uuid4()),
                     parent_id=None,
                     name="my_file.txt",
