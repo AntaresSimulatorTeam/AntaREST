@@ -17,6 +17,7 @@ from antarest.core.exceptions import GemsLibraryAlreadyExists
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
+from tests.study.dao.conftest import check_8_1_gems_library_integrity
 
 ASSETS_PATH = Path(__file__).parent / "assets"
 
@@ -40,4 +41,5 @@ def test_nominal_cases(dao_10_2: StudyDao) -> None:
 
     # Fetch the saved library and check its content
     saved_library = dao.get_library()
-    assert saved_library == library
+    assert saved_library is not None
+    check_8_1_gems_library_integrity(saved_library)
