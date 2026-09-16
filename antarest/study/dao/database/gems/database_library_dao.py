@@ -111,13 +111,14 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                     "description": model_row.description,
                     "taxonomy_category": model_row.taxonomy_category,
                     "properties": json.loads(model_row.properties) if model_row.properties is not None else [],
+                    "ports": model_ports.get(model_row.id, []),
+                    "parameters": model_parameters.get(model_row.id, []),
+                    # These fields are dumped, and we do not care about their content for the moment
                     "variables": json.loads(model_row.variables),
                     "binding_constraints": json.loads(model_row.binding_constraints),
                     "constraints": json.loads(model_row.constraints),
                     "objective_contributions": json.loads(model_row.objective_contributions),
                     "extra_outputs": json.loads(model_row.extra_outputs),
-                    "ports": model_ports.get(model_row.id, []),
-                    "parameters": model_parameters.get(model_row.id, []),
                     "port_field_definitions": json.loads(model_row.port_field_definitions),
                 }
             )
