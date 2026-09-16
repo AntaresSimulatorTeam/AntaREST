@@ -23,7 +23,6 @@ import shutil
 import tempfile
 from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import cast
 
 import polars as pl
 
@@ -43,12 +42,10 @@ from antarest.output.filestudy.model import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
-    MultipleOutputHeaders,
     QueryFileType,
+    find_mode_dir,
     get_output_object_type,
-    normalize_df_column_names,
 )
-from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
 
 logger = logging.getLogger(__name__)
@@ -114,7 +111,6 @@ def _aggregate_to_parquet(
         frequency=frequency,
         ids_to_consider=ids_to_consider,
         columns_names=[],
-        transform_columns_headers=True,
     )
     try:
         dataframes = manager.aggregate_output_data()
@@ -204,8 +200,7 @@ def _parse_bc_file(file: Path, mc_root: MCRoot, mc_year: int | None = None) -> p
         return None
 
     df = output_data.data
-    headers = cast(MultipleOutputHeaders, output_data.headers)
-    col_names = normalize_df_column_names(mc_root, headers)
+    col_names = [c.normal_repr() for c in output_data.headers]
     df.columns = col_names
     df = df.with_row_index(TIME_ID_COL, offset=1)
 
@@ -286,9 +281,6 @@ def extract_output_to_parquet(output_dir: Path, target_dir: Path) -> None:
     target_dir.mkdir(parents=True, exist_ok=True)
 
     mode_dir = find_mode_dir(output_dir)
-    if mode_dir is None:
-        logger.warning(f"No economy or adequacy directory found in {output_dir}")
-        return
 
     for mc_root in (MCRoot.MC_IND, MCRoot.MC_ALL):
         mc_root_path = mode_dir / str(mc_root.value)

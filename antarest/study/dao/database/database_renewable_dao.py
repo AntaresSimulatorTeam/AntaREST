@@ -23,7 +23,6 @@ from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    AreaNotFound,
     RenewableClusterNotFound,
     RenewableClustersNotFound,
 )
@@ -35,7 +34,7 @@ from antarest.study.business.model.renewable_cluster_model import (
 )
 from antarest.study.dao.api.renewable_dao import RenewableDao
 from antarest.study.dao.common import AreaId, RenewableId, RenewableSeriesMapping
-from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.common import validate_area_exists, validate_areas_exist
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.renewable import RENEWABLE_CLUSTER_TABLE, RENEWABLE_SERIES_TABLE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_scenario_hourly
@@ -46,7 +45,7 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
 
     def _convert_db_row_to_renewable(self, row: Any) -> RenewableCluster:
         data = get_row_representation_as_dict(row)
-        del data["study_id"]
+        del data["study_data_id"]
         del data["area_id"]
         data["id"] = data.pop("renewable_id")
         cluster = RenewableCluster(**data)
@@ -55,7 +54,7 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
         return cluster
 
     def _convert_renewable_cluster_to_row(self, area_id: str, cluster: RenewableCluster) -> dict[str, Any]:
-        values = dict(study_id=self._study_id, area_id=area_id, **cluster.model_dump())
+        values = dict(study_data_id=self._study_data_id, area_id=area_id, **cluster.model_dump())
         values["renewable_id"] = values.pop("id").lower()
         return values
 
@@ -63,9 +62,7 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
         self, data: dict[AreaId, list[RenewableId]], exc: IntegrityError | None = None
     ) -> NoReturn:
         # Checks if some areas are missing
-        existing_ids = set(self.get_impl().get_all_area_ids())
-        if invalid_areas := set(data) - existing_ids:
-            raise AreaNotFound(*invalid_areas)
+        validate_areas_exist(self._db_session, self._study_data_id, set(data))
 
         # Means the issue lies in the renewables
         all_existing_renewables = self.get_all_renewables()
@@ -94,6 +91,7 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
         try:
             upsert_one(session, RENEWABLE_CLUSTER_TABLE, values)
         except IntegrityError as e:
+            session.rollback()
             self._raise_the_right_renewable_exception({area_id: [renewable.id]}, e)
 
         session.commit()
@@ -112,6 +110,7 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
         try:
             upsert_multiple(session=session, table=RENEWABLE_CLUSTER_TABLE, values=values)
         except IntegrityError as e:
+            session.rollback()
             invalid_data = {area_id: [renew.id.lower() for renew in renewables] for area_id, renewables in data.items()}
             self._raise_the_right_renewable_exception(invalid_data, e)
 
@@ -119,7 +118,7 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
 
     @override
     def save_renewable_series(self, series: RenewableSeriesMapping) -> None:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         try:
@@ -127,7 +126,7 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
             for area_id, value in series.items():
                 for renewable_id, matrix_id in value.items():
                     data = {
-                        "study_id": study_id,
+                        "study_data_id": study_data_id,
                         "area_id": area_id,
                         "renewable_id": renewable_id,
                         "matrix_id": matrix_id,
@@ -135,6 +134,7 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
                     values.append(data)
             upsert_multiple(session, RENEWABLE_SERIES_TABLE, values)
         except IntegrityError as e:
+            session.rollback()
             invalid_data = {area_id: list(renewable_dict) for area_id, renewable_dict in series.items()}
             self._raise_the_right_renewable_exception(invalid_data, e)
 
@@ -142,13 +142,13 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
 
     @override
     def delete_renewable(self, area_id: str, renewable: RenewableCluster) -> None:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
         renewable_id = renewable.id.lower()
 
         result = session.execute(
             delete(RENEWABLE_CLUSTER_TABLE).where(
-                (RENEWABLE_CLUSTER_TABLE.c.study_id == study_id)
+                (RENEWABLE_CLUSTER_TABLE.c.study_data_id == study_data_id)
                 & (RENEWABLE_CLUSTER_TABLE.c.area_id == area_id)
                 & (RENEWABLE_CLUSTER_TABLE.c.renewable_id == renewable_id)
             )
@@ -162,10 +162,10 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
 
     @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
-        stmt = select(RENEWABLE_CLUSTER_TABLE).where(RENEWABLE_CLUSTER_TABLE.c.study_id == study_id)
+        stmt = select(RENEWABLE_CLUSTER_TABLE).where(RENEWABLE_CLUSTER_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
 
         renewables_by_areas: dict[str, dict[str, RenewableCluster]] = {}
@@ -176,20 +176,20 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
 
     @override
     def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
-        validate_area_exists(session, study_id, area_id)
+        validate_area_exists(session, study_data_id, area_id)
 
         stmt = select(RENEWABLE_CLUSTER_TABLE).where(
-            (RENEWABLE_CLUSTER_TABLE.c.study_id == study_id) & (RENEWABLE_CLUSTER_TABLE.c.area_id == area_id)
+            (RENEWABLE_CLUSTER_TABLE.c.study_data_id == study_data_id) & (RENEWABLE_CLUSTER_TABLE.c.area_id == area_id)
         )
         rows = session.execute(stmt).fetchall()
         return [self._convert_db_row_to_renewable(row) for row in rows]
 
     def _select_renewable_cluster(self, area_id: str, renewable_id: str) -> Select[Any]:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         return select(RENEWABLE_CLUSTER_TABLE).where(
-            (RENEWABLE_CLUSTER_TABLE.c.study_id == study_id)
+            (RENEWABLE_CLUSTER_TABLE.c.study_data_id == study_data_id)
             & (RENEWABLE_CLUSTER_TABLE.c.area_id == area_id)
             & (RENEWABLE_CLUSTER_TABLE.c.renewable_id == renewable_id)
         )
@@ -212,10 +212,10 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
 
     @override
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
         stmt = select(RENEWABLE_SERIES_TABLE).where(
-            (RENEWABLE_SERIES_TABLE.c.study_id == study_id)
+            (RENEWABLE_SERIES_TABLE.c.study_data_id == study_data_id)
             & (RENEWABLE_SERIES_TABLE.c.area_id == area_id)
             & (RENEWABLE_SERIES_TABLE.c.renewable_id == renewable_id)
         )
@@ -227,9 +227,9 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
 
     @override
     def get_all_renewables_series(self) -> RenewableSeriesMapping:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
-        stmt = select(RENEWABLE_SERIES_TABLE).where(RENEWABLE_SERIES_TABLE.c.study_id == study_id)
+        stmt = select(RENEWABLE_SERIES_TABLE).where(RENEWABLE_SERIES_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
         result: RenewableSeriesMapping = {}
         for row in rows:

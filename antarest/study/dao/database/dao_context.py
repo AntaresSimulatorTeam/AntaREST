@@ -20,6 +20,7 @@ tables is defined in a single place.
 """
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Session
@@ -28,29 +29,15 @@ if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
+@dataclass(frozen=True)
 class StudyDaoContext:
     """
     Identifies the study a set of database DAOs operates on, and carries their session.
     """
 
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        """
-        Args:
-            study_id: The study ID for database queries.
-            db_session: SQLAlchemy session for database operations.
-        """
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @property
-    def study_id(self) -> str:
-        """The study ID, as found in `study.id`."""
-        return self._study_id
-
-    @property
-    def session(self) -> Session:
-        """The SQLAlchemy session used for database operations."""
-        return self._db_session
+    study_id: str
+    study_data_id: int
+    session: Session
 
 
 class DatabaseDaoBase(ABC):
@@ -64,6 +51,10 @@ class DatabaseDaoBase(ABC):
     @property
     def _study_id(self) -> str:
         return self._context.study_id
+
+    @property
+    def _study_data_id(self) -> int:
+        return self._context.study_data_id
 
     @property
     def _db_session(self) -> Session:

@@ -22,7 +22,10 @@ from antarest.core.exceptions import AreaNotFound, ReserveDefinitionNotFound, Re
 from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
-from antarest.study.dao.api.common import remove_reserve_symmetries_by_cascade
+from antarest.study.dao.api.common import (
+    remove_reserves_from_symmetries,
+    remove_reserves_from_symmetries_dict,
+)
 from antarest.study.dao.api.reserve_definition_dao import ReserveDefinitionDao
 from antarest.study.dao.common import AreaId, ReserveDefinitionsMapping, ReserveNeedsMapping
 from antarest.study.dao.database.common import area_exists, validate_area_exists
@@ -37,16 +40,16 @@ _NEED_TABLE = RESERVE_NEED_MATRIX_TABLE
 
 def _convert_row_to_model(row: Row[Any]) -> ReserveDefinition:
     data = get_row_representation_as_dict(row)
-    del data["study_id"]
+    del data["study_data_id"]
     del data["area_id"]
     data["id"] = data.pop("reserve_id")
     return ReserveDefinition.model_validate(data)
 
 
-def _convert_model_to_row(study_id: str, area_id: str, reserve: ReserveDefinition) -> dict[str, Any]:
+def _convert_model_to_row(study_data_id: int, area_id: str, reserve: ReserveDefinition) -> dict[str, Any]:
     values = reserve.model_dump()
     values["reserve_id"] = values.pop("id")
-    values["study_id"] = study_id
+    values["study_data_id"] = study_data_id
     values["area_id"] = area_id
     return values
 
@@ -56,12 +59,14 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
 
     def _select_reserve(self, area_id: str, reserve_id: str) -> Select[Any]:
         return select(_TABLE).where(
-            (_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id) & (_TABLE.c.reserve_id == reserve_id)
+            (_TABLE.c.study_data_id == self._study_data_id)
+            & (_TABLE.c.area_id == area_id)
+            & (_TABLE.c.reserve_id == reserve_id)
         )
 
     @override
     def get_all_reserve_definitions(self) -> ReserveDefinitionsMapping:
-        stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
+        stmt = select(_TABLE).where(_TABLE.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: ReserveDefinitionsMapping = {}
         for row in rows:
@@ -73,18 +78,18 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
     def get_all_reserve_definitions_for_area(self, area_id: str) -> Sequence[ReserveDefinition]:
         rows = self._get_all_reserve_definitions_for_area(area_id)
         if not rows:
-            validate_area_exists(self._db_session, self._study_id, area_id)
+            validate_area_exists(self._db_session, self._study_data_id, area_id)
         return [_convert_row_to_model(row) for row in rows]
 
     def _get_all_reserve_definitions_for_area(self, area_id: str) -> Sequence[Row[Any]]:
-        stmt = select(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.area_id == area_id))
+        stmt = select(_TABLE).where((_TABLE.c.study_data_id == self._study_data_id) & (_TABLE.c.area_id == area_id))
         return self._db_session.execute(stmt).fetchall()
 
     @override
     def get_reserve_definition(self, area_id: str, reserve_id: str) -> ReserveDefinition:
         row = self._db_session.execute(self._select_reserve(area_id, reserve_id)).fetchone()
         if not row:
-            validate_area_exists(self._db_session, self._study_id, area_id)
+            validate_area_exists(self._db_session, self._study_data_id, area_id)
             raise ReserveDefinitionNotFound(area_id, reserve_id)
         return _convert_row_to_model(row)
 
@@ -100,12 +105,13 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
         values = []
         for area_id, reserves in data.items():
             for reserve in reserves:
-                values.append(_convert_model_to_row(self._study_id, area_id, reserve))
+                values.append(_convert_model_to_row(self._study_data_id, area_id, reserve))
         try:
             upsert_multiple(session=self._db_session, table=_TABLE, values=values)
         except IntegrityError as e:
+            self._db_session.rollback()
             for area_id in data:
-                if not area_exists(self._db_session, self._study_id, area_id):
+                if not area_exists(self._db_session, self._study_data_id, area_id):
                     raise AreaNotFound(area_id) from e
             raise
         self._db_session.commit()
@@ -116,7 +122,7 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
             return
         result = self._db_session.execute(
             delete(_TABLE).where(
-                (_TABLE.c.study_id == self._study_id)
+                (_TABLE.c.study_data_id == self._study_data_id)
                 & (_TABLE.c.area_id == area_id)
                 & (_TABLE.c.reserve_id.in_(reserve_ids))
             )
@@ -127,18 +133,37 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
             if invalid_ids := set(reserve_ids) - existing:
                 raise ReserveDefinitionsNotFound({area_id: invalid_ids})  # type: ignore
 
+        reserve_ids_to_delete = set(reserve_ids)
+        self.delete_orphan_thermal_symmetries(area_id, reserve_ids_to_delete)
+        self.delete_orphan_st_storage_symmetries(area_id, reserve_ids_to_delete)
+        self.delete_orphan_hydro_symmetries(area_id, reserve_ids_to_delete)
         self._db_session.commit()
 
-        # We have to delete the reserve symmetries associated with the reserve as we do not have a foreign key constraint
-        symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
-        new_symmetries = remove_reserve_symmetries_by_cascade(symmetries_dict, set(reserve_ids))
-        if new_symmetries is not None:
-            self.get_impl().save_thermal_reserve_symmetries({area_id: new_symmetries})
+    def delete_orphan_hydro_symmetries(self, area_id: str, reserves: set[ReserveDefinitionId]) -> None:
+        symmetries = self.get_impl().get_hydro_reserve_symmetries(area_id)
+        if remove_reserves_from_symmetries(symmetries, reserves):
+            self.get_impl().save_hydro_reserve_symmetries({area_id: symmetries})
+
+    def delete_orphan_thermal_symmetries(
+        self, area_id: str, reserves: dict[str, set[ReserveDefinitionId]] | set[ReserveDefinitionId]
+    ) -> None:
+        thermal_symmetries_dict = self.get_impl().get_thermal_reserve_symmetries(area_id)
+        new_thermal_symmetries = remove_reserves_from_symmetries_dict(thermal_symmetries_dict, reserves)
+        if new_thermal_symmetries is not None:
+            self.get_impl().save_thermal_reserve_symmetries({area_id: new_thermal_symmetries})
+
+    def delete_orphan_st_storage_symmetries(
+        self, area_id: str, reserves: dict[str, set[ReserveDefinitionId]] | set[ReserveDefinitionId]
+    ) -> None:
+        st_storage_symmetries_dict = self.get_impl().get_st_storage_reserve_symmetries(area_id)
+        new_st_storage_symmetries = remove_reserves_from_symmetries_dict(st_storage_symmetries_dict, reserves)
+        if new_st_storage_symmetries is not None:
+            self.get_impl().save_st_storage_reserve_symmetries({area_id: new_st_storage_symmetries})
 
     @override
     def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
         stmt = select(_NEED_TABLE).where(
-            (_NEED_TABLE.c.study_id == self._study_id)
+            (_NEED_TABLE.c.study_data_id == self._study_data_id)
             & (_NEED_TABLE.c.area_id == area_id)
             & (_NEED_TABLE.c.reserve_id == reserve_id)
         )
@@ -149,7 +174,7 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
 
     @override
     def get_all_reserve_needs(self) -> ReserveNeedsMapping:
-        stmt = select(_NEED_TABLE).where(_NEED_TABLE.c.study_id == self._study_id)
+        stmt = select(_NEED_TABLE).where(_NEED_TABLE.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         result: ReserveNeedsMapping = {}
         for row in rows:
@@ -165,7 +190,7 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
             for reserve_id, matrix_id in per_reserve.items():
                 values.append(
                     {
-                        "study_id": self._study_id,
+                        "study_data_id": self._study_data_id,
                         "area_id": area_id,
                         "reserve_id": reserve_id,
                         "matrix_id": matrix_id,
@@ -174,8 +199,9 @@ class DatabaseReserveDefinitionDao(ReserveDefinitionDao, DatabaseDaoBase):
         try:
             upsert_multiple(session=self._db_session, table=_NEED_TABLE, values=values)
         except IntegrityError as e:
+            self._db_session.rollback()
             for area_id in mapping:
-                if not area_exists(self._db_session, self._study_id, area_id):
+                if not area_exists(self._db_session, self._study_data_id, area_id):
                     raise AreaNotFound(area_id) from e
             for area_id, per_reserve in mapping.items():
                 for reserve_id in per_reserve:

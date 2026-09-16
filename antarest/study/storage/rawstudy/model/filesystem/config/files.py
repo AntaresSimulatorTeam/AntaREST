@@ -35,7 +35,12 @@ from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_9_2, STUDY_VERSION_10_0
+from antarest.study.model import (
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_10_2,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
@@ -542,7 +547,7 @@ def _parse_reserves(root: Path, area: str) -> list[str]:
 
     # Reserve definitions exist only since v10.0
     version = _parse_version(root)
-    if version < STUDY_VERSION_10_0:
+    if version < STUDY_VERSION_10_2:
         return []
 
     relpath = Path(f"input/reserves/{area}/reserves.yml")

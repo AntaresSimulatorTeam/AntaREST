@@ -45,7 +45,7 @@ from antarest.output.filestudy.metadata import (
 )
 from antarest.output.filestudy.model import QueryFileType
 from antarest.output.filestudy.variables import extract_variables_list
-from antarest.output.model import OutputVariablesList
+from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -408,7 +408,6 @@ class V2OutputStorage(IOutputStorage):
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        transform_columns_headers: bool,
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         target_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
@@ -419,8 +418,6 @@ class V2OutputStorage(IOutputStorage):
             if batch.is_empty():
                 continue
             has_data = True
-            if not transform_columns_headers:
-                batch = batch.drop("timeId", strict=False)
             yield batch
 
         if not has_data:
@@ -446,4 +443,10 @@ class V2OutputStorage(IOutputStorage):
     @override
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def get_matrix_aggregation_result(
+        self, study_id: str, output_id: str, data_selection: StudyDownloadDTO
+    ) -> MatrixAggregationResultDTO:
         raise NotImplementedError()

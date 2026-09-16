@@ -101,7 +101,7 @@ class DatabaseUserResourcesDao(UserResourcesDao, DatabaseDaoBase):
                 is_last_part = k == len(parts) - 1
 
                 value = {
-                    "study_id": self._study_id,
+                    "study_data_id": self._study_data_id,
                     "id": resource_id,
                     "name": part,
                     "parent_id": parent_id,
@@ -141,7 +141,9 @@ class DatabaseUserResourcesDao(UserResourcesDao, DatabaseDaoBase):
                 relative_path_parts_length = len(resource.relative_to(resource_path).parts)
                 id_to_remove = data.ids[-1 - relative_path_parts_length]
 
-                stmt = delete(_TABLE).where((_TABLE.c.study_id == self._study_id) & (_TABLE.c.id == id_to_remove))
+                stmt = delete(_TABLE).where(
+                    (_TABLE.c.study_data_id == self._study_data_id) & (_TABLE.c.id == id_to_remove)
+                )
                 self._db_session.execute(stmt)
                 self._db_session.commit()
                 return
@@ -171,7 +173,7 @@ class DatabaseUserResourcesDao(UserResourcesDao, DatabaseDaoBase):
         return self.blob_service.get(data.blob_id)
 
     def _build_resources_tree(self) -> dict[PurePosixPath, UserResourcesDatabaseData]:
-        stmt = select(_TABLE).where(_TABLE.c.study_id == self._study_id)
+        stmt = select(_TABLE).where(_TABLE.c.study_data_id == self._study_data_id)
 
         rows = self._db_session.execute(stmt).fetchall()
 

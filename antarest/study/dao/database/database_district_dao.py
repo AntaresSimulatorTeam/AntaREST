@@ -55,7 +55,7 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
 
         If the district already exists, it will be overwritten.
         """
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         # Validate that all areas exist
@@ -64,7 +64,7 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
             raise AreaNotFound(*invalid_areas)
 
         values = {
-            "study_id": study_id,
+            "study_data_id": study_data_id,
             "district_id": district.id,
             "name": district.name,
             "output": district.output,
@@ -81,18 +81,18 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         """
         Remove a district from a study.
         """
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         result = session.execute(
             delete(DISTRICT_TABLE).where(
-                (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)
+                (DISTRICT_TABLE.c.study_data_id == study_data_id) & (DISTRICT_TABLE.c.district_id == district_id)
             )
         )
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect so the district did not exist
-            raise DistrictConfigNotFound(f"District '{district_id}' does not exist in study '{study_id}'")
+            raise DistrictConfigNotFound(f"District '{district_id}' does not exist in study '{self._study_id}'")
         session.commit()
 
     @override
@@ -100,10 +100,10 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         """
         Returns the list of districts in this study.
         """
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
-        stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_id == study_id)
+        stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_data_id == study_data_id)
         district_rows = session.execute(stmt).fetchall()
 
         return [_convert_db_row_to_district(row) for row in district_rows]
@@ -113,11 +113,11 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         """
         Get the district with the given id.
         """
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         stmt = select(DISTRICT_TABLE).where(
-            (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)
+            (DISTRICT_TABLE.c.study_data_id == study_data_id) & (DISTRICT_TABLE.c.district_id == district_id)
         )
         row = session.execute(stmt).fetchone()
         if not row:
@@ -130,10 +130,10 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         """
         Returns whether a district with the given id exists in the study.
         """
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
 
         stmt = select(DISTRICT_TABLE.c.district_id).where(
-            (DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == district_id)
+            (DISTRICT_TABLE.c.study_data_id == study_data_id) & (DISTRICT_TABLE.c.district_id == district_id)
         )
         return session.execute(stmt).fetchone() is not None

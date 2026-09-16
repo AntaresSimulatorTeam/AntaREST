@@ -47,6 +47,7 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_RUN_OF_RIVER_TABLE,
     HYDRO_WATER_VALUES_TABLE,
 )
+from antarest.study.dao.database.study_data_queries import belongs_to_study
 from tests.study.dao.utils import save_area
 
 
@@ -430,7 +431,7 @@ class TestCascadeDelete:
         # Verify hydro management is also deleted
         with db_session:
             stmt = select(HYDRO_MANAGEMENT_TABLE).where(
-                (HYDRO_MANAGEMENT_TABLE.c.study_id == dao.get_study_id())
+                (belongs_to_study(HYDRO_MANAGEMENT_TABLE, dao.get_study_id()))
                 & (HYDRO_MANAGEMENT_TABLE.c.area_id == "paris")
             )
             row = db_session.execute(stmt).fetchone()
@@ -447,7 +448,7 @@ class TestCascadeDelete:
         # Verify inflow structure is also deleted
         with db_session:
             stmt = select(HYDRO_INFLOW_STRUCTURE_TABLE).where(
-                (HYDRO_INFLOW_STRUCTURE_TABLE.c.study_id == dao.get_study_id())
+                (belongs_to_study(HYDRO_INFLOW_STRUCTURE_TABLE, dao.get_study_id()))
                 & (HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id == "paris")
             )
             row = db_session.execute(stmt).fetchone()
@@ -474,14 +475,14 @@ class TestCascadeDelete:
 
         with db_session:
             stmt = select(HYDRO_ALLOCATION_TABLE).where(
-                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
+                (belongs_to_study(HYDRO_ALLOCATION_TABLE, dao.get_study_id()))
                 & (HYDRO_ALLOCATION_TABLE.c.target_area_id == "london")
             )
             rows = db_session.execute(stmt).fetchall()
             assert len(rows) == 0
 
             stmt = select(HYDRO_ALLOCATION_TABLE).where(
-                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
+                (belongs_to_study(HYDRO_ALLOCATION_TABLE, dao.get_study_id()))
                 & (HYDRO_ALLOCATION_TABLE.c.source_area_id == "paris")
             )
             rows = db_session.execute(stmt).fetchall()
@@ -504,7 +505,7 @@ class TestCascadeDelete:
 
         with db_session:
             stmt = select(HYDRO_ALLOCATION_TABLE).where(
-                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
+                (belongs_to_study(HYDRO_ALLOCATION_TABLE, dao.get_study_id()))
                 & (HYDRO_ALLOCATION_TABLE.c.source_area_id == "paris")
             )
             rows = db_session.execute(stmt).fetchall()

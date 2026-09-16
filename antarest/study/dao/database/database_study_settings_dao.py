@@ -70,25 +70,25 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_general_config(self, config: GeneralConfig) -> None:
-        values = dict(study_id=self._study_id, **config.model_dump())
+        values = dict(study_data_id=self._study_data_id, **config.model_dump())
         session = self._db_session
         upsert_one(session, GENERAL_CONFIG_TABLE, values)
         session.commit()
 
     @override
     def get_general_config(self) -> GeneralConfig:
-        study_id = self._study_id
-        stmt = select(GENERAL_CONFIG_TABLE).where(GENERAL_CONFIG_TABLE.c.study_id == study_id)
+        study_data_id = self._study_data_id
+        stmt = select(GENERAL_CONFIG_TABLE).where(GENERAL_CONFIG_TABLE.c.study_data_id == study_data_id)
         row = self._db_session.execute(stmt).fetchone()
         if not row:
-            raise StudyNotFoundError(study_id)
+            raise StudyNotFoundError(self._study_id)
         data = get_row_representation_as_dict(row)
-        del data["study_id"]
+        del data["study_data_id"]
         return GeneralConfig(**data)
 
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
-        values = dict(study_id=self._study_id, **config.model_dump(exclude={"export_mps"}))
+        values = dict(study_data_id=self._study_data_id, **config.model_dump(exclude={"export_mps"}))
         # Handle `export_mps` differently as it can either be a string or a boolean but will be stored as String in DB.
         if isinstance(config.export_mps, bool):
             mps = str(config.export_mps)
@@ -102,14 +102,16 @@ class DatabaseStudySettingsDao(
 
     @override
     def get_optimization_preferences(self) -> OptimizationPreferences:
-        study_id = self._study_id
-        stmt = select(OPTIMIZATION_PREFERENCES_TABLE).where(OPTIMIZATION_PREFERENCES_TABLE.c.study_id == study_id)
+        study_data_id = self._study_data_id
+        stmt = select(OPTIMIZATION_PREFERENCES_TABLE).where(
+            OPTIMIZATION_PREFERENCES_TABLE.c.study_data_id == study_data_id
+        )
         row = self._db_session.execute(stmt).fetchone()
         if not row:
-            raise StudyNotFoundError(study_id)
+            raise StudyNotFoundError(self._study_id)
 
         data = get_row_representation_as_dict(row)
-        del data["study_id"]
+        del data["study_data_id"]
         # Handle `export_mps` differently as it is stored as String in DB, but it can either be a string or a boolean.
         mps: bool | str
         if row.export_mps.lower() == "true":
@@ -124,72 +126,76 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_advanced_parameters(self, parameters: AdvancedParameters) -> None:
-        values = dict(study_id=self._study_id, **parameters.model_dump())
+        values = dict(study_data_id=self._study_data_id, **parameters.model_dump())
         session = self._db_session
         upsert_one(session, ADVANCED_PARAMETERS_TABLE, values)
         session.commit()
 
     @override
     def get_advanced_parameters(self) -> AdvancedParameters:
-        study_id = self._study_id
-        stmt = select(ADVANCED_PARAMETERS_TABLE).where(ADVANCED_PARAMETERS_TABLE.c.study_id == study_id)
+        study_data_id = self._study_data_id
+        stmt = select(ADVANCED_PARAMETERS_TABLE).where(ADVANCED_PARAMETERS_TABLE.c.study_data_id == study_data_id)
         row = self._db_session.execute(stmt).fetchone()
         if not row:
-            raise StudyNotFoundError(study_id)
+            raise StudyNotFoundError(self._study_id)
 
         data = get_row_representation_as_dict(row)
-        del data["study_id"]
+        del data["study_data_id"]
         return AdvancedParameters(**data)
 
     @override
     def get_compatibility_parameters(self) -> CompatibilityParameters:
-        study_id = self._study_id
-        stmt = select(COMPATIBILITY_PARAMETERS_TABLE).where(COMPATIBILITY_PARAMETERS_TABLE.c.study_id == study_id)
+        study_data_id = self._study_data_id
+        stmt = select(COMPATIBILITY_PARAMETERS_TABLE).where(
+            COMPATIBILITY_PARAMETERS_TABLE.c.study_data_id == study_data_id
+        )
         row = self._db_session.execute(stmt).fetchone()
         if not row:
-            raise StudyNotFoundError(study_id)
+            raise StudyNotFoundError(self._study_id)
         return CompatibilityParameters(hydro_pmax=row.hydro_pmax)
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
-        values = dict(study_id=self._study_id, hydro_pmax=parameters.hydro_pmax)
+        values = dict(study_data_id=self._study_data_id, hydro_pmax=parameters.hydro_pmax)
         session = self._db_session
         upsert_one(session, COMPATIBILITY_PARAMETERS_TABLE, values)
         session.commit()
 
     @override
     def save_adequacy_patch_parameters(self, parameters: AdequacyPatchParameters) -> None:
-        values = dict(study_id=self._study_id, **parameters.model_dump())
+        values = dict(study_data_id=self._study_data_id, **parameters.model_dump())
         session = self._db_session
         upsert_one(session, ADEQUACY_PATCH_PARAMETERS_TABLE, values)
         session.commit()
 
     @override
     def get_adequacy_patch_parameters(self) -> AdequacyPatchParameters:
-        study_id = self._study_id
-        stmt = select(ADEQUACY_PATCH_PARAMETERS_TABLE).where(ADEQUACY_PATCH_PARAMETERS_TABLE.c.study_id == study_id)
+        study_data_id = self._study_data_id
+        stmt = select(ADEQUACY_PATCH_PARAMETERS_TABLE).where(
+            ADEQUACY_PATCH_PARAMETERS_TABLE.c.study_data_id == study_data_id
+        )
         row = self._db_session.execute(stmt).fetchone()
         if not row:
-            raise StudyNotFoundError(study_id)
+            raise StudyNotFoundError(self._study_id)
 
         data = get_row_representation_as_dict(row)
-        del data["study_id"]
+        del data["study_data_id"]
         return AdequacyPatchParameters(**data)
 
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
-        values = dict(study_id=self._study_id, thermal_number=config.thermal.number)
+        values = dict(study_data_id=self._study_data_id, thermal_number=config.thermal.number)
         session = self._db_session
         upsert_one(session, TIMESERIES_CONFIG_TABLE, values)
         session.commit()
 
     @override
     def get_timeseries_config(self) -> TimeSeriesConfiguration:
-        study_id = self._study_id
-        stmt = select(TIMESERIES_CONFIG_TABLE).where(TIMESERIES_CONFIG_TABLE.c.study_id == study_id)
+        study_data_id = self._study_data_id
+        stmt = select(TIMESERIES_CONFIG_TABLE).where(TIMESERIES_CONFIG_TABLE.c.study_data_id == study_data_id)
         row = self._db_session.execute(stmt).fetchone()
         if not row:
-            raise StudyNotFoundError(study_id)
+            raise StudyNotFoundError(self._study_id)
         return TimeSeriesConfiguration(thermal=TimeSeriesType(number=row.thermal_number))
 
     @override
@@ -204,18 +210,18 @@ class DatabaseStudySettingsDao(
                 sorted(out_of_range),
             )
         years = {y: v for y, v in playlist.years.items() if 1 <= y <= nb_years}
-        values = dict(study_id=self._study_id, years=to_json_string(years))
+        values = dict(study_data_id=self._study_data_id, years=to_json_string(years))
         session = self._db_session
         upsert_one(session, PLAYLIST_TABLE, values)
         session.commit()
 
     @override
     def get_playlist_config(self) -> Playlist:
-        study_id = self._study_id
-        stmt = select(PLAYLIST_TABLE).where(PLAYLIST_TABLE.c.study_id == study_id)
+        study_data_id = self._study_data_id
+        stmt = select(PLAYLIST_TABLE).where(PLAYLIST_TABLE.c.study_data_id == study_data_id)
         row = self._db_session.execute(stmt).fetchone()
         if not row:
-            raise StudyNotFoundError(study_id)
+            raise StudyNotFoundError(self._study_id)
         sparse = Playlist(years=from_json(row.years))
         nb_years = self.get_general_config().nb_years
         return _expand_playlist(sparse, nb_years)

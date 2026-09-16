@@ -19,7 +19,7 @@ from antarest.study.business.model.reserves_global_parameters_model import (
     ReservesGlobalParametersUpdate,
 )
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.model import STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.update_reserves_global_parameters import (
     UpdateReservesGlobalParameters,
 )
@@ -32,8 +32,8 @@ def _initialize_area(dao: StudyDao, area_id: str) -> None:
     dao.save_reserves_global_parameters({area_id: ReservesGlobalParameters()})
 
 
-def test_apply_command(command_context: CommandContext, dao_10_0: StudyDao) -> None:
-    dao = dao_10_0
+def test_apply_command(command_context: CommandContext, dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
     area_id = "paris"
     _initialize_area(dao, area_id)
 
@@ -44,7 +44,7 @@ def test_apply_command(command_context: CommandContext, dao_10_0: StudyDao) -> N
     command = UpdateReservesGlobalParameters(
         properties={area_id: update},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
     output = command.apply(dao)
     assert output.status
@@ -56,8 +56,8 @@ def test_apply_command(command_context: CommandContext, dao_10_0: StudyDao) -> N
     assert result.energy_activation_ratio_down == 1.0
 
 
-def test_apply_multiple_areas(command_context: CommandContext, dao_10_0: StudyDao) -> None:
-    dao = dao_10_0
+def test_apply_multiple_areas(command_context: CommandContext, dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
     _initialize_area(dao, "paris")
     _initialize_area(dao, "lyon")
 
@@ -67,7 +67,7 @@ def test_apply_multiple_areas(command_context: CommandContext, dao_10_0: StudyDa
             "lyon": ReservesGlobalParametersUpdate(energy_activation_ratio_down=0.3),
         },
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
     output = command.apply(dao)
     assert output.status
@@ -87,14 +87,14 @@ def test_area_not_found(command_context: CommandContext, dao_10_0: StudyDao) -> 
     command = UpdateReservesGlobalParameters(
         properties={"nonexistent": ReservesGlobalParametersUpdate(reference_activation_duration_up=5)},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
     output = command.apply(dao)
     assert not output.status
 
 
 def test_version_check(command_context: CommandContext) -> None:
-    with pytest.raises(ValidationError, match="study version before 10.0"):
+    with pytest.raises(ValidationError, match="study version before 10.2"):
         UpdateReservesGlobalParameters(
             properties={"paris": ReservesGlobalParametersUpdate(reference_activation_duration_up=5)},
             command_context=command_context,
@@ -110,7 +110,7 @@ def test_to_dto(command_context: CommandContext) -> None:
     command = UpdateReservesGlobalParameters(
         properties={"paris": update},
         command_context=command_context,
-        study_version=STUDY_VERSION_10_0,
+        study_version=STUDY_VERSION_10_2,
     )
     dto = command.to_dto()
     assert dto.action == "update_reserves_global_parameters"

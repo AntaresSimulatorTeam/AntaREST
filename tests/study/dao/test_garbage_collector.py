@@ -289,9 +289,9 @@ def test_garbage_collection(command_context: CommandContext, tmp_path: Path, db_
         assert task.deleted_count == 43
 
 
-def test_provider_includes_reserve_need_matrix(dao_10_0: StudyDao) -> None:
-    # TODO: adapt this test once v10.0 is fully supported
-    dao = dao_10_0
+def test_provider_includes_reserve_need_matrix(dao_10_2: StudyDao) -> None:
+    # TODO: adapt this test once v10.2 is fully supported
+    dao = dao_10_2
     matrix_service = dao.matrix_service
 
     save_area(dao, "paris")

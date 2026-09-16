@@ -42,6 +42,7 @@ from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_TABLE,
     BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
 )
+from antarest.study.dao.database.study_data_queries import belongs_to_study
 from antarest.study.model import STUDY_VERSION_8_8, Study
 from tests.study.dao.conftest import build_db_dao
 
@@ -726,7 +727,7 @@ def test_mixed_matrix_changes_in_one_call(dao: StudyDao) -> None:
 
 def _assert_tables_empty(db_session: Session, tables: list[Table], study_id: str) -> None:
     for table in tables:
-        rows = db_session.execute(select(table).where(table.c.study_id == study_id)).fetchall()
+        rows = db_session.execute(select(table).where(belongs_to_study(table, study_id))).fetchall()
         assert rows == [], f"{table.name}: expected no rows for study {study_id}, found {len(rows)}"
 
 
