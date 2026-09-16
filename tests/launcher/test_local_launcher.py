@@ -262,7 +262,7 @@ def test_select_best_binary() -> None:
         SolverVersion.parse("700"): Path("700"),
         SolverVersion.parse("800"): Path("800"),
         SolverVersion.parse("900"): Path("900"),
-        SolverVersion.parse("1000"): Path("1000"),
+        SolverVersion.parse("1020"): Path("1020"),
     }
     local_launcher = LocalLauncher(
         LocalConfig.model_validate({"id": "id", "name": "name", "type": "local", "binaries": binaries}),
@@ -275,7 +275,7 @@ def test_select_best_binary() -> None:
     assert local_launcher._select_best_binary(SolverVersion.parse("700")) == Path("700")
     assert local_launcher._select_best_binary(SolverVersion.parse("800")) == Path("800")
     assert local_launcher._select_best_binary(SolverVersion.parse("900")) == Path("900")
-    assert local_launcher._select_best_binary(SolverVersion.parse("1000")) == Path("1000")
+    assert local_launcher._select_best_binary(SolverVersion.parse("1020")) == Path("1020")
 
     # Missing solvers
     with pytest.raises(UnsupportedStudyVersion, match="Solver version 6 not found in the application config"):

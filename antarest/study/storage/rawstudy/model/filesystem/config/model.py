@@ -87,7 +87,7 @@ class AreaConfig(AntaresBaseModel, extra="forbid"):
     st_storages: list[STStorage] = []
     # Since v9.2, dictionary storage ID -> constraints
     st_storages_additional_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
-    # Since v10.0
+    # Since v10.2
     reserves: list[str] = []
 
 
