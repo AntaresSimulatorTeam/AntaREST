@@ -89,12 +89,7 @@ class DatabaseStudySettingsDao(
     @override
     def save_optimization_preferences(self, config: OptimizationPreferences) -> None:
         values = dict(study_data_id=self._study_data_id, **config.model_dump(exclude={"export_mps"}))
-        # Handle `export_mps` differently as it can either be a string or a boolean but will be stored as String in DB.
-        if isinstance(config.export_mps, bool):
-            mps = str(config.export_mps)
-        else:
-            mps = config.export_mps
-        values["export_mps"] = mps
+        values["export_mps"] = str(config.export_mps)
 
         session = self._db_session
         upsert_one(session, OPTIMIZATION_PREFERENCES_TABLE, values)
@@ -112,16 +107,6 @@ class DatabaseStudySettingsDao(
 
         data = get_row_representation_as_dict(row)
         del data["study_data_id"]
-        # Handle `export_mps` differently as it is stored as String in DB, but it can either be a string or a boolean.
-        mps: bool | str
-        if row.export_mps.lower() == "true":
-            mps = True
-        elif row.export_mps.lower() == "false":
-            mps = False
-        else:
-            mps = row.export_mps
-        data["export_mps"] = mps
-
         return OptimizationPreferences(**data)
 
     @override
