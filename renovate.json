@@ -4,7 +4,7 @@
     "config:recommended",
     ":semanticCommits"
   ],
-  "rebaseWhen": "behind-base-branch",
+  "rebaseWhen": "never",
   "dependencyDashboard": true,
   "labels": ["dependencies"],
   "baseBranches": ["dev"],
