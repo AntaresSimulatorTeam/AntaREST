@@ -188,12 +188,12 @@ def test_launcher_config_solver_versions(tmp_path: Path) -> None:
         "launcher": {
             "default": "local",
             "launchers": [
-                {"id": "local", "name": "local", "type": "local", "binaries": {"880": "", "9.2": "", "10.0": ""}},
+                {"id": "local", "name": "local", "type": "local", "binaries": {"880": "", "9.2": "", "10.2": ""}},
                 {
                     "id": "slurm",
                     "name": "slurm",
                     "type": "slurm",
-                    "antares_versions_on_remote_server": ["8", "880", "9.2", "10.0"],
+                    "antares_versions_on_remote_server": ["8", "880", "9.2", "10.2"],
                 },
             ],
         }
@@ -209,7 +209,7 @@ def test_launcher_config_solver_versions(tmp_path: Path) -> None:
     assert sorted(local_launcher.binaries) == [
         SolverVersion.parse("880"),
         SolverVersion.parse("9.2"),
-        SolverVersion.parse("10.0"),
+        SolverVersion.parse("10.2"),
     ]
 
     # Slurm launcher
@@ -218,7 +218,7 @@ def test_launcher_config_solver_versions(tmp_path: Path) -> None:
         SolverVersion.parse("8"),
         SolverVersion.parse("880"),
         SolverVersion.parse("9.2"),
-        SolverVersion.parse("10.0"),
+        SolverVersion.parse("10.2"),
     ]
 
 

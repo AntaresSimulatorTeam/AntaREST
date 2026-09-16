@@ -43,7 +43,6 @@ from antarest.study.model import (
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
-    STUDY_VERSION_10_0,
     STUDY_VERSION_10_2,
     Study,
 )
@@ -79,33 +78,6 @@ def db_dao_930_shared() -> DatabaseStudyDao:
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao_10_0(
-    request,
-    db_session: Session,
-    matrix_service: ISimpleMatrixService,
-    command_context: "CommandContext",
-    tmp_path: Path,
-    study_factory: StudyFactory,
-) -> StudyDao:
-    """A DAO parameterized over both backends (v10.0)."""
-    # v10.0 has no study template on disk — create a v9.3 study and force its version to 10.0.
-    if request.param == "db":
-        dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
-        study = db_session.get(Study, dao.get_study_id())
-        study.version = str(STUDY_VERSION_10_0)
-        db_session.commit()
-        # Settings were saved at v9.3; replay v10 init so v10-specific defaults stick.
-        prefs = dao.get_optimization_preferences()
-        initialize_optimization_preferences_against_version(prefs, STUDY_VERSION_10_0)
-        dao.save_optimization_preferences(prefs)
-        return dao
-    else:
-        dao = build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
-        dao.get_file_study().config.version = STUDY_VERSION_10_0
-        return dao
-
-
-@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_10_2(
     request,
     db_session: Session,
@@ -114,7 +86,7 @@ def dao_10_2(
     tmp_path: Path,
     study_factory: StudyFactory,
 ) -> StudyDao:
-    """A DAO parameterized over both backends (v10.0)."""
+    """A DAO parameterized over both backends (v10.2)."""
     # v10.2 has no study template on disk — create a v9.3 study and force its version to 10.2.
     if request.param == "db":
         dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
