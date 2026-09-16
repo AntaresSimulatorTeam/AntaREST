@@ -12,11 +12,13 @@
 
 import logging
 import os
+import threading
 import time
 from http import HTTPStatus
 from typing import Any
 
 import prometheus_client
+import psutil
 from fastapi import FastAPI
 from prometheus_client import (
     CollectorRegistry,
@@ -203,11 +205,40 @@ def _add_db_session_metrics(registry: CollectorRegistry, session_factory: sessio
             events_counter.labels(WORKER_ID, "select").inc()
 
 
-def _add_metrics_middleware(registry: CollectorRegistry, application: FastAPI) -> None:
+def _add_resources_metrics(registry: CollectorRegistry, application: FastAPI) -> None:
     """
-    Registers an HTTP middleware to report metrics about requests count and duration
+    Register HTTP to report metrics about resources usage.
     """
 
+    memory_gauge = Gauge(
+        "resources_memory_bytes",
+        "Memory usage",
+        ["worker_id"],
+        registry=registry,
+    )
+
+    cpu_usage_gauge = Gauge(
+        "resources_cpu_usage",
+        "CPU usage",
+        ["worker_id"],
+        registry=registry,
+    )
+
+    def updating_gauges_thread() -> None:
+        cpu_percent = psutil.cpu_percent(interval=1, percpu=False)
+        used_memory = psutil.virtual_memory().used
+        memory_gauge.labels(WORKER_ID).set(used_memory)
+        cpu_usage_gauge.labels(WORKER_ID).set(cpu_percent)
+        time.sleep(1)
+
+    job = threading.Thread(
+        target=updating_gauges_thread,
+        name="resources_metrics_updater",
+    )
+    job.start()
+
+
+def _add_metrics_middleware(registry: CollectorRegistry, application: FastAPI) -> None:
     request_counter = Counter(
         "http_requests",
         "HTTP requests count",
@@ -283,6 +314,7 @@ def add_metrics(application: FastAPI, config: Config) -> None:
     application.mount("/metrics", metrics_app)
 
     _add_metrics_middleware(prometheus_client.REGISTRY, application)
+    _add_resources_metrics(prometheus_client.REGISTRY, application)
 
 
 def _task_labels(task_type: TaskType, status: TaskStatus | None = None) -> list[str]:

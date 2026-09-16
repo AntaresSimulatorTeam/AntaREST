@@ -69,3 +69,7 @@ debug: False
 # You only need to configure celery-specific settings here if you want to override defaults.
 # celery:
 #   result_expires: 86400  # 24 hours
+
+metrics:
+  prometheus:
+    multiprocess: false
