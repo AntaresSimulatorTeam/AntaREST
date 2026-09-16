@@ -4,7 +4,7 @@
     "config:recommended",
     ":semanticCommits"
   ],
-  "rebaseWhen": "never",
+  "rebaseWhen": "behind-base-branch",
   "dependencyDashboard": true,
   "labels": ["dependencies"],
   "baseBranches": ["dev"],
@@ -14,9 +14,20 @@
   "minimumReleaseAge": "5 days",
   "schedule": ["after 9am and before 6pm every weekday"],
   "timezone": "Europe/Paris",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["after 9am and before 6pm on monday"],
+    "dependencyDashboardApproval": true
+  },
   "commitMessagePrefix": "chore(deps):",
   "commitMessageAction": "update",
   "packageRules": [
+    {
+      "description": "NumPy 2.5 requires Python 3.12; keep Python 3.11 support",
+      "matchManagers": ["pep621"],
+      "matchPackageNames": ["numpy"],
+      "allowedVersions": "<2.5"
+    },
     {
       "description": "Group all Python minor/patch updates in one PR",
       "matchManagers": ["pep621"],
