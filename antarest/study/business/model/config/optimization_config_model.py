@@ -58,7 +58,7 @@ class OptimizationPreferences(AntaresBaseModel):
     export_mps: bool | str = False
     unfeasible_problem_behavior: UnfeasibleProblemBehavior = UnfeasibleProblemBehavior.ERROR_VERBOSE
     simplex_optimization_range: SimplexOptimizationRange = SimplexOptimizationRange.WEEK
-    # Since v10.0
+    # Since v10.2
     include_reserves: bool | None = None
 
 

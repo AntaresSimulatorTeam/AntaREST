@@ -81,8 +81,8 @@ def test_apply_multiple_areas(command_context: CommandContext, dao_10_2: StudyDa
     assert lyon.reference_activation_duration_down == 1
 
 
-def test_area_not_found(command_context: CommandContext, dao_10_0: StudyDao) -> None:
-    dao = dao_10_0
+def test_area_not_found(command_context: CommandContext, dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
 
     command = UpdateReservesGlobalParameters(
         properties={"nonexistent": ReservesGlobalParametersUpdate(reference_activation_duration_up=5)},

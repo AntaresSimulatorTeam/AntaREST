@@ -65,7 +65,7 @@ class TestConfig:
                         "id": "test_local",
                         "name": "local",
                         "type": "local",
-                        "binaries": {"880": "", "9.2": "", "10.0": ""},
+                        "binaries": {"880": "", "9.2": "", "10.2": ""},
                         "enable_nb_cores_detection": False,
                         "nb_cores": {"min": 10, "default": 100, "max": 1000},
                         "time_limit": {"min": 11, "default": 101, "max": 1001},
@@ -76,7 +76,7 @@ class TestConfig:
                         "id": "slurm_id",
                         "name": "slurm_name",
                         "type": "slurm",
-                        "antares_versions_on_remote_server": ["8", "880", "9.2", "10.0"],
+                        "antares_versions_on_remote_server": ["8", "880", "9.2", "10.2"],
                         "local_workspace": "/tmp/slurm/local_workspace",
                         "username": "slurm_username",
                         "hostname": "slurm_hostname",
@@ -204,7 +204,7 @@ class TestConfig:
         assert local_launcher.binaries == {
             SolverVersion(major=8, minor=8, patch=0): Path("."),
             SolverVersion(major=9, minor=2, patch=0): Path("."),
-            SolverVersion(major=10, minor=0, patch=0): Path("."),
+            SolverVersion(major=10, minor=2, patch=0): Path("."),
         }
         assert local_launcher.enable_nb_cores_detection is False
         assert local_launcher.nb_cores.min == 10
@@ -226,7 +226,7 @@ class TestConfig:
             SolverVersion(major=8, minor=0, patch=0),
             SolverVersion(major=8, minor=8, patch=0),
             SolverVersion(major=9, minor=2, patch=0),
-            SolverVersion(major=10, minor=0, patch=0),
+            SolverVersion(major=10, minor=2, patch=0),
         ]
         assert slurm_launcher.local_workspace == Path("/tmp/slurm/local_workspace")
         assert slurm_launcher.username == "slurm_username"
