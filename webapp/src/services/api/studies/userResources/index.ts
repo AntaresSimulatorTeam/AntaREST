@@ -14,24 +14,28 @@
 
 import { format } from "@/utils/stringUtils";
 import client from "../../client";
-import type { Study } from "../types";
 import { userResourcesTreeSchema } from "./schemas";
 import type {
   CreateOrReplaceUserResourceParams,
   DeleteUserResourceParams,
   GetUserResourceContentParams,
+  GetUserResourceTreeParams,
+  UserResourcesTree,
 } from "./types";
 
 const BASE_URL = "/v1/studies/{studyId}/user-resources";
 
-export async function getUserResourcesTree({ studyId }: { studyId: Study["id"] }) {
+export async function getUserResourcesTree({
+  studyId,
+}: GetUserResourceTreeParams): Promise<UserResourcesTree> {
   const { data } = await client.get(format(BASE_URL, { studyId }));
   return userResourcesTreeSchema.parse(data);
 }
 
 export async function getUserResourceContent({ studyId, path }: GetUserResourceContentParams) {
-  const { data } = await client.get(format(`${BASE_URL}/content`, { studyId }), {
+  const { data } = await client.get<Blob>(format(`${BASE_URL}/content`, { studyId }), {
     params: { path },
+    responseType: "blob",
   });
   return data;
 }

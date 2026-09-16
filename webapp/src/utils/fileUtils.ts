@@ -25,3 +25,14 @@ export function downloadFile(fileData: BlobPart, fileName: string) {
   link.click();
   URL.revokeObjectURL(link.href);
 }
+
+/**
+ * Gets the file extension from a filename.
+ *
+ * @param filename - The name of the file.
+ * @returns The file extension in lowercase, or an empty string if none exists.
+ */
+export function getFileExtension(filename: string): string {
+  const parts = filename.split(".");
+  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : "";
+}

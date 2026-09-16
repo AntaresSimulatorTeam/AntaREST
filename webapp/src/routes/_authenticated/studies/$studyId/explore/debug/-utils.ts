@@ -164,20 +164,6 @@ export function isInOutputFolder(path: string): boolean {
   return path.startsWith("output/");
 }
 
-/**
- * Determines if .txt files content is empty
- *
- * @param text - Content of .txt to check
- * @returns boolean indicating if content is effectively empty
- */
-export function isEmptyContent(text: string | string[]): boolean {
-  if (Array.isArray(text)) {
-    return !text || text.every((line) => typeof line === "string" && !line.trim());
-  }
-
-  return typeof text === "string" && !text.trim();
-}
-
 export async function getTreeData(studyId: StudyMetadata["id"]) {
   const treeData = await getStudyData<TreeFolder>(studyId, "", -1);
   return R.omit(["Desktop", "study", "logs"], treeData);
@@ -263,6 +249,8 @@ function parseResponse(res: string | MatrixDataDTO): string {
  */
 export function parseContent(content: string, options: ContentParsingOptions): string {
   const { filePath, fileType } = options;
+
+  console.log(content);
 
   if (isInOutputFolder(filePath) && fileType === "matrix") {
     // Apply special handling for matrices in output folders

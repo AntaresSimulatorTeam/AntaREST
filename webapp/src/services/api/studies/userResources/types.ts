@@ -14,7 +14,11 @@
 
 import type z from "zod";
 import type { Study } from "../types";
-import type { userResourcesTreeSchema, userResourceTypeSchema } from "./schemas";
+import type {
+  userResourceFolderSchema,
+  userResourcesTreeSchema,
+  userResourceTypeSchema,
+} from "./schemas";
 
 type UserResourceType = z.infer<typeof userResourceTypeSchema>;
 
@@ -24,9 +28,15 @@ type UserResourceType = z.infer<typeof userResourceTypeSchema>;
 
 export type UserResourcesTree = z.infer<typeof userResourcesTreeSchema>;
 
+export type UserResourceFolder = z.infer<typeof userResourceFolderSchema>;
+
 ////////////////////////////////////////////////////////////////
 // Request Params
 ////////////////////////////////////////////////////////////////
+
+export interface GetUserResourceTreeParams {
+  studyId: Study["id"];
+}
 
 export interface GetUserResourceContentParams {
   studyId: Study["id"];

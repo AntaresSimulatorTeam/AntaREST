@@ -18,8 +18,8 @@ import EmptyView from "@/components/page/EmptyView";
 import RouterListItemButton from "@/components/router/RouterListItemButton";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import { deleteFile } from "@/services/api/studies/raw";
+import { deleteUserResource } from "@/services/api/studies/userResources";
+import { userResourceFolderSchema } from "@/services/api/studies/userResources/schemas";
 import { toError } from "@/utils/fnUtils";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -41,22 +41,19 @@ import { useParams } from "@tanstack/react-router";
 import { Fragment, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  canEditFile,
   type DataCompProps,
-  getFileIcon,
-  getFileType,
-  isFolder,
-  type TreeFolder,
+  getTreeItemIcon,
+  getTreeItemType,
+  isTreeItemFolder,
 } from "../../../-utils";
-import DebugContext from "../../DebugContext";
+import UserResourcesContext from "../../UserResourcesContext";
 import { Filename, Menubar } from "../styles";
 import CreateFolderDialog from "./CreateFolderDialog";
 
-function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProps) {
-  const params = useParams({ from: "/_authenticated/studies/$studyId/explore/debug/" });
-  const { reloadTree } = useContext(DebugContext);
+function Folder({ name, path: folderPath, data, studyId }: DataCompProps) {
+  const params = useParams({ from: "/_authenticated/studies/$studyId/explore/user-resources/" });
+  const { reloadTree } = useContext(UserResourcesContext);
   const { t } = useTranslation();
-  const study = useStudy();
   const replaceAction = useConfirm();
   const deleteAction = useConfirm<{ isFolder: boolean; filename: string }>();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -69,17 +66,21 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
     filename: string;
   }>(null);
 
-  const treeFolder = treeData as TreeFolder;
-  const fileList = Object.entries(treeFolder);
+  const folder = userResourceFolderSchema.parse(data);
+
+  const fileList = [
+    ...folder.directories.map((directory) => [directory.name, directory] as const),
+    ...folder.files.map((filename) => [filename, filename] as const),
+  ];
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleValidateUpload = (file: File) => {
-    const childWithSameName = treeFolder[file.name];
+    const childWithSameName = folder.files.find((filename) => filename === file.name);
     if (childWithSameName) {
-      if (isFolder(childWithSameName)) {
+      if (isTreeItemFolder(childWithSameName)) {
         throw new Error(t("study.fileExplorer.folder.upload.error.replaceFolder"));
       }
 
@@ -107,7 +108,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
       })
       .then((confirm) => {
         if (confirm) {
-          deleteFile({ studyId, path: menuData.filePath })
+          deleteUserResource({ studyId, path: menuData.filePath })
             .then(reloadTree)
             .catch((err) => {
               enqueueErrorSnackbar(t("global.error.delete"), toError(err));
@@ -126,26 +127,22 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
         subheader={
           <ListSubheader sx={(theme) => ({ backgroundImage: theme.vars.overlays[1] })}>
             <Menubar>
-              <Filename>{filename}</Filename>
-              {canEdit && (
-                <>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => setOpenCreateFolderDialog(true)}
-                    startIcon={<CreateNewFolderIcon />}
-                  >
-                    {t("study.fileExplorer.folder.new")}
-                  </Button>
-                  <UploadFileButton
-                    studyId={studyId}
-                    studyStorageMode="filesystem"
-                    path={(file) => `${filePath}/${file.name}`}
-                    onUploadSuccessful={reloadTree}
-                    validate={handleValidateUpload}
-                  />
-                </>
-              )}
+              <Filename>{name}</Filename>
+              <Button
+                variant="contained"
+                size="small"
+                onClick={() => setOpenCreateFolderDialog(true)}
+                startIcon={<CreateNewFolderIcon />}
+              >
+                {t("study.fileExplorer.folder.new")}
+              </Button>
+              <UploadFileButton
+                studyId={studyId}
+                studyStorageMode="database"
+                path={(file) => (folderPath ? `${folderPath}/${file.name}` : file.name)}
+                onUploadSuccessful={reloadTree}
+                validate={handleValidateUpload}
+              />
             </Menubar>
           </ListSubheader>
         }
@@ -160,36 +157,34 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
         dense
       >
         {fileList.length > 0 ? (
-          fileList.map(([filename, data], index, arr) => {
-            const path = `${filePath}/${filename}`;
-            const type = getFileType(data);
-            const Icon = getFileIcon(type);
+          fileList.map(([name, data], index, arr) => {
+            const path = folderPath ? `${folderPath}/${name}` : name;
+            const type = getTreeItemType(data);
+            const Icon = getTreeItemIcon(type);
             const isNotLast = index !== arr.length - 1;
 
             return (
-              <Fragment key={filename}>
+              <Fragment key={name}>
                 <ListItem
                   secondaryAction={
-                    canEditFile(study, path) && (
-                      <IconButton
-                        edge="end"
-                        onClick={(event) => {
-                          setMenuData({
-                            anchorEl: event.currentTarget,
-                            filePath: path,
-                            isFolder: type === "folder",
-                            filename,
-                          });
-                        }}
-                      >
-                        <MoreVertIcon />
-                      </IconButton>
-                    )
+                    <IconButton
+                      edge="end"
+                      onClick={(event) => {
+                        setMenuData({
+                          anchorEl: event.currentTarget,
+                          filePath: path,
+                          isFolder: type === "folder",
+                          filename: name,
+                        });
+                      }}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
                   }
                   disablePadding
                 >
                   <RouterListItemButton
-                    to="/studies/$studyId/explore/debug"
+                    to="/studies/$studyId/explore/user-resources"
                     params={params}
                     search={{ path }}
                   >
@@ -197,8 +192,8 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
                       <Icon />
                     </ListItemIcon>
                     <ListItemText
-                      title={filename}
-                      primary={filename}
+                      title={name}
+                      primary={name}
                       slotProps={{
                         primary: {
                           sx: { overflow: "hidden", textOverflow: "ellipsis" },
@@ -212,7 +207,10 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
             );
           })
         ) : (
-          <EmptyView title={t("study.fileExplorer.folder.empty")} icon={getFileIcon("folder")} />
+          <EmptyView
+            title={t("study.fileExplorer.folder.empty")}
+            icon={getTreeItemIcon("folder")}
+          />
         )}
       </List>
       {/* Items menu */}
@@ -230,7 +228,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
         open={openCreateFolderDialog}
         onCancel={() => setOpenCreateFolderDialog(false)}
         studyId={studyId}
-        parentPath={filePath}
+        currentPath={folderPath}
       />
       {/* Confirm file replacement */}
       <ConfirmationDialog

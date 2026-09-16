@@ -15,14 +15,14 @@
 import DownloadButton from "@/components/buttons/DownloadButton";
 import UploadFileButton from "@/components/buttons/UploadFileButton";
 import EmptyView from "@/components/page/EmptyView";
-import { getRawFile } from "@/services/api/studies/raw";
+import { getUserResourceContent } from "@/services/api/studies/userResources";
 import { downloadFile } from "@/utils/fileUtils";
 import BlockIcon from "@mui/icons-material/Block";
 import { useTranslation } from "react-i18next";
 import type { DataCompProps } from "../../-utils";
 import { Filename, Menubar } from "./styles";
 
-function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
+function Unsupported({ studyId, path, name }: DataCompProps) {
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -30,8 +30,8 @@ function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
   ////////////////////////////////////////////////////////////////
 
   const handleDownload = async () => {
-    const file = await getRawFile({ studyId, path: filePath });
-    downloadFile(file, file.name);
+    const blob = await getUserResourceContent({ studyId, path });
+    downloadFile(blob, name);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -41,10 +41,8 @@ function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
   return (
     <>
       <Menubar>
-        <Filename>{filename}</Filename>
-        {canEdit && (
-          <UploadFileButton studyId={studyId} studyStorageMode="filesystem" path={filePath} />
-        )}
+        <Filename>{name}</Filename>
+        <UploadFileButton studyId={studyId} studyStorageMode="database" path={path} />
         <DownloadButton onClick={handleDownload} />
       </Menubar>
       <EmptyView icon={BlockIcon} title={t("study.fileExplorer.file.unsupported")} />

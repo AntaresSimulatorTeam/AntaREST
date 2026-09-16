@@ -14,9 +14,10 @@
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { uploadFile } from "@/services/api/studies/raw";
-import type { StudyMetadata } from "@/types/types";
+import type { Study } from "@/services/api/studies/types";
+import { createOrReplaceUserResource } from "@/services/api/studies/userResources";
 import { toError } from "@/utils/fnUtils";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 import { Button } from "@mui/material";
 import { useSnackbar } from "notistack";
 import { useEffect, useState } from "react";
@@ -27,7 +28,8 @@ type ValidateResult = boolean | null | undefined;
 type Validate = (file: File) => ValidateResult | Promise<ValidateResult>;
 
 export interface UploadFileButtonProps {
-  studyId: StudyMetadata["id"];
+  studyId: Study["id"];
+  studyStorageMode: Study["storageMode"];
   path: string | ((file: File) => string);
   children?: React.ReactNode;
   accept?: Accept;
@@ -40,6 +42,7 @@ function UploadFileButton(props: UploadFileButtonProps) {
   const { t } = useTranslation();
   const {
     studyId,
+    studyStorageMode,
     path,
     accept,
     disabled,
@@ -89,12 +92,21 @@ function UploadFileButton(props: UploadFileButtonProps) {
 
       const filePath = typeof path === "function" ? path(fileToUpload) : path;
 
-      await uploadFile({
-        studyId,
-        path: filePath,
-        file: fileToUpload,
-        createMissing: true,
-      });
+      if (studyStorageMode === "filesystem") {
+        await uploadFile({
+          studyId,
+          path: filePath,
+          file: fileToUpload,
+          createMissing: true,
+        });
+      } else {
+        await createOrReplaceUserResource({
+          studyId,
+          path: filePath,
+          resourceType: "file",
+          file: fileToUpload,
+        });
+      }
 
       enqueueSnackbar(t("global.import.success"), { variant: "success" });
     } catch (err) {
@@ -118,7 +130,7 @@ function UploadFileButton(props: UploadFileButtonProps) {
       <Button
         variant="outlined"
         onClick={open}
-        startIcon={<FileDownloadIcon />}
+        startIcon={<FileUploadIcon />}
         loadingPosition="start"
         loading={isUploading}
         disabled={disabled}
