@@ -52,9 +52,9 @@ library:
         upper-bound: p_max
         variable-type: continuous
       ports:
-        - id: power_port
-          type: flow
         - id: hydrogen_port
+          type: flow
+        - id: power_port
           type: flow
       port-field-definitions:
         - port: hydrogen_port
