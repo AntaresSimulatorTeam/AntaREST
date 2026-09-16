@@ -53,8 +53,8 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
         # Library metadata
         stmt = select(GEMS_LIBRARY_METADATA_TABLE).where(GEMS_LIBRARY_METADATA_TABLE.c.study_data_id == study_data_id)
 
-        row = session.execute(stmt).fetchone()
-        if not row:
+        metadata_row = session.execute(stmt).fetchone()
+        if not metadata_row:
             # No library found, as it is not mandatory to have a library, we simply return None.
             return None
 
@@ -99,7 +99,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                 }
             )
 
-        ## Models metadata
+        ## Other data
         models_stmt = select(GEMS_MODELS_TABLE).where(GEMS_MODELS_TABLE.c.study_data_id == study_data_id)
         models = []
         for model_row in session.execute(models_stmt).fetchall():
@@ -123,9 +123,9 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
         # Full library
         return GemsLibrary.model_validate(
             {
-                "id": row.id,
-                "description": row.description,
-                "version": row.version,
+                "id": metadata_row.id,
+                "description": metadata_row.description,
+                "version": metadata_row.version,
                 "port_types": port_types,
                 "models": models,
             }

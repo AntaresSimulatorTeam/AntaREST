@@ -37,3 +37,7 @@ def test_nominal_cases(dao_10_2: StudyDao) -> None:
     # Ensures we cannot replace a library once it already exists in a study
     with pytest.raises(GemsLibraryAlreadyExists):
         dao.save_library(library)
+
+    # Fetch the saved library and check its content
+    saved_library = dao.get_library()
+    assert saved_library == library
