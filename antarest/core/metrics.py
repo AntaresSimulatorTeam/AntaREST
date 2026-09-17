@@ -211,23 +211,24 @@ def _add_resources_metrics(registry: CollectorRegistry, application: FastAPI) ->
     """
 
     memory_gauge = Gauge(
-        "resources_memory_bytes",
-        "Memory usage",
+        "memory_percent",
+        "Used memory percentage",
         ["worker_id"],
         registry=registry,
     )
 
     cpu_usage_gauge = Gauge(
-        "resources_cpu_usage",
-        "CPU usage",
+        "cpu_percent",
+        "CPU use percentage",
         ["worker_id"],
         registry=registry,
     )
 
     def updating_gauges_thread() -> None:
-        cpu_percent = psutil.cpu_percent(interval=1, percpu=False)
-        used_memory = psutil.virtual_memory().used
-        memory_gauge.labels(WORKER_ID).set(used_memory)
+        process = psutil.Process()
+        cpu_percent = process.cpu_percent(interval=1) #psutil.cpu_percent(interval=1, percpu=False)
+        memory_percent = process.memory_percent() #psutil.Process.memory_percent()
+        memory_gauge.labels(WORKER_ID).set(memory_percent)
         cpu_usage_gauge.labels(WORKER_ID).set(cpu_percent)
         time.sleep(1)
 
