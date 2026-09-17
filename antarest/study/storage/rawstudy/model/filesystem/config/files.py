@@ -545,7 +545,7 @@ def _parse_reserves(root: Path, area: str) -> list[str]:
     Parse the reserves INI file and return the list of reserve ids
     """
 
-    # Reserve definitions exist only since v10.0
+    # Reserve definitions exist only since v10.2
     version = _parse_version(root)
     if version < STUDY_VERSION_10_2:
         return []
