@@ -14,8 +14,7 @@ from pathlib import Path
 import numpy as np
 
 from antarest.core.config import InternalMatrixFormat
-from antarest.matrixstore.repository import MatrixContentRepository
-from antarest.matrixstore.service import SimpleMatrixService
+from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_scenario_hourly,
     default_scenario_hourly_ones,
@@ -28,12 +27,7 @@ DEFAULT_INTERNAL_FORMAT = InternalMatrixFormat.TSV
 
 class TestGeneratorMatrixConstants:
     def test_get_st_storage(self, tmp_path: Path) -> None:
-        matrix_content_repository = MatrixContentRepository(bucket_dir=tmp_path, format=DEFAULT_INTERNAL_FORMAT)
-        generator = GeneratorMatrixConstants(
-            matrix_service=SimpleMatrixService(
-                matrix_content_repository=matrix_content_repository,
-            )
-        )
+        generator = GeneratorMatrixConstants(matrix_service=InMemorySimpleMatrixService())
         generator.init_constant_matrices()
 
         ref1 = generator.get_st_storage_pmax_injection()
@@ -58,12 +52,7 @@ class TestGeneratorMatrixConstants:
         assert np.array_equal(matrix_dto5.to_numpy(), default_scenario_hourly())
 
     def test_get_binding_constraint_before_v87(self, tmp_path: Path) -> None:
-        matrix_content_repository = MatrixContentRepository(bucket_dir=tmp_path, format=DEFAULT_INTERNAL_FORMAT)
-        generator = GeneratorMatrixConstants(
-            matrix_service=SimpleMatrixService(
-                matrix_content_repository=matrix_content_repository,
-            )
-        )
+        generator = GeneratorMatrixConstants(matrix_service=InMemorySimpleMatrixService())
         generator.init_constant_matrices()
         series = matrix_constants.binding_constraint.series_before_v87
 

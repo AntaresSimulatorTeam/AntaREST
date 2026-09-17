@@ -17,7 +17,7 @@ This DAO provides database-backed storage for studies when storage_mode=DATABASE
 Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
-from typing import TYPE_CHECKING, Self
+from typing import Self
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -25,10 +25,13 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.blobstore.service import IBlobService
 from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase, StudyDaoContext
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
 from antarest.study.dao.database.database_binding_constraint_dao import DatabaseBindingConstraintDao
@@ -37,7 +40,11 @@ from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
+from antarest.study.dao.database.database_reserve_certification_dao import (
+    DatabaseReserveCertificationDao,
+)
 from antarest.study.dao.database.database_reserve_definition_dao import DatabaseReserveDefinitionDao
+from antarest.study.dao.database.database_reserve_symmetries_dao import DatabaseReserveSymmetriesDao
 from antarest.study.dao.database.database_reserves_global_parameters_dao import DatabaseReservesGlobalParametersDao
 from antarest.study.dao.database.database_scenario_builder_dao import DatabaseScenarioBuilderDao
 from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
@@ -46,18 +53,14 @@ from antarest.study.dao.database.database_thematic_trimming_dao import DatabaseT
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
+from antarest.study.dao.database.gems.database_library_dao import DatabaseGemsLibraryDao
 from antarest.study.dao.database.models.comments import COMMENTS_TABLE
-from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.dtos import StudyDataSynthesis
 from antarest.study.model import Study, StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import MatrixSupplier
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
-
-if TYPE_CHECKING:
-    from antarest.matrixstore.service import ISimpleMatrixService
-    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class DatabaseStudyDao(
@@ -79,6 +82,9 @@ class DatabaseStudyDao(
     DatabaseBindingConstraintDao,
     DatabaseReservesGlobalParametersDao,
     DatabaseReserveDefinitionDao,
+    DatabaseReserveCertificationDao,
+    DatabaseReserveSymmetriesDao,
+    DatabaseGemsLibraryDao,
 ):
     """
     Database implementation of StudyDao.
@@ -87,8 +93,10 @@ class DatabaseStudyDao(
     def __init__(
         self,
         study_id: str,
+        study_data_id: int,
         db_session: Session,
         matrix_service: ISimpleMatrixService,
+        blob_service: IBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
     ) -> None:
         """
@@ -98,36 +106,27 @@ class DatabaseStudyDao(
             study_id: The study ID for database queries
             db_session: SQLAlchemy session for database operations
             matrix_service: Matrix storage service
+            blob_service: Blobs storage service
             generator_matrix_constants: Predefined matrix constants generator
         """
-        DatabaseAreaDao.__init__(self, study_id, db_session)
-        DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
-        DatabaseDistrictDao.__init__(self, study_id, db_session)
-        DatabaseLinkDao.__init__(self, study_id, db_session)
-        DatabaseLayerDao.__init__(self, study_id, db_session)
-        DatabaseHydroDao.__init__(self, study_id, db_session)
-        DatabaseThermalDao.__init__(self, study_id, db_session)
-        DatabaseStudySettingsDao.__init__(self, study_id, db_session)
-        DatabaseRenewableDao.__init__(self, study_id, db_session)
-        DatabaseUserResourcesDao.__init__(self, study_id, db_session)
-        DatabaseStStorageDao.__init__(self, study_id, db_session)
-        DatabaseThematicTrimmingDao.__init__(self, study_id, db_session)
-        DatabaseScenarioBuilderDao.__init__(self, study_id, db_session)
-        DatabaseXpansionDao.__init__(self, study_id, db_session)
-        DatabaseBindingConstraintDao.__init__(self, study_id, db_session)
-        DatabaseReservesGlobalParametersDao.__init__(self, study_id, db_session)
-        DatabaseReserveDefinitionDao.__init__(self, study_id, db_session)
+        DatabaseDaoBase.__init__(self, StudyDaoContext(study_id, study_data_id, db_session))
         self._matrix_service = matrix_service
+        self._blob_service = blob_service
         self._generator_matrix_constants = generator_matrix_constants
 
     @override
     @property
-    def matrix_service(self) -> "ISimpleMatrixService":
+    def matrix_service(self) -> ISimpleMatrixService:
         return self._matrix_service
+
+    @property
+    @override
+    def blob_service(self) -> IBlobService:
+        return self._blob_service
 
     @override
     @property
-    def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
+    def generator_matrix_constants(self) -> GeneratorMatrixConstants:
         return self._generator_matrix_constants
 
     # Implementation of abstract methods required by StudyDao
@@ -205,13 +204,13 @@ class DatabaseStudyDao(
 
     @override
     def get_comments(self) -> str:
-        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_id == self._study_id)
+        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_data_id == self._study_data_id)
         comments = self._db_session.execute(stmt).scalar_one_or_none()
         return comments if comments is not None else ""
 
     @override
     def save_comments(self, comments: str) -> None:
-        upsert_one(self._db_session, COMMENTS_TABLE, {"study_id": self._study_id, "comments": comments})
+        upsert_one(self._db_session, COMMENTS_TABLE, {"study_data_id": self._study_data_id, "comments": comments})
         self._db_session.commit()
 
     @override

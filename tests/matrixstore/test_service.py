@@ -51,7 +51,7 @@ from antarest.matrixstore.model import (
 )
 from antarest.matrixstore.parsing import load_matrix
 from antarest.matrixstore.repository import compute_hash
-from antarest.matrixstore.service import MatrixService, check_dataframe_compliance
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService, check_dataframe_compliance
 from tests.conftest import PROJECT_DIR
 from tests.helpers import with_db_context
 
@@ -67,6 +67,11 @@ resource_path = (
     / "test-01-all.result.tsv"
 )
 AGGREGATION_DF = pl.read_csv(resource_path, separator="\t")
+
+
+@pytest.fixture(name="matrix_service")
+def matrix_service_fixture(matrix_service_on_disk: ISimpleMatrixService) -> ISimpleMatrixService:
+    return matrix_service_on_disk
 
 
 class TestMatrixService:

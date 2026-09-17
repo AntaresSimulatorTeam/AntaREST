@@ -17,7 +17,6 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
 )
@@ -48,6 +47,7 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_RUN_OF_RIVER_TABLE,
     HYDRO_WATER_VALUES_TABLE,
 )
+from antarest.study.dao.database.study_data_queries import belongs_to_study
 from tests.study.dao.utils import save_area
 
 
@@ -431,7 +431,7 @@ class TestCascadeDelete:
         # Verify hydro management is also deleted
         with db_session:
             stmt = select(HYDRO_MANAGEMENT_TABLE).where(
-                (HYDRO_MANAGEMENT_TABLE.c.study_id == dao.get_study_id())
+                (belongs_to_study(HYDRO_MANAGEMENT_TABLE, dao.get_study_id()))
                 & (HYDRO_MANAGEMENT_TABLE.c.area_id == "paris")
             )
             row = db_session.execute(stmt).fetchone()
@@ -448,7 +448,7 @@ class TestCascadeDelete:
         # Verify inflow structure is also deleted
         with db_session:
             stmt = select(HYDRO_INFLOW_STRUCTURE_TABLE).where(
-                (HYDRO_INFLOW_STRUCTURE_TABLE.c.study_id == dao.get_study_id())
+                (belongs_to_study(HYDRO_INFLOW_STRUCTURE_TABLE, dao.get_study_id()))
                 & (HYDRO_INFLOW_STRUCTURE_TABLE.c.area_id == "paris")
             )
             row = db_session.execute(stmt).fetchone()
@@ -475,14 +475,14 @@ class TestCascadeDelete:
 
         with db_session:
             stmt = select(HYDRO_ALLOCATION_TABLE).where(
-                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
+                (belongs_to_study(HYDRO_ALLOCATION_TABLE, dao.get_study_id()))
                 & (HYDRO_ALLOCATION_TABLE.c.target_area_id == "london")
             )
             rows = db_session.execute(stmt).fetchall()
             assert len(rows) == 0
 
             stmt = select(HYDRO_ALLOCATION_TABLE).where(
-                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
+                (belongs_to_study(HYDRO_ALLOCATION_TABLE, dao.get_study_id()))
                 & (HYDRO_ALLOCATION_TABLE.c.source_area_id == "paris")
             )
             rows = db_session.execute(stmt).fetchall()
@@ -505,7 +505,7 @@ class TestCascadeDelete:
 
         with db_session:
             stmt = select(HYDRO_ALLOCATION_TABLE).where(
-                (HYDRO_ALLOCATION_TABLE.c.study_id == dao.get_study_id())
+                (belongs_to_study(HYDRO_ALLOCATION_TABLE, dao.get_study_id()))
                 & (HYDRO_ALLOCATION_TABLE.c.source_area_id == "paris")
             )
             rows = db_session.execute(stmt).fetchall()
@@ -575,11 +575,10 @@ _ALL_HYDRO_MATRIX_TABLES = [
 class TestHydroMatrices:
     """Tests for hydro matrix CRUD operations."""
 
-    def test_save_and_get_all_hydro_matrices(
-        self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]
-    ) -> None:
+    def test_save_and_get_all_hydro_matrices(self, dao_93: StudyDao) -> None:
         """Test saving and retrieving all 13 hydro matrix types."""
-        dao, matrix_service = dao_and_matrix_service
+        dao = dao_93
+        matrix_service = dao.matrix_service
         save_area(dao, "Paris")
 
         def make(data: list[list[float]]) -> tuple[pl.DataFrame, str]:
@@ -723,10 +722,10 @@ class TestHydroMatrices:
                 rows = db_session.execute(select(table)).fetchall()
                 assert rows == [], f"Table {table.name} should be empty after cascade delete"
 
-    def test_errors_inside_save_matrices(self, dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService]) -> None:
-        dao, matrix_service = dao_and_matrix_service
+    def test_errors_inside_save_matrices(self, dao_93: StudyDao) -> None:
+        dao = dao_93
 
-        series_id = matrix_service.create(pl.DataFrame([[4]]))
+        series_id = dao.matrix_service.create(pl.DataFrame([[4]]))
 
         save_methods = [
             dao.save_hydro_credit_modulations,

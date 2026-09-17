@@ -17,7 +17,6 @@ Unit tests for ScenarioBuilderDao — run on both database and filesystem backen
 import pytest
 
 from antarest.core.exceptions import InvalidFieldForVersionError
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.scenario_builder_model import RANDOM, Ruleset, ScenarioType
@@ -70,11 +69,9 @@ def test_save_ruleset_with_area_scenarios(dao: StudyDao) -> None:
     assert result.wind == {"de": {"0": 3}}
 
 
-def test_save_ruleset_with_all_area_types(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_save_ruleset_with_all_area_types(dao_93: StudyDao) -> None:
     # hydro_final_levels + hydro_generation_power require v9.2+
-    dao, _ = dao_and_matrix_service
+    dao = dao_93
     _setup_areas(dao, "fr")
     ruleset = Ruleset(
         load={"fr": {"0": 1}},
@@ -135,9 +132,9 @@ def test_save_ruleset_with_renewable_scenarios(dao: StudyDao) -> None:
     assert result.renewable == {"de": {"wind_farm": {"0": 3}}}
 
 
-def test_save_ruleset_with_storage_inflows(dao_and_matrix_service) -> None:
+def test_save_ruleset_with_storage_inflows(dao_93: StudyDao) -> None:
     # storage_inflows requires v9.3+
-    dao, _ = dao_and_matrix_service
+    dao = dao_93
     _setup_areas(dao, "fr")
     dao.save_st_storages({"fr": [_make_storage(dao, id="battery_1", name="Battery 1")]})
     ruleset = Ruleset(storage_inflows={"fr": {"battery_1": {"0": 4, "1": 5}}})
@@ -147,9 +144,9 @@ def test_save_ruleset_with_storage_inflows(dao_and_matrix_service) -> None:
     assert result.storage_inflows == {"fr": {"battery_1": {"0": 4, "1": 5}}}
 
 
-def test_save_ruleset_with_storage_constraints(dao_and_matrix_service) -> None:
+def test_save_ruleset_with_storage_constraints(dao_93: StudyDao) -> None:
     # storage_constraints requires v9.3+
-    dao, _ = dao_and_matrix_service
+    dao = dao_93
     _setup_areas(dao, "fr")
     dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints(
@@ -196,11 +193,9 @@ def test_get_scenario_by_type_thermal(dao: StudyDao) -> None:
     assert result == {"fr": {"gas": {"0": 1}, "nuc": {"0": 2}}}
 
 
-def test_get_scenario_by_type_storage_constraints(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_get_scenario_by_type_storage_constraints(dao_93: StudyDao) -> None:
     # storage_constraints requires v9.3+
-    dao, _ = dao_and_matrix_service
+    dao = dao_93
     _setup_areas(dao, "fr")
     dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints({"fr": {"battery": [STStorageAdditionalConstraint(id="c1", name="C1")]}})
@@ -301,16 +296,14 @@ def test_get_scenario_by_type_includes_unsaved_binding_constraints(dao: StudyDao
     }
 
 
-def test_get_scenario_by_type_includes_unsaved_storage_constraints(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_get_scenario_by_type_includes_unsaved_storage_constraints(dao_93: StudyDao) -> None:
     """This test cover all possible gaps for sts additional constraints :
     * populated constraint with missing year
     * unsaved sibling constraint on same storage
     * unsaved sibling storage on same area
     * unsaved sibling area entirely
     """
-    dao, _ = dao_and_matrix_service
+    dao = dao_93
     _setup_areas(dao, "fr", "de")
     _set_nb_years(dao, 2)
     dao.save_st_storages(
@@ -395,11 +388,9 @@ def test_scenario_builder_link_deleted(dao: StudyDao) -> None:
     assert result == {}
 
 
-def test_scenario_builder_st_storage_deleted(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_scenario_builder_st_storage_deleted(dao_93: StudyDao) -> None:
     # storage_inflows requires v9.3+
-    dao, _ = dao_and_matrix_service
+    dao = dao_93
     _setup_areas(dao, "fr")
 
     dao.save_st_storages({"fr": [_make_storage(dao, id="battery_1", name="Battery 1")]})
@@ -414,11 +405,9 @@ def test_scenario_builder_st_storage_deleted(
     assert result == {"fr": {}}
 
 
-def test_scenario_builder_st_storage_constraint_deleted(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_scenario_builder_st_storage_constraint_deleted(dao_93: StudyDao) -> None:
     # storage_constraints requires v9.3+
-    dao, _ = dao_and_matrix_service
+    dao = dao_93
     _setup_areas(dao, "fr")
 
     dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
@@ -436,11 +425,9 @@ def test_scenario_builder_st_storage_constraint_deleted(
     assert result == {"fr": {"battery": {}}}
 
 
-def test_scenario_builder_st_storage_deleted_cascades_to_constraints(
-    dao_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_scenario_builder_st_storage_deleted_cascades_to_constraints(dao_93: StudyDao) -> None:
     # storage_inflows + storage_constraints require v9.3+
-    dao, _ = dao_and_matrix_service
+    dao = dao_93
     _setup_areas(dao, "fr")
 
     dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
@@ -496,11 +483,8 @@ def test_scenario_builder_area_deleted_cascades_load(dao: StudyDao) -> None:
     assert dao.get_scenario_by_type(ScenarioType.LOAD) == {}
 
 
-def test_get_scenario_by_type_raises_for_version_incompatible_type(
-    dao_860_and_matrix_service: tuple[StudyDao, ISimpleMatrixService],
-) -> None:
+def test_get_scenario_by_type_raises_for_version_incompatible_type(dao_86: StudyDao) -> None:
     """v8.6 has no binding-constraint scenarios → query must raise InvalidFieldForVersionError."""
-    dao, _ = dao_860_and_matrix_service
 
     with pytest.raises(InvalidFieldForVersionError):
-        dao.get_scenario_by_type(ScenarioType.BINDING_CONSTRAINTS)
+        dao_86.get_scenario_by_type(ScenarioType.BINDING_CONSTRAINTS)

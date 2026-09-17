@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from antares.study.version import StudyVersion
 from typing_extensions import override
@@ -20,10 +20,8 @@ from antarest.core.exceptions import CommandApplicationError
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.dao.memory.in_memory_study_dao import InMemoryStudyDao
 from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.variantstudy.model.command.common import CommandOutput
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 
@@ -64,42 +62,6 @@ class StudyInterface(ABC):
     @abstractmethod
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
         raise NotImplementedError()
-
-
-class InMemoryStudyInterface(StudyInterface):
-    """
-    In memory implementation of study interface.
-    Only used for test purposes, currently.
-    """
-
-    def __init__(self, id: str, version: StudyVersion, matrix_service: ISimpleMatrixService):
-        self._id = id
-        self._study_dao = InMemoryStudyDao(version, matrix_service, study_id=id)
-
-    @override
-    @property
-    def id(self) -> str:
-        return self._id
-
-    @override
-    @property
-    def version(self) -> StudyVersion:
-        return self._study_dao.get_version()
-
-    @override
-    def add_commands(self, commands: Sequence[ICommand], listener: ICommandListener | None = None) -> None:
-        for command in commands:
-            result: CommandOutput[Any] = command.apply(self._study_dao, listener)
-            if not result.status:
-                raise CommandApplicationError(result.message)
-
-    @override
-    def get_study_dao(self) -> ReadOnlyStudyDao:
-        return self._study_dao.read_only()
-
-    @override
-    def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
-        self._study_dao.update_antares_file(metadata)
 
 
 class FileStudyInterface(StudyInterface):

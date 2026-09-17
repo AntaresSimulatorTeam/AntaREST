@@ -22,7 +22,7 @@ import { useTranslation } from "react-i18next";
 import Fields from "./Fields";
 import LauncherMetrics from "./LauncherMetrics";
 import StudyList from "./StudyList";
-import { getDefaultValues, type FormValues } from "./utils";
+import { getDefaultValues, getScheduleRunAt, type FormValues } from "./utils";
 
 interface Props {
   open: boolean;
@@ -61,6 +61,8 @@ function LaunchStudiesDialog({ open, studyIds, onClose, onRun }: Props) {
       nbCores: values.nbCores,
     };
 
+    const runAt = getScheduleRunAt(values.schedule);
+
     return Promise.all(
       studyIds.map((id) =>
         launchStudy({
@@ -69,6 +71,7 @@ function LaunchStudiesDialog({ open, studyIds, onClose, onRun }: Props) {
           solverPresetsId: hasConfig ? values.configuration : undefined,
           launcherParams,
           version: values.version,
+          runAt,
         }),
       ),
     );

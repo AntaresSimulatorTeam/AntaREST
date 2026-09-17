@@ -21,6 +21,23 @@ import {
 import { queryClient } from "./queryClient";
 
 ////////////////////////////////////////////////////////////////
+// Externally Mutated Data
+////////////////////////////////////////////////////////////////
+
+/**
+ * Options for queries whose data can be mutated outside react-query's knowledge (legacy pages,
+ * table mode, debug view, variant commands, server-side cascades), so the cache can't be
+ * reliably invalidated.
+ *
+ * Data is treated as always stale: it refetches on every mount and window focus. Concurrent
+ * readers of the same key still share a single fetch.
+ *
+ * Drop this only once ALL writers of the query invalidate the cache.
+ */
+
+export const EXTERNALLY_MUTATED = { staleTime: 0 } as const;
+
+////////////////////////////////////////////////////////////////
 // Query List
 ////////////////////////////////////////////////////////////////
 

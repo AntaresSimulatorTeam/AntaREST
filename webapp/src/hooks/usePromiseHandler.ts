@@ -14,9 +14,9 @@
 
 import { type SnackbarKey, useSnackbar } from "notistack";
 import { useCallback } from "react";
+import { useLatest } from "react-use";
 import { toError } from "../utils/fnUtils";
 import useEnqueueErrorSnackbar from "./useEnqueueErrorSnackbar";
-import useUpdatedRef from "./useUpdatedRef";
 
 interface UsePromiseHandlerParams<T extends unknown[], U> {
   fn: (...args: T) => Promise<U>;
@@ -34,7 +34,7 @@ interface UsePromiseHandlerParams<T extends unknown[], U> {
 function usePromiseHandler<T extends unknown[], U>(params: UsePromiseHandlerParams<T, U>) {
   const { enqueueSnackbar, closeSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const paramsRef = useUpdatedRef(params);
+  const paramsRef = useLatest(params);
 
   const handlePromise = useCallback(
     async (...args: T) => {

@@ -12,22 +12,38 @@
  * This file is part of the Antares project.
  */
 
-import type { FavoriteDirectory, FavoriteStudy } from "@/services/api/favorites/types";
+import type {
+  FavoriteDirectory,
+  FavoriteExternalDirectory,
+  FavoriteStudy,
+} from "@/services/api/favorites/types";
 import type { FavoriteButtonProps } from "./FavoriteButton";
 import FavoriteDirectoryToggle from "./FavoriteDirectoryToggle";
+import FavoriteExternalDirectoryToggle from "./FavoriteExternalDirectoryToggle";
 import FavoriteStudyToggle from "./FavoriteStudyToggle";
 
 interface Props {
-  favorite: FavoriteStudy | FavoriteDirectory;
+  favorite: FavoriteStudy | FavoriteDirectory | FavoriteExternalDirectory;
   edge?: FavoriteButtonProps["edge"];
   tooltipPlacement?: FavoriteButtonProps["tooltipPlacement"];
 }
 
 function FavoriteToggle({ favorite, ...rest }: Props) {
-  if ("studyId" in favorite) {
-    return <FavoriteStudyToggle studyId={favorite.studyId} {...rest} />;
+  if ("directoryId" in favorite) {
+    return <FavoriteDirectoryToggle directoryId={favorite.directoryId} {...rest} />;
   }
-  return <FavoriteDirectoryToggle directoryId={favorite.directoryId} {...rest} />;
+
+  if ("workspace" in favorite) {
+    return (
+      <FavoriteExternalDirectoryToggle
+        workspace={favorite.workspace}
+        path={favorite.path}
+        {...rest}
+      />
+    );
+  }
+
+  return <FavoriteStudyToggle studyId={favorite.studyId} {...rest} />;
 }
 
 export default FavoriteToggle;

@@ -150,6 +150,12 @@ class ReserveDefinitionNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
+class ReserveDefinitionsNotFound(HTTPException):
+    def __init__(self, invalid_reserve_ids: dict[str, set[str]]):
+        msg = f"Reserve definitions not found: {invalid_reserve_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
 # ============================================================
 # Duplicate (409)
 # ============================================================
@@ -250,11 +256,6 @@ class CommandNotValid(HTTPException):
 class CommandApplicationError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.INTERNAL_SERVER_ERROR, message)
-
-
-class CommandUpdateAuthorizationError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.LOCKED, message)
 
 
 class StudyValidationError(HTTPException):
@@ -436,8 +437,8 @@ class OutputSubFolderNotFound(HTTPException):
     Exception raised when an output sub folders do not exist
     """
 
-    def __init__(self, output_id: str, mc_root: str) -> None:
-        message = f"The output '{output_id}' sub-folder '{mc_root}' does not exist"
+    def __init__(self, output_id: str, relpath: str) -> None:
+        message = f"The output '{output_id}' sub-folder '{relpath}' does not exist"
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
     @override
@@ -600,13 +601,14 @@ class LayerNotAllowedToBeDeleted(HTTPException):
         )
 
 
-class UserResourcesNotFound(HTTPException):
+class UserResourceNotFound(HTTPException):
     def __init__(self, path: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, f"User resources not found: '{path}'")
 
 
-class StudyOutputNotFoundError(Exception):
-    pass
+class UserResourceIsAFolder(HTTPException):
+    def __init__(self, path: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, f"User resources '{path}' is a folder. Please provide a file.")
 
 
 class AreaNotFound(HTTPException):
@@ -849,7 +851,7 @@ class RenewableClustersNotFound(HTTPException):
 
 class STStoragesNotFound(HTTPException):
     def __init__(self, invalid_sts_ids: dict[str, set[str]]) -> None:
-        msg = f"Short term storages not found: {invalid_sts_ids}"
+        msg = f"Short-term storages not found: {invalid_sts_ids}"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
@@ -857,3 +859,21 @@ class SevenZipNotSupportedOnThisMachine(Exception):
     def __init__(self) -> None:
         msg = "7z command line is not supported on this machine. Consider installing it if you want to unarchive these files."
         super().__init__(msg)
+
+
+class ReserveCertificationNotFound(HTTPException):
+    def __init__(self, area_id: str, object_type: str, object_id: str | None, reserve_ids: set[str]):
+        target = f"{object_type} '{object_id}'" if object_id else object_type
+        msg = f"Certifications for reserve(s) '{reserve_ids}' on {target} not found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class ReserveCertificationsNotFound(HTTPException):
+    def __init__(self, area_id: str, object_type: str):
+        msg = f"No {object_type} reserve certifications found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class GemsLibraryAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)

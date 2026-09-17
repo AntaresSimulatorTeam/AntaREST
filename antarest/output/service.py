@@ -12,7 +12,6 @@
 import itertools
 import logging
 import tempfile
-import uuid
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
@@ -36,9 +35,6 @@ from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.model import StudyPermissionType
 from antarest.core.serde.matrix_export import TableExportFormat
-from antarest.core.serde.parquet_writer import (
-    yield_dataframes_from_parquet,
-)
 from antarest.core.tasks.model import TaskListFilter, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
 from antarest.core.utils.archives import ArchiveFormat
@@ -49,20 +45,16 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.filestudy.aggregator_management import (
-    AREA_COL,
+from antarest.output.dbmodel import Output
+from antarest.output.filestudy.aggregation import (
     CLUSTER_ID_COL,
-    LINK_COL,
 )
-from antarest.output.filestudy.utils import (
+from antarest.output.filestudy.model import (
     MCYEAR_COL,
     MCAllAreasQueryFile,
     MCAllLinksQueryFile,
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
-    QueryFileType,
-    add_time_index_to_dataframe,
-    split_concatenated_columns_from_dataframe,
 )
 from antarest.output.model import (
     OutputVariablesInformation,
@@ -70,6 +62,8 @@ from antarest.output.model import (
     OutputVariablesViewResponse,
     OutputVariablesViewStatus,
 )
+from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
+from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
@@ -85,12 +79,8 @@ from antarest.output.variable_view.model import (
     get_query_file,
 )
 from antarest.study.model import (
-    MatrixAggregationResultDTO,
     MatrixFrequency,
-    MatrixIndex,
     StorageMode,
-    StudyDownloadDTO,
-    StudyDownloadType,
 )
 from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -229,6 +219,7 @@ class OutputService:
         matrix_service: ISimpleMatrixService,
         tmp_dir: Path,
         studies_repository: IStudyMetadataProvider,
+        output_repository: OutputRepository,
     ) -> None:
         self._storages = tuple(storages)
         self._task_service = task_service
@@ -236,6 +227,7 @@ class OutputService:
         self._matrix_service = matrix_service
         self._tmp_dir = tmp_dir
         self._studies_repository = studies_repository
+        self._output_repository = output_repository
 
         OutputVariablesMatrixUsageProvider(self._matrix_service)
 
@@ -315,6 +307,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.unarchive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
+                self._output_repository.delete(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -417,9 +410,10 @@ class OutputService:
 
         logger.info(f"output added to study {uuid}")
 
-        # Optimized path for studies stored on external devices, that will then be unarchived there.
         # TODO: as commented elsewhere, that workflow should be refactored to not span multiple files
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
+            # Always the case for studies stored on external devices, as they will be unarchived there for performance reasons.
+            # It is also possible for managed studies if the option `-z` was used to run the solver.
             self.unarchive_output(uuid, output_id)
 
         return output_id
@@ -496,82 +490,11 @@ class OutputService:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
 
-        # Fetches time_index
-        time_index = self.get_output_time_index(study_id, output_id, data.level)
+        storage = self._find_output_storage(study_id, output_id)
 
-        # Fetches the data
-        query_files: list[QueryFileType]
-        if data.type == StudyDownloadType.LINK:
-            query_files = [MCIndLinksQueryFile.VALUES]
-        else:
-            query_files = [MCIndAreasQueryFile.VALUES]
-            if data.include_clusters:
-                query_files.append(MCIndAreasQueryFile.DETAILS)
-                query_files.append(MCIndAreasQueryFile.DETAILS_RES)
-
-        file_paths = []
-        try:
-            # Launch all aggregation tasks
-            for query_file in query_files:
-                file_name = str(uuid.uuid4())
-                file_path = self._tmp_dir / file_name
-                task_id = self.start_aggregate_output_data(
-                    study_id,
-                    output_id,
-                    query_file,
-                    data.level,
-                    TableExportFormat.PARQUET,
-                    data.columns,
-                    data.filter,
-                    file_path,
-                    transform_columns_headers=False,
-                    mc_years=data.years,
-                )
-                # Wait for the aggregation to end
-                self._task_service.await_task(task_id)
-
-                # Aggregation can fail (for instance, when asking renewables values and no cluster exists)
-                # If so, we shouldn't raise to keep backward compatibility
-                task = self._task_service.status_task(task_id)
-                if task.status != TaskStatus.COMPLETED:
-                    file_path.unlink(missing_ok=True)
-                    continue
-
-                file_paths.append(file_path)
-
-            # Once they all ended, build the final response
-            intermediary_dict: dict[str, Any] = {}
-            # We're opening the parquet files chunk by chunk to avoid flooding memory
-            for dataframe in yield_dataframes_from_parquet(file_paths, []):
-                # Convert the dataframe in the right response
-                column_type_name = LINK_COL if data.type == StudyDownloadType.LINK else AREA_COL
-                for object_name, object_group in dataframe.groupby(column_type_name):
-                    assert isinstance(object_name, str)
-                    assert isinstance(object_group, pd.DataFrame)
-                    element_name = object_name
-                    if data.type == StudyDownloadType.LINK:
-                        element_name = "^".join(element_name.split(" - "))
-
-                    for year, year_group in object_group.groupby(MCYEAR_COL):
-                        year_group.drop(columns=[column_type_name, MCYEAR_COL], inplace=True)
-                        variables_list = list(split_concatenated_columns_from_dataframe(year_group))
-                        intermediary_dict.setdefault(element_name, {}).setdefault(str(year), []).extend(variables_list)
-
-            response = MatrixAggregationResultDTO.model_validate(
-                {
-                    "index": time_index,
-                    "data": [
-                        {"type": data.type, "name": name, "data": values} for name, values in intermediary_dict.items()
-                    ],
-                }
-            )
-
-            with open(tmp_file, "w", encoding="utf-8") as fh:
-                fh.write(response.model_dump_json())
-
-        finally:
-            for file_path in file_paths:
-                file_path.unlink(missing_ok=True)
+        result = storage.get_matrix_aggregation_result(study_id, output_id, data)
+        with open(tmp_file, "w", encoding="utf-8") as fh:
+            fh.write(result.model_dump_json())
 
         return FileResponse(tmp_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
 
@@ -588,6 +511,8 @@ class OutputService:
         self._studies_repository.assert_permission(uuid, StudyPermissionType.WRITE)
 
         self._find_output_storage(uuid, output_name).delete_output(uuid, output_name)
+
+        self._output_repository.delete(uuid, output_name)
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
@@ -637,6 +562,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
+                self._output_repository.delete(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
@@ -716,7 +642,6 @@ class OutputService:
         columns_names: Sequence[str],
         ids_to_consider: Sequence[str],
         file_path: Path,
-        transform_columns_headers: bool = True,
         mc_years: Sequence[int] | None = None,
         on_success: Callable[[], None] | None = None,
         on_failure: Callable[[Exception], None] | None = None,
@@ -733,7 +658,6 @@ class OutputService:
             columns_names: regexes (if details) or columns to be selected, if empty, all columns are selected
             ids_to_consider: list of areas or links ids to consider, if empty, all areas are selected
             file_path: path of the file where output aggregation data will be stored
-            transform_columns_headers: If False, keeps the output columns as written by the Simulator
             mc_years: list of monte-carlo years, if empty, all years are selected (only for mc-ind)
             on_success: callback to be called when the task is completed successfully
             on_failure: callback to be called when the task fails with an exception
@@ -755,7 +679,6 @@ class OutputService:
                     frequency,
                     ids_to_consider,
                     columns_names,
-                    transform_columns_headers,
                     mc_years,
                 )
                 export_df_chunks(self._tmp_dir, file_path, results, export_format)
@@ -835,7 +758,8 @@ class OutputService:
                 polars_df = polars_df.with_columns(pl.all().cast(pl.Float64))
             df = polars_df.to_pandas()
             if with_index:
-                add_time_index_to_dataframe(df, self.get_output_time_index(study_id, output_id, frequency))
+                matrix_index = self.get_output_time_index(study_id, output_id, frequency)
+                matrix_index.set_as_df_index(df)
             return df
 
         # Checks if the asked couple `variable name` / `output_identifier` exists for the output
@@ -912,7 +836,13 @@ class OutputService:
         return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, log_type)
 
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
-        return self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
+        output = self._output_repository.get(study_id, output_id)
+        if output and output.disk_space_bytes is not None:
+            return output.disk_space_bytes
+        else:
+            disk_usage = self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
+            self._output_repository.save(Output(study_id=study_id, output_id=output_id, disk_space_bytes=disk_usage))
+            return disk_usage
 
     def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
         """
@@ -931,6 +861,8 @@ class OutputService:
             current_storage.export_output(study_id, output_id, tmp_zip)
             target_storage.import_output(study_id, tmp_zip)
             current_storage.delete_output(study_id, output_id)
+
+        self._output_repository.delete(study_id, output_id)
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)

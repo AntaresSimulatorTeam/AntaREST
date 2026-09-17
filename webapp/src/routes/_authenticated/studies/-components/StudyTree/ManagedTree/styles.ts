@@ -84,13 +84,3 @@ export const textFieldStyles: SxProps<Theme> = {
     borderWidth: 2,
   },
 };
-
-export const nodeActionsContainerStyles: SxProps<Theme> = {
-  ".MuiTreeItem-content:not(:hover) &": {
-    display: "none",
-  },
-};
-
-export const actionButtonStyles: SxProps<Theme> = {
-  p: 0.25,
-};

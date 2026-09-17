@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from antarest.study.business.model.layer_model import LayerCreation
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
@@ -132,28 +133,17 @@ class TestReplaceLayerAreas:
         assert "1" not in area2_ui["layerY"]
         assert "1" not in str(area2_ui["ui"]["layers"])
 
-    def test_replace_layer_areas_layer_not_found(
-        self, empty_study_880: FileStudy, command_context: CommandContext
-    ) -> None:
+    def test_replace_layer_areas_layer_not_found(self, dao: StudyDao, command_context: CommandContext) -> None:
         """Test replacing areas in a non-existent layer returns an error."""
-        empty_study = empty_study_880
-        dao = build_dao_from_file_study(empty_study, command_context)
-
+        version = dao.get_version()
         # Create an area
-        create_area = CreateArea(
-            area_name="Area1",
-            command_context=command_context,
-            study_version=empty_study.config.version,
-        )
+        create_area = CreateArea(area_name="Area1", command_context=command_context, study_version=version)
         output = create_area.apply(study_dao=dao)
         assert output.status
 
         # Try to replace a non-existent layer
         update_command = ReplaceLayerAreas(
-            layer_id="999",
-            area_ids=["area1"],
-            command_context=command_context,
-            study_version=empty_study.config.version,
+            layer_id="999", area_ids=["area1"], command_context=command_context, study_version=version
         )
 
         output = update_command.apply(study_dao=dao)

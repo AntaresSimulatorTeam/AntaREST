@@ -20,12 +20,15 @@ import Fieldset from "@/components/Fieldset";
 import { validateNumber } from "@/utils/validation/number";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Box, IconButton, Tooltip } from "@mui/material";
+import { isBefore } from "date-fns";
 import { useEffect, useMemo } from "react";
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
+  getScheduleRunAt,
   isXpressAvailableForVersion,
   otherOptionsToArray,
+  SIMULATION_SCHEDULES,
   XPRESS_OPTION,
   type FormValues,
 } from "./utils";
@@ -59,6 +62,15 @@ function Fields() {
   const configurationOptions = useMemo(
     () => getConfigurationOptionsForVersion?.(version) || [],
     [getConfigurationOptionsForVersion, version],
+  );
+
+  const scheduleOptions = useMemo(
+    () =>
+      SIMULATION_SCHEDULES.map((value) => ({
+        value,
+        label: t(`launcher.field.schedule.${value}`),
+      })),
+    [t],
   );
 
   const configurationTooltip = useMemo(() => {
@@ -103,6 +115,17 @@ function Fields() {
       min: currentLauncher.nbCores.min,
       max: currentLauncher.nbCores.max,
     });
+  };
+
+  const validateSchedule = (value: FormValues["schedule"]) => {
+    const runAt = getScheduleRunAt(value);
+
+    // "Tonight" options can resolve to a past time (e.g. "Tonight 7 PM" selected at 8 PM)
+    if (runAt && isBefore(runAt, new Date())) {
+      return t("launcher.field.schedule.error.past");
+    }
+
+    return true;
   };
 
   const validateOtherOptions = (value: FormValues["otherOptions"]) => {
@@ -187,6 +210,14 @@ function Fields() {
           label={t("launcher.field.autoUnzip")}
           name="autoUnzip"
           control={control}
+          fullWidth
+        />
+        <SelectFE
+          label={t("launcher.field.schedule")}
+          name="schedule"
+          options={scheduleOptions}
+          control={control}
+          rules={{ validate: validateSchedule }}
           fullWidth
         />
         <SelectFE

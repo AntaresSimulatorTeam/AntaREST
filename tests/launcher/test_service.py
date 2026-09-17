@@ -11,17 +11,17 @@
 # This file is part of the Antares project.
 
 import json
-import math
 import os
 import time
-from datetime import timedelta
+import uuid
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
-from unittest.mock import Mock, call
+from unittest.mock import Mock, call, patch
 from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
+from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy import create_engine
 
@@ -35,32 +35,33 @@ from antarest.core.config import (
 )
 from antarest.core.exceptions import StudyNotFoundError
 from antarest.core.filetransfer.model import FileDownload, FileDownloadDTO, FileDownloadTaskDTO
-from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
-from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
+from antarest.core.utils.fastapi_sqlalchemy.middleware import db, init_db_singleton
 from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.adapters.local_launcher.local_launcher import SOLVER_VERSION_9_2
-from antarest.launcher.exceptions import NoValidOutputError
+from antarest.launcher.exceptions import InvalidScheduleTime, NoValidOutputError
 from antarest.launcher.model import (
     JobLog,
     JobLogType,
     JobResult,
     JobStatus,
-    LauncherLoadDTO,
     LauncherParametersDTO,
+    LauncherRuntimeConfig,
     LogType,
+    SlurmRuntimeConfig,
     SolverPresets,
     SolverPresetsDB,
 )
 from antarest.launcher.service import (
     EXECUTION_INFO_FILE,
     LAUNCHER_PARAM_NAME_SUFFIX,
+    MAX_SCHEDULE_HORIZON,
     IncompatibleSolverPresets,
     JobNotFound,
     LauncherService,
@@ -70,6 +71,7 @@ from antarest.login.model import Identity
 from antarest.login.utils import current_user_context, get_current_user
 from antarest.output.service import OutputService
 from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     OwnerInfo,
@@ -83,7 +85,7 @@ from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import with_admin_user
+from tests.helpers import create_raw_study, with_admin_user, with_db_context
 
 
 class TestLauncherService:
@@ -134,6 +136,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
             file_transfer_manager=Mock(),
@@ -165,6 +168,65 @@ class TestLauncherService:
             )
         )
 
+    def test_runtime_config(self, tmp_path: Path) -> None:
+        config = Config(
+            storage=StorageConfig(tmp_dir=tmp_path),
+            launcher=LauncherConfig(
+                default="slurm",
+                configs=[SlurmConfig(id="slurm", name="slurm"), LocalConfig(id="local", name="local")],
+            ),
+        )
+        runtime_repo = Mock()
+        runtime_repo.get.return_value = LauncherRuntimeConfig()
+        runtime_repo.save.side_effect = lambda launcher_id, config: config
+
+        factory_launcher_mock = Mock()
+        factory_launcher_mock.build_launcher.return_value = {"slurm": Mock(), "local": Mock()}
+
+        launcher_service = LauncherService(
+            config=config,
+            study_service=Mock(),
+            output_service=Mock(),
+            login_service=Mock(),
+            job_result_repository=Mock(),
+            solver_presets_repository=Mock(),
+            launcher_runtime_config_repository=runtime_repo,
+            factory_launcher=factory_launcher_mock,
+            event_bus=Mock(),
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+
+        # GET returns an empty config when nothing is stored
+        assert launcher_service.get_runtime_config("slurm") == LauncherRuntimeConfig()
+
+        # GET reflects the stored value
+        runtime_repo.get.return_value = LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=12))
+        stored = launcher_service.get_runtime_config("slurm")
+        assert stored.slurm is not None
+        assert stored.slurm.oversubscribe_core_threshold == 12
+
+        new_config = LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=8))
+
+        # PUT as admin persists and returns the config
+        with current_user_context(DEFAULT_ADMIN_USER):
+            result = launcher_service.update_runtime_config("slurm", new_config)
+        assert result.slurm is not None
+        assert result.slurm.oversubscribe_core_threshold == 8
+        runtime_repo.save.assert_called_once()
+
+        # PUT of a SLURM config on a non-SLURM launcher is rejected
+        with current_user_context(DEFAULT_ADMIN_USER):
+            with pytest.raises(HTTPException):
+                launcher_service.update_runtime_config("local", new_config)
+
+        # PUT by a non-admin user is forbidden
+        non_admin = JWTUser(id=2, impersonator=2, type="users", groups=[])
+        with pytest.raises(UserHasNotPermissionError):
+            with current_user_context(non_admin):
+                launcher_service.update_runtime_config("slurm", new_config)
+
     @with_admin_user
     def test_service_get_result_from_launcher(self) -> None:
         launcher_mock = Mock()
@@ -195,6 +257,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -235,6 +298,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -302,7 +366,7 @@ class TestLauncherService:
         config_repository = Mock()
 
         study_service = Mock(spec=StudyService)
-        study_service.repository = StudyMetadataRepository(cache_service=Mock(spec=ICache), session=db_session)
+        study_service.repository = StudyMetadataRepository(session=db_session)
         db_session.add_all(fake_execution_result)
         db_session.add_all(all_faked_execution_results)
         db_session.commit()
@@ -323,6 +387,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=config_repository,
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             factory_launcher=factory_launcher_mock,
             event_bus=Mock(),
             file_transfer_manager=Mock(),
@@ -713,6 +778,7 @@ class TestLauncherService:
         )
 
     @with_admin_user
+    @with_db_context
     def test_manage_output(self, tmp_path: Path) -> None:
         # TODO: finish adaptation
         study_service = Mock()
@@ -749,7 +815,12 @@ class TestLauncherService:
             output_data.writestr("some output", "0\n1")
         job_id = "job_id"
         zipped_job_id = "zipped_job_id"
-        study_id = "study_id"
+        study_id = str(uuid.uuid4())
+        # Adds the study linked to the job inside DB
+        study = create_raw_study(study_id, "study-test", tmp_path)
+        db.session.add(study)
+        db.session.commit()
+        # Defines the side effects
         launcher_service.job_result_repository.get.side_effect = [
             None,
             JobResult(id=job_id, study_id=study_id),
@@ -939,115 +1010,7 @@ class TestLauncherService:
         )
         assert actual_obj.to_dto().model_dump() == expected_obj.to_dto().model_dump()
 
-    @pytest.mark.parametrize(
-        ["running_jobs", "expected_result", "default_launcher"],
-        [
-            pytest.param(
-                [],
-                {
-                    "allocatedCpuRate": 0.0,
-                    "clusterLoadRate": 0.0,
-                    "nbQueuedJobs": 0,
-                    "launcherStatus": "SUCCESS",
-                },
-                "local",
-                id="local_no_running_job",
-            ),
-            pytest.param(
-                [
-                    Mock(
-                        spec=JobResult,
-                        launcher="local",
-                        launcher_params=None,
-                    ),
-                    Mock(
-                        spec=JobResult,
-                        launcher="local",
-                        launcher_params='{"nb_cpu": 7}',
-                    ),
-                ],
-                {
-                    "allocatedCpuRate": min(100.0, 800 / (os.cpu_count() or 1)),
-                    "clusterLoadRate": min(100.0, 800 / (os.cpu_count() or 1)),
-                    "nbQueuedJobs": 0,
-                    "launcherStatus": "SUCCESS",
-                },
-                "local",
-                id="local_with_running_jobs",
-            ),
-            pytest.param(
-                [],
-                {
-                    "allocatedCpuRate": 0.0,
-                    "clusterLoadRate": 0.0,
-                    "nbQueuedJobs": 0,
-                    "launcherStatus": "SUCCESS",
-                },
-                "slurm",
-                id="slurm launcher with no config",
-                marks=pytest.mark.xfail(
-                    reason="Configuration is not available for the slurm launcher",
-                    raises=ValidationError,
-                    strict=True,
-                ),
-            ),
-        ],
-    )
-    def test_get_load(
-        self,
-        tmp_path: Path,
-        running_jobs: list[JobResult],
-        expected_result: dict[str, Any],
-        default_launcher: str,
-    ) -> None:
-        study_service = Mock()
-        job_repository = Mock()
-
-        config = Config(
-            storage=StorageConfig(tmp_dir=tmp_path),
-            launcher=LauncherConfig(default=default_launcher, configs=[LocalConfig(id="local", name="name")]),
-        )
-
-        launcher_mock = Mock()
-        launcher_mock.get_load.return_value = LauncherLoadDTO.model_validate(expected_result)
-
-        launchers_dict = {}
-        if default_launcher == "local":
-            launchers_dict[default_launcher] = launcher_mock
-
-        factory_launcher_mock = Mock()
-        factory_launcher_mock.build_launcher.return_value = launchers_dict
-
-        launcher_service = LauncherService(
-            config=config,
-            study_service=study_service,
-            output_service=Mock(),
-            login_service=Mock(),
-            job_result_repository=job_repository,
-            solver_presets_repository=Mock(),
-            event_bus=Mock(),
-            factory_launcher=factory_launcher_mock,
-            file_transfer_manager=Mock(),
-            task_service=Mock(),
-            cache=Mock(),
-        )
-
-        job_repository.get_running.return_value = running_jobs
-
-        launcher_expected_result = LauncherLoadDTO.model_validate(expected_result)
-        actual_result = launcher_service.get_load(default_launcher)
-
-        assert launcher_expected_result.launcher_status == actual_result.launcher_status
-        assert launcher_expected_result.nb_queued_jobs == actual_result.nb_queued_jobs
-        assert math.isclose(
-            launcher_expected_result.cluster_load_rate,
-            actual_result.cluster_load_rate,
-        )
-        assert math.isclose(
-            launcher_expected_result.allocated_cpu_rate,
-            actual_result.allocated_cpu_rate,
-        )
-
+    @with_db_context
     def test_import_output_is_called_with_the_right_user(self, tmp_path: Path) -> None:
         # Create user
         jwt_user = JWTUser(id=2, impersonator=2, type="users")
@@ -1055,9 +1018,14 @@ class TestLauncherService:
         login_service = Mock()
         login_service.get_jwt.return_value = jwt_user
         # Put this user as the job owner
-        job_result = JobResult(study_id="study_id", owner_id=jwt_user.id)
+        study_id = str(uuid.uuid4())
+        job_result = JobResult(study_id=study_id, owner_id=jwt_user.id)
         job_repository = Mock()
         job_repository.get.return_value = job_result
+        # Adds the study linked to the job inside DB
+        study = create_raw_study(study_id, "study-test", tmp_path)
+        db.session.add(study)
+        db.session.commit()
 
         # fake import_output function that checks the current user
         def fake_import_output(
@@ -1085,6 +1053,7 @@ class TestLauncherService:
 
         # Ensures the output_service.import_output method was called with the right user
         launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
+        launcher_service.output_service.import_output.assert_called_once()
 
     @with_admin_user
     def test_run_study_with_solver_presets(self) -> None:
@@ -1132,6 +1101,7 @@ class TestLauncherService:
             login_service=Mock(),
             job_result_repository=repository,
             solver_presets_repository=solver_presets_repository,
+            launcher_runtime_config_repository=Mock(**{"get.return_value": LauncherRuntimeConfig()}),
             factory_launcher=factory_launcher_mock,
             event_bus=event_bus,
             file_transfer_manager=Mock(),
@@ -1184,3 +1154,88 @@ class TestLauncherService:
         params_with_other_options = LauncherParametersDTO(other_options="--some-option")
         with pytest.raises(IncompatibleSolverPresets):
             launcher_service.run_study("study_uuid", "local", params_with_other_options, "config-1", "8.0")
+
+    @with_db_context
+    @pytest.mark.parametrize("managed", [True, False])
+    def test_import_output_for_different_workspaces(self, tmp_path: Path, managed: bool) -> None:
+        ##########################
+        # Set Up
+        ##########################
+
+        # Create a study in DB
+        study_id = str(uuid.uuid4())
+        study = create_raw_study(study_id, "study-test", path="")
+        if managed:
+            study.workspace = DEFAULT_WORKSPACE_NAME
+        else:
+            study.workspace = "other-workspace"
+        db.session.add(study)
+        db.session.commit()
+
+        # Create a fake job
+        job_result = JobResult(study_id=study_id, owner_id=1)
+        job_repository = Mock()
+        job_repository.get.return_value = job_result
+
+        # Builds the service
+        output_service = Mock()
+        output_service.import_output.side_effect = None
+        launcher_service = LauncherService(
+            config=Mock(),
+            study_service=Mock(),
+            output_service=output_service,
+            login_service=Mock(),
+            job_result_repository=job_repository,
+            solver_presets_repository=Mock(),
+            event_bus=Mock(),
+            factory_launcher=Mock(),
+            file_transfer_manager=Mock(),
+            task_service=Mock(),
+            cache=Mock(),
+        )
+
+        ##########################
+        # Test
+        ##########################
+
+        # We patch the `archive_dir` function to always raise.
+        # This way we can check if it was called or not.
+        with patch("antarest.launcher.service.archive_dir", side_effect=ValueError("Output archiving failed for test")):
+            if managed:
+                # We should not raise here as we do not need to archive the output.
+                launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
+            else:
+                # Here we expect the method to raise as we need to archive the output in order to unarchive it later on the Windows VM.
+                with pytest.raises(ValueError, match="Output archiving failed for test"):
+                    launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
+
+
+class TestNormalizeScheduledAt:
+    NOW = datetime(2026, 7, 7, 12, 0, 0)
+
+    @pytest.fixture(autouse=True)
+    def _freeze_now(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr("antarest.launcher.service.current_time", lambda: self.NOW)
+
+    def test_naive_future_is_returned_unchanged(self) -> None:
+        run_at = self.NOW + timedelta(hours=6)
+        assert LauncherService._normalize_scheduled_at(run_at) == run_at
+
+    def test_aware_input_is_converted_to_naive_utc(self) -> None:
+        run_at = datetime(2026, 7, 7, 20, 0, 0, tzinfo=timezone(timedelta(hours=2)))
+        result = LauncherService._normalize_scheduled_at(run_at)
+        assert result == datetime(2026, 7, 7, 18, 0, 0)
+        assert result.tzinfo is None
+
+    def test_past_time_raises(self) -> None:
+        with pytest.raises(InvalidScheduleTime):
+            LauncherService._normalize_scheduled_at(self.NOW - timedelta(seconds=1))
+
+    def test_now_raises(self) -> None:
+        # Must be strictly in the future.
+        with pytest.raises(InvalidScheduleTime):
+            LauncherService._normalize_scheduled_at(self.NOW)
+
+    def test_beyond_horizon_raises(self) -> None:
+        with pytest.raises(InvalidScheduleTime):
+            LauncherService._normalize_scheduled_at(self.NOW + MAX_SCHEDULE_HORIZON + timedelta(seconds=1))

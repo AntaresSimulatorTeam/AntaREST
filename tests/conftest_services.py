@@ -27,7 +27,7 @@ from typing_extensions import override
 
 from antarest.blobstore.repository import BlobContentRepository
 from antarest.blobstore.service import BlobService
-from antarest.core.config import Config, InternalMatrixFormat, StorageConfig, WorkspaceConfig
+from antarest.core.config import Config, StorageConfig, WorkspaceConfig
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import IEventBus
 from antarest.core.tasks.model import CustomTaskEventMessages, TaskDTO, TaskListFilter, TaskResult, TaskStatus, TaskType
@@ -36,13 +36,11 @@ from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.utils import current_time
 from antarest.eventbus.business.local_eventbus import LocalEventBus
 from antarest.eventbus.service import EventBusService
-from antarest.matrixstore.repository import MatrixContentRepository
-from antarest.matrixstore.service import ISimpleMatrixService, MatrixService, SimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.directory_service import DirectoryService
 from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.storage_service import StudyStorageService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -55,10 +53,8 @@ __all__ = (
     "command_context_fixture",
     "bucket_dir_fixture",
     "blob_dir_fixture",
-    "simple_matrix_service_fixture",
     "simple_blob_service_fixture",
     "generator_matrix_constants_fixture",
-    "uri_resolver_service_fixture",
     "core_cache_fixture",
     "study_factory_fixture",
     "core_config_fixture",
@@ -164,21 +160,6 @@ def bucket_dir_fixture(tmp_path_factory: Path) -> Path:
     return t.cast(Path, tmp_path_factory.mktemp("matrix_store"))
 
 
-@pytest.fixture(name="simple_matrix_service", scope="session")
-def simple_matrix_service_fixture(bucket_dir: Path) -> SimpleMatrixService:
-    """
-    Fixture that creates a SimpleMatrixService instance using the session-level temporary directory.
-
-    Args:
-        bucket_dir: The session-level temporary directory for storing matrices.
-
-    Returns:
-        An instance of the SimpleMatrixService class representing the matrix service.
-    """
-    matrix_content_repository = MatrixContentRepository(bucket_dir=bucket_dir, format=InternalMatrixFormat.TSV)
-    return SimpleMatrixService(matrix_content_repository=matrix_content_repository)
-
-
 @pytest.fixture(name="blob_dir", scope="session")
 def blob_dir_fixture(tmp_path_factory: t.Any) -> Path:
     """Same as bucket_dir_fixture for the blob store"""
@@ -193,37 +174,19 @@ def simple_blob_service_fixture(blob_dir: Path) -> BlobService:
 
 
 @pytest.fixture(name="generator_matrix_constants", scope="session")
-def generator_matrix_constants_fixture(
-    simple_matrix_service: SimpleMatrixService,
-) -> GeneratorMatrixConstants:
+def generator_matrix_constants_fixture(matrix_service: ISimpleMatrixService) -> GeneratorMatrixConstants:
     """
     Fixture that creates a GeneratorMatrixConstants instance with a session-level scope.
 
     Args:
-        simple_matrix_service: An instance of the SimpleMatrixService class.
+        matrix_service: : An instance of the InMemorySimpleMatrixService class.
 
     Returns:
         An instance of the GeneratorMatrixConstants class representing the matrix constants generator.
     """
-    out_generator_matrix_constants = GeneratorMatrixConstants(simple_matrix_service)
+    out_generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
     out_generator_matrix_constants.init_constant_matrices()
     return out_generator_matrix_constants
-
-
-@pytest.fixture(name="uri_resolver_service", scope="session")
-def uri_resolver_service_fixture(
-    simple_matrix_service: SimpleMatrixService,
-) -> MatrixStorageContext:
-    """
-    Fixture that creates an UriResolverService instance with a session-level scope.
-
-    Args:
-        simple_matrix_service: An instance of the SimpleMatrixService class.
-
-    Returns:
-        An instance of the MatrixStorageContext class representing the URI resolver service.
-    """
-    return MatrixStorageContext(matrix_service=simple_matrix_service, is_managed=True)
 
 
 @pytest.fixture(name="core_cache", scope="session")
@@ -241,26 +204,18 @@ def core_cache_fixture() -> ICache:
 
 
 @pytest.fixture(name="study_factory", scope="session")
-def study_factory_fixture(
-    simple_matrix_service: SimpleMatrixService,
-    uri_resolver_service: MatrixStorageContext,
-    core_cache: ICache,
-) -> StudyFactory:
+def study_factory_fixture(matrix_service: ISimpleMatrixService, core_cache: ICache) -> StudyFactory:
     """
     Fixture that creates a StudyFactory instance with a session-level scope.
 
     Args:
-        simple_matrix_service: An instance of the SimpleMatrixService class.
-        uri_resolver_service: An instance of the MatrixStorageContext class.
+        matrix_service: An instance of the InMemorySimpleMatrixService class.
         core_cache: An instance of the ICache class.
 
     Returns:
         An instance of the StudyFactory class representing the study factory used for all tests.
     """
-    return StudyFactory(
-        matrix_service=simple_matrix_service,
-        cache=core_cache,
-    )
+    return StudyFactory(matrix_service=matrix_service, cache=core_cache)
 
 
 @pytest.fixture(name="core_config")
@@ -326,7 +281,7 @@ def event_bus_fixture() -> IEventBus:
 @pytest.fixture(name="command_factory", scope="session")
 def command_factory_fixture(
     generator_matrix_constants: GeneratorMatrixConstants,
-    simple_matrix_service: SimpleMatrixService,
+    matrix_service: ISimpleMatrixService,
     simple_blob_service: BlobService,
 ) -> CommandFactory:
     """
@@ -334,7 +289,7 @@ def command_factory_fixture(
 
     Args:
         generator_matrix_constants: An instance of the GeneratorMatrixConstants class.
-        simple_matrix_service: An instance of the SimpleMatrixService class.
+        matrix_service: An instance of the InMemorySimpleMatrixService class.
         simple_blob_service: An instance of the BlobService class.
 
     Returns:
@@ -342,7 +297,7 @@ def command_factory_fixture(
     """
     return CommandFactory(
         generator_matrix_constants=generator_matrix_constants,
-        matrix_service=simple_matrix_service,
+        matrix_service=matrix_service,
         blob_service=simple_blob_service,
     )
 
@@ -350,20 +305,18 @@ def command_factory_fixture(
 # noinspection PyUnusedLocal
 @pytest.fixture(name="variant_study_repository")
 def variant_study_repository_fixture(
-    core_cache: ICache,
     db_middleware: DBSessionMiddleware,  # required
 ) -> VariantStudyRepository:
     """
     Fixture that creates a VariantStudyRepository instance.
 
     Args:
-        core_cache: An instance of the ICache class.
         db_middleware: An instance of the DBSessionMiddleware class.
 
     Returns:
-        An instance of the VariantStudyRepository class with the provided cache service.
+        An instance of the VariantStudyRepository class.
     """
-    return VariantStudyRepository(cache_service=core_cache)
+    return VariantStudyRepository()
 
 
 @pytest.fixture(name="raw_study_service")
@@ -389,7 +342,7 @@ def raw_study_service_fixture(
         study_factory=study_factory,
         cache=core_cache,
         command_context=command_factory.command_context,
-        repository=StudyMetadataRepository(cache_service=core_cache),
+        repository=StudyMetadataRepository(),
     )
 
 
@@ -403,7 +356,6 @@ def variant_study_service_fixture(
     variant_study_repository: VariantStudyRepository,
     event_bus: IEventBus,
     core_config: Config,
-    simple_matrix_service: ISimpleMatrixService,
 ) -> VariantStudyService:
     """
     Fixture that creates a VariantStudyService instance.
@@ -430,7 +382,7 @@ def variant_study_service_fixture(
         repository=variant_study_repository,
         event_bus=event_bus,
         config=core_config,
-        matrix_service=simple_matrix_service,
+        matrix_service=command_factory.command_context.matrix_service,
     )
 
 

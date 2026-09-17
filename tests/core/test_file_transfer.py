@@ -28,6 +28,7 @@ from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import MustBeAuthenticatedError
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.fastapi_sqlalchemy.middleware import get_session_factory
+from antarest.core.utils.utils import current_time
 from antarest.login.utils import current_user_context
 from tests.helpers import with_admin_user
 from tests.test_helpers.db import create_db_event_counter
@@ -85,7 +86,7 @@ def test_lifecycle(tmp_path: Path) -> None:
         # expiration
         downloads = ftm.list_downloads()
         assert len(downloads) == 1
-        filedownload.expiration_date = datetime.datetime.now(datetime.UTC) - datetime.timedelta(seconds=5)
+        filedownload.expiration_date = current_time() - datetime.timedelta(seconds=5)
         ftm.repository.save(filedownload)
         downloads = ftm.list_downloads()
         assert len(downloads) == 0

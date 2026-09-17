@@ -39,13 +39,14 @@ from antarest.core.utils.utils import StopWatch
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.lfs.lfs import ILargeFileStorage
-from antarest.output.filestudy.file_output_utils import (
+from antarest.output.filestudy.logs import find_simulation_log
+from antarest.output.filestudy.metadata import (
     extract_output_details,
-    extract_variables_list,
-    find_simulation_log,
 )
-from antarest.output.filestudy.utils import QueryFileType
-from antarest.output.model import OutputVariablesList
+from antarest.output.filestudy.model import QueryFileType
+from antarest.output.filestudy.variables import extract_variables_list
+from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
+from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
@@ -62,7 +63,7 @@ from antarest.output.storage.v2.variables_storage import (
     read_output_from_parquet,
 )
 from antarest.study.business.model.config.general_model import Mode
-from antarest.study.model import MatrixFrequency, MatrixIndex
+from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 from antarest.study.storage.utils import (
@@ -407,7 +408,6 @@ class V2OutputStorage(IOutputStorage):
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        transform_columns_headers: bool,
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
         target_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
@@ -418,8 +418,6 @@ class V2OutputStorage(IOutputStorage):
             if batch.is_empty():
                 continue
             has_data = True
-            if not transform_columns_headers:
-                batch = batch.drop("timeId", strict=False)
             yield batch
 
         if not has_data:
@@ -445,4 +443,10 @@ class V2OutputStorage(IOutputStorage):
     @override
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def get_matrix_aggregation_result(
+        self, study_id: str, output_id: str, data_selection: StudyDownloadDTO
+    ) -> MatrixAggregationResultDTO:
         raise NotImplementedError()

@@ -68,8 +68,8 @@ def build_study_service(
     """
 
     study_factory = StudyFactory(matrix_service=matrix_service, cache=cache)
-    metadata_repository = metadata_repository or StudyMetadataRepository(cache)
-    variant_repository = variant_repository or VariantStudyRepository(cache)
+    metadata_repository = metadata_repository or StudyMetadataRepository()
+    variant_repository = variant_repository or VariantStudyRepository()
     job_result_repository = job_result_repository or JobResultRepository()
 
     if not generator_matrix_constants:

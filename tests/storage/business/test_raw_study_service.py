@@ -65,7 +65,7 @@ def test_create_file_study_dao(tmp_path: Path, project_path: Path) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
     config = build_config(tmp_path)
-    raw_study_service = RawStudyService(config, Mock(), study_factory, Mock(), StudyMetadataRepository(Mock()))
+    raw_study_service = RawStudyService(config, Mock(), study_factory, Mock(), StudyMetadataRepository())
 
     # Add the `RawStudy` in the database
     raw_study = create_raw_study(
@@ -113,7 +113,7 @@ def test_create_study_versions(tmp_path: str, project_path: Path) -> None:
     study_factory = Mock()
     study_factory.create_from_fs.return_value = FileStudy(Mock(), study)
     config = build_config(path_studies)
-    raw_study_service = RawStudyService(config, Mock(), study_factory, Mock(), StudyMetadataRepository(Mock()))
+    raw_study_service = RawStudyService(config, Mock(), study_factory, Mock(), StudyMetadataRepository())
 
     def create_study(version: str) -> RawStudy:
         raw_study = create_raw_study(

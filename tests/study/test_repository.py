@@ -11,12 +11,10 @@
 # This file is part of the Antares project.
 
 import typing as t
-from unittest.mock import Mock
 
 import pytest
 from sqlalchemy.orm import Session
 
-from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, User
@@ -65,8 +63,7 @@ def test_get_all__general_case(
     expected_names: t.Sequence[str],
 ) -> None:
     test_workspace = "test-repository"
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     now = current_time()
     study_1 = create_variant_study(name="s1")
@@ -137,8 +134,7 @@ def test_get_all__incompatible_case(
     db_session: Session,
 ) -> None:
     test_workspace = "workspace1"
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     now = current_time()
     study_1 = create_variant_study(id=1, name="study-1")
@@ -205,8 +201,7 @@ def test_get_all__study_name_filter(
     name: str,
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     study_1 = create_variant_study(id=1, name="specie-variant")
     study_2 = create_variant_study(id=2, name="prefix-specie-variant")
@@ -266,8 +261,7 @@ def test_get_all__managed_study_filter(
     expected_ids: t.List[str],
 ) -> None:
     test_workspace = "test-workspace"
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     study_1 = create_variant_study(id=1, name="study-1")
     study_2 = create_variant_study(id=2, name="study-2")
@@ -321,8 +315,7 @@ def test_get_all__archived_study_filter(
     archived: t.Optional[bool],
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     study_1 = create_variant_study(id=1, name="study-1", archived=True)
     study_2 = create_variant_study(id=2, name="study-2", archived=False)
@@ -370,8 +363,7 @@ def test_get_all__variant_study_filter(
     variant: t.Optional[bool],
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     study_1 = create_variant_study(id=1, name="study-1")
     study_2 = create_variant_study(id=2, name="study-2")
@@ -421,8 +413,7 @@ def test_get_all__study_version_filter(
     versions: t.Sequence[str],
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     study_1 = create_variant_study(id=1, name="study-1", version="1")
     study_2 = create_variant_study(id=2, name="study-2", version="2")
@@ -472,8 +463,7 @@ def test_get_all__study_users_filter(
     users: t.Sequence["int"],
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     test_user_1 = User(id=1000)
     test_user_2 = User(id=2000)
@@ -531,8 +521,7 @@ def test_get_all__study_groups_filter(
     groups: t.Sequence[str],
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     test_group_1 = Group(id=1000)
     test_group_2 = Group(id=2000)
@@ -591,8 +580,7 @@ def test_get_all__study_ids_filter(
     study_ids: t.Sequence[str],
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     study_1 = create_variant_study(id=1, name="study-1")
     study_2 = create_variant_study(id=2, name="study-2")
@@ -642,8 +630,7 @@ def test_get_all__study_existence_filter(
     exists: t.Optional[bool],
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     study_1 = create_variant_study(id=1, name="study-1")
     study_2 = create_variant_study(id=2, name="study-2")
@@ -694,8 +681,7 @@ def test_get_all__study_workspace_filter(
     workspace: str,
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     study_1 = create_variant_study(id=1, name="study-1")
     study_2 = create_variant_study(id=2, name="study-2")
@@ -748,8 +734,7 @@ def test_get_all__study_folder_filter(
     folder: str,
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     study_1 = create_variant_study(id=1, name="study-1", folder="/home/folder-1")
     study_2 = create_variant_study(id=2, name="study-2", folder="/home/folder-2")
@@ -800,8 +785,7 @@ def test_get_all__study_tags_filter(
     tags: t.Sequence[str],
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     test_tag_1 = Tag(label="hidden-tag")
     test_tag_2 = Tag(label="decennial")
@@ -896,8 +880,7 @@ def test_get_all__non_admin_permissions_filter(
     study_groups: t.Sequence[str],
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     user_1 = User(id=101, name="user1")
     user_2 = User(id=102, name="user2")
@@ -1033,8 +1016,7 @@ def test_get_all__admin_permissions_filter(
     study_groups: t.Sequence[str],
     expected_ids: t.List[str],
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
     user_1 = User(id=101, name="user1")
     user_2 = User(id=102, name="user2")
     user_3 = User(id=103, name="user3")
@@ -1138,8 +1120,7 @@ def test_get_all__admin_permissions_filter(
 def test_update_tags(
     db_session: Session,
 ) -> None:
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     study_id = 1
     study = create_raw_study(id=study_id, name=f"study-{study_id}", tags=[])
@@ -1148,20 +1129,20 @@ def test_update_tags(
 
     # use the db recorder to check that:
     # 1- finding existing tags requires 1 query
-    # 2- updating the study tags requires 4 queries (2 selects, 2 inserts)
+    # 2- updating the study tags requires 2 queries (2 inserts)
     # 3- deleting orphan tags requires 1 query
     with DBStatementRecorder(db_session.bind) as db_recorder:
         repository.update_tags(study, ["Tag1", "Tag2"])
-    assert len(db_recorder.sql_statements) == 6, str(db_recorder)
+    assert len(db_recorder.sql_statements) == 4, str(db_recorder)
 
     # Check that when we change the tags to ["TAG1", "Tag3"],
     # "Tag1" is preserved, "Tag2" is deleted and "Tag3" is created
     # 1- finding existing tags requires 1 query
-    # 2- updating the study tags requires 4 queries (2 selects, 2 inserts, 1 delete)
+    # 2- updating the study tags requires 3 queries (2 inserts, 1 delete)
     # 3- deleting orphan tags requires 1 query
     with DBStatementRecorder(db_session.bind) as db_recorder:
         repository.update_tags(study, ["TAG1", "Tag3"])
-    assert len(db_recorder.sql_statements) == 7, str(db_recorder)
+    assert len(db_recorder.sql_statements) == 5, str(db_recorder)
 
     # Check that only "Tag1" and "Tag3" are present in the database
     tags = db_session.query(Tag).all()
@@ -1201,8 +1182,7 @@ def test_count_studies__general_case(
     expected_ids: t.List[str],
 ) -> None:
     test_workspace = "test-repository"
-    icache: Mock = Mock(spec=ICache)
-    repository = StudyMetadataRepository(cache_service=icache, session=db_session)
+    repository = StudyMetadataRepository(session=db_session)
 
     now = current_time()
     study_1 = create_variant_study(id="1", name="study-1")

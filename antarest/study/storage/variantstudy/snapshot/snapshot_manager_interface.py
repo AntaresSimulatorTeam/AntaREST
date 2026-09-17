@@ -18,14 +18,6 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 class ISnapshotManager(ABC):
     @abstractmethod
-    def is_snapshot_up_to_date(self, study: VariantStudy) -> bool:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def has_snapshot(self, study: VariantStudy) -> bool:
-        raise NotImplementedError()
-
-    @abstractmethod
     def create_snapshot(self, ref_study: Study, variant_study: VariantStudy) -> None:
         raise NotImplementedError()
 

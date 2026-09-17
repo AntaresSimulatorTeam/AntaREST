@@ -11,5 +11,5 @@
 # This file is part of the Antares project.
 
 """
-Utility methods for working with file study outputs.
+Utility methods for working with file study outputs, independent of any application service.
 """

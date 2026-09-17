@@ -50,6 +50,22 @@ function ReservesLayout() {
             params,
           }),
         },
+        {
+          id: "certifications",
+          label: t("study.modeling.reserves.certifications"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications",
+            params,
+          }),
+        },
+        {
+          id: "symmetries",
+          label: t("study.modeling.reserves.symmetries"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries",
+            params,
+          }),
+        },
       ]}
     />
   );

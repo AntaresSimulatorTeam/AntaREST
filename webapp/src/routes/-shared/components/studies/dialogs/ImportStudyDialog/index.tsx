@@ -12,27 +12,34 @@
  * This file is part of the Antares project.
  */
 
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 
 import UploadDialog, { type UploadDialogProps } from "@/components/dialogs/UploadDialog";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
+import SelectFE, { type Options } from "@/components/fieldEditors/SelectFE";
 import { directoryQueries } from "@/queries/directories/queries";
 import { createStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { StorageMode } from "@/types/types";
 
 import { StudyDestinationFE } from "../../StudyDestinationFE";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
-import { refreshDirectoriesIfNeeded, toDirectoryPath } from "../../StudyDestinationFE/utils";
 import { useRedirectToDestination } from "../../StudyDestinationFE/useRedirectToDestination";
-
-const ROOT_DESTINATION: DirectoryDestination = { directoryId: null, newSubdirectoriesPath: "" };
+import { refreshDirectoriesIfNeeded, toDirectoryPath } from "../../StudyDestinationFE/utils";
 
 interface Props {
   open: boolean;
   onClose: VoidFunction;
 }
+
+const ROOT_DESTINATION: DirectoryDestination = { directoryId: null, newSubdirectoriesPath: "" };
+
+const STORAGE_MODE_OPTIONS = [
+  { value: StorageMode.FILESYSTEM, label: (t) => t("studies.storageMode.filesystem") },
+  { value: StorageMode.DATABASE, label: (t) => t("studies.storageMode.database") },
+] as const satisfies Options<StorageMode>;
 
 function ImportStudyDialog({ open, onClose }: Props) {
   const { t } = useTranslation();
@@ -43,6 +50,7 @@ function ImportStudyDialog({ open, onClose }: Props) {
 
   const [destination, setDestination] = useState<DirectoryDestination>(ROOT_DESTINATION);
   const [redirect, setRedirect] = useState(true);
+  const [storageMode, setStorageMode] = useState(StorageMode.FILESYSTEM);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -51,8 +59,12 @@ function ImportStudyDialog({ open, onClose }: Props) {
   const handleImport: UploadDialogProps["onImport"] = async (file, onUploadProgress) => {
     const directoryPath = toDirectoryPath(destination, directories);
 
-    await dispatch(createStudy({ file, onUploadProgress, directory: directoryPath })).unwrap();
+    await dispatch(
+      createStudy({ file, onUploadProgress, directory: directoryPath, storageMode }),
+    ).unwrap();
+  };
 
+  const handleImportComplete: UploadDialogProps["onImportComplete"] = async () => {
     const updatedDirectories = await refreshDirectoriesIfNeeded(
       queryClient,
       destination,
@@ -73,8 +85,10 @@ function ImportStudyDialog({ open, onClose }: Props) {
       open={open}
       title={t("studies.importNewStudy")}
       dropzoneText={t("studies.importHint")}
+      multiple
       onCancel={onClose}
       onImport={handleImport}
+      onImportComplete={handleImportComplete}
       maxWidth="md"
       fullWidth
       PaperProps={{ sx: { height: "100%" } }}
@@ -84,6 +98,18 @@ function ImportStudyDialog({ open, onClose }: Props) {
             value={destination}
             onChange={(event) => setDestination(event.target.value)}
             fillHeight
+          />
+          <SelectFE
+            label={t("studies.storageMode")}
+            options={STORAGE_MODE_OPTIONS}
+            value={storageMode}
+            onChange={(event) => setStorageMode(event.target.value)}
+            helperText={
+              storageMode === StorageMode.DATABASE
+                ? t("studies.storageMode.gemsCompatible")
+                : undefined
+            }
+            size="small"
           />
           <CheckBoxFE
             value={redirect}

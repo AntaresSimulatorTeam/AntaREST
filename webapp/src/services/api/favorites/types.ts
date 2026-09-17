@@ -12,15 +12,16 @@
  * This file is part of the Antares project.
  */
 
-export interface FavoriteStudy {
-  studyId: string;
-  studyName: string;
-}
+import type z from "zod";
+import type {
+  favoriteDirectorySchema,
+  favoriteExternalDirectorySchema,
+  favoriteStudySchema,
+} from "./schemas";
 
-export interface FavoriteDirectory {
-  directoryId: string;
-  directoryName: string;
-}
+export type FavoriteStudy = z.infer<typeof favoriteStudySchema>;
+export type FavoriteDirectory = z.infer<typeof favoriteDirectorySchema>;
+export type FavoriteExternalDirectory = z.infer<typeof favoriteExternalDirectorySchema>;
 
 export interface FavoriteStudyParams {
   studyId: string;

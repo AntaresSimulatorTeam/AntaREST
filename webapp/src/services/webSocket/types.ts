@@ -73,7 +73,7 @@ export interface TaskProgressEventPayload {
 // Events
 ////////////////////////////////////////////////////////////////
 
-interface StudyJobEvent {
+export interface StudyJobEvent {
   type:
     | typeof WsEventType.StudyJobStarted
     | typeof WsEventType.StudyJobCompleted
@@ -90,8 +90,8 @@ interface StudyEvent {
   payload: StudyEventPayload;
 }
 
-interface StudyDataEvent {
-  type: typeof WsEventType.StudyDataEdited;
+interface StudyMapEvent {
+  type: typeof WsEventType.StudyMapEdited;
   payload: GenericInfo<string>;
 }
 
@@ -145,7 +145,7 @@ interface TaskProgressEvent {
 export type WsEvent =
   | StudyJobEvent
   | StudyEvent
-  | StudyDataEvent
+  | StudyMapEvent
   | MaintenanceModeEvent
   | MessageInfoEvent
   | StudyVariantGenerationCommandResultEvent

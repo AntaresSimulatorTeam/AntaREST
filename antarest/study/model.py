@@ -19,7 +19,6 @@ from enum import StrEnum
 from pathlib import Path, PurePath, PurePosixPath
 from typing import TYPE_CHECKING, Annotated, Any, TypeAlias
 
-import numpy as np
 from antares.study.version import StudyVersion
 from pydantic import (
     BeforeValidator,
@@ -29,7 +28,6 @@ from pydantic import (
     alias_generators,
     computed_field,
     field_validator,
-    model_validator,
 )
 from pydantic.alias_generators import to_camel
 from sqlalchemy import (
@@ -48,7 +46,6 @@ from typing_extensions import override
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.np_array import NpArray
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
 
@@ -76,7 +73,7 @@ STUDY_VERSION_9_0 = StudyVersion.parse("9.0")
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 STUDY_VERSION_9_3 = NEW_DEFAULT_STUDY_VERSION
-STUDY_VERSION_10_0 = StudyVersion.parse("10.0")
+STUDY_VERSION_10_2 = StudyVersion.parse("10.2")
 
 
 def _serialize_version(version: StudyVersion) -> str:
@@ -282,10 +279,12 @@ class Study(Base):
         path: The path to a study directory on the file system. Note that depending on the type of study, this may
               represent different things. In particular, this is generally speaking not a valid study for the simulator.
               (for example, variants will generate snapshots in "<path> / snapshot").
+              In addition, this field is empty (None) for database studies.
         folder: Where the study is located in the workspace, from the user point of view.
                 Note that generally speaking, this will not correspond to a valid folder on disk, this is only a logical
                 folder presented to the user, not the way we organize data internally.
                 This field is kept for backward compatibility but will be progressively replaced by directory_id.
+                Note that this field is empty for database studies
         directory_id: The ID of the directory containing this study. Only for managed studies.
         parent_id: The ID of the parent study, if any. Only makes sense for variant studies.
         public_mode: Defines the actions any user logged in is allowed to take on the study.
@@ -314,7 +313,7 @@ class Study(Base):
     created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
     last_access: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    path: Mapped[str] = mapped_column(String())
+    path: Mapped[str | None] = mapped_column(String(), nullable=True)
     folder: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
     directory_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("directory.id", ondelete="SET NULL"), nullable=True, index=True
@@ -638,12 +637,6 @@ class DeleteManyStudies(AntaresBaseModel):
     with_variants: bool = Field(default=False, description="Whether to delete variant studies as well")
 
 
-class StudyDownloadType(StrEnum):
-    LINK = "LINK"
-    DISTRICT = "DISTRICT"
-    AREA = "AREA"
-
-
 class MatrixFrequency(StrEnum):
     """
     An enumeration of matrix frequencies.
@@ -656,54 +649,6 @@ class MatrixFrequency(StrEnum):
     WEEKLY = "weekly"
     DAILY = "daily"
     HOURLY = "hourly"
-
-
-class StudyDownloadDTO(AntaresBaseModel, alias_generator=to_camel):
-    """
-    DTO used to download outputs
-    """
-
-    type: StudyDownloadType
-    years: list[int] = []
-    level: MatrixFrequency
-    filter_in: Annotated[str | None, Field(deprecated=True, default=None)]  # We don't consider it
-    filter_out: Annotated[str | None, Field(deprecated=True, default=None)]  # We don't consider it
-    filter: list[str] = []
-    columns: list[str] = []
-    synthesis: Annotated[bool, Field(deprecated=True, default=False)]  # We always consider it's False
-    include_clusters: bool = False
-
-    @model_validator(mode="after")
-    def check_coherence(self) -> "StudyDownloadDTO":
-        if self.include_clusters and self.type == StudyDownloadType.LINK:
-            raise ValueError("Cannot ask for cluster values for type link")
-        return self
-
-
-class MatrixIndex(AntaresBaseModel):
-    start_date: str = ""
-    steps: int = 8760
-    first_week_size: int = 7
-    level: MatrixFrequency = MatrixFrequency.HOURLY
-
-
-class TimeSerie(AntaresBaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True, ser_json_inf_nan="constants")
-
-    name: str
-    unit: str
-    data: NpArray = np.zeros(shape=(0,))
-
-
-class TimeSeriesData(AntaresBaseModel):
-    type: StudyDownloadType
-    name: str
-    data: dict[str, list[TimeSerie]] = {}
-
-
-class MatrixAggregationResultDTO(AntaresBaseModel):
-    index: MatrixIndex
-    data: list[TimeSeriesData]
 
 
 class DirectoryMetadata(AntaresBaseModel):

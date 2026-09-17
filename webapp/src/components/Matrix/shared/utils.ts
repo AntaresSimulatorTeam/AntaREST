@@ -27,13 +27,14 @@
  * This file is part of the Antares project.
  */
 
-import { Decimal } from "decimal.js-light";
+import type { MatrixIndex } from "@/types/types";
+import { measureTextWidth } from "@/utils/domUtils";
+import { getCurrentLanguage } from "@/utils/i18nUtils";
 import { UTCDate } from "@date-fns/utc";
+import type { Item } from "@glideapps/glide-data-grid";
 import type { Locale } from "date-fns";
 import { enUS, fr } from "date-fns/locale";
-import type { Item } from "@glideapps/glide-data-grid";
-import { getCurrentLanguage } from "@/utils/i18nUtils";
-import { measureTextWidth } from "@/utils/domUtils";
+import { Decimal } from "decimal.js-light";
 import { groupHeaderTheme } from "../styles";
 import { Aggregate, Column, TIME_FREQUENCY_CONFIG } from "./constants";
 import type {
@@ -42,7 +43,6 @@ import type {
   CalculateAggregatesParams,
   CustomColumnOptions,
   DataColumnsConfig,
-  DateTimeMetadataDTO,
   DateTimes,
   EnhancedGridColumn,
   FormatGridNumberOptions,
@@ -169,7 +169,7 @@ export function getLocale(): Locale {
  * @param config.level - The time frequency level (ANNUAL, MONTHLY, WEEKLY, DAILY, HOURLY)
  * @returns An array of formatted date/time strings
  */
-export const generateDateTime = (config: DateTimeMetadataDTO): DateTimes => {
+export const generateDateTime = (config: MatrixIndex): DateTimes => {
   const { start_date, steps, first_week_size, level } = config;
   const { increment } = TIME_FREQUENCY_CONFIG[level];
 

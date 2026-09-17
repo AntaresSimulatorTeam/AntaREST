@@ -105,7 +105,7 @@ function FiltersDrawer(props: Props) {
       anchor="right"
       open={open}
       onClose={onClose}
-      PaperProps={{ sx: { width: 300 } }}
+      slotProps={{ paper: { sx: { width: 300 } } }}
     >
       <Toolbar>
         <FilterAltIcon sx={{ mr: 1 }} />

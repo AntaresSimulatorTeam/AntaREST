@@ -11,11 +11,9 @@
 # This file is part of the Antares project.
 
 import datetime
-from unittest.mock import Mock
 
 from sqlalchemy.orm import Session
 
-from antarest.core.interfaces.cache import ICache
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import create_raw_study, create_variant_study
@@ -28,7 +26,7 @@ class TestVariantStudyRepository:
         When getting the children of the root study
         Then the children are returned in reverse chronological order
         """
-        repository = VariantStudyRepository(cache_service=Mock(spec=ICache), session=db_session)
+        repository = VariantStudyRepository(session=db_session)
 
         # Create a root study
         raw_study = create_raw_study(name="My Root")
@@ -82,7 +80,7 @@ class TestVariantStudyRepository:
         assert children == [variant2, variant3, variant1]
 
     def test_get_all_descendants(self, db_session: Session) -> None:
-        repository = VariantStudyRepository(cache_service=Mock(spec=ICache), session=db_session)
+        repository = VariantStudyRepository(session=db_session)
 
         raw_study = create_raw_study(name="Root")
         db_session.add(raw_study)
@@ -118,7 +116,7 @@ class TestVariantStudyRepository:
         assert {d.id for d in descendants} == {v1a.id, v1a1.id}
 
     def test_get_root_ancestor_id(self, db_session: Session) -> None:
-        repository = VariantStudyRepository(cache_service=Mock(spec=ICache), session=db_session)
+        repository = VariantStudyRepository(session=db_session)
 
         # Unknown id
         assert repository.get_root_ancestor_id("nope") is None

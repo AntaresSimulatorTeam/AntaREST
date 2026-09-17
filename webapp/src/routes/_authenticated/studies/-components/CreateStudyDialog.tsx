@@ -14,7 +14,7 @@
 
 import FormDialog from "@/components/dialogs/FormDialog";
 import CheckboxesTagsFE from "@/components/fieldEditors/CheckboxesTagsFE";
-import SelectFE from "@/components/fieldEditors/SelectFE";
+import SelectFE, { type Options } from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
@@ -23,7 +23,7 @@ import { createStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getGroups, getLatestStudyVersion, getStudyVersions } from "@/redux/selectors";
-import type { StudyMetadata, StudyPublicMode } from "@/types/types";
+import { StorageMode, type StudyMetadata, type StudyPublicMode } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
 import { getSemanticVersionOptions } from "@/utils/versionUtils";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
@@ -32,19 +32,24 @@ import { useNavigate } from "@tanstack/react-router";
 import { useSnackbar } from "notistack";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-
 interface FieldValues {
   name: string;
   version: string;
   publicMode: StudyPublicMode;
   groups: string[];
   tags: string[];
+  storageMode: StorageMode;
 }
 
 interface Props {
   open: boolean;
   onClose: VoidFunction;
 }
+
+const STORAGE_MODE_OPTIONS = [
+  { value: StorageMode.FILESYSTEM, label: (t) => t("studies.storageMode.filesystem") },
+  { value: StorageMode.DATABASE, label: (t) => t("studies.storageMode.database") },
+] as const satisfies Options<StorageMode>;
 
 function CreateStudyDialog({ open, onClose }: Props) {
   const { t } = useTranslation();
@@ -115,10 +120,11 @@ function CreateStudyDialog({ open, onClose }: Props) {
           publicMode: "NONE",
           groups: [],
           tags: [],
+          storageMode: StorageMode.FILESYSTEM,
         },
       }}
     >
-      {({ control }) => (
+      {({ control, watch }) => (
         <>
           <Fieldset fullFieldWidth>
             <StringFE
@@ -133,6 +139,17 @@ function CreateStudyDialog({ open, onClose }: Props) {
               name="version"
               control={control}
               rules={{ required: t("form.field.required") }}
+            />
+            <SelectFE
+              label={t("studies.storageMode")}
+              options={STORAGE_MODE_OPTIONS}
+              name="storageMode"
+              control={control}
+              helperText={
+                watch("storageMode") === StorageMode.DATABASE
+                  ? t("studies.storageMode.gemsCompatible")
+                  : undefined
+              }
             />
           </Fieldset>
           <Fieldset legend={t("global.permission")} fullFieldWidth>

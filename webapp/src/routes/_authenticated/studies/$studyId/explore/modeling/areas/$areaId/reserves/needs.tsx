@@ -19,7 +19,7 @@ import { reserveQueries } from "@/queries/reserves/queries";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
 import { sortByProp } from "@/services/utils";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { Box, Stack } from "@mui/material";
+import { Alert, Box, Stack } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -70,6 +70,11 @@ function ReservesNeeds() {
 
   return (
     <Stack direction="column" spacing={1} sx={{ height: 1 }}>
+      {reservesEnabled === false && (
+        <Alert severity="warning" sx={{ mb: 1 }}>
+          {t("study.modeling.reserves.readOnly.alert")}
+        </Alert>
+      )}
       <SelectFE
         label={t("study.modeling.reserves.needs.select")}
         value={selectedReserveId}

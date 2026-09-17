@@ -16,7 +16,11 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import DummyEventBusService, IEventBus
 from antarest.core.tasks.service import ITaskService
-from antarest.launcher.repository import JobResultRepository, SolverPresetsRepository
+from antarest.launcher.repository import (
+    JobResultRepository,
+    LauncherRuntimeConfigRepository,
+    SolverPresetsRepository,
+)
 from antarest.launcher.service import LauncherService
 from antarest.login.service import LoginService
 from antarest.output.service import OutputService
@@ -37,8 +41,9 @@ def build_launcher(
     if not service_launcher:
         job_repository = JobResultRepository()
         solver_presets_repository = SolverPresetsRepository()
+        launcher_runtime_config_repository = LauncherRuntimeConfigRepository()
         # keep old job results
-        #        study_service.add_on_deletion_callback(repository.delete_by_study_id)
+        # study_service.add_on_deletion_callback(repository.delete_by_study_id)
         service_launcher = LauncherService(
             config=config,
             study_service=study_service,
@@ -46,6 +51,7 @@ def build_launcher(
             login_service=login_service,
             job_result_repository=job_repository,
             solver_presets_repository=solver_presets_repository,
+            launcher_runtime_config_repository=launcher_runtime_config_repository,
             event_bus=event_bus,
             file_transfer_manager=file_transfer_manager,
             task_service=task_service,

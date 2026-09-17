@@ -31,10 +31,10 @@ from antarest.core.utils.utils import sanitize_string, validate_folder_path, val
 from antarest.core.utils.web import APITag
 from antarest.dependencies import ConfigDep, StudyServiceDep, auth_required
 from antarest.login.utils import require_admin_user, require_current_user
+from antarest.output.model.download import MatrixIndex
 from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
     DeleteManyStudies,
-    MatrixIndex,
     StorageMode,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
@@ -621,5 +621,20 @@ def create_study_routes() -> APIRouter:
         """
         logger.info(f"Normalizing study {study_id}")
         return study_service.normalize_study_by_id(study_id)
+
+    @bp.put(
+        "/studies/{study_id}/cache/_invalidate",
+        summary="Invalidate the cached configuration of a study",
+        status_code=HTTPStatus.NO_CONTENT,
+    )
+    def invalidate_study_cache(study_service: StudyServiceDep, study_id: UuidStr) -> None:
+        """
+        Drop the cached configuration of a study so that the next read rebuilds it from disk.
+
+        Useful when the study files have been modified directly on disk (outside of the API),
+        which would otherwise leave the cache out of sync with the filesystem.
+        """
+        logger.info(f"Invalidating cache for study {study_id}")
+        study_service.invalidate_cache(study_id)
 
     return bp

@@ -30,6 +30,7 @@ export async function launchStudy({
   solverPresetsId,
   version,
   launcherParams,
+  runAt,
 }: LaunchStudyParams) {
   const { data } = await client.post<JobCreationDTO>(
     `${BASE_URL}/run/${studyId}`,
@@ -39,6 +40,7 @@ export async function launchStudy({
         version: compactSemanticVersion(version),
         launcher: launcherId,
         solver_presets_id: solverPresetsId,
+        run_at: runAt,
       },
     },
   );

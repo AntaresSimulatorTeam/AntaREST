@@ -19,7 +19,8 @@ from pydantic import ValidationError
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.model import STUDY_VERSION_7_2, STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -106,7 +107,7 @@ class TestCreateSTStorage:
         )
         assert cmd.parameters.group == STStorageGroup.BATTERY.value
 
-    def test_init__invalid_storage_name(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
+    def test_init__invalid_storage_name(self, command_context: CommandContext) -> None:
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
             parameters = {**PARAMETERS, "name": "?%$$"}  # bad name
@@ -221,8 +222,7 @@ class TestCreateSTStorage:
             == "Value error, 422: Field efficiency_withdrawal is not a valid field for study version 8.8"
         )
 
-    def test_apply__invalid_version(self, empty_study_720: FileStudy, command_context: CommandContext) -> None:
-        empty_study = empty_study_720
+    def test_apply__invalid_version(self, command_context: CommandContext) -> None:
         # Given an old study in version 720
         # When we apply the config to add a new ST Storage
         with pytest.raises(ValidationError) as ctx:
@@ -230,7 +230,7 @@ class TestCreateSTStorage:
                 command_context=command_context,
                 area_id="foo",
                 parameters=STStorageCreation(**PARAMETERS),
-                study_version=empty_study.config.version,
+                study_version=STUDY_VERSION_7_2,
             )
         assert ctx.value.error_count() == 1
         raised_error = ctx.value.errors()[0]
@@ -240,15 +240,14 @@ class TestCreateSTStorage:
             == "Value error, 422: Short-term storages only exist since v8.6 and your study is in 7.2"
         )
 
-    def test_apply__missing_area(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
+    def test_apply__missing_area(self, dao: StudyDao, command_context: CommandContext) -> None:
         # Given a study without "unknown area" area
         # When we apply the config to add a new ST Storage
-        dao = build_dao_from_file_study(empty_study_860, command_context)
         create_st_storage = CreateSTStorage(
             command_context=command_context,
             area_id="unknown area",  # bad ID
             parameters=STStorageCreation(**PARAMETERS),
-            study_version=empty_study_860.config.version,
+            study_version=dao.get_version(),
         )
         command_output = create_st_storage.apply(dao)
 
@@ -256,13 +255,10 @@ class TestCreateSTStorage:
         assert command_output.status is False
         assert "Area is not found: 'unknown area'" in command_output.message
 
-    def test_apply__duplicate_storage(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
-        recent_study = empty_study_860
-        dao = build_dao_from_file_study(recent_study, command_context)
+    def test_apply__duplicate_storage(self, dao: StudyDao, command_context: CommandContext) -> None:
+        study_version = dao.get_version()
         # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
-        )
+        create_area = CreateArea(area_name="Area FR", command_context=command_context, study_version=study_version)
         create_area.apply(dao)
 
         # Then, apply the config for a new ST Storage
@@ -270,7 +266,7 @@ class TestCreateSTStorage:
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
             parameters=STStorageCreation(**PARAMETERS),
-            study_version=recent_study.config.version,
+            study_version=study_version,
         )
         command_output = create_st_storage.apply(dao)
         assert command_output.status is True
@@ -281,7 +277,7 @@ class TestCreateSTStorage:
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
             parameters=STStorageCreation(**parameters),
-            study_version=recent_study.config.version,
+            study_version=study_version,
         )
         command_output = create_st_storage.apply(dao)
 
@@ -293,13 +289,10 @@ class TestCreateSTStorage:
             flags=re.IGNORECASE,
         )
 
-    def test_apply_create__nominal_case(self, empty_study_860: FileStudy, command_context: CommandContext) -> None:
-        recent_study = empty_study_860
-        dao = build_dao_from_file_study(recent_study, command_context)
+    def test_apply_create__nominal_case(self, dao: StudyDao, command_context: CommandContext) -> None:
+        study_version = dao.get_version()
         # First, prepare a new Area
-        create_area = CreateArea(
-            area_name="Area FR", command_context=command_context, study_version=recent_study.config.version
-        )
+        create_area = CreateArea(area_name="Area FR", command_context=command_context, study_version=study_version)
         create_area.apply(dao)
 
         # Then, apply the config for a new ST Storage
@@ -307,7 +300,7 @@ class TestCreateSTStorage:
             command_context=command_context,
             area_id=transform_name_to_id(create_area.area_name),
             parameters=STStorageCreation(**PARAMETERS),
-            study_version=recent_study.config.version,
+            study_version=study_version,
         )
         command_output = create_st_storage.apply(dao)
 

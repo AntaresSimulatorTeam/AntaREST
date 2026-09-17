@@ -12,7 +12,6 @@
 
 import datetime
 import json
-import typing as t
 import uuid
 from pathlib import Path
 
@@ -22,12 +21,19 @@ from sqlalchemy.orm import Session
 
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
 from antarest.study.model import StorageMode
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    CommandsListVersion,
+    VariantStudy,
+    VariantStudySnapshot,
+)
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import create_raw_study, create_variant_study
+from tests.helpers import create_raw_study, create_variant_study, with_db_context
 
 
 @pytest.fixture(name="user_id")
@@ -91,10 +97,8 @@ class TestVariantStudySnapshot:
         """
         Check the creation of an instance of VariantStudySnapshot
         """
-        now = current_time()
-
         with db_session:
-            snap = VariantStudySnapshot(id=variant_study_id, created_at=now)
+            snap = VariantStudySnapshot(id=variant_study_id, version=13)
             db_session.add(snap)
             db_session.commit()
 
@@ -107,18 +111,17 @@ class TestVariantStudySnapshot:
 
         # check Study fields
         assert obj.id == variant_study_id
-        assert obj.created_at == now.replace(tzinfo=None)
+        assert obj.version == 13
         assert obj.last_executed_command is None
 
     def test_init__with_command(self, db_session: Session, variant_study_id: str) -> None:
         """
         Check the creation of an instance of VariantStudySnapshot
         """
-        now = current_time()
         command_id = str(uuid.uuid4())
 
         with db_session:
-            snap = VariantStudySnapshot(id=variant_study_id, created_at=now, last_executed_command=command_id)
+            snap = VariantStudySnapshot(id=variant_study_id, version=2, last_executed_command=command_id)
             db_session.add(snap)
             db_session.commit()
 
@@ -126,7 +129,7 @@ class TestVariantStudySnapshot:
             db_session.query(VariantStudySnapshot).filter(VariantStudySnapshot.id == variant_study_id).one()
         )
         assert obj.id == variant_study_id
-        assert obj.created_at == now.replace(tzinfo=None)
+        assert obj.version == 2
         assert obj.last_executed_command == command_id
 
 
@@ -236,84 +239,60 @@ class TestVariantStudy:
         assert obj.snapshot is None
         assert obj.commands == []
 
-    @pytest.mark.parametrize(
-        "created_at, updated_at, study_antares_file, expected",
-        [
-            pytest.param(
-                datetime.datetime(2023, 11, 9),
-                datetime.datetime(2023, 11, 8),
-                "study.antares",
-                True,
-                id="with-recent-snapshot",
-            ),
-            pytest.param(
-                datetime.datetime(2023, 11, 7),
-                datetime.datetime(2023, 11, 8),
-                "study.antares",
-                False,
-                id="with-old-snapshot",
-            ),
-            pytest.param(
-                datetime.datetime(2023, 11, 9),
-                datetime.datetime(2023, 11, 8),
-                "dirty.antares",
-                False,
-                id="with-dirty-snapshot",
-            ),
-            pytest.param(
-                None,
-                datetime.datetime(2023, 11, 8),
-                "study.antares",
-                False,
-                id="without-snapshot",
-            ),
-        ],
-    )
-    def test_is_snapshot_recent(
-        self,
-        variant_study_service: VariantStudyService,
-        db_session: Session,
-        tmp_path: Path,
-        raw_study_id: int,
-        user_id: int,
-        created_at: t.Optional[datetime.datetime],
-        updated_at: datetime.datetime,
-        study_antares_file: str,
-        expected: bool,
-    ) -> None:
-        """
-        Check the snapshot_uptodate() method
-        """
-        with db_session:
-            # Given a variant study (referencing the raw study)
-            # with optionally a snapshot and a snapshot directory
-            variant_id = str(uuid.uuid4())
-            variant = create_variant_study(
-                id=variant_id,
-                name="Study 3.0",
-                author="Sandrine",
-                parent_id=raw_study_id,
-                updated_at=updated_at,
-                path=str(tmp_path.joinpath("variant")),
-                owner_id=user_id,
-                storage_mode=StorageMode.FILESYSTEM,
-            )
 
-            # If the snapshot creation date is given, we create a snapshot
-            # and a snapshot directory.
-            snapshot_dir = Path(variant.path) / "snapshot"
-            if created_at:
-                variant.snapshot = VariantStudySnapshot(created_at=created_at)
-                snapshot_dir.mkdir(parents=True, exist_ok=True)
+def _set_up(session: Session, parent_id: int, user_id: int) -> str:
+    with session:
+        # Given a variant study (referencing the raw study)
+        # with optionally a snapshot and a snapshot directory
+        variant_id = str(uuid.uuid4())
+        variant = create_variant_study(
+            id=variant_id,
+            name="Study 3.0",
+            author="Sandrine",
+            parent_id=parent_id,
+            path="",
+            owner_id=user_id,
+            storage_mode=StorageMode.FILESYSTEM,
+            commands_version=CommandsListVersion(version=0, variant_id=variant_id),
+        )
 
-            # If the "study.antares" file is given, we create it in the snapshot directory.
-            if study_antares_file:
-                snapshot_dir.mkdir(parents=True, exist_ok=True)
-                (snapshot_dir / study_antares_file).touch()
+        session.add(variant)
+        session.commit()
 
-            db_session.add(variant)
-            db_session.commit()
+        return variant_id
 
-        # Check the snapshot_uptodate() method
-        obj: VariantStudy = db_session.query(VariantStudy).filter(VariantStudy.id == variant_id).one()
-        assert variant_study_service.is_snapshot_up_to_date(obj) == expected
+
+@with_db_context
+def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_study_id: int, user_id: int) -> None:
+    """
+    Check the `is_snapshot_up_to_date()` method
+    """
+    session = db.session
+    variant_id = _set_up(session, raw_study_id, user_id)
+
+    # 1st case, no snapshot in DB -> Not up to date
+    variant = session.get(VariantStudy, variant_id)
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
+
+    # 2nd case: Add the snapshot in DB with a version 0 which matches the command blocks version -> Up to date
+    variant.snapshot = VariantStudySnapshot(id=variant_id, version=0, last_executed_command=None)
+    session.add(variant)
+    session.commit()
+
+    variant = session.get(VariantStudy, variant_id)
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is True
+
+    # 3rd case: Changes the version in `commands_list_version` table -> Not up to date
+    upsert_one(session, CommandsListVersion.__table__, {"variant_id": variant_id, "version": 1})
+    session.commit()
+
+    variant = session.get(VariantStudy, variant_id)
+    session.refresh(variant)
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
+
+    # 4th case: Adapt the version in the study snapshot to match the commands one -> Up to date
+    variant.snapshot.version = 1
+    session.add(variant)
+    session.commit()
+
+    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is True

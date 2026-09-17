@@ -15,6 +15,7 @@ from pathlib import PurePosixPath
 from fastapi import HTTPException
 
 from antarest.core.config import Config
+from antarest.core.utils.utils import is_path_safe
 from antarest.favorite.model import (
     FavoriteAggregateDTO,
     FavoriteDirectory,
@@ -31,7 +32,7 @@ from antarest.favorite.repository import (
 )
 from antarest.login.utils import get_user_impersonator
 from antarest.study.directory_exceptions import DirectoryNotFoundError
-from antarest.study.storage.utils import get_workspace_from_config, is_folder_safe
+from antarest.study.storage.utils import get_workspace_from_config
 
 
 class FavoriteStudyService:
@@ -147,7 +148,7 @@ class FavoriteExternalDirectoryService:
         """
         workspace_conf = get_workspace_from_config(self.workspace_config, workspace)
 
-        if not is_folder_safe(workspace_conf, directory_path):
+        if not is_path_safe(workspace_conf.path, directory_path):
             raise HTTPException(
                 status_code=http.HTTPStatus.BAD_REQUEST,
                 detail=f"Directory {directory_path} is not safe",

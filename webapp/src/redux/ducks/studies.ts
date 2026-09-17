@@ -19,6 +19,7 @@ import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyEventPayload } from "@/services/webSocket/types";
 import type {
   GroupDTO,
+  StorageMode,
   StudyMetadata,
   StudyPublicMode,
   StudySortConfig,
@@ -78,12 +79,14 @@ interface StudyCreator {
   groups?: string[];
   publicMode?: StudyPublicMode;
   tags?: string[];
+  storageMode?: StorageMode;
 }
 
 interface StudyUpload {
   file: File;
   onUploadProgress?: (progress: number) => void;
   directory?: string;
+  storageMode?: StorageMode;
 }
 
 interface StudyUpdate {
@@ -177,16 +180,16 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
     try {
       // StudyUpload
       if ("file" in arg) {
-        const { file, onUploadProgress, directory } = arg;
-        const studyId = await api.importStudy(file, onUploadProgress, directory);
+        const { file, onUploadProgress, directory, storageMode } = arg;
+        const studyId = await api.importStudy(file, onUploadProgress, directory, storageMode);
         return api.getStudyMetadata(studyId);
       }
 
       // StudyCreator
-      const { name, version, groups, publicMode, tags } = arg;
+      const { name, version, groups, publicMode, tags, storageMode } = arg;
 
       // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
-      const studyId = await api.createStudy(name, version, groups);
+      const studyId = await api.createStudy(name, version, groups, storageMode);
 
       if (publicMode) {
         await api.changePublicMode(studyId, publicMode);

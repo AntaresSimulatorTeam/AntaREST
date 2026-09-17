@@ -17,7 +17,7 @@ import re
 import typing as t
 import uuid
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import ANY, Mock
 
 import pytest
 from antares.study.version import StudyVersion
@@ -29,10 +29,12 @@ from antarest.core.interfaces.cache import CacheConstants, update_cache
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
 from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.json import to_json_string
 from antarest.core.tasks.service import ITaskNotifier
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
-from antarest.login.utils import current_user_context
+from antarest.login.utils import current_user_context, get_user_impersonator
 from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -41,7 +43,12 @@ from antarest.study.model import StorageMode
 from antarest.study.storage.file_study_utils import get_snapshot_dir
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfigDTO
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
-from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy, VariantStudySnapshot
+from antarest.study.storage.variantstudy.model.dbmodel import (
+    CommandBlock,
+    CommandsListVersion,
+    VariantStudy,
+    VariantStudySnapshot,
+)
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from antarest.study.storage.variantstudy.snapshot.snapshot_generator import SnapshotGenerator
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
@@ -59,34 +66,35 @@ logger = logging.getLogger(__name__)
 
 
 def _create_variant(
-    tmp_path: Path,
+    path: Path,
     variant_name: str,
     parent_id: str,
-    updated_at: datetime.datetime,
-    snapshot_created_at: datetime.datetime | None = None,
+    with_snapshot: bool,
+    snapshot_version: int = 0,
     storage_mode: StorageMode = StorageMode.FILESYSTEM,
 ) -> VariantStudy:
     """
     Create a variant study with a snapshot (if snapshot_created_at is provided).
     """
-    variant_dir = tmp_path.joinpath(f"some_place/{variant_name}")
-    variant_dir.mkdir(parents=True, exist_ok=True)
+    variant_dir = path.joinpath(f"some_place/{variant_name}")
+
+    if storage_mode.FILESYSTEM:
+        variant_dir.mkdir(parents=True, exist_ok=True)
+
+    variant_id = str(uuid.uuid4())
     variant = create_variant_study(
-        id=str(uuid.uuid4()),
+        id=variant_id,
         name=variant_name,
-        updated_at=updated_at,
         parent_id=parent_id,
         path=str(variant_dir),
         storage_mode=storage_mode,
+        commands_version=CommandsListVersion(version=0, variant_id=variant_id),
     )
 
-    if snapshot_created_at:
-        snapshot_dir = variant_dir.joinpath("snapshot")
-        snapshot_dir.mkdir(parents=True, exist_ok=True)
-        (snapshot_dir / "study.antares").touch()
+    if with_snapshot:
         variant.snapshot = VariantStudySnapshot(
             id=variant.id,
-            created_at=snapshot_created_at,
+            version=snapshot_version,
             last_executed_command=None,
         )
 
@@ -111,73 +119,11 @@ def _get_dao_factory(variant_id: str, variant_study_service: VariantStudyService
             variant_study_service.get_study_paths,
         )
 
-    return DatabaseStudyDaoFactory(ctx.matrix_service, ctx.generator_matrix_constants)
+    return DatabaseStudyDaoFactory(ctx.matrix_service, ctx.blob_service, ctx.generator_matrix_constants)
 
 
 class TestSearchRefStudy:
-    """
-    Test the `search_ref_study` method of the `SnapshotGenerator` class.
-
-    We need to test several cases:
-
-    Cases where we expect to have the root study and a list of `CommandBlock`
-    for all variants in the order of the list.
-
-    - The edge case where the list of studies is empty.
-      Note: This case is unlikely, but the function should be able to handle it.
-
-    - The case where the list of studies contains variants with or without snapshots,
-      but a search is requested from scratch.
-
-    - The case where the list of studies contains variants with obsolete snapshots, meaning that:
-      - either there is no snapshot,
-      - or the snapshot's creation date is earlier than the variant's last modification date.
-      Note: The situation where the "snapshot/study.antares" file does not exist is not considered.
-
-    Cases where we expect to have a different reference study than the root study
-    and corresponding to a variant with an up-to-date snapshot.
-
-    - The case where the list of studies contains two variants with up-to-date snapshots and
-      where the first is older than the second, and a third variant without snapshot.
-      We expect to have a reference study corresponding to the second variant
-      and a list of commands for the second variant.
-
-    - The case where the list of studies contains two variants with up-to-date snapshots and
-      where the first is more recent than the second, and a third variant without snapshot.
-      We expect to have a reference study corresponding to the first variant
-      and a list of commands for both variants in order.
-
-    - The case where the list of studies contains a variant with an up-to-date snapshot and
-      corresponds to the generation of all commands for the variant.
-      We expect to have an empty list of commands because the snapshot is already completely up-to-date.
-
-    - The case where the list of studies contains a variant with an up-to-date snapshot and
-      corresponds to a partial generation of commands for the variant.
-      We expect to have a list of commands corresponding to the remaining commands.
-    """
-
-    def test_search_ref_study__empty_descendants(self, variant_study_service: VariantStudyService) -> None:
-        """
-        Edge case where the list of studies is empty.
-        We expect to have the root study and a list of `CommandBlock` for all variants
-        in the order of the list.
-
-        Note: This case is unlikely, but the function should be able to handle it.
-
-        Given an empty list of descendants,
-        When calling search_ref_study,
-        Then the root study is returned as reference study,
-        and an empty list of commands is returned.
-        """
-        generator = _build_generator(variant_study_service)
-
-        root_study = create_study(id=str(uuid.uuid4()), name="root")
-        references: t.Sequence[VariantStudy] = []
-        search_result = generator.search_ref_study(root_study, references)
-        assert search_result.ref_study == root_study
-        assert search_result.cmd_blocks == []
-        assert search_result.force_regenerate is True
-
+    @with_db_context
     def test_search_ref_study__from_scratch(self, tmp_path: Path, variant_study_service: VariantStudyService) -> None:
         """
         Case where the list of studies contains variants with or without snapshots,
@@ -193,27 +139,9 @@ class TestSearchRefStudy:
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=1),
-        )
-        variant2 = _create_variant(
-            tmp_path,
-            "variant2",
-            variant1.id,
-            datetime.datetime(year=2023, month=1, day=2),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
-        )
-        variant3 = _create_variant(
-            tmp_path,
-            "variant3",
-            variant2.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            None,
-        )
+        variant1 = _create_variant(tmp_path, "variant1", root_study.id, with_snapshot=True, snapshot_version=0)
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=True, snapshot_version=0)
+        variant3 = _create_variant(tmp_path, "variant3", variant2.id, with_snapshot=False)
 
         # Add some variant commands
         variant1.commands = [
@@ -224,6 +152,7 @@ class TestSearchRefStudy:
                 command="create_area",
                 version=1,
                 args='{"area_name": "DE"}',
+                study_version="9.3",
             ),
         ]
         variant1.snapshot.last_executed_command = variant1.commands[0].id
@@ -235,6 +164,7 @@ class TestSearchRefStudy:
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
             ),
         ]
         variant2.snapshot.last_executed_command = variant2.commands[0].id
@@ -246,8 +176,14 @@ class TestSearchRefStudy:
                 command="update_thermal_clusters",
                 version=1,
                 args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
+                study_version="9.3",
             ),
         ]
+
+        # Save the studies in DB
+        variant_study_service.raw_study_service.repository.save(root_study)
+        for variant in [variant1, variant2, variant3]:
+            variant_study_service.repository.save(variant)
 
         # Check the variants
         generator = _build_generator(variant_study_service)
@@ -257,15 +193,15 @@ class TestSearchRefStudy:
         assert search_result.cmd_blocks == [c for v in [variant1, variant2, variant3] for c in v.commands]
         assert search_result.force_regenerate is True
 
+    @with_db_context
     def test_search_ref_study__obsolete_snapshots(
         self, tmp_path: Path, variant_study_service: VariantStudyService
     ) -> None:
         """
         Case where the list of studies contains variants with obsolete snapshots, meaning that:
           - either there is no snapshot,
-          - or the snapshot's creation date is earlier than the variant's last modification date.
-          Note: The situation where the "snapshot/study.antares" file does not exist is not considered.
-        The third variant has no snapshot, and must be generated from scratch.
+          - or the snapshot version is older than the variant commands list one.
+        The third variant has no snapshot and must be generated from scratch.
         We expect to have a reference study corresponding to the root study
         and the list of commands of all variants in order.
         """
@@ -277,24 +213,22 @@ class TestSearchRefStudy:
             tmp_path,
             "variant1",
             root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=None,
+            with_snapshot=False,
         )
         # Variant 2 has an obsolete snapshot.
         variant2 = _create_variant(
             tmp_path,
             "variant2",
             variant1.id,
-            datetime.datetime(year=2023, month=1, day=2),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=1),
+            with_snapshot=True,
+            snapshot_version=-1,  # Mimics an obsolete snapshot as the starting version is supposed to be 0
         )
         # Variant 3 has no snapshot.
         variant3 = _create_variant(
             tmp_path,
             "variant3",
             variant2.id,
-            datetime.datetime(year=2023, month=1, day=3),
-            snapshot_created_at=None,
+            with_snapshot=False,
         )
 
         # Add some variant commands
@@ -306,6 +240,7 @@ class TestSearchRefStudy:
                 command="create_area",
                 version=1,
                 args='{"area_name": "DE"}',
+                study_version="9.3",
             ),
         ]
         variant2.commands = [
@@ -316,6 +251,7 @@ class TestSearchRefStudy:
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
             ),
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -324,64 +260,56 @@ class TestSearchRefStudy:
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "IT", "cluster_name": "IT", "cluster_type": "gas"}',
+                study_version="9.3",
             ),
         ]
-        variant2.snapshot.last_executed_command = variant2.commands[0].id
         variant3.commands = [
             CommandBlock(
                 id=str(uuid.uuid4()),
-                study_id=variant2.id,
+                study_id=variant3.id,
                 index=0,
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "BE", "cluster_name": "BE", "cluster_type": "oil"}',
+                study_version="9.3",
             ),
         ]
+
+        # Save the studies in DB
+        variant_study_service.raw_study_service.repository.save(root_study)
+        for variant in [variant1, variant2, variant3]:
+            variant_study_service.repository.save(variant)
 
         # Check the variants
         references = [variant1, variant2, variant3]
         generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
+        search_result = generator.search_ref_study(root_study, references, from_scratch=False)
         assert search_result.ref_study == root_study
         assert search_result.cmd_blocks == [c for v in [variant1, variant2, variant3] for c in v.commands]
         assert search_result.force_regenerate is True
 
+    @with_db_context
     def test_search_ref_study__old_recent_snapshot(
         self, tmp_path: Path, variant_study_service: VariantStudyService
     ) -> None:
         """
-        Case where the list of studies contains a variant with up-to-date snapshots and
-        where the first is older than the second.
-        The third variant has no snapshot, and must be generated from scratch.
-        We expect to have a reference study corresponding to the second variant
-        and the list of commands of the third variant.
+        Case where we have 3 variants.
+        The 1st and 2nd one are up-to-date. The 3rd one has no snapshot.
+        We expect to have a reference study corresponding to the 2nd variant as it's closer to the 3rd than the 1st.
+        We also expect to have the list of commands of the third variant.
         """
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
-        # Prepare some variants with snapshots:
         # Variant 1 has an up-to-date snapshot.
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=1),
-        )
-        # Variant 2 has an up-to-date snapshot, but is more recent than variant 1.
-        variant2 = _create_variant(
-            tmp_path,
-            "variant2",
-            variant1.id,
-            datetime.datetime(year=2023, month=1, day=2),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=3),
-        )
+        variant1 = _create_variant(tmp_path, "variant1", root_study.id, with_snapshot=True, snapshot_version=0)
+        # Variant 2 is created from Variant 1 and is also up-to-date.
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=True, snapshot_version=0)
         # Variant 3 has no snapshot.
         variant3 = _create_variant(
             tmp_path,
             "variant3",
             variant2.id,
-            datetime.datetime(year=2023, month=1, day=3),
-            snapshot_created_at=None,
+            with_snapshot=False,
         )
 
         # Add some variant commands
@@ -393,9 +321,9 @@ class TestSearchRefStudy:
                 command="create_area",
                 version=1,
                 args='{"area_name": "DE"}',
+                study_version="9.3",
             ),
         ]
-        variant1.snapshot.last_executed_command = variant1.commands[0].id
         variant2.commands = [
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -404,108 +332,35 @@ class TestSearchRefStudy:
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
             ),
         ]
-        variant2.snapshot.last_executed_command = variant2.commands[0].id
         variant3.commands = [
             CommandBlock(
                 id=str(uuid.uuid4()),
-                study_id=variant2.id,
+                study_id=variant3.id,
                 index=0,
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "BE", "cluster_name": "BE", "cluster_type": "oil"}',
+                study_version="9.3",
             ),
         ]
+
+        # Save the studies in DB
+        variant_study_service.raw_study_service.repository.save(root_study)
+        for variant in [variant1, variant2, variant3]:
+            variant_study_service.repository.save(variant)
 
         # Check the variants
         references = [variant1, variant2, variant3]
         generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
+        search_result = generator.search_ref_study(root_study, references, from_scratch=False)
         assert search_result.ref_study == variant2
         assert search_result.cmd_blocks == variant3.commands
         assert search_result.force_regenerate is True
 
-    def test_search_ref_study__recent_old_snapshot(
-        self, tmp_path: Path, variant_study_service: VariantStudyService
-    ) -> None:
-        """
-        Case where the list of studies contains a variant with up-to-date snapshots and
-        where the second is older than the first.
-        The third variant has no snapshot, and must be generated from scratch.
-        We expect to have a reference study corresponding to the first variant
-        and the list of commands of the second and third variants.
-        """
-        root_study = create_study(id=str(uuid.uuid4()), name="root")
-
-        # Prepare some variants with snapshots:
-        # Variant 1 has an up-to-date snapshot, but is more recent than variant 2.
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=3),
-        )
-        # Variant 2 has an up-to-date snapshot, but is older that variant 1.
-        variant2 = _create_variant(
-            tmp_path,
-            "variant2",
-            variant1.id,
-            datetime.datetime(year=2023, month=1, day=2),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
-        )
-        # Variant 3 has no snapshot.
-        variant3 = _create_variant(
-            tmp_path,
-            "variant3",
-            variant2.id,
-            datetime.datetime(year=2023, month=1, day=3),
-            snapshot_created_at=None,
-        )
-
-        # Add some variant commands
-        variant1.commands = [
-            CommandBlock(
-                id=str(uuid.uuid4()),
-                study_id=variant1.id,
-                index=0,
-                command="create_area",
-                version=1,
-                args='{"area_name": "DE"}',
-            ),
-        ]
-        variant1.snapshot.last_executed_command = variant1.commands[0].id
-        variant2.commands = [
-            CommandBlock(
-                id=str(uuid.uuid4()),
-                study_id=variant2.id,
-                index=0,
-                command="create_thermal_cluster",
-                version=1,
-                args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
-            ),
-        ]
-        variant2.snapshot.last_executed_command = variant2.commands[0].id
-        variant3.commands = [
-            CommandBlock(
-                id=str(uuid.uuid4()),
-                study_id=variant2.id,
-                index=0,
-                command="create_thermal_cluster",
-                version=1,
-                args='{"area_name": "BE", "cluster_name": "BE", "cluster_type": "oil"}',
-            ),
-        ]
-
-        # Check the variants
-        references = [variant1, variant2, variant3]
-        generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
-        assert search_result.ref_study == variant1
-        assert search_result.cmd_blocks == [c for v in [variant2, variant3] for c in v.commands]
-        assert search_result.force_regenerate is True
-
+    @with_db_context
     def test_search_ref_study__one_variant_completely_uptodate(
         self, tmp_path: Path, variant_study_service: VariantStudyService
     ) -> None:
@@ -521,13 +376,7 @@ class TestSearchRefStudy:
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
         # Prepare some variants with snapshots:
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
-        )
+        variant1 = _create_variant(tmp_path, "variant1", root_study.id, with_snapshot=True, snapshot_version=0)
 
         # Add some variant commands
         variant1.commands = [
@@ -538,6 +387,7 @@ class TestSearchRefStudy:
                 command="create_area",
                 version=1,
                 args='{"area_name": "DE"}',
+                study_version="9.3",
             ),
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -546,6 +396,7 @@ class TestSearchRefStudy:
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
             ),
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -554,31 +405,32 @@ class TestSearchRefStudy:
                 command="update_thermal_clusters",
                 version=1,
                 args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
+                study_version="9.3",
             ),
         ]
-
-        # The last executed command is the last item of the commands list.
         variant1.snapshot.last_executed_command = variant1.commands[-1].id
+
+        # Save the studies in DB
+        variant_study_service.raw_study_service.repository.save(root_study)
+        for variant in [variant1]:
+            variant_study_service.repository.save(variant)
 
         # Check the variants
         references = [variant1]
         generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
+        search_result = generator.search_ref_study(root_study, references, from_scratch=False)
         assert search_result.ref_study == variant1
         assert search_result.cmd_blocks == []
         assert search_result.force_regenerate is False
 
+    @with_db_context
     def test_search_ref_study__one_variant_partially_uptodate(
         self, tmp_path: Path, variant_study_service: VariantStudyService
     ) -> None:
         """
-        Case where the list of studies contains a variant with an up-to-date snapshot and
-        corresponds to a partial generation of commands for the variant (partially up-to-date)
-        We expect to have a list of commands corresponding to the remaining commands.
+        Case where the variant has a snapshot but is not up-to-date and points to the penultimate command.
 
-        Given a list of descendants with some variants with up-to-date snapshots,
-        When calling search_ref_study with the flag from_scratch=False,
-        Then the variant is returned as reference study, and the remaining commands are returned.
+        We expect the reference study to be the variant and the list of commands to be only the last command.
         """
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
@@ -587,8 +439,8 @@ class TestSearchRefStudy:
             tmp_path,
             "variant1",
             root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
+            with_snapshot=True,
+            snapshot_version=-1,  # Mimics an obsolete snapshot as the starting version is supposed to be 0
         )
 
         # Add some variant commands
@@ -600,6 +452,7 @@ class TestSearchRefStudy:
                 command="create_area",
                 version=1,
                 args='{"area_name": "DE"}',
+                study_version="9.3",
             ),
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -608,6 +461,7 @@ class TestSearchRefStudy:
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
             ),
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -616,98 +470,44 @@ class TestSearchRefStudy:
                 command="update_thermal_clusters",
                 version=1,
                 args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
+                study_version="9.3",
             ),
         ]
 
-        # The last executed command is the NOT last item of the commands list.
+        # The last executed command is the penultimate command.
         variant1.snapshot.last_executed_command = variant1.commands[0].id
+
+        # Save the studies in DB
+        variant_study_service.raw_study_service.repository.save(root_study)
+        for variant in [variant1]:
+            variant_study_service.repository.save(variant)
 
         # Check the variants
         references = [variant1]
         generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
+        search_result = generator.search_ref_study(root_study, references, from_scratch=False)
         assert search_result.ref_study == variant1
         assert search_result.cmd_blocks == variant1.commands[1:]
         assert search_result.force_regenerate is False
 
-    def test_search_ref_study__missing_last_command(
-        self, tmp_path: Path, variant_study_service: VariantStudyService
-    ) -> None:
-        """
-        Case where the list of studies contains a variant with an up-to-date snapshot,
-        but the last executed command is missing (probably caused by a bug).
-        We expect to have the list of all variant commands, so that the snapshot can be re-generated.
-        """
-        root_study = create_study(id=str(uuid.uuid4()), name="root")
-
-        # Prepare some variants with snapshots:
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
-        )
-
-        # Add some variant commands
-        variant1.commands = [
-            CommandBlock(
-                id=str(uuid.uuid4()),
-                study_id=variant1.id,
-                index=0,
-                command="create_area",
-                version=1,
-                args='{"area_name": "DE"}',
-            ),
-            CommandBlock(
-                id=str(uuid.uuid4()),
-                study_id=variant1.id,
-                index=1,
-                command="create_thermal_cluster",
-                version=1,
-                args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
-            ),
-            CommandBlock(
-                id=str(uuid.uuid4()),
-                study_id=variant1.id,
-                index=2,
-                command="update_thermal_clusters",
-                version=1,
-                args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
-            ),
-        ]
-
-        # The last executed command is missing.
-        variant1.snapshot.last_executed_command = None
-
-        # Check the variants
-        references = [variant1]
-        generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
-        assert search_result.ref_study == variant1
-        assert search_result.cmd_blocks == variant1.commands
-        assert search_result.force_regenerate is True
-
+    @with_db_context
     def test_search_ref_study__deleted_last_command(
         self, tmp_path: Path, variant_study_service: VariantStudyService
     ) -> None:
         """
-        Case where the list of studies contains a variant with an up-to-date snapshot,
-        but the last executed command is missing (removed).
-        We expect to have the list of all variant commands, so that the snapshot can be re-generated.
+        Case where the variant has a snapshot but is not up to date.
+        It points to a command that no longer exists. It is possible, as the user can remove or replace commands.
+
+        We expect the reference study to be the variant and the list of commands to be all of its commands
         """
         root_study = create_study(id=str(uuid.uuid4()), name="root")
 
-        # Prepare some variants with snapshots:
-        variant1 = _create_variant(
-            tmp_path,
-            "variant1",
-            root_study.id,
-            datetime.datetime(year=2023, month=1, day=1),
-            snapshot_created_at=datetime.datetime(year=2023, month=1, day=2),
-        )
+        # Variant 1 has an up-to-date snapshot.
+        variant1 = _create_variant(tmp_path, "variant1", root_study.id, with_snapshot=True, snapshot_version=0)
+        # Variant 2 is created from Variant 1 and has an obsolete snapshot.
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=True, snapshot_version=-1)
 
-        # Add some variant commands
+        # Add some variant commands to the 1st variant just to ensure we won't have them in the final result.
         variant1.commands = [
             CommandBlock(
                 id=str(uuid.uuid4()),
@@ -716,34 +516,45 @@ class TestSearchRefStudy:
                 command="create_area",
                 version=1,
                 args='{"area_name": "DE"}',
-            ),
+                study_version="9.3",
+            )
+        ]
+
+        variant2.commands = [
             CommandBlock(
                 id=str(uuid.uuid4()),
-                study_id=variant1.id,
+                study_id=variant2.id,
                 index=1,
                 command="create_thermal_cluster",
                 version=1,
                 args='{"area_name": "DE", "cluster_name": "DE", "cluster_type": "thermal"}',
+                study_version="9.3",
             ),
             CommandBlock(
                 id=str(uuid.uuid4()),
-                study_id=variant1.id,
+                study_id=variant2.id,
                 index=2,
                 command="update_thermal_clusters",
                 version=1,
                 args='{"cluster_properties": {"DE": {"DE": {"enabled": False}}}}',
+                study_version="9.3",
             ),
         ]
 
         # The last executed command is missing.
-        variant1.snapshot.last_executed_command = str(uuid.uuid4())
+        variant1.snapshot.last_executed_command = "missing command"
+
+        # Save the studies in DB
+        variant_study_service.raw_study_service.repository.save(root_study)
+        for variant in [variant1, variant2]:
+            variant_study_service.repository.save(variant)
 
         # Check the variants
-        references = [variant1]
+        references = [variant1, variant2]
         generator = _build_generator(variant_study_service)
-        search_result = generator.search_ref_study(root_study, references)
+        search_result = generator.search_ref_study(root_study, references, from_scratch=False)
         assert search_result.ref_study == variant1
-        assert search_result.cmd_blocks == variant1.commands
+        assert search_result.cmd_blocks == variant2.commands
         assert search_result.force_regenerate is True
 
 
@@ -886,11 +697,7 @@ class TestSnapshotGenerator:
 
     @with_admin_user
     @with_db_context
-    def test_generate__nominal_case(
-        self,
-        variant_study_id: str,
-        variant_study_service: VariantStudyService,
-    ) -> None:
+    def test_generate__nominal_case(self, variant_study_id: str, variant_study_service: VariantStudyService) -> None:
         """
         Test the generation of a variant study based on a raw study.
 
@@ -901,7 +708,6 @@ class TestSnapshotGenerator:
         - `notifier` set to a callback function used to register de notifications,
         Then the variant generation must succeed.
         We must check that:
-        - the number of database queries is kept as low as possible,
         - the variant is correctly generated in the "snapshot" directory and all commands are applied,
         - the matrices are not denormalized (we should have links to matrices),
         - the variant is updated in the database (snapshot and additional_data),
@@ -915,18 +721,9 @@ class TestSnapshotGenerator:
         notifier = RegisterNotification()
 
         factory = _get_dao_factory(variant_study_id, variant_study_service)
-        with DBStatementRecorder(db.session.bind) as db_recorder:
-            results = generator.generate_snapshot(
-                variant_study_id, dao_factory=factory, from_scratch=False, notifier=notifier
-            )
-
-        # Check: the number of database queries is kept as low as possible.
-        # We expect 4 queries:
-        # - 1 query to fetch the ancestors of a variant study,
-        # - 1 query to fetch the root study (with owner and groups for permission check),
-        # - 1 query to fetch the list of variants with snapshot, commands, etc.,
-        # - 1 query to insert the variant study snapshot.
-        assert len(db_recorder.sql_statements) == 4, str(db_recorder)
+        results = generator.generate_snapshot(
+            variant_study_id, dao_factory=factory, from_scratch=True, notifier=notifier
+        )
 
         # Check: the variant generation must succeed.
         assert results.model_dump() == {
@@ -1112,23 +909,21 @@ class TestSnapshotGenerator:
         assert isinstance(variant_study, VariantStudy)
 
         study_version = StudyVersion.parse(variant_study.version)
-        variant_study_service.append_commands(
-            variant_study_id,
-            [
-                CommandDTO(action="create_area", args={"area_name": "North"}, study_version=study_version),  # duplicate
-            ],
-        )
-
-        generator = _build_generator(variant_study_service)
 
         err_msg = (
             f"Failed to generate variant study {variant_study.id}: "
             f"Unexpected exception occurred when trying to apply command CommandName.CREATE_AREA: "
             f"Area 'North' already exists and could not be created"
         )
-        factory = _get_dao_factory(variant_study.id, variant_study_service)
         with pytest.raises(VariantGenerationError, match=re.escape(err_msg)):
-            generator.generate_snapshot(variant_study.id, from_scratch=False, dao_factory=factory)
+            variant_study_service.append_commands(
+                variant_study_id,
+                [
+                    CommandDTO(
+                        action="create_area", args={"area_name": "North"}, study_version=study_version
+                    ),  # duplicate
+                ],
+            )
 
         # Check: the snapshot directory is removed.
         snapshot_dir = get_snapshot_dir(variant_study)
@@ -1161,45 +956,18 @@ class TestSnapshotGenerator:
 
         # Check the results
         assert results.model_dump() == {
-            "success": True,
+            "success": True,  # Generation should succeed even if the notification fails.
             "should_invalidate_cache": False,
-            "details": [
-                {
-                    "id": AnyUUID(),
-                    "name": "create_area",
-                    "status": True,
-                    "msg": "Area 'North' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_area",
-                    "status": True,
-                    "msg": "Area 'South' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_link",
-                    "status": True,
-                    "msg": "Link between 'north' and 'south' created",
-                },
-                {
-                    "id": AnyUUID(),
-                    "name": "create_cluster",
-                    "status": True,
-                    "msg": "Thermal cluster 'gas_cluster' added to area 'south'.",
-                },
-            ],
+            "details": [],  # All commands were applied in the fixture
         }
 
-        # Check th logs
+        # Check the logs
         assert "Something went wrong" in caplog.text
 
     @with_admin_user
     @with_db_context
     def test_generate__variant_of_variant(
-        self,
-        variant_study_id: str,
-        variant_study_service: VariantStudyService,
+        self, variant_study_id: str, variant_study_service: VariantStudyService
     ) -> None:
         """
         Test the generation of a variant study of a variant study.
@@ -1222,21 +990,16 @@ class TestSnapshotGenerator:
         )
 
         # Generate the variant again.
-        results = generator.generate_snapshot(new_variant.id, from_scratch=False, dao_factory=factory)
+        results = generator.generate_snapshot(new_variant.id, from_scratch=True, dao_factory=factory)
 
         # Check the results
-        assert results.model_dump() == {
-            "success": True,
-            "should_invalidate_cache": False,
-            "details": [
-                {
-                    "id": AnyUUID(),
-                    "name": "create_area",
-                    "status": True,
-                    "msg": "Area 'East' created",
-                },
-            ],
-        }
+        assert results.model_dump() == {"success": True, "should_invalidate_cache": False, "details": ANY}
+        assert {
+            "id": AnyUUID(),
+            "name": "create_area",
+            "status": True,
+            "msg": "Area 'East' created",
+        } in results.model_dump()["details"]
 
     @with_admin_user
     @with_db_context
@@ -1256,7 +1019,7 @@ class TestSnapshotGenerator:
         assert cache.get(cache_key) is not None
         # Generates the snapshot
         factory = _get_dao_factory(variant_study_id, variant_study_service)
-        results = generator.generate_snapshot(variant_study_id, dao_factory=factory)
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
         # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
         assert not results.should_invalidate_cache
         generated_cache = cache.get(cache_key)
@@ -1278,7 +1041,7 @@ class TestSnapshotGenerator:
         )
 
         # Generates the snapshot
-        results = generator.generate_snapshot(variant_study_id, dao_factory=factory)
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
         # Ensures we shouldn't have to invalidate the cache as the `create cluster` command updated the config correctly
         assert not results.should_invalidate_cache
         # Ensures the cache was modified accordingly
@@ -1302,7 +1065,112 @@ class TestSnapshotGenerator:
             ],
         )
 
-        results = generator.generate_snapshot(variant_study_id, dao_factory=factory)
+        results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
         # Ensures we have to invalidate the cache as the `update_config` command couldn't (it's too generic)
         assert results.should_invalidate_cache
         assert cache.get(cache_key) is None
+
+    @with_admin_user
+    @with_db_context
+    def test_generation_results_details(
+        self, variant_study_service: VariantStudyService, variant_study_id: str
+    ) -> None:
+        generator = _build_generator(variant_study_service)
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
+
+        # Add a command to the variant study inside DB
+        command_block = CommandBlock(
+            id=str(uuid.uuid4()),
+            command="create_cluster",
+            args='{"area_id": "north", "parameters": {"name": "my_cluster"}}',
+            index=5,
+            version=3,
+            study_version="9.3",
+            user_id=get_user_impersonator(),
+            updated_at=current_time(),
+            study_id=variant_study_id,
+        )
+        db.session.add(command_block)
+        db.session.commit()
+
+        # Generate the variant
+        result = generator.generate_snapshot(variant_study_id, from_scratch=False, dao_factory=factory)
+
+        # We should only see the last command we added in the result
+        details = result.model_dump()["details"]
+        assert details == [
+            {
+                "id": ANY,
+                "msg": "Thermal cluster 'my_cluster' added to area 'north'.",
+                "name": "create_cluster",
+                "status": True,
+            }
+        ]
+
+    @with_admin_user
+    @with_db_context
+    def test_db_connections(
+        self, variant_study_service: VariantStudyService, variant_study_id: str, tmp_path: Path
+    ) -> None:
+        """
+        Checks the number of database queries when generating a variant study snapshot.
+        The number should be kept as low as possible.
+        """
+        generator = _build_generator(variant_study_service)
+        factory = _get_dao_factory(variant_study_id, variant_study_service)
+
+        # Generate from scratch
+        with DBStatementRecorder(db.session.bind) as db_recorder:
+            results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
+            assert results.success is True
+
+            # We expect 2 queries:
+            # - 1 query to fetch the whole tree of studies (with join query on owner, groups, commands,
+            # snapshot and command_version)
+            # - 1 query to delete the snapshot
+            # - 1 query to insert the variant study snapshot
+
+            assert len(db_recorder.sql_statements) == 3, str(db_recorder)
+
+        # `is_snapshot_up_to_date` method
+        with DBStatementRecorder(db.session.bind) as db_recorder:
+            variant_study_service.repository.is_snapshot_up_to_date(variant_study_id)
+
+            # We expect 1 query:
+            # - 1 query to fetch the variant study snapshot and its associated command versions in the same query
+
+            assert len(db_recorder.sql_statements) == 1, str(db_recorder)
+
+        # Create a big variant tree to ensure we do not perform N+1 requests
+        variant1 = _create_variant(tmp_path, "variant1", variant_study_id, with_snapshot=False)
+        variant2 = _create_variant(tmp_path, "variant2", variant1.id, with_snapshot=False)
+        variant3 = _create_variant(tmp_path, "variant3", variant2.id, with_snapshot=False)
+        variant4 = _create_variant(tmp_path, "variant4", variant3.id, with_snapshot=False)
+        variant5 = _create_variant(tmp_path, "variant5", variant4.id, with_snapshot=False)
+
+        for k, variant in enumerate([variant1, variant2, variant3, variant4, variant5]):
+            args = to_json_string(dict(area_name=f"fr_{variant.id}"))
+            variant.commands = [
+                CommandBlock(
+                    id=str(uuid.uuid4()),
+                    study_id=variant.id,
+                    index=0,
+                    command="create_area",
+                    version=1,
+                    args=args,
+                    study_version="9.3",
+                )
+            ]
+            variant_study_service.repository.save(variant)
+
+        variant_5_id = variant5.id
+        with DBStatementRecorder(db.session.bind) as db_recorder:
+            # Variants {1...5} do not have a snapshot.
+            # So, we have to go back to the first variant that was generated at the start of the test to find an up-to-date snapshot.
+            # This should not generate N+1 queries even if we have to go back far in the variant tree.
+
+            results = generator.generate_snapshot(variant_5_id, dao_factory=factory, from_scratch=False)
+            assert results.success is True
+
+            # Only 2 queries since snapshot did not exist, so no need to delete it
+            assert len(db_recorder.sql_statements) == 2, str(db_recorder)

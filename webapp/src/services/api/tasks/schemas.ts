@@ -39,9 +39,9 @@ export const taskSchema = z.object({
   owner: z.number().optional(),
   refId: nullishToOptional(z.string()),
   creationDateUtc: z.string(),
-  completionDateUtc: z.string().optional(),
+  completionDateUtc: nullishToOptional(z.string()),
   progress: nullishToOptional(z.number()),
-  result: taskResultSchema.optional(),
+  result: nullishToOptional(taskResultSchema),
   logs: nullishToOptional(z.array(taskLogSchema)),
 });
 

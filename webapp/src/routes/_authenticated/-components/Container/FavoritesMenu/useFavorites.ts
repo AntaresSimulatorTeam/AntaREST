@@ -13,34 +13,53 @@
  */
 
 import { directoryQueries } from "@/queries/directories/queries";
+import { externalDirectoryQueries } from "@/queries/externalDirectories/queries";
 import { studyQueries } from "@/queries/studies/queries";
 import useCreateFavoriteStudy from "@/routes/-shared/hooks/favorites/useCreateFavoriteStudy";
-import type { FavoriteDirectory, FavoriteStudy } from "@/services/api/favorites/types";
+import type {
+  FavoriteDirectory,
+  FavoriteExternalDirectory,
+  FavoriteStudy,
+} from "@/services/api/favorites/types";
 import { sortByName } from "@/services/utils";
 import storage from "@/services/utils/localStorage";
+import { getLastPathSegment, joinPaths } from "@/utils/pathUtils";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMount } from "react-use";
 import type { Favorite } from "./types";
 
-function normalizeAndSortFavorites(favorites: FavoriteStudy[] | FavoriteDirectory[]) {
-  const normalized = favorites.map(
-    (fav): Favorite =>
-      "studyId" in fav
-        ? {
-            id: `study-${fav.studyId}`,
-            elementId: fav.studyId,
-            name: fav.studyName,
-            type: "study",
-            original: fav,
-          }
-        : {
-            id: `directory-${fav.directoryId}`,
-            elementId: fav.directoryId,
-            name: fav.directoryName,
-            type: "directory",
-            original: fav,
-          },
-  );
+function normalizeAndSortFavorites(
+  favorites: FavoriteStudy[] | FavoriteDirectory[] | FavoriteExternalDirectory[],
+) {
+  const normalized = favorites.map((fav): Favorite => {
+    if ("directoryId" in fav) {
+      return {
+        id: `directory-${fav.directoryId}`,
+        name: fav.directoryName,
+        type: "directory",
+        original: fav,
+      };
+    }
+
+    if ("workspace" in fav) {
+      const absolutePath = joinPaths("/", fav.workspace, fav.path);
+
+      return {
+        id: `external-directory-${absolutePath}`,
+        name: getLastPathSegment(fav.path),
+        type: "externalDirectory",
+        absolutePath,
+        original: fav,
+      };
+    }
+
+    return {
+      id: `study-${fav.studyId}`,
+      name: fav.studyName,
+      type: "study",
+      original: fav,
+    };
+  });
 
   return sortByName(normalized);
 }
@@ -73,7 +92,12 @@ function useFavorites() {
     select: normalizeAndSortFavorites,
   });
 
-  return [...favoriteStudies, ...favoriteDirectories];
+  const { data: favoriteExternalDirectories } = useSuspenseQuery({
+    ...externalDirectoryQueries.favorites(),
+    select: normalizeAndSortFavorites,
+  });
+
+  return [...favoriteStudies, ...favoriteDirectories, ...favoriteExternalDirectories];
 }
 
 export default useFavorites;

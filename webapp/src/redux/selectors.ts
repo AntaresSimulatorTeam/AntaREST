@@ -360,16 +360,6 @@ export const getLinksAndClusters = createSelector(getStudySynthesis, (synthesis)
   return linksAndClusters;
 });
 
-export const getStudyOutput = createSelector(
-  getStudySynthesis,
-  (state: AppState, studyId: StudyMetadata["id"], outputId: string) => outputId,
-  (synthesis, outputId) => {
-    if (synthesis?.outputs[outputId]) {
-      return { id: outputId, ...synthesis?.outputs[outputId] };
-    }
-  },
-);
-
 ////////////////////////////////////////////////////////////////
 // Study Maps
 ////////////////////////////////////////////////////////////////

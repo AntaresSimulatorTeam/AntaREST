@@ -12,17 +12,14 @@
 import contextlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 from unittest.mock import Mock
 
 import polars as pl
 import pytest
-from antares.study.version import StudyVersion
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from antarest.blobstore.service import IBlobService
-from antarest.core.interfaces.cache import ICache
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -34,6 +31,7 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.config.optimization_config_model import (
     initialize_optimization_preferences_against_version,
 )
+from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
@@ -41,13 +39,11 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import (
-    STUDY_VERSION_8_6,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
-    STUDY_VERSION_10_0,
+    STUDY_VERSION_10_2,
     Study,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
@@ -63,132 +59,49 @@ def db_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> Databas
 
 
 @pytest.fixture
-def db_dao_930(db_dao_930_and_matrix_service) -> DatabaseStudyDao:
-    return db_dao_930_and_matrix_service[0]
-
-
-@pytest.fixture
-def db_dao_930_and_matrix_service(
-    db_session: Session, matrix_service: ISimpleMatrixService
-) -> tuple[DatabaseStudyDao, ISimpleMatrixService]:
-    return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3), matrix_service
-
-
-@pytest.fixture
-def fs_dao_930_and_matrix_service(
-    db_session: Session, command_context: CommandContext, tmp_path: Path, core_cache: ICache
-) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
-    return build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
-
-
-@pytest.fixture(scope="session")
-def db_dao_930_shared() -> DatabaseStudyDao:
-    return build_shared_db_dao(STUDY_VERSION_9_3, InMemorySimpleMatrixService())
-
-
-def build_shared_db_dao(study_version: StudyVersion, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    """To be used inside tests that do not alter the DAO, but just use it"""
-    engine = create_engine("sqlite:///:memory:")
-    Base.metadata.create_all(engine)
-    make_session = sessionmaker(bind=engine)
-    with contextlib.closing(make_session()) as session:
-        return build_db_dao(session, matrix_service, study_version)
-
-
-@pytest.fixture
 def db_dao_920(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
     return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_2)
 
 
-def build_fs_dao(
-    db_session: Session,
-    version: StudyVersion,
-    command_context: "CommandContext",
-    core_cache: "ICache",
-    tmp_path: Path,
-) -> tuple[FileStudyTreeDao, ISimpleMatrixService]:
-    matrix_service = command_context.matrix_service
-    study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
-    return build_filesystem_dao(db_session, version, command_context, study_factory, tmp_path), matrix_service
+@pytest.fixture
+def db_dao_930(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+
+
+@pytest.fixture(scope="session")
+def db_dao_930_shared() -> DatabaseStudyDao:
+    engine = create_engine("sqlite:///:memory:")
+    Base.metadata.create_all(engine)
+    make_session = sessionmaker(bind=engine)
+    with contextlib.closing(make_session()) as session:
+        return build_db_dao(session, InMemorySimpleMatrixService(), STUDY_VERSION_9_3)
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao_builder(
+def dao_10_2(
     request,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
     command_context: "CommandContext",
     tmp_path: Path,
-    core_cache: "ICache",
-) -> Callable[[StudyVersion], StudyDao]:
-    """A DAO factory parameterized over both backends, accepting the study version as argument."""
-
-    def _build(version: StudyVersion) -> StudyDao:
-        if request.param == "db":
-            return build_db_dao(db_session, matrix_service, version)
-        dao, _ = build_fs_dao(db_session, version, command_context, core_cache, tmp_path)
-        return dao
-
-    return _build
-
-
-@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao_and_matrix_service(
-    request,
-    db_session: Session,
-    matrix_service: ISimpleMatrixService,
-    command_context: "CommandContext",
-    tmp_path: Path,
-    core_cache: "ICache",
-) -> tuple[StudyDao, ISimpleMatrixService]:
-    """A (DAO, matrix_service) pair parameterized over both backends (v9.3)."""
-    if request.param == "db":
-        return build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3), matrix_service
-    else:
-        return build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
-
-
-@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao_10_0(
-    request,
-    db_session: Session,
-    matrix_service: ISimpleMatrixService,
-    command_context: "CommandContext",
-    tmp_path: Path,
-    core_cache: "ICache",
+    study_factory: StudyFactory,
 ) -> StudyDao:
-    """A DAO parameterized over both backends (v10.0)."""
-    # v10.0 has no study template on disk — create a v9.3 study and force its version to 10.0.
+    """A DAO parameterized over both backends (v10.2)."""
+    # v10.2 has no study template on disk — create a v9.3 study and force its version to 10.2.
     if request.param == "db":
         dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
         study = db_session.get(Study, dao.get_study_id())
-        study.version = str(STUDY_VERSION_10_0)
+        study.version = str(STUDY_VERSION_10_2)
         db_session.commit()
         # Settings were saved at v9.3; replay v10 init so v10-specific defaults stick.
         prefs = dao.get_optimization_preferences()
-        initialize_optimization_preferences_against_version(prefs, STUDY_VERSION_10_0)
+        initialize_optimization_preferences_against_version(prefs, STUDY_VERSION_10_2)
         dao.save_optimization_preferences(prefs)
         return dao
     else:
-        dao, _ = build_fs_dao(db_session, STUDY_VERSION_9_3, command_context, core_cache, tmp_path)
-        dao.get_file_study().config.version = STUDY_VERSION_10_0
+        dao = build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
+        dao.get_file_study().config.version = STUDY_VERSION_10_2
         return dao
-
-
-@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao_860_and_matrix_service(
-    request,
-    db_session: Session,
-    matrix_service: ISimpleMatrixService,
-    command_context: "CommandContext",
-    tmp_path: Path,
-    core_cache: "ICache",
-) -> tuple[StudyDao, ISimpleMatrixService]:
-    """A (DAO, matrix_service) pair parameterized over both backends (v8.6)."""
-    if request.param == "db":
-        return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_6), matrix_service
-    else:
-        return build_fs_dao(db_session, STUDY_VERSION_8_6, command_context, core_cache, tmp_path)
 
 
 def build_reserve_definition(reserve_name: str) -> ReserveDefinition:
@@ -216,13 +129,12 @@ class RealCaseStudy:
     dataframes: list[pl.DataFrame]
 
 
-def build_real_case_study(
-    dao: StudyDao, matrix_service: ISimpleMatrixService, null_matrices: bool = False
-) -> RealCaseStudy:
+def build_real_case_study(dao: StudyDao, null_matrices: bool = False) -> RealCaseStudy:
     """
     If `null_matrices` is True, the created matrices will all be the same empty matrix.
     Otherwise, the matrices will be created with different contents to diversify tests.
     """
+    matrix_service = dao.matrix_service
     if null_matrices:
         dataframes = [pl.DataFrame(orient="row")] * 43
     else:
@@ -430,3 +342,60 @@ def create_area(area_name: str, dao: StudyDao) -> None:
     command = CreateArea(area_name=area_name, command_context=command_context, study_version=dao.get_version())
     output = command.apply(dao)
     assert output.status
+
+
+def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
+    # Metadata
+    assert library is not None
+    assert library.id == "andromede-v1-models-weo-hybrid"
+    assert (
+        library.description
+        == "Andromede V1 model library - without expectation operators - allows hybrid connections (i.e. connections between Andromede models and Antares legacy area)"
+    )
+    assert library.version is None
+    # Port types
+    assert len(library.port_types) == 1
+    port_type = library.port_types[0]
+    assert port_type.id == "flow"
+    assert port_type.description == "A port which transfers power flow"
+    assert len(port_type.fields) == 1
+    assert port_type.fields[0].id == "flow"
+    assert port_type.thermal_capacity_connection is None
+    assert port_type.area_connection is not None
+    assert port_type.area_connection.spillage_bound is None
+    assert port_type.area_connection.injection_to_balance == "flow"
+    assert port_type.area_connection.unsupplied_energy_bound is None
+    # Models
+    assert len(library.models) == 2
+    first_model = library.models[0]
+    assert first_model.id == "dsr"
+    assert first_model.description is None
+    assert first_model.taxonomy_category is None
+    assert first_model.properties == []
+    assert len(first_model.parameters) == 2
+    assert first_model.parameters[0].id == "curtailment_price"
+    assert first_model.parameters[0].time_dependent is False
+    assert first_model.parameters[0].scenario_dependent is False
+    assert first_model.parameters[1].id == "max_load"
+    assert first_model.parameters[1].time_dependent is True
+    assert first_model.parameters[1].scenario_dependent is True
+    assert len(first_model.ports) == 1
+    assert first_model.ports[0].id == "balance_port"
+    assert first_model.ports[0].type == "flow"
+    second_model = library.models[1]
+    assert second_model.id == "electrolyser"
+    assert second_model.description is None
+    assert second_model.taxonomy_category is None
+    assert second_model.properties == []
+    assert len(second_model.parameters) == 2
+    assert second_model.parameters[0].id == "efficiency"
+    assert second_model.parameters[0].time_dependent is False
+    assert second_model.parameters[0].scenario_dependent is False
+    assert second_model.parameters[1].id == "p_max"
+    assert second_model.parameters[1].time_dependent is True
+    assert second_model.parameters[1].scenario_dependent is True
+    assert len(second_model.ports) == 2
+    assert second_model.ports[0].id == "hydrogen_port"
+    assert second_model.ports[0].type == "flow"
+    assert second_model.ports[1].id == "power_port"
+    assert second_model.ports[1].type == "flow"

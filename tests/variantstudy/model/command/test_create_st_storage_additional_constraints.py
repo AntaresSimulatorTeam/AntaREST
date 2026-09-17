@@ -18,6 +18,7 @@ from antarest.study.business.model.sts_model import (
     Occurrence,
     STStorageAdditionalConstraintCreation,
 )
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -106,10 +107,9 @@ class TestCreateSTStorageAdditionalConstraint:
             },
         }
 
-    def test_error_cases(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
-        study = empty_study_920
-        dao = build_dao_from_file_study(study, command_context)
-        version = study.config.version
+    def test_error_cases(self, command_context: CommandContext, dao_92: StudyDao) -> None:
+        dao = dao_92
+        version = dao.get_version()
 
         # Create a constraint in a fake area
         cmd = CreateSTStorageAdditionalConstraints(
@@ -124,7 +124,7 @@ class TestCreateSTStorageAdditionalConstraint:
         assert output.message == "Short-term storage 'sts_1' inside area 'fr' does not exist."
 
         # Create the area `fr`
-        cmd = CreateArea(area_name="fr", command_context=command_context, study_version=study.config.version)
+        cmd = CreateArea(area_name="fr", command_context=command_context, study_version=version)
         cmd.apply(dao)
 
         # Create a constraint with a fake storage

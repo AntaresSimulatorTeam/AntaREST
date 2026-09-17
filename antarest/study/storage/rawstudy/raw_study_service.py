@@ -33,6 +33,7 @@ from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_storage import FileStudyStorage
+from antarest.study.storage.file_study_utils import check_study_path
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.study_storage_interface import IStudyStorage
@@ -67,11 +68,12 @@ class RawStudyService(AbstractStudyService):
         self.study_factory = study_factory
         self.repository = repository
         self._matrix_service = command_context.matrix_service
+        blob_service = command_context.blob_service
         generator_matrix_constants = command_context.generator_matrix_constants
-        db_dao_factory = DatabaseStudyDaoFactory(self._matrix_service, generator_matrix_constants)
+        db_dao_factory = DatabaseStudyDaoFactory(self._matrix_service, blob_service, generator_matrix_constants)
         fs_dao_factory = FileStudyDaoFactory(
             self._matrix_service,
-            command_context.blob_service,
+            blob_service,
             generator_matrix_constants,
             study_factory,
             cache,
@@ -114,7 +116,7 @@ class RawStudyService(AbstractStudyService):
             sanitized = str(escape(study_id))
             logger.warning("Study %s not found in metadata db", sanitized)
             raise StudyNotFoundError(study_id)
-        return ResourcePaths(study_path=Path(study.path), output_path=None)
+        return ResourcePaths(study_path=check_study_path(study), output_path=None)
 
     def create_study_dao(self, study: RawStudy) -> None:
         metadata = StudyMetadataCreation(

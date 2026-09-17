@@ -14,13 +14,11 @@
 Database implementation of XpansionDao.
 """
 
-from abc import abstractmethod
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 import polars as pl
 from sqlalchemy import CursorResult, Table, asc, delete, insert, or_, select, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import ColumnElement
 from typing_extensions import override
 
@@ -34,6 +32,8 @@ from antarest.core.exceptions import (
     XpansionConfigurationDoesNotExist,
     XpansionFileNotFoundError,
 )
+from antarest.core.utils.sql_utils import upsert_multiple, upsert_one
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionAdequacyPattern,
@@ -46,7 +46,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.api.xpansion_dao import XpansionDao
 from antarest.study.dao.common import XpansionCapacitiesMapping, XpansionConstraintsMapping, XpansionWeightsMapping
-from antarest.study.dao.database.common import get_row_representation_as_dict
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.xpansion import (
     XPANSION_ADEQUACY_CRITERION_TABLE,
     XPANSION_ADEQUACY_PATTERN_TABLE,
@@ -57,36 +57,22 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_SETTINGS_TABLE,
     XPANSION_WEIGHT_TABLE,
 )
-from antarest.study.dao.database.sql_utils import upsert_multiple, upsert_one
-
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-class DatabaseXpansionDao(XpansionDao):
+class DatabaseXpansionDao(XpansionDao, DatabaseDaoBase):
     """Database implementation of XpansionDao."""
 
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
-
-    # ------------------------------------------------------------------
-    # Internal helpers
-    # ------------------------------------------------------------------
-
     def _settings_row_exists(self) -> bool:
-        stmt = select(XPANSION_SETTINGS_TABLE.c.study_id).where(XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
+        stmt = select(XPANSION_SETTINGS_TABLE.c.study_data_id).where(
+            XPANSION_SETTINGS_TABLE.c.study_data_id == self._study_data_id
+        )
         return self._db_session.execute(stmt).fetchone() is not None
 
     def _candidate_to_row(self, candidate: XpansionCandidate) -> dict[str, Any]:
         data = candidate.model_dump()
         data.pop("link")
         return {
-            "study_id": self._study_id,
+            "study_data_id": self._study_data_id,
             "link_area_from": candidate.link.area_from,
             "link_area_to": candidate.link.area_to,
             **data,
@@ -96,7 +82,7 @@ class DatabaseXpansionDao(XpansionDao):
         data = get_row_representation_as_dict(row)
         area_from = data.pop("link_area_from")
         area_to = data.pop("link_area_to")
-        del data["study_id"]
+        del data["study_data_id"]
         data["link"] = XpansionLink(area_from=area_from, area_to=area_to).serialize()
         return XpansionCandidate.model_validate(data)
 
@@ -115,7 +101,7 @@ class DatabaseXpansionDao(XpansionDao):
     @override
     def delete_xpansion_configuration(self) -> None:
         result = self._db_session.execute(
-            delete(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
+            delete(XPANSION_SETTINGS_TABLE).where(XPANSION_SETTINGS_TABLE.c.study_data_id == self._study_data_id)
         )
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
@@ -133,16 +119,16 @@ class DatabaseXpansionDao(XpansionDao):
             select(XPANSION_SETTINGS_TABLE, XPANSION_SENSITIVITY_PROJECTION_TABLE.c.candidate_name)
             .outerjoin(
                 XPANSION_SENSITIVITY_PROJECTION_TABLE,
-                XPANSION_SETTINGS_TABLE.c.study_id == XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id,
+                XPANSION_SETTINGS_TABLE.c.study_data_id == XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_data_id,
             )
-            .where(XPANSION_SETTINGS_TABLE.c.study_id == self._study_id)
+            .where(XPANSION_SETTINGS_TABLE.c.study_data_id == self._study_data_id)
         )
         rows = self._db_session.execute(stmt).fetchall()
         if not rows:
             raise XpansionConfigurationDoesNotExist(self._study_id)
 
         data = get_row_representation_as_dict(rows[0])
-        del data["study_id"]
+        del data["study_data_id"]
         del data["candidate_name"]
         sensitivity_config = XpansionSensitivitySettings(
             epsilon=data.pop("sensitivity_epsilon"),
@@ -156,7 +142,7 @@ class DatabaseXpansionDao(XpansionDao):
         data = settings.model_dump()
         sensitivity = data.pop("sensitivity_config")
         values: dict[str, Any] = {
-            "study_id": self._study_id,
+            "study_data_id": self._study_data_id,
             **data,
             "sensitivity_epsilon": sensitivity["epsilon"],
             "sensitivity_capex": sensitivity["capex"],
@@ -165,14 +151,17 @@ class DatabaseXpansionDao(XpansionDao):
         # Replace projection rows: delete existing, then insert the new list.
         self._db_session.execute(
             delete(XPANSION_SENSITIVITY_PROJECTION_TABLE).where(
-                XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id == self._study_id
+                XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_data_id == self._study_data_id
             )
         )
         if sensitivity["projection"]:
             try:
                 self._db_session.execute(
                     insert(XPANSION_SENSITIVITY_PROJECTION_TABLE),
-                    [{"study_id": self._study_id, "candidate_name": name} for name in sensitivity["projection"]],
+                    [
+                        {"study_data_id": self._study_data_id, "candidate_name": name}
+                        for name in sensitivity["projection"]
+                    ],
                 )
             except IntegrityError:
                 self._db_session.rollback()
@@ -188,7 +177,7 @@ class DatabaseXpansionDao(XpansionDao):
             if filename:
                 row = self._db_session.execute(
                     select(table.c.filename).where(
-                        (table.c.study_id == self._study_id) & (table.c.filename == filename)
+                        (table.c.study_data_id == self._study_data_id) & (table.c.filename == filename)
                     )
                 ).fetchone()
                 if row is None:
@@ -200,14 +189,15 @@ class DatabaseXpansionDao(XpansionDao):
 
     @override
     def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
-        stmt = select(XPANSION_CANDIDATE_TABLE).where(XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+        stmt = select(XPANSION_CANDIDATE_TABLE).where(XPANSION_CANDIDATE_TABLE.c.study_data_id == self._study_data_id)
         rows = self._db_session.execute(stmt).fetchall()
         return [self._row_to_candidate(row) for row in rows]
 
     @override
     def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
         stmt = select(XPANSION_CANDIDATE_TABLE).where(
-            (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id) & (XPANSION_CANDIDATE_TABLE.c.name == candidate_id)
+            (XPANSION_CANDIDATE_TABLE.c.study_data_id == self._study_data_id)
+            & (XPANSION_CANDIDATE_TABLE.c.name == candidate_id)
         )
         row = self._db_session.execute(stmt).fetchone()
         if not row:
@@ -232,14 +222,14 @@ class DatabaseXpansionDao(XpansionDao):
         if old_id and old_id != candidate.name:
             self._db_session.execute(
                 delete(XPANSION_CANDIDATE_TABLE).where(
-                    (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+                    (XPANSION_CANDIDATE_TABLE.c.study_data_id == self._study_data_id)
                     & (XPANSION_CANDIDATE_TABLE.c.name == candidate.name)
                 )
             )
             result = self._db_session.execute(
                 update(XPANSION_CANDIDATE_TABLE)
                 .where(
-                    (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+                    (XPANSION_CANDIDATE_TABLE.c.study_data_id == self._study_data_id)
                     & (XPANSION_CANDIDATE_TABLE.c.name == old_id)
                 )
                 .values(self._candidate_to_row(candidate))
@@ -261,7 +251,7 @@ class DatabaseXpansionDao(XpansionDao):
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
         result = self._db_session.execute(
             delete(XPANSION_CANDIDATE_TABLE).where(
-                (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+                (XPANSION_CANDIDATE_TABLE.c.study_data_id == self._study_data_id)
                 & (XPANSION_CANDIDATE_TABLE.c.name == candidate_name)
             )
         )
@@ -290,7 +280,9 @@ class DatabaseXpansionDao(XpansionDao):
         existing = {
             row.filename
             for row in self._db_session.execute(
-                select(XPANSION_CAPACITY_TABLE.c.filename).where(XPANSION_CAPACITY_TABLE.c.study_id == self._study_id)
+                select(XPANSION_CAPACITY_TABLE.c.filename).where(
+                    XPANSION_CAPACITY_TABLE.c.study_data_id == self._study_data_id
+                )
             ).fetchall()
         }
         for attr in [
@@ -308,7 +300,7 @@ class DatabaseXpansionDao(XpansionDao):
     @override
     def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
         stmt = select(XPANSION_SENSITIVITY_PROJECTION_TABLE.c.candidate_name).where(
-            (XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_id == self._study_id)
+            (XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_data_id == self._study_data_id)
             & (XPANSION_SENSITIVITY_PROJECTION_TABLE.c.candidate_name == candidate_name)
         )
         if self._db_session.execute(stmt).fetchone() is not None:
@@ -328,9 +320,9 @@ class DatabaseXpansionDao(XpansionDao):
             )
             .outerjoin(
                 XPANSION_ADEQUACY_PATTERN_TABLE,
-                XPANSION_ADEQUACY_CRITERION_TABLE.c.study_id == XPANSION_ADEQUACY_PATTERN_TABLE.c.study_id,
+                XPANSION_ADEQUACY_CRITERION_TABLE.c.study_data_id == XPANSION_ADEQUACY_PATTERN_TABLE.c.study_data_id,
             )
-            .where(XPANSION_ADEQUACY_CRITERION_TABLE.c.study_id == self._study_id)
+            .where(XPANSION_ADEQUACY_CRITERION_TABLE.c.study_data_id == self._study_data_id)
         )
         rows = self._db_session.execute(stmt).fetchall()
         if not rows:
@@ -354,19 +346,24 @@ class DatabaseXpansionDao(XpansionDao):
             self._db_session,
             XPANSION_ADEQUACY_CRITERION_TABLE,
             {
-                "study_id": self._study_id,
+                "study_data_id": self._study_data_id,
                 "stopping_threshold": criterion.stopping_threshold,
                 "criterion_count_threshold": criterion.criterion_count_threshold,
             },
         )
         # Replace all patterns: delete existing rows then insert the new ones.
         self._db_session.execute(
-            delete(XPANSION_ADEQUACY_PATTERN_TABLE).where(XPANSION_ADEQUACY_PATTERN_TABLE.c.study_id == self._study_id)
+            delete(XPANSION_ADEQUACY_PATTERN_TABLE).where(
+                XPANSION_ADEQUACY_PATTERN_TABLE.c.study_data_id == self._study_data_id
+            )
         )
         if criterion.patterns:
             self._db_session.execute(
                 insert(XPANSION_ADEQUACY_PATTERN_TABLE),
-                [{"study_id": self._study_id, "area": p.area, "criterion": p.criterion} for p in criterion.patterns],
+                [
+                    {"study_data_id": self._study_data_id, "area": p.area, "criterion": p.criterion}
+                    for p in criterion.patterns
+                ],
             )
         self._db_session.commit()
 
@@ -385,7 +382,7 @@ class DatabaseXpansionDao(XpansionDao):
     def get_all_xpansion_weights(self) -> XpansionWeightsMapping:
         rows = self._db_session.execute(
             select(XPANSION_WEIGHT_TABLE.c.matrix_id, XPANSION_WEIGHT_TABLE.c.filename).where(
-                XPANSION_WEIGHT_TABLE.c.study_id == self._study_id
+                XPANSION_WEIGHT_TABLE.c.study_data_id == self._study_data_id
             )
         ).fetchall()
         return {row.filename: row.matrix_id for row in rows}
@@ -394,7 +391,7 @@ class DatabaseXpansionDao(XpansionDao):
     def get_all_xpansion_capacities(self) -> XpansionCapacitiesMapping:
         rows = self._db_session.execute(
             select(XPANSION_CAPACITY_TABLE.c.matrix_id, XPANSION_CAPACITY_TABLE.c.filename).where(
-                XPANSION_CAPACITY_TABLE.c.study_id == self._study_id
+                XPANSION_CAPACITY_TABLE.c.study_data_id == self._study_data_id
             )
         ).fetchall()
         return {row.filename: row.matrix_id for row in rows}
@@ -403,7 +400,7 @@ class DatabaseXpansionDao(XpansionDao):
     def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
         rows = self._db_session.execute(
             select(XPANSION_CONSTRAINT_TABLE.c.content, XPANSION_CONSTRAINT_TABLE.c.filename).where(
-                XPANSION_CONSTRAINT_TABLE.c.study_id == self._study_id
+                XPANSION_CONSTRAINT_TABLE.c.study_data_id == self._study_data_id
             )
         ).fetchall()
         return {row.filename: row.content for row in rows}
@@ -413,7 +410,7 @@ class DatabaseXpansionDao(XpansionDao):
         if resource_type == XpansionResourceFileType.CONSTRAINTS:
             row = self._db_session.execute(
                 select(XPANSION_CONSTRAINT_TABLE.c.content).where(
-                    (XPANSION_CONSTRAINT_TABLE.c.study_id == self._study_id)
+                    (XPANSION_CONSTRAINT_TABLE.c.study_data_id == self._study_data_id)
                     & (XPANSION_CONSTRAINT_TABLE.c.filename == filename)
                 )
             ).fetchone()
@@ -422,7 +419,9 @@ class DatabaseXpansionDao(XpansionDao):
             return bytes(row.content)
         table = self._get_resource_table(resource_type)
         row = self._db_session.execute(
-            select(table.c.matrix_id).where((table.c.study_id == self._study_id) & (table.c.filename == filename))
+            select(table.c.matrix_id).where(
+                (table.c.study_data_id == self._study_data_id) & (table.c.filename == filename)
+            )
         ).fetchone()
         if row is None:
             raise XpansionFileNotFoundError(f"Resource '{filename}' not found")
@@ -432,7 +431,7 @@ class DatabaseXpansionDao(XpansionDao):
     def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
         table = self._get_resource_table(resource_type)
         rows = self._db_session.execute(
-            select(table.c.filename).where(table.c.study_id == self._study_id).order_by(asc(table.c.filename))
+            select(table.c.filename).where(table.c.study_data_id == self._study_data_id).order_by(asc(table.c.filename))
         ).fetchall()
         return [row.filename for row in rows]
 
@@ -457,7 +456,7 @@ class DatabaseXpansionDao(XpansionDao):
             ]
             row = self._db_session.execute(
                 select(XPANSION_CANDIDATE_TABLE.c.name).where(
-                    (XPANSION_CANDIDATE_TABLE.c.study_id == self._study_id)
+                    (XPANSION_CANDIDATE_TABLE.c.study_data_id == self._study_data_id)
                     & or_(*[col == filename for col in profile_cols])
                 )
             ).fetchone()
@@ -468,8 +467,8 @@ class DatabaseXpansionDao(XpansionDao):
         self, col: ColumnElement[str], resource_type: XpansionResourceFileType, filename: str
     ) -> None:
         row = self._db_session.execute(
-            select(XPANSION_SETTINGS_TABLE.c.study_id).where(
-                (XPANSION_SETTINGS_TABLE.c.study_id == self._study_id) & (col == filename)
+            select(XPANSION_SETTINGS_TABLE.c.study_data_id).where(
+                (XPANSION_SETTINGS_TABLE.c.study_data_id == self._study_data_id) & (col == filename)
             )
         ).fetchone()
         if row:
@@ -479,7 +478,7 @@ class DatabaseXpansionDao(XpansionDao):
     def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         table = self._get_resource_table(resource_type)
         result = self._db_session.execute(
-            delete(table).where((table.c.study_id == self._study_id) & (table.c.filename == filename))
+            delete(table).where((table.c.study_data_id == self._study_data_id) & (table.c.filename == filename))
         )
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
@@ -490,7 +489,7 @@ class DatabaseXpansionDao(XpansionDao):
     def save_xpansion_constraint(self, data: XpansionConstraintsMapping) -> None:
         values = []
         for filename, content in data.items():
-            values.append({"study_id": self._study_id, "filename": filename, "content": content})
+            values.append({"study_data_id": self._study_data_id, "filename": filename, "content": content})
 
         upsert_multiple(self._db_session, XPANSION_CONSTRAINT_TABLE, values)
         self._db_session.commit()
@@ -499,7 +498,7 @@ class DatabaseXpansionDao(XpansionDao):
     def save_xpansion_capacity(self, data: XpansionCapacitiesMapping) -> None:
         values = []
         for filename, series_id in data.items():
-            values.append({"study_id": self._study_id, "filename": filename, "matrix_id": series_id})
+            values.append({"study_data_id": self._study_data_id, "filename": filename, "matrix_id": series_id})
 
         upsert_multiple(self._db_session, XPANSION_CAPACITY_TABLE, values)
         self._db_session.commit()
@@ -508,7 +507,7 @@ class DatabaseXpansionDao(XpansionDao):
     def save_xpansion_weight(self, data: XpansionWeightsMapping) -> None:
         values = []
         for filename, series_id in data.items():
-            values.append({"study_id": self._study_id, "filename": filename, "matrix_id": series_id})
+            values.append({"study_data_id": self._study_data_id, "filename": filename, "matrix_id": series_id})
 
         upsert_multiple(self._db_session, XPANSION_WEIGHT_TABLE, values)
         self._db_session.commit()

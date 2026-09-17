@@ -1,6 +1,89 @@
 Antares Web Changelog
 =====================
 
+v2.34.0 (2026-08-14)
+--------------------
+
+### Features
+* **launcher**: handle gracefully empty output [`#3282`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3282)
+* **ui-reserves**: add read-only mode to GroupedDataTable and reserves view [`#3281`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3281)
+* **ui-tablemodes**: use API instead of localStorage [`#3275`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3275)
+* **ui-debug**: hide the view for study without filesystem storage [`#3278`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3278)
+* **favorite_external_directory**: add external directories favorite [`#3239`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3239)
+* **favorite_aggregate**: added the aggregate method, checking for another tests to be done [`#3293`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3293)
+* **ui-reserves**: add FormDrawer component for editing reserves [`#3294`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3294)
+* **ui**: add reserves global parameters fields validation [`#3299`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3299)
+* **reserves**: support thermal reserves [`#3280`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3280)
+* **ui-studies**: add studies storage mode selection on create and import [`#3306`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3306)
+* **study**: add invalidate cache endpoint [`#3307`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3307)
+* **ai**: initialize AGENTS.md [`#3311`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3311)
+* **launcher**: save launcher loads in db [`#3283`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3283)
+* **launcher**: add launch scheduling [`#3300`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3300)
+* **user**: create CRUD endpoints for user resources in a study [`#3313`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3313)
+* **ui-studies**: allow only managed references to be moved [`#3325`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3325)
+* **ui-studies**: add multiple import [`#3329`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3329)
+* **launcher**: slurm add oversubscribe [`#3321`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3321)
+* **output_disk_usage**: added the output disk usage in database [`#3330`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3330)
+* **ui-reserves**: add reserves certifications view [`#3323`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3323)
+* **ui-jobs**: add scheduled study launch [`#3340`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3340)
+* **ui-studies**: allow adding external directories to favorites [`#3338`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3338)
+
+### Bug fixes
+
+* **config**: fix file parsing issue [`#3285`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3285)
+* **api**: harmonize usage of `response_model_exclude_none` [`#3291`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3291)
+* **hydro**: correlation issue for DB studies [`#3290`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3290)
+* **config**: revert allowing integers as group IDs [`#3288`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3288)
+* **ui**: prevent infinite update loop in GroupedDataTable prop sync [`#3297`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3297)
+* **ui-reserves**: add missing ratios validation rules [`#3303`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3303)
+* **reserves**: rename endpoint and use right file name [`#3304`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3304)
+* **docs**: favicon display and other broken link [`#3309`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3309)
+* **variant**: invalidate snapshot during generation [`#3320`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3320)
+* **db**: modify existing alembic migration [`#3324`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3324)
+* **celery**: add explicit exception when initializing MaintenanceContext and do not initialize unused services in worker [`#3327`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3327)
+* **launcher**: fix celery worker launch [`#3331`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3331)
+* **launcher**: solve possibly conflicting URLs for launchers config [`#3333`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3333)
+* **dependencies**: update uv.lock, fix conflicting paramiko version [`#3335`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3335)
+* **ui-outputs**: some issues in the view [`#3336`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3336)
+* **output**: search digest in correct folder in adequacy [`#3337`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3337)
+* **reserves**: save_symmetry should require existing certification [`#3343`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3343)
+* **ui**: stabilize debounced output export in ExportModal [`#3348`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3348)
+* **ui**: stabilize debounced job output download [`#3353`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3353)
+
+### Performances
+
+* **variant**: get variant lineage in 1 query [`#3319`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3319)
+* **output**: dont read whole file when not necessary [`#3332`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3332)
+
+### Refactorings
+
+* **config**: use pydantic when loading config [`#3261`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3261)
+* **ui-reserves**: load includeReserves flag via TanStack Query, apply read-only to all tabs [`#3287`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3287)
+* **variant**: remove legacy endpoints [`#3292`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3292) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **archive**: drop `py7zr` library [`#3296`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3296) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **events**: only push event when the map is edited [`#3301`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3301)
+* **output**: harmonize aggregation logic [`#3308`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3308) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **variants**: make the generation synchronous [`#3298`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3298) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **db**: change user resources table structure [`#3318`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3318)
+* **ui-output**: update the view [`#3295`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3295)
+* **ui-ws**: jobs listener [`#3326`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3326)
+* **output**: move models and functions to more relevant places [`#3339`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3339)
+
+### Miscellaneous
+
+* **gunicorn**: put back logs [`#3284`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3284)
+* **study**: remove todo related to old R scripts release [`#3289`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3289)
+* **launcher**: remove adequacy patch legacy code [`#3302`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3302)
+* **sonar**: fix some reliability issues [`#3310`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3310)
+* **dao**: remove `in_memory_dao` [`#3312`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3312)
+* **dao**: parametrize more tests [`#3315`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3315)
+* **study**: remove unused cache [`#3316`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3316)
+* **dependencies**: bump mypy to 2.3 [`#3317`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3317)
+* **deps**: update python dependencies (minor/patch) [`#3266`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3266)
+* **ui-study**: hide DB storage mode for now [`#3352`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3352)
+
+**Full Changelog**: https://github.com/AntaresSimulatorTeam/AntaREST/compare/v2.33.0...v2.34.0
+
 v2.33.0 (2026-06-24)
 --------------------
 

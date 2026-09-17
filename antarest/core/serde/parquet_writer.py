@@ -19,7 +19,7 @@ import polars as pl
 import pyarrow as pa
 from pyarrow.parquet import ParquetFile, ParquetWriter
 
-from antarest.output.filestudy.utils import MCYEAR_COL, TIME_ID_COL
+from antarest.output.filestudy.model import MCYEAR_COL, TIME_ID_COL
 
 # 1M rows, which is the default in pyarrow parquet too
 DEFAULT_ROW_GROUP_SIZE = 1024 * 1024

@@ -731,6 +731,10 @@ tasks:
         - generate-kirshoff-constraints
 ```
 
+> NOTE: these names are yours to choose, they only identify a remote worker and its queues. They are
+> unrelated to the [`services`](#services) list of the `server` section, which takes the names of the
+> application's own service modules.
+
 # server
 
 ## **worker_threadpool_size**
@@ -743,8 +747,9 @@ tasks:
 
 - **Type:** List of Strings
 - **Default value:** []
-- **Description:** Services to enable when launching the application. Possible values: "watcher," "matrix_gc," "
-  archive_worker," "auto_archiver," "simulator_worker."
+- **Description:** Services to enable when launching the application. Possible values, as defined by the `Module`
+  enum in `antarest/service_creator.py`: `watcher`, `matrix_gc`, `archive_worker`, `auto_archiver`, `blob_gc`,
+  `variable_view_gc`.
 
 ```yaml
 #example for server settings

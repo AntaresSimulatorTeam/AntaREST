@@ -26,6 +26,7 @@ export function adaptJobDtoToJob(dto: JobDTO): Job {
         : undefined,
     status: dto.status,
     creationDate: dto.creation_date,
+    scheduledAt: dto.scheduled_at,
     completionDate: dto.completion_date,
     msg: dto.msg,
     outputId: dto.output_id,

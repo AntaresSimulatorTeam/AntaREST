@@ -21,13 +21,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import { IconButton, Stack, Typography } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
+import { actionButtonStyles, nodeActionsContainerStyles } from "../styles";
 import EditableTreeItem from "./EditableTreeItem";
-import {
-  actionButtonStyles,
-  nodeActionsContainerStyles,
-  treeItemStyles,
-  treeNodeIcons,
-} from "./styles";
+import { treeItemStyles, treeNodeIcons } from "./styles";
 import type { ManagedTreeNodeProps } from "./types";
 
 function ManagedTreeNode({

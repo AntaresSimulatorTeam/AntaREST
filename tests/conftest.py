@@ -20,10 +20,12 @@ from antares.study.version.create_app import CreateApp
 from sqlalchemy.orm import Session
 
 from antarest.blobstore.in_memory import InMemoryBlobService
+from antarest.core.config import InternalMatrixFormat
 from antarest.core.interfaces.cache import ICache
 from antarest.favorite.repository import FavoriteDirectoryRepository, FavoriteStudyRepository
 from antarest.favorite.service import FavoriteDirectoryService, FavoriteStudyService
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
+from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
@@ -75,9 +77,32 @@ def ini_cleaner() -> Callable[[str], str]:
     return cleaner
 
 
-@pytest.fixture(name="matrix_service")
+@pytest.fixture(name="matrix_service", scope="session")
 def matrix_service_fixture() -> InMemorySimpleMatrixService:
     return InMemorySimpleMatrixService()
+
+
+@pytest.fixture(name="real_matrix_service")
+def real_matrix_service_fixture(tmp_path: Path) -> MatrixService:
+    repo = MatrixRepository()
+    bucket_dir = tmp_path / "bucket_dir"
+    content = MatrixContentRepository(bucket_dir, InternalMatrixFormat.FEATHER)
+    dataset_repo = MatrixDataSetRepository()
+
+    config = Mock()
+    config.storage = Mock()
+    config.storage.tmp_dir = bucket_dir
+
+    service = MatrixService(
+        repo=repo,
+        repo_dataset=dataset_repo,
+        matrix_content_repository=content,
+        user_service=Mock(),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+        config=config,
+    )
+    return service
 
 
 @pytest.fixture(name="blob_service")
@@ -190,7 +215,7 @@ def build_db_dao(db_session: Session, matrix_service: ISimpleMatrixService, vers
         study.storage_mode = StorageMode.DATABASE
         db_session.add(study)
         db_session.commit()
-        factory = DatabaseStudyDaoFactory(matrix_service, generator_matrix_constants, db_session)
+        factory = DatabaseStudyDaoFactory(matrix_service, InMemoryBlobService(), generator_matrix_constants, db_session)
         metadata = StudyMetadataCreation(id=study_id, version=version, managed=True)
         dao = factory.create_study_dao(metadata)
     return dao
@@ -248,23 +273,46 @@ def build_filesystem_dao(
 
 @pytest.fixture
 def fs_dao(
-    db_session: Session, command_context: CommandContext, tmp_path: Path, study_factory: StudyFactory
+    db_session: Session, command_context: CommandContext, tmp_path: Path, core_cache: ICache
 ) -> FileStudyTreeDao:
+    study_factory = StudyFactory(matrix_service=command_context.matrix_service, cache=core_cache)
     return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao(
+def dao_builder(
     request,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
-    command_context: CommandContext,
+    command_context: "CommandContext",
     tmp_path: Path,
-    core_cache: ICache,
-) -> StudyDao:
-    """A DAO parameterized over both backends (v8.8+)."""
-    if request.param == "db":
-        return build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
-    else:
-        study_factory = StudyFactory(matrix_service=matrix_service, cache=core_cache)
-        return build_filesystem_dao(db_session, STUDY_VERSION_8_8, command_context, study_factory, tmp_path)
+    study_factory: StudyFactory,
+) -> Callable[[StudyVersion], StudyDao]:
+    """A DAO factory parameterized over both backends, accepting the study version as argument."""
+
+    def _build(version: StudyVersion) -> StudyDao:
+        if request.param == "db":
+            return build_db_dao(db_session, matrix_service, version)
+        return build_filesystem_dao(db_session, version, command_context, study_factory, tmp_path)
+
+    return _build
+
+
+@pytest.fixture
+def dao(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_8_8)
+
+
+@pytest.fixture
+def dao_86(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_8_6)
+
+
+@pytest.fixture
+def dao_92(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_9_2)
+
+
+@pytest.fixture
+def dao_93(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_9_3)

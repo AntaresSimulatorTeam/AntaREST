@@ -72,6 +72,7 @@ from antarest.login.model import Group
 from antarest.login.service import LoginService, UserNotFoundError
 from antarest.login.utils import get_current_user, get_user_id, get_user_impersonator
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
+from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.business.adequacy_patch_management import AdequacyPatchManager
 from antarest.study.business.advanced_parameters_management import AdvancedParamsManager
@@ -79,7 +80,9 @@ from antarest.study.business.allocation_management import AllocationManager
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
 from antarest.study.business.areas.renewable_management import RenewableManager
+from antarest.study.business.areas.reserve_certification_management import ReserveCertificationsManager
 from antarest.study.business.areas.reserve_definitions_management import ReserveDefinitionsManager
+from antarest.study.business.areas.reserve_symmetries_management import ReserveSymmetriesManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
 from antarest.study.business.areas.thermal_management import ThermalManager
 from antarest.study.business.binding_constraint_management import BindingConstraintManager, ConstraintFilters
@@ -111,19 +114,19 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.business.thematic_trimming_management import ThematicTrimmingManager
 from antarest.study.business.timeseries_config_management import TimeSeriesConfigManager
+from antarest.study.business.user_resources_management import UserResourcesManager
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.dao.api.study_dao import ReadOnlyStudyDao, StudyDao
 from antarest.study.directory_service import DirectoryService
 from antarest.study.dtos import StudySynthesis
-from antarest.study.events import notify_study_creation, notify_study_data_edition, notify_study_edition
+from antarest.study.events import notify_study_creation, notify_study_edition, notify_study_map_edition
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
     MatrixFrequency,
-    MatrixIndex,
     RawStudy,
     StorageMode,
     Study,
@@ -146,6 +149,7 @@ from antarest.study.repository import (
     StudyPagination,
     StudySortBy,
 )
+from antarest.study.storage.file_study_utils import check_study_path
 from antarest.study.storage.matrix_profile import adjust_matrix_columns_index
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -338,21 +342,6 @@ class ThermalClusterTimeSeriesGeneratorTask:
                 thermal_outage_details=self.thermal_outage_details,
             )
             self.study_interface_supplier(study).add_commands([command], listener)
-
-            if isinstance(study, VariantStudy):
-                # In this case we only added the command to the list.
-                # It means the generation will really be executed in the next snapshot generation.
-                # We don't want this, we want this task to generate the matrices no matter the study.
-                # Therefore, we have to launch a variant generation task inside the timeseries generation one.
-                variant_service = self.storage_service.variant_study_service
-                task_service = variant_service.task_service
-                generation_task_id = variant_service.generate_task(study, False, listener)
-                task_service.await_task(generation_task_id)
-                result = task_service.status_task(generation_task_id)
-                assert result.result is not None
-                if not result.result.success:
-                    raise ValueError(result.result.message)
-
             notify_study_edition(self.event_bus, study)
 
     def run_task(self, notifier: ITaskNotifier) -> TaskResult:
@@ -545,10 +534,14 @@ class VariantStudyInterface(StudyInterface):
     @override
     def update_study_metadata(self, metadata: StudyMetadataUpdate) -> None:
         """
-        We update the last modification date in DB.
-        This way, the variant snapshot will be re-generated inside future operations.
+        If the study is stored on the filesystem, some of its metadata is duplicated.
+        They are stored in DB and on the disk.
+        When updating the metadata, we store the new data in DB and increment the `commands_list_version` table.
+        This way, the variant snapshot will be re-generated with the metadata stored in DB for future operations.
         """
         self._study.updated_at = current_time()
+        if self._study.storage_mode == StorageMode.FILESYSTEM:
+            self._variant_service.repository.increment_commands_list_version(self._study.id)
         self._variant_service.repository.save(self._study)
 
 
@@ -557,7 +550,7 @@ class IOutputsAccess(ABC):
     Access to outputs data.
 
     The abstraction is quite leaky: the behaviour for outputs stored in-study is kept
-    unchanched for backward compat, and stays mainly implemented in raw study service.
+    unchanged for backward compat, and stays mainly implemented in raw study service.
 
     Lightweight interface to the output service, with only a few methods that are legitimate to
     use by studies being an aggregate of study input data and output data.
@@ -654,6 +647,8 @@ class StudyService:
         self.compatibility_parameters_manager = CompatibilityParamsManager(command_context)
         self.reserves_global_parameters_manager = ReservesGlobalParametersManager(command_context)
         self.reserve_definitions_manager = ReserveDefinitionsManager(command_context)
+        self.reserve_symmetries_manager = ReserveSymmetriesManager(command_context)
+        self.reserve_certifications_manager = ReserveCertificationsManager(command_context)
         self.hydro_manager = HydroManager(command_context)
         self.allocation_manager = AllocationManager(command_context)
         self.renewable_manager = RenewableManager(command_context)
@@ -674,6 +669,7 @@ class StudyService:
             self.st_storage_manager,
             self.binding_constraint_manager,
         )
+        self.user_resources_manager = UserResourcesManager(command_context)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: list[Callable[[str], None]] = []
@@ -929,6 +925,12 @@ class StudyService:
         self.assert_study_unarchived(study)
         return study
 
+    def invalidate_cache(self, uuid: str) -> None:
+        """Drop the study cache so the next read rebuilds its config from disk."""
+        study = self.get_study(uuid)
+        logger.info(f"Invalidating cache for study {study.id}")
+        remove_from_cache(cache=self.cache_service, root_id=study.id)
+
     def get_study_interface(self, study: Study) -> StudyInterface:
         """
         Creates the business interface to a particular study.
@@ -990,7 +992,7 @@ class StudyService:
             id=sid,
             name=study_name,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=str(study_path),
+            path=str(study_path) if storage_mode == StorageMode.FILESYSTEM else None,
             author=author,
             editor=author,
             created_at=now_utc,
@@ -1091,12 +1093,17 @@ class StudyService:
         now = current_time()
         clean_up_missing_studies_threshold = now - timedelta(days=MAX_MISSING_STUDY_TIMEOUT)
         all_studies = self.repository.get_all_raw()
+
+        all_studies = [study for study in all_studies if not is_managed(study)]
         if directory:
             if recursive:
-                all_studies = [raw_study for raw_study in all_studies if directory in Path(raw_study.path).parents]
+                all_studies = [
+                    raw_study for raw_study in all_studies if directory in check_study_path(raw_study).parents
+                ]
             else:
-                all_studies = [raw_study for raw_study in all_studies if directory == Path(raw_study.path).parent]
-        all_studies = [study for study in all_studies if study.workspace != DEFAULT_WORKSPACE_NAME]
+                all_studies = [
+                    raw_study for raw_study in all_studies if directory == check_study_path(raw_study).parent
+                ]
         folders = [folder for folder in folders if folder.workspace != DEFAULT_WORKSPACE_NAME]
         studies_by_path_workspace = {(study.workspace, study.path): study for study in all_studies}
 
@@ -1383,7 +1390,7 @@ class StudyService:
         Returns:
             Path to the archive file containing the study files compressed inside.
         """
-        path_study = Path(metadata.path)
+        study_name = metadata.name
         with tempfile.TemporaryDirectory(dir=self.config.storage.tmp_dir) as tmpdir:
             logger.info(f"Exporting study {metadata.id} to temporary path {tmpdir}")
             tmp_study_path = Path(tmpdir) / "tmp_copy"
@@ -1396,7 +1403,7 @@ class StudyService:
                     )
             stopwatch = StopWatch()
             archive_dir(tmp_study_path, target, archive_format=archive_format)
-            logger.info(f"Study {path_study} exported ({target.suffix} format) in {stopwatch}s")
+            logger.info(f"Study {study_name} exported ({target.suffix} format) in {stopwatch}s")
         return target
 
     def export_study_flat(
@@ -1566,7 +1573,7 @@ class StudyService:
         study = RawStudy(
             id=sid,
             workspace=DEFAULT_WORKSPACE_NAME,
-            path=path,
+            path=path if storage_mode == StorageMode.FILESYSTEM else None,
             editor=self.get_user_name(),
             public_mode=PublicMode.NONE if group_ids else PublicMode.READ,
             owner=owner,
@@ -1703,7 +1710,6 @@ class StudyService:
             parsed_commands.extend(self.storage_service.variant_study_service.command_factory.to_command(command))
         self.get_study_interface(study).add_commands(parsed_commands)
 
-        notify_study_data_edition(self.event_bus, study)
         logger.info("Study %s updated by user %s", uuid, get_user_id())
         return None
 
@@ -1743,7 +1749,6 @@ class StudyService:
         else:
             self._edit_study_using_command(study=study, url=url.strip().strip("/"), data=new)
 
-        notify_study_data_edition(self.event_bus, study)
         logger.info("data %s on study %s updated by user %s", url, uuid, get_user_id())
         return cast(JSON, new)
 
@@ -1875,7 +1880,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         new_area = self.area_manager.create_area(self.get_study_interface(study), area_creation_dto)
-        notify_study_data_edition(self.event_bus, study)
+        notify_study_map_edition(self.event_bus, study)
         return new_area
 
     def create_link(
@@ -1887,7 +1892,7 @@ class StudyService:
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
         new_link = self.links_manager.create_link(self.get_study_interface(study), link_creation_dto)
-        notify_study_data_edition(self.event_bus, study)
+        notify_study_map_edition(self.event_bus, study)
         return new_link
 
     def update_link(
@@ -1903,7 +1908,7 @@ class StudyService:
         updated_link = self.links_manager.update_link(
             self.get_study_interface(study), area_from, area_to, link_update_dto
         )
-        notify_study_data_edition(self.event_bus, study)
+        notify_study_map_edition(self.event_bus, study)
         return updated_link
 
     def update_area_ui(
@@ -1916,7 +1921,8 @@ class StudyService:
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
         self.assert_study_unarchived(study)
-        return self.area_manager.update_area_ui(self.get_study_interface(study), area_id, area_ui, layer)
+        self.area_manager.update_area_ui(self.get_study_interface(study), area_id, area_ui, layer)
+        notify_study_map_edition(self.event_bus, study)
 
     def delete_area(self, uuid: str, area_id: str) -> None:
         """
@@ -1944,7 +1950,7 @@ class StudyService:
 
         # Delete the area
         self.area_manager.delete_area(study_interface, area_id)
-        notify_study_data_edition(self.event_bus, study)
+        notify_study_map_edition(self.event_bus, study)
 
     def delete_link(
         self,
@@ -1976,7 +1982,7 @@ class StudyService:
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(link_id, binding_ids, object_type="Link")
         self.links_manager.delete_link(study_interface, area_from, area_to)
-        notify_study_data_edition(self.event_bus, study)
+        notify_study_map_edition(self.event_bus, study)
 
     def archive(self, uuid: str) -> str:
         logger.info(f"Archiving study {uuid}")
@@ -2125,7 +2131,7 @@ class StudyService:
         with contextlib.suppress(FileNotFoundError):
             archive_exists = self.storage_service.raw_study_service.find_archive_path(study).is_file()
 
-        study_exists = Path(study.path).joinpath("study.antares").is_file()
+        study_exists = study.path is not None and Path(study.path).joinpath("study.antares").is_file()
         state = get_archive_consistency_state(
             archived_in_db=study.archived,
             archive_exists=archive_exists,

@@ -293,6 +293,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
         "launcher_params": ANY,
         "status": "pending",
         "creation_date": ANY,
+        "scheduled_at": None,
         "completion_date": None,
         "msg": None,
         "output_id": None,

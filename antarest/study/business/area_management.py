@@ -31,7 +31,6 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
-from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -75,16 +74,6 @@ class AreaManager:
             ChildNotFoundError: if one of the Area IDs is not found in the configuration.
         """
         return study.get_study_dao().get_all_areas_ui_info()
-
-    def update_layer_areas(self, study: StudyInterface, layer_id: str, areas: list[str]) -> None:
-        logger.info(f"Replacing layer {layer_id} areas with {areas}")
-        command = ReplaceLayerAreas(
-            layer_id=layer_id,
-            area_ids=areas,
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-        study.add_commands([command])
 
     def create_area(self, study: StudyInterface, area_creation_info: AreaCreation) -> AreaInfo:
         # check if area already exists

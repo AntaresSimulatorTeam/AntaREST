@@ -13,12 +13,14 @@
  */
 
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
+import FavoriteExternalDirectoryToggle from "@/routes/-shared/components/studies/FavoriteToggle/FavoriteExternalDirectoryToggle";
 import { sortByName } from "@/services/utils";
 import RadarIcon from "@mui/icons-material/Radar";
-import { Tooltip } from "@mui/material";
+import { Stack, Tooltip, Typography } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { actionButtonStyles, nodeActionsContainerStyles } from "../styles";
 import { treeItemStyles, treeNodeIcons, workspaceItemStyles } from "./styles";
 import type { ExternalTreeNodeMetadata, ExternalTreeNodeProps } from "./types";
 
@@ -29,6 +31,12 @@ const filterScannedStudies = R.reject<ExternalTreeNodeMetadata>(
 const isWorkspacePath = (path: string): boolean =>
   path.startsWith("/") && !path.slice(1).includes("/");
 
+const getWorkspaceAndRelativePath = (path: string) => {
+  const [workspace, ...rest] = path.split("/").filter(Boolean);
+  const relativePath = rest.join("/");
+  return [workspace, relativePath] as const;
+};
+
 function ExternalTreeNode({ node, itemsLoading, exploredFolders }: ExternalTreeNodeProps) {
   const { hasChildren, children, path, name, isStudyFolder, alias } = node;
   const { t } = useTranslation();
@@ -37,6 +45,7 @@ function ExternalTreeNode({ node, itemsLoading, exploredFolders }: ExternalTreeN
   const hasUnloadedChildren =
     hasChildren && children.length === 0 && !exploredFolders.includes(path);
   const isWorkspace = isWorkspacePath(path);
+  const [workspace, relativePath] = getWorkspaceAndRelativePath(path);
 
   const sortedChildren = useMemo(() => {
     return sortByName(filterScannedStudies(children));
@@ -76,7 +85,23 @@ function ExternalTreeNode({ node, itemsLoading, exploredFolders }: ExternalTreeN
   return (
     <TreeItemEnhanced
       itemId={path}
-      label={label}
+      label={
+        <Stack justifyContent="space-between" spacing={1}>
+          <Typography variant="body2" noWrap>
+            {label}
+          </Typography>
+          <Stack spacing={0.25} sx={nodeActionsContainerStyles}>
+            {!isWorkspace && (
+              <FavoriteExternalDirectoryToggle
+                workspace={workspace}
+                path={relativePath}
+                slotProps={{ icon: { fontSize: "extra-small" } }}
+                sx={actionButtonStyles}
+              />
+            )}
+          </Stack>
+        </Stack>
+      }
       loading={isLoading}
       slots={{
         collapseIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folderOpen,

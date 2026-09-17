@@ -393,30 +393,13 @@ class TestFetchRawData:
 
         # With a path that doesn't exist
         res = client.delete(f"/v1/studies/{internal_study_id}/raw?path=user/fake_folder/fake_file.txt")
-        expected_msg = "the given path doesn't exist"
+        assert "the given path doesn't exist" in res.json()["description"]
         if study_type == "raw":
             assert res.status_code == 403
             assert res.json()["exception"] == "ResourceDeletionNotAllowed"
-            assert expected_msg in res.json()["description"]
         else:
-            res.raise_for_status()
-            task_id = client.put(f"/v1/studies/{internal_study_id}/generate").json()
-            res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True")
-            task = res.json()
-            assert task["status"] == TaskStatus.FAILED.value
-            assert not task["result"]["success"]
-            assert expected_msg in task["result"]["message"]
-            # Check the message users will see inside the front-end (GET /comments endpoint will fail)
-            res = client.get(f"/v1/studies/{internal_study_id}/comments")
             assert res.status_code == 417
-            response = res.json()
-            assert response["exception"] == "VariantGenerationError"
-            assert expected_msg in response["description"]
-            # We have to delete the command to make the variant "clean" again.
-            res = client.get(f"/v1/studies/{internal_study_id}/commands")
-            cmd_id = res.json()[-1]["id"]
-            res = client.delete(f"/v1/studies/{internal_study_id}/commands/{cmd_id}")
-            res.raise_for_status()
+            assert res.json()["exception"] == "VariantGenerationError"
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_create_folder(

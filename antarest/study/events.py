@@ -18,10 +18,10 @@ from antarest.study.model import (
 )
 
 
-def notify_study_data_edition(event_bus: IEventBus, study: Study) -> None:
+def notify_study_map_edition(event_bus: IEventBus, study: Study) -> None:
     event_bus.push(
         Event(
-            type=EventType.STUDY_DATA_EDITED,
+            type=EventType.STUDY_MAP_EDITED,
             payload=study.to_json_summary(),
             permissions=PermissionInfo.from_study(study),
         )

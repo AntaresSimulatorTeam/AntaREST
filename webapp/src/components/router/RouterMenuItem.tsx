@@ -17,7 +17,9 @@ import { createLink, type LinkComponent } from "@tanstack/react-router";
 
 const CustomMenuItem = createLink(MenuItem);
 
-export const RouterMenuItem: LinkComponent<typeof MenuItem> = (props) => {
+export type RouterMenuItemProps = LinkComponent<typeof MenuItem>;
+
+const RouterMenuItem: LinkComponent<typeof MenuItem> = (props) => {
   return <CustomMenuItem activeProps={{ selected: true }} {...props} />;
 };
 

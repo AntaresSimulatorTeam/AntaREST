@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import { TimeFrequency } from "@/components/Matrix/shared/constants";
+import type { TimeFrequencyType } from "@/components/Matrix/shared/types";
 import SelectMulti from "@/components/SelectMulti";
 import SelectSingle from "@/components/SelectSingle";
 import { Box, Checkbox, FormControlLabel, styled } from "@mui/material";
@@ -19,12 +21,11 @@ import range from "lodash/range";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
   type Area,
   type District,
-  type StudySynthesis,
   type StudyOutputDownloadDTO,
+  type StudySynthesis,
 } from "../../../../../../../types/types";
 import Filter from "./Filter";
 import TagSelect from "./TagSelect";
@@ -62,13 +63,6 @@ function ExportFilterModal(props: PropTypes) {
     StudyOutputDownloadType.LINKS,
     StudyOutputDownloadType.DISTRICT,
   ];
-  const levelList: string[] = [
-    StudyOutputDownloadLevelDTO.HOURLY,
-    StudyOutputDownloadLevelDTO.DAILY,
-    StudyOutputDownloadLevelDTO.WEEKLY,
-    StudyOutputDownloadLevelDTO.MONTHLY,
-    StudyOutputDownloadLevelDTO.ANNUAL,
-  ];
 
   const onTypeChange = (value: string[] | string): void => {
     setFilter({
@@ -81,7 +75,7 @@ function ExportFilterModal(props: PropTypes) {
   };
 
   const onLevelChange = (value: string[] | string): void => {
-    setFilter({ ...filter, level: value as StudyOutputDownloadLevelDTO });
+    setFilter({ ...filter, level: value as TimeFrequencyType });
   };
 
   useEffect(() => {
@@ -125,9 +119,9 @@ function ExportFilterModal(props: PropTypes) {
       )}
       <SelectSingle
         name={t("study.level")}
-        list={levelList.map((elm) => ({
+        list={Object.values(TimeFrequency).map((elm) => ({
           id: elm,
-          name: t(`study.${elm.toLowerCase()}`),
+          name: t(`study.${elm}`),
         }))}
         data={filter.level}
         setValue={(data: string) => onLevelChange(data)}

@@ -17,7 +17,7 @@ export const WsEventType = {
   StudyCreated: "STUDY_CREATED",
   StudyEdited: "STUDY_EDITED",
   StudyDeleted: "STUDY_DELETED",
-  StudyDataEdited: "STUDY_DATA_EDITED",
+  StudyMapEdited: "STUDY_MAP_EDITED",
   StudyJobStarted: "STUDY_JOB_STARTED",
   StudyJobLogUpdate: "STUDY_JOB_LOG_UPDATE",
   StudyJobCompleted: "STUDY_JOB_COMPLETED",

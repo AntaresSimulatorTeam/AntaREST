@@ -11,10 +11,15 @@
 # This file is part of the Antares project.
 from pathlib import PurePosixPath
 
+from sqlalchemy.orm import Session
+
 from antarest.blobstore.model import BlobReference
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.database.database_blob_usage_provider import DatabaseBlobUsageProvider
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.model import STUDY_VERSION_8_8
+from tests.conftest import build_db_dao
 
 
 def test_blob_usage_provider_returns_blob_ids(db_dao: DatabaseStudyDao) -> None:
@@ -55,6 +60,30 @@ def test_blob_usage_provider_ignores_folders(db_dao: DatabaseStudyDao) -> None:
 
     assert len(used_blobs) == 1
     assert used_blobs[0].blob_id == "blob_aaa"
+
+
+def test_blob_usage_provider_reports_every_study(
+    db_dao: DatabaseStudyDao, db_session: Session, matrix_service: ISimpleMatrixService
+) -> None:
+    """
+    The provider walks all studies at once. Since `user_resources` is keyed by `study_data_id`,
+    the study each blob is used by is recovered by a join, which must not lose or mix up rows.
+    """
+    other_dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_8_8)
+    db_dao.save_user_resources(
+        [UserResourceDataCreation(path=PurePosixPath("a.txt"), resource_type=ResourceType.FILE, blob_id="blob_aaa")]
+    )
+    other_dao.save_user_resources(
+        [UserResourceDataCreation(path=PurePosixPath("b.txt"), resource_type=ResourceType.FILE, blob_id="blob_bbb")]
+    )
+
+    provider = DatabaseBlobUsageProvider()
+    usage = {b.blob_id: b.use_description for b in provider.get_blob_usage()}
+
+    assert usage == {
+        "blob_aaa": f"Used by study {db_dao.get_study_id()}",
+        "blob_bbb": f"Used by study {other_dao.get_study_id()}",
+    }
 
 
 def test_blob_usage_provider_empty() -> None:

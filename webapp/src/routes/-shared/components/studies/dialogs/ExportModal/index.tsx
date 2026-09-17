@@ -14,12 +14,12 @@
 
 import BasicDialog, { type BasicDialogProps } from "@/components/dialogs/BasicDialog";
 import SelectSingle from "@/components/SelectSingle";
+import useDebounce from "@/hooks/useDebounce";
 import { getOutputs } from "@/services/api/studies/outputs";
 import type { Output } from "@/services/api/studies/outputs/types";
 import { Box, Button } from "@mui/material";
 import type { AxiosError } from "axios";
 import debug from "debug";
-import debounce from "lodash/debounce";
 import { useSnackbar } from "notistack";
 import * as R from "ramda";
 import { useEffect, useState } from "react";
@@ -32,7 +32,6 @@ import {
   getStudySynthesis,
 } from "../../../../../../services/api/study";
 import {
-  StudyOutputDownloadLevelDTO,
   StudyOutputDownloadType,
   type GenericInfo,
   type StudyMetadata,
@@ -77,12 +76,12 @@ export default function ExportModal(props: BasicDialogProps & Props) {
   const [studySynthesis, setStudySynthesis] = useState<StudySynthesis>();
   const [filter, setFilter] = useState<StudyOutputDownloadDTO>({
     type: StudyOutputDownloadType.AREAS,
-    level: StudyOutputDownloadLevelDTO.WEEKLY,
+    level: "weekly",
     synthesis: false,
     includeClusters: false,
   });
 
-  const exportOutput = debounce(
+  const exportOutput = useDebounce(
     async (output: string) => {
       if (study) {
         try {
@@ -92,8 +91,7 @@ export default function ExportModal(props: BasicDialogProps & Props) {
         }
       }
     },
-    2000,
-    { leading: true, trailing: false },
+    { wait: 2000, leading: true, trailing: false },
   );
 
   const onExportFiltered = async (

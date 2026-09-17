@@ -19,6 +19,7 @@ export interface ExternalTreeNodeMetadata {
   path: string;
   children: ExternalTreeNodeMetadata[];
   hasChildren?: boolean;
+  // TODO: unclear name, doesn't reflect its actual purpose in the app (triggers the radar icon display for "unscanned" study folders)
   isStudyFolder?: boolean;
   isScannedStudy?: boolean;
   alias?: string;

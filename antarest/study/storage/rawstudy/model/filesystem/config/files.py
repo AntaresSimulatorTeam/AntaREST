@@ -35,7 +35,12 @@ from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_9_2, STUDY_VERSION_10_0
+from antarest.study.model import (
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_10_2,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
@@ -540,9 +545,9 @@ def _parse_reserves(root: Path, area: str) -> list[str]:
     Parse the reserves INI file and return the list of reserve ids
     """
 
-    # Reserve definitions exist only since v10.0
+    # Reserve definitions exist only since v10.2
     version = _parse_version(root)
-    if version < STUDY_VERSION_10_0:
+    if version < STUDY_VERSION_10_2:
         return []
 
     relpath = Path(f"input/reserves/{area}/reserves.yml")
@@ -571,15 +576,3 @@ def _parse_links_filtering(root: Path, area: str) -> dict[str, LinkConfig]:
         file_type=FileType.SIMPLE_INI,
     )
     return {link_id: parse_link(obj, area, link_id).to_config() for link_id, obj in properties_ini.items()}
-
-
-def _check_build_on_solver_tests(test_dir: Path) -> None:
-    for antares_path in test_dir.rglob("study.antares"):
-        study_path = antares_path.parent
-        print(f"Checking '{study_path}'...")
-        build(study_path, "test")
-
-
-if __name__ == "__main__":
-    TEST_DIR = Path("~/Projects/antarest_data/studies/Antares_Simulator_Tests_NR").expanduser()
-    _check_build_on_solver_tests(TEST_DIR)

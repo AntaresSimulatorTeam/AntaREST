@@ -14,7 +14,9 @@ from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
 from antarest.study.business.model.layer_model import Layer, LayerCreation, LayerUpdate
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
+from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.update_layer import UpdateLayer
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -39,13 +41,28 @@ class LayerManager:
 
         return layer_id
 
-    def update_layer_name(self, study: StudyInterface, layer_id: str, layer_name: str) -> None:
-        command = UpdateLayer(
-            parameters=LayerUpdate(id=layer_id, name=layer_name),
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-        study.add_commands([command])
+    def update_layer(self, study: StudyInterface, layer_id: str, layer_name: str, areas: list[str]) -> None:
+        commands: list[ICommand] = []
+
+        if layer_name:
+            command1 = UpdateLayer(
+                parameters=LayerUpdate(id=layer_id, name=layer_name),
+                command_context=self._command_context,
+                study_version=study.version,
+            )
+            commands.append(command1)
+
+        if areas:
+            command2 = ReplaceLayerAreas(
+                layer_id=layer_id,
+                area_ids=areas,
+                command_context=self._command_context,
+                study_version=study.version,
+            )
+            commands.append(command2)
+
+        if commands:
+            study.add_commands(commands)
 
     def remove_layer(self, study: StudyInterface, layer_id: str) -> None:
         """

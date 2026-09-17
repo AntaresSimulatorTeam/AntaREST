@@ -189,6 +189,7 @@ function Matrix({
                 canImport={canImport}
                 enableFilters={enableFilters}
                 enableResize={enableResize}
+                readOnly={isSubmitting || readOnly}
                 onImport={(_, index) => {
                   setUploadType(index === 0 ? "file" : "database");
                 }}

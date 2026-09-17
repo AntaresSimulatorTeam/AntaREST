@@ -7,7 +7,7 @@ edit_uri: edit/dev/docs
 theme:
   name: material
   logo: assets/logo.png
-  favicon: assets/icone.png
+  favicon: assets/favicon.png
   prev_next_buttons_location: none
   features:
     - navigation.instant
@@ -35,7 +35,7 @@ nav:
   - Database management: database.md
   - Add a new study version: add-new-antares-version.md
   - Changelog: CHANGELOG.md
-  - Contributing: CONTRIBUTING.md
+  - Contributing: contributing.md
   
 extra:
   generator: false

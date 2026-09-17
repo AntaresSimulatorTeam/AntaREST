@@ -182,15 +182,14 @@ def test_renewable_exists_returns_false_for_unknown_area(dao: StudyDao) -> None:
     assert not dao.renewable_exists("nonexistent", "gas")
 
 
-def test_renewable_matrix_round_trip(dao_and_matrix_service) -> None:
+def test_renewable_matrix_round_trip(dao: StudyDao) -> None:
     """Matrix survives a save/get round-trip on both backends."""
-    dao, matrix_service = dao_and_matrix_service
     save_area(dao, "Paris")
     renewable = RenewableCluster(id="battery", name="Battery")
     dao.save_renewable("paris", renewable)
 
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
-    series_id = matrix_service.create(dataframe)
+    series_id = dao.matrix_service.create(dataframe)
 
     dao.save_renewable_series({"paris": {"battery": series_id}})
     pl.testing.assert_frame_equal(dao.get_renewable_series("paris", "battery"), dataframe, check_dtypes=False)

@@ -38,7 +38,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     output_id = "20201014-1425eco-goodbye"
     res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-list")
     expected_content = from_json((ASSETS_DIR / "res1.json").read_bytes())
-    assert expected_content == res.json()
+    assert res.json() == expected_content
 
     # Ensures we saved the data inside the DB and that we're still able to read it
     with db():
@@ -47,7 +47,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
         assert db_content.study_id == internal_study_id
         assert db_content.output_id == output_id
         assert db_content.variables_list_version == 1
-        assert db_content.to_model().model_dump(by_alias=True) == expected_content
+        assert expected_content == db_content.to_model().model_dump(by_alias=True)
 
     # Checks mc-all links work properly as we didn't have any info in the first output
     output_id = "20241807-1540eco-extra-outputs"
@@ -290,31 +290,31 @@ def test_export_output_variables_view(client: TestClient, user_access_token: str
     # Default format is CSV
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
-    assert content == [",1,2", "2018-01-07,46452000,46452000", "2018-01-14,46452000,46452000"]
+    assert content == [",1,2", "2018-01-07,46452000.0,46452000.0", "2018-01-14,46452000.0,46452000.0"]
 
     # Without index
     query_params["index"] = "false"
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
-    assert content == ["1,2", "46452000,46452000", "46452000,46452000"]
+    assert content == ["1,2", "46452000.0,46452000.0", "46452000.0,46452000.0"]
 
     # Without headers
     query_params["header"] = "false"
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
-    assert content == ["46452000,46452000", "46452000,46452000"]
+    assert content == ["46452000.0,46452000.0", "46452000.0,46452000.0"]
 
     # Change format to TSV
     query_params["export_format"] = "tsv"
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
-    assert content == ["46452000\t46452000", "46452000\t46452000"]
+    assert content == ["46452000.0\t46452000.0", "46452000.0\t46452000.0"]
 
     # Use Csv semicolon
     query_params["export_format"] = "csv (semicolon)"
     res = client.get(export_url, params=query_params)
     content = res.content.decode("utf-8").splitlines()
-    assert content == ["46452000;46452000", "46452000;46452000"]
+    assert content == ["46452000,0;46452000,0", "46452000,0;46452000,0"]
 
     # Format to Excel
     query_params["export_format"] = "xlsx"

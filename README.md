@@ -10,7 +10,7 @@
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
 [![React](https://img.shields.io/badge/react-18.x-blue.svg)](https://reactjs.org/)
 
-[Documentation](https://antares-web.readthedocs.io/) • [Installation](#installation) • [Contributing](./CONTRIBUTING.md) • [Issues](https://github.com/AntaresSimulatorTeam/AntaREST/issues)
+[Documentation](https://antares-web.readthedocs.io/) • [Installation](#installation) • [Contributing](./contributing.md) • [Issues](https://github.com/AntaresSimulatorTeam/AntaREST/issues)
 
 </div>
 
@@ -68,7 +68,7 @@ adding powerful features for collaboration, storage optimization, and advanced e
 Before you begin, ensure you have the following installed:
 
 - **Python**: 3.11.x ([Download](https://www.python.org/downloads/))
-- **Node.js**: 22.13.0 ([Download](https://nodejs.org/))
+- **Node.js**: 22.23.2 ([Download](https://nodejs.org/))
 - **Git**: Latest version ([Download](https://git-scm.com/))
 
 Optional (for specific deployment modes):
@@ -219,7 +219,7 @@ mypy
 We welcome contributions from the community! Whether you're fixing bugs, 
 adding features, or improving documentation, your help is appreciated.
 
-Please read our [Contributing Guide](./CONTRIBUTING.md) to learn about:
+Please read our [Contributing Guide](./contributing.md) to learn about:
 - Setting up your development environment
 - Code style and standards
 - Submitting pull requests

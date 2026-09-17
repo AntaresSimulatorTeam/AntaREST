@@ -12,13 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import type { FavoriteDirectory, FavoriteStudy } from "@/services/api/favorites/types";
+import type {
+  FavoriteDirectory,
+  FavoriteExternalDirectory,
+  FavoriteStudy,
+} from "@/services/api/favorites/types";
 
 export type Favorite = {
   id: string;
-  elementId: string;
   name: string;
 } & (
   | { type: "study"; original: FavoriteStudy }
   | { type: "directory"; original: FavoriteDirectory }
+  | { type: "externalDirectory"; absolutePath: string; original: FavoriteExternalDirectory }
 );

@@ -17,6 +17,7 @@ import { useLayoutEffect, useRef } from "react";
 /**
  * Hook that returns a mutable ref that automatically updates its value.
  *
+ * @deprecated Use `useLatest` from react-use instead.
  * @param value - The value to store in the ref.
  * @returns The mutable ref.
  */
