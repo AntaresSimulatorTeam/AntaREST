@@ -38,13 +38,20 @@ def upgrade():
         Column("extra_outputs", String(), nullable=True),
         Column("properties", String(), nullable=True),
         Column("binding_constraints", String(), nullable=True),
-        ForeignKeyConstraint(["parent_category"], ["gems_taxonomy_categories.id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(
+            ["study_data_id", "parent_category"],
+            ["gems_taxonomy_categories.study_data_id", "gems_taxonomy_categories.id"],
+            ondelete="CASCADE",
+        ),
         ForeignKeyConstraint(["study_data_id"], ["gems_taxonomy_metadata.study_data_id"], ondelete="CASCADE"),
     )
 
     with op.batch_alter_table("gems_models", schema=None) as batch_op:
         batch_op.create_foreign_key(
-            NEW_FK_NAME, "gems_taxonomy_categories", ["taxonomy_category"], ["id"]
+            NEW_FK_NAME,
+            "gems_taxonomy_categories",
+            ["study_data_id", "taxonomy_category"],
+            ["study_data_id", "id"],
         )
 
 def downgrade():
