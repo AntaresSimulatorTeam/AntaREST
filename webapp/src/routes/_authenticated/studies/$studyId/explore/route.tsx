@@ -97,6 +97,15 @@ function StudyExploreLayout() {
             search: { path: undefined },
           }),
         },
+        study.storageMode === "database" && {
+          id: "user-resources",
+          label: t("study.userResources"),
+          linkOptions: linkOptions({
+            to: "/studies/$studyId/explore/user-resources",
+            params,
+            search: { path: undefined },
+          }),
+        },
       ].filter(Boolean)}
       divider
     />
