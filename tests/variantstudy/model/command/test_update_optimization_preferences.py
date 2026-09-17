@@ -36,6 +36,7 @@ class TestUpdateOptimizationPreferences:
             "hurdleCosts": False,
             "transmissionCapacities": False,
             "unfeasibleProblemBehavior": UnfeasibleProblemBehavior.ERROR_DRY,
+            "includeThermalClusterRamping": True,
         }
 
         properties = OptimizationPreferencesUpdate.model_validate(args)
@@ -51,6 +52,7 @@ class TestUpdateOptimizationPreferences:
                 "include-hurdlecosts": False,
                 "transmission-capacities": False,
                 "include-unfeasible-problem-behavior": UnfeasibleProblemBehavior.ERROR_DRY,
+                "include-thermal-cluster-ramping": True,
             }
         )
 

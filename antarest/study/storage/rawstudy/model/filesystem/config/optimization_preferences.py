@@ -36,6 +36,7 @@ class OptimizationPreferencesFileData(AntaresBaseModel):
     )
     thermal_clusters_min_stable_power: bool | None = Field(default=None, alias="include-tc-minstablepower")
     thermal_clusters_min_ud_time: bool | None = Field(default=None, alias="include-tc-min-ud-time")
+    include_thermal_cluster_ramping: bool | None = Field(default=None, alias="include-thermal-cluster-ramping")
     day_ahead_reserve: bool | None = Field(default=None, alias="include-dayahead")
     primary_reserve: bool | None = Field(default=None, alias="include-primaryreserve")
     strategic_reserve: bool | None = Field(default=None, alias="include-strategicreserve")

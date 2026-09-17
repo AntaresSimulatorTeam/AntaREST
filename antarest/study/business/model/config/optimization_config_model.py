@@ -65,6 +65,7 @@ class OptimizationPreferences(AntaresBaseModel):
     transmission_capacities: bool | LegacyTransmissionCapacities | TransmissionCapacities = True
     thermal_clusters_min_stable_power: bool = True
     thermal_clusters_min_ud_time: bool = True
+    include_thermal_cluster_ramping: bool = False
     day_ahead_reserve: bool = True
     primary_reserve: bool = True
     strategic_reserve: bool = True
@@ -84,6 +85,7 @@ class OptimizationPreferencesUpdate(AntaresBaseModel):
     transmission_capacities: bool | LegacyTransmissionCapacities | TransmissionCapacities | None = None
     thermal_clusters_min_stable_power: bool | None = None
     thermal_clusters_min_ud_time: bool | None = None
+    include_thermal_cluster_ramping: bool | None = None
     day_ahead_reserve: bool | None = None
     primary_reserve: bool | None = None
     strategic_reserve: bool | None = None

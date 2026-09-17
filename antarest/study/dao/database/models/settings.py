@@ -140,6 +140,7 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
     Column("transmission_capacities", String(), nullable=False),
     Column("thermal_clusters_min_stable_power", Boolean(), nullable=False),
     Column("thermal_clusters_min_ud_time", Boolean(), nullable=False),
+    Column("include_thermal_cluster_ramping", Boolean(), nullable=False),
     Column("day_ahead_reserve", Boolean(), nullable=False),
     Column("primary_reserve", Boolean(), nullable=False),
     Column("strategic_reserve", Boolean(), nullable=False),
