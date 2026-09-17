@@ -14,6 +14,7 @@ from pathlib import Path
 
 from typing_extensions import override
 
+from antarest.core.exceptions import GemsTaxonomyAlreadyExists
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.dao.api.gems_taxonomy_dao import GemsTaxonomyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -41,6 +42,10 @@ class FileStudyGemsTaxonomyDao(GemsTaxonomyDao, ABC):
 
     @override
     def save_taxonomy(self, taxonomy: GemsTaxonomy) -> None:
-        taxonomy_file_path = _get_gems_taxonomy_file_path(self.get_file_study().config.study_path)
+        file_study = self.get_file_study()
+        taxonomy_file_path = _get_gems_taxonomy_file_path(file_study.config.study_path)
+        if taxonomy_file_path.exists():
+            raise GemsTaxonomyAlreadyExists(f"A taxonomy already exists for study {file_study.config.study_id}")
+
         yaml_content = taxonomy.model_dump(mode="json", exclude_unset=True, by_alias=True)
         YAMLWriter().write({"taxonomy": yaml_content}, taxonomy_file_path)
