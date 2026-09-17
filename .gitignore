@@ -156,4 +156,4 @@ watcher
 !uv.lock
 
 **/bucket
-blobstore/
+/blobstore/
