@@ -17,27 +17,27 @@ import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import StudyPathFE from "@/routes/-shared/components/studies/StudyPathFE";
-import { createFolder } from "@/services/api/studies/raw";
+import { createOrReplaceUserResource } from "@/services/api/studies/userResources";
 import type { StudyMetadata } from "@/types/types";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import { useNavigate } from "@tanstack/react-router";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
-import DebugContext from "../../DebugContext";
+import UserResourcesContext from "../../UserResourcesContext";
 
 interface Props {
   open: boolean;
   onCancel: VoidFunction;
   studyId: StudyMetadata["id"];
-  parentPath: string;
+  currentPath: string;
 }
 
 const defaultValues = { folder: "", openFolder: false };
 
 type DefaultValues = typeof defaultValues;
 
-function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
-  const { reloadTree } = useContext(DebugContext);
+function CreateFolderDialog({ open, onCancel, studyId, currentPath }: Props) {
+  const { reloadTree } = useContext(UserResourcesContext);
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -45,14 +45,14 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const toPath = (directory: string) => `${parentPath}/${directory}`;
+  const toPath = (folder: string) => (currentPath ? `${currentPath}/${folder}` : folder);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values: { folder } }: SubmitHandlerPlus<DefaultValues>) => {
-    return createFolder({ studyId, path: toPath(folder) });
+    return createOrReplaceUserResource({ studyId, path: toPath(folder), resourceType: "folder" });
   };
 
   const handleSubmitSuccessful = async ({
@@ -64,7 +64,7 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
 
     if (openFolder) {
       navigate({
-        to: "/studies/$studyId/explore/debug",
+        to: "/studies/$studyId/explore/user-resources",
         params: { studyId },
         search: { path: toPath(folder) },
       });

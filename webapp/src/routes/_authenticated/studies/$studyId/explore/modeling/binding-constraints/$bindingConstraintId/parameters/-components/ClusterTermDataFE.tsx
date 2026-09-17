@@ -19,6 +19,7 @@ import { getLinksAndClusters } from "@/redux/selectors";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { isBindingConstraintClusterTerm } from "@/services/api/studies/bindingConstraints/utils";
+import { sortByProp } from "@/services/utils";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import TermDataFieldSkeleton from "./TermDataFieldSkeleton";
@@ -44,20 +45,26 @@ function ClusterTermDataFE({ index }: { index: number }) {
     selector: (state) => {
       const linkAndClusters = getLinksAndClusters(state, study.id);
 
-      const areaOptions = linkAndClusters.clusters.map(({ element }) => ({
-        label: element.name,
-        value: element.id,
-      }));
+      const areaOptions = sortByProp(
+        "label",
+        linkAndClusters.clusters.map(({ element }) => ({
+          label: element.name,
+          value: element.id,
+        })),
+      );
 
       const clusterList =
         linkAndClusters.clusters.find(({ element }) => element.id === currentArea)?.item_list || [];
 
-      const clusterOptions = clusterList
-        .filter(({ id }) => id === currentCluster || !isClusterTermExist(currentArea, id))
-        .map(({ name, id }) => ({
-          label: name,
-          value: id,
-        }));
+      const clusterOptions = sortByProp(
+        "label",
+        clusterList
+          .filter(({ id }) => id === currentCluster || !isClusterTermExist(currentArea, id))
+          .map(({ name, id }) => ({
+            label: name,
+            value: id,
+          })),
+      );
 
       return [areaOptions, clusterOptions];
     },

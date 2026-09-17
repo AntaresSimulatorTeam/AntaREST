@@ -33,6 +33,7 @@ import { Route as AuthenticatedStudiesStudyIdExploreTableModesRouteRouteImport }
 import { Route as AuthenticatedStudiesStudyIdExploreModelingRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/route'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/route'
 import { Route as AuthenticatedStudiesStudyIdExploreXpansionIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/xpansion/index'
+import { Route as AuthenticatedStudiesStudyIdExploreUserResourcesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/user-resources/index'
 import { Route as AuthenticatedStudiesStudyIdExploreTableModesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/table-modes/index'
 import { Route as AuthenticatedStudiesStudyIdExploreOutputsIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/outputs/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/index'
@@ -275,6 +276,12 @@ const AuthenticatedStudiesStudyIdExploreXpansionIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedStudiesStudyIdExploreXpansionRouteRoute,
+  } as any)
+const AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute =
+  AuthenticatedStudiesStudyIdExploreUserResourcesIndexRouteImport.update({
+    id: '/user-resources/',
+    path: '/user-resources/',
+    getParentRoute: () => AuthenticatedStudiesStudyIdExploreRouteRoute,
   } as any)
 const AuthenticatedStudiesStudyIdExploreTableModesIndexRoute =
   AuthenticatedStudiesStudyIdExploreTableModesIndexRouteImport.update({
@@ -1194,6 +1201,7 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/modeling/': typeof AuthenticatedStudiesStudyIdExploreModelingIndexRoute
   '/studies/$studyId/explore/outputs': typeof AuthenticatedStudiesStudyIdExploreOutputsIndexRoute
   '/studies/$studyId/explore/table-modes/': typeof AuthenticatedStudiesStudyIdExploreTableModesIndexRoute
+  '/studies/$studyId/explore/user-resources': typeof AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute
   '/studies/$studyId/explore/xpansion/': typeof AuthenticatedStudiesStudyIdExploreXpansionIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRouteWithChildren
   '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdRouteRouteWithChildren
@@ -1313,6 +1321,7 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/modeling': typeof AuthenticatedStudiesStudyIdExploreModelingIndexRoute
   '/studies/$studyId/explore/outputs': typeof AuthenticatedStudiesStudyIdExploreOutputsIndexRoute
   '/studies/$studyId/explore/table-modes': typeof AuthenticatedStudiesStudyIdExploreTableModesIndexRoute
+  '/studies/$studyId/explore/user-resources': typeof AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute
   '/studies/$studyId/explore/xpansion': typeof AuthenticatedStudiesStudyIdExploreXpansionIndexRoute
   '/studies/$studyId/explore/configuration/adequacy-patch/perimeter': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchPerimeterRoute
   '/studies/$studyId/explore/configuration/geo-trimming/areas': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRoute
@@ -1432,6 +1441,7 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/modeling/': typeof AuthenticatedStudiesStudyIdExploreModelingIndexRoute
   '/_authenticated/studies/$studyId/explore/outputs/': typeof AuthenticatedStudiesStudyIdExploreOutputsIndexRoute
   '/_authenticated/studies/$studyId/explore/table-modes/': typeof AuthenticatedStudiesStudyIdExploreTableModesIndexRoute
+  '/_authenticated/studies/$studyId/explore/user-resources/': typeof AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute
   '/_authenticated/studies/$studyId/explore/xpansion/': typeof AuthenticatedStudiesStudyIdExploreXpansionIndexRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdRouteRouteWithChildren
@@ -1563,6 +1573,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/'
     | '/studies/$studyId/explore/outputs'
     | '/studies/$studyId/explore/table-modes/'
+    | '/studies/$studyId/explore/user-resources'
     | '/studies/$studyId/explore/xpansion/'
     | '/studies/$studyId/explore/modeling/areas/$areaId'
     | '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId'
@@ -1682,6 +1693,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling'
     | '/studies/$studyId/explore/outputs'
     | '/studies/$studyId/explore/table-modes'
+    | '/studies/$studyId/explore/user-resources'
     | '/studies/$studyId/explore/xpansion'
     | '/studies/$studyId/explore/configuration/adequacy-patch/perimeter'
     | '/studies/$studyId/explore/configuration/geo-trimming/areas'
@@ -1800,6 +1812,7 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/modeling/'
     | '/_authenticated/studies/$studyId/explore/outputs/'
     | '/_authenticated/studies/$studyId/explore/table-modes/'
+    | '/_authenticated/studies/$studyId/explore/user-resources/'
     | '/_authenticated/studies/$studyId/explore/xpansion/'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId'
     | '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId'
@@ -2067,6 +2080,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/studies/$studyId/explore/xpansion/'
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreXpansionIndexRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreXpansionRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/user-resources/': {
+      id: '/_authenticated/studies/$studyId/explore/user-resources/'
+      path: '/user-resources'
+      fullPath: '/studies/$studyId/explore/user-resources'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreUserResourcesIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/table-modes/': {
       id: '/_authenticated/studies/$studyId/explore/table-modes/'
@@ -3394,6 +3414,7 @@ interface AuthenticatedStudiesStudyIdExploreRouteRouteChildren {
   AuthenticatedStudiesStudyIdExploreIndexRoute: typeof AuthenticatedStudiesStudyIdExploreIndexRoute
   AuthenticatedStudiesStudyIdExploreDebugIndexRoute: typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   AuthenticatedStudiesStudyIdExploreOutputsIndexRoute: typeof AuthenticatedStudiesStudyIdExploreOutputsIndexRoute
+  AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute: typeof AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute
   AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute: typeof AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute
 }
 
@@ -3413,6 +3434,8 @@ const AuthenticatedStudiesStudyIdExploreRouteRouteChildren: AuthenticatedStudies
       AuthenticatedStudiesStudyIdExploreDebugIndexRoute,
     AuthenticatedStudiesStudyIdExploreOutputsIndexRoute:
       AuthenticatedStudiesStudyIdExploreOutputsIndexRoute,
+    AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute:
+      AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute,
     AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute:
       AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute,
   }
