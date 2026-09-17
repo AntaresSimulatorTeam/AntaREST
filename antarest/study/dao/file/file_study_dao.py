@@ -25,6 +25,7 @@ from antarest.study.dao.file.file_study_area_properties_dao import FileStudyArea
 from antarest.study.dao.file.file_study_compatibility_parameters import FileStudyCompatibilityParametersDao
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
 from antarest.study.dao.file.file_study_district_dao import FileStudyDistrictDao
+from antarest.study.dao.file.file_study_gems_library_dao import FileStudyGemsLibraryDao
 from antarest.study.dao.file.file_study_general_config_dao import FileStudyGeneralConfigDao
 from antarest.study.dao.file.file_study_hydro_dao import FileStudyHydroDao
 from antarest.study.dao.file.file_study_layer_dao import FileStudyLayerDao
@@ -32,7 +33,7 @@ from antarest.study.dao.file.file_study_link_dao import FileStudyLinkDao
 from antarest.study.dao.file.file_study_optimization_preferences import FileStudyOptimizationPreferencesDao
 from antarest.study.dao.file.file_study_playlist_config_dao import FileStudyPlaylistConfigDao
 from antarest.study.dao.file.file_study_renewable_dao import FileStudyRenewableDao
-from antarest.study.dao.file.file_study_reserve_certification_dao import FileStudyThermalReserveCertificationDao
+from antarest.study.dao.file.file_study_reserve_certification_dao import FileStudyReserveCertificationDao
 from antarest.study.dao.file.file_study_reserve_definition_dao import FileStudyReserveDefinitionDao
 from antarest.study.dao.file.file_study_reserve_symmetries_dao import FileStudyReserveSymmetriesDao
 from antarest.study.dao.file.file_study_reserves_global_parameters_dao import FileStudyReservesGlobalParametersDao
@@ -78,9 +79,10 @@ class FileStudyTreeDao(
     FileStudyAreaPropertiesDao,
     FileStudyScenarioBuilderDao,
     FileStudyAreaDao,
+    FileStudyGemsLibraryDao,
     FileStudyReservesGlobalParametersDao,
     FileStudyReserveDefinitionDao,
-    FileStudyThermalReserveCertificationDao,
+    FileStudyReserveCertificationDao,
     FileStudyReserveSymmetriesDao,
 ):
     """

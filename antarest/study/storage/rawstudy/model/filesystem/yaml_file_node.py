@@ -63,8 +63,8 @@ class YAMLWriter(IniWriter):
 
     @override
     def write(self, data: JSON, path: Path) -> None:
-        with open(path, "wb") as fh:
-            fh.write(yaml.safe_dump(data).encode("utf-8"))
+        with open(path, "w", encoding="utf-8") as fh:
+            yaml.safe_dump(data, fh)
 
 
 class YAMLFileNode(IniFileNode):

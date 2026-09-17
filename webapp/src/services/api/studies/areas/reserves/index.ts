@@ -19,6 +19,7 @@ import {
   reserveSchema,
   reservesCertificationsSchema,
   reservesSchema,
+  reservesSymmetriesSchema,
   updateReserveGlobalParametersSchema,
   updateReserveParamsSchema,
 } from "./schemas";
@@ -31,9 +32,12 @@ import type {
   ReservesAreaParams,
   ReservesCertifications,
   ReservesCertificationsParams,
+  ReservesSymmetries,
+  ReservesSymmetriesParams,
   UpdateReserveGlobalParametersParams,
   UpdateReserveParams,
   UpdateReservesCertificationsParams,
+  UpdateReservesSymmetriesParams,
 } from "./types";
 
 /**
@@ -180,4 +184,44 @@ export async function updateReservesCertifications(
     body,
   );
   return reservesCertificationsSchema.parse(res.data);
+}
+
+/**
+ * GET /v1/studies/{studyId}/areas/{areaId}/reserves/symmetries/{productionType} - Gets the
+ * reserve symmetries of an area for a given production type.
+ *
+ * @param params - Study, area identifiers and the production type.
+ * @returns The symmetries, keyed by cluster ID.
+ * @throws If the response doesn't match the expected schema.
+ */
+export async function getReservesSymmetries(
+  params: ReservesSymmetriesParams,
+): Promise<ReservesSymmetries> {
+  const { studyId, areaId, productionType } = params;
+  const res = await client.get(
+    `/v1/studies/${studyId}/areas/${areaId}/reserves/symmetries/${productionType}`,
+  );
+  return reservesSymmetriesSchema.parse(res.data);
+}
+
+/**
+ * PUT /v1/studies/{studyId}/areas/{areaId}/reserves/symmetries/{productionType} - Replaces
+ * the reserve symmetries of an area for a given production type.
+ *
+ * The whole mapping is replaced: a cluster omitted from the payload loses its symmetries.
+ *
+ * @param params - Identifiers, the production type and the full symmetries mapping.
+ * @returns The updated symmetries mapping.
+ * @throws If the params or response doesn't match the expected schema.
+ */
+export async function updateReservesSymmetries(
+  params: UpdateReservesSymmetriesParams,
+): Promise<ReservesSymmetries> {
+  const { studyId, areaId, productionType, data } = params;
+  const body = reservesSymmetriesSchema.parse(data);
+  const res = await client.put(
+    `/v1/studies/${studyId}/areas/${areaId}/reserves/symmetries/${productionType}`,
+    body,
+  );
+  return reservesSymmetriesSchema.parse(res.data);
 }

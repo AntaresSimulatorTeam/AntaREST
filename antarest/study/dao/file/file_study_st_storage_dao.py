@@ -25,7 +25,11 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.dao.api.st_storage_dao import STStorageDao
 from antarest.study.dao.common import AreaId, StStorageConstraintSeriesMapping, StStorageId, StStorageSeriesMapping
-from antarest.study.dao.file.common import check_area_exists
+from antarest.study.dao.file.common import (
+    check_area_exists,
+    get_st_storage_reserve_participations_as_yaml_content,
+    get_st_storage_reserve_path,
+)
 from antarest.study.model import STUDY_VERSION_9_2, STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
@@ -560,19 +564,19 @@ class FileStudySTStorageDao(STStorageDao, ABC):
         # Cascade: Remove any reserve certification attached to the deleted storage.
         # Avoids leaving orphan sections in `input/st-storage/clusters/<area>/reserve-participations.yml`.
         """
-        if self.get_file_study().config.version < STUDY_VERSION_10_2:
+        file_study = self.get_file_study()
+        if file_study.config.version < STUDY_VERSION_10_2:
             # Reserves only exist in version 10.2+
             return
 
-        storage_exists = False
-        all_area_certifications = self.get_impl().get_st_storage_reserve_certifications(area_id)
-        for reserve_id, thermal_dict in all_area_certifications.items():
-            for current_storage_id in thermal_dict:
-                if current_storage_id == storage_id:
-                    del all_area_certifications[reserve_id][storage_id]
-                    storage_exists = True
-                    break
+        st_storage_exists = False
+        yaml_content = get_st_storage_reserve_participations_as_yaml_content(area_id, file_study)
+        for k, participation in enumerate(yaml_content["participations"]):
+            if participation["storage"] == storage_id:
+                st_storage_exists = True
+                del yaml_content["participations"][k]
+                break
 
-        if storage_exists:
-            # Avoid performing an empty save if there are no certifications to remove
-            self.get_impl().save_st_storage_reserve_certifications({area_id: all_area_certifications})
+        if st_storage_exists:
+            # Avoid performing an empty save if there is no st-storage to remove
+            file_study.tree.save(yaml_content, get_st_storage_reserve_path(area_id))

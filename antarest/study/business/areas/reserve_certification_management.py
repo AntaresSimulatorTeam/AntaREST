@@ -10,10 +10,14 @@
 #
 # This file is part of the Antares project.
 from antarest.study.business.model.reserve_certification_model import (
+    HydroReserveCertificationMapping,
     StorageReserveCertificationMapping,
     ThermalReserveCertificationMapping,
 )
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.storage.variantstudy.model.command.replace_hydro_reserve_certifications import (
+    ReplaceHydroReserveCertifications,
+)
 from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_certifications import (
     ReplaceStStorageReserveCertifications,
 )
@@ -59,6 +63,27 @@ class ReserveCertificationsManager:
     ) -> StorageReserveCertificationMapping:
 
         command = ReplaceStStorageReserveCertifications(
+            area_id=area_id,
+            certifications=data,
+            study_version=study.version,
+            command_context=self._command_context,
+        )
+
+        # Apply the modifications
+        study.add_commands([command])
+        return data
+
+    def get_hydro_certifications(self, study: StudyInterface, area_id: str) -> HydroReserveCertificationMapping:
+        return study.get_study_dao().get_hydro_reserve_certifications(area_id)
+
+    def set_hydro_certifications(
+        self,
+        study: StudyInterface,
+        area_id: str,
+        data: HydroReserveCertificationMapping,
+    ) -> HydroReserveCertificationMapping:
+
+        command = ReplaceHydroReserveCertifications(
             area_id=area_id,
             certifications=data,
             study_version=study.version,

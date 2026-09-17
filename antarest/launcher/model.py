@@ -81,7 +81,7 @@ class LauncherParametersDTO(AntaresBaseModel, extra="forbid"):
     time_limit: int = 240 * 3600  # Default value set to 240 hours (in seconds)
     xpansion: XpansionParametersDTO | bool | None = None
     xpansion_r_version: bool = False
-    archive_output: bool = True
+    archive_output: bool = Field(deprecated=True, default=True)
     auto_unzip: bool = True
     output_suffix: FileNameStr | None = None
     other_options: str | None = None

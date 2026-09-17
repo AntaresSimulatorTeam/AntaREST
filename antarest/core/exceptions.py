@@ -861,13 +861,19 @@ class SevenZipNotSupportedOnThisMachine(Exception):
         super().__init__(msg)
 
 
-class ThermalReserveCertificationNotFound(HTTPException):
-    def __init__(self, area_id: str, thermal_id: str, reserve_ids: set[str]):
-        msg = f"Certifications for reserve(s) '{reserve_ids}' on thermal cluster '{thermal_id}' not found in area '{area_id}'"
-        super().__init__(HTTPStatus.NOT_FOUND, msg)
-
-
 class ReserveCertificationNotFound(HTTPException):
-    def __init__(self, area_id: str, area_asset_id: str, reserve_ids: set[str]):
-        msg = f"Certifications for reserve(s) '{reserve_ids}' on area asset '{area_asset_id}' not found in area '{area_id}'"
+    def __init__(self, area_id: str, object_type: str, object_id: str | None, reserve_ids: set[str]):
+        target = f"{object_type} '{object_id}'" if object_id else object_type
+        msg = f"Certifications for reserve(s) '{reserve_ids}' on {target} not found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class ReserveCertificationsNotFound(HTTPException):
+    def __init__(self, area_id: str, object_type: str):
+        msg = f"No {object_type} reserve certifications found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class GemsLibraryAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)

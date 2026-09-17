@@ -78,6 +78,16 @@ class StudyConverter:
         # Comments
         self._new_dao.save_comments(self._source_dao.get_comments())
 
+        # GEMS
+        self._convert_gems()
+
+    def _convert_gems(self) -> None:
+        if self._study_version >= STUDY_VERSION_10_2:
+            gems_library = self._source_dao.get_library()
+            if not gems_library:
+                return
+            self._new_dao.save_library(gems_library)
+
     def _convert_settings(self) -> None:
         self._new_dao.save_general_config(self._source_dao.get_general_config())
         self._new_dao.save_playlist_config(self._source_dao.get_playlist_config())
@@ -261,7 +271,7 @@ class StudyConverter:
             self._new_dao.save_reserve_needs(self._source_dao.get_all_reserve_needs())
 
         self._convert_certifications_reserves()
-        self._convert_resvers_symmetries()
+        self._convert_reserves_symmetries()
 
     def _convert_certifications_reserves(self) -> None:
         # Thermal certifications
@@ -274,7 +284,12 @@ class StudyConverter:
         if st_storage_certitifcations:
             self._new_dao.save_st_storage_reserve_certifications(st_storage_certitifcations)
 
-    def _convert_resvers_symmetries(self) -> None:
+        # Hydro (long-term storage) certifications
+        hydro_certifications = self._source_dao.get_all_hydro_reserve_certifications()
+        if hydro_certifications:
+            self._new_dao.save_hydro_reserve_certifications(hydro_certifications)
+
+    def _convert_reserves_symmetries(self) -> None:
         # Thermal symmetries
         thermal_symmetries = self._source_dao.get_all_thermal_reserve_symmetries()
         if thermal_symmetries:
@@ -284,6 +299,11 @@ class StudyConverter:
         st_storage_symmetries = self._source_dao.get_all_st_storage_reserve_symmetries()
         if st_storage_symmetries:
             self._new_dao.save_st_storage_reserve_symmetries(st_storage_symmetries)
+
+        # Hydro (long-term storage) symmetries
+        hydro_symmetries = self._source_dao.get_all_hydro_reserve_symmetries()
+        if hydro_symmetries:
+            self._new_dao.save_hydro_reserve_symmetries(hydro_symmetries)
 
     def _convert_short_term_storages(
         self, storages: dict[str, dict[str, STStorage]], constraints: STStorageAdditionalConstraintsMap

@@ -15,6 +15,8 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.study.service import StudyService
 from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.outputs import create_minimal_output_zip_from_name
@@ -247,10 +249,17 @@ def test_copy_as_variant_with_outputs(client: TestClient, admin_access_token: st
     assert (new_output_path / "output2.zip").exists()
 
 
-def test_copy_variant_with_specific_path(client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
+@pytest.mark.parametrize("storage_mode", ["database", "filesystem"])
+def test_copy_variant_with_specific_path(
+    client: TestClient,
+    admin_access_token: str,
+    tmp_path: Path,
+    storage_mode: str,
+    study_service: StudyService,
+) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
-    raw = client.post("/v1/studies?name=raw")
+    raw = client.post(f"/v1/studies?name=raw&storage_mode={storage_mode}")
     assert raw.status_code == 201
     parent_id = raw.json()
     client.post(
@@ -274,6 +283,10 @@ def test_copy_variant_with_specific_path(client: TestClient, admin_access_token:
 
     study_folder = copied_study[study_id]["folder"]
     assert study_folder == "folder/" + study_id
+
+    with db():
+        study = study_service.get_study(study_id)
+        assert study.path is None if storage_mode == "database" else not None
 
 
 def test_copy_variant_with_auto_directory_creation(client: TestClient, admin_access_token: str) -> None:

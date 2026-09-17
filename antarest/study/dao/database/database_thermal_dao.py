@@ -22,7 +22,7 @@ from sqlalchemy import CursorResult, Row, Select, Table, delete, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import AreaNotFound, ThermalClusterNotFound, ThermalClustersNotFound
+from antarest.core.exceptions import ThermalClusterNotFound, ThermalClustersNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.thermal_cluster_model import (
@@ -32,7 +32,7 @@ from antarest.study.business.model.thermal_cluster_model import (
 )
 from antarest.study.dao.api.thermal_dao import ThermalDao
 from antarest.study.dao.common import AreaId, SeriesId, ThermalId, ThermalSeriesMapping
-from antarest.study.dao.database.common import validate_area_exists
+from antarest.study.dao.database.common import validate_area_exists, validate_areas_exist
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.thermal import (
     THERMAL_CLUSTER_TABLE,
@@ -113,9 +113,7 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
         self, data: dict[AreaId, list[ThermalId]], exc: IntegrityError | None = None
     ) -> NoReturn:
         # Checks if some areas are missing
-        existing_ids = set(self.get_impl().get_all_area_ids())
-        if invalid_areas := set(data) - existing_ids:
-            raise AreaNotFound(*invalid_areas)
+        validate_areas_exist(self._db_session, self._study_data_id, set(data))
 
         # Means the issue lies in the thermals
         all_existing_thermals = self.get_all_thermals()

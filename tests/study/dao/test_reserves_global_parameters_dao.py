@@ -31,9 +31,9 @@ def test_get_when_no_row_for_existing_area(dao_10_2: StudyDao) -> None:
         assert dao.get_reserves_global_parameters(area_id) == ReservesGlobalParameters()
 
 
-def test_get_raises_when_area_does_not_exist(dao_10_0: StudyDao) -> None:
+def test_get_raises_when_area_does_not_exist(dao_10_2: StudyDao) -> None:
     with pytest.raises(AreaNotFound):
-        dao_10_0.get_reserves_global_parameters("nonexistent")
+        dao_10_2.get_reserves_global_parameters("nonexistent")
 
 
 def test_save_and_retrieve(dao_10_2: StudyDao) -> None:
@@ -67,16 +67,16 @@ def test_save_updates_existing(dao_10_2: StudyDao) -> None:
     assert result.reference_activation_duration_up == 10
 
 
-def test_save_raises_for_nonexistent_area(dao_10_0: StudyDao) -> None:
+def test_save_raises_for_nonexistent_area(dao_10_2: StudyDao) -> None:
     with pytest.raises(AreaNotFound):
-        dao_10_0.save_reserves_global_parameters({"nonexistent": ReservesGlobalParameters()})
+        dao_10_2.save_reserves_global_parameters({"nonexistent": ReservesGlobalParameters()})
 
 
-def test_save_validates_all_areas_before_writing(dao_10_0: StudyDao) -> None:
-    save_area(dao_10_0, "paris")
+def test_save_validates_all_areas_before_writing(dao_10_2: StudyDao) -> None:
+    save_area(dao_10_2, "paris")
 
     with pytest.raises(AreaNotFound):
-        dao_10_0.save_reserves_global_parameters(
+        dao_10_2.save_reserves_global_parameters(
             {
                 "paris": ReservesGlobalParameters(reference_activation_duration_up=42),
                 "nonexistent": ReservesGlobalParameters(),
