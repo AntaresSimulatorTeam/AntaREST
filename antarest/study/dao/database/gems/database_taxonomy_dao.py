@@ -82,8 +82,7 @@ class DatabaseGemsTaxonomyDao(GemsTaxonomyDao, DatabaseDaoBase):
             data = {"study_data_id": study_data_id, "id": category.id, "parent_category": category.parent_category}
             for key in ["variables", "parameters", "ports", "extra_outputs", "properties", "binding_constraints"]:
                 value = cat_dump.get(key)
-                if value is not None:
-                    data[key] = json.dumps(cat_dump[key])
+                data[key] = json.dumps(value) if value is not None else None
             category_values.append(data)
 
         if category_values:
