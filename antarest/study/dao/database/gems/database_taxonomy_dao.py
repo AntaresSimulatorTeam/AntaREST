@@ -1,0 +1,29 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+from typing_extensions import override
+
+from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
+from antarest.study.dao.api.gems_taxonomy_dao import GemsTaxonomyDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
+
+
+class DatabaseGemsTaxonomyDao(GemsTaxonomyDao, DatabaseDaoBase):
+    """Database implementation of GemsTaxonomyDao"""
+
+    @override
+    def get_taxonomy(self) -> GemsTaxonomy | None:
+        raise NotImplementedError()
+
+    @override
+    def save_taxonomy(self, taxonomy: GemsTaxonomy) -> None:
+        raise NotImplementedError()
