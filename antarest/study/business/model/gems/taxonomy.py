@@ -10,6 +10,8 @@
 #
 # This file is part of the Antares project.
 
+from typing import Any
+
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
@@ -24,12 +26,12 @@ class _GemsCategories(AntaresBaseModel):
 
     # These fields are not used in the current implementation
     # That's why they are treated as unknown data
-    variables: str | None = None
-    parameters: str | None = None
-    ports: str | None = None
-    extra_outputs: str | None = None
-    properties: str | None = None
-    binding_constraints: str | None = None
+    variables: Any | None = None
+    parameters: Any | None = None
+    ports: Any | None = None
+    extra_outputs: Any | None = None
+    properties: Any | None = None
+    binding_constraints: Any | None = None
 
 
 class GemsTaxonomy(AntaresBaseModel):
