@@ -29,6 +29,8 @@ const studyGroupSchema = z.object({
 
 const studyPublicModeSchema = z.enum(["NONE", "READ", "EXECUTE", "EDIT", "FULL"]);
 
+const studyStorageModeSchema = z.enum(["filesystem", "database"]);
+
 export const studySchema = z
   .object({
     id: z.string(),
@@ -45,6 +47,7 @@ export const studySchema = z
     workspace: z.string(),
     managed: z.boolean(),
     archived: z.boolean(),
+    storage_mode: studyStorageModeSchema,
     horizon: z.string().nullable(),
     folder: z.string().nullable(),
     tags: z.array(z.string()),
@@ -56,6 +59,7 @@ export const studySchema = z
       created,
       updated,
       public_mode: publicMode,
+      storage_mode: storageMode,
       directory_id: directoryId,
       parent_id: parentId,
       ...rest
@@ -64,6 +68,7 @@ export const studySchema = z
       creationDate: created,
       modificationDate: updated,
       publicMode,
+      storageMode,
       directoryId,
       parentId,
     }),
