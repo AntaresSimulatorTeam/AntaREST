@@ -43,4 +43,4 @@ class FileStudyGemsTaxonomyDao(GemsTaxonomyDao, ABC):
     def save_taxonomy(self, taxonomy: GemsTaxonomy) -> None:
         taxonomy_file_path = _get_gems_taxonomy_file_path(self.get_file_study().config.study_path)
         yaml_content = taxonomy.model_dump(mode="json", exclude_unset=True, by_alias=True)
-        YAMLWriter().write({"library": yaml_content}, taxonomy_file_path)
+        YAMLWriter().write({"taxonomy": yaml_content}, taxonomy_file_path)
