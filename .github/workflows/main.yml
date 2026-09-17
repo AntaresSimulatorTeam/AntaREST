@@ -20,7 +20,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: Install dependencies
-        run: uv sync --frozen --extra desktop --compile-bytecode
+        run: uv sync --locked --extra desktop --compile-bytecode
       - name: Check format (ruff)
         run: |
           uv run --frozen ruff check antarest/ tests/
@@ -48,7 +48,7 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: Install dependencies
-        run: uv sync --frozen --compile-bytecode
+        run: uv sync --locked --compile-bytecode
       - name: Test with pytest
         run: uv run --frozen pytest --cov antarest --cov-report xml -n 4 --dist=worksteal
       - name: Archive code coverage results
