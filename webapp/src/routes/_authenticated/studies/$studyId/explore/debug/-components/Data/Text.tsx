@@ -29,7 +29,7 @@ import plaintext from "react-syntax-highlighter/dist/esm/languages/hljs/plaintex
 import properties from "react-syntax-highlighter/dist/esm/languages/hljs/properties";
 import xml from "react-syntax-highlighter/dist/esm/languages/hljs/xml";
 import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import { isEmptyContent, parseContent, type DataCompProps } from "../../-utils";
+import { parseContent, type DataCompProps } from "../../-utils";
 import { Filename, Menubar } from "./styles";
 
 SyntaxHighlighter.registerLanguage("xml", xml);
@@ -63,15 +63,23 @@ function getSyntaxProps(data: string | string[]): SyntaxHighlighterProps {
   };
 }
 
+function isEmptyContent(text: string | string[]): boolean {
+  if (Array.isArray(text)) {
+    return !text || text.every((line) => typeof line === "string" && !line.trim());
+  }
+
+  return typeof text === "string" && !text.trim();
+}
+
 function Text({ studyId, filePath, filename, fileType, canEdit }: DataCompProps) {
   const { t } = useTranslation();
   const theme = useTheme();
 
   const textRes = usePromiseWithSnackbarError(
-    () =>
-      getStudyData<string>(studyId, filePath).then((text) =>
-        parseContent(text, { filePath, fileType }),
-      ),
+    async () => {
+      const data = await getStudyData<string | string[]>(studyId, filePath);
+      return Array.isArray(data) ? data : parseContent(data, { filePath, fileType });
+    },
     {
       errorMessage: t("studies.error.retrieveData"),
       deps: [studyId, filePath, fileType],
@@ -105,6 +113,7 @@ function Text({ studyId, filePath, filename, fileType, canEdit }: DataCompProps)
             {canEdit && (
               <UploadFileButton
                 studyId={studyId}
+                studyStorageMode="filesystem"
                 path={filePath}
                 accept={{ "text/plain": [".txt"] }}
                 onUploadSuccessful={handleUploadSuccessful}
@@ -112,7 +121,7 @@ function Text({ studyId, filePath, filename, fileType, canEdit }: DataCompProps)
             )}
             <DownloadButton onClick={handleDownload} />
           </Menubar>
-          {isEmptyContent(text) ? ( // TODO remove when files become editable
+          {isEmptyContent(text) ? (
             <EmptyView icon={GridOffIcon} title={t("study.outputs.noData")} />
           ) : (
             <SyntaxHighlighter
