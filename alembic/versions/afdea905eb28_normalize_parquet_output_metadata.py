@@ -295,7 +295,7 @@ def _variables_list(output_id):
             "areas": [areas[k] for k in sorted(areas)],
             "links": [links[k] for k in sorted(links)],
         }
-    return json.dumps(result, default=lambda value: sorted(value))
+    return json.dumps(result, default=sorted)
 
 
 def downgrade():

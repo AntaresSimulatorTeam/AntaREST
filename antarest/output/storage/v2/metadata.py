@@ -51,15 +51,18 @@ class IParquetOutputMetadata(ABC):
 
     @property
     @abstractmethod
-    def mc_years(self) -> list[int]: ...
+    def mc_years(self) -> list[int]:
+        raise NotImplementedError
 
     @abstractmethod
-    def get_time_index(self, frequency: MatrixFrequency) -> MatrixIndex: ...
+    def get_time_index(self, frequency: MatrixFrequency) -> MatrixIndex:
+        raise NotImplementedError
 
     @abstractmethod
     def get_variables(
         self, aggregation: ScenarioAggregation, element_type: ElementType
-    ) -> Sequence[VariableDescription]: ...
+    ) -> Sequence[VariableDescription]:
+        raise NotImplementedError
 
     @abstractmethod
     def get_elements(
@@ -69,7 +72,8 @@ class IParquetOutputMetadata(ABC):
         frequency: MatrixFrequency | None = None,
         years: Sequence[int] = (),
         elements: Sequence[str] = (),
-    ) -> Sequence[ElementVariables]: ...
+    ) -> Sequence[ElementVariables]:
+        raise NotImplementedError
 
 
 class ParquetOutputMetadata(IParquetOutputMetadata):
