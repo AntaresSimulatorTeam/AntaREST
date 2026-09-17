@@ -12,9 +12,12 @@
 import shutil
 from pathlib import Path
 
+import pytest
+
+from antarest.core.exceptions import GemsTaxonomyAlreadyExists
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from tests.study.dao.test_database_gems_taxonomy_dao import check_legacy_gems_taxonomy_integrity
+from tests.study.dao.conftest import check_gems_taxonomy_integrity
 
 ASSETS_PATH = Path(__file__).parent.parent / "assets"
 
@@ -28,12 +31,11 @@ def test_default_case(dao_10_2: StudyDao) -> None:
 def test_taxonomy_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     dao = filestudy_dao_v10_2
     tax_folder = dao.get_file_study().config.study_path / "input"
-    tax_folder.mkdir(exist_ok=True)
     shutil.copy(ASSETS_PATH / "gems" / "taxonomy" / "taxonomy.yml", tax_folder / "taxonomy.yml")
 
     taxonomy = dao.get_taxonomy()
     assert taxonomy is not None
-    check_legacy_gems_taxonomy_integrity(taxonomy)
+    check_gems_taxonomy_integrity(taxonomy)
 
     # Remove the taxonomy file
     (tax_folder / "taxonomy.yml").unlink()
@@ -43,4 +45,8 @@ def test_taxonomy_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     dao.save_taxonomy(taxonomy)
     taxonomy = dao.get_taxonomy()
     assert taxonomy is not None
-    check_legacy_gems_taxonomy_integrity(taxonomy)
+    check_gems_taxonomy_integrity(taxonomy)
+
+    # Saving another content is forbidden
+    with pytest.raises(GemsTaxonomyAlreadyExists, match="A taxonomy already exists for study"):
+        dao.save_taxonomy(taxonomy)

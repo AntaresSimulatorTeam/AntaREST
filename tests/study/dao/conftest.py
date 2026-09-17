@@ -32,6 +32,7 @@ from antarest.study.business.model.config.optimization_config_model import (
     initialize_optimization_preferences_against_version,
 )
 from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
@@ -399,3 +400,32 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert second_model.ports[0].type == "flow"
     assert second_model.ports[1].id == "power_port"
     assert second_model.ports[1].type == "flow"
+
+
+def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
+    assert taxonomy is not None
+    assert taxonomy.id == "antares_legacy_taxonomy"
+    assert taxonomy.description == "GEMS taxonomy configuration for Antares Legacy Models."
+    assert len(taxonomy.categories) == 15
+
+    categories_by_id = {c.id: c for c in taxonomy.categories}
+
+    balance = categories_by_id["balance"]
+    assert balance.id == "balance"
+    assert balance.parent_category is None
+    assert balance.variables == [{"id": "unsupplied_energy"}, {"id": "spilled_energy"}]
+    assert balance.ports == [{"id": "balance_port"}]
+    assert balance.binding_constraints == [{"id": "balance"}]
+    assert balance.extra_outputs is not None
+    assert len(balance.extra_outputs) == 5
+
+    generation = categories_by_id["generation"]
+    assert generation.id == "generation"
+    assert generation.parent_category is None
+    assert generation.ports == [{"id": "balance_port"}]
+
+    dispatchable = categories_by_id["dispatchable_generation"]
+    assert dispatchable.id == "dispatchable_generation"
+    assert dispatchable.parent_category == "generation"
+    assert dispatchable.variables == [{"id": "generation_power"}]
+    assert dispatchable.properties == [{"id": "technology"}]
