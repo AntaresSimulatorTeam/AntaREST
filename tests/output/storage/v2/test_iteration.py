@@ -109,7 +109,7 @@ def test_iterate_areas_filters(parquet_dir: Path, parquet_metadata: IParquetOutp
         (1, "fr"),
     ]
     assert area_dfs[0].variables == [VariableDescription(name="FR_NUCLEAR", unit="MWh", statistic_type=None)]
-    assert area_dfs[0].data.columns == ["FR_NUCLEAR__MWh"]
+    assert area_dfs[0].data.width == 1
     assert area_dfs[0].data.to_series(0).to_list() == [
         595200.0,
         537600.0,

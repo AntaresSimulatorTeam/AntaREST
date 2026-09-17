@@ -9,11 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
-"""
-Support for the "download" API
-"""
+"""Implement the imagrid download contract using relational metadata and parquet."""
 
 from pathlib import Path
 
@@ -24,37 +20,50 @@ from antarest.output.model import (
     TimeSerie,
     TimeSeriesData,
 )
-from antarest.output.storage.v2.iteration import iterate_areas_df
+from antarest.output.storage.v2.dbmodel import ElementType
+from antarest.output.storage.v2.iteration import iterate_element_dfs
+from antarest.output.storage.v2.layout import CLUSTER_TYPES
 from antarest.output.storage.v2.metadata import IParquetOutputMetadata
 
 
 def build_matrix_aggregation_result(
     output_metadata: IParquetOutputMetadata, parquet_dir: Path, data_selection: StudyDownloadDTO
 ) -> MatrixAggregationResultDTO:
-
-    element_results: dict[str, TimeSeriesData] = {}  # one TimeSeriesData for each element of the system
-
-    if data_selection.type in {StudyDownloadType.AREA, StudyDownloadType.DISTRICT}:
-        area_dfs = iterate_areas_df(
+    kinds: list[ElementType] = ["link"] if data_selection.type == StudyDownloadType.LINK else ["area"]
+    if data_selection.include_clusters:
+        kinds.extend(CLUSTER_TYPES)
+    results: dict[str, TimeSeriesData] = {}
+    for kind in kinds:
+        # Restore original details-column order, even when metrics from different
+        # clusters were interleaved in the simulator file.
+        series: dict[tuple[int, str], list[tuple[int, TimeSerie]]] = {}
+        for item in iterate_element_dfs(
             output_metadata,
             parquet_dir,
+            "mc-ind",
+            kind,
             data_selection.level,
             data_selection.years,
             data_selection.filter,
             data_selection.columns,
-        )
-        for area_df in area_dfs:
-            year, area_id, df, vars = area_df.year, area_df.area_id, area_df.data, area_df.variables
-            ts_data = element_results.setdefault(
-                area_id, TimeSeriesData(type=data_selection.type, name=area_id, data={})
-            )
-            for var_index, var in enumerate(vars):
-                numerical_data = df.to_series(var_index).cast(float).to_list()
-                ts_data.data.setdefault(str(year), []).append(
-                    TimeSerie(name=var.name, unit=var.unit_repr(), data=numerical_data)
+        ):
+            element = item.element
+            entries = series.setdefault((element.year, element.element_id), [])
+            for i, (variable, position) in enumerate(zip(item.variables, item.positions)):
+                entries.append(
+                    (
+                        position,
+                        TimeSerie(
+                            name=element.cluster_id or variable.name,
+                            unit=variable.unit_repr(),
+                            data=item.data.to_series(i).cast(float).to_list(),
+                        ),
+                    )
                 )
-
+        for (year, element_id), entries in series.items():
+            name = "^".join(element_id.split(" - ")) if kind == "link" else element_id
+            result = results.setdefault(name, TimeSeriesData(type=data_selection.type, name=name, data={}))
+            result.data.setdefault(str(year), []).extend(value for _, value in sorted(entries, key=lambda p: p[0]))
     return MatrixAggregationResultDTO(
-        index=output_metadata.get_time_index(data_selection.level),
-        data=list(element_results.values()),
+        index=output_metadata.get_time_index(data_selection.level), data=list(results.values())
     )

@@ -31,6 +31,37 @@ from tests.test_helpers.dates import utc_to_local
 ASSETS_DIR = assets_dir / "output_variables_list"
 
 
+def test_get_output_variables_view_when_materialization_finishes_during_read(
+    client: TestClient, user_access_token: str, internal_study_id: str, mocker
+):
+    from antarest.output.variable_view.db import get_output_view_inside_db
+
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    output_id = "20201014-1425eco-goodbye"
+    url = f"/v1/studies/{internal_study_id}/output/{output_id}/variables-views"
+    params = {"type": "area", "variable_name": "OP. COST", "frequency": "weekly", "area_id": "de"}
+    response = client.post(f"{url}/materialize", params=params)
+    assert response.status_code == 200
+    task = wait_task_completion(client, user_access_token, response.json())
+    assert task.status == TaskStatus.COMPLETED
+
+    # Reproduce the two observations of the race deterministically: the first
+    # lookup misses the view, then the task is complete and its real data exists.
+    first_lookup = True
+
+    def lookup(*args, **kwargs):
+        nonlocal first_lookup
+        if first_lookup:
+            first_lookup = False
+            return None
+        return get_output_view_inside_db(*args, **kwargs)
+
+    mocker.patch("antarest.output.service.get_output_view_inside_db", side_effect=lookup)
+    response = client.get(f"{url}/data", params=params)
+    assert response.status_code == 200
+    assert response.json() == {"data": [[46452000.0, 46452000.0], [46452000.0, 46452000.0]], "columns": ["1", "2"]}
+
+
 def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_id: str):
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 

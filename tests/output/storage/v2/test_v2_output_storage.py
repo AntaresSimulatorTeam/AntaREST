@@ -10,24 +10,19 @@
 #
 # This file is part of the Antares project.
 import shutil
-import uuid
 import zipfile
 from pathlib import Path
 
 import polars as pl
 import pytest
-from sqlalchemy import Engine
 
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
-from antarest.lfs.dir_lfs import DirLargeFileStorage
 from antarest.lfs.lfs import ILargeFileStorage
 from antarest.output.filestudy.model import MCAllAreasQueryFile
 from antarest.output.model.download import MatrixIndex
-from antarest.output.storage.v2.repository import OutputV2Repository
 from antarest.output.storage.v2.storage import V2OutputStorage
 from antarest.output.storage.v2.variables_storage import parquet_output_dir
 from antarest.study.model import MatrixFrequency, Study
@@ -35,60 +30,6 @@ from antarest.study.repository import StudyMetadataRepository
 from tests.test_helpers.dates import utc_to_local
 
 EXPECTED_DATE = utc_to_local("20201014-1227")
-
-
-@pytest.fixture
-def init_db(db_engine: Engine) -> None:
-    init_db_singleton(custom_engine=db_engine)
-
-
-@pytest.fixture
-def study_repo(init_db) -> StudyMetadataRepository:
-    return StudyMetadataRepository()
-
-
-@pytest.fixture
-def output_repo(init_db) -> OutputV2Repository:
-    return OutputV2Repository()
-
-
-@pytest.fixture(scope="session")
-def sta_mini_zip_path(project_path: Path) -> Path:
-    return project_path / "examples/studies/STA-mini.zip"
-
-
-@pytest.fixture(scope="session")
-def output_path(tmp_path_factory: pytest.TempPathFactory, sta_mini_zip_path: Path) -> Path:
-    tmp_dir = tmp_path_factory.mktemp(basename=f"unzipped-output-{uuid.uuid4()}")
-
-    with zipfile.ZipFile(sta_mini_zip_path, "r") as zf:
-        zf.extractall(tmp_dir)
-    return tmp_dir / "STA-mini" / "output" / "20201014-1427eco"
-
-
-@pytest.fixture
-def study_id(study_repo: StudyMetadataRepository) -> str:
-    with db():
-        # The FK constraints enforces us to create a study first.
-        study_repo.save(Study(id="my-study", name="name", version="9.2", path=""))
-    return "my-study"
-
-
-@pytest.fixture
-def lfs(tmp_path: Path) -> ILargeFileStorage:
-    return DirLargeFileStorage(tmp_path / "lfs")
-
-
-@pytest.fixture
-def storage(
-    tmp_path: Path, study_repo: StudyMetadataRepository, output_repo: OutputV2Repository, lfs: ILargeFileStorage
-) -> V2OutputStorage:
-    storage_tmp_dir = tmp_path / "storage" / "tmp"
-    variables_dir = tmp_path / "variables"
-    storage = V2OutputStorage(
-        archive_storage=lfs, tmp_dir=storage_tmp_dir, repository=output_repo, variables_dir=variables_dir
-    )
-    return storage
 
 
 def test_storage(

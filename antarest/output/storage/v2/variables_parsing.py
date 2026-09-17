@@ -9,143 +9,134 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+"""Read only headers, and persist the variable catalogue and object memberships."""
 
-"""
-Parsing of variables metadata from file studies, in order to populate the database
-"""
-
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Iterable
 
 from sqlalchemy.orm import Session
 
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_headers
-from antarest.output.filestudy.model import FileOutput, MCAllAreasQueryFile, MCIndAreasQueryFile, VariableDescription
-from antarest.output.storage.v2.dbmodel import DbParquetArea, DbParquetVariable, ElementType, ScenarioAggregation
-from antarest.study.model import MatrixFrequency
+from antarest.output.filestudy.model import FileOutput, VariableDescription
+from antarest.output.storage.v2.dbmodel import (
+    DbParquetArea,
+    DbParquetBindingConstraint,
+    DbParquetCluster,
+    DbParquetLink,
+    DbParquetVariable,
+    ElementColumns,
+    ElementType,
+    ScenarioAggregation,
+)
+from antarest.output.storage.v2.layout import SourceFile, header_groups, source_files
 
-# TODO: Possibly a better naming to find than "parsing results"
 
-
-@dataclass(frozen=True)
+@dataclass
 class ParsingResultPart:
-    """
-    A list of variables, and for each area the list of variables, as a list of indices.
-
-    Results from the parsing of a set of files for one element type, and either mc-ind or mc-all
-    """
-
-    variables: list[VariableDescription]
-    area_vars: dict[str, list[int]]
+    variables: list[VariableDescription] = field(default_factory=list)
+    area_vars: dict[str, list[int]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
+class Membership:
+    source: SourceFile
+    cluster_id: str | None
+    columns: list[int]
+    positions: list[int]
+
+
+@dataclass
 class OutputParsingResult:
-    """
-    Intermediate data structure from which we'll populate the database.
-    """
+    parts: dict[tuple[ScenarioAggregation, ElementType], ParsingResultPart] = field(default_factory=dict)
+    memberships: list[Membership] = field(default_factory=list)
 
-    mc_ind_areas: ParsingResultPart
-    mc_all_areas: ParsingResultPart
+    @property
+    def mc_ind_areas(self) -> ParsingResultPart:
+        return self.parts.get(("mc-ind", "area"), ParsingResultPart())
 
-
-def parse_area_variables(file_output: FileOutput, aggregation: ScenarioAggregation) -> ParsingResultPart:
-    var_cols: dict[VariableDescription, int] = {}
-    vars: list[VariableDescription] = []
-    area_cols: dict[str, list[int]] = {}
-
-    # data source depends on aggregation type
-    get_file: Callable[[str, MatrixFrequency], Path | None]
-    area_ids: Iterable[str]
-    match aggregation:
-        case "mc-ind":
-
-            def get_file(element_id: str, freq: MatrixFrequency) -> Path | None:
-                return file_output.get_mc_ind_file(
-                    file_output.first_mc_year, MCIndAreasQueryFile.VALUES, element_id, freq
-                )
-
-            area_ids = file_output.mc_ind_area_ids
-        case "mc-all":
-
-            def get_file(element_id: str, freq: MatrixFrequency) -> Path | None:
-                return file_output.get_mc_all_file(MCAllAreasQueryFile.VALUES, element_id, freq)
-
-            area_ids = file_output.mc_all_area_ids
-
-    for element_id in area_ids:
-        # searching for the first existing "frequency"
-        for freq in MatrixFrequency:
-            if data_file := get_file(element_id, freq):
-                with open(data_file) as f:
-                    area_vars = parse_headers(f, get_start_column(freq))
-
-                for v in area_vars:
-                    if v not in var_cols:
-                        var_cols[v] = len(vars)
-                        vars.append(v)
-
-                area_cols[element_id] = [var_cols[v] for v in area_vars]
-                break  # other frequencies will have the same variables
-
-    return ParsingResultPart(variables=vars, area_vars=area_cols)
+    @property
+    def mc_all_areas(self) -> ParsingResultPart:
+        return self.parts.get(("mc-all", "area"), ParsingResultPart())
 
 
 def parse_output_variables(file_output: FileOutput) -> OutputParsingResult:
-    """
-    Extract area "values" variables from the output
-    """
-
-    return OutputParsingResult(
-        mc_all_areas=parse_area_variables(file_output, "mc-all"),
-        mc_ind_areas=parse_area_variables(file_output, "mc-ind"),
-    )
-
-
-def _convert_to_db_vars(
-    output_id: int, aggregation: ScenarioAggregation, elt_type: ElementType, vars: list[VariableDescription]
-) -> list[DbParquetVariable]:
-    return [
-        DbParquetVariable(
-            output_id=output_id,
-            scenario_aggregation=aggregation,
-            element_type=elt_type,
-            column=c,
-            name=v.name,
-            unit=v.unit,
-            statistic_type=v.statistic_type,
-        )
-        for c, v in enumerate(vars)
-    ]
+    result = OutputParsingResult()
+    indices: dict[tuple[ScenarioAggregation, ElementType], dict[VariableDescription, int]] = {}
+    for source in source_files(file_output):
+        key = source.aggregation, source.element_type
+        part = result.parts.setdefault(key, ParsingResultPart())
+        index = indices.setdefault(key, {})
+        with source.path.open(encoding="utf-8") as content:
+            headers = parse_headers(content, get_start_column(source.frequency))
+        for group in header_groups(headers, source.element_type):
+            columns = []
+            for variable in group.variables:
+                if variable not in index:
+                    index[variable] = len(part.variables)
+                    part.variables.append(variable)
+                columns.append(index[variable])
+            if source.element_type == "area":
+                part.area_vars.setdefault(source.element_id, columns)
+            result.memberships.append(Membership(source, group.cluster_id, columns, group.positions))
+    return result
 
 
 def extract_output_variables_to_database(session: Session, output_id: int, file_output: FileOutput) -> None:
-    """
-    Parses variables from file output an dump them to database.
-    """
-    parsing_result = parse_output_variables(file_output)
-
-    variables: list[DbParquetVariable] = []
-    areas: list[DbParquetArea] = []
-
-    mc_all_areas = parsing_result.mc_all_areas
-    mc_ind_areas = parsing_result.mc_ind_areas
-    variables.extend(_convert_to_db_vars(output_id, "mc-all", "area", mc_all_areas.variables))
-    variables.extend(_convert_to_db_vars(output_id, "mc-ind", "area", mc_ind_areas.variables))
-
-    mc_ind_area_vars = mc_ind_areas.area_vars
-    mc_all_area_vars = mc_all_areas.area_vars
-    area_ids = sorted(set(mc_all_area_vars).union(mc_ind_area_vars))
-    for area_id in area_ids:
-        areas.append(
-            DbParquetArea(
-                output_id=output_id,
-                area_id=area_id,
-                mc_all_vars=mc_all_area_vars.get(area_id, []),
-                mc_ind_vars=mc_ind_area_vars.get(area_id, []),
-            )
+    result = parse_output_variables(file_output)
+    for (aggregation, element_type), part in result.parts.items():
+        session.add_all(
+            [
+                DbParquetVariable(
+                    output_id=output_id,
+                    scenario_aggregation=aggregation,
+                    element_type=element_type,
+                    column=i,
+                    name=v.name,
+                    unit=v.unit,
+                    statistic_type=v.statistic_type,
+                )
+                for i, v in enumerate(part.variables)
+            ]
         )
-
-    session.add_all(variables)
-    session.add_all(areas)
+    for membership in result.memberships:
+        source = membership.source
+        row: ElementColumns
+        if source.element_type in ("link", "link_id"):
+            area1, area2 = source.element_id.split(" - ", 1)
+            row = DbParquetLink(area_1_id=area1, area_2_id=area2)
+        elif membership.cluster_id is not None:
+            row = DbParquetCluster(area_id=source.element_id, cluster_id=membership.cluster_id)
+        elif source.element_type == "binding_constraint":
+            row = DbParquetBindingConstraint(constraint_id=source.element_id)
+        else:
+            row = DbParquetArea(area_id=source.element_id)
+        row.output_id = output_id
+        row.scenario_aggregation = source.aggregation
+        row.element_type = source.element_type
+        row.frequency = source.frequency.value
+        row.mc_year = source.year
+        row.columns = membership.columns
+        row.positions = membership.positions
+        session.add(row)
+    # The variables-list API also lists objects whose output directory is empty.
+    roots: list[tuple[ScenarioAggregation, int, Path]] = [("mc-all", 0, file_output.mc_all_dir)]
+    roots.extend(("mc-ind", year, file_output.get_mc_year_dir(year)) for year in file_output.mc_years)
+    presence: DbParquetArea | DbParquetLink
+    for aggregation, year, path in roots:
+        for kind in ("areas", "links"):
+            for folder in sorted((path / kind).glob("*")):
+                if not folder.is_dir():
+                    continue
+                if kind == "areas":
+                    presence = DbParquetArea(area_id=folder.name, element_type="area")
+                else:
+                    a1, a2 = folder.name.split(" - ", 1)
+                    presence = DbParquetLink(area_1_id=a1, area_2_id=a2, element_type="link")
+                presence.output_id = output_id
+                presence.scenario_aggregation = aggregation
+                presence.mc_year = year
+                presence.frequency = ""
+                presence.columns = []
+                presence.positions = []
+                session.add(presence)
+    session.flush()

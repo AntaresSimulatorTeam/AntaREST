@@ -19,13 +19,13 @@ from typing import Any, BinaryIO
 
 import pandas as pd
 import polars as pl
+from sqlalchemy import delete, select
 from typing_extensions import override
 
 from antarest.core.exceptions import (
     OutputAggregationError,
     OutputAlreadyExists,
     OutputNotFound,
-    ShouldNotHappenException,
 )
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import (
@@ -44,8 +44,13 @@ from antarest.output.filestudy.logs import find_simulation_log
 from antarest.output.filestudy.metadata import (
     extract_output_details,
 )
-from antarest.output.filestudy.model import FileOutput, QueryFileType
-from antarest.output.filestudy.variables import extract_variables_list
+from antarest.output.filestudy.model import (
+    FileOutput,
+    MCAllLinksQueryFile,
+    MCIndAreasQueryFile,
+    MCIndLinksQueryFile,
+    QueryFileType,
+)
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.output_storage import (
@@ -54,8 +59,11 @@ from antarest.output.storage.output_storage import (
     OutputMetadata,
     OutputStorageType,
 )
+from antarest.output.storage.v2.dbmodel import ELEMENT_TABLES, DbParquetVariable, ElementType, ScenarioAggregation
 from antarest.output.storage.v2.download import build_matrix_aggregation_result
-from antarest.output.storage.v2.metadata import ParquetOuputMetadataImpl
+from antarest.output.storage.v2.iteration import aggregate_data
+from antarest.output.storage.v2.layout import FILE_TYPES
+from antarest.output.storage.v2.metadata import ParquetOutputMetadata
 from antarest.output.storage.v2.repository import (
     DbOutputMetadataV2,
     OutputV2Repository,
@@ -63,9 +71,7 @@ from antarest.output.storage.v2.repository import (
 from antarest.output.storage.v2.variables_parsing import extract_output_variables_to_database
 from antarest.output.storage.v2.variables_storage import (
     create_parquet_files,
-    extract_output_to_parquet,
     parquet_output_dir,
-    read_output_from_parquet,
 )
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
@@ -179,6 +185,7 @@ class V2OutputStorage(IOutputStorage):
         self._repository = repository
         self._tmp_dir = tmp_dir
         self._variables_dir = variables_dir
+        self._tmp_dir.mkdir(parents=True, exist_ok=True)
 
     def _get_metadata(self, study_id: str, output_name: str) -> DbOutputMetadataV2 | None:
         return self._repository.get_output_metadata(study_id, output_name)
@@ -211,6 +218,7 @@ class V2OutputStorage(IOutputStorage):
         timer = StopWatch()
         tmp_dir = self._tmp_dir / f"output-import-{study_id}-{uuid.uuid4()}"
         tmp_dir.mkdir(parents=True)
+        written_output: str | None = None
         try:
             # We first ensure we have 2 versions of the output: as an archive, and as a directory
             archive_path, dir_path = _write_temporary_files(tmp_dir, output)
@@ -220,6 +228,7 @@ class V2OutputStorage(IOutputStorage):
                 raise OutputAlreadyExists(output_name)
 
             # Write the compressed version to archive storage
+            written_output = output_name
             self._archive_storage.write_file(_archive_id(study_id, output_name), archive_path)
 
             # Create metadata
@@ -227,51 +236,56 @@ class V2OutputStorage(IOutputStorage):
 
             simulation_range = _extract_simulation_range(dir_path)
 
-            self._repository.save_output_metadata(
-                DbOutputMetadataV2(
-                    study_id=study_id,
-                    output_name=output_name,
-                    archived=False,
-                    mode=output_details.mode,
-                    synthesis=output_details.synthesis,
-                    by_year=output_details.by_year,
-                    nb_years=output_details.nb_years,
-                    start_month=simulation_range.starting_month,
-                    january_first_weekday=simulation_range.january_1st_weekday,
-                    leap_year=simulation_range.leap_year,
-                    start_day=simulation_range.start_day,
-                    end_day=simulation_range.end_day,
-                    first_weekday=simulation_range.first_weekday,
-                )
+            metadata = DbOutputMetadataV2(
+                study_id=study_id,
+                output_name=output_name,
+                archived=False,
+                mode=output_details.mode,
+                synthesis=output_details.synthesis,
+                by_year=output_details.by_year,
+                nb_years=output_details.nb_years,
+                start_month=simulation_range.starting_month,
+                january_first_weekday=simulation_range.january_1st_weekday,
+                leap_year=simulation_range.leap_year,
+                start_day=simulation_range.start_day,
+                end_day=simulation_range.end_day,
+                first_weekday=simulation_range.first_weekday,
             )
-
             file_output = FileOutput(dir_path)
-            output_id = 0  # TODO: create it first with the metadata above
-            extract_output_variables_to_database(db.session, output_id, file_output)
-
+            metadata.mc_years = file_output.mc_years
+            metadata.metadata_version = 1
+            db.session.add(metadata)
+            db.session.flush()
+            extract_output_variables_to_database(db.session, metadata.id, file_output)
             variables_target = parquet_output_dir(self._variables_dir, study_id, output_name)
-            metadata = ParquetOuputMetadataImpl(db.session, output_id)
-            create_parquet_files(metadata, file_output, variables_target)  # TODO: complete implementation
+            create_parquet_files(ParquetOutputMetadata(db.session, metadata.id), file_output, variables_target)
 
-            self._save_logs(study_id, output_name, logs, dir_path)
+            self._save_logs(study_id, output_name, logs, dir_path, commit=False)
 
-            variables_list = extract_variables_list(dir_path)
-            self._repository.save_output_variables_list(study_id, output_name, variables_list)
+            self._repository.save_output_metadata(metadata)
 
             logger.info(f"Output imported to internal storage in {timer}s.")
             return output_name
+        except Exception:
+            db.session.rollback()
+            if written_output is not None:
+                self._archive_storage.delete_file(_archive_id(study_id, written_output))
+                shutil.rmtree(parquet_output_dir(self._variables_dir, study_id, written_output), ignore_errors=True)
+            raise
         finally:
             shutil.rmtree(tmp_dir, ignore_errors=True)
 
-    def _save_logs(self, study_id: str, output_id: str, logs: SimulationLogs, output_dir: Path) -> None:
+    def _save_logs(
+        self, study_id: str, output_id: str, logs: SimulationLogs, output_dir: Path, *, commit: bool = True
+    ) -> None:
         out_log = logs.out or find_simulation_log(output_dir, LogType.STDOUT)
         if out_log:
             log_content = out_log.read_text(encoding="utf-8")
-            self._repository.save_log(study_id, output_id, LogType.STDOUT, log_content)
+            self._repository.save_log(study_id, output_id, LogType.STDOUT, log_content, commit=commit)
         err_log = logs.err or find_simulation_log(output_dir, LogType.STDERR)
         if err_log:
             log_content = err_log.read_text(encoding="utf-8")
-            self._repository.save_log(study_id, output_id, LogType.STDERR, log_content)
+            self._repository.save_log(study_id, output_id, LogType.STDERR, log_content, commit=commit)
 
     @override
     def list_outputs(self, study_id: str) -> list[OutputMetadata]:
@@ -296,31 +310,42 @@ class V2OutputStorage(IOutputStorage):
         if self._get_metadata(target_study_id, output_id) is not None:
             raise OutputAlreadyExists(output_id)
 
-        with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp_dir:
-            tmp_archive_path = Path(tmp_dir) / "output.zip"
-            self._archive_storage.read_file(_archive_id(src_study_id, output_id), tmp_archive_path)
-            self._archive_storage.write_file(_archive_id(target_study_id, output_id), tmp_archive_path)
-
-        metadata = self._require_metadata(src_study_id, output_id)
-        copy_metadata = clone_orm_object(DbOutputMetadataV2, metadata)
-        copy_metadata.study_id = target_study_id
-        copy_metadata.output_name = output_id
-        self._repository.save_output_metadata(copy_metadata)
-
-        out_log = self._repository.get_log(src_study_id, output_id, LogType.STDOUT)
-        err_log = self._repository.get_log(src_study_id, output_id, LogType.STDERR)
-        self._repository.save_log(target_study_id, output_id, LogType.STDOUT, out_log)
-        self._repository.save_log(target_study_id, output_id, LogType.STDERR, err_log)
-
-        variables_list = self._repository.get_output_variables_list(src_study_id, output_id)
-        if variables_list is None:
-            raise ShouldNotHappenException(f"Variables list not found for output {src_study_id}/{output_id}.")
-        self._repository.save_output_variables_list(target_study_id, output_id, variables_list)
-
+        metadata = self._ensure_metadata(src_study_id, output_id)
         src_vars = parquet_output_dir(self._variables_dir, src_study_id, output_id)
         dst_vars = parquet_output_dir(self._variables_dir, target_study_id, output_id)
-        if src_vars.exists():
-            shutil.copytree(src_vars, dst_vars)
+        try:
+            with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp_dir:
+                tmp_archive_path = Path(tmp_dir) / "output.zip"
+                self._archive_storage.read_file(_archive_id(src_study_id, output_id), tmp_archive_path)
+                self._archive_storage.write_file(_archive_id(target_study_id, output_id), tmp_archive_path)
+
+            copy_metadata = clone_orm_object(DbOutputMetadataV2, metadata)
+            del copy_metadata.id
+            copy_metadata.study_id = target_study_id
+            db.session.add(copy_metadata)
+            db.session.flush()
+            for table in (DbParquetVariable, *ELEMENT_TABLES):
+                for row in db.session.scalars(select(table).where(table.output_id == metadata.id)).all():
+                    copied = type(row)(**{c.name: getattr(row, c.name) for c in row.__table__.columns})
+                    setattr(copied, "output_id", copy_metadata.id)
+                    db.session.add(copied)
+            db.session.flush()
+            for log_type in (LogType.STDOUT, LogType.STDERR):
+                self._repository.save_log(
+                    target_study_id,
+                    output_id,
+                    log_type,
+                    self._repository.get_log(src_study_id, output_id, log_type),
+                    commit=False,
+                )
+            if src_vars.exists():
+                shutil.copytree(src_vars, dst_vars)
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            self._archive_storage.delete_file(_archive_id(target_study_id, output_id))
+            shutil.rmtree(dst_vars, ignore_errors=True)
+            raise
 
     @override
     def delete_output(self, study_id: str, output_id: str) -> None:
@@ -364,18 +389,66 @@ class V2OutputStorage(IOutputStorage):
         logger.info(f"Unarchiving output {study_id}/{output_id} in internal storage.")
         metadata = self._require_metadata(study_id, output_id)
 
-        # Rebuild parquet files from the archive BEFORE updating metadata,
-        # so that if reconstruction fails, the output stays marked as archived.
-        with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp_dir:
-            tmp_archive_path = Path(tmp_dir) / "output.zip"
-            self._archive_storage.read_file(_archive_id(study_id, output_id), tmp_archive_path)
-            dir_path = Path(tmp_dir) / "output"
-            extract_archive_from_path(tmp_archive_path, dir_path)
-            variables_target = parquet_output_dir(self._variables_dir, study_id, output_id)
-            extract_output_to_parquet(dir_path, variables_target)
+        self._rebuild_metadata(metadata, unarchive=True)
 
-        metadata.archived = False
-        self._repository.save_output_metadata(metadata)
+    def _ensure_metadata(self, study_id: str, output_id: str) -> DbOutputMetadataV2:
+        metadata = self._require_metadata(study_id, output_id)
+        if metadata.metadata_version < 1:
+            # Serialize upgrades of an existing output on PostgreSQL.
+            metadata = db.session.execute(
+                select(DbOutputMetadataV2)
+                .where(DbOutputMetadataV2.id == metadata.id)
+                .with_for_update()
+                .execution_options(populate_existing=True)
+            ).scalar_one()
+            if metadata.metadata_version < 1:
+                self._rebuild_metadata(metadata)
+        return metadata
+
+    def _rebuild_metadata(self, metadata: DbOutputMetadataV2, unarchive: bool = False) -> None:
+        """Reconstruct missing units/statistics from the archive, including legacy outputs.
+
+        The old blob cannot supply this information. Keep the old parquet directory
+        until replacement files are complete, and restore it if the DB commit fails.
+        Archived outputs only need their headers until explicitly unarchived.
+        """
+        target = parquet_output_dir(self._variables_dir, metadata.study_id, metadata.output_name)
+        backup = target.with_name(f"{target.name}.backup-{uuid.uuid4()}")
+        replaced = False
+        try:
+            with tempfile.TemporaryDirectory(dir=self._tmp_dir) as tmp:
+                archive = Path(tmp) / "output.zip"
+                source = Path(tmp) / "output"
+                self._archive_storage.read_file(_archive_id(metadata.study_id, metadata.output_name), archive)
+                extract_archive_from_path(archive, source)
+                fix_study_root(source)
+                for table in (DbParquetVariable, *ELEMENT_TABLES):
+                    db.session.execute(delete(table).where(table.output_id == metadata.id))
+                file_output = FileOutput(source)
+                metadata.mc_years = file_output.mc_years
+                extract_output_variables_to_database(db.session, metadata.id, file_output)
+                if unarchive or not metadata.archived:
+                    self._variables_dir.mkdir(parents=True, exist_ok=True)
+                    with tempfile.TemporaryDirectory(dir=self._variables_dir) as staging:
+                        new_dir = Path(staging) / "parquet"
+                        create_parquet_files(ParquetOutputMetadata(db.session, metadata.id), file_output, new_dir)
+                        if target.exists():
+                            target.rename(backup)
+                        new_dir.rename(target)
+                        replaced = True
+                metadata.metadata_version = 1
+                if unarchive:
+                    metadata.archived = False
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+            if replaced:
+                shutil.rmtree(target, ignore_errors=True)
+            if backup.exists():
+                backup.rename(target)
+            raise
+        finally:
+            shutil.rmtree(backup, ignore_errors=True)
 
     @override
     def get_digest(self, study_id: str, output_id: str) -> DigestUI:
@@ -387,10 +460,8 @@ class V2OutputStorage(IOutputStorage):
         """
         Get variables list of this output.
         """
-        result = self._repository.get_output_variables_list(study_id, output_id)
-        if not result:
-            raise ValueError(f"Variables list not found for output {study_id}/{output_id}.")
-        return result
+        metadata = self._ensure_metadata(study_id, output_id)
+        return ParquetOutputMetadata(db.session, metadata.id).get_variables_list()
 
     @override
     def write_output_to_dir(self, study_id: str, output_id: str, parent: Path) -> None:
@@ -420,16 +491,28 @@ class V2OutputStorage(IOutputStorage):
         columns_names: Sequence[str],
         mc_years: Sequence[int] | None = None,
     ) -> Iterator[pl.DataFrame]:
-        target_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
+        metadata = self._ensure_metadata(study_id, output_id)
+        if metadata.archived:
+            raise OutputAggregationError(output_id, "Output is archived")
+        aggregation: ScenarioAggregation = (
+            "mc-ind" if isinstance(query_file, (MCIndAreasQueryFile, MCIndLinksQueryFile)) else "mc-all"
+        )
+        element_type: ElementType = FILE_TYPES[query_file.value]
+        if isinstance(query_file, (MCIndLinksQueryFile, MCAllLinksQueryFile)):
+            element_type = "link" if query_file.value == "values" else "link_id"
         has_data = False
-        for batch in read_output_from_parquet(
-            target_dir, query_file, frequency, ids_to_consider, columns_names, mc_years
+        for batch in aggregate_data(
+            ParquetOutputMetadata(db.session, metadata.id),
+            parquet_output_dir(self._variables_dir, study_id, output_id),
+            aggregation,
+            element_type,
+            frequency,
+            mc_years or [],
+            ids_to_consider,
+            columns_names,
         ):
-            if batch.is_empty():
-                continue
             has_data = True
             yield batch
-
         if not has_data:
             raise OutputAggregationError(output_id, "No output data matching the criteria were found")
 
@@ -459,8 +542,9 @@ class V2OutputStorage(IOutputStorage):
     def get_matrix_aggregation_result(
         self, study_id: str, output_id: str, data_selection: StudyDownloadDTO
     ) -> MatrixAggregationResultDTO:
-        metadata = self._require_metadata(study_id, output_id)
-        db_id = 0  # TODO: get from metadata
-        parquet_metadata = ParquetOuputMetadataImpl(db.session, db_id)
+        metadata = self._ensure_metadata(study_id, output_id)
+        if metadata.archived:
+            raise OutputAggregationError(output_id, "Output is archived")
+        parquet_metadata = ParquetOutputMetadata(db.session, metadata.id)
         output_dir = parquet_output_dir(self._variables_dir, study_id, output_id)
         return build_matrix_aggregation_result(parquet_metadata, output_dir, data_selection)

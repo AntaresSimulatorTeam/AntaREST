@@ -9,417 +9,41 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+"""Write all output families with schemas defined by database metadata."""
 
-"""
-Conversion of Antares output TSV files to parquet format.
-
-Output structure: one parquet file per (mc_root, object_type, frequency) tuple.
-Naming convention: {mc_root}_{object_type}_{frequency}.parquet
-Example: mc-all_areas_hourly.parquet, mc-ind_thermal_clusters_daily.parquet
-"""
-
-import logging
-import shutil
-import tempfile
-from collections.abc import Iterator, Sequence
+from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Self, TypeAlias
+from typing import TYPE_CHECKING, Any, Self
 
 import polars as pl
 import polars.selectors as pls
 import pyarrow as pa
 from polars import Float64
 
-from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
-from antarest.core.serde.parquet_writer import (
-    BatchParquetWriter,
-    write_dataframes_in_parquet_format_by_column_sets,
-    write_dataframes_stream_parquet,
-    yield_dataframes_from_parquet,
-)
-from antarest.output.filestudy.aggregation import AggregatorManager
-from antarest.output.filestudy.iteration import OutputFileData, iterate_output_data
+from antarest.core.serde.parquet_writer import BatchParquetWriter
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file
-from antarest.output.filestudy.model import (
-    MCYEAR_COL,
-    TIME_ID_COL,
-    FileOutput,
-    MCAllAreasQueryFile,
-    MCAllLinksQueryFile,
-    MCIndAreasQueryFile,
-    MCIndLinksQueryFile,
-    MCRoot,
-    QueryFileType,
-    VariableDescription,
-    find_mode_dir,
-    get_output_object_type,
-)
+from antarest.output.filestudy.model import FileOutput, VariableDescription
+from antarest.output.storage.v2.dbmodel import ElementType, ScenarioAggregation
+from antarest.output.storage.v2.layout import SourceFile, header_groups, index_columns, parquet_filename, source_files
 from antarest.output.storage.v2.metadata import IParquetOutputMetadata
 from antarest.study.model import MatrixFrequency
-
-logger = logging.getLogger(__name__)
-
-
-def parquet_output_dir(variables_dir: Path, study_id: str, output_name: str) -> Path:
-    return variables_dir / f"{study_id}-{output_name}"
-
-
-def _parquet_file_name(mc_root: MCRoot, object_type: str, frequency: MatrixFrequency) -> str:
-    return f"{mc_root.value}_{object_type}_{frequency.value}.parquet"
-
-
-_SKIPPED_QUERY_FILES = {"id"}
-"""Query file types that should not be converted to parquet (metadata files, not variable data)."""
-
-
-def _discover_file_type_frequencies(
-    folders: list[Path], file_type_class: type[QueryFileType]
-) -> list[tuple[QueryFileType, MatrixFrequency]]:
-    seen: set[tuple[str, str]] = set()
-    result: list[tuple[QueryFileType, MatrixFrequency]] = []
-    for folder in folders:
-        for file in folder.iterdir():
-            if not file.name.endswith(".txt"):
-                continue
-            parts = file.stem.split("-")
-            freq_str = parts[-1]
-            file_type_str = "-".join(parts[:-1])
-            key = (file_type_str, freq_str)
-            if key in seen:
-                continue
-            try:
-                query_file = file_type_class(file_type_str)
-                if query_file.value in _SKIPPED_QUERY_FILES:
-                    continue
-                frequency = MatrixFrequency(freq_str)
-                seen.add(key)
-                result.append((query_file, frequency))
-            except ValueError:
-                continue
-    return result
-
-
-def _merge_intermediate_parquets(file_paths: list[Path], new_index: list[str], target_path: Path) -> None:
-    if len(file_paths) == 1:
-        shutil.move(file_paths[0], target_path)
-        return
-    dataframes = yield_dataframes_from_parquet(file_paths, new_index)
-    write_dataframes_stream_parquet(target_path, dataframes)
-
-
-def _aggregate_to_parquet(
-    output_dir: Path,
-    query_file: QueryFileType,
-    frequency: MatrixFrequency,
-    ids_to_consider: list[str],
-    target_path: Path,
-) -> None:
-    manager = AggregatorManager(
-        output_path=output_dir,
-        query_file=query_file,
-        frequency=frequency,
-        ids_to_consider=ids_to_consider,
-        columns_names=[],
-    )
-    try:
-        dataframes = manager.aggregate_output_data()
-    except (OutputNotFound, OutputSubFolderNotFound, OutputAggregationError, MCRootNotHandled) as e:
-        logger.warning(f"Skipping {query_file.value}-{frequency.value}: {e}")
-        return
-
-    with tempfile.TemporaryDirectory() as intermediate_dir:
-        file_paths, new_index = write_dataframes_in_parquet_format_by_column_sets(Path(intermediate_dir), dataframes)
-        if not file_paths:
-            return
-        _merge_intermediate_parquets(file_paths, new_index, target_path)
-
-
-def _extract_areas(
-    output_dir: Path,
-    base_path: Path,
-    mc_root: MCRoot,
-    target_dir: Path,
-) -> None:
-    areas_path = base_path / "areas"
-    if not areas_path.exists():
-        return
-
-    all_ids = [d.name for d in areas_path.iterdir() if d.is_dir()]
-    area_ids = []
-    district_ids = []
-
-    for item in all_ids:
-        if item.startswith("@"):
-            district_ids.append(item)
-        else:
-            area_ids.append(item)
-
-    file_type_class: type[QueryFileType] = MCIndAreasQueryFile if mc_root == MCRoot.MC_IND else MCAllAreasQueryFile
-
-    ref_folders = [areas_path / a for a in all_ids]
-    combos = _discover_file_type_frequencies(ref_folders, file_type_class)
-
-    for query_file, frequency in combos:
-        obj_type = get_output_object_type(query_file, is_link=False)
-        if area_ids:
-            file_name = _parquet_file_name(mc_root, obj_type, frequency)
-            _aggregate_to_parquet(output_dir, query_file, frequency, area_ids, target_dir / file_name)
-
-        # Districts
-        if district_ids and query_file.value == "values":
-            file_name = _parquet_file_name(mc_root, "districts", frequency)
-            _aggregate_to_parquet(output_dir, query_file, frequency, district_ids, target_dir / file_name)
-
-
-def _extract_links(
-    output_dir: Path,
-    base_path: Path,
-    mc_root: MCRoot,
-    target_dir: Path,
-) -> None:
-    links_path = base_path / "links"
-    if not links_path.exists():
-        return
-
-    link_ids = [d.name for d in links_path.iterdir() if d.is_dir()]
-    if not link_ids:
-        return
-
-    file_type_class: type[QueryFileType] = MCIndLinksQueryFile if mc_root == MCRoot.MC_IND else MCAllLinksQueryFile
-    ref_folders = [links_path / lid for lid in link_ids]
-    combos = _discover_file_type_frequencies(ref_folders, file_type_class)
-
-    for query_file, frequency in combos:
-        file_name = _parquet_file_name(mc_root, "links", frequency)
-        _aggregate_to_parquet(output_dir, query_file, frequency, link_ids, target_dir / file_name)
-
-
-def _parse_bc_file(file: Path, mc_root: MCRoot, mc_year: int | None = None) -> pl.DataFrame | None:
-    freq_str = file.stem.split("-")[-1]
-    try:
-        frequency = MatrixFrequency(freq_str)
-    except ValueError:
-        return None
-
-    start_col = get_start_column(frequency)
-    try:
-        output_data = parse_output_file(file, start_col)
-    except Exception as e:
-        logger.debug(f"Skipping binding constraint {file.name}: {e}")
-        return None
-
-    df = output_data.data
-    col_names = [c.normal_repr() for c in output_data.headers]
-    df.columns = col_names
-    df = df.with_row_index(TIME_ID_COL, offset=1)
-
-    if mc_year is not None:
-        df = df.with_columns(pl.lit(mc_year).alias(MCYEAR_COL))
-
-    return df if not df.is_empty() else None
-
-
-def _discover_bc_frequencies(bc_path: Path) -> set[str]:
-    freqs: set[str] = set()
-    for file in bc_path.iterdir():
-        if file.name.endswith(".txt"):
-            freqs.add(file.stem.split("-")[-1])
-    return freqs
-
-
-def _generate_bc_dataframes(
-    bc_paths: list[tuple[Path, int | None]],
-    freq_str: str,
-    mc_root: MCRoot,
-) -> Iterator[pl.DataFrame]:
-    for bc_path, mc_year in bc_paths:
-        for file in bc_path.iterdir():
-            if not file.name.endswith(".txt"):
-                continue
-            if file.stem.split("-")[-1] != freq_str:
-                continue
-            df = _parse_bc_file(file, mc_root, mc_year)
-            if df is not None:
-                yield df
-
-
-def _extract_binding_constraints(
-    mc_root_path: Path,
-    mc_root: MCRoot,
-    target_dir: Path,
-) -> None:
-    bc_paths: list[tuple[Path, int | None]] = []
-    if mc_root == MCRoot.MC_IND:
-        for year_dir in sorted(mc_root_path.iterdir()):
-            if not year_dir.is_dir():
-                continue
-            bc_path = year_dir / "binding_constraints"
-            if bc_path.exists():
-                bc_paths.append((bc_path, int(year_dir.name)))
-    else:
-        bc_path = mc_root_path / "binding_constraints"
-        if bc_path.exists():
-            bc_paths.append((bc_path, None))
-
-    if not bc_paths:
-        return
-
-    # Discover all available frequencies
-    all_freqs: set[str] = set()
-    for bc_path, _ in bc_paths:
-        all_freqs |= _discover_bc_frequencies(bc_path)
-
-    for freq_str in all_freqs:
-        try:
-            frequency = MatrixFrequency(freq_str)
-        except ValueError:
-            continue
-
-        file_name = _parquet_file_name(mc_root, "binding_constraints", frequency)
-        intermediate_dir = Path(tempfile.mkdtemp())
-        try:
-            dataframes = _generate_bc_dataframes(bc_paths, freq_str, mc_root)
-            file_paths, new_index = write_dataframes_in_parquet_format_by_column_sets(intermediate_dir, dataframes)
-            if file_paths:
-                _merge_intermediate_parquets(file_paths, new_index, target_dir / file_name)
-        finally:
-            shutil.rmtree(intermediate_dir, ignore_errors=True)
-
-
-def extract_output_to_parquet(output_dir: Path, target_dir: Path) -> None:
-    target_dir.mkdir(parents=True, exist_ok=True)
-
-    mode_dir = find_mode_dir(output_dir)
-
-    for mc_root in (MCRoot.MC_IND, MCRoot.MC_ALL):
-        mc_root_path = mode_dir / str(mc_root.value)
-        if not mc_root_path.exists():
-            continue
-
-        # For mc-ind, use first MC year folder for structure discovery
-        if mc_root == MCRoot.MC_IND:
-            years = [d for d in mc_root_path.iterdir() if d.is_dir()]
-            if not years:
-                continue
-            base_path = years[0]
-        else:
-            base_path = mc_root_path
-
-        _extract_areas(output_dir, base_path, mc_root, target_dir)
-        _extract_links(output_dir, base_path, mc_root, target_dir)
-        _extract_binding_constraints(mc_root_path, mc_root, target_dir)
-
-    logger.info(f"Extracted output variables to parquet in {target_dir}")
-
-
-_ID_COLUMNS = {"area", "link", MCYEAR_COL, TIME_ID_COL, "cluster"}
-"""Columns that are not variable data but identification/index columns."""
-
-
-def _mc_root_for_query_file(query_file: QueryFileType) -> MCRoot:
-    if isinstance(query_file, (MCIndAreasQueryFile, MCIndLinksQueryFile)):
-        return MCRoot.MC_IND
-    return MCRoot.MC_ALL
-
-
-def _filter_columns(
-    schema_names: list[str],
-    columns_names: Sequence[str],
-    mc_root: MCRoot,
-    is_details: bool,
-) -> list[str]:
-    lower_filters = [c.lower() for c in columns_names]
-    selected = []
-    for col in schema_names:
-        if col in _ID_COLUMNS:
-            selected.append(col)
-        elif mc_root == MCRoot.MC_IND and not is_details:
-            if col.lower() in lower_filters:
-                selected.append(col)
-        else:
-            if any(f in col.lower() for f in lower_filters):
-                selected.append(col)
-    return selected
-
-
-def _read_filtered(
-    parquet_path: Path,
-    id_col: str,
-    ids: Sequence[str],
-    mc_root: MCRoot,
-    mc_years: Sequence[int] | None,
-    columns_names: Sequence[str],
-    is_details: bool,
-) -> Iterator[pl.DataFrame]:
-    if not parquet_path.exists():
-        return
-
-    lazy = pl.scan_parquet(parquet_path)
-
-    if ids:
-        lazy = lazy.filter(pl.col(id_col).is_in(list(ids)))
-
-    if mc_years and mc_root == MCRoot.MC_IND:
-        lazy = lazy.filter(pl.col(MCYEAR_COL).is_in(list(mc_years)))
-
-    if columns_names:
-        schema_names = lazy.collect_schema().names()
-        selected = _filter_columns(schema_names, columns_names, mc_root, is_details)
-        lazy = lazy.select(selected)
-
-    yield from lazy.collect_batches()
-
-
-def read_output_from_parquet(
-    target_dir: Path,
-    query_file: QueryFileType,
-    frequency: MatrixFrequency,
-    ids_to_consider: Sequence[str],
-    columns_names: Sequence[str],
-    mc_years: Sequence[int] | None,
-) -> Iterator[pl.DataFrame]:
-    mc_root = _mc_root_for_query_file(query_file)
-    is_link = isinstance(query_file, (MCIndLinksQueryFile, MCAllLinksQueryFile))
-    is_details = "details" in query_file.value
-    obj_type = get_output_object_type(query_file, is_link)
-    id_col = "link" if is_link else "area"
-
-    # Split areas vs districts
-    if not is_link and ids_to_consider:
-        district_ids = [i for i in ids_to_consider if i.startswith("@")]
-        area_ids = [i for i in ids_to_consider if not i.startswith("@")]
-    else:
-        district_ids = []
-        area_ids = list(ids_to_consider)
-
-    # Read main file (areas, links, or details)
-    if area_ids or not ids_to_consider:
-        parquet_path = target_dir / _parquet_file_name(mc_root, obj_type, frequency)
-        yield from _read_filtered(parquet_path, id_col, area_ids, mc_root, mc_years, columns_names, is_details)
-
-    # Read districts file if needed
-    if district_ids:
-        parquet_path = target_dir / _parquet_file_name(mc_root, "districts", frequency)
-        yield from _read_filtered(parquet_path, id_col, district_ids, mc_root, mc_years, columns_names, is_details)
-
-
-# TODO: the implementation above needs to be replaced with one that uses the
-#       column indices that have been determined when parsing variable metadata
-
-IndexCol: TypeAlias = Literal["mcYear", "area", "timeId"]
 
 if TYPE_CHECKING:
     Field = pa.Field[Any]
 else:
     Field = pa.Field
 
-# Mapping to pyarrow fields
-INDEX_FIELDS: dict[IndexCol, Field] = {
+INDEX_FIELDS: dict[str, Field] = {
     "mcYear": pa.field("mcYear", pa.int32()),
-    "area": pa.field("area", pa.large_string()),  # polars uses large_string and not just string
     "timeId": pa.field("timeId", pa.int32()),
+    **{key: pa.field(key, pa.large_string()) for key in ("area", "link", "cluster", "constraint")},
 }
+
+
+def parquet_output_dir(variables_dir: Path, study_id: str, output_name: str) -> Path:
+    return variables_dir / f"{study_id}-{output_name}"
 
 
 @dataclass(frozen=True)
@@ -429,7 +53,7 @@ class IndexedOutputDataFrame:
     the MC year.
     """
 
-    index_cols: Sequence[IndexCol]
+    index_cols: Sequence[str]
     var_cols: Sequence[VariableDescription]
 
     data: pl.DataFrame
@@ -444,11 +68,20 @@ class ParquetOutputWriter:
     metadata remains the information stored in database.
     """
 
-    def __init__(self, target_path: Path, index_cols: list[IndexCol], var_cols: Sequence[VariableDescription]) -> None:
+    def __init__(self, target_path: Path, index_cols: list[str], var_cols: Sequence[VariableDescription]) -> None:
         self.index_cols = index_cols
         self.var_cols = var_cols
         self.target_path = target_path
         self.writer: BatchParquetWriter | None = None
+        # Names are diagnostic only. Disambiguate equal names/units/statistics safely.
+        self.column_names: list[str] = []
+        used = set(index_cols)
+        for i, variable in enumerate(var_cols):
+            name = variable.normal_repr()
+            while name in used:
+                name += f"__{i}"
+            used.add(name)
+            self.column_names.append(name)
 
     def __enter__(self) -> Self:
         return self
@@ -468,8 +101,7 @@ class ParquetOutputWriter:
         Trying to have a meaningful naming mainly for debugging purpose.
         For business logic, the code MUST rely on database metadata instead.
         """
-        var = self.var_cols[index]
-        return "__".join((p for p in (var.name, var.unit, var.statistic_type) if p))
+        return self.column_names[index]
 
     def _adapt_df(self, output_df: IndexedOutputDataFrame) -> pa.Table:
         offset = len(self.index_cols)
@@ -497,69 +129,35 @@ class ParquetOutputWriter:
         self.writer.append_table(self._adapt_df(output_df))
 
 
-_TIME_COL = pl.int_range(pl.len(), dtype=pl.Int32()).alias("timeId")
-
-
-def time_col() -> pl.Expr:
-    return _TIME_COL
-
-
-def element_id_col(colname: str, element_id: str) -> pl.Expr:
-    return pl.lit(element_id, dtype=pl.String()).alias(colname)
-
-
-def mc_year_col(mc_year: int | Literal["mc-all"]) -> pl.Expr:
-    if mc_year == "mc-all":
-        raise ValueError("Should not created time id col for mc-all dataframe")
-    return pl.lit(mc_year, dtype=pl.Int32()).alias("mcYear")
-
-
-def index_df(data: OutputFileData) -> IndexedOutputDataFrame:
-    """
-    Adds index columns (mc year, element identifier(s), ) to dataframes containing only variables values
-    """
-    metadata = data.file.metadata
-    df = data.data
-    match metadata.file_type:
-        case MCIndAreasQueryFile.VALUES:
-            return IndexedOutputDataFrame(
-                index_cols=["mcYear", "area", "timeId"],
-                var_cols=df.headers,
-                data=df.data.select(
-                    mc_year_col(metadata.year), element_id_col("area", metadata.element_id), time_col(), pl.all()
-                ),
-            )
-        case MCAllAreasQueryFile.VALUES:
-            return IndexedOutputDataFrame(
-                index_cols=["area", "timeId"],
-                var_cols=df.headers,
-                data=df.data.select(element_id_col("area", metadata.element_id), time_col(), pl.all()),
-            )
-
-    raise NotImplementedError(f"Not yet implemented: {metadata.file_type}")
-
-
-def extract_areas_refacto(
-    metadata: IParquetOutputMetadata,
-    file_output: FileOutput,
-    target_dir: Path,
-) -> None:
-
-    variable_cols = metadata.get_variables("mc-ind", "area")
-
-    for freq in MatrixFrequency:
-        output_file_path = target_dir / f"mc-ind_areas_{freq.value}.parquet"
-        with ParquetOutputWriter(
-            output_file_path, index_cols=["mcYear", "area", "timeId"], var_cols=variable_cols
-        ) as writer:
-            file_data = iterate_output_data(file_output.output_dir, MCIndAreasQueryFile.VALUES, freq, [], [])
-            indexed_dfs = map(index_df, file_data)
-            for df in indexed_dfs:
-                writer.append_output_df(df)
-
-
 def create_parquet_files(metadata: IParquetOutputMetadata, file_output: FileOutput, target_dir: Path) -> None:
-    """
-    Creates parquet files in target_dir in consistence with columns that have been defined in the metadata object.
-    """
-    extract_areas_refacto(metadata, file_output, target_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    files: dict[tuple[ScenarioAggregation, ElementType, MatrixFrequency], list[SourceFile]] = defaultdict(list)
+    for source in source_files(file_output):
+        if source.element_type not in ("area_id", "link_id"):
+            files[source.aggregation, source.element_type, source.frequency].append(source)
+    # One writer at a time bounds the row-group buffers across output families/frequencies.
+    for (aggregation, element_type, frequency), sources in files.items():
+        indices = index_columns(aggregation, element_type)
+        variables = metadata.get_variables(aggregation, element_type)
+        with ParquetOutputWriter(
+            target_dir / parquet_filename(aggregation, element_type, frequency), indices, variables
+        ) as writer:
+            for source in sources:
+                output = parse_output_file(source.path, get_start_column(frequency))
+                for group in header_groups(output.headers, element_type):
+                    index_exprs: list[pl.Expr] = []
+                    if aggregation == "mc-ind":
+                        index_exprs.append(pl.lit(source.year, dtype=pl.Int32()).alias("mcYear"))
+                    id_col = indices[1] if aggregation == "mc-ind" else indices[0]
+                    index_exprs.append(pl.lit(source.element_id, dtype=pl.String()).alias(id_col))
+                    if group.cluster_id is not None:
+                        index_exprs.append(pl.lit(group.cluster_id, dtype=pl.String()).alias("cluster"))
+                    index_exprs.append(pl.int_range(1, pl.len() + 1, dtype=pl.Int32()).alias("timeId"))
+                    selected: list[pl.Expr] = [pls.by_index(i) for i in group.positions]
+                    writer.append_output_df(
+                        IndexedOutputDataFrame(
+                            index_cols=indices,
+                            var_cols=group.variables,
+                            data=output.data.select(index_exprs + selected),
+                        )
+                    )

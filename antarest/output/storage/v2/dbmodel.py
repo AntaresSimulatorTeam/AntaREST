@@ -11,30 +11,27 @@
 # This file is part of the Antares project.
 from typing import Any, Literal, TypeAlias
 
-from sqlalchemy import BigInteger, Dialect, ForeignKeyConstraint, SmallInteger, String, types
+from sqlalchemy import Boolean, Dialect, ForeignKey, Integer, String, UniqueConstraint, types
 from sqlalchemy.orm import Mapped, mapped_column
 from typing_extensions import override
 
-from antarest.dbmodel import Base
+from antarest.core.persistence import Base
 
 ElementType: TypeAlias = Literal[
     "area",
     "link",
-    "binding_constraint",
     "thermal_cluster",
     "renewable_cluster",
     "short_term_storage",
+    "binding_constraint",
+    "area_id",
+    "link_id",
 ]
-
 ScenarioAggregation: TypeAlias = Literal["mc-ind", "mc-all"]
 
 
 class IntList(types.TypeDecorator[list[int]]):
-    """
-    Stores a list of integers as a comma separated string.
-
-    Can avoid many to many relationships which would not be useful.
-    """
+    """Compact ordered column indices; an empty list is a valid value."""
 
     impl = String
     cache_ok = True
@@ -48,61 +45,103 @@ class IntList(types.TypeDecorator[list[int]]):
     @override
     def process_result_value(self, value: Any | None, dialect: Dialect) -> list[int]:
         if not isinstance(value, str):
-            raise ValueError("Expected a string.")
-        return [int(c) for c in value.split(",")]
+            raise ValueError("Expected a string")
+        return [int(c) for c in value.split(",")] if value else []
 
 
-class DbParquetOutput(Base):
-    # TODO: we should merge the existing v2_output_metadata tables into this one
-    #       the integer identifier will be easier and more efficient to use than the couple of strings
-    #       study_id / output_id
+class DbOutputMetadataV2(Base):
+    __tablename__ = "output_v2_metadata"
 
-    __tablename__ = "parquet_output"
+    __table_args__ = (UniqueConstraint("study_id", "output_name", name="uq_output_v2_study_name"),)
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    mc_years: Mapped[list[int]] = mapped_column(IntList)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    mc_years: Mapped[list[int]] = mapped_column(IntList, default=list)
+    metadata_version: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Design note: we don't enforce a foreign key constraint on study_id because it
+    #              constrains too much the workflow, for example it does not allow
+    #              to mark an output for deletion and delete it later, or just to
+    #              delete output after deleting the study itself
+    study_id: Mapped[str] = mapped_column(
+        String(),
+        nullable=False,
+    )
+    output_name: Mapped[str] = mapped_column(String(), nullable=False)
+    archived: Mapped[bool] = mapped_column(Boolean(), nullable=False)
+    # TODO: enum ?
+    mode: Mapped[str] = mapped_column(String(), nullable=False)
+    synthesis: Mapped[bool] = mapped_column(Boolean(), nullable=False)
+    by_year: Mapped[bool] = mapped_column(Boolean(), nullable=False)
+    nb_years: Mapped[int] = mapped_column(Integer(), nullable=False)
+
+    # Definition of the 12-month range
+    # TODO: enum
+    start_month: Mapped[int] = mapped_column(Integer(), nullable=False)
+    # TODO: enum
+    january_first_weekday: Mapped[int] = mapped_column(Integer(), nullable=False)
+    leap_year: Mapped[bool] = mapped_column(Boolean(), nullable=False)
+
+    # Definition of the simulation range
+    start_day: Mapped[int] = mapped_column(Integer(), nullable=False)
+    end_day: Mapped[int] = mapped_column(Integer(), nullable=False)
+
+    # For weekly aggregation
+    # TODO: enum
+    first_weekday: Mapped[int] = mapped_column(Integer(), nullable=False)
 
 
 class DbParquetVariable(Base):
-    """
-    Represents one of the variables referenced in an output.
-
-    Those variables are then referenced by elements of the system (areas, links ...), that contain
-    actual data for them.
-
-    Attributes:
-        column: the column offset in the actual parquet file, compared to index columns (starts at 0).
-    """
+    """Source of truth for variable columns, excluding the leading index columns."""
 
     __tablename__ = "parquet_variable"
-
-    __table_args__ = (ForeignKeyConstraint(["output_id"], ["parquet_output.id"]),)  # TODO
-
-    output_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    scenario_aggregation: Mapped[ScenarioAggregation] = mapped_column(primary_key=True)
-    element_type: Mapped[ElementType] = mapped_column(primary_key=True)
-    column: Mapped[int] = mapped_column(SmallInteger, primary_key=True)
-    name: Mapped[str]
-    unit: Mapped[str | None]
-    statistic_type: Mapped[str | None]
+    output_id: Mapped[int] = mapped_column(ForeignKey("output_v2_metadata.id", ondelete="CASCADE"), primary_key=True)
+    scenario_aggregation: Mapped[ScenarioAggregation] = mapped_column(String(16), primary_key=True)
+    element_type: Mapped[ElementType] = mapped_column(String(32), primary_key=True)
+    column: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    unit: Mapped[str | None] = mapped_column(String)
+    statistic_type: Mapped[str | None] = mapped_column(String)
 
 
-class DbParquetArea(Base):
-    """
-    Information related to an area of an output, in particular which variables it has data for,
-    in mc-ind and in mc-all (they may differ).
+class ElementColumns:
+    """Membership for an actual source file, including its column order.
 
-    The variables are reference through their column index.
+    Frequency and year distinguish missing files and differences between scenarios.
+    positions restores the original interleaving of cluster columns on download.
     """
 
+    output_id: Mapped[int] = mapped_column(
+        ForeignKey("output_v2_metadata.id", ondelete="CASCADE"), primary_key=True, index=True
+    )
+    scenario_aggregation: Mapped[ScenarioAggregation] = mapped_column(String(16), primary_key=True)
+    element_type: Mapped[ElementType] = mapped_column(String(32), primary_key=True)
+    frequency: Mapped[str] = mapped_column(String(16), primary_key=True)
+    mc_year: Mapped[int] = mapped_column(Integer, primary_key=True)
+    columns: Mapped[list[int]] = mapped_column(IntList)
+    positions: Mapped[list[int]] = mapped_column(IntList)
+
+
+class DbParquetArea(ElementColumns, Base):
     __tablename__ = "parquet_area"
-
-    __table_args__ = (ForeignKeyConstraint(["output_id"], ["parquet_output.id"]),)  # TODO
-
-    output_id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
-    area_id: Mapped[str] = mapped_column(primary_key=True)
-    mc_all_vars: Mapped[list[int]] = mapped_column(IntList)
-    mc_ind_vars: Mapped[list[int]] = mapped_column(IntList)
+    area_id: Mapped[str] = mapped_column(String, primary_key=True)
 
 
-# TODO: add tables for other element types: links, thermal clusters, etc
+class DbParquetLink(ElementColumns, Base):
+    __tablename__ = "parquet_link"
+    area_1_id: Mapped[str] = mapped_column(String, primary_key=True)
+    area_2_id: Mapped[str] = mapped_column(String, primary_key=True)
+
+
+class DbParquetCluster(ElementColumns, Base):
+    # Cluster families share identifiers; element_type distinguishes their namespaces.
+    __tablename__ = "parquet_cluster"
+    area_id: Mapped[str] = mapped_column(String, primary_key=True)
+    cluster_id: Mapped[str] = mapped_column(String, primary_key=True)
+
+
+class DbParquetBindingConstraint(ElementColumns, Base):
+    __tablename__ = "parquet_binding_constraint"
+    constraint_id: Mapped[str] = mapped_column(String, primary_key=True)
+
+
+ELEMENT_TABLES = (DbParquetArea, DbParquetLink, DbParquetCluster, DbParquetBindingConstraint)
