@@ -20,7 +20,7 @@ GEMS_TAXONOMY_METADATA_TABLE = Table(
     "gems_taxonomy_metadata",
     metadata,
     study_data_id_col(),
-    Column("id", String(255), primary_key=True),
+    Column("id", String(255), nullable=False),
     Column("description", String(), nullable=True),
     ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
 )
