@@ -11,39 +11,18 @@
 # This file is part of the Antares project.
 import re
 from typing import Any
-from unittest.mock import Mock
 
 import pytest
 
-from antarest.blobstore.in_memory import InMemoryBlobService
-from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.reserve_participations import (
     parse_hydro_reserves_certifications,
     parse_hydro_reserves_symmetries,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
-from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from tests.study.dao.utils import save_area
-
-
-@pytest.fixture
-def filestudy_dao_v10_2(empty_study_930: FileStudy, matrix_service: ISimpleMatrixService) -> FileStudyTreeDao:
-    empty_study_930.config.version = STUDY_VERSION_10_2
-    constants = GeneratorMatrixConstants(matrix_service)
-    constants.init_constant_matrices()
-    return FileStudyTreeDao(
-        empty_study_930,
-        False,
-        constants,
-        InMemoryBlobService(),
-        matrix_service,
-        Mock(),
-    )
 
 
 def _hydro_reserve_file(dao: FileStudyTreeDao, area_id: str):

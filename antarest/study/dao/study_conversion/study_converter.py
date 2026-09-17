@@ -78,6 +78,16 @@ class StudyConverter:
         # Comments
         self._new_dao.save_comments(self._source_dao.get_comments())
 
+        # GEMS
+        self._convert_gems()
+
+    def _convert_gems(self) -> None:
+        if self._study_version >= STUDY_VERSION_10_2:
+            gems_library = self._source_dao.get_library()
+            if not gems_library:
+                return
+            self._new_dao.save_library(gems_library)
+
     def _convert_settings(self) -> None:
         self._new_dao.save_general_config(self._source_dao.get_general_config())
         self._new_dao.save_playlist_config(self._source_dao.get_playlist_config())
