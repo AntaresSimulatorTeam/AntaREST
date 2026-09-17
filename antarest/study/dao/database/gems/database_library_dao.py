@@ -27,8 +27,6 @@ from antarest.study.dao.database.models.gems.library import (
     GEMS_PORT_TYPES_TABLE,
 )
 
-METADATA_TABLE = GEMS_LIBRARY_METADATA_TABLE
-
 
 class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
     """Database implementation of GemsLibraryDao"""
