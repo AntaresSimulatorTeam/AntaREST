@@ -140,7 +140,6 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
     Column("transmission_capacities", String(), nullable=False),
     Column("thermal_clusters_min_stable_power", Boolean(), nullable=False),
     Column("thermal_clusters_min_ud_time", Boolean(), nullable=False),
-    Column("include_thermal_cluster_ramping", Boolean(), nullable=False),
     Column("day_ahead_reserve", Boolean(), nullable=False),
     Column("primary_reserve", Boolean(), nullable=False),
     Column("strategic_reserve", Boolean(), nullable=False),
@@ -149,6 +148,7 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
     Column("unfeasible_problem_behavior", enum_col(UnfeasibleProblemBehavior), nullable=False),
     Column("simplex_optimization_range", enum_col(SimplexOptimizationRange), nullable=False),
     Column("include_reserves", Boolean(), nullable=True),
+    Column("include_thermal_cluster_ramping", Boolean(), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id"],
         ["study_data.study_data_id"],

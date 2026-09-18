@@ -18,11 +18,8 @@ depends_on = None
 
 
 def upgrade():
-    default_boolean = sa.text("0") if op.get_context().dialect.name == "sqlite" else "f"
     with op.batch_alter_table("optimization_preferences") as batch_op:
-        batch_op.add_column(
-            sa.Column("include_thermal_cluster_ramping", sa.Boolean(), server_default=default_boolean, nullable=False)
-        )
+        batch_op.add_column(sa.Column("include_thermal_cluster_ramping", sa.Boolean(), nullable=True))
 
 
 def downgrade():

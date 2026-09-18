@@ -1693,7 +1693,6 @@
                 "dayAheadReserve": true,
                 "exportMps": false,
                 "hurdleCosts": true,
-                "includeThermalClusterRamping": false,
                 "primaryReserve": true,
                 "simplexOptimizationRange": "week",
                 "spinningReserve": true,
