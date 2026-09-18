@@ -745,33 +745,38 @@ class OutputService:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
 
         db_model = get_output_view_inside_db(study_id, output_id, variable_name, frequency, output_item_id)
-        if db_model is not None:
-            # Update `last_read` value inside DB
-            db_model.last_read = current_time()
-            db.session.merge(db_model)
-            db.session.commit()
+        if db_model is None:
+            # Checks if the asked couple `variable name` / `output_identifier` exists for the output
+            available_variables = self.get_output_variables_list(study_id, output_id)
+            check_output_variable_exists(output_id, variable_name, available_variables, output_item_id)
 
-            # Get the dataframe inside the matrix-store
-            polars_df = self._matrix_service.get(db_model.matrix_id)
-            # Convert it to pandas and use np.NaN as null values for backward compatibility
-            if not all(dtype.is_numeric() for dtype in polars_df.dtypes):
-                polars_df = polars_df.with_columns(pl.all().cast(pl.Float64))
-            df = polars_df.to_pandas()
-            if with_index:
-                matrix_index = self.get_output_time_index(study_id, output_id, frequency)
-                matrix_index.set_as_df_index(df)
-            return df
+            task_id, _ = self._get_ongoing_variables_view_materialization_task(
+                output_item_id, study_id, output_id, frequency
+            )
+            if task_id:
+                return OutputVariablesViewResponse(status=OutputVariablesViewStatus.IN_PROGRESS, task_id=task_id)
 
-        # Checks if the asked couple `variable name` / `output_identifier` exists for the output
-        available_variables = self.get_output_variables_list(study_id, output_id)
-        check_output_variable_exists(output_id, variable_name, available_variables, output_item_id)
+            # Materialization commits the view before completing its task. It may
+            # have finished between the first lookup and the task-status query.
+            db_model = get_output_view_inside_db(study_id, output_id, variable_name, frequency, output_item_id)
+            if db_model is None:
+                return OutputVariablesViewResponse(status=OutputVariablesViewStatus.NOT_FOUND, task_id=None)
 
-        # Return a 404 Response with a body specifying if the materialization is in progress or not.
-        task_id, _ = self._get_ongoing_variables_view_materialization_task(
-            output_item_id, study_id, output_id, frequency
-        )
-        status = OutputVariablesViewStatus.IN_PROGRESS if task_id else OutputVariablesViewStatus.NOT_FOUND
-        return OutputVariablesViewResponse(status=status, task_id=task_id)
+        # Update `last_read` value inside DB
+        db_model.last_read = current_time()
+        db.session.merge(db_model)
+        db.session.commit()
+
+        # Get the dataframe inside the matrix-store
+        polars_df = self._matrix_service.get(db_model.matrix_id)
+        # Convert it to pandas and use np.NaN as null values for backward compatibility
+        if not all(dtype.is_numeric() for dtype in polars_df.dtypes):
+            polars_df = polars_df.with_columns(pl.all().cast(pl.Float64))
+        df = polars_df.to_pandas()
+        if with_index:
+            matrix_index = self.get_output_time_index(study_id, output_id, frequency)
+            matrix_index.set_as_df_index(df)
+        return df
 
     def materialize_output_variables_view(
         self,

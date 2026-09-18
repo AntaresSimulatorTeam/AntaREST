@@ -11,12 +11,14 @@
 # This file is part of the Antares project.
 from dataclasses import dataclass
 from enum import Enum, StrEnum
+from functools import cached_property
 from pathlib import Path
-from typing import Callable, Generic, Literal, Sequence, TypeAlias, TypeVar
+from typing import Callable, Generic, Iterable, Literal, Sequence, TypeAlias, TypeVar
 
 import polars as pl
 
 from antarest.core.exceptions import OutputSubFolderNotFound
+from antarest.study.model import MatrixFrequency
 
 """Column name for the Monte Carlo year."""
 MCYEAR_COL = "mcYear"
@@ -163,3 +165,119 @@ def find_mode_dir(output_dir: Path) -> Path:
         if mode_dir.exists():
             return mode_dir
     raise OutputSubFolderNotFound(output_dir.name, "economy|adequacy")
+
+
+class FileOutput:
+    """
+    Provides a collection of methods to inspect the content of an output directory.
+
+    Caches properties that may take some time to build (typically going through files), for efficiency.
+
+    Attributes:
+        output_dir (Path): The path to the output directory typically (<study_dir>/outputs/<output_id>).
+    """
+
+    def __init__(self, output_dir: Path):
+        self.output_dir = output_dir
+
+    @cached_property
+    def mc_years(self) -> list[int]:
+        mode_dir = find_mode_dir(self.output_dir)
+        mc_ind_dir = mode_dir / "mc-ind"
+        if not mc_ind_dir.exists():
+            return []
+        return sorted(int(d.name) for d in mc_ind_dir.iterdir() if d.is_dir() and d.name.isdigit())
+
+    @property
+    def first_mc_year(self) -> int:
+        return self.mc_years[0]
+
+    @property
+    def mode(self) -> str:
+        return self.mode_dir.name
+
+    @cached_property
+    def mode_dir(self) -> Path:
+        return find_mode_dir(self.output_dir)
+
+    @property
+    def mc_all_dir(self) -> Path:
+        return self.mode_dir / "mc-all"
+
+    @property
+    def mc_ind_dir(self) -> Path:
+        return self.mode_dir / "mc-ind"
+
+    def get_mc_year_dir(self, year: int) -> Path:
+        return self.mc_ind_dir / f"{year:05d}"
+
+    @cached_property
+    def mc_ind_link_ids(self) -> tuple[str, ...]:
+        """
+        IDs of links that have data in mc-ind, sorted.
+        """
+        return tuple(sorted({d.name for y in self.mc_years for d in self.iter_links_dir(y) if d.is_dir()}))
+
+    @cached_property
+    def mc_ind_area_ids(self) -> tuple[str, ...]:
+        """
+        IDs of areas that have data in mc-ind, sorted.
+        """
+        return tuple(sorted({d.name for y in self.mc_years for d in self.iter_areas_dir(y) if d.is_dir()}))
+
+    @cached_property
+    def mc_all_link_ids(self) -> tuple[str, ...]:
+        """
+        IDs of links that have data in mc-all, sorted.
+        """
+        links_dir = self.mc_all_dir / "links"
+        return tuple(sorted(d.name for d in links_dir.iterdir() if d.is_dir())) if links_dir.is_dir() else ()
+
+    @cached_property
+    def mc_all_area_ids(self) -> tuple[str, ...]:
+        """
+        IDs of areas that have data in mc-all, sorted.
+        """
+        areas_dir = self.mc_all_dir / "areas"
+        return tuple(sorted(d.name for d in areas_dir.iterdir() if d.is_dir())) if areas_dir.is_dir() else ()
+
+    def iter_areas_dir(self, mc_year: int) -> Iterable[Path]:
+        """
+        No ordering guarantee.
+        """
+        path = self.get_mc_year_dir(mc_year) / "areas"
+        return path.iterdir() if path.is_dir() else ()
+
+    def iter_links_dir(self, mc_year: int) -> Iterable[Path]:
+        """
+        No ordering guarantee.
+        """
+        path = self.get_mc_year_dir(mc_year) / "links"
+        return path.iterdir() if path.is_dir() else ()
+
+    def get_mc_all_file(
+        self,
+        file_type: MCAllAreasQueryFile | MCAllLinksQueryFile,
+        element_id: str,
+        frequency: MatrixFrequency,
+    ) -> Path | None:
+        """
+        Returns the path corresponding to the specified data, if it exists.
+        """
+        element_type = "areas" if isinstance(file_type, MCAllAreasQueryFile) else "links"
+        file_path = self.mc_all_dir / element_type / element_id / f"{file_type}-{frequency}.txt"
+        return file_path if file_path.exists() else None
+
+    def get_mc_ind_file(
+        self,
+        mc_year: int,
+        file_type: MCIndAreasQueryFile | MCIndLinksQueryFile,
+        element_id: str,
+        frequency: MatrixFrequency,
+    ) -> Path | None:
+        """
+        Returns the path corresponding to the specified data, if it exists.
+        """
+        element_type = "areas" if isinstance(file_type, MCIndAreasQueryFile) else "links"
+        file_path = self.get_mc_year_dir(mc_year) / element_type / element_id / f"{file_type}-{frequency}.txt"
+        return file_path if file_path.exists() else None
