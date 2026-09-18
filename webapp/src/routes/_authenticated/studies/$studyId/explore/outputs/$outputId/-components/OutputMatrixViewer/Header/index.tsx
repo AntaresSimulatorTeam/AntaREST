@@ -65,7 +65,7 @@ function Header() {
                 <FilterListIcon />
               </IconButton>
             </Tooltip>
-            {!isVariablePerVariable ? (
+            {isVariablePerVariable ? (
               <DownloadVariableViewButton
                 params={buildVariableViewParams({ item, dataType, frequency, clusterId, variable })}
                 disabled={!isMatrixDataLoaded}
