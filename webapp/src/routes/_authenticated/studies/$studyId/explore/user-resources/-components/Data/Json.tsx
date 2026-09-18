@@ -22,8 +22,10 @@ import JSONEditor, {
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import useFormBlocker from "@/hooks/useFormBlocker";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
-import { getRawFile } from "@/services/api/studies/raw";
-import { editStudy, getStudyData } from "@/services/api/study";
+import {
+  createOrReplaceUserResource,
+  getUserResourceContent,
+} from "@/services/api/studies/userResources";
 import { downloadFile } from "@/utils/fileUtils";
 import SaveIcon from "@mui/icons-material/Save";
 import { Button, Divider } from "@mui/material";
@@ -34,22 +36,30 @@ import { useUpdateEffect } from "react-use";
 import type { DataCompProps } from "../../-utils";
 import { Filename, Menubar } from "./styles";
 
-function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
-  const [t] = useTranslation();
+function Json({ path, name, studyId }: DataCompProps) {
+  const { t } = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const jsonApiRef = useRef<JSONApi>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const jsonRes = usePromiseWithSnackbarError(() => getStudyData(studyId, filePath, -1), {
-    errorMessage: t("studies.error.retrieveData"),
-    deps: [studyId, filePath],
-  });
+  const jsonResponse = usePromiseWithSnackbarError(
+    async () => {
+      const jsonBlob = await getUserResourceContent({ studyId, path });
+      const jsonText = await jsonBlob.text();
+      const json = JSON.parse(jsonText);
+      return { json, jsonBlob };
+    },
+    {
+      errorMessage: t("studies.error.retrieveData"),
+      deps: [studyId, path],
+    },
+  );
 
   useUpdateEffect(() => {
     setIsDirty(false);
     setIsSaving(false);
-  }, [jsonRes.data]);
+  }, [jsonResponse.data]);
 
   useFormBlocker({ isDirty, isSubmitting: isSaving });
 
@@ -57,27 +67,29 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleDownload = async () => {
-    const file = await getRawFile({ studyId, path: filePath });
-    downloadFile(file, file.name);
-  };
-
   const handleSaveClick = () => {
     jsonApiRef.current?.save();
   };
 
   const handleSave: JSONEditorProps["onSave"] = (json) => {
-    return editStudy(json, studyId, filePath);
+    return createOrReplaceUserResource({
+      studyId,
+      path,
+      resourceType: "file",
+      file: new File([JSON.stringify(json)], name, { type: "application/json" }),
+    });
   };
 
   const handleSaveSuccessful: JSONEditorProps["onSaveSuccessful"] = () => {
     enqueueSnackbar(t("studies.success.saveData"), {
       variant: "success",
     });
+
+    jsonResponse.reload();
   };
 
   const handleUploadSuccessful = () => {
-    jsonRes.reload();
+    jsonResponse.reload();
   };
 
   const handleStateChange = (state: JSONState) => {
@@ -91,11 +103,11 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
 
   return (
     <UsePromiseCond
-      response={jsonRes}
-      ifFulfilled={(json) => (
+      response={jsonResponse}
+      ifFulfilled={({ json, jsonBlob }) => (
         <>
           <Menubar>
-            <Filename>{filename}</Filename>
+            <Filename>{name}</Filename>
             <Button
               startIcon={<SaveIcon />}
               variant="contained"
@@ -107,16 +119,14 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
               {t("global.save")}
             </Button>
             <Divider orientation="vertical" flexItem />
-            {canEdit && (
-              <UploadFileButton
-                studyId={studyId}
-                studyStorageMode="filesystem"
-                path={filePath}
-                accept={{ "application/json": [".json"] }}
-                onUploadSuccessful={handleUploadSuccessful}
-              />
-            )}
-            <DownloadButton onClick={handleDownload} />
+            <UploadFileButton
+              studyId={studyId}
+              studyStorageMode="database"
+              path={path}
+              accept={{ "application/json": [".json"] }}
+              onUploadSuccessful={handleUploadSuccessful}
+            />
+            <DownloadButton onClick={() => downloadFile(jsonBlob, name)} />
           </Menubar>
           <JSONEditor
             json={json}

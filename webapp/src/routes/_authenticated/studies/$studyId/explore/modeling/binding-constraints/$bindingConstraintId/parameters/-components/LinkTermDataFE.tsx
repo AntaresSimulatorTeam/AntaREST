@@ -19,6 +19,7 @@ import { getLinksAndClusters } from "@/redux/selectors";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { isBindingConstraintLinkTerm } from "@/services/api/studies/bindingConstraints/utils";
+import { sortByProp } from "@/services/utils";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import TermDataFieldSkeleton from "./TermDataFieldSkeleton";
@@ -44,20 +45,26 @@ function LinkTermDataFE({ index }: { index: number }) {
     selector: (state) => {
       const linkAndClusters = getLinksAndClusters(state, study.id);
 
-      const area1Options = linkAndClusters.links.map(({ element }) => ({
-        label: element.name,
-        value: element.id,
-      }));
+      const area1Options = sortByProp(
+        "label",
+        linkAndClusters.links.map(({ element }) => ({
+          label: element.name,
+          value: element.id,
+        })),
+      );
 
       const area2List =
         linkAndClusters.links.find(({ element }) => element.id === currentArea1)?.item_list || [];
 
-      const area2Options = area2List
-        .filter(({ id }) => id === currentArea2 || !isLinkTermExist(currentArea1, id))
-        .map(({ name, id }) => ({
-          label: name,
-          value: id,
-        }));
+      const area2Options = sortByProp(
+        "label",
+        area2List
+          .filter(({ id }) => id === currentArea2 || !isLinkTermExist(currentArea1, id))
+          .map(({ name, id }) => ({
+            label: name,
+            value: id,
+          })),
+      );
 
       return [area1Options, area2Options];
     },
