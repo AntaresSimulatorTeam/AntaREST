@@ -53,6 +53,11 @@ GEMS_MODELS_TABLE = Table(
     Column("extra_outputs", String(), nullable=False),
     Column("port_field_definitions", String(), nullable=False),
     ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(
+        ["study_data_id", "taxonomy_category"],
+        ["gems_taxonomy_categories.study_data_id", "gems_taxonomy_categories.id"],
+        ondelete="CASCADE",
+    ),
 )
 
 GEMS_MODELS_PORTS_TABLE = Table(

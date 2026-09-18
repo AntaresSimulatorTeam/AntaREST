@@ -83,9 +83,15 @@ class StudyConverter:
 
     def _convert_gems(self) -> None:
         if self._study_version >= STUDY_VERSION_10_2:
+            # Library and taxonomy
             gems_library = self._source_dao.get_library()
             if not gems_library:
+                # No library means no GEMS at all, we can stop here
                 return
+            gems_taxonomy = self._source_dao.get_taxonomy()
+            if gems_taxonomy:
+                # Save taxonomy before library to avoid foreign key constraint errors
+                self._new_dao.save_taxonomy(gems_taxonomy)
             self._new_dao.save_library(gems_library)
 
     def _convert_settings(self) -> None:

@@ -877,3 +877,8 @@ class ReserveCertificationsNotFound(HTTPException):
 class GemsLibraryAlreadyExists(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class GemsTaxonomyAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
