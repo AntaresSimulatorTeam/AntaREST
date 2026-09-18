@@ -55,10 +55,8 @@ def upgrade():
         )
 
 def downgrade():
-    dialect_name: str = op.get_context().dialect.name
-    if dialect_name == "postgresql":
-        with op.batch_alter_table("gems_models", schema=None) as batch_op:
-            batch_op.drop_constraint(NEW_FK_NAME, type_="foreignkey")
+    with op.batch_alter_table("gems_models", schema=None) as batch_op:
+        batch_op.drop_constraint(NEW_FK_NAME, type_="foreignkey")
 
     op.drop_table("gems_taxonomy_categories")
     op.drop_table("gems_taxonomy_metadata")

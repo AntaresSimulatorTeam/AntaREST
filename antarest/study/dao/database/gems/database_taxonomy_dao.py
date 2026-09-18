@@ -86,6 +86,6 @@ class DatabaseGemsTaxonomyDao(GemsTaxonomyDao, DatabaseDaoBase):
             category_values.append(data)
 
         if category_values:
-            session.execute(insert(GEMS_TAXONOMY_CATEGORIES_TABLE), category_values)
+            session.execute(insert(GEMS_TAXONOMY_CATEGORIES_TABLE).values(category_values))
 
         session.commit()
