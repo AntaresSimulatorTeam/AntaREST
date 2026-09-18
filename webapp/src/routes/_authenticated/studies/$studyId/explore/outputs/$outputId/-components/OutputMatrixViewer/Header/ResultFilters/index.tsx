@@ -43,6 +43,7 @@ function ResultFilters() {
   const [localYear, setLocalYear] = useState<number | null>(null);
 
   const isYearByYearMode = monteCarloMode === "mc-ind";
+  const isVariablePerVariable = monteCarloMode === "variable-per-variable";
 
   const dataTypeOptions = useMemo(
     () => getDataTypeOptions(item, monteCarloMode),
@@ -87,7 +88,7 @@ function ResultFilters() {
   return (
     <CustomScrollbar>
       <Stack spacing={1} sx={{ pt: 1, width: "max-content" }}>
-        <ColumnsFilters />
+        {!isVariablePerVariable && <ColumnsFilters />}
         <SelectFE
           label={t("study.outputs.monteCarlo")}
           value={monteCarloMode}
