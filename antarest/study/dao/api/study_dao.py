@@ -30,6 +30,7 @@ from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
@@ -74,6 +75,7 @@ from antarest.study.dao.api.compatibility_parameters_dao import (
 )
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
+from antarest.study.dao.api.gems_taxonomy_dao import GemsTaxonomyDao, ReadOnlyGemsTaxonomyDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.layer_dao import LayerDao, ReadOnlyLayerDao
@@ -163,6 +165,7 @@ class ReadOnlyStudyDao(
     ReadOnlyReserveCertificationDao,
     ReadOnlyReserveSymmetriesDao,
     ReadOnlyGemsLibraryDao,
+    ReadOnlyGemsTaxonomyDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -217,6 +220,7 @@ class StudyDao(
     ReserveCertificationDao,
     ReserveSymmetriesDao,
     GemsLibraryDao,
+    GemsTaxonomyDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -968,3 +972,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_library(self) -> GemsLibrary | None:
         return self._adaptee.get_library()
+
+    @override
+    def get_taxonomy(self) -> GemsTaxonomy | None:
+        return self._adaptee.get_taxonomy()
