@@ -454,6 +454,25 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
     assert res.status_code == 422
 
 
+@pytest.mark.parametrize("field", ["includeReserves", "includeThermalClusterRamping"])
+def test_optimization_fields_since_10_2_rejected_before(
+    client: TestClient, admin_access_token: str, field: str
+) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    study_id = client.post("/v1/studies", params={"name": "foo", "version": 930}).json()
+
+    res = client.get(f"/v1/studies/{study_id}/config/optimization/form")
+    assert field not in res.json()
+
+    res = client.put(f"/v1/studies/{study_id}/config/optimization/form", json={field: True})
+    assert res.status_code == 422
+    assert "is not a valid field for study version before 10.2" in res.json()["description"]
+
+    # Field was not written to the study
+    res = client.get(f"/v1/studies/{study_id}/config/optimization/form")
+    assert field not in res.json()
+
+
 @pytest.mark.parametrize("study_type", ["raw", "variant"])
 def test_updated_changes_after_command(
     study_type: str,

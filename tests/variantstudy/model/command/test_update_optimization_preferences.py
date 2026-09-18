@@ -59,22 +59,50 @@ class TestUpdateOptimizationPreferences:
         assert optimization_preferences == default_values
 
     def test_version_10_2(self, dao_10_2: StudyDao, command_context: CommandContext) -> None:
-        assert dao_10_2.get_optimization_preferences().include_reserves is False  # Default value
+        # Default values
+        preferences = dao_10_2.get_optimization_preferences()
+        assert preferences.include_reserves is False
+        assert preferences.include_thermal_cluster_ramping is False
 
         version = dao_10_2.get_version()
+
+        # Update `include_reserves` only
         properties = OptimizationPreferencesUpdate(include_reserves=True)
         command = UpdateOptimizationPreferences(
             parameters=properties, command_context=command_context, study_version=version
         )
         output = command.apply(dao_10_2)
         assert output.status
+        preferences = dao_10_2.get_optimization_preferences()
+        assert preferences.include_reserves is True
+        assert preferences.include_thermal_cluster_ramping is False
 
-        assert dao_10_2.get_optimization_preferences().include_reserves is True
+        # Update `include_thermal_cluster_ramping` only
+        properties = OptimizationPreferencesUpdate(include_thermal_cluster_ramping=True)
+        command = UpdateOptimizationPreferences(
+            parameters=properties, command_context=command_context, study_version=version
+        )
+        output = command.apply(dao_10_2)
+        assert output.status
+        preferences = dao_10_2.get_optimization_preferences()
+        assert preferences.include_reserves is True
+        assert preferences.include_thermal_cluster_ramping is True
 
-        # Ensure we cannot update the field `include_reserves` for a study version before 10.2
+        # Ensure we cannot update these fields for a study version before 10.2
         with pytest.raises(
             ValueError, match="Field include_reserves is not a valid field for study version before 10.2"
         ):
             UpdateOptimizationPreferences(
-                parameters=properties, command_context=command_context, study_version=STUDY_VERSION_9_3
+                parameters=OptimizationPreferencesUpdate(include_reserves=True),
+                command_context=command_context,
+                study_version=STUDY_VERSION_9_3,
+            )
+        with pytest.raises(
+            ValueError,
+            match="Field include_thermal_cluster_ramping is not a valid field for study version before 10.2",
+        ):
+            UpdateOptimizationPreferences(
+                parameters=OptimizationPreferencesUpdate(include_thermal_cluster_ramping=True),
+                command_context=command_context,
+                study_version=STUDY_VERSION_9_3,
             )

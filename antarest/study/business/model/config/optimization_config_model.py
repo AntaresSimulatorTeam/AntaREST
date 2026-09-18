@@ -74,6 +74,7 @@ class OptimizationPreferences(AntaresBaseModel):
     simplex_optimization_range: SimplexOptimizationRange = SimplexOptimizationRange.WEEK
     # Since v10.2
     include_reserves: bool | None = None
+    include_thermal_cluster_ramping: bool | None = None
 
 
 class OptimizationPreferencesUpdate(AntaresBaseModel):
@@ -92,6 +93,7 @@ class OptimizationPreferencesUpdate(AntaresBaseModel):
     unfeasible_problem_behavior: UnfeasibleProblemBehavior | None = None
     simplex_optimization_range: SimplexOptimizationRange | None = None
     include_reserves: bool | None = None
+    include_thermal_cluster_ramping: bool | None = None
 
 
 def update_optimization_preferences(
@@ -109,12 +111,17 @@ def update_optimization_preferences(
 def initialize_optimization_preferences_against_version(
     parameters: OptimizationPreferences, version: StudyVersion
 ) -> None:
-    if version >= STUDY_VERSION_10_2 and parameters.include_reserves is None:
-        parameters.include_reserves = False
+    if version >= STUDY_VERSION_10_2:
+        if parameters.include_reserves is None:
+            parameters.include_reserves = False
+        if parameters.include_thermal_cluster_ramping is None:
+            parameters.include_thermal_cluster_ramping = False
 
 
 def validate_optimization_preferences_against_version(
     version: StudyVersion, parameters: OptimizationPreferences | OptimizationPreferencesUpdate
 ) -> None:
-    if version < STUDY_VERSION_10_2 and parameters.include_reserves is not None:
-        raise InvalidFieldForVersionError("Field include_reserves is not a valid field for study version before 10.2")
+    if version < STUDY_VERSION_10_2:
+        for field in ("include_reserves", "include_thermal_cluster_ramping"):
+            if getattr(parameters, field) is not None:
+                raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version before 10.2")
