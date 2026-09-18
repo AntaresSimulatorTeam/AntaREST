@@ -14,26 +14,24 @@
 
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
-import { thermalQueries } from "@/queries/thermals/queries";
 import type {
-  CertificationProductionType,
+  ProductionType,
   Reserve,
   ReserveCertification,
-  ReservesCertifications,
 } from "@/services/api/studies/areas/reserves/types";
 import { Alert } from "@mui/material";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import CertificationsTable, {
-  type ClusterRow,
+  type AssetRow,
   type ReserveRow,
 } from "./-components/CertificationsTable";
+import ProductionTypeSelect from "./-components/ProductionTypeSelect";
 import UpdateCertificationDrawer from "./-components/UpdateCertificationDrawer";
-import UpdateReserveClustersDrawer, {
-  type ClustersFormValues,
-} from "./-components/UpdateReserveClustersDrawer";
+import UpdateReserveAssetsDrawer from "./-components/UpdateReserveAssetsDrawer";
+import { DEFAULT_PRODUCTION_TYPE, PRODUCTION_TYPES } from "./-productionTypes";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications",
@@ -41,44 +39,37 @@ export const Route = createFileRoute(
   component: ReservesCertifications,
 });
 
-// A cluster newly selected for a reserve starts with these values: the warning
-// shown in the table prompts the user to fill them in.
-const DEFAULT_CERTIFICATION: ReserveCertification = {
-  maxPower: 0,
-  maxPowerOff: 0,
-  participationCost: 0,
-  participationCostOff: 0,
-};
-
 function ReservesCertifications() {
   const { t } = useTranslation();
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
+  const [productionType, setProductionType] = useState(DEFAULT_PRODUCTION_TYPE);
+  // Switching type suspends on new queries: the transition keeps the current
+  // table on screen (with its loading state) instead of the route fallback.
+  const [isProductionTypePending, startProductionTypeTransition] = useTransition();
   const [selectedReserve, setSelectedReserve] = useState<Reserve | null>(null);
-  const [isClustersDrawerOpen, setIsClustersDrawerOpen] = useState(false);
-  const [editingCluster, setEditingCluster] = useState<ClusterRow | null>(null);
+  const [isAssetsDrawerOpen, setIsAssetsDrawerOpen] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<AssetRow | null>(null);
   const [isUpdateDrawerOpen, setIsUpdateDrawerOpen] = useState(false);
 
-  const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
+  const { labelKey, assetsQuery, defaultCertification } = PRODUCTION_TYPES[productionType];
 
-  const { data: reserves, isFetching: isReservesFetching } = useSuspenseQuery(
-    reserveQueries.list(studyId, areaId),
-  );
-
-  const { data: thermalCertifications } = useSuspenseQuery(
-    reserveQueries.certifications(studyId, areaId, "thermals"),
-  );
-
-  const { data: thermalClusters } = useSuspenseQuery(thermalQueries.list(studyId, areaId));
-
-  // Certifications mapping per production type. "storages" and "hydro" will be
-  // added once their endpoints are released.
-  const certificationsByType: Record<CertificationProductionType, ReservesCertifications> = {
-    thermals: thermalCertifications,
-  };
+  const [
+    { data: reservesEnabled },
+    { data: reserves, isFetching: isReservesFetching },
+    { data: certifications },
+    { data: assets },
+  ] = useSuspenseQueries({
+    queries: [
+      reserveQueries.enabled(studyId),
+      reserveQueries.list(studyId, areaId),
+      reserveQueries.certifications(studyId, areaId, productionType),
+      assetsQuery(studyId, areaId),
+    ],
+  });
 
   const updateMutation = useMutation({
-    ...reserveMutations.updateCertifications(studyId, areaId, "thermals"),
+    ...reserveMutations.updateCertifications(studyId, areaId, productionType),
     onSuccess: (updatedCertifications, { productionType }) => {
       queryClient.setQueryData(
         reserveQueries.certifications(studyId, areaId, productionType).queryKey,
@@ -88,103 +79,98 @@ function ReservesCertifications() {
   });
 
   const rows = useMemo<ReserveRow[]>(() => {
-    const clustersById = new Map(thermalClusters.map((cluster) => [cluster.id, cluster]));
+    const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
 
     return reserves.map((reserve) => ({
       kind: "reserve",
       id: reserve.id,
       name: reserve.name,
       reserve,
-      subRows: Object.entries(thermalCertifications[reserve.id] ?? {}).map(
-        ([clusterId, certification]): ClusterRow => ({
-          kind: "cluster",
-          // Prefixed with the reserve ID because a cluster can be certified for
+      subRows: Object.entries(certifications[reserve.id] ?? {}).map(
+        ([assetId, certification]): AssetRow => ({
+          kind: "asset",
+          // Prefixed with the reserve ID because an asset can be certified for
           // several reserves and row IDs must be unique across the table
-          id: `${reserve.id}/${clusterId}`,
-          name: clustersById.get(clusterId)?.name ?? clusterId,
-          enabled: clustersById.get(clusterId)?.enabled ?? false,
-          productionType: "thermals",
+          id: `${reserve.id}/${assetId}`,
+          name: assetsById.get(assetId)?.name ?? assetId,
+          enabled: assetsById.get(assetId)?.enabled,
+          productionType,
           reserveId: reserve.id,
-          clusterId,
+          assetId,
           certification,
         }),
       ),
     }));
-  }, [reserves, thermalCertifications, thermalClusters]);
+  }, [reserves, certifications, assets, productionType]);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleReserveClick = ({ reserve }: ReserveRow) => {
-    setSelectedReserve(reserve);
-    setIsClustersDrawerOpen(true);
+  const handleProductionTypeChange = (type: ProductionType) => {
+    // Drawers hold rows of the current type: don't let them outlive it.
+    setSelectedReserve(null);
+    setEditingAsset(null);
+    startProductionTypeTransition(() => setProductionType(type));
   };
 
-  const handleClusterClick = (row: ClusterRow) => {
-    setEditingCluster(row);
+  const handleReserveClick = ({ reserve }: ReserveRow) => {
+    setSelectedReserve(reserve);
+    setIsAssetsDrawerOpen(true);
+  };
+
+  const handleAssetClick = (row: AssetRow) => {
+    setEditingAsset(row);
     setIsUpdateDrawerOpen(true);
   };
 
-  // Rebuilds each production type's mapping from the selection: kept clusters
-  // retain their parameters, new ones get the defaults, deselected ones are
-  // removed (the PUT endpoint replaces the whole mapping).
-  const handleClustersSubmit = async (values: ClustersFormValues) => {
+  // Rebuilds the reserve's mapping from the selection: kept assets retain their
+  // parameters, new ones get the defaults, deselected ones are removed (the PUT
+  // endpoint replaces the whole mapping).
+  const handleAssetsSubmit = async (assetIds: string[]) => {
     if (!selectedReserve) {
-      return values;
+      return assetIds;
     }
 
-    const submittedValues = { ...values };
+    const currentReserveCertifications = certifications[selectedReserve.id] ?? {};
 
-    for (const [productionType, selectedIds] of Object.entries(values) as Array<
-      [CertificationProductionType, string[]]
-    >) {
-      const currentCertifications = certificationsByType[productionType];
-      const currentReserveCertifications = currentCertifications[selectedReserve.id] ?? {};
+    const reserveCertifications = Object.fromEntries(
+      assetIds.map((assetId) => [
+        assetId,
+        currentReserveCertifications[assetId] ?? defaultCertification,
+      ]),
+    );
 
-      const reserveCertifications = Object.fromEntries(
-        selectedIds.map((clusterId) => [
-          clusterId,
-          currentReserveCertifications[clusterId] ?? DEFAULT_CERTIFICATION,
-        ]),
-      );
+    const data = { ...certifications };
 
-      const data = { ...currentCertifications };
-
-      if (selectedIds.length > 0) {
-        data[selectedReserve.id] = reserveCertifications;
-      } else {
-        delete data[selectedReserve.id];
-      }
-
-      const updatedCertifications = await updateMutation.mutateAsync({
-        studyId,
-        areaId,
-        productionType,
-        data,
-      });
-
-      submittedValues[productionType] = Object.keys(
-        updatedCertifications[selectedReserve.id] ?? {},
-      );
+    if (assetIds.length > 0) {
+      data[selectedReserve.id] = reserveCertifications;
+    } else {
+      delete data[selectedReserve.id];
     }
 
-    return submittedValues;
+    const updatedCertifications = await updateMutation.mutateAsync({
+      studyId,
+      areaId,
+      productionType,
+      data,
+    });
+
+    return Object.keys(updatedCertifications[selectedReserve.id] ?? {});
   };
 
   const handleCertificationSubmit = async (certification: ReserveCertification) => {
-    if (!editingCluster) {
+    if (!editingAsset) {
       return certification;
     }
 
-    const { productionType, reserveId, clusterId } = editingCluster;
-    const currentCertifications = certificationsByType[productionType];
+    const { reserveId, assetId } = editingAsset;
 
     const data = {
-      ...currentCertifications,
+      ...certifications,
       [reserveId]: {
-        ...currentCertifications[reserveId],
-        [clusterId]: certification,
+        ...certifications[reserveId],
+        [assetId]: certification,
       },
     };
 
@@ -195,7 +181,7 @@ function ReservesCertifications() {
       data,
     });
 
-    return updatedCertifications[reserveId]?.[clusterId] ?? certification;
+    return updatedCertifications[reserveId]?.[assetId] ?? certification;
   };
 
   ////////////////////////////////////////////////////////////////
@@ -211,30 +197,35 @@ function ReservesCertifications() {
       )}
       <CertificationsTable
         rows={rows}
+        productionType={productionType}
+        toolbarActions={
+          <ProductionTypeSelect value={productionType} onChange={handleProductionTypeChange} />
+        }
         readOnly={!reservesEnabled}
-        isLoading={isReservesFetching}
+        isLoading={isReservesFetching || isProductionTypePending}
         onReserveClick={handleReserveClick}
-        onClusterClick={handleClusterClick}
+        onAssetClick={handleAssetClick}
       />
       {selectedReserve && (
-        <UpdateReserveClustersDrawer
-          key={selectedReserve.id}
-          open={isClustersDrawerOpen}
-          reserveId={selectedReserve.id}
-          defaultValues={{
-            thermals: Object.keys(thermalCertifications[selectedReserve.id] ?? {}),
-          }}
-          onClose={() => setIsClustersDrawerOpen(false)}
-          onSubmit={handleClustersSubmit}
+        <UpdateReserveAssetsDrawer
+          key={`${productionType}/${selectedReserve.id}`}
+          open={isAssetsDrawerOpen}
+          reserveName={selectedReserve.name}
+          label={t(labelKey)}
+          assets={assets}
+          defaultValues={Object.keys(certifications[selectedReserve.id] ?? {})}
+          onClose={() => setIsAssetsDrawerOpen(false)}
+          onSubmit={handleAssetsSubmit}
         />
       )}
-      {editingCluster && (
+      {editingAsset && (
         <UpdateCertificationDrawer
-          key={editingCluster.id}
+          key={`${productionType}/${editingAsset.id}`}
           open={isUpdateDrawerOpen}
-          clusterName={editingCluster.name}
-          clusterEnabled={editingCluster.enabled}
-          certification={editingCluster.certification}
+          productionType={productionType}
+          assetName={editingAsset.name}
+          assetEnabled={editingAsset.enabled}
+          certification={editingAsset.certification}
           onClose={() => setIsUpdateDrawerOpen(false)}
           onSubmit={handleCertificationSubmit}
         />
