@@ -22,6 +22,7 @@ import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import useOutput from "../../../../-hooks/useOutput";
 import useOutputContext from "../../../../-hooks/useOutputFilters";
+import ColumnsFilters from "./ColumnsFilters";
 import VariablesFilters from "./VariablesFilters";
 import { FREQUENCY_OPTIONS, getDataTypeOptions, MONTE_CARLO_MODE_OPTIONS } from "./utils";
 
@@ -72,7 +73,8 @@ function ResultFilters() {
 
   return (
     <CustomScrollbar>
-      <Stack spacing={1} sx={{ pt: 1 }}>
+      <Stack spacing={1} sx={{ pt: 1, width: "max-content" }}>
+        <ColumnsFilters />
         <SelectFE
           label={t("study.outputs.monteCarlo")}
           value={monteCarloMode}
