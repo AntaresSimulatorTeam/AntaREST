@@ -13,7 +13,6 @@
 from pathlib import Path
 
 import pytest
-from pydantic import ValidationError
 
 from antarest.core.exceptions import GemsScenarioBuilderAlreadyExists
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -61,9 +60,7 @@ def test_real_file_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     assert path.read_text().strip() == ASSET.read_text().strip()
 
 
-@pytest.mark.parametrize(
-    "line", ["load 0 = 1", "load, -1 = 1", "load, 0 = 0", "load, 0 = 1.5", ", 0 = 1", "load, 0 = 1\nload, 0 = 2"]
-)
+@pytest.mark.parametrize("line", ["load 0 = 1", "load, -1 = 1", "load, 0 = 1.5", ", 0 = 1", "load, 0 = 1\nload, 0 = 2"])
 def test_invalid_file(filestudy_dao_v10_2: FileStudyTreeDao, line: str) -> None:
     path = filestudy_dao_v10_2.get_file_study().config.study_path / "input/data-series/modeler-scenariobuilder.dat"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,14 +76,6 @@ def test_whitespace(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     assert filestudy_dao_v10_2.get_gems_scenario_builder() == GemsScenarioBuilder(
         scenario_groups={"Load_Group": {0: 2, 3: 5}}
     )
-
-
-@pytest.mark.parametrize(
-    "groups", [{"load": {-1: 1}}, {"load": {0: 0}}, {"": {0: 1}}, {"a,b": {0: 1}}, {"a\nb": {0: 1}}, {"load": {}}]
-)
-def test_invalid_model(groups: dict[str, dict[int, int]]) -> None:
-    with pytest.raises(ValidationError):
-        GemsScenarioBuilder(scenario_groups=groups)
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)

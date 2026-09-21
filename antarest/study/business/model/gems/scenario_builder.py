@@ -10,14 +10,9 @@
 #
 # This file is part of the Antares project.
 
-from typing import Annotated
-
-from pydantic import ConfigDict, Field, NonNegativeInt, PositiveInt, StringConstraints
+from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
-
-ScenarioGroupId = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, pattern=r"^[^,=\r\n]+$")]
-ScenarioMapping = Annotated[dict[NonNegativeInt, PositiveInt], Field(min_length=1)]
 
 
 class GemsScenarioBuilder(AntaresBaseModel):
@@ -25,4 +20,4 @@ class GemsScenarioBuilder(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    scenario_groups: dict[ScenarioGroupId, ScenarioMapping] = Field(default_factory=dict)
+    scenario_groups: dict[str, dict[int, int]] = Field(default_factory=dict)
