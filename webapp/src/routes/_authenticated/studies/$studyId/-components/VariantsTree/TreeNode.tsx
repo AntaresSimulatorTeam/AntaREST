@@ -18,13 +18,9 @@ import {
   CURVE_OFFSET,
   DCX,
   DCY,
-  RECT_DECORATION,
-  RECT_X_SPACING,
   RECT_Y_SPACING,
   RECT_Y_SPACING_2,
   STROKE_WIDTH,
-  TEXT_SIZE,
-  TEXT_SPACING,
   TILE_SIZE_X,
   TILE_SIZE_Y,
   TILE_SIZE_Y_2,
@@ -33,17 +29,14 @@ import { computeChildRows, getNodeColors, type LayoutNode } from "./utils";
 
 const ClickableCircle = styled("circle")({ cursor: "pointer" });
 const ClickableRect = styled("rect")({ cursor: "pointer" });
-const ClickableText = styled("text")({ cursor: "pointer" });
 
 interface TreeNodeProps {
   node: LayoutNode;
   depth: number;
   row: number;
   baseRectWidth: number;
-  effectiveTextWidth: number;
   hoverId: string | null;
   currentStudyId: string;
-  isDarkMode: boolean;
   onClick: (studyId: string) => void;
   onHover: (id: string | null) => void;
 }
@@ -53,19 +46,16 @@ function TreeNode({
   depth,
   row,
   baseRectWidth,
-  effectiveTextWidth,
   hoverId,
   currentStudyId,
-  isDarkMode,
   onClick,
   onHover,
 }: TreeNodeProps) {
-  const { name, attributes, children, drawOptions } = node;
+  const { attributes, children, drawOptions } = node;
   const { id } = attributes;
   const { totalDescendants } = drawOptions;
   const colors = getNodeColors(depth);
   const isActive = hoverId === id || currentStudyId === id;
-  const textFill = isDarkMode ? (isActive ? "black" : "white") : "black";
   const childRows = computeChildRows(children, row);
 
   // Circle centre coordinates
@@ -110,39 +100,6 @@ function TreeNode({
         onMouseOut={handleMouseOut}
       />
 
-      {/* Label background */}
-      <ClickableRect
-        x={baseRectWidth + RECT_X_SPACING}
-        y={rectY}
-        width={effectiveTextWidth}
-        height={rectHeight}
-        fill={isActive ? colors.base : colors.faint}
-        onClick={handleClick}
-        onMouseOver={handleMouseOver}
-        onMouseOut={handleMouseOut}
-      />
-
-      {/* Label accent bar */}
-      <rect
-        x={baseRectWidth + RECT_X_SPACING}
-        y={rectY}
-        width={RECT_DECORATION}
-        height={rectHeight}
-        fill={colors.base}
-      />
-
-      {/* Label text */}
-      <ClickableText
-        x={baseRectWidth + RECT_X_SPACING + RECT_DECORATION + TEXT_SPACING}
-        y={cy + RECT_Y_SPACING_2}
-        fill={textFill}
-        fontSize={TEXT_SIZE}
-        onClick={handleClick}
-        onMouseOver={handleMouseOver}
-      >
-        {name}
-      </ClickableText>
-
       {/* Vertical line to children */}
       {verticalLineEndY > 0 && (
         <path
@@ -177,10 +134,8 @@ function TreeNode({
           depth={depth + 1}
           row={childRows[index]}
           baseRectWidth={baseRectWidth}
-          effectiveTextWidth={effectiveTextWidth}
           hoverId={hoverId}
           currentStudyId={currentStudyId}
-          isDarkMode={isDarkMode}
           onClick={onClick}
           onHover={onHover}
         />
