@@ -13,9 +13,8 @@
  */
 
 import SearchMultipleFE from "@/components/fieldEditors/SearchMultipleFE";
-import SelectFE from "@/components/fieldEditors/SelectFE";
+import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
 import { Divider } from "@mui/material";
-import * as R from "ramda";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
@@ -27,32 +26,35 @@ import {
   type ColumnStatisticsFilter,
 } from "../../utils";
 
-const getStaticsArrayFromFilter = (stats: ColumnStatisticsFilter): ColumnStatistics[] => {
-  return R.toPairs(stats)
-    .filter(([_, value]) => value)
-    .map(([key]) => key);
-};
-
 function ColumnsFilters() {
   const { monteCarloMode, setColumnsFilters, columnsFilters } = useOutputContext();
   const { t } = useTranslation();
   const [searches, setSearches] = useState(columnsFilters.searches);
   const [inputSearch, setInputSearch] = useState("");
-  const [stats, setStats] = useState<ColumnStatistics[]>(() =>
-    getStaticsArrayFromFilter(columnsFilters.stats),
-  );
+  const stats = COLUMN_STATISTICS.filter((stat) => columnsFilters.stats[stat]);
   const isStatsEnabled = isMonteCarloModeHasStats(monteCarloMode);
 
-  // Update columns filters when a field changes
+  // Update columns filters when a search changes
   useUpdateEffect(() => {
-    setColumnsFilters({
+    setColumnsFilters((prev) => ({
+      ...prev,
       searches: inputSearch ? [...searches, inputSearch] : searches,
-      stats: COLUMN_STATISTICS.reduce((acc, stat) => {
-        acc[stat] = stats.includes(stat);
-        return acc;
-      }, {} as ColumnStatisticsFilter),
-    });
-  }, [inputSearch, searches, stats, setColumnsFilters]);
+    }));
+  }, [inputSearch, searches, setColumnsFilters]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleStatsChange = (event: SelectFEChangeEvent<ColumnStatistics[]>) => {
+    const selectedStats = event.target.value;
+    const newStats = COLUMN_STATISTICS.reduce((acc, stat) => {
+      acc[stat] = selectedStats.includes(stat);
+      return acc;
+    }, {} as ColumnStatisticsFilter);
+
+    setColumnsFilters((prev) => ({ ...prev, stats: newStats }));
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -73,7 +75,7 @@ function ColumnsFilters() {
           label={t("study.outputs.statistics")}
           value={stats}
           options={COLUMN_STATISTICS}
-          onChange={(event) => setStats(event.target.value)}
+          onChange={handleStatsChange}
           multiple
           size="extra-small"
           sx={{ minWidth: 150 }}

@@ -64,15 +64,11 @@ function ResultFilters() {
   );
 
   // Reset year when 'Year by year' mode is toggled
-  useEffect(
-    () => {
-      const v = isYearByYearMode ? 1 : -1;
-      setYear(v);
-      setLocalYear(v > 0 ? v : null);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [isYearByYearMode],
-  );
+  useEffect(() => {
+    const v = isYearByYearMode ? 1 : -1;
+    setYear(v);
+    setLocalYear(v > 0 ? v : null);
+  }, [isYearByYearMode, setYear]);
 
   // Update dataType when options change if the current dataType is not in the new options
   useEffect(() => {
