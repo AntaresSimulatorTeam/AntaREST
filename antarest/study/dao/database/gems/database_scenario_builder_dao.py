@@ -30,13 +30,13 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         rows = self._db_session.execute(select(table).where(table.c.study_data_id == self._study_data_id)).fetchall()
         if not rows:
             return None
-        return GemsScenarioBuilder(scenario_groups={row.scenario_group: json.loads(row.data) for row in rows})
+        return GemsScenarioBuilder(scenarios={row.scenario_group: json.loads(row.data) for row in rows})
 
     @override
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
-        groups = scenario_builder.scenario_groups
+        groups = scenario_builder.model_dump(mode="json")["scenarios"]
         try:
             upsert_multiple(
                 session,

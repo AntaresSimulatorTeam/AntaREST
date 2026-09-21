@@ -15,9 +15,18 @@ from pydantic import ConfigDict, Field
 from antarest.core.serde import AntaresBaseModel
 
 
+class GemsScBuilderMapping(AntaresBaseModel):
+    """Associate a zero-based scenario with a one-based data-series column."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    scenario: int = Field(ge=0)
+    time_series_index: int = Field(ge=1)
+
+
 class GemsScenarioBuilder(AntaresBaseModel):
     """Map each group's zero-based scenarios to one-based data-series columns."""
 
     model_config = ConfigDict(extra="forbid")
 
-    scenario_groups: dict[str, dict[int, int]] = Field(default_factory=dict)
+    scenarios: dict[str, list[GemsScBuilderMapping]] = Field(default_factory=dict)
