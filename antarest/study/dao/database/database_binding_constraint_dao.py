@@ -14,16 +14,14 @@
 Database implementation of ConstraintDao.
 """
 
-from abc import abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any, NewType, Sequence
+from typing import Any, NewType, Sequence
 
 import polars as pl
 from antares.study.version import StudyVersion
 from sqlalchemy import Row, Table, delete, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from sqlalchemy.sql import outerjoin
 from typing_extensions import override
 
@@ -42,6 +40,7 @@ from antarest.study.business.model.binding_constraint_model import (
 )
 from antarest.study.dao.api.binding_constraint_dao import ConstraintDao
 from antarest.study.dao.common import BindingConstraintSeriesMapping, SeriesId
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_CLUSTER_TERM_TABLE as CT,
 )
@@ -136,19 +135,7 @@ class _MatrixChanges:
         self.insertions.append(_MatrixInsertion(constraint_id, matrix_type, matrix_id))
 
 
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-
-
-class DatabaseBindingConstraintDao(ConstraintDao):
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        self._study_id = study_id
-        self._db_session = db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
-
+class DatabaseBindingConstraintDao(ConstraintDao, DatabaseDaoBase):
     def _fetch_constraints(self, constraint_ids: list[ConstraintId]) -> dict[ConstraintId, BindingConstraint]:
         """
         Two steps in this function
@@ -164,7 +151,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         link_join = outerjoin(
             BC,
             LT,
-            (BC.c.study_id == LT.c.study_id) & (BC.c.constraint_id == LT.c.constraint_id),
+            (BC.c.study_data_id == LT.c.study_data_id) & (BC.c.constraint_id == LT.c.constraint_id),
         )
         q1 = (
             select(
@@ -183,7 +170,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                 LT.c.offset.label("lt_offset"),
             )
             .select_from(link_join)
-            .where(BC.c.study_id == self._study_id)
+            .where(BC.c.study_data_id == self._study_data_id)
         )
         if constraint_ids:
             q1 = q1.where(BC.c.constraint_id.in_(constraint_ids))
@@ -207,7 +194,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
             return {}
 
         # Query 2: cluster terms only (BC already fetched above)
-        ct_filter = CT.c.study_id == self._study_id
+        ct_filter = CT.c.study_data_id == self._study_data_id
         if constraint_ids:
             ct_filter = ct_filter & (CT.c.constraint_id.in_(constraint_ids))
 
@@ -248,10 +235,12 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         We want to avoid fetching terms as we do not need them.
         That's why we use a specific DB request
         """
-        join_query = BC.join(table, (BC.c.study_id == table.c.study_id) & (BC.c.constraint_id == table.c.constraint_id))
+        join_query = BC.join(
+            table, (BC.c.study_data_id == table.c.study_data_id) & (BC.c.constraint_id == table.c.constraint_id)
+        )
         q = (
             select(BC.c.time_step, table.c.matrix_id)
-            .where((BC.c.study_id == self._study_id) & (BC.c.constraint_id == constraint_id))
+            .where((BC.c.study_data_id == self._study_data_id) & (BC.c.constraint_id == constraint_id))
             .select_from(join_query)
         )
         row = self._db_session.execute(q).fetchone()
@@ -273,11 +262,15 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         raise ValueError("One of the binding constraints table is not filled as it should") from exc
 
     def _save_bc_matrices(self, table: Table, series: BindingConstraintSeriesMapping) -> None:
-        rows = [{"study_id": self._study_id, "constraint_id": cid, "matrix_id": mid} for cid, mid in series.items()]
+        rows = [
+            {"study_data_id": self._study_data_id, "constraint_id": cid, "matrix_id": mid}
+            for cid, mid in series.items()
+        ]
 
         try:
             upsert_multiple(self._db_session, table, rows)
         except IntegrityError as e:
+            self._db_session.rollback()
             self._raise_the_right_binding_constraint_exception(set(series), e)
 
     @override
@@ -317,9 +310,9 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         return self.get_all_bc_matrices(BINDING_CONSTRAINT_EQ_MATRIX_TABLE)
 
     def get_all_bc_matrices(self, table: Table) -> BindingConstraintSeriesMapping:
-        study_id = self._study_id
+        study_data_id = self._study_data_id
         session = self._db_session
-        stmt = select(table).where((table.c.study_id == study_id))
+        stmt = select(table).where((table.c.study_data_id == study_data_id))
         rows = session.execute(stmt).fetchall()
         return {row.constraint_id: row.matrix_id for row in rows}
 
@@ -340,19 +333,19 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         upsert_multiple(
             self._db_session,
             BC,
-            [self._bc_to_row(self._study_id, bc) for bc in constraints],
+            [self._bc_to_row(self._study_data_id, bc) for bc in constraints],
         )
 
     def _save_cluster_terms(self, constraints: Sequence[BindingConstraint]) -> None:
         constraint_ids = [bc.id for bc in constraints]
         cluster_terms = [
-            self._cluster_term_to_row(self._study_id, bc.id, term)
+            self._cluster_term_to_row(self._study_data_id, bc.id, term)
             for bc in constraints
             for term in bc.terms
             if isinstance(term.data, ClusterTerm)
         ]
         self._db_session.execute(
-            delete(CT).where((CT.c.study_id == self._study_id) & (CT.c.constraint_id.in_(constraint_ids)))
+            delete(CT).where((CT.c.study_data_id == self._study_data_id) & (CT.c.constraint_id.in_(constraint_ids)))
         )
         if cluster_terms:
             upsert_multiple(self._db_session, CT, cluster_terms)
@@ -360,13 +353,13 @@ class DatabaseBindingConstraintDao(ConstraintDao):
     def _save_link_terms(self, constraints: Sequence[BindingConstraint]) -> None:
         constraint_ids = [bc.id for bc in constraints]
         link_terms = [
-            self._link_term_to_row(self._study_id, bc.id, term)
+            self._link_term_to_row(self._study_data_id, bc.id, term)
             for bc in constraints
             for term in bc.terms
             if isinstance(term.data, LinkTerm)
         ]
         self._db_session.execute(
-            delete(LT).where((LT.c.study_id == self._study_id) & (LT.c.constraint_id.in_(constraint_ids)))
+            delete(LT).where((LT.c.study_data_id == self._study_data_id) & (LT.c.constraint_id.in_(constraint_ids)))
         )
         if link_terms:
             upsert_multiple(self._db_session, LT, link_terms)
@@ -377,7 +370,7 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         for matrix_type, table in _MATRIX_TYPE_TABLES.items():
             rows = self._db_session.execute(
                 select(table.c.constraint_id, table.c.matrix_id).where(
-                    (table.c.study_id == self._study_id) & (table.c.constraint_id.in_(constraint_ids))
+                    (table.c.study_data_id == self._study_data_id) & (table.c.constraint_id.in_(constraint_ids))
                 )
             ).fetchall()
             for row in rows:
@@ -578,7 +571,9 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         for matrix_type, constraint_ids in deletions_by_type.items():
             table = _MATRIX_TYPE_TABLES[matrix_type]
             db.execute(
-                delete(table).where((table.c.study_id == self._study_id) & (table.c.constraint_id.in_(constraint_ids)))
+                delete(table).where(
+                    (table.c.study_data_id == self._study_data_id) & (table.c.constraint_id.in_(constraint_ids))
+                )
             )
 
         # Group insertions by type so we can issue one upsert batch per table.
@@ -591,7 +586,11 @@ class DatabaseBindingConstraintDao(ConstraintDao):
                 db,
                 _MATRIX_TYPE_TABLES[matrix_type],
                 [
-                    {"study_id": self._study_id, "constraint_id": ins.constraint_id, "matrix_id": ins.matrix_id}
+                    {
+                        "study_data_id": self._study_data_id,
+                        "constraint_id": ins.constraint_id,
+                        "matrix_id": ins.matrix_id,
+                    }
                     for ins in insertions
                 ],
             )
@@ -604,31 +603,35 @@ class DatabaseBindingConstraintDao(ConstraintDao):
         """
         if self.get_impl().get_version() < STUDY_VERSION_8_7:
             return
-        active_groups = select(BC.c.group).where(BC.c.study_id == self._study_id).distinct()
+        active_groups = select(BC.c.group).where(BC.c.study_data_id == self._study_data_id).distinct()
         self._db_session.execute(
             delete(SCENARIO_BINDING_CONSTRAINTS_TABLE).where(
-                (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_id == self._study_id)
+                (SCENARIO_BINDING_CONSTRAINTS_TABLE.c.study_data_id == self._study_data_id)
                 & SCENARIO_BINDING_CONSTRAINTS_TABLE.c.bc_group_id.not_in(active_groups)
             )
         )
 
-    def _bc_to_row(self, study_id: str, bc: BindingConstraint) -> dict[str, Any]:
+    def _bc_to_row(self, study_data_id: int, bc: BindingConstraint) -> dict[str, Any]:
         data = bc.model_dump(exclude={"id", "terms"})
-        return {"study_id": study_id, "constraint_id": bc.id, **data}
+        return {"study_data_id": study_data_id, "constraint_id": bc.id, **data}
 
-    def _cluster_term_to_row(self, study_id: str, constraint_id: ConstraintId, term: ConstraintTerm) -> dict[str, Any]:
+    def _cluster_term_to_row(
+        self, study_data_id: int, constraint_id: ConstraintId, term: ConstraintTerm
+    ) -> dict[str, Any]:
         assert isinstance(term.data, ClusterTerm)
         return {
-            "study_id": study_id,
+            "study_data_id": study_data_id,
             "constraint_id": constraint_id,
             **term.model_dump(exclude={"data"}),
             **term.data.model_dump(),
         }
 
-    def _link_term_to_row(self, study_id: str, constraint_id: ConstraintId, term: ConstraintTerm) -> dict[str, Any]:
+    def _link_term_to_row(
+        self, study_data_id: int, constraint_id: ConstraintId, term: ConstraintTerm
+    ) -> dict[str, Any]:
         assert isinstance(term.data, LinkTerm)
         return {
-            "study_id": study_id,
+            "study_data_id": study_data_id,
             "constraint_id": constraint_id,
             **term.model_dump(exclude={"data"}),
             **term.data.model_dump(),
@@ -666,7 +669,9 @@ class DatabaseBindingConstraintDao(ConstraintDao):
 
         # Order matters : delete BC rows first so the table reflects the final state,
         # then prune orphaned groups via a single subquery.
-        db.execute(delete(BC).where((BC.c.study_id == self._study_id) & (BC.c.constraint_id.in_(constraint_ids))))
+        db.execute(
+            delete(BC).where((BC.c.study_data_id == self._study_data_id) & (BC.c.constraint_id.in_(constraint_ids)))
+        )
         self._cleanup_scenario_builder_groups()
 
         db.commit()

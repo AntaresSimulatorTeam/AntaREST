@@ -23,6 +23,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     LocalTSGenerationBehavior,
     ThermalCostGeneration,
 )
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
@@ -33,7 +34,7 @@ _COST_GEN_ENUM = enum_col(ThermalCostGeneration, name="thermalcostgeneration")
 THERMAL_CLUSTER_TABLE = Table(
     "thermal_cluster",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("thermal_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
@@ -72,7 +73,7 @@ THERMAL_CLUSTER_TABLE = Table(
     Column("cost_generation", _COST_GEN_ENUM, nullable=True),
     Column("efficiency", Float, nullable=True),
     Column("variable_o_m_cost", Float, nullable=True),
-    ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_data_id", "area_id"], ["area.study_data_id", "area.area_id"], ondelete="CASCADE"),
 )
 
 
@@ -80,13 +81,13 @@ def _create_thermal_matrix_table(name: str) -> Table:
     return Table(
         name,
         metadata,
-        Column("study_id", String(36), nullable=False, primary_key=True),
+        study_data_id_col(),
         Column("area_id", String(255), nullable=False, primary_key=True),
         Column("thermal_id", String(255), nullable=False, primary_key=True),
         Column("matrix_id", String(64), nullable=False),
         ForeignKeyConstraint(
-            ["study_id", "area_id", "thermal_id"],
-            ["thermal_cluster.study_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
+            ["study_data_id", "area_id", "thermal_id"],
+            ["thermal_cluster.study_data_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
             ondelete="CASCADE",
         ),
     )

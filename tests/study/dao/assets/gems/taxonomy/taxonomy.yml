@@ -1,0 +1,131 @@
+taxonomy:
+  id: antares_legacy_taxonomy
+  description: GEMS taxonomy configuration for Antares Legacy Models.
+  categories:
+
+    - id: balance
+      variables:
+        - id: unsupplied_energy
+        - id: spilled_energy
+      ports:
+        - id: balance_port
+      binding-constraints:
+        - id: balance
+      extra-outputs:
+        - id: price
+        - id: imbalance_cost
+        - id: is_loss_of_load
+        - id: is_significant_loss_of_load
+        - id: is_near_loss_of_load
+
+    - id: generation
+      ports:
+        - id: balance_port
+
+    - id: dispatchable_generation
+      parent-category: generation
+      variables: 
+        - id: generation_power
+      extra-outputs:
+        - id: prop_cost
+        - id: non_prop_cost
+        - id: actual_num_units_on
+        - id: cluster_availability
+        - id: min_gen_power
+        - id: up_margin
+        - id: co2_emissions
+        - id: nh3_emissions
+        - id: so2_emissions
+        - id: nox_emissions
+        - id: pm2_5_emissions
+        - id: pm5_emissions
+        - id: pm10_emissions
+        - id: nmvoc_emissions
+        - id: op1_emissions
+        - id: op2_emissions
+        - id: op3_emissions
+        - id: op4_emissions
+        - id: op5_emissions
+        - id: profit
+      properties:
+        - id: technology
+
+    - id: fatal_generation
+      parent-category: generation
+      parameters:
+        - id: available_power
+      extra-outputs:
+        - id: minus_generation
+        - id: generation_power
+    
+    - id: renewable_fatal_generation
+      parent-category: fatal_generation
+      properties:
+        - id: technology
+
+    - id: miscellaneous_fatal_generation
+      parent-category: fatal_generation
+      properties:
+        - id: technology 
+        - id: miscellaneous_type
+
+    - id: consumption
+      extra-outputs:
+        - id: actual_load
+      ports:
+        - id: balance_port
+
+    - id: fatal_consumption
+      parent-category: consumption
+
+    - id: storage
+      ports:
+        - id: balance_port
+      variables:
+        - id: injection_power
+        - id: withdrawal_power
+        - id: level
+    
+    - id: long_term_storage
+      parent-category: storage
+      variables:
+        - id: overflow
+      extra-outputs:
+        - id: actual_inflows
+        - id: level_percentage
+    
+    - id: long_term_storage_with_watervalues
+      parent-category: long_term_storage
+      extra-outputs:
+        - id: hydro_shadow_price
+        - id: bellman_value
+    
+    - id: short_term_storage
+      parent-category: storage
+      extra-outputs:
+        - id: profit
+      properties:
+        - id: group
+
+    - id: link
+      ports:
+        - id: out_port
+        - id: in_port
+      variables:
+        - id: flow
+      extra-outputs:
+        - id: abs_flow
+        - id: abs_congestion_fee
+        - id: alg_congestion_fee
+        - id: capacity_shadow_price
+        - id: is_directly_congested
+        - id: is_indirectly_congested
+        - id: prop_cost
+        - id: minus_flow
+        - id: actual_loop_flow
+
+    - id: coupling_models
+
+    - id: capacity_investment_decisions
+      ports:
+        - id: capacity_port

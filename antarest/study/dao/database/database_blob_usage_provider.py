@@ -11,20 +11,17 @@
 # This file is part of the Antares project.
 from collections.abc import Iterable
 
-from sqlalchemy import select
 from typing_extensions import override
 
 from antarest.blobstore.blob_usage_provider import IBlobUsageProvider
 from antarest.blobstore.model import BlobReference
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.dao.database.models.user_resources import USER_RESOURCES_TABLE
+from antarest.study.dao.database.study_data_queries import yield_used_blobs
 
 
 class DatabaseBlobUsageProvider(IBlobUsageProvider):
     @override
     def get_blob_usage(self) -> Iterable[BlobReference]:
         with db():
-            stmt = select(USER_RESOURCES_TABLE).where(USER_RESOURCES_TABLE.c.blob_id.isnot(None))
-            rows = db.session.execute(stmt).fetchall()
-            for row in rows:
-                yield BlobReference(blob_id=row.blob_id, use_description=f"Used by study {row.study_id}")
+            for blob_id, study_id in yield_used_blobs(db.session):
+                yield BlobReference(blob_id=blob_id, use_description=f"Used by study {study_id}")

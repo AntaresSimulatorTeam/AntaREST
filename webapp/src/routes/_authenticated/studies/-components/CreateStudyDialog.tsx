@@ -14,7 +14,7 @@
 
 import FormDialog from "@/components/dialogs/FormDialog";
 import CheckboxesTagsFE from "@/components/fieldEditors/CheckboxesTagsFE";
-import SelectFE from "@/components/fieldEditors/SelectFE";
+import SelectFE, { type Options } from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
@@ -32,7 +32,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useSnackbar } from "notistack";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-
 interface FieldValues {
   name: string;
   version: string;
@@ -46,6 +45,11 @@ interface Props {
   open: boolean;
   onClose: VoidFunction;
 }
+
+const STORAGE_MODE_OPTIONS = [
+  { value: StorageMode.FILESYSTEM, label: (t) => t("studies.storageMode.filesystem") },
+  { value: StorageMode.DATABASE, label: (t) => t("studies.storageMode.database") },
+] as const satisfies Options<StorageMode>;
 
 function CreateStudyDialog({ open, onClose }: Props) {
   const { t } = useTranslation();
@@ -101,7 +105,6 @@ function CreateStudyDialog({ open, onClose }: Props) {
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
-  const enableDatabaseStorage = false; // To be removed when activating the feature
 
   return (
     <FormDialog
@@ -137,22 +140,17 @@ function CreateStudyDialog({ open, onClose }: Props) {
               control={control}
               rules={{ required: t("form.field.required") }}
             />
-            {enableDatabaseStorage && (
-              <SelectFE
-                label={t("studies.storageMode")}
-                options={[
-                  { value: StorageMode.FILESYSTEM, label: t("studies.storageMode.filesystem") },
-                  { value: StorageMode.DATABASE, label: t("studies.storageMode.database") },
-                ]}
-                name="storageMode"
-                control={control}
-                helperText={
-                  watch("storageMode") === StorageMode.DATABASE
-                    ? t("studies.storageMode.gemsCompatible")
-                    : undefined
-                }
-              />
-            )}
+            <SelectFE
+              label={t("studies.storageMode")}
+              options={STORAGE_MODE_OPTIONS}
+              name="storageMode"
+              control={control}
+              helperText={
+                watch("storageMode") === StorageMode.DATABASE
+                  ? t("studies.storageMode.gemsCompatible")
+                  : undefined
+              }
+            />
           </Fieldset>
           <Fieldset legend={t("global.permission")} fullFieldWidth>
             <SelectFE

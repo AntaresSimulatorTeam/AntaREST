@@ -48,9 +48,9 @@ export interface XpansionCandidate {
   "link-profile"?: string;
   "already-installed-link-profile"?: string;
   "direct-link-profile"?: string;
-  "direct-already-installed-link-profile"?: string;
+  "already-installed-direct-link-profile"?: string;
   "indirect-link-profile"?: string;
-  "indirect-already-installed-link-profile"?: string;
+  "already-installed-indirect-link-profile"?: string;
 }
 
 export enum XpansionRenderView {

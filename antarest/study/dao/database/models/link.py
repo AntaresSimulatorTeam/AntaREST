@@ -15,6 +15,7 @@ from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, St
 from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.link_model import AssetType, LinkStyle, TransmissionCapacity
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
@@ -22,7 +23,7 @@ metadata = Base.metadata
 LINK_TABLE = Table(
     "link",
     metadata,
-    Column("study_id", String(length=36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area1", String(length=255), nullable=False, primary_key=True),
     Column("area2", String(length=255), nullable=False, primary_key=True),
     Column("hurdles_cost", Boolean(), nullable=False),
@@ -40,15 +41,15 @@ LINK_TABLE = Table(
     Column("filter_synthesis", String(), nullable=False),
     Column("filter_year_by_year", String(), nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "area1"],
-        ["area.study_id", "area.area_id"],
-        name="fk_link_study_id_area_id_1",
+        ["study_data_id", "area1"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_link_study_data_id_area_id_1",
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
-        ["study_id", "area2"],
-        ["area.study_id", "area.area_id"],
-        name="fk_link_study_id_area_id_2",
+        ["study_data_id", "area2"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_link_study_data_id_area_id_2",
         ondelete="CASCADE",
     ),
 )
@@ -58,12 +59,12 @@ def _create_matrix_table(name: str) -> Table:
     return Table(
         name,
         metadata,
-        Column("study_id", String(36), nullable=False, primary_key=True),
+        study_data_id_col(),
         Column("area1", String(255), nullable=False, primary_key=True),
         Column("area2", String(255), nullable=False, primary_key=True),
         Column("matrix_id", String(64), nullable=False),
         ForeignKeyConstraint(
-            ["study_id", "area1", "area2"], ["link.study_id", "link.area1", "link.area2"], ondelete="CASCADE"
+            ["study_data_id", "area1", "area2"], ["link.study_data_id", "link.area1", "link.area2"], ondelete="CASCADE"
         ),
     )
 

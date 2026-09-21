@@ -437,8 +437,8 @@ class OutputSubFolderNotFound(HTTPException):
     Exception raised when an output sub folders do not exist
     """
 
-    def __init__(self, output_id: str, mc_root: str) -> None:
-        message = f"The output '{output_id}' sub-folder '{mc_root}' does not exist"
+    def __init__(self, output_id: str, relpath: str) -> None:
+        message = f"The output '{output_id}' sub-folder '{relpath}' does not exist"
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
     @override
@@ -851,7 +851,7 @@ class RenewableClustersNotFound(HTTPException):
 
 class STStoragesNotFound(HTTPException):
     def __init__(self, invalid_sts_ids: dict[str, set[str]]) -> None:
-        msg = f"Short term storages not found: {invalid_sts_ids}"
+        msg = f"Short-term storages not found: {invalid_sts_ids}"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
 
 
@@ -861,7 +861,24 @@ class SevenZipNotSupportedOnThisMachine(Exception):
         super().__init__(msg)
 
 
-class ThermalReserveCertificationNotFound(HTTPException):
-    def __init__(self, area_id: str, thermal_id: str, reserve_ids: set[str]):
-        msg = f"Certifications for reserve(s) '{reserve_ids}' on thermal cluster '{thermal_id}' not found in area '{area_id}'"
+class ReserveCertificationNotFound(HTTPException):
+    def __init__(self, area_id: str, object_type: str, object_id: str | None, reserve_ids: set[str]):
+        target = f"{object_type} '{object_id}'" if object_id else object_type
+        msg = f"Certifications for reserve(s) '{reserve_ids}' on {target} not found in area '{area_id}'"
         super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class ReserveCertificationsNotFound(HTTPException):
+    def __init__(self, area_id: str, object_type: str):
+        msg = f"No {object_type} reserve certifications found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class GemsLibraryAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class GemsTaxonomyAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)

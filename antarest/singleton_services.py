@@ -25,6 +25,7 @@ from antarest.service_creator import (
     create_blob_gc,
     create_core_services,
     create_matrix_gc,
+    create_variable_view_gc,
     create_watcher,
     init_db_engine,
 )
@@ -53,6 +54,10 @@ def _init(config_file: Path, services_list: list[Module]) -> list[IService]:
     if Module.BLOB_GC in services_list:
         blob_gc = create_blob_gc(config, core_services.blob_service)
         services.append(blob_gc)
+
+    if Module.VARIABLE_VIEW_GC in services_list:
+        variable_view_gc = create_variable_view_gc(config)
+        services.append(variable_view_gc)
 
     if Module.AUTO_ARCHIVER in services_list:
         auto_archive_service = AutoArchiveService(core_services.study_service, core_services.output_service, config)

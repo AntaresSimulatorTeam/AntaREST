@@ -22,6 +22,8 @@ import type {
   reserveSchema,
   reserveTypeSchema,
   reservesCertificationsSchema,
+  reservesSymmetriesSchema,
+  symmetryProductionTypeSchema,
   updateReserveGlobalParametersSchema,
   updateReserveParamsSchema,
 } from "./schemas";
@@ -33,6 +35,8 @@ export type ReserveGlobalParameters = z.infer<typeof reserveGlobalParametersSche
 export type CertificationProductionType = z.infer<typeof certificationProductionTypeSchema>;
 export type ReserveCertification = z.infer<typeof reserveCertificationSchema>;
 export type ReservesCertifications = z.infer<typeof reservesCertificationsSchema>;
+export type SymmetryProductionType = z.infer<typeof symmetryProductionTypeSchema>;
+export type ReservesSymmetries = z.infer<typeof reservesSymmetriesSchema>;
 
 export type CreateReserveData = z.infer<typeof createReserveParamsSchema>;
 export type UpdateReserveData = z.infer<typeof updateReserveParamsSchema>;
@@ -70,4 +74,12 @@ export interface ReservesCertificationsParams extends ReservesAreaParams {
 
 export interface UpdateReservesCertificationsParams extends ReservesCertificationsParams {
   data: ReservesCertifications;
+}
+
+export interface ReservesSymmetriesParams extends ReservesAreaParams {
+  productionType: SymmetryProductionType;
+}
+
+export interface UpdateReservesSymmetriesParams extends ReservesSymmetriesParams {
+  data: ReservesSymmetries;
 }

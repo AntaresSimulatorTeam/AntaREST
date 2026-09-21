@@ -78,7 +78,7 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
   return (
     <FormDialog
       open={open}
-      title={t("study.debug.folder.new")}
+      title={t("study.fileExplorer.folder.new")}
       titleIcon={CreateNewFolderIcon}
       config={{ defaultValues }}
       onCancel={onCancel}
@@ -93,11 +93,11 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
             name="folder"
             control={control}
             rules={{ required: t("form.field.required") }}
-            helperText={t("study.debug.folder.new.name.helper")}
+            helperText={t("study.fileExplorer.folder.new.name.helper")}
             disableAdornment
           />
           <CheckBoxFE
-            label={t("study.debug.folder.new.openDirectory")}
+            label={t("study.fileExplorer.folder.new.openDirectory")}
             name="openFolder"
             control={control}
           />

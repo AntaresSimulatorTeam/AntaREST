@@ -11,14 +11,15 @@
 # This file is part of the Antares project.
 import logging
 import warnings
-from collections.abc import Iterator, MutableSequence, Sequence
+from collections.abc import Iterator, Sequence
 from pathlib import Path
-from typing import cast
+from typing import TypeAlias
 
 import pandas as pd
 import polars as pl
 
 from antarest.core.exceptions import MCRootNotHandled, OutputAggregationError, OutputNotFound, OutputSubFolderNotFound
+from antarest.output.filestudy.iteration import select_files
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file
 from antarest.output.filestudy.model import (
     MCYEAR_COL,
@@ -27,14 +28,11 @@ from antarest.output.filestudy.model import (
     MCIndAreasQueryFile,
     MCIndLinksQueryFile,
     MCRoot,
-    MultipleOutputHeaders,
     OutputDataFrame,
     QueryFileType,
-    SingleOutputHeaders,
-    concatenate_dataframe_multi_indexed_columns,
-    normalize_df_column_names,
+    VariableDescription,
+    find_mode_dir,
 )
-from antarest.output.utils import find_mode_dir
 from antarest.study.model import MatrixFrequency
 
 # We use pandas.DataFrame.stack() without the `future_stack` keyword as its 2 times faster
@@ -57,6 +55,17 @@ ACTUAL_COLUMN_COMPONENT = 1
 
 logger = logging.getLogger(__name__)
 
+# The implementation uses sometimes plain string headers,
+# sometimes a tuple of strings (name, unit, stat)
+# Typing should be improved, but for now we stick with that union.
+ColMetadata: TypeAlias = VariableDescription | str
+
+
+def _check_is_str(value: ColMetadata) -> str:
+    if not isinstance(value, str):
+        raise ValueError(f"Expected a string, got {type(value)}")
+    return value
+
 
 def _columns_ordering(df_cols: list[str], column_name: str, is_details: bool, mc_root: MCRoot) -> list[str]:
     # original columns
@@ -76,19 +85,6 @@ def _columns_ordering(df_cols: list[str], column_name: str, is_details: bool, mc
     return new_column_order
 
 
-def _filtered_files_listing(
-    folders_to_check: list[Path],
-    query_file: str,
-    frequency: str,
-) -> dict[str, MutableSequence[str]]:
-    filtered_files: dict[str, MutableSequence[str]] = {}
-    for folder_path in folders_to_check:
-        for file in folder_path.iterdir():
-            if file.stem == f"{query_file}-{frequency}":
-                filtered_files.setdefault(folder_path.name, []).append(file.name)
-    return filtered_files
-
-
 class AggregatorManager:
     def __init__(
         self,
@@ -97,7 +93,6 @@ class AggregatorManager:
         frequency: MatrixFrequency,
         ids_to_consider: Sequence[str],
         columns_names: Sequence[str],
-        transform_columns_headers: bool,  # False when used by the Imagrid `/download` endpoint.
         mc_years: Sequence[int] | None = None,
     ):
         self.output_path = output_path
@@ -113,8 +108,6 @@ class AggregatorManager:
             else "links"
         )
         _mode_dir = find_mode_dir(self.output_path)
-        if _mode_dir is None:
-            raise OutputSubFolderNotFound(self.output_id, f"economy/{MCRoot.MC_IND.value}")
         self.mc_ind_path = _mode_dir / MCRoot.MC_IND.value
         self.mc_all_path = _mode_dir / MCRoot.MC_ALL.value
         self.mc_root = (
@@ -123,88 +116,15 @@ class AggregatorManager:
             else MCRoot.MC_ALL
         )
         self._output_first_column = get_start_column(self.frequency)
-        self.transform_columns_headers = transform_columns_headers
 
-    def _parse_output_file(self, file_path: Path, normalize_column_names: bool) -> OutputDataFrame:
-        output_data = parse_output_file(file_path, self._output_first_column)
+    def _variable_names(self, headers: Sequence[ColMetadata]) -> list[str]:
+        return [col.name if isinstance(col, VariableDescription) else col for col in headers]
 
-        if normalize_column_names:
-            headers = cast(MultipleOutputHeaders, output_data.headers)
-            output_data.headers = normalize_df_column_names(self.mc_root, headers)
-
-        return output_data
-
-    def _filter_ids(self, folder_path: Path) -> list[str]:
-        if self.output_type == "areas":
-            # Areas names filtering
-            areas_ids = sorted([d.name for d in folder_path.iterdir()])
-            if self.ids_to_consider:
-                areas_ids = [area_id for area_id in areas_ids if area_id in self.ids_to_consider]
-            return areas_ids
-
-        # Links names filtering
-        links_ids = sorted(d.name for d in folder_path.iterdir())
-        if self.ids_to_consider:
-            return [link for link in links_ids if link in self.ids_to_consider]
-        return links_ids
-
-    def _gather_all_files_to_consider(self) -> Sequence[Path]:
-        if self.mc_root == MCRoot.MC_IND:
-            # Monte Carlo years filtering
-            all_mc_years = [d.name for d in self.mc_ind_path.iterdir()]
-            if self.mc_years:
-                all_mc_years = [year for year in all_mc_years if int(year) in self.mc_years]
-            if not all_mc_years:
-                return []
-
-            # Links / Areas ids filtering
-
-            # The list of areas and links is the same whatever the MC year under consideration:
-            # Therefore we choose the first year by default avoiding useless scanning directory operations.
-            first_mc_year = all_mc_years[0]
-            areas_or_links_ids = self._filter_ids(self.mc_ind_path / first_mc_year / self.output_type)
-
-            # Frequency and query file filtering
-            folders_to_check = [self.mc_ind_path / first_mc_year / self.output_type / id for id in areas_or_links_ids]
-            filtered_files = _filtered_files_listing(folders_to_check, self.query_file, self.frequency)
-
-            # Loop on MC years to return the whole list of files
-            all_output_files = [
-                self.mc_ind_path / mc_year / self.output_type / area_or_link / file
-                for mc_year in all_mc_years
-                for area_or_link, files in filtered_files.items()
-                for file in files
-            ]
-        elif self.mc_root == MCRoot.MC_ALL:
-            # Links / Areas ids filtering
-            areas_or_links_ids = self._filter_ids(self.mc_all_path / self.output_type)
-
-            # Frequency and query file filtering
-            folders_to_check = [self.mc_all_path / self.output_type / id for id in areas_or_links_ids]
-            filtered_files = _filtered_files_listing(folders_to_check, self.query_file, self.frequency)
-
-            # Loop to return the whole list of files
-            all_output_files = [
-                self.mc_all_path / self.output_type / area_or_link / file
-                for area_or_link, files in filtered_files.items()
-                for file in files
-            ]
-        else:
-            raise MCRootNotHandled(f"Unknown Monte Carlo root: {self.mc_root}")
-        return all_output_files
-
-    def _ensures_typing(self, headers: list[str] | list[list[str]]) -> list[str]:
-        # Method used to fix mypy typing inside `columns_filtering` method
-        if not self.transform_columns_headers:
-            multiple_headers = cast(MultipleOutputHeaders, headers)
-            return [col[0] for col in multiple_headers]
-        return cast(SingleOutputHeaders, headers)
-
-    def columns_filtering(self, data: OutputDataFrame, is_details: bool) -> OutputDataFrame:
+    def columns_filtering(self, data: OutputDataFrame[ColMetadata], is_details: bool) -> OutputDataFrame[ColMetadata]:
         # columns filtering
         lower_case_columns = [c.lower() for c in self.columns_names]
         if lower_case_columns:
-            df_columns = self._ensures_typing(data.headers)
+            df_columns = self._variable_names(data.headers)
             if self.mc_root == MCRoot.MC_ALL:
                 filtered_columns = [c for c in df_columns if any(regex in c.lower() for regex in lower_case_columns)]
             else:
@@ -215,13 +135,14 @@ class AggregatorManager:
                 filtered_columns.insert(0, CLUSTER_ID_COL)
 
             indices = [k for k, c in enumerate(df_columns) if c in filtered_columns]
-            data.data = data.data.select([data.data.columns[i] for i in indices])
-            headers = cast(MultipleOutputHeaders, data.headers)
-            data.headers = [headers[i] for i in indices]
+            data = OutputDataFrame(
+                data=data.data.select([data.data.columns[i] for i in indices]),
+                headers=[data.headers[i] for i in indices],
+            )
 
         return data
 
-    def _process_df(self, file_path: Path, is_details: bool) -> OutputDataFrame:
+    def _process_df(self, file_path: Path, is_details: bool) -> OutputDataFrame[ColMetadata]:
         """
         Process the output file to return a DataFrame with the correct columns and values
             - In the case of a details file, the DataFrame, the columns include two parts cluster name + actual column name
@@ -237,13 +158,12 @@ class AggregatorManager:
         Returns:
             the DataFrame with the correct columns and values
         """
-        normalize_cols = self.transform_columns_headers and not is_details
-        output_data = self._parse_output_file(file_path, normalize_column_names=normalize_cols)
-        if not self.transform_columns_headers or not is_details:
-            return output_data
+        output_data = parse_output_file(file_path, self._output_first_column)
+        if not is_details:
+            return output_data.map_metadata(VariableDescription.normal_repr)
 
         df = output_data.data.to_pandas()
-        df.columns = pd.MultiIndex.from_tuples(output_data.headers)  # type: ignore
+        df.columns = pd.MultiIndex.from_tuples(c.to_tuple() for c in output_data.headers)
         nb_clusters = df.columns.get_level_values(CLUSTER_ID_COMPONENT).nunique()
         # actual columns without the cluster id (NODU, production etc.)
         actual_cols = sorted(df.columns.get_level_values(ACTUAL_COLUMN_COMPONENT).unique())
@@ -280,13 +200,10 @@ class AggregatorManager:
             # columns filtering
             output_data = self.columns_filtering(output_data, is_details)
 
-            if not self.transform_columns_headers:
-                concatenate_dataframe_multi_indexed_columns(output_data)
-
             # Starting from here, output_data.headers are just a list of strings.
             # We can use them as columns for our dataframe.
             df = output_data.data
-            df.columns = cast(SingleOutputHeaders, output_data.headers)
+            df.columns = output_data.map_metadata(_check_is_str).headers
 
             column_name = AREA_COL if self.output_type == "areas" else LINK_COL
             new_column_order = _columns_ordering(df.columns, column_name, is_details, self.mc_root)
@@ -306,13 +223,12 @@ class AggregatorManager:
                 data = relative_path_parts[AREA_OR_LINK_INDEX__ALL]
                 df = df.with_columns(pl.lit(data).alias(column_name))
 
-            if self.transform_columns_headers:
-                # add a column for the time id
-                if not is_details:
-                    df = df.with_row_index(TIME_ID_COL, offset=1)
+            # add a column for the time id
+            if not is_details:
+                df = df.with_row_index(TIME_ID_COL, offset=1)
 
-                # Reorganize the columns
-                df = df.select(new_column_order)
+            # Reorganize the columns
+            df = df.select(new_column_order)
 
             yield df
 
@@ -341,7 +257,12 @@ class AggregatorManager:
         self._check_mc_root_folder_exists()
 
         # filters files to consider
-        all_output_files = sorted(self._gather_all_files_to_consider())
+        all_output_files = sorted(
+            f.path
+            for f in select_files(
+                self.output_path, self.query_file, self.frequency, self.ids_to_consider, self.mc_years
+            )
+        )
 
         if not all_output_files:
             raise OutputAggregationError(self.output_id, "No output files matching the criteria were found.")

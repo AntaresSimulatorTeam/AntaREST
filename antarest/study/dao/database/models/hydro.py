@@ -20,13 +20,14 @@ when a study has storage_mode=DATABASE.
 from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 HYDRO_MANAGEMENT_TABLE = Table(
     "hydro_management",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     # Hydro management configuration fields
     Column("inter_daily_breakdown", Float, nullable=False),
@@ -47,9 +48,9 @@ HYDRO_MANAGEMENT_TABLE = Table(
     # v9.2+ field - nullable for older study versions
     Column("overflow_spilled_cost_difference", Float, nullable=True),
     ForeignKeyConstraint(
-        ["study_id", "area_id"],
-        ["area.study_id", "area.area_id"],
-        name="fk_hydro_management_study_id_area_id_area",
+        ["study_data_id", "area_id"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_hydro_management_study_data_id_area_id_area",
         ondelete="CASCADE",
     ),
 )
@@ -57,13 +58,13 @@ HYDRO_MANAGEMENT_TABLE = Table(
 HYDRO_INFLOW_STRUCTURE_TABLE = Table(
     "hydro_inflow_structure",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_id", String(255), nullable=False, primary_key=True),
     Column("inter_monthly_correlation", Float, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "area_id"],
-        ["area.study_id", "area.area_id"],
-        name="fk_hydro_inflow_structure_study_id_area_id_area",
+        ["study_data_id", "area_id"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_hydro_inflow_structure_study_data_id_area_id_area",
         ondelete="CASCADE",
     ),
 )
@@ -71,20 +72,20 @@ HYDRO_INFLOW_STRUCTURE_TABLE = Table(
 HYDRO_ALLOCATION_TABLE = Table(
     "hydro_allocation",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("source_area_id", String(255), nullable=False, primary_key=True),
     Column("target_area_id", String(255), nullable=False, primary_key=True),
     Column("coefficient", Float, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "source_area_id"],
-        ["area.study_id", "area.area_id"],
-        name="fk_hydro_allocation_study_id_source_area_id_area",
+        ["study_data_id", "source_area_id"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_hydro_allocation_study_data_id_source_area_id_area",
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
-        ["study_id", "target_area_id"],
-        ["area.study_id", "area.area_id"],
-        name="fk_hydro_allocation_study_id_target_area_id_area",
+        ["study_data_id", "target_area_id"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_hydro_allocation_study_data_id_target_area_id_area",
         ondelete="CASCADE",
     ),
 )
@@ -92,21 +93,21 @@ HYDRO_ALLOCATION_TABLE = Table(
 HYDRO_CORRELATION_TABLE = Table(
     "hydro_correlation",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("area_from", String(255), nullable=False, primary_key=True),
     Column("area_to", String(255), nullable=False, primary_key=True),
     # Stored as -1 to 1
     Column("coefficient", Float, nullable=False),
     ForeignKeyConstraint(
-        ["study_id", "area_from"],
-        ["area.study_id", "area.area_id"],
-        name="fk_hydro_correlation_study_id_area_from_area",
+        ["study_data_id", "area_from"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_hydro_correlation_study_data_id_area_from_area",
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
-        ["study_id", "area_to"],
-        ["area.study_id", "area.area_id"],
-        name="fk_hydro_correlation_study_id_area_to_area",
+        ["study_data_id", "area_to"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_hydro_correlation_study_data_id_area_to_area",
         ondelete="CASCADE",
     ),
 )
@@ -116,10 +117,10 @@ def _create_hydro_matrix_table(name: str) -> Table:
     return Table(
         name,
         metadata,
-        Column("study_id", String(36), nullable=False, primary_key=True),
+        study_data_id_col(),
         Column("area_id", String(255), nullable=False, primary_key=True),
         Column("matrix_id", String(64), nullable=False),
-        ForeignKeyConstraint(["study_id", "area_id"], ["area.study_id", "area.area_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["study_data_id", "area_id"], ["area.study_data_id", "area.area_id"], ondelete="CASCADE"),
     )
 
 

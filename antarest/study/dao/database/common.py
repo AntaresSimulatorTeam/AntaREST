@@ -9,44 +9,93 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import TYPE_CHECKING
+import json
+from enum import StrEnum
+from typing import TYPE_CHECKING, Any, Sequence, cast
 
-from sqlalchemy import Table, select
+from sqlalchemy import Row, Table, delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.area_properties_model import FILTER_OPTIONS, FrequencyFilter, sort_filter_options
-from antarest.study.dao.common import AreaSeriesMapping
+from antarest.study.business.model.reserve_certification_model import (
+    ReserveCertification,
+)
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
+from antarest.study.dao.common import AreaSeriesMapping, ReserveSymmetriesMapping
 from antarest.study.dao.database.models.area import AREA_TABLE
+from antarest.study.dao.database.models.st_storage_reserve_certification import ST_STORAGE_RESERVE_CERTIFICATION_TABLE
+from antarest.study.dao.database.models.st_storage_reserve_symmetries import ST_STORAGE_RESERVE_SYMMETRIES_TABLE
+from antarest.study.dao.database.models.thermal_reserve_certification import THERMAL_RESERVE_CERTIFICATION_TABLE
+from antarest.study.dao.database.models.thermal_reserve_symmetries import THERMAL_RESERVE_SYMMETRIES_TABLE
 
 if TYPE_CHECKING:
     from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
 
-def validate_area_exists(session: Session, study_id: str, area_id: str) -> None:
-    if not area_exists(session, study_id, area_id):
+def validate_area_exists(session: Session, study_data_id: int, area_id: str) -> None:
+    if not area_exists(session, study_data_id, area_id):
         raise AreaNotFound(area_id)
 
 
-def area_exists(session: Session, study_id: str, area_id: str) -> bool:
-    stmt = select(AREA_TABLE.c.area_id).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+def area_exists(session: Session, study_data_id: int, area_id: str) -> bool:
+    stmt = select(AREA_TABLE.c.area_id).where(
+        (AREA_TABLE.c.study_data_id == study_data_id) & (AREA_TABLE.c.area_id == area_id)
+    )
     return session.execute(stmt).fetchone() is not None
 
 
+def validate_areas_exist(session: Session, study_data_id: int, area_ids: set[str]) -> None:
+    stmt = select(AREA_TABLE.c.area_id).where((AREA_TABLE.c.study_data_id == study_data_id))
+    rows = session.execute(stmt).fetchall()
+    existing_area_ids = {row.area_id for row in rows}
+    if invalid_areas := area_ids - existing_area_ids:
+        raise AreaNotFound(*invalid_areas)
+
+
+def delete_by_area_id(
+    session: Session, study_data_id: int, table: Table, area_ids: set[str], inserted_area_ids: set[str]
+) -> None:
+    """
+    Deletes every row of `table` belonging to `area_ids`.
+
+    `inserted_area_ids` are the areas the caller is about to insert rows for. They are excluded from
+    the check below: the foreign keys will validate them on insert, so checking them here would cost
+    a query for nothing.
+    """
+    stmt = (
+        delete(table)
+        .where((table.c.study_data_id == study_data_id) & (table.c.area_id.in_(area_ids)))
+        .returning(table.c.area_id)
+    )
+    deleted_area_ids = {row.area_id for row in session.execute(stmt)}
+
+    # An area that deletes nothing and inserts nothing may simply not exist: check it, otherwise
+    # the save silently does nothing at all.
+    if untouched_area_ids := area_ids - deleted_area_ids - inserted_area_ids:
+        try:
+            validate_areas_exist(session, study_data_id, untouched_area_ids)
+        except AreaNotFound:
+            session.rollback()
+            raise
+
+
 def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: Table) -> None:
-    session = dao.get_session()
-    study_id = dao.get_study_id()
+    session = dao._db_session
+    study_data_id = dao._study_data_id
 
     try:
         values = []
         for area_id, series_id in series.items():
-            data = {"study_id": study_id, "area_id": area_id, "matrix_id": series_id}
+            data = {"study_data_id": study_data_id, "area_id": area_id, "matrix_id": series_id}
             values.append(data)
         upsert_multiple(session, table, values)
 
     except IntegrityError as e:
+        session.rollback()
         invalid_ids = set(series) - set(dao.get_all_area_ids())
         if invalid_ids:
             raise AreaNotFound(*invalid_ids)
@@ -57,8 +106,8 @@ def save_area_matrix(dao: "DatabaseStudyDao", series: AreaSeriesMapping, table: 
     session.commit()
 
 
-def get_all_area_matrices(study_id: str, session: Session, table: Table) -> AreaSeriesMapping:
-    stmt = select(table).where((table.c.study_id == study_id))
+def get_all_area_matrices(study_data_id: int, session: Session, table: Table) -> AreaSeriesMapping:
+    stmt = select(table).where((table.c.study_data_id == study_data_id))
     rows = session.execute(stmt).fetchall()
     return {row.area_id: row.matrix_id for row in rows}
 
@@ -84,3 +133,84 @@ def serialize_frequency_filters(encoded_value: set[FrequencyFilter]) -> str:
     if isinstance(encoded_value, str):
         return encoded_value
     return ", ".join(sort_filter_options(encoded_value))
+
+
+"""
+Reserve types
+"""
+
+
+def convert_row_to_symmetries(row: Row[Any]) -> ReserveSymmetries:
+    return cast(ReserveSymmetries, json.loads(row.symmetries))
+
+
+def serialize_symmetries(symmetries: ReserveSymmetries) -> str:
+    """
+    Encodes the symmetries into the `symmetries` column, dropping the empty ones as they carry
+    no information.
+    """
+    return json.dumps([symmetry for symmetry in symmetries if symmetry])
+
+
+class ReserveObjectType(StrEnum):
+    THERMAL = "thermal"
+    ST_STORAGE = "st_storage"
+
+    def _db_key(self) -> str:
+        if self == ReserveObjectType.THERMAL:
+            return "thermal_id"
+        else:
+            return "st_storage_id"
+
+    def db_symmetry_table(self) -> Table:
+        if self == ReserveObjectType.THERMAL:
+            return THERMAL_RESERVE_SYMMETRIES_TABLE
+        else:
+            return ST_STORAGE_RESERVE_SYMMETRIES_TABLE
+
+    def db_certification_table(self) -> Table:
+        if self == ReserveObjectType.THERMAL:
+            return THERMAL_RESERVE_CERTIFICATION_TABLE
+        else:
+            return ST_STORAGE_RESERVE_CERTIFICATION_TABLE
+
+    def convert_symmetry_to_row(
+        self, study_data_id: int, area_id: str, object_id: str, symmetries: ReserveSymmetries
+    ) -> dict[str, Any]:
+        return {
+            "study_data_id": study_data_id,
+            "area_id": area_id,
+            "symmetries": serialize_symmetries(symmetries),
+            self._db_key(): object_id,
+        }
+
+    def convert_all_rows_to_symmetries(self, rows: Sequence[Row[Any]]) -> dict[str, ReserveSymmetries]:
+        result = {}
+        for row in rows:
+            row_as_dict = get_row_representation_as_dict(row)
+            result[row_as_dict[self._db_key()]] = convert_row_to_symmetries(row)
+        return result
+
+    def convert_all_rows_to_dict_of_symmetries(self, rows: Sequence[Row[Any]]) -> ReserveSymmetriesMapping:
+        result: ReserveSymmetriesMapping = {}
+        for row in rows:
+            row_as_dict = get_row_representation_as_dict(row)
+            result.setdefault(row.area_id, {})[row_as_dict[self._db_key()]] = convert_row_to_symmetries(row)
+        return result
+
+    def convert_certification_to_row(
+        self, study_data_id: int, area_id: str, object_id: str, reserve_id: str, certification: ReserveCertification
+    ) -> dict[str, Any]:
+        return {
+            "study_data_id": study_data_id,
+            "area_id": area_id,
+            "reserve_id": reserve_id,
+            self._db_key(): object_id,
+            **certification.model_dump(),
+        }
+
+    def convert_row_to_mapping(self, row: Row[Any]) -> dict[str, Any]:
+        data = get_row_representation_as_dict(row)
+        for key in ("study_data_id", "area_id", self._db_key(), "reserve_id"):
+            del data[key]
+        return data

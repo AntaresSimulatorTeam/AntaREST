@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.study.model import STUDY_VERSION_10_0
+from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.cluster.area.list import (
@@ -24,6 +24,6 @@ class InputThermalClustersArea(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {"list": InputThermalClustersAreaList(self.config.next_file("list.ini"))}
-        if self.config.version >= STUDY_VERSION_10_0:
+        if self.config.version >= STUDY_VERSION_10_2:
             children["reserve-participations"] = YAMLFileNode(self.config.next_file("reserve-participations.yml"))
         return children

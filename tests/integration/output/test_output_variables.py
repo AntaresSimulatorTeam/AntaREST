@@ -38,7 +38,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     output_id = "20201014-1425eco-goodbye"
     res = client.get(f"/v1/studies/{internal_study_id}/output/{output_id}/variables-list")
     expected_content = from_json((ASSETS_DIR / "res1.json").read_bytes())
-    assert expected_content == res.json()
+    assert res.json() == expected_content
 
     # Ensures we saved the data inside the DB and that we're still able to read it
     with db():
@@ -47,7 +47,7 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
         assert db_content.study_id == internal_study_id
         assert db_content.output_id == output_id
         assert db_content.variables_list_version == 1
-        assert db_content.to_model().model_dump(by_alias=True) == expected_content
+        assert expected_content == db_content.to_model().model_dump(by_alias=True)
 
     # Checks mc-all links work properly as we didn't have any info in the first output
     output_id = "20241807-1540eco-extra-outputs"
