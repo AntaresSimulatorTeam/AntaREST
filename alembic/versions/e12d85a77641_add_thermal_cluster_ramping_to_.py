@@ -1,7 +1,7 @@
 """add_thermal_cluster_ramping_to_optimization_preferences
 
 Revision ID: e12d85a77641
-Revises: 0974bca4078d
+Revises: e6892cbcad66
 Create Date: 2026-09-17 10:28:26.615150
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "e12d85a77641"
-down_revision = "0974bca4078d"
+down_revision = "e6892cbcad66"
 branch_labels = None
 depends_on = None
 
