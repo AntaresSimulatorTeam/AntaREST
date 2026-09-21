@@ -62,7 +62,9 @@ function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
 
   const baseRectWidth = Math.max(TILE_SIZE_X * (depth + DEPTH_OFFSET), MIN_WIDTH);
   const treeHeight = TILE_SIZE_Y * (totalDescendants + 1) + TILE_SIZE_Y_2;
-  const labelWidth = Math.min(RECT_TEXT_WIDTH / ZOOM_OUT, containerWidth / 2);
+  const defaultLabelWidth = RECT_TEXT_WIDTH / ZOOM_OUT;
+  const labelWidth =
+    containerWidth > 0 ? Math.min(defaultLabelWidth, containerWidth / 2) : defaultLabelWidth;
   const graphWidth = Math.max(
     baseRectWidth,
     (containerWidth - labelWidth) * ZOOM_OUT - RECT_X_SPACING,
