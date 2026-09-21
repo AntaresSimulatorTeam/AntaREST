@@ -29,7 +29,7 @@ interface Props {
 function OutputMatrixViewer({ item }: Props) {
   const [monteCarloMode, setMonteCarloMode] = useState<MonteCarloMode>("mc-all");
   const [dataType, setDataType] = useState<DataType>("values");
-  const [frequency, setFrequency] = useState<Frequency>("hourly");
+  const [frequency, setFrequency] = useState<Frequency>("annual");
   const [year, setYear] = useState(-1);
   const [variable, setVariable] = useState("");
   const [clusterId, setClusterId] = useState<string>("");
