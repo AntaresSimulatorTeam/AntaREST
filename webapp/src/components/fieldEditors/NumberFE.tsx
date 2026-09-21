@@ -14,6 +14,7 @@
 
 import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import i18n from "@/i18n";
+import { isNumericValue } from "@/utils/numberUtils";
 import { setValueAsNumber } from "@/utils/reactHookFormUtils";
 import { TextField, type TextFieldProps } from "@mui/material";
 import * as RA from "ramda-adjunct";
@@ -21,10 +22,26 @@ import * as RA from "ramda-adjunct";
 export interface NumberFEProps extends Omit<TextFieldProps, "type" | "value" | "defaultValue"> {
   value?: number;
   defaultValue?: number;
+  onValueChange?: (value: number | null) => void;
 }
 
-function NumberFE(props: NumberFEProps) {
-  return <TextField {...props} type="number" />;
+function NumberFE({ onChange, onValueChange, ...rest }: NumberFEProps) {
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleChange: NumberFEProps["onChange"] = (event) => {
+    onChange?.(event);
+
+    const value = event.target.value;
+    onValueChange?.(isNumericValue(value) ? Number(value) : null);
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return <TextField {...rest} onChange={handleChange} type="number" />;
 }
 
 const NumberFEWithRHF = reactHookFormSupport({

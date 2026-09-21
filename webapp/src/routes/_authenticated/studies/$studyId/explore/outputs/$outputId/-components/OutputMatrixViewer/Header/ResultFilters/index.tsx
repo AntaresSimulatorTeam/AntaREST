@@ -15,13 +15,14 @@
 import CustomScrollbar from "@/components/CustomScrollbar";
 import NumberFE from "@/components/fieldEditors/NumberFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
-import { useDebouncedField } from "@/hooks/useDebouncedField";
 import { Stack } from "@mui/material";
 import * as R from "ramda";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useDebounce } from "react-use";
 import useOutput from "../../../../-hooks/useOutput";
 import useOutputContext from "../../../../-hooks/useOutputFilters";
+import ColumnsFilters from "./ColumnsFilters";
 import VariablesFilters from "./VariablesFilters";
 import { FREQUENCY_OPTIONS, getDataTypeOptions, MONTE_CARLO_MODE_OPTIONS } from "./utils";
 
@@ -32,7 +33,6 @@ function ResultFilters() {
     item,
     monteCarloMode,
     setMonteCarloMode,
-    year,
     setYear,
     dataType,
     setDataType,
@@ -40,23 +40,34 @@ function ResultFilters() {
     setFrequency,
   } = useOutputContext();
 
+  const [localYear, setLocalYear] = useState<number | null>(null);
+
   const isYearByYearMode = monteCarloMode === "mc-ind";
+  const isVariablePerVariable = monteCarloMode === "variable-per-variable";
 
   const dataTypeOptions = useMemo(
     () => getDataTypeOptions(item, monteCarloMode),
     [item, monteCarloMode],
   );
 
-  const { localValue: debouncedYear, handleChange: debouncedSetYear } = useDebouncedField({
-    value: year,
-    onChange: setYear,
-    delay: 500,
-    transformValue: (value: number) => R.clamp(1, output.nbYears, value),
-  });
+  // Debounce updating the year to avoid frequent updates while typing
+  useDebounce(
+    () => {
+      if (localYear !== null) {
+        const v = R.clamp(1, output.nbYears, localYear);
+        setYear(v);
+        setLocalYear(v);
+      }
+    },
+    500,
+    [localYear],
+  );
 
   // Reset year when 'Year by year' mode is toggled
   useEffect(() => {
-    setYear(isYearByYearMode ? 1 : -1);
+    const v = isYearByYearMode ? 1 : -1;
+    setYear(v);
+    setLocalYear(v > 0 ? v : null);
   }, [isYearByYearMode, setYear]);
 
   // Update dataType when options change if the current dataType is not in the new options
@@ -72,7 +83,8 @@ function ResultFilters() {
 
   return (
     <CustomScrollbar>
-      <Stack spacing={1} sx={{ pt: 1 }}>
+      <Stack spacing={1} sx={{ pt: 1, width: "max-content" }}>
+        {!isVariablePerVariable && <ColumnsFilters />}
         <SelectFE
           label={t("study.outputs.monteCarlo")}
           value={monteCarloMode}
@@ -101,14 +113,14 @@ function ResultFilters() {
         {isYearByYearMode && (
           <NumberFE
             label={t("global.year")}
-            value={debouncedYear}
+            value={localYear ?? undefined}
             slotProps={{
               htmlInput: {
                 min: 1,
                 max: output.nbYears,
               },
             }}
-            onChange={(event) => debouncedSetYear(Number(event.target.value))}
+            onValueChange={(value) => setLocalYear(value)}
             size="extra-small"
             sx={{ width: 80 }}
           />

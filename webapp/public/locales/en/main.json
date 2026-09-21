@@ -794,7 +794,6 @@
   "study.outputs.noClusters": "No clusters available",
   "study.outputs.display": "Display",
   "study.outputs.temporality": "Temporality",
-  "study.outputs.filterColumns": "Filter columns",
   "study.outputs.statistics": "Statistics",
   "study.outputs.noData": "No data available",
   "study.outputs.noVariablesForArea": "No variables available for this area",
