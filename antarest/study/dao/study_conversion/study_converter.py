@@ -83,6 +83,10 @@ class StudyConverter:
 
     def _convert_gems(self) -> None:
         if self._study_version >= STUDY_VERSION_10_2:
+            scenario_builder = self._source_dao.get_gems_scenario_builder()
+            if scenario_builder is not None:
+                self._new_dao.save_gems_scenario_builder(scenario_builder)
+
             # Library and taxonomy
             gems_library = self._source_dao.get_library()
             if not gems_library:

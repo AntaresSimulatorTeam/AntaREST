@@ -882,3 +882,8 @@ class GemsLibraryAlreadyExists(HTTPException):
 class GemsTaxonomyAlreadyExists(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class GemsScenarioBuilderAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)

@@ -54,6 +54,7 @@ from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
 from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
 from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
 from antarest.study.dao.database.gems.database_library_dao import DatabaseGemsLibraryDao
+from antarest.study.dao.database.gems.database_scenario_builder_dao import DatabaseGemsScenarioBuilderDao
 from antarest.study.dao.database.gems.database_taxonomy_dao import DatabaseGemsTaxonomyDao
 from antarest.study.dao.database.models.comments import COMMENTS_TABLE
 from antarest.study.dtos import StudyDataSynthesis
@@ -87,6 +88,7 @@ class DatabaseStudyDao(
     DatabaseReserveSymmetriesDao,
     DatabaseGemsLibraryDao,
     DatabaseGemsTaxonomyDao,
+    DatabaseGemsScenarioBuilderDao,
 ):
     """
     Database implementation of StudyDao.
