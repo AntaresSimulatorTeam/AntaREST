@@ -10,10 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy import insert, select
+import json
+
+from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsScenarioBuilderAlreadyExists
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -24,17 +27,31 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
     @override
     def get_gems_scenario_builder(self) -> GemsScenarioBuilder | None:
         table = GEMS_SCENARIO_BUILDER_TABLE
-        row = self._db_session.execute(select(table).where(table.c.study_data_id == self._study_data_id)).fetchone()
-        if row is None:
+        rows = self._db_session.execute(select(table).where(table.c.study_data_id == self._study_data_id)).fetchall()
+        if not rows:
             return None
-        return GemsScenarioBuilder(scenario_groups=row.scenario_groups)
+        return GemsScenarioBuilder(scenario_groups={row.scenario_group: json.loads(row.data) for row in rows})
 
     @override
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
-        if self.get_gems_scenario_builder() is not None:
-            raise GemsScenarioBuilderAlreadyExists(f"A GEMS scenario builder already exists for study {self._study_id}")
-        self._db_session.execute(
-            insert(GEMS_SCENARIO_BUILDER_TABLE),
-            {"study_data_id": self._study_data_id, **scenario_builder.model_dump(mode="json")},
-        )
-        self._db_session.commit()
+        table = GEMS_SCENARIO_BUILDER_TABLE
+        session = self._db_session
+        groups = scenario_builder.scenario_groups
+        try:
+            upsert_multiple(
+                session,
+                table,
+                [
+                    {"study_data_id": self._study_data_id, "scenario_group": group, "data": json.dumps(data)}
+                    for group, data in groups.items()
+                ],
+            )
+            session.execute(
+                delete(table).where(
+                    (table.c.study_data_id == self._study_data_id) & table.c.scenario_group.not_in(groups)
+                )
+            )
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            raise

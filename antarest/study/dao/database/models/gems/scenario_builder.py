@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy import JSON, Column, ForeignKeyConstraint, Table
+from sqlalchemy import Column, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
@@ -19,6 +19,7 @@ GEMS_SCENARIO_BUILDER_TABLE = Table(
     "gems_scenario_builder",
     Base.metadata,
     study_data_id_col(),
-    Column("scenario_groups", JSON, nullable=False),
+    Column("scenario_group", String(255), primary_key=True),
+    Column("data", String(), nullable=False),
     ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
 )

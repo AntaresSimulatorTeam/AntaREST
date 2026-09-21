@@ -16,7 +16,6 @@ from pathlib import Path
 
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsScenarioBuilderAlreadyExists
 from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -50,19 +49,17 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
             if scenario_index in mappings:
                 raise ValueError(f"Duplicate GEMS scenario builder mapping at line {line_number}: {line!r}")
             mappings[scenario_index] = int(column)
-        return GemsScenarioBuilder(scenario_groups=groups)
+        return GemsScenarioBuilder(scenario_groups=groups) if groups else None
 
     @override
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
         study = self.get_file_study()
         path = _get_gems_scenario_builder_file_path(study.config.study_path)
+        if not scenario_builder.scenario_groups:
+            path.unlink(missing_ok=True)
+            return
         path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            with path.open("x", encoding="utf-8") as stream:
-                for group, scenarios in scenario_builder.scenario_groups.items():
-                    for scenario, column in scenarios.items():
-                        stream.write(f"{group}, {scenario} = {column}\n")
-        except FileExistsError as exc:
-            raise GemsScenarioBuilderAlreadyExists(
-                f"A GEMS scenario builder already exists for study {study.config.study_id}"
-            ) from exc
+        with path.open("w", encoding="utf-8") as stream:
+            for group, scenarios in scenario_builder.scenario_groups.items():
+                for scenario, column in scenarios.items():
+                    stream.write(f"{group}, {scenario} = {column}\n")

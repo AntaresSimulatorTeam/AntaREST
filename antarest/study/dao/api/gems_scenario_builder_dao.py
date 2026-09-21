@@ -18,11 +18,12 @@ from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuil
 class ReadOnlyGemsScenarioBuilderDao(ABC):
     @abstractmethod
     def get_gems_scenario_builder(self) -> GemsScenarioBuilder | None:
+        """Return the scenario builder, or None if no scenario groups are configured."""
         raise NotImplementedError()
 
 
 class GemsScenarioBuilderDao(ReadOnlyGemsScenarioBuilderDao):
     @abstractmethod
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
-        """Add a GEMS scenario builder to a study without replacing an existing one."""
+        """Create or replace the complete builder, removing omitted groups. An empty builder clears it."""
         raise NotImplementedError()

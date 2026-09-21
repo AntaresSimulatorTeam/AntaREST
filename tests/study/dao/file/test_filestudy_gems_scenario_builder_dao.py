@@ -14,7 +14,6 @@ from pathlib import Path
 
 import pytest
 
-from antarest.core.exceptions import GemsScenarioBuilderAlreadyExists
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
 from antarest.study.dao.api.study_dao import ReadOnlyAdapter, StudyDao
@@ -31,17 +30,47 @@ def test_roundtrip(dao_10_2: StudyDao) -> None:
     dao_10_2.save_gems_scenario_builder(builder)
     assert dao_10_2.get_gems_scenario_builder() == builder
     assert ReadOnlyAdapter(dao_10_2).get_gems_scenario_builder() == builder
-    with pytest.raises(GemsScenarioBuilderAlreadyExists):
-        dao_10_2.save_gems_scenario_builder(GemsScenarioBuilder())
+    dao_10_2.save_gems_scenario_builder(builder)
+    assert dao_10_2.get_gems_scenario_builder() == builder
+
+
+def test_replace_builder(dao_10_2: StudyDao) -> None:
+    dao_10_2.save_gems_scenario_builder(GemsScenarioBuilder(scenario_groups={"load": {0: 1, 1: 5}, "hydro": {2: 7}}))
+    replacement = GemsScenarioBuilder(scenario_groups={"load": {0: 4}, "wind": {1: 2}})
+    dao_10_2.save_gems_scenario_builder(replacement)
+    assert dao_10_2.get_gems_scenario_builder() == replacement
+
+
+def test_clear_builder(dao_10_2: StudyDao) -> None:
+    builder = GemsScenarioBuilder(scenario_groups={"load": {0: 1}})
+    dao_10_2.save_gems_scenario_builder(builder)
+    dao_10_2.save_gems_scenario_builder(GemsScenarioBuilder())
+    assert dao_10_2.get_gems_scenario_builder() is None
+    dao_10_2.save_gems_scenario_builder(GemsScenarioBuilder())
+    assert dao_10_2.get_gems_scenario_builder() is None
+    dao_10_2.save_gems_scenario_builder(builder)
     assert dao_10_2.get_gems_scenario_builder() == builder
 
 
 def test_empty_builder(dao_10_2: StudyDao) -> None:
     builder = GemsScenarioBuilder()
     dao_10_2.save_gems_scenario_builder(builder)
-    assert dao_10_2.get_gems_scenario_builder() == builder
-    with pytest.raises(GemsScenarioBuilderAlreadyExists):
-        dao_10_2.save_gems_scenario_builder(builder)
+    assert dao_10_2.get_gems_scenario_builder() is None
+    dao_10_2.save_gems_scenario_builder(builder)
+    populated = GemsScenarioBuilder(scenario_groups={"load": {0: 1}})
+    dao_10_2.save_gems_scenario_builder(populated)
+    assert dao_10_2.get_gems_scenario_builder() == populated
+
+
+def test_save_after_empty_file(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    dao = filestudy_dao_v10_2
+    path = dao.get_file_study().config.study_path / "input/data-series/modeler-scenariobuilder.dat"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n  \n")
+    assert dao.get_gems_scenario_builder() is None
+    builder = GemsScenarioBuilder(scenario_groups={"load": {0: 1}})
+    dao.save_gems_scenario_builder(builder)
+    assert dao.get_gems_scenario_builder() == builder
 
 
 def test_real_file_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
