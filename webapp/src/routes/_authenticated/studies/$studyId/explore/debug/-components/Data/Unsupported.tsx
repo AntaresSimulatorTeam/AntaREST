@@ -42,10 +42,12 @@ function Unsupported({ studyId, filePath, filename, canEdit }: DataCompProps) {
     <>
       <Menubar>
         <Filename>{filename}</Filename>
-        {canEdit && <UploadFileButton studyId={studyId} path={filePath} />}
+        {canEdit && (
+          <UploadFileButton studyId={studyId} studyStorageMode="filesystem" path={filePath} />
+        )}
         <DownloadButton onClick={handleDownload} />
       </Menubar>
-      <EmptyView icon={BlockIcon} title={t("study.debug.file.unsupported")} />
+      <EmptyView icon={BlockIcon} title={t("study.fileExplorer.file.unsupported")} />
     </>
   );
 }

@@ -28,6 +28,7 @@ from antarest.study.business.model.config.advanced_parameters_model import (
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
 from antarest.study.business.model.config.general_model import BuildingMode, GeneralConfig, Mode, Month, WeekDay
 from antarest.study.business.model.config.optimization_config_model import (
+    ExportMPS,
     OptimizationPreferences,
     SimplexOptimizationRange,
     TransmissionCapacities,
@@ -143,7 +144,7 @@ def test_nominal_case(dao: StudyDao) -> None:
         primary_reserve=False,
         strategic_reserve=False,
         spinning_reserve=False,
-        export_mps="optim-1",
+        export_mps=ExportMPS.OPTIM1,
         unfeasible_problem_behavior=UnfeasibleProblemBehavior.ERROR_DRY,
         simplex_optimization_range=SimplexOptimizationRange.DAY,
         include_reserves=True,

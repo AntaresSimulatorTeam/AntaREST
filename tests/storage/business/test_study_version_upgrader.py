@@ -74,7 +74,7 @@ class TestCheckVersionCoherence:
     @pytest.mark.parametrize(
         "from_version, target_version, message",
         [
-            ("1000", "710", "Version '1000' isn't among supported versions"),
+            ("1020", "710", "Version '1020' isn't among supported versions"),
             ("820", "32", "Version '32' isn't among supported versions"),
         ],
     )

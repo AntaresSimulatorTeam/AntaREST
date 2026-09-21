@@ -9,14 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Mapping, TypeAlias
+from typing import Annotated, TypeAlias
 
 from pydantic import ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
-from antarest.study.dao.common import AreaAssetId
 
 Cost = Annotated[float, Field(ge=0)]
 Power = Annotated[float, Field(ge=0)]
@@ -59,5 +58,13 @@ class StorageReserveCertification(
 StorageId: TypeAlias = str
 StorageReserveCertificationMapping = dict[ReserveDefinitionId, dict[StorageId, StorageReserveCertification]]
 
+
+##########################
+# Hydro part
+##########################
+
+# An area owns exactly one long-term storage (hydro). Unlike thermal and short-term storage, its
+# certifications and symmetries therefore carry no asset dimension: they are keyed by reserve alone.
+HydroReserveCertificationMapping = dict[ReserveDefinitionId, StorageReserveCertification]
+
 ReserveCertification = ThermalReserveCertification | StorageReserveCertification
-ReserveCertificationMapping = Mapping[ReserveDefinitionId, Mapping[AreaAssetId, ReserveCertification]]

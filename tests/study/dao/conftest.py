@@ -31,6 +31,8 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.config.optimization_config_model import (
     initialize_optimization_preferences_against_version,
 )
+from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
@@ -42,7 +44,6 @@ from antarest.study.model import (
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
-    STUDY_VERSION_10_0,
     STUDY_VERSION_10_2,
     Study,
 )
@@ -78,33 +79,6 @@ def db_dao_930_shared() -> DatabaseStudyDao:
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao_10_0(
-    request,
-    db_session: Session,
-    matrix_service: ISimpleMatrixService,
-    command_context: "CommandContext",
-    tmp_path: Path,
-    study_factory: StudyFactory,
-) -> StudyDao:
-    """A DAO parameterized over both backends (v10.0)."""
-    # v10.0 has no study template on disk — create a v9.3 study and force its version to 10.0.
-    if request.param == "db":
-        dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
-        study = db_session.get(Study, dao.get_study_id())
-        study.version = str(STUDY_VERSION_10_0)
-        db_session.commit()
-        # Settings were saved at v9.3; replay v10 init so v10-specific defaults stick.
-        prefs = dao.get_optimization_preferences()
-        initialize_optimization_preferences_against_version(prefs, STUDY_VERSION_10_0)
-        dao.save_optimization_preferences(prefs)
-        return dao
-    else:
-        dao = build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
-        dao.get_file_study().config.version = STUDY_VERSION_10_0
-        return dao
-
-
-@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_10_2(
     request,
     db_session: Session,
@@ -113,7 +87,7 @@ def dao_10_2(
     tmp_path: Path,
     study_factory: StudyFactory,
 ) -> StudyDao:
-    """A DAO parameterized over both backends (v10.0)."""
+    """A DAO parameterized over both backends (v10.2)."""
     # v10.2 has no study template on disk — create a v9.3 study and force its version to 10.2.
     if request.param == "db":
         dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
@@ -369,3 +343,106 @@ def create_area(area_name: str, dao: StudyDao) -> None:
     command = CreateArea(area_name=area_name, command_context=command_context, study_version=dao.get_version())
     output = command.apply(dao)
     assert output.status
+
+
+def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
+    # Metadata
+    assert library is not None
+    assert library.id == "andromede-v1-models-weo-hybrid"
+    assert (
+        library.description
+        == "Andromede V1 model library - without expectation operators - allows hybrid connections (i.e. connections between Andromede models and Antares legacy area)"
+    )
+    assert library.version is None
+    # Port types
+    assert len(library.port_types) == 1
+    port_type = library.port_types[0]
+    assert port_type.id == "flow"
+    assert port_type.description == "A port which transfers power flow"
+    assert len(port_type.fields) == 1
+    assert port_type.fields[0].id == "flow"
+    assert port_type.thermal_capacity_connection is None
+    assert port_type.area_connection is not None
+    assert port_type.area_connection.spillage_bound is None
+    assert port_type.area_connection.injection_to_balance == "flow"
+    assert port_type.area_connection.unsupplied_energy_bound is None
+    # Models
+    assert len(library.models) == 2
+    first_model = library.models[0]
+    assert first_model.id == "dsr"
+    assert first_model.description is None
+    assert first_model.taxonomy_category is None
+    assert first_model.properties == []
+    assert len(first_model.parameters) == 2
+    assert first_model.parameters[0].id == "curtailment_price"
+    assert first_model.parameters[0].time_dependent is False
+    assert first_model.parameters[0].scenario_dependent is False
+    assert first_model.parameters[1].id == "max_load"
+    assert first_model.parameters[1].time_dependent is True
+    assert first_model.parameters[1].scenario_dependent is True
+    assert len(first_model.ports) == 1
+    assert first_model.ports[0].id == "balance_port"
+    assert first_model.ports[0].type == "flow"
+    second_model = library.models[1]
+    assert second_model.id == "electrolyser"
+    assert second_model.description is None
+    assert second_model.taxonomy_category is None
+    assert second_model.properties == []
+    assert len(second_model.parameters) == 2
+    assert second_model.parameters[0].id == "efficiency"
+    assert second_model.parameters[0].time_dependent is False
+    assert second_model.parameters[0].scenario_dependent is False
+    assert second_model.parameters[1].id == "p_max"
+    assert second_model.parameters[1].time_dependent is True
+    assert second_model.parameters[1].scenario_dependent is True
+    assert len(second_model.ports) == 2
+    assert second_model.ports[0].id == "hydrogen_port"
+    assert second_model.ports[0].type == "flow"
+    assert second_model.ports[1].id == "power_port"
+    assert second_model.ports[1].type == "flow"
+
+
+def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
+    assert taxonomy is not None
+    assert taxonomy.id == "antares_legacy_taxonomy"
+    assert taxonomy.description == "GEMS taxonomy configuration for Antares Legacy Models."
+    assert len(taxonomy.categories) == 15
+
+    categories_by_id = {c.id: c for c in taxonomy.categories}
+    assert sorted(list(categories_by_id)) == [
+        "balance",
+        "capacity_investment_decisions",
+        "consumption",
+        "coupling_models",
+        "dispatchable_generation",
+        "fatal_consumption",
+        "fatal_generation",
+        "generation",
+        "link",
+        "long_term_storage",
+        "long_term_storage_with_watervalues",
+        "miscellaneous_fatal_generation",
+        "renewable_fatal_generation",
+        "short_term_storage",
+        "storage",
+    ]
+
+    balance = categories_by_id["balance"]
+    assert balance.id == "balance"
+    assert balance.parent_category is None
+    assert balance.variables == [{"id": "unsupplied_energy"}, {"id": "spilled_energy"}]
+    assert balance.ports == [{"id": "balance_port"}]
+    assert balance.binding_constraints == [{"id": "balance"}]
+    assert balance.extra_outputs is not None
+    assert len(balance.extra_outputs) == 5
+
+    generation = categories_by_id["generation"]
+    assert generation.id == "generation"
+    assert generation.parent_category is None
+    assert generation.ports == [{"id": "balance_port"}]
+
+    dispatchable = categories_by_id["dispatchable_generation"]
+    assert dispatchable.id == "dispatchable_generation"
+    assert dispatchable.parent_category == "generation"
+    assert dispatchable.variables == [{"id": "generation_power"}]
+    assert dispatchable.properties == [{"id": "technology"}]

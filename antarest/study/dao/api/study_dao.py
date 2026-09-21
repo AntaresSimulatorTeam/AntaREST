@@ -29,6 +29,8 @@ from antarest.study.business.model.config.optimization_config_model import Optim
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
+from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
@@ -36,6 +38,7 @@ from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.reserve_certification_model import (
+    HydroReserveCertificationMapping,
     StorageReserveCertificationMapping,
     ThermalReserveCertificationMapping,
 )
@@ -71,6 +74,8 @@ from antarest.study.dao.api.compatibility_parameters_dao import (
     ReadOnlyCompatibilityParametersDao,
 )
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
+from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
+from antarest.study.dao.api.gems_taxonomy_dao import GemsTaxonomyDao, ReadOnlyGemsTaxonomyDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.layer_dao import LayerDao, ReadOnlyLayerDao
@@ -108,6 +113,7 @@ from antarest.study.dao.common import (
     AreaId,
     AreaSeriesMapping,
     BindingConstraintSeriesMapping,
+    HydroReserveSymmetriesMapping,
     LinkSeriesMapping,
     RenewableSeriesMapping,
     ReserveDefinitionsMapping,
@@ -158,6 +164,8 @@ class ReadOnlyStudyDao(
     ReadOnlyReserveDefinitionDao,
     ReadOnlyReserveCertificationDao,
     ReadOnlyReserveSymmetriesDao,
+    ReadOnlyGemsLibraryDao,
+    ReadOnlyGemsTaxonomyDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -211,6 +219,8 @@ class StudyDao(
     ReserveDefinitionDao,
     ReserveCertificationDao,
     ReserveSymmetriesDao,
+    GemsLibraryDao,
+    GemsTaxonomyDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -942,3 +952,27 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
         return self._adaptee.get_all_st_storage_reserve_certifications()
+
+    @override
+    def get_hydro_reserve_certifications(self, area_id: AreaId) -> HydroReserveCertificationMapping:
+        return self._adaptee.get_hydro_reserve_certifications(area_id)
+
+    @override
+    def get_all_hydro_reserve_certifications(self) -> dict[AreaId, HydroReserveCertificationMapping]:
+        return self._adaptee.get_all_hydro_reserve_certifications()
+
+    @override
+    def get_hydro_reserve_symmetries(self, area_id: AreaId) -> ReserveSymmetries:
+        return self._adaptee.get_hydro_reserve_symmetries(area_id)
+
+    @override
+    def get_all_hydro_reserve_symmetries(self) -> HydroReserveSymmetriesMapping:
+        return self._adaptee.get_all_hydro_reserve_symmetries()
+
+    @override
+    def get_library(self) -> GemsLibrary | None:
+        return self._adaptee.get_library()
+
+    @override
+    def get_taxonomy(self) -> GemsTaxonomy | None:
+        return self._adaptee.get_taxonomy()

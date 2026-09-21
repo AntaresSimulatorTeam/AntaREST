@@ -12,7 +12,11 @@
 import pytest
 
 from antarest.study.business.model.reserve_certification_model import ThermalReserveCertification
-from antarest.study.business.model.reserve_definition_model import ReserveDefinitionCreation, ReserveType
+from antarest.study.business.model.reserve_definition_model import (
+    ReserveDefinitionCreation,
+    ReserveDefinitionId,
+    ReserveType,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
@@ -174,3 +178,23 @@ def test_error_cases(dao_10_2: StudyDao, command_context: CommandContext) -> Non
     output = cmd.apply(dao_10_2)
     assert not output.status
     assert "Thermal cluster 'fake_thermal' not found in area 'fr'" in output.message
+
+    # 1- Removes certifications for reserve "r2", "r3" and "r4" -> Should work
+    cmd = ReplaceThermalReserveCertifications(
+        area_id="fr",
+        certifications={ReserveDefinitionId("r1"): {"th1": ThermalReserveCertification()}},
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_2,
+    )
+    output = cmd.apply(dao_10_2)
+    assert output.status
+    # 2- Try to save a symmetry linking reserve "r1" and "r2" -> Should raise as "r2" is not certified.
+    cmd = ReplaceThermalReserveSymmetries(
+        area_id="fr",
+        symmetries={"th1": [["r1", "r2"]]},
+        command_context=command_context,
+        study_version=STUDY_VERSION_10_2,
+    )
+    output = cmd.apply(dao_10_2)
+    assert not output.status
+    assert "Certifications for reserve(s) '{'r2'}' on thermal 'th1' not found in area 'fr'" in output.message

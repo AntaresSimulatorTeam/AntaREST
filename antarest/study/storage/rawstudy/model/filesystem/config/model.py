@@ -87,7 +87,7 @@ class AreaConfig(AntaresBaseModel, extra="forbid"):
     st_storages: list[STStorage] = []
     # Since v9.2, dictionary storage ID -> constraints
     st_storages_additional_constraints: dict[str, list[STStorageAdditionalConstraint]] = {}
-    # Since v10.0
+    # Since v10.2
     reserves: list[str] = []
 
 
@@ -243,8 +243,8 @@ class FileStudyTreeConfig(DTO):
         Note that groups are stored in lower case in the binding constraints file.
         """
 
-        lower_groups = {bc.group: bc.group for bc in self.bindings}
-        return [grp for _, grp in sorted(lower_groups.items())]  # type: ignore
+        lower_groups = {bc.group: bc.group for bc in self.bindings if bc.group is not None}
+        return [grp for _, grp in sorted(lower_groups.items())]
 
     def get_sts_constraint_ids(self, area: str, storage: str) -> list[str]:
         if self.version >= STUDY_VERSION_9_2:

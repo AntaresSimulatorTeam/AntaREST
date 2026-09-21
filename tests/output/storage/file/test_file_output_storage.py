@@ -547,9 +547,7 @@ def test_import_output_directory(output_storage: IOutputStorage, tmp_path: Path)
     assert output_storage.get_logs("my-study", f"{expected_date}eco-other", LogType.STDERR) == "some error"
 
 
-def test_import_output_zip_should_import_it_as_archived(
-    output_storage: IOutputStorage, tmp_path: Path, sta_mini_zip_path: Path
-) -> None:
+def test_import_output_zip_should_import_it_as_archived(output_storage: IOutputStorage, tmp_path: Path) -> None:
     # Checks the "optimized path" for zipped outputs, see TODOs
 
     # Use the `20201014-1430adq-2` output as it's already zipped
@@ -563,6 +561,10 @@ def test_import_output_zip_should_import_it_as_archived(
         (outputs_dir / "my-study").mkdir()
         zip_path = outputs_dir / "STA-mini" / "20201014-1430adq-2.zip"
         in_study = False
+
+    # Copies the `zip_path` as `import_output` cleans it.
+    second_zip_path = tmp_path / "output_copied.zip"
+    shutil.copy(zip_path, second_zip_path)
 
     # Import zip file
     output_id = output_storage.import_output("my-study", zip_path)
@@ -581,7 +583,7 @@ def test_import_output_zip_should_import_it_as_archived(
     err_logs = tmp_path / "err.log"
     err_logs.write_text("some error")
     output_id = output_storage.import_output(
-        "my-study", zip_path, output_name_suffix="other", logs=SimulationLogs(out_logs, err_logs)
+        "my-study", second_zip_path, output_name_suffix="other", logs=SimulationLogs(out_logs, err_logs)
     )
     assert output_id == f"{expected_date}adq-other"
     assert output_storage.list_outputs("my-study") == [
