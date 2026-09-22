@@ -15,9 +15,10 @@
 import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/GroupedDataTable/utils";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import type {
-  CertificationProductionType,
+  ProductionType,
   Reserve,
   ReserveCertification,
+  ReserveCertificationField,
 } from "@/services/api/studies/areas/reserves/types";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
@@ -31,15 +32,17 @@ import {
 } from "material-react-table";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { PRODUCTION_TYPES } from "../-productionTypes";
 
-export interface ClusterRow {
-  kind: "cluster";
+export interface AssetRow {
+  kind: "asset";
   id: string;
   name: string;
-  enabled: boolean;
-  productionType: CertificationProductionType;
+  /** Omitted for assets without an activation state (hydro). */
+  enabled?: boolean;
+  productionType: ProductionType;
   reserveId: Reserve["id"];
-  clusterId: string;
+  assetId: string;
   certification: ReserveCertification;
 }
 
@@ -48,17 +51,20 @@ export interface ReserveRow {
   id: string;
   name: string;
   reserve: Reserve;
-  subRows: ClusterRow[];
+  subRows: AssetRow[];
 }
 
-export type CertificationsTableRow = ReserveRow | ClusterRow;
+export type CertificationsTableRow = ReserveRow | AssetRow;
 
 interface Props {
   rows: ReserveRow[];
+  productionType: ProductionType;
+  /** Rendered at the start of the table toolbar (e.g. the production type select). */
+  toolbarActions?: React.ReactNode;
   readOnly?: boolean;
   isLoading?: boolean;
   onReserveClick: (row: ReserveRow) => void;
-  onClusterClick: (row: ClusterRow) => void;
+  onAssetClick: (row: AssetRow) => void;
 }
 
 const columnHelper = createMRTColumnHelper<CertificationsTableRow>();
@@ -72,12 +78,36 @@ const clickableNameStyles = {
   },
 };
 
-// Displays reserves as parent rows and their certified clusters as expandable
-// sub-rows. Clicking a reserve name opens the cluster selection drawer, clicking
-// a cluster name opens the certification parameters drawer.
-function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClusterClick }: Props) {
+// Certification parameters differ by production type: read them by name.
+function getCertificationValue(
+  certification: ReserveCertification,
+  field: ReserveCertificationField,
+) {
+  const values: Partial<Record<ReserveCertificationField, number>> = certification;
+  return values[field] ?? null;
+}
+
+// Displays reserves as parent rows and their certified assets as expandable
+// sub-rows, with one column per certification parameter of the production type.
+// Clicking a reserve name opens the asset selection drawer, clicking an asset
+// name opens the certification parameters drawer.
+function CertificationsTable({
+  rows,
+  productionType,
+  toolbarActions,
+  readOnly,
+  isLoading,
+  onReserveClick,
+  onAssetClick,
+}: Props) {
   const { t } = useTranslation();
   const { isDarkMode } = useThemeColorScheme();
+  const {
+    assetsHaveActivationState,
+    certificationFields,
+    isCertificationIncomplete,
+    incompleteLabelKey,
+  } = PRODUCTION_TYPES[productionType];
 
   const columns = useMemo(
     () => [
@@ -86,9 +116,6 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
         size: 120,
         Cell: ({ renderedCellValue, row, staticRowIndex, table }) => (
           <Stack direction="row" alignItems="center" gap={0.5}>
-            {/* The default expand column is hidden (see `columnVisibility`):
-                the button is rendered here so its depth-based margin indents
-                sub-rows and content stays flush with the table's left edge. */}
             <MRT_ExpandButton row={row} staticRowIndex={staticRowIndex} table={table} />
             {readOnly ? (
               renderedCellValue
@@ -98,7 +125,7 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
                 onClick={() =>
                   row.original.kind === "reserve"
                     ? onReserveClick(row.original)
-                    : onClusterClick(row.original)
+                    : onAssetClick(row.original)
                 }
               >
                 {renderedCellValue}
@@ -111,11 +138,19 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
                 </Typography>
               </Tooltip>
             )}
+            {/* A saved certification with no effect yet: prompt the user to
+                fill in the parameters of a newly selected asset. */}
+            {row.original.kind === "asset" &&
+              isCertificationIncomplete(row.original.certification) && (
+                <Tooltip title={t(incompleteLabelKey)}>
+                  <WarningAmberIcon color="warning" sx={{ fontSize: 16 }} />
+                </Tooltip>
+              )}
           </Stack>
         ),
         ...getTableOptionsForAlign("left"),
       }),
-      columnHelper.accessor((row) => (row.kind === "cluster" ? row.enabled : null), {
+      columnHelper.accessor((row) => (row.kind === "asset" ? (row.enabled ?? null) : null), {
         id: "enabled",
         header: t("study.modeling.reserves.certifications.field.enabled"),
         size: 80,
@@ -135,57 +170,26 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
           );
         },
       }),
-      columnHelper.accessor(
-        (row) => (row.kind === "cluster" ? row.certification.participationCost : null),
-        {
-          id: "participationCost",
-          header: t("study.modeling.reserves.certifications.field.participationCost"),
-          size: 80,
-        },
-      ),
-      columnHelper.accessor(
-        (row) => (row.kind === "cluster" ? row.certification.participationCostOff : null),
-        {
-          id: "participationCostOff",
-          header: t("study.modeling.reserves.certifications.field.participationCostOff"),
-          size: 80,
-        },
-      ),
-      columnHelper.accessor((row) => (row.kind === "cluster" ? row.certification.maxPower : null), {
-        id: "maxPower",
-        header: t("study.modeling.reserves.certifications.field.maxPower"),
-        size: 80,
-        Cell: ({ cell }) => {
-          const value = cell.getValue();
-
-          if (value === null) {
-            return null;
-          }
-
-          // A max power of 0 means the certification has no effect: prompt the
-          // user to fill in the parameters of a newly selected cluster.
-          return (
-            <Stack gap={0.5} justifyContent="flex-end">
-              {value === 0 && (
-                <Tooltip title={t("study.modeling.reserves.certifications.incomplete")}>
-                  <WarningAmberIcon color="warning" sx={{ fontSize: 16 }} />
-                </Tooltip>
-              )}
-              {value}
-            </Stack>
-          );
-        },
-      }),
-      columnHelper.accessor(
-        (row) => (row.kind === "cluster" ? row.certification.maxPowerOff : null),
-        {
-          id: "maxPowerOff",
-          header: t("study.modeling.reserves.certifications.field.maxPowerOff"),
-          size: 80,
-        },
+      ...certificationFields.map((field) =>
+        columnHelper.accessor(
+          (row) => (row.kind === "asset" ? getCertificationValue(row.certification, field) : null),
+          {
+            id: field,
+            header: t(`study.modeling.reserves.certifications.field.${field}`),
+            size: 80,
+          },
+        ),
       ),
     ],
-    [t, readOnly, onReserveClick, onClusterClick],
+    [
+      t,
+      readOnly,
+      certificationFields,
+      isCertificationIncomplete,
+      incompleteLabelKey,
+      onReserveClick,
+      onAssetClick,
+    ],
   );
 
   const table = useMaterialReactTable({
@@ -198,9 +202,11 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
     initialState: {
       density: "compact",
       expanded: true,
-      columnVisibility: { "mrt-row-expand": false },
     },
-    state: { isLoading },
+    state: {
+      isLoading,
+      columnVisibility: { "mrt-row-expand": false, enabled: assetsHaveActivationState },
+    },
     enableStickyHeader: true,
     enableColumnDragging: false,
     enableColumnActions: false,
@@ -209,6 +215,7 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
     positionToolbarAlertBanner: "none",
     positionToolbarDropZone: "none",
     // Toolbars
+    renderTopToolbarCustomActions: () => toolbarActions,
     renderToolbarInternalActions: ({ table }) => (
       <>
         <MRT_ToggleGlobalFilterButton table={table} />
@@ -223,17 +230,13 @@ function CertificationsTable({ rows, readOnly, isLoading, onReserveClick, onClus
         "> .MuiBox-root": {
           alignItems: "center",
           p: 0,
-          pb: 1,
+          py: 0.5,
           "> .MuiBox-root": {
             flexWrap: "nowrap", // Prevent the search field to be wrapped
           },
         },
       },
     },
-    // Styles
-    // `height: 1` bounds the Paper to its scrollable parent panel so
-    // `muiTableContainerProps` below can scroll the rows internally,
-    // keeping the toolbar and sticky header always in view.
     muiTablePaperProps: { sx: { display: "flex", flexDirection: "column", height: 1 } },
     muiTableContainerProps: { sx: { flex: 1, overflow: "auto" } },
     ...getTableOptionsForAlign("right"),
