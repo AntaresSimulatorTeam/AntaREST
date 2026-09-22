@@ -14,7 +14,7 @@
 
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
-import type { TRow } from "@/components/GroupedDataTable/types";
+import type { RowData } from "@/components/GroupedDataTable/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
@@ -51,9 +51,11 @@ function Thermals() {
   const { areaId } = Route.useParams();
   const { t } = useTranslation();
 
-  const { data: clustersWithCapacity = [], isLoading } = usePromiseWithSnackbarError<
-    ThermalClusterWithCapacity[]
-  >(
+  const {
+    data: clustersWithCapacity = [],
+    isLoading,
+    status,
+  } = usePromiseWithSnackbarError<ThermalClusterWithCapacity[]>(
     async () => {
       const clusters = await getThermalClusters(study.id, areaId);
       return clusters?.map(addClusterCapacity);
@@ -65,7 +67,7 @@ function Thermals() {
     },
   );
 
-  const [totals, setTotals] = useState(getClustersWithCapacityTotals(clustersWithCapacity));
+  const [totals, setTotals] = useState(() => getClustersWithCapacityTotals(clustersWithCapacity));
 
   const columns = useMemo(() => {
     const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } = totals;
@@ -122,14 +124,13 @@ function Thermals() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: TRow) => {
+  const handleCreate = async (values: RowData) => {
     const cluster = await createThermalCluster(study.id, areaId, values);
     return addClusterCapacity(cluster);
   };
 
   const handleDuplicate = async (row: ThermalClusterWithCapacity, newName: string) => {
     const cluster = await duplicateThermalCluster(study.id, areaId, row.id, newName);
-
     return { ...row, ...cluster };
   };
 
@@ -144,6 +145,7 @@ function Thermals() {
 
   return (
     <GroupedDataTable
+      key={status}
       isLoading={isLoading}
       data={clustersWithCapacity}
       columns={columns}

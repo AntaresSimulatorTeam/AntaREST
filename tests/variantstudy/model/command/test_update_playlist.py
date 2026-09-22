@@ -12,14 +12,17 @@
 import pytest
 
 from antarest.study.business.model.config.playlist_model import PlaylistUpdate
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestUpdatePlaylist:
     def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
+        dao = build_dao_from_file_study(study, command_context)
 
         study.tree.save(5, ["settings", "generaldata", "general", "nbyears"])
 
@@ -33,7 +36,7 @@ class TestUpdatePlaylist:
         command = UpdatePlaylist(
             playlist=properties, command_context=command_context, study_version=study.config.version
         )
-        output = command.apply(study_data=study)
+        output = command.apply(study_dao=dao)
         assert output.status
 
         playlist_config = study.tree.get(["settings", "generaldata", "playlist"])
@@ -44,20 +47,17 @@ class TestUpdatePlaylist:
             "playlist_year_weight": ["0,3.2", "2,4"],
         }
 
-    def test_error_cases(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
-        study = empty_study_880
-
+    def test_error_cases(self, dao: StudyDao, command_context: CommandContext) -> None:
+        version = dao.get_version()
         # Try to give a negative value for the year
         args = {"years": {-1: {"status": False, "weight": 3.2}}}
         with pytest.raises(ValueError, match="Input should be greater than 0"):
-            UpdatePlaylist(playlist=args, command_context=command_context, study_version=study.config.version)
+            UpdatePlaylist(playlist=args, command_context=command_context, study_version=version)
 
         # Try to give a value higher than `nbyears`
         args = {"years": {3: {"status": False, "weight": 3.2}}}
         properties = PlaylistUpdate.model_validate(args)
 
-        command = UpdatePlaylist(
-            playlist=properties, command_context=command_context, study_version=study.config.version
-        )
-        output = command.apply(study_data=study)
+        command = UpdatePlaylist(playlist=properties, command_context=command_context, study_version=version)
+        output = command.apply(study_dao=dao)
         assert not output.status

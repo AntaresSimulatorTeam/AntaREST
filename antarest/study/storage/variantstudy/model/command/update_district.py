@@ -9,13 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-from typing import Any, Dict, Final, Optional
+from typing import Any, Final
 
 from pydantic import ConfigDict, ValidationInfo, model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.district_model import DistrictUpdate, update_district
+from antarest.study.business.model.district_model import District, DistrictUpdate, update_district
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -51,7 +50,7 @@ class UpdateDistrict(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _migrate_v1_to_v2(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _migrate_v1_to_v2(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         if info.context:
             version = info.context.version
             if version == 1:
@@ -68,7 +67,7 @@ class UpdateDistrict(ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[District]:
         if not study_data.district_exists(self.id):
             return command_failed(message=f"District '{self.id}' does not exist and should be created")
 
@@ -82,7 +81,7 @@ class UpdateDistrict(ICommand):
 
         study_data.save_district(updated_district)
 
-        return command_succeeded(message=self.id)
+        return command_succeeded(message=f"District {self.id} updated successfully.", result=updated_district)
 
     @override
     def to_dto(self) -> CommandDTO:

@@ -10,22 +10,42 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Callable
 
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import LinkNotFound
+from antarest.core.exceptions import ChildNotFoundError, LinkNotFound
 from antarest.study.business.model.link_model import (
     Link,
 )
 from antarest.study.dao.api.link_dao import LinkDao
+from antarest.study.dao.common import AreaId, LinkSeriesMapping
+from antarest.study.dao.file.common import check_area_exists
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link, serialize_link
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+
+
+def _get_series_before_v82_matrix_path(area_from: AreaId, area_to: AreaId) -> list[str]:
+    return ["input", "links", area_from, area_to]
+
+
+def _get_series_after_v82_matrix_path(area_from: AreaId, area_to: AreaId) -> list[str]:
+    return ["input", "links", area_from, f"{area_to}_parameters"]
+
+
+def _get_direct_capacity_matrix_path(area_from: AreaId, area_to: AreaId) -> list[str]:
+    return ["input", "links", area_from, "capacities", f"{area_to}_direct"]
+
+
+def _get_indirect_capacity_matrix_path(area_from: AreaId, area_to: AreaId) -> list[str]:
+    return ["input", "links", area_from, "capacities", f"{area_to}_indirect"]
 
 
 class FileStudyLinkDao(LinkDao, ABC):
@@ -40,7 +60,7 @@ class FileStudyLinkDao(LinkDao, ABC):
     @override
     def get_links(self) -> Sequence[Link]:
         file_study = self.get_file_study()
-        result: List[Link] = []
+        result: list[Link] = []
 
         for area_from, area in file_study.config.areas.items():
             area_links = file_study.tree.get(["input", "links", area_from, "properties"])
@@ -55,30 +75,47 @@ class FileStudyLinkDao(LinkDao, ABC):
             area1_id, area2_id = sorted((area1_id, area2_id))
             file_study.tree.get(["input", "links", area1_id, "properties", area2_id])
             return True
-        except KeyError:
+        except (KeyError, ChildNotFoundError):
             return False
 
     @override
     def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         area_from, area_to = sorted((area_from, area_to))
-        url = ["input", "links", area_from, "capacities", f"{area_to}_indirect"]
+        url = _get_indirect_capacity_matrix_path(area_from, area_to)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
         area_from, area_to = sorted((area_from, area_to))
-        url = ["input", "links", area_from, "capacities", f"{area_to}_direct"]
+        url = _get_direct_capacity_matrix_path(area_from, area_to)
         return self.get_impl().get_matrix(url)
 
     @override
     def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
-        study_data = self.get_file_study()
+        version = self.get_impl().get_version()
         area_from, area_to = sorted((area_from, area_to))
-        if study_data.config.version < STUDY_VERSION_8_2:
-            url = ["input", "links", area_from, area_to]
+        if version < STUDY_VERSION_8_2:
+            url = _get_series_before_v82_matrix_path(area_from, area_to)
         else:
-            url = ["input", "links", area_from, f"{area_to}_parameters"]
+            url = _get_series_after_v82_matrix_path(area_from, area_to)
         return self.get_impl().get_matrix(url)
+
+    @override
+    def get_all_links_series(self) -> LinkSeriesMapping:
+        version = self.get_impl().get_version()
+        if version < STUDY_VERSION_8_2:
+            url_getter = _get_series_before_v82_matrix_path
+        else:
+            url_getter = _get_series_after_v82_matrix_path
+        return self._get_link_matrices(url_getter)
+
+    @override
+    def get_all_links_indirect_capacities(self) -> LinkSeriesMapping:
+        return self._get_link_matrices(_get_indirect_capacity_matrix_path)
+
+    @override
+    def get_all_links_direct_capacities(self) -> LinkSeriesMapping:
+        return self._get_link_matrices(_get_direct_capacity_matrix_path)
 
     @override
     def get_link(self, area1_id: str, area2_id: str) -> Link:
@@ -87,47 +124,57 @@ class FileStudyLinkDao(LinkDao, ABC):
         try:
             area_links = file_study.tree.get(["input", "links", area_from, "properties", area_to])
             return parse_link(area_links, area_from, area_to)
-        except KeyError:
+        except (KeyError, ChildNotFoundError):
             raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study")
 
     @override
-    def save_link(self, link: Link) -> None:
+    def save_links(self, links: Sequence[Link]) -> None:
         study_data = self.get_file_study()
-        self._update_link_config(link.area1, link.area2, link)
-
-        study_data.tree.save(serialize_link(link), ["input", "links", link.area1, "properties", link.area2])
+        for link in links:
+            self._update_link_config(link.area1, link.area2, link)
+            study_data.tree.save(serialize_link(link), ["input", "links", link.area1, "properties", link.area2])
 
     def _update_link_config(self, area1_id: str, area2_id: str, link: Link) -> None:
         study_data = self.get_file_study().config
-        if area1_id not in study_data.areas:
-            raise ValueError(f"The area '{area1_id}' does not exist")
-        if area2_id not in study_data.areas:
-            raise ValueError(f"The area '{area2_id}' does not exist")
+        for area in (area1_id, area2_id):
+            check_area_exists(study_data, area)
 
         area_from, area_to = sorted([area1_id, area2_id])
         study_data.areas[area_from].links[area_to] = link.to_config()
 
-    @override
-    def save_link_series(self, area_from: str, area_to: str, series_id: str) -> None:
+    def _save_link_matrices(self, series: LinkSeriesMapping, url_getter: Callable[[AreaId, AreaId], list[str]]) -> None:
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         study_data = self.get_file_study()
-        version = study_data.config.version
-        area_from, area_to = sorted((area_from, area_to))
+        for (area_from, area_to), series_id in series.items():
+            area_from, area_to = sorted((area_from, area_to))
+            url = url_getter(area_from, area_to)
+            try:
+                node = study_data.tree.get_node(url)
+            except ChildNotFoundError:
+                for area in (area_from, area_to):
+                    check_area_exists(study_data.config, area)
+                raise
+            assert isinstance(node, InputSeriesMatrix)
+            matrices_mapping.setdefault(series_id, []).append(node)
+        self.get_impl().save_matrices(matrices_mapping)
+
+    @override
+    def save_link_series(self, series: LinkSeriesMapping) -> None:
+        version = self.get_impl().get_version()
+        url_getter: Callable[[AreaId, AreaId], list[str]]
         if version < STUDY_VERSION_8_2:
-            study_data.tree.save(series_id, ["input", "links", area_from, area_to])
+            url_getter = _get_series_before_v82_matrix_path
         else:
-            study_data.tree.save(series_id, ["input", "links", area_from, f"{area_to}_parameters"])
+            url_getter = _get_series_after_v82_matrix_path
+        self._save_link_matrices(series, url_getter)
 
     @override
-    def save_link_direct_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        area_from, area_to = sorted((area_from, area_to))
-        study_data.tree.save(series_id, ["input", "links", area_from, "capacities", f"{area_to}_direct"])
+    def save_link_direct_capacities(self, series: LinkSeriesMapping) -> None:
+        self._save_link_matrices(series, _get_direct_capacity_matrix_path)
 
     @override
-    def save_link_indirect_capacities(self, area_from: str, area_to: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        area_from, area_to = sorted((area_from, area_to))
-        study_data.tree.save(series_id, ["input", "links", area_from, "capacities", f"{area_to}_indirect"])
+    def save_link_indirect_capacities(self, series: LinkSeriesMapping) -> None:
+        self._save_link_matrices(series, _get_indirect_capacity_matrix_path)
 
     @override
     def delete_link(self, link: Link) -> None:
@@ -136,9 +183,9 @@ class FileStudyLinkDao(LinkDao, ABC):
         if study_data.config.version < STUDY_VERSION_8_2:
             study_data.tree.delete(["input", "links", link.area1, link.area2])
         else:
-            study_data.tree.delete(["input", "links", link.area1, f"{link.area2}_parameters"])
-            study_data.tree.delete(["input", "links", link.area1, "capacities", f"{link.area2}_direct"])
-            study_data.tree.delete(["input", "links", link.area1, "capacities", f"{link.area2}_indirect"])
+            study_data.tree.delete(_get_series_after_v82_matrix_path(link.area1, link.area2))
+            study_data.tree.delete(_get_direct_capacity_matrix_path(link.area1, link.area2))
+            study_data.tree.delete(_get_indirect_capacity_matrix_path(link.area1, link.area2))
 
         study_data.tree.delete(["input", "links", link.area1, "properties", link.area2])
 
@@ -162,3 +209,25 @@ class FileStudyLinkDao(LinkDao, ABC):
                     del ruleset[key]
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
+    def _get_link_matrices(self, url_getter: Callable[[AreaId, AreaId], list[str]]) -> LinkSeriesMapping:
+        study_data = self.get_file_study()
+        matrix_nodes = {}
+
+        areas = study_data.config.areas
+        for area_from, value in areas.items():
+            for area_to in value.links:
+                url = url_getter(area_from, area_to)
+                node = study_data.tree.get_node(url)
+                assert isinstance(node, InputSeriesMatrix)
+                matrix_nodes[node] = (area_from, area_to)
+
+        result: LinkSeriesMapping = {}
+
+        matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
+
+        for node, matrix_id in matrices_mapping.items():
+            area_from, area_to = matrix_nodes[node]
+            result[(area_from, area_to)] = matrix_id
+
+        return result

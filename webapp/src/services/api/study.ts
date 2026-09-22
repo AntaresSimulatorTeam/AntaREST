@@ -12,22 +12,23 @@
  * This file is part of the Antares project.
  */
 
-import type { AxiosRequestConfig } from "axios";
-import * as RA from "ramda-adjunct";
 import type { FolderDTO, WorkspaceDTO } from "@/queries/explorer/schemas";
 import { compactSemanticVersion } from "@/utils/versionUtils";
+import type { AxiosRequestConfig } from "axios";
+import * as RA from "ramda-adjunct";
 import type { StudyMapDistrict } from "../../redux/ducks/studyMaps";
-import type {
-  AreasConfig,
-  FileStudyTreeConfigDTO,
-  MatrixAggregationResult,
-  StudyLayer,
-  StudyMetadata,
-  StudyMetadataDTO,
-  StudyMetadataPatchDTO,
-  StudyOutput,
-  StudyOutputDownloadDTO,
-  StudyPublicMode,
+import {
+  StorageMode,
+  type AreasConfig,
+  type DistrictApplyFilter,
+  type MatrixAggregationResult,
+  type StudyLayer,
+  type StudyMetadata,
+  type StudyMetadataDTO,
+  type StudyMetadataPatchDTO,
+  type StudyOutputDownloadDTO,
+  type StudyPublicMode,
+  type StudySynthesis,
 } from "../../types/types";
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
@@ -91,28 +92,7 @@ export const getStudyMetadata = async (sid: string): Promise<StudyMetadata> => {
   return convertStudyDtoToMetadata(sid, res.data);
 };
 
-export const getStudyOutputs = async (sid: string): Promise<StudyOutput[]> => {
-  const res = await client.get(`/v1/studies/${sid}/outputs`);
-  return res.data;
-};
-
-/**
- * Utility function to get a study output by its ID.
- * Since the API endpoint for getting a single output is not available, we fetch all outputs and filter by ID.
- *
- * @param studyId - The ID of the study.
- * @param outputId - The ID of the output to retrieve.
- * @returns The study output if found, or null if not found.
- */
-export const getStudyOutputById = async (
-  studyId: string,
-  outputId: string,
-): Promise<StudyOutput | undefined> => {
-  const outputs = await getStudyOutputs(studyId);
-  return outputs.find((output) => output.name === outputId);
-};
-
-export const getStudySynthesis = async (sid: string): Promise<FileStudyTreeConfigDTO> => {
+export const getStudySynthesis = async (sid: string): Promise<StudySynthesis> => {
   const res = await client.get(`/v1/studies/${sid}/synthesis`);
   return res.data;
 };
@@ -142,10 +122,11 @@ export const createStudy = async (
   name: string,
   version: string,
   groups?: string[],
+  storageMode: StorageMode = StorageMode.FILESYSTEM,
 ): Promise<string> => {
   const groupIds = groups && groups.length > 0 ? `&groups=${groups.join(",")}` : "";
   const res = await client.post(
-    `/v1/studies?name=${encodeURIComponent(name)}&version=${compactSemanticVersion(version)}${groupIds}`,
+    `/v1/studies?name=${encodeURIComponent(name)}&version=${compactSemanticVersion(version)}${groupIds}&storage_mode=${storageMode}`,
   );
   return res.data;
 };
@@ -187,13 +168,25 @@ export const unarchiveStudy = async (sid: string): Promise<void> => {
 };
 
 export const upgradeStudy = async (studyId: string, targetVersion: string): Promise<void> => {
-  await client.put(`/v1/studies/${studyId}/upgrade`, {
-    target_version: compactSemanticVersion(targetVersion),
+  await client.put(`/v1/studies/${studyId}/upgrade`, null, {
+    params: {
+      target_version: compactSemanticVersion(targetVersion),
+    },
   });
 };
 
-export const deleteStudy = async (sid: string, deleteAllChildren?: boolean): Promise<void> => {
-  const res = await client.delete(`/v1/studies/${sid}?children=${deleteAllChildren || false}`);
+export const deleteStudy = async (studyId: string, deleteChildren = false): Promise<void> => {
+  const res = await client.delete(`/v1/studies/${studyId}?children=${deleteChildren}`);
+  return res.data;
+};
+
+export const deleteStudies = async (params: {
+  studyIds: string[];
+  withVariants?: boolean;
+}): Promise<void> => {
+  const res = await client.delete("/v1/studies", {
+    data: { withVariants: true, ...params },
+  });
   return res.data;
 };
 
@@ -216,6 +209,8 @@ export const exportOutput = async (sid: string, output: string): Promise<FileDow
 export const importStudy = async (
   file: File,
   onProgress?: (progress: number) => void,
+  directory?: string,
+  storageMode: StorageMode = StorageMode.FILESYSTEM,
 ): Promise<StudyMetadata["id"]> => {
   const options: AxiosRequestConfig = {};
   if (onProgress) {
@@ -233,6 +228,7 @@ export const importStudy = async (
     headers: {
       "content-type": "multipart/form-data",
     },
+    params: { storage_mode: storageMode, ...(directory ? { directory } : {}) },
   };
   const res = await client.post("/v1/studies/_import", formData, restconfig);
   return res.data;
@@ -272,24 +268,6 @@ export const getStudyJobLog = async (
 export const downloadJobOutput = async (jobId: string): Promise<any> => {
   const res = await client.get(`/v1/launcher/jobs/${jobId}/output`);
   return res.data;
-};
-
-export const unarchiveOutput = async (studyId: string, outputId: string): Promise<string> => {
-  const res = await client.post(
-    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_unarchive`,
-  );
-  return res.data;
-};
-
-export const archiveOutput = async (studyId: string, outputId: string): Promise<string> => {
-  const res = await client.post(
-    `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/_archive`,
-  );
-  return res.data;
-};
-
-export const deleteOutput = async (studyId: string, outputId: string): Promise<void> => {
-  await client.delete(`/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}`);
 };
 
 export const changeStudyOwner = async (
@@ -399,7 +377,7 @@ export async function updateStudyDistrict(
   output: StudyMapDistrict["output"],
   comments: StudyMapDistrict["comments"],
   areas?: StudyMapDistrict["areas"],
-  applyFilter?: string,
+  applyFilter?: DistrictApplyFilter,
 ): Promise<void> {
   await client.put(`v1/studies/${studyId}/districts/${districtId}`, {
     output,

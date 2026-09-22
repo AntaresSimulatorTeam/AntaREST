@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional, Union
 
 from fastapi import HTTPException
 
@@ -234,7 +233,7 @@ class LoginService:
             )
             raise UserHasNotPermissionError()
 
-    def get_group(self, id: str) -> Optional[Group]:
+    def get_group(self, id: str) -> Group | None:
         """
         Get group.
         Permission: SADMIN, all users that belong to the group
@@ -264,7 +263,7 @@ class LoginService:
             logger.error("group %s not found by user %s", id, get_user_id())
             raise GroupNotFoundError()
 
-    def get_group_info(self, id: str) -> Optional[GroupDetailDTO]:
+    def get_group_info(self, id: str) -> GroupDetailDTO | None:
         """
         Get group.
         Permission: SADMIN, GADMIN (own group)
@@ -324,7 +323,7 @@ class LoginService:
             )
             return None
 
-    def get_identity(self, id: int, include_token: bool = False) -> Optional[Identity]:
+    def get_identity(self, id: int, include_token: bool = False) -> Identity | None:
         """
         Get user, LDAP user or bot.
 
@@ -340,7 +339,7 @@ class LoginService:
             return user or self.bots.get(id)
         return user
 
-    def get_user_info(self, id: int) -> Optional[IdentityDTO]:
+    def get_user_info(self, id: int) -> IdentityDTO | None:
         """
         Get user information
         Permission: SADMIN, GADMIN (own group), USER (own user)
@@ -395,7 +394,7 @@ class LoginService:
             logger.error("bot %d not found by user %s", id, get_user_id())
             raise UserHasNotPermissionError()
 
-    def get_bot_info(self, id: int) -> Optional[BotIdentityDTO]:
+    def get_bot_info(self, id: int) -> BotIdentityDTO | None:
         """
         Get user information
         Permission: SADMIN, GADMIN (own group), USER (own user)
@@ -422,7 +421,7 @@ class LoginService:
             ],
         )
 
-    def get_all_bots_by_owner(self, owner: int) -> List[Bot]:
+    def get_all_bots_by_owner(self, owner: int) -> list[Bot]:
         """
         Get by bo owned by a user
         Permission: SADMIN, USER (owner)
@@ -461,7 +460,7 @@ class LoginService:
         """
         return self.bots.exists(id)
 
-    def authenticate(self, name: str, pwd: str) -> Optional[JWTUser]:
+    def authenticate(self, name: str, pwd: str) -> JWTUser | None:
         """
         Check if password match username stored in DB.
         Args:
@@ -471,7 +470,7 @@ class LoginService:
         Returns: jwt data with user information if auth success, None else.
 
         """
-        intern: Optional[User] = self.users.get_by_name(name)
+        intern: User | None = self.users.get_by_name(name)
         if intern and intern.password.check(pwd):
             logger.info("successful login from intern user %s", name)
             return self.get_jwt(intern.id)
@@ -484,7 +483,7 @@ class LoginService:
         logger.error("wrong authentication from user %s", name)
         return None
 
-    def get_jwt(self, user_id: int) -> Optional[JWTUser]:
+    def get_jwt(self, user_id: int) -> JWTUser | None:
         """
         Build a jwt data from user id.
 
@@ -509,7 +508,7 @@ class LoginService:
         logger.error("Can't claim JWT for user=%d", user_id)
         return None
 
-    def get_all_groups(self, details: bool = False) -> List[Union[GroupDetailDTO, GroupDTO]]:
+    def get_all_groups(self, details: bool = False) -> list[GroupDetailDTO | GroupDTO]:
         """
         Get all groups.
         Permission: SADMIN
@@ -537,7 +536,7 @@ class LoginService:
             return [group.to_dto() for group in group_list]
 
         # User details needed
-        users_by_group: dict[tuple[str, str], List[UserRoleDTO]] = {}
+        users_by_group: dict[tuple[str, str], list[UserRoleDTO]] = {}
         all_users = self.get_all_users(details=True)
         for identity in all_users:
             assert isinstance(identity, IdentityDTO)
@@ -550,7 +549,7 @@ class LoginService:
 
         return [GroupDetailDTO(id=key[0], name=key[1], users=users) for key, users in users_by_group.items()]
 
-    def _get_user_by_group(self, group: str) -> List[Identity]:
+    def _get_user_by_group(self, group: str) -> list[Identity]:
         roles = self.roles.get_all_by_group(group)
         user_list = []
         for role in roles:
@@ -559,7 +558,7 @@ class LoginService:
                 user_list.append(user)
         return user_list
 
-    def get_all_users(self, details: bool = False) -> List[Union[UserInfo, IdentityDTO]]:
+    def get_all_users(self, details: bool = False) -> list[UserInfo | IdentityDTO]:
         """
         Get all users.
         Permission: SADMIN
@@ -603,7 +602,7 @@ class LoginService:
         all_roles = self.roles.get_all(details=details, groups=groups)
 
         # Builds a map from a user to all his roles
-        roles_per_user: dict[int, List[RoleDTO]] = {}
+        roles_per_user: dict[int, list[RoleDTO]] = {}
         for role in all_roles:
             roles_per_user.setdefault(role.identity_id, []).append(
                 RoleDTO(
@@ -629,7 +628,7 @@ class LoginService:
             ]
         return [UserInfo(id=id, name=user_mapping_id_to_name[id]) for id in roles_per_user]
 
-    def get_all_bots(self) -> List[Bot]:
+    def get_all_bots(self) -> list[Bot]:
         """
         Get all bots
         Permission: SADMIN
@@ -644,7 +643,7 @@ class LoginService:
             )
             raise UserHasNotPermissionError()
 
-    def get_all_roles_in_group(self, group: str) -> List[Role]:
+    def get_all_roles_in_group(self, group: str) -> list[Role]:
         """
         Get all roles inside a group
         Permission: SADMIN, GADMIN (own group)

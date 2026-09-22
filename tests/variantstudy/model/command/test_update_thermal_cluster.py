@@ -18,6 +18,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterGroup,
     ThermalClusterUpdate,
 )
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_1
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
@@ -28,14 +29,15 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import dirhash
+from tests.helpers import build_dao_from_file_study, dirhash
 
 
 class TestUpdateThermalCluster:
-    def _set_up(self, study: FileStudy, command_context: CommandContext, area_name: str, thermal_name: str) -> None:
-        CreateArea(area_name=area_name, command_context=command_context, study_version=study.config.version).apply(
-            study
-        )
+    def _set_up(
+        self, study: FileStudy, command_context: CommandContext, area_name: str, thermal_name: str
+    ) -> FileStudyTreeDao:
+        dao = build_dao_from_file_study(study, command_context)
+        CreateArea(area_name=area_name, command_context=command_context, study_version=study.config.version).apply(dao)
         area_id = transform_name_to_id(area_name)
         thermal = {
             "co2": 0.57,
@@ -63,13 +65,14 @@ class TestUpdateThermalCluster:
         study.tree.save(thermal, ["input", "thermal", "clusters", area_id, "list", thermal_name])
         thermal_config = parse_thermal_cluster(study_version=study.config.version, data=thermal)
         study.config.areas[area_id].thermals.append(thermal_config)
+        return dao
 
     def test_update_thermal(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_810
         area_name = "FR"
         area_id = "fr"
         thermal_cluster_name = "test"
-        self._set_up(empty_study, command_context, area_name, thermal_cluster_name)
+        dao = self._set_up(empty_study, command_context, area_name, thermal_cluster_name)
 
         args = {
             "co2": 0.60,
@@ -85,7 +88,7 @@ class TestUpdateThermalCluster:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = command.apply(study_data=empty_study)
+        output = command.apply(study_dao=dao)
 
         assert output.status
 
@@ -123,7 +126,7 @@ class TestUpdateThermalCluster:
         # Set up
         study = empty_study_810
         self._set_up(study, command_context, "fr", "test")
-        self._set_up(study, command_context, "second_area", "test_2")
+        dao = self._set_up(study, command_context, "second_area", "test_2")
         # Ensures updating an unexisting thermal cluster raises an Exception.
         # Also ensures the study wasn't partially modified.
         hash_before_update = dirhash(study.config.study_path / "input" / "thermal", "md5")
@@ -136,7 +139,7 @@ class TestUpdateThermalCluster:
             study_version=study.config.version,
         )
 
-        output = command.apply(study_data=study)
+        output = command.apply(study_dao=dao)
         assert not output.status
         assert output.message == f"The thermal cluster '{fake_cluster}' in the area 'second_area' is not found."
         hash_after_update = dirhash(study.config.study_path / "input" / "thermal", "md5")

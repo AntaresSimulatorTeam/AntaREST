@@ -12,8 +12,10 @@
 
 """Integration tests for the variable view garbage collection task."""
 
+import tempfile
 import uuid
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import polars as pl
 
@@ -22,8 +24,9 @@ from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_variable_view import clean_variable_views
 from antarest.matrixstore.service import MatrixService
+from antarest.output.model import OutputVariablesType
+from antarest.output.variable_view.db import OutputVariablesViewsModel
 from antarest.study.model import MatrixFrequency, RawStudy
-from antarest.study.output.output_model import OutputVariablesType, OutputVariablesViewsModel
 
 
 def _create_study(study_id: str) -> RawStudy:
@@ -60,8 +63,9 @@ def _create_variable_view(
 class TestCleanVariableViewsIntegration:
     """Integration tests for clean_variable_views using real database."""
 
-    def test_deletes_old_variable_views(self, matrix_service: MatrixService) -> None:
+    def test_deletes_old_variable_views(self, real_matrix_service: MatrixService) -> None:
         """Test that old variable views are deleted."""
+        matrix_service = real_matrix_service
         study_id = str(uuid.uuid4())
         output_id = "test-output"
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
@@ -69,6 +73,7 @@ class TestCleanVariableViewsIntegration:
         with db():
             matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -82,7 +87,7 @@ class TestCleanVariableViewsIntegration:
             views_before = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_before) == 1
 
-        result = clean_variable_views(dry_run=False, retention_time=7)
+        result = clean_variable_views(dry_run=False, retention_time=7, lock_folder=Path(tempfile.gettempdir()))
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1
@@ -92,8 +97,9 @@ class TestCleanVariableViewsIntegration:
             views_after = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_after) == 0
 
-    def test_keeps_recent_variable_views(self, matrix_service: MatrixService) -> None:
+    def test_keeps_recent_variable_views(self, real_matrix_service: MatrixService) -> None:
         """Test that recent variable views are NOT deleted."""
+        matrix_service = real_matrix_service
         study_id = str(uuid.uuid4())
         output_id = "test-output"
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
@@ -101,6 +107,7 @@ class TestCleanVariableViewsIntegration:
         with db():
             matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -111,7 +118,7 @@ class TestCleanVariableViewsIntegration:
             )
             db.session.commit()
 
-        result = clean_variable_views(dry_run=False, retention_time=7)
+        result = clean_variable_views(dry_run=False, retention_time=7, lock_folder=Path(tempfile.gettempdir()))
 
         assert result.status == BackGroundTaskStatus.SKIPPED
         assert result.reason == "no_unused_variable_view"
@@ -121,8 +128,9 @@ class TestCleanVariableViewsIntegration:
             views_after = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_after) == 1
 
-    def test_dry_run_does_not_delete(self, matrix_service: MatrixService) -> None:
+    def test_dry_run_does_not_delete(self, real_matrix_service: MatrixService) -> None:
         """Test that dry_run mode does not delete variable views."""
+        matrix_service = real_matrix_service
         study_id = str(uuid.uuid4())
         output_id = "test-output"
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
@@ -130,6 +138,7 @@ class TestCleanVariableViewsIntegration:
         with db():
             matrix_id = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
             db.session.add(
                 _create_variable_view(
                     study_id=study_id,
@@ -140,7 +149,7 @@ class TestCleanVariableViewsIntegration:
             )
             db.session.commit()
 
-        result = clean_variable_views(dry_run=True, retention_time=7)
+        result = clean_variable_views(dry_run=True, retention_time=7, lock_folder=Path(tempfile.gettempdir()))
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1
@@ -152,15 +161,16 @@ class TestCleanVariableViewsIntegration:
 
     def test_returns_skipped_with_no_views(self) -> None:
         """Test execution when there are no variable views."""
-        result = clean_variable_views(dry_run=False, retention_time=7)
+        result = clean_variable_views(dry_run=False, retention_time=7, lock_folder=Path(tempfile.gettempdir()))
 
         assert result.status == BackGroundTaskStatus.SKIPPED
         assert result.reason == "no_unused_variable_view"
         assert result.deleted_count == 0
         assert result.duration_seconds >= 0
 
-    def test_deletes_only_old_views_keeps_recent(self, matrix_service: MatrixService) -> None:
+    def test_deletes_only_old_views_keeps_recent(self, real_matrix_service: MatrixService) -> None:
         """Test that only old views are deleted while recent ones are kept."""
+        matrix_service = real_matrix_service
         study_id = str(uuid.uuid4())
         output_id = "test-output"
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
@@ -169,6 +179,7 @@ class TestCleanVariableViewsIntegration:
             matrix_id_old = matrix_service.create(matrix_data)
             matrix_id_recent = matrix_service.create(matrix_data)
             db.session.add(_create_study(study_id))
+            db.session.flush()
 
             # Old view - should be deleted
             db.session.add(
@@ -193,7 +204,7 @@ class TestCleanVariableViewsIntegration:
             views_before = db.session.query(OutputVariablesViewsModel).all()
             assert len(views_before) == 2
 
-        result = clean_variable_views(dry_run=False, retention_time=7)
+        result = clean_variable_views(dry_run=False, retention_time=7, lock_folder=Path(tempfile.gettempdir()))
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.deleted_count == 1

@@ -9,24 +9,19 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-from typing import List, Optional
+from pathlib import PurePosixPath
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError
-from antarest.core.model import JSON
-from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
-from antarest.study.storage.variantstudy.business.utils import AliasDecoder, strip_matrix_protocol, validate_matrix
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
+from antarest.study.storage.variantstudy.business.utils import AliasDecoder, validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
     InnerMatrices,
-    command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -48,49 +43,31 @@ class ReplaceMatrix(ICommand):
     # ==================
 
     target: str
-    matrix: List[List[MatrixData]] | str = Field(validate_default=True)
+    matrix: list[list[MatrixData]] | str = Field(validate_default=True)
 
     @field_validator("matrix", mode="before")
-    def matrix_validator(cls, matrix: List[List[MatrixData]] | str, values: ValidationInfo) -> str:
+    def matrix_validator(cls, matrix: list[list[MatrixData]] | str, values: ValidationInfo) -> str:
         return validate_matrix(matrix, values.data)
 
     @override
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         if self.target[0] == "@":
-            self.target = AliasDecoder.decode(self.target, study_data)
+            self.target = AliasDecoder.decode(self.target, self.study_version)
 
-        replace_matrix_data: JSON = {}
-        target_matrix = replace_matrix_data
-        url = self.target.split("/")
-        for element in url[:-1]:
-            target_matrix[element] = {}
-            target_matrix = target_matrix[element]
-
-        target_matrix[url[-1]] = self.matrix
-
-        try:
-            last_node = study_data.tree.get_node(url)
-            assert_this(isinstance(last_node, MatrixNode))
-        except (KeyError, ChildNotFoundError):
-            return command_failed(message=f"Path '{self.target}' does not exist.")
-        except AssertionError:
-            return command_failed(message=f"Path '{self.target}' does not target a matrix.")
-
-        study_data.tree.save(replace_matrix_data)
-        return command_succeeded(message=f"Matrix '{self.target}' has been successfully replaced.")
+        mapper = RawPathToMatrixMapper(study_data)
+        assert isinstance(self.matrix, str)
+        mapper.save_matrix_from_path(PurePosixPath(self.target), self.matrix)
+        return command_succeeded(message=f"Matrix '{self.target}' has been successfully replaced.", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=CommandName.REPLACE_MATRIX.value,
-            args={
-                "target": self.target,
-                "matrix": strip_matrix_protocol(self.matrix),
-            },
+            args={"target": self.target, "matrix": self.matrix},
             study_version=self.study_version,
         )
 
     @override
     def get_inner_matrices(self) -> InnerMatrices:
-        assert_this(isinstance(self.matrix, str))
-        return InnerMatrices(matrices=[strip_matrix_protocol(self.matrix)])
+        assert isinstance(self.matrix, str)
+        return InnerMatrices(matrices=[self.matrix])

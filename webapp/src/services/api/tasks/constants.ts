@@ -31,4 +31,6 @@ export const TaskType = {
   UpgradeStudy: "UPGRADE_STUDY",
   ThermalClusterSeriesGeneration: "THERMAL_CLUSTER_SERIES_GENERATION",
   SnapshotClearing: "SNAPSHOT_CLEARING",
+  OutputAggregation: "OUTPUT_AGGREGATION",
+  OutputVariablesViewMaterialization: "OUTPUT_VARIABLES_VIEW_MATERIALIZATION",
 } as const;

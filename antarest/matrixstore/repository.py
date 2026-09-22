@@ -9,13 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
 import hashlib
 import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -28,10 +26,12 @@ from sqlalchemy.orm import Session
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.matrixstore.model import Matrix, MatrixDataSet
+from antarest.core.utils.utils import current_time
+from antarest.matrixstore.model import LEGACY_MATRIX_VERSION, NEW_MATRIX_VERSION, Matrix, MatrixDataSet
 from antarest.matrixstore.parsing import load_matrix, save_matrix
 
 logger = logging.getLogger(__name__)
+LOCK_SUFFIX = ".tsv.lock"
 
 
 class MatrixDataSetRepository:
@@ -39,7 +39,7 @@ class MatrixDataSetRepository:
     Database connector to manage Matrix metadata entity
     """
 
-    def __init__(self, session: Optional[Session] = None) -> None:
+    def __init__(self, session: Session | None = None) -> None:
         self._session = session
 
     @property
@@ -62,20 +62,20 @@ class MatrixDataSetRepository:
         logger.debug(f"Matrix dataset {matrix_user_metadata.id} for user {matrix_user_metadata.owner_id} saved")
         return matrix_user_metadata
 
-    def get(self, id_number: str) -> Optional[MatrixDataSet]:
+    def get(self, id_number: str) -> MatrixDataSet | None:
         return self.session.get(MatrixDataSet, id_number)
 
-    def get_all_datasets(self) -> List[MatrixDataSet]:
+    def get_all_datasets(self) -> list[MatrixDataSet]:
         stmt = select(MatrixDataSet)
         result = self.session.execute(stmt)
-        matrix_datasets: List[MatrixDataSet] = list(result.scalars().all())
+        matrix_datasets: list[MatrixDataSet] = list(result.scalars().all())
         return matrix_datasets
 
     def query(
         self,
-        name: Optional[str],
-        owner: Optional[int] = None,
-    ) -> List[MatrixDataSet]:
+        name: str | None,
+        owner: int | None = None,
+    ) -> list[MatrixDataSet]:
         """
         Query a list of MatrixUserMetadata by searching for each one separately if a set of filter match
 
@@ -92,7 +92,7 @@ class MatrixDataSetRepository:
         if owner is not None:
             stmt = stmt.where(MatrixDataSet.owner_id == owner)
         result = self.session.execute(stmt.distinct())
-        datasets: List[MatrixDataSet] = list(result.scalars().all())
+        datasets: list[MatrixDataSet] = list(result.scalars().all())
         return datasets
 
     def delete(self, dataset_id: str) -> None:
@@ -106,7 +106,7 @@ class MatrixRepository:
     Database connector to manage Matrix entity.
     """
 
-    def __init__(self, session: Optional[Session] = None) -> None:
+    def __init__(self, session: Session | None = None) -> None:
         self._session = session
 
     @property
@@ -138,7 +138,7 @@ class MatrixRepository:
             for matrix in matrices:
                 self.save(matrix)
 
-    def get(self, matrix_hash: str) -> Optional[Matrix]:
+    def get(self, matrix_hash: str) -> Matrix | None:
         return self.session.get(Matrix, matrix_hash)
 
     def get_matrices(self) -> list[Matrix]:
@@ -213,7 +213,7 @@ def compute_hash(df: pl.DataFrame) -> str:
     pandas_df = df.to_pandas()
     pandas_df.replace({None: np.nan}, inplace=True)
     if df.columns == [str(i) for i in range(len(df.columns))]:
-        pandas_df.columns = pd.RangeIndex(0, pandas_df.shape[1])  # type: ignore
+        pandas_df.columns = pd.RangeIndex(0, pandas_df.shape[1])
 
     # We're computing the hash with the dataframe content and its headers
     column_names_hashes = util.hash_pandas_object(pandas_df.columns, index=False)
@@ -310,7 +310,7 @@ class MatrixContentRepository:
             return MatrixCreationResult(hash=matrix_hash, new=False)
 
         # Ensure exclusive access to the matrix file between multiple processes (or threads).
-        lock_file = matrix_path.with_suffix(".tsv.lock")  # use tsv lock to stay consistent with old data
+        lock_file = matrix_path.with_suffix(LOCK_SUFFIX)  # use tsv lock to stay consistent with old data
         with FileLock(lock_file, timeout=15):
             # we check again for the existence of the file, as it might have been created by another process or thread
             if matrix_path.exists():
@@ -359,7 +359,7 @@ class MatrixContentRepository:
 
         # IMPORTANT: Deleting the lock file under Linux can make locking unreliable.
         # Abandoned lock files are deleted here to maintain consistent behavior.
-        lock_file = matrix_path.with_suffix(".tsv.lock")
+        lock_file = matrix_path.with_suffix(LOCK_SUFFIX)
         lock_file.unlink(missing_ok=True)
 
     def get_matrix_disk_usage(self, matrix_hash: str) -> int:
@@ -368,10 +368,51 @@ class MatrixContentRepository:
             return os.stat(matrix_path).st_size
         raise FileNotFoundError(str(self.bucket_dir.joinpath(matrix_hash)))
 
-    def _get_matrix_path_n_format(self, matrix_hash: str) -> tuple[Optional[Path], InternalMatrixFormat]:
+    def _get_matrix_path_n_format(self, matrix_hash: str) -> tuple[Path | None, InternalMatrixFormat]:
         for internal_format in InternalMatrixFormat:
             matrix_path = self.bucket_dir.joinpath(f"{matrix_hash}.{internal_format}")
             if matrix_path.exists():
                 return matrix_path, internal_format
 
         return None, InternalMatrixFormat.HDF
+
+    def infer_matrix_characteristics(self, matrix_id: str) -> Matrix:
+        matrix_path, matrix_format = self._get_matrix_path_n_format(matrix_id)
+        assert matrix_path is not None
+
+        if matrix_format == InternalMatrixFormat.TSV:
+            # We only need the matrix version for the parsing of legacy `TSV` files.
+            version = LEGACY_MATRIX_VERSION
+            try:
+                df = load_matrix(matrix_format, matrix_path, version)
+                if compute_hash(df) != matrix_id:
+                    # Means we did not read the matrix as we were supposed to so we have to read it with the other version
+                    version = NEW_MATRIX_VERSION
+                    df = load_matrix(matrix_format, matrix_path, version)
+            except ValueError:
+                # Happens if the matrix contains values that are not handled in v1. Means the matrix is in v2.
+                version = NEW_MATRIX_VERSION
+                df = load_matrix(matrix_format, matrix_path, version)
+
+        else:
+            version = NEW_MATRIX_VERSION
+            df = load_matrix(matrix_format, matrix_path, version)
+
+        height, width = df.shape
+        return Matrix(id=matrix_id, width=width, height=height, created_at=current_time(), version=version)
+
+    def get_all_matrices_on_the_filesystem(self) -> tuple[set[str], set[Path]]:
+        known_suffixes = {f".{fmt}" for fmt in InternalMatrixFormat}
+        matrices = set()
+        invalid_files = set()
+
+        for file_path in self.bucket_dir.iterdir():
+            if file_path.name.endswith(LOCK_SUFFIX):
+                continue
+
+            if file_path.suffix in known_suffixes:
+                matrices.add(file_path.stem)
+            elif file_path.is_file():
+                invalid_files.add(file_path)
+
+        return matrices, invalid_files

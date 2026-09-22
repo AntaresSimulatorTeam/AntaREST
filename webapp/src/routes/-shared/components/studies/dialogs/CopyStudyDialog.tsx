@@ -18,16 +18,22 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import UsePromiseCond from "@/components/utils/UsePromiseCond";
-import usePromise from "@/hooks/usePromise";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { directoryQueries } from "@/queries/directories/queries";
+import { outputQueries } from "@/queries/outputs/queries";
 import { copyStudy } from "@/services/api/studies";
-import { getStudyOutputs } from "@/services/api/study";
-import type { StudyMetadata, StudyOutput } from "@/types/types";
+import type { Output } from "@/services/api/studies/outputs/types";
+import { getTask } from "@/services/api/tasks";
+import type { StudyMetadata } from "@/types/types";
+import { toError } from "@/utils/fnUtils";
 import { validateStudyName } from "@/utils/studiesUtils";
 import FileCopyOutlinedIcon from "@mui/icons-material/FileCopyOutlined";
 import SaveAsIcon from "@mui/icons-material/SaveAs";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import StudyPathFE from "../StudyPathFE";
+import StudyDestinationFE from "../StudyDestinationFE";
+import type { DirectoryDestination } from "../StudyDestinationFE/types";
+import { toDirectoryPath } from "../StudyDestinationFE/utils";
 
 interface Props {
   study: StudyMetadata;
@@ -37,38 +43,74 @@ interface Props {
 
 interface DefaultValues {
   studyName: string;
-  destinationFolder: string;
-  outputIds?: Array<StudyOutput["name"]>;
+  destination: DirectoryDestination;
+  outputIds?: Array<Output["id"]>;
+}
+
+function selectOutputsData(outputs: Output[]) {
+  const outputOptions = outputs.map((output) => ({
+    value: output.id,
+    label: output.name,
+  }));
+
+  const defaultOutputIds = outputs.map((output) => output.id);
+
+  return { outputOptions, defaultOutputIds };
 }
 
 function CopyStudyDialog({ study, open, onClose }: Props) {
   const { t } = useTranslation();
   const isVariant = study.type === "variantstudy";
   const Icon = isVariant ? SaveAsIcon : FileCopyOutlinedIcon;
+  const queryClient = useQueryClient();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
-  const outputsRes = usePromise(async () => {
-    const outputs = await getStudyOutputs(study.id);
-    return outputs.map(({ name }) => name);
-  }, [study.id]);
+  const {
+    data: { outputOptions, defaultOutputIds } = { outputOptions: [], defaultOutputIds: [] },
+    isPending: isOutputsPending,
+    isError: isOutputsError,
+    isSuccess: isOutputsSuccess,
+  } = useQuery({
+    ...outputQueries.list(study.id),
+    select: selectOutputsData,
+  });
 
   const defaultValues: DefaultValues = {
     studyName: `${study.name} (${t("studies.copySuffix")})`,
-    destinationFolder: "",
+    destination: { directoryId: study.directoryId ?? null, newSubdirectoriesPath: "" },
   };
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({
-    values: { studyName, destinationFolder, outputIds = [] },
+  const handleSubmit = async ({
+    values: { studyName, destination, outputIds = [] },
   }: SubmitHandlerPlus<DefaultValues>) => {
-    return copyStudy({
+    // TODO: This should be moved to the API layer when Tan stack migration is done.
+    const directoryPath = toDirectoryPath(destination, directories);
+
+    const taskId = await copyStudy({
       studyId: study.id,
       studyName: studyName.trim(),
-      destinationFolder,
+      destinationFolder: directoryPath,
       outputIds,
     });
+
+    // Poll task completion in the background, then refresh
+    // the directory list so the dialog is not blocked while the task runs.
+    getTask({ id: taskId, waitForCompletion: true })
+      .then(() => {
+        if (destination.newSubdirectoriesPath) {
+          queryClient.invalidateQueries({ queryKey: directoryQueries.list().queryKey });
+        }
+      })
+      .catch((err) => {
+        enqueueErrorSnackbar(t("studies.error.copyStudy"), toError(err));
+      });
+
+    return taskId;
   };
 
   ////////////////////////////////////////////////////////////////
@@ -98,29 +140,34 @@ function CopyStudyDialog({ study, open, onClose }: Props) {
             rules={{ validate: validateStudyName }}
             autoFocus
           />
-          <StudyPathFE name="destinationFolder" control={control} />
-          <UsePromiseCond
-            response={outputsRes}
-            ifPending={() => (
-              <FieldSkeleton>
-                <SelectFE value="" />
-              </FieldSkeleton>
-            )}
-            ifRejected={() => <SelectFE helperText={t("study.error.listOutputs")} error disabled />}
-            ifFulfilled={(outputs) => (
-              <SelectFE
-                name="outputIds"
-                control={control}
-                label={t("global.outputs")}
-                defaultValue={outputs}
-                options={outputs}
-                startCaseLabel={false}
-                multiple
-                onSelectAllOptions={(values) => setValue("outputIds", values)}
-                onDeselectAllOptions={() => setValue("outputIds", [])}
-              />
-            )}
-          />
+          <StudyDestinationFE name="destination" control={control} />
+          {/* Outputs field */}
+          {isOutputsPending && (
+            <FieldSkeleton>
+              <SelectFE value="" />
+            </FieldSkeleton>
+          )}
+          {isOutputsError && (
+            <SelectFE
+              label={t("global.outputs")}
+              helperText={t("study.error.listOutputs")}
+              error
+              disabled
+            />
+          )}
+          {isOutputsSuccess && (
+            <SelectFE
+              name="outputIds"
+              control={control}
+              label={t("global.outputs")}
+              defaultValue={defaultOutputIds}
+              options={outputOptions}
+              startCaseLabel={false}
+              multiple
+              onSelectAllOptions={(values) => setValue("outputIds", values)}
+              onDeselectAllOptions={() => setValue("outputIds", [])}
+            />
+          )}
         </Fieldset>
       )}
     </FormDialog>

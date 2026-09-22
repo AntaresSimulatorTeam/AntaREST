@@ -62,7 +62,7 @@ function MapPage() {
   const [openDialog, setOpenDialog] = useState(false);
   const [openConfig, setOpenConfig] = useState(false);
   const [zoomLevel, setZoomLevel] = useDebouncedState(INITIAL_ZOOM, 250);
-  const previousNode = useRef<string>();
+  const previousNode = useRef<string>(undefined);
   const graphRef = useRef<Graph<GraphNode & StudyMapNode, GraphLink & LinkProperties>>(null);
   const currentLayerId = useAppSelector(getCurrentLayer);
   const currentArea = useAppSelector(getCurrentStudyMapNode);

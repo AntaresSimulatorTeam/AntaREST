@@ -21,7 +21,7 @@ This includes:
 """
 
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any
 
 from fastapi import FastAPI
 from pydantic import ConfigDict
@@ -46,9 +46,9 @@ class RedirectMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app: ASGIApp,
-        dispatch: Optional[DispatchFunction] = None,
-        protected_roots: Optional[List[str]] = None,
-        protected_paths: Optional[List[str]] = None,
+        dispatch: DispatchFunction | None = None,
+        protected_roots: list[str] | None = None,
+        protected_paths: list[str] | None = None,
     ) -> None:
         """
         Initializes an instance of the URLRewriterMiddleware.

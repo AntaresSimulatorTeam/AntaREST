@@ -14,23 +14,25 @@
 SQLAlchemy Core table definitions for district storage.
 """
 
-from sqlalchemy import Boolean, Column, Enum, ForeignKeyConstraint, String, Table
+from sqlalchemy import Boolean, Column, ForeignKeyConstraint, String, Table
 
+from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
 from antarest.study.business.model.district_model import DistrictApplyFilter
+from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
 
 DISTRICT_TABLE = Table(
     "district",
     metadata,
-    Column("study_id", String(36), nullable=False, primary_key=True),
+    study_data_id_col(),
     Column("district_id", String(255), nullable=False, primary_key=True),
     Column("name", String(255), nullable=False),
     Column("output", Boolean, nullable=False),
     Column("comments", String(500), nullable=False),
-    Column("apply_filter", Enum(DistrictApplyFilter), nullable=False),
+    Column("apply_filter", enum_col(DistrictApplyFilter), nullable=False),
     Column("add_areas", String, nullable=False),
     Column("subtract_areas", String, nullable=False),
-    ForeignKeyConstraint(["study_id"], ["study.id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
 )

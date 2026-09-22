@@ -34,12 +34,12 @@ class FileStudyCompatibilityParametersDao(CompatibilityParametersDao, ABC):
             data = file_study.tree.get(["settings", "generaldata", "compatibility"])
         except KeyError:
             data = {}
-        return parse_compatibility_parameters(file_study.config.version, {"compatibility": data})
+        return parse_compatibility_parameters({"compatibility": data})
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
         file_study = self.get_file_study()
         file_study.tree.save(
-            serialize_compatibility_parameters(file_study.config.version, parameters),
+            serialize_compatibility_parameters(parameters),
             ["settings", "generaldata", "compatibility"],
         )

@@ -52,8 +52,6 @@ export const THERMAL_GROUPS = [
 ] as const;
 
 export const THERMAL_POLLUTANTS = [
-  "co2",
-  // Since v8.6
   "so2",
   "nh3",
   "nox",
@@ -87,9 +85,8 @@ export type ThermalGroup = (typeof THERMAL_GROUPS)[number];
 type LocalTSGenerationBehavior = (typeof TS_GENERATION_OPTIONS)[number];
 type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
 type CostGeneration = (typeof COST_GENERATION_OPTIONS)[number];
-type ThermalPollutants = Record<(typeof THERMAL_POLLUTANTS)[number], number>;
 
-export interface ThermalCluster<LegacyGroup extends boolean = false> extends ThermalPollutants {
+export interface ThermalCluster<LegacyGroup extends boolean = false> {
   id: string;
   name: string;
   group: LegacyGroup extends true ? ThermalGroup : string; // Before v9.3 => ThermalGroup, since v9.3 => string
@@ -111,10 +108,24 @@ export interface ThermalCluster<LegacyGroup extends boolean = false> extends The
   volatilityPlanned: number;
   lawForced: TimeSeriesLawOption;
   lawPlanned: TimeSeriesLawOption;
+  co2: number;
+  // Since v8.6
+  so2?: number;
+  nh3?: number;
+  nox?: number;
+  nmvoc?: number;
+  pm25?: number;
+  pm5?: number;
+  pm10?: number;
+  op1?: number;
+  op2?: number;
+  op3?: number;
+  op4?: number;
+  op5?: number;
   // Since v8.7
-  costGeneration: CostGeneration;
-  efficiency: number;
-  variableOMCost: number;
+  costGeneration?: CostGeneration;
+  efficiency?: number;
+  variableOMCost?: number;
 }
 
 export type ThermalClusterWithCapacity = ClusterWithCapacity<ThermalCluster>;

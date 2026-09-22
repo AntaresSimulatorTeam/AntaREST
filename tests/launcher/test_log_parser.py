@@ -12,7 +12,6 @@
 
 import json
 import sys
-from typing import List, Union
 
 import pytest
 from typing_extensions import override
@@ -79,7 +78,7 @@ def test_parse_log_lines(
     assert output == expected_result
 
 
-HistoryType = List[List[Union[str, float]]]
+HistoryType = list[list[str | float]]
 
 
 class MyLaunchProgressDTO(LaunchProgressDTO):

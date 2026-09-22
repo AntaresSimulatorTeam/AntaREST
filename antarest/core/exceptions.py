@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 
 import re
+from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Optional, Sequence
 
 from fastapi.exceptions import HTTPException
 from typing_extensions import override
@@ -142,6 +142,20 @@ class STStorageNotFound(ClusterNotFound):
     object_name = "Short-term storage"
 
 
+class ReserveDefinitionNotFound(HTTPException):
+    """Reserve definition is not found (404 Not Found)"""
+
+    def __init__(self, area_id: str, reserve_id: str):
+        msg = f"Reserve definition '{reserve_id}' not found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class ReserveDefinitionsNotFound(HTTPException):
+    def __init__(self, invalid_reserve_ids: dict[str, set[str]]):
+        msg = f"Reserve definitions not found: {invalid_reserve_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
 # ============================================================
 # Duplicate (409)
 # ============================================================
@@ -199,6 +213,16 @@ class DuplicateSTStorage(DuplicateConfigSection):
     object_name = SHORT_TERM_STORAGE
 
 
+class ReservedReserveDefinitionId(HTTPException):
+    """Reserve definition id is reserved (422 Unprocessable Entity)"""
+
+    def __init__(self, id_: str) -> None:
+        super().__init__(
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            f"Reserve definition id '{id_}' is reserved",
+        )
+
+
 class StudyNotFoundError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
@@ -234,11 +258,6 @@ class CommandApplicationError(HTTPException):
         super().__init__(HTTPStatus.INTERNAL_SERVER_ERROR, message)
 
 
-class CommandUpdateAuthorizationError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.LOCKED, message)
-
-
 class StudyValidationError(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
@@ -252,6 +271,12 @@ class LinkValidationError(HTTPException):
 class LinkNotFound(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class LinksNotFound(HTTPException):
+    def __init__(self, *link_ids: str) -> None:
+        ids = ", ".join(f"'{link}'" for link in link_ids)
+        super().__init__(HTTPStatus.NOT_FOUND, f"Links are not found: {ids}")
 
 
 class VariantStudyParentNotValid(HTTPException):
@@ -269,11 +294,11 @@ class NotAManagedStudyException(HTTPException):
 
 class TaskAlreadyRunning(HTTPException):
     def __init__(self) -> None:
-        super(TaskAlreadyRunning, self).__init__(HTTPStatus.EXPECTATION_FAILED, "Task is already running")
+        super().__init__(HTTPStatus.EXPECTATION_FAILED, "Task is already running")
 
 
 class StudyDeletionNotAllowed(HTTPException):
-    def __init__(self, uuid: str, message: Optional[str] = None) -> None:
+    def __init__(self, uuid: str, message: str | None = None) -> None:
         msg = f"Study {uuid} (not managed) is not allowed to be deleted"
         if message:
             msg += f"\n{message}"
@@ -397,19 +422,34 @@ class OutputAlreadyUnarchived(HTTPException):
         super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
 
 
+class OutputAlreadyExists(HTTPException):
+    """
+    Exception raised when a user wants to import an output which already exists.
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"Output '{output_id}' already exists"
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
 class OutputSubFolderNotFound(HTTPException):
     """
     Exception raised when an output sub folders do not exist
     """
 
-    def __init__(self, output_id: str, mc_root: str) -> None:
-        message = f"The output '{output_id}' sub-folder '{mc_root}' does not exist"
+    def __init__(self, output_id: str, relpath: str) -> None:
+        message = f"The output '{output_id}' sub-folder '{relpath}' does not exist"
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
     @override
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
+
+
+class InvalidOutputConversionRequest(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
 class BadZipBinary(HTTPException):
@@ -435,6 +475,12 @@ class WritingInsideZippedFileException(HTTPException):
 class BindingConstraintNotFound(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class BindingConstraintsNotFound(HTTPException):
+    def __init__(self, *bc_ids: str) -> None:
+        ids = ", ".join(f"'{bc}'" for bc in bc_ids)
+        super().__init__(HTTPStatus.NOT_FOUND, f"Binding constraints are not found: {ids}")
 
 
 class DuplicateConstraintName(HTTPException):
@@ -528,7 +574,7 @@ class InvalidConstraintTerm(HTTPException):
         self,
         term_id: str,
         reason: str,
-        binding_constraint_id: Optional[str] = None,
+        binding_constraint_id: str | None = None,
     ) -> None:
         message = f"Invalid constraint term {term_id}"
         if binding_constraint_id:
@@ -555,8 +601,14 @@ class LayerNotAllowedToBeDeleted(HTTPException):
         )
 
 
-class StudyOutputNotFoundError(Exception):
-    pass
+class UserResourceNotFound(HTTPException):
+    def __init__(self, path: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, f"User resources not found: '{path}'")
+
+
+class UserResourceIsAFolder(HTTPException):
+    def __init__(self, path: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, f"User resources '{path}' is a folder. Please provide a file.")
 
 
 class AreaNotFound(HTTPException):
@@ -676,9 +728,9 @@ class XpansionConfigurationAlreadyExists(Exception):
         super().__init__(HTTPStatus.CONFLICT, f"Xpansion configuration already exists for study {study_id}")
 
 
-class XpansionConfigurationDoesNotExist(Exception):
+class XpansionConfigurationDoesNotExist(HTTPException):
     def __init__(self, study_id: str) -> None:
-        super().__init__(HTTPStatus.CONFLICT, f"Xpansion configuration does not exist for study {study_id}")
+        super().__init__(HTTPStatus.NOT_FOUND, f"Xpansion configuration does not exist for study {study_id}")
 
 
 class XpansionFileAlreadyExistsError(HTTPException):
@@ -783,3 +835,50 @@ class OutputVariablesViewError(HTTPException):
     def __init__(self, output_id: str, message: str) -> None:
         msg = f"Could not retrieve variables view for output '{output_id}' : {message}."
         super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class ThermalClustersNotFound(HTTPException):
+    def __init__(self, invalid_thermal_ids: dict[str, set[str]]) -> None:
+        msg = f"Thermal clusters not found: {invalid_thermal_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class RenewableClustersNotFound(HTTPException):
+    def __init__(self, invalid_renewable_ids: dict[str, set[str]]) -> None:
+        msg = f"Renewable clusters not found: {invalid_renewable_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class STStoragesNotFound(HTTPException):
+    def __init__(self, invalid_sts_ids: dict[str, set[str]]) -> None:
+        msg = f"Short-term storages not found: {invalid_sts_ids}"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class SevenZipNotSupportedOnThisMachine(Exception):
+    def __init__(self) -> None:
+        msg = "7z command line is not supported on this machine. Consider installing it if you want to unarchive these files."
+        super().__init__(msg)
+
+
+class ReserveCertificationNotFound(HTTPException):
+    def __init__(self, area_id: str, object_type: str, object_id: str | None, reserve_ids: set[str]):
+        target = f"{object_type} '{object_id}'" if object_id else object_type
+        msg = f"Certifications for reserve(s) '{reserve_ids}' on {target} not found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class ReserveCertificationsNotFound(HTTPException):
+    def __init__(self, area_id: str, object_type: str):
+        msg = f"No {object_type} reserve certifications found in area '{area_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, msg)
+
+
+class GemsLibraryAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class GemsTaxonomyAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)

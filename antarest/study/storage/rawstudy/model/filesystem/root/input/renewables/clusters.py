@@ -14,11 +14,11 @@ from typing_extensions import override
 from antarest.core.serde.ini_common import any_section_option_matcher
 from antarest.core.serde.ini_reader import LOWER_CASE_PARSER, IniReader
 from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 
 _VALUE_PARSERS = {any_section_option_matcher("group"): LOWER_CASE_PARSER}
 _VALUE_SERIALIZERS = {any_section_option_matcher("group"): LOWER_CASE_SERIALIZER}
@@ -40,11 +40,11 @@ class ClusteredRenewableClusterConfig(IniFileNode):
 class ClusteredRenewableCluster(FolderNode):
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
+        matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
         area: str,
     ):
-        super().__init__(matrix_mapper, config)
+        super().__init__(matrix_storage_context, config)
         self.area = area
 
     @override
@@ -56,6 +56,6 @@ class ClusteredRenewableAreaCluster(FolderNode):
     @override
     def build(self) -> TREE:
         return {
-            area: ClusteredRenewableCluster(self.matrix_mapper, self.config.next_file(area), area)
+            area: ClusteredRenewableCluster(self.matrix_storage_context, self.config.next_file(area), area)
             for area in self.config.area_names()
         }

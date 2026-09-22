@@ -15,6 +15,8 @@ from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionAdequacyPattern,
 )
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -22,11 +24,12 @@ from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy
     ReplaceXpansionAdequacyCriterion,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestReplaceXpansionAdequacyCriterion:
     @staticmethod
-    def set_up(empty_study: FileStudy, command_context: CommandContext) -> None:
+    def set_up(empty_study: FileStudy, command_context: CommandContext) -> FileStudyTreeDao:
         empty_study.tree.save(
             {
                 "user": {
@@ -45,12 +48,14 @@ class TestReplaceXpansionAdequacyCriterion:
         )
         cmd1 = CreateArea(area_name="FR", command_context=command_context, study_version=empty_study.config.version)
         cmd2 = CreateArea(area_name="de", command_context=command_context, study_version=empty_study.config.version)
-        cmd1.apply(empty_study)
-        cmd2.apply(empty_study)
+        dao = build_dao_from_file_study(empty_study, command_context)
+        cmd1.apply(dao)
+        cmd2.apply(dao)
+        return dao
 
     def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
-        self.set_up(empty_study, command_context)
+        dao = self.set_up(empty_study, command_context)
 
         # Add some patterns
         new_criterion = XpansionAdequacyCriterion(
@@ -64,7 +69,7 @@ class TestReplaceXpansionAdequacyCriterion:
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status, output.message
 
         # Checks the file content
@@ -89,7 +94,7 @@ stopping_threshold: 1000000.0
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status, output.message
 
         # Checks the file content
@@ -109,7 +114,7 @@ stopping_threshold: 1.2
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status, output.message
 
         # Checks the file content
@@ -123,17 +128,14 @@ stopping_threshold: 3.0
 """
         )
 
-    def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
-        empty_study = empty_study_870
-        self.set_up(empty_study, command_context)
-
+    def test_error_cases(self, dao: StudyDao, command_context: CommandContext) -> None:
         # Try to update with a non-existing area
         cmd = ReplaceXpansionAdequacyCriterion(
             criterion=XpansionAdequacyCriterion(patterns=[XpansionAdequacyPattern(area="fake", criterion=6.1)]),
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status is False
         assert "Area is not found: 'fake'" in output.message
 

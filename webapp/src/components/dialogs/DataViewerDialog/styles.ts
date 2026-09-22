@@ -30,10 +30,10 @@ export const StyledButton = styled(Button)(({ theme }) => ({
   borderRight: "none !important",
   "&:hover": {
     color: "white",
-    backgroundColor: theme.palette.secondary.main,
+    backgroundColor: theme.vars.palette.secondary.main,
   },
   "&:disabled": {
-    backgroundColor: theme.palette.secondary.dark,
+    backgroundColor: theme.vars.palette.secondary.dark,
     color: "white !important",
   },
 }));

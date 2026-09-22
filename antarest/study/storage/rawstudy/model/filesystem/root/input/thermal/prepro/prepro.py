@@ -20,7 +20,7 @@ class InputThermalPrepro(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            a: InputThermalPreproArea(self.matrix_mapper, self.config.next_file(a), area=a)
+            a: InputThermalPreproArea(self.matrix_storage_context, self.config.next_file(a), area=a)
             for a in self.config.area_names()
         }
         return children

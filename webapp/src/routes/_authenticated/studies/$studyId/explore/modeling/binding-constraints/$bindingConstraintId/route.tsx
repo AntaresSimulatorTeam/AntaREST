@@ -95,7 +95,7 @@ function BindingConstraintLayout() {
             },
           },
         ]}
-        extraActions={
+        secondaryActions={
           <>
             <Button
               variant="outlined"

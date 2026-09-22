@@ -15,8 +15,6 @@ Adaptations of scenario builder business class for the API,
 mainly for compatibility purposes.
 """
 
-from typing import TypeAlias
-
 from pydantic import Field
 
 from antarest.core.serde import AntaresBaseModel
@@ -26,8 +24,6 @@ from antarest.study.business.model.scenario_builder_model import (
     AreaScenarios,
     HydroLevelsScenarios,
     Ruleset,
-    Rulesets,
-    RulesetsUpdate,
     RulesetUpdate,
     StorageConstraintsScenarios,
 )
@@ -66,12 +62,9 @@ class RulesetView(AntaresBaseModel, populate_by_name=True, extra="forbid"):
         return RulesetUpdate.model_construct(**field_values)
 
 
-RulesetsView: TypeAlias = dict[str, RulesetView]
+def ruleset_model_to_view(model: Ruleset) -> RulesetView:
+    return RulesetView.from_model(model)
 
 
-def rulesets_model_to_view(model: Rulesets) -> RulesetsView:
-    return {name: RulesetView.from_model(m) for name, m in model.items()}
-
-
-def rulesets_view_to_model(view: RulesetsView) -> RulesetsUpdate:
-    return {name: v.to_model() for name, v in view.items()}
+def ruleset_view_to_model(view: RulesetView) -> RulesetUpdate:
+    return view.to_model()

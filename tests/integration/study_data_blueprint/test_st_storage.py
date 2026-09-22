@@ -12,6 +12,7 @@
 
 import re
 import typing as t
+import uuid
 from unittest.mock import ANY
 
 import numpy as np
@@ -344,7 +345,7 @@ class TestSTStorage:
         assert obj["exception"] == "CommandApplicationError"
 
         # Check delete with the wrong value of `study_id`
-        bad_study_id = "bad_study"
+        bad_study_id = str(uuid.uuid4())
         res = client.request(
             "DELETE", f"/v1/studies/{bad_study_id}/areas/{area_id}/storages", json=[siemens_battery_id]
         )
@@ -383,7 +384,8 @@ class TestSTStorage:
         )
         assert res.status_code == 500
         obj = res.json()
-        assert f"The area '{bad_area_id}' does not exist" in obj["description"]
+        msg = f"Area is not found: '{bad_area_id}'"
+        assert msg in obj["description"]
         assert obj["exception"] == "CommandApplicationError"
 
         # Check POST with wrong `group`
@@ -401,8 +403,8 @@ class TestSTStorage:
         )
         assert res.status_code == 404
         obj = res.json()
-        assert obj["description"] == f"'{bad_area_id}' not a child of InputSTStorageClusters"
-        assert obj["exception"] == "ChildNotFoundError"
+        assert obj["description"] == f"Area is not found: '{bad_area_id}'"
+        assert obj["exception"] == "AreaNotFound"
 
         # Check PATCH with the wrong `storage_id`
         bad_storage_id = "bad_storage"

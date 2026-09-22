@@ -12,10 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import type { VariantTree } from "@/services/api/studies/variants/types";
 import { Box } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { StudyMetadata, VariantTree } from "@/types/types";
+import useStudy from "../../-hooks/useStudy";
 import {
   DEPTH_OFFSET,
   MIN_WIDTH,
@@ -27,24 +28,24 @@ import {
   ZOOM_OUT,
 } from "./constants";
 import TreeNode from "./TreeNode";
+import TreeLabels from "./TreeLabels";
 import { buildLayoutTree } from "./utils";
 
 interface VariantsTreeProps {
-  study: StudyMetadata;
   variantTree: VariantTree;
   onClick: (studyId: string) => void;
 }
 
-function VariantsTree({ study, variantTree, onClick }: VariantsTreeProps) {
+function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const { isDarkMode } = useThemeColorScheme();
   const layoutTree = useMemo(() => buildLayoutTree(variantTree), [variantTree]);
   const { depth, totalDescendants } = layoutTree.drawOptions;
+  const study = useStudy();
 
-  // Track the container's pixel width so the SVG viewBox can expand
-  // to fill all available horizontal space.
+  // Keep the labels within the visible panel and let the graph use the remaining width.
   useEffect(() => {
     const element = containerRef.current;
     if (!element) {
@@ -60,15 +61,14 @@ function VariantsTree({ study, variantTree, onClick }: VariantsTreeProps) {
   }, []);
 
   const baseRectWidth = Math.max(TILE_SIZE_X * (depth + DEPTH_OFFSET), MIN_WIDTH);
-  const baseTreeWidth = baseRectWidth + RECT_TEXT_WIDTH + RECT_X_SPACING;
   const treeHeight = TILE_SIZE_Y * (totalDescendants + 1) + TILE_SIZE_Y_2;
-
-  // The viewBox width is chosen so that when the SVG scales uniformly
-  const viewBoxWidth =
-    containerWidth > 0 ? Math.max(baseTreeWidth, containerWidth * ZOOM_OUT) : baseTreeWidth;
-
-  // The text-label column stretches to absorb any extra width.
-  const effectiveTextWidth = viewBoxWidth - baseRectWidth - RECT_X_SPACING;
+  const defaultLabelWidth = RECT_TEXT_WIDTH / ZOOM_OUT;
+  const labelWidth =
+    containerWidth > 0 ? Math.min(defaultLabelWidth, containerWidth / 2) : defaultLabelWidth;
+  const graphWidth = Math.max(
+    baseRectWidth,
+    (containerWidth - labelWidth) * ZOOM_OUT - RECT_X_SPACING,
+  );
 
   const handleHover = useCallback((id: string | null) => setHoverId(id), []);
 
@@ -80,44 +80,59 @@ function VariantsTree({ study, variantTree, onClick }: VariantsTreeProps) {
     <Box
       ref={containerRef}
       sx={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "flex-start",
-        alignItems: "flex-start",
         width: 1,
+        minWidth: 0,
         flexGrow: 1,
-        overflowY: "auto",
+        overflow: "auto",
       }}
     >
       <Box
         sx={{
-          width: 1,
-          minWidth: baseTreeWidth / ZOOM_OUT,
-          minHeight: treeHeight / ZOOM_OUT,
+          width: "max-content",
+          minWidth: "100%",
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-start",
           alignItems: "flex-start",
+          gap: `${RECT_X_SPACING / ZOOM_OUT}px`,
         }}
       >
+        <Box
+          sx={{
+            position: "sticky",
+            left: 0,
+            zIndex: 1,
+            flexShrink: 0,
+            width: labelWidth,
+            height: treeHeight / ZOOM_OUT,
+            bgcolor: "background.default",
+          }}
+        >
+          <TreeLabels
+            node={layoutTree}
+            depth={0}
+            row={0}
+            hoverId={hoverId}
+            currentStudyId={study.id}
+            isDarkMode={isDarkMode}
+            onClick={onClick}
+            onHover={handleHover}
+          />
+        </Box>
         <svg
           role="img"
           aria-labelledby="variants-tree-title"
-          width="100%"
+          width={graphWidth / ZOOM_OUT}
           height={treeHeight / ZOOM_OUT}
           preserveAspectRatio="xMinYMin meet"
-          viewBox={`0 0 ${viewBoxWidth} ${treeHeight}`}
+          viewBox={`0 0 ${graphWidth} ${treeHeight}`}
         >
           <title id="variants-tree-title">Study variant tree</title>
           <TreeNode
             node={layoutTree}
             depth={0}
             row={0}
-            baseRectWidth={baseRectWidth}
-            effectiveTextWidth={effectiveTextWidth}
+            baseRectWidth={graphWidth}
             hoverId={hoverId}
             currentStudyId={study.id}
-            isDarkMode={isDarkMode}
             onClick={onClick}
             onHover={handleHover}
           />

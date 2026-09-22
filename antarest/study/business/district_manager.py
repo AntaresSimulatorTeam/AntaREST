@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from antarest.core.exceptions import AreaNotFound, DistrictAlreadyExist, DistrictNotFound
 from antarest.study.business.model.district_model import (

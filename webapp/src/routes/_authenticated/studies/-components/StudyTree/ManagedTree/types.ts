@@ -22,7 +22,6 @@ export interface DirectoryTreeNode {
 
 export interface ManagedTreeNodeProps {
   node: DirectoryTreeNode;
-  onNodeClick: (id: string) => void;
   selectedPath?: string;
 
   // Create handlers

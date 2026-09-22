@@ -12,7 +12,6 @@
 
 import logging
 from dataclasses import dataclass
-from typing import Dict, Optional
 
 import httpx
 
@@ -50,7 +49,7 @@ class ExternalUser:
     external_id: str
     first_name: str
     last_name: str
-    groups: Dict[str, str]
+    groups: dict[str, str]
 
     @staticmethod
     def from_json(id: str, data: JSON) -> "ExternalUser":
@@ -90,7 +89,7 @@ class LdapService:
         self.roles = roles
         self.default_role_sync = config.security.external_auth.default_group_role
 
-    def _fetch(self, name: str, password: str) -> Optional[ExternalUser]:
+    def _fetch(self, name: str, password: str) -> ExternalUser | None:
         """
         Fetch user from LDAP
         Args:
@@ -172,7 +171,7 @@ class LdapService:
 
         return existing_user
 
-    def get(self, id: int) -> Optional[UserLdap]:
+    def get(self, id: int) -> UserLdap | None:
         """
         Get User stored in DB
         Args:
@@ -183,7 +182,7 @@ class LdapService:
         """
         return self.users.get(id)
 
-    def login(self, name: str, password: str) -> Optional[UserLdap]:
+    def login(self, name: str, password: str) -> UserLdap | None:
         """
         Try to log user to external LDAP
         Args:

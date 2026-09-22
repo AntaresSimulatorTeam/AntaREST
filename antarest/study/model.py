@@ -17,9 +17,8 @@ import uuid
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path, PurePath, PurePosixPath
-from typing import TYPE_CHECKING, Annotated, Any, Dict, List, Optional, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, TypeAlias
 
-import numpy as np
 from antares.study.version import StudyVersion
 from pydantic import (
     BeforeValidator,
@@ -29,7 +28,6 @@ from pydantic import (
     alias_generators,
     computed_field,
     field_validator,
-    model_validator,
 )
 from pydantic.alias_generators import to_camel
 from sqlalchemy import (
@@ -42,12 +40,12 @@ from sqlalchemy import (
     String,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy.sql.sqltypes import BigInteger
 from typing_extensions import override
 
 from antarest.core.model import PublicMode
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.serde.np_array import NpArray
 from antarest.login.model import Group, GroupDTO, Identity
 from antarest.study.css4_colors import COLOR_NAMES
 
@@ -75,10 +73,16 @@ STUDY_VERSION_9_0 = StudyVersion.parse("9.0")
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 STUDY_VERSION_9_3 = NEW_DEFAULT_STUDY_VERSION
+STUDY_VERSION_10_2 = StudyVersion.parse("10.2")
 
-StudyVersionStr: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(str)]
-StudyVersionInt: TypeAlias = Annotated[StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(int)]
 
+def _serialize_version(version: StudyVersion) -> str:
+    return f"{version:2d}"
+
+
+StudyVersionStr: TypeAlias = Annotated[
+    StudyVersion, BeforeValidator(StudyVersion.parse), PlainSerializer(_serialize_version)
+]
 
 STUDY_REFERENCE_TEMPLATES: set[StudyVersion] = {
     STUDY_VERSION_7_0,
@@ -184,7 +188,7 @@ class Directory(Base):
         unique=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    parent_id: Mapped[Optional[str]] = mapped_column(
+    parent_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("directory.id", name="fk_directory_parent_id"), nullable=True, index=True
     )
 
@@ -220,7 +224,7 @@ class Tag(Base):
     label: Mapped[str] = mapped_column(String(40), primary_key=True, index=True)
     color: Mapped[str] = mapped_column(String(20), index=True, default=lambda: secrets.choice(COLOR_NAMES))
 
-    studies: Mapped[List["Study"]] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
+    studies: Mapped[list["Study"]] = relationship("Study", secondary=StudyTag.__table__, back_populates="tags")
 
     @override
     def __str__(self) -> str:  # pragma: no cover
@@ -240,13 +244,18 @@ class StudyContentStatus(enum.Enum):
     ERROR = "ERROR"
 
 
-class StorageMode(enum.StrEnum):
+class StorageMode(StrEnum):
     """
     Storage mode for study data.
     """
 
     FILESYSTEM = "filesystem"
     DATABASE = "database"
+
+
+class StudyType(StrEnum):
+    VARIANT = "variantstudy"
+    RAW = "rawstudy"
 
 
 class CommentsDto(AntaresBaseModel):
@@ -270,10 +279,12 @@ class Study(Base):
         path: The path to a study directory on the file system. Note that depending on the type of study, this may
               represent different things. In particular, this is generally speaking not a valid study for the simulator.
               (for example, variants will generate snapshots in "<path> / snapshot").
+              In addition, this field is empty (None) for database studies.
         folder: Where the study is located in the workspace, from the user point of view.
                 Note that generally speaking, this will not correspond to a valid folder on disk, this is only a logical
                 folder presented to the user, not the way we organize data internally.
                 This field is kept for backward compatibility but will be progressively replaced by directory_id.
+                Note that this field is empty for database studies
         directory_id: The ID of the directory containing this study. Only for managed studies.
         parent_id: The ID of the parent study, if any. Only makes sense for variant studies.
         public_mode: Defines the actions any user logged in is allowed to take on the study.
@@ -293,38 +304,38 @@ class Study(Base):
         default=lambda: str(uuid.uuid4()),
         unique=True,
     )
-    name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     type: Mapped[str] = mapped_column(String(50), index=True)
     version: Mapped[str] = mapped_column(String(255), index=True)
-    author: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    editor: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    horizon: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
-    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
-    last_access: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    path: Mapped[str] = mapped_column(String())
-    folder: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
-    directory_id: Mapped[Optional[str]] = mapped_column(
+    author: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    editor: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    horizon: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    last_access: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    path: Mapped[str | None] = mapped_column(String(), nullable=True)
+    folder: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    directory_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("directory.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    parent_id: Mapped[Optional[str]] = mapped_column(
+    parent_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("study.id", name="fk_study_study_id"), nullable=True, index=True
     )
     public_mode: Mapped[PublicMode] = mapped_column(Enum(PublicMode), default=PublicMode.NONE)
-    owner_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
+    owner_id: Mapped[int | None] = mapped_column(Integer, ForeignKey(Identity.id), nullable=True, index=True)
     archived: Mapped[bool] = mapped_column(Boolean(), default=False, index=True)
     storage_mode: Mapped[StorageMode] = mapped_column(
         Enum(StorageMode), default=StorageMode.FILESYSTEM, nullable=False, index=True
     )
 
-    tags: Mapped[List[Tag]] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
+    tags: Mapped[list[Tag]] = relationship(Tag, secondary=StudyTag.__table__, back_populates="studies")
     owner = relationship(Identity, uselist=False)
     groups = relationship(Group, secondary=StudyGroup.__table__, cascade="")
     directory = relationship("Directory", uselist=False)
 
     # Define a one-to-many relationship between `Study` and `TaskJob`.
     # If the Study is deleted, all attached TaskJob must be deleted in cascade.
-    jobs: Mapped[List["TaskJob"]] = relationship(
+    jobs: Mapped[list["TaskJob"]] = relationship(
         "TaskJob", back_populates="study", cascade="all, delete, delete-orphan"
     )
 
@@ -368,15 +379,15 @@ class Study(Base):
         return {"id": self.id, "name": self.name}
 
     @validates("folder")
-    def validate_folder(self, key: str, folder: Optional[str]) -> Optional[str]:
+    def validate_folder(self, key: str, folder: str | None) -> str | None:
         """
         We want to store the path in posix format in the database, even on windows.
         """
         return normalize_path(folder)
 
 
-def normalize_path(path: Optional[str]) -> Optional[str]:
-    """
+def normalize_path(path: str | None) -> str | None:
+    r"""
     Turns any path including a windows path (with \ separator) to a posix path (with / separator).
     """
     if not path:
@@ -405,9 +416,9 @@ class RawStudy(Study):
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    content_status: Mapped[Optional[StudyContentStatus]] = mapped_column(Enum(StudyContentStatus), nullable=True)
+    content_status: Mapped[StudyContentStatus | None] = mapped_column(Enum(StudyContentStatus), nullable=True)
     workspace: Mapped[str] = mapped_column(String(255), default=DEFAULT_WORKSPACE_NAME, nullable=False, index=True)
-    missing: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, index=True)
+    missing: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "rawstudy",
@@ -444,6 +455,24 @@ class RawStudy(Study):
         }
 
 
+class StudyDiskSpaceAnalysis(Base):
+    """
+    Study disk space analysis entity implementation
+    """
+
+    __tablename__ = "study_disk_space_analysis"
+
+    study_id: Mapped[str] = mapped_column(
+        String(255),
+        ForeignKey("study.id", name="fk_study_disk_space_id", ondelete="CASCADE"),
+        nullable=False,
+        primary_key=True,
+    )
+    disk_space_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    last_analysis_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    study: Mapped["Study"] = relationship("Study", uselist=False)
+
+
 @dataclasses.dataclass
 class StudyFolder:
     """
@@ -452,7 +481,7 @@ class StudyFolder:
 
     path: Path
     workspace: str
-    groups: List[Group]
+    groups: list[Group]
 
 
 class FolderDTO(AntaresBaseModel):
@@ -497,52 +526,55 @@ class WorkspaceDTO(AntaresBaseModel):
     """
 
     name: str
-    disk_name: Optional[str] = None
+    disk_name: str | None = None
     model_config = ConfigDict(populate_by_name=True, alias_generator=alias_generators.to_camel)
 
 
 class OwnerInfo(AntaresBaseModel):
-    id: Optional[int] = None
+    id: int | None = None
     name: str
 
 
 class StudyMetadataDTO(AntaresBaseModel):
     id: str
     name: str
-    version: StudyVersionInt
-    author: Optional[str] = None
-    editor: Optional[str] = None
+    version: StudyVersionStr
+    author: str | None = None
+    editor: str | None = None
     created: str
     updated: str
-    type: str
+    type: StudyType
     owner: OwnerInfo
-    groups: List[GroupDTO]
+    groups: list[GroupDTO]
     public_mode: PublicMode
     workspace: str
     managed: bool
     archived: bool
-    horizon: Optional[str] = None
-    folder: Optional[str] = None
-    tags: List[str] = []
-    directory_id: Optional[str] = None
-    parent_id: Optional[str] = None
+    storage_mode: StorageMode
+    horizon: str | None = None
+    folder: str | None = None
+    tags: list[str] = []
+    directory_id: str | None = None
+    parent_id: str | None = None
 
     @field_validator("horizon", mode="before")
-    def transform_horizon_to_str(cls, val: str | int | None) -> Optional[str]:
+    def transform_horizon_to_str(cls, val: str | int | None) -> str | None:
         # horizon can be an int.
         return str(val) if val else val  # type: ignore
 
 
 class StudyMetadataPatchDTO(AntaresBaseModel):
-    name: Optional[str] = None
-    author: Optional[str] = None
-    horizon: Optional[str] = None
-    tags: List[str] = []
+    name: str | None = None
+    author: str | None = None
+    horizon: str | None = None
+    tags: list[str] | None = None
 
     @field_validator("tags", mode="before")
-    def _normalize_tags(cls, v: List[str]) -> List[str]:
+    def _normalize_tags(cls, v: list[str] | None) -> list[str]:
         """Remove leading and trailing whitespaces, and replace consecutive whitespaces by a single one."""
-        tags = []
+        tags: list[str] = []
+        if not v:
+            return tags
         for tag in v:
             tag = " ".join(tag.split())
             if not tag:
@@ -553,30 +585,56 @@ class StudyMetadataPatchDTO(AntaresBaseModel):
         return tags
 
 
-class StudySimSettingsDTO(AntaresBaseModel):
-    general: Dict[str, Any]
-    input: Dict[str, Any]
-    output: Dict[str, Any]
-    optimization: Dict[str, Any]
-    otherPreferences: Dict[str, Any]
-    advancedParameters: Dict[str, Any]
-    seedsMersenneTwister: Dict[str, Any]
-    playlist: Optional[List[int]] = None
+class StudyRepairType(StrEnum):
+    ARCHIVE_CONSISTENCY = "archive_consistency"
 
 
-class StudySimResultDTO(AntaresBaseModel):
-    name: str
-    type: str
-    settings: StudySimSettingsDTO
-    completionDate: str
-    status: str
-    archived: bool
+class StudyRepairSeverity(StrEnum):
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
 
 
-class StudyDownloadType(enum.StrEnum):
-    LINK = "LINK"
-    DISTRICT = "DISTRICT"
-    AREA = "AREA"
+class StudyRepairRequest(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    repairs: list[StudyRepairType] = Field(default_factory=lambda: [StudyRepairType.ARCHIVE_CONSISTENCY])
+    dry_run: bool = True
+
+
+class StudyRepairIssue(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    code: str
+    severity: StudyRepairSeverity
+    message: str
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class StudyRepairAction(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    code: str
+    description: str
+    details: dict[str, Any] = Field(default_factory=dict)
+
+
+class StudyRepairReport(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    study_id: str
+    dry_run: bool
+    issues: list[StudyRepairIssue] = Field(default_factory=list)
+    proposed_actions: list[StudyRepairAction] = Field(default_factory=list)
+    applied_actions: list[StudyRepairAction] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class DeleteManyStudies(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    study_ids: list[str] = Field(..., description="List of study UUIDs to delete")
+    with_variants: bool = Field(default=False, description="Whether to delete variant studies as well")
 
 
 class MatrixFrequency(StrEnum):
@@ -593,58 +651,10 @@ class MatrixFrequency(StrEnum):
     HOURLY = "hourly"
 
 
-class StudyDownloadDTO(AntaresBaseModel, alias_generator=to_camel):
-    """
-    DTO used to download outputs
-    """
-
-    type: StudyDownloadType
-    years: list[int] = []
-    level: MatrixFrequency
-    filter_in: Annotated[Optional[str], Field(deprecated=True, default=None)]  # We don't consider it
-    filter_out: Annotated[Optional[str], Field(deprecated=True, default=None)]  # We don't consider it
-    filter: list[str] = []
-    columns: list[str] = []
-    synthesis: Annotated[bool, Field(deprecated=True, default=False)]  # We always consider it's False
-    include_clusters: bool = False
-
-    @model_validator(mode="after")
-    def check_coherence(self) -> "StudyDownloadDTO":
-        if self.include_clusters and self.type == StudyDownloadType.LINK:
-            raise ValueError("Cannot ask for cluster values for type link")
-        return self
-
-
-class MatrixIndex(AntaresBaseModel):
-    start_date: str = ""
-    steps: int = 8760
-    first_week_size: int = 7
-    level: MatrixFrequency = MatrixFrequency.HOURLY
-
-
-class TimeSerie(AntaresBaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True, ser_json_inf_nan="constants")
-
-    name: str
-    unit: str
-    data: NpArray = np.zeros(shape=(0,))
-
-
-class TimeSeriesData(AntaresBaseModel):
-    type: StudyDownloadType
-    name: str
-    data: dict[str, list[TimeSerie]] = {}
-
-
-class MatrixAggregationResultDTO(AntaresBaseModel):
-    index: MatrixIndex
-    data: list[TimeSeriesData]
-
-
 class DirectoryMetadata(AntaresBaseModel):
     id: str
     name: str
-    parent_id: Optional[str] = None
+    parent_id: str | None = None
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -672,7 +682,7 @@ def _validate_directory_name(name: str) -> str:
 
 class DirectoryCreation(AntaresBaseModel):
     name: str = Field(..., min_length=1, max_length=255)
-    parent_id: Optional[str] = None
+    parent_id: str | None = None
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
@@ -689,13 +699,42 @@ class DirectoryUpdate(AntaresBaseModel):
     - **parentId**: New parent directory ID (optional, empty string for root)
     """
 
-    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
-    parent_id: Optional[str] = None
+    name: str | None = Field(default=None, min_length=1, max_length=255)
+    parent_id: str | None = None
 
     model_config = ConfigDict(populate_by_name=True, alias_generator=to_camel)
 
     @field_validator("name")
     @classmethod
-    def validate_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_name(cls, v: str | None) -> str | None:
         """Validate directory name."""
         return _validate_directory_name(v) if v is not None else v
+
+
+@dataclasses.dataclass(frozen=True)
+class StudyMetadataUpdate:
+    name: str | None = None
+    author: str | None = None
+    editor: str | None = None
+    last_save: float | None = None
+    created_at: float | None = None
+
+
+@dataclasses.dataclass(frozen=True)
+class StudyMetadataCopy:
+    name: str
+    owner: Identity
+    groups: list[Group]
+    directory_id: str | None
+
+
+@dataclasses.dataclass(frozen=True)
+class StudyMetadataCreation:
+    id: str
+    version: StudyVersion
+    managed: bool
+    name: str | None = None
+    author: str | None = None
+    editor: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None

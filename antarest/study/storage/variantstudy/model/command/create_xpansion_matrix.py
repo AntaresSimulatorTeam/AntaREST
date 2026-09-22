@@ -10,15 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
 
 from pydantic import Field, ValidationInfo, field_validator
 from typing_extensions import override
 
-from antarest.core.utils.utils import assert_this
 from antarest.matrixstore.model import MatrixData
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -35,24 +33,25 @@ class AbstractCreateXpansionMatrix(ICommand):
     # ==================
 
     filename: str
-    matrix: List[List[MatrixData]] | str = Field(validate_default=True)
+    matrix: list[list[MatrixData]] | str = Field(validate_default=True)
 
     @field_validator("matrix", mode="before")
-    def matrix_validator(cls, matrix: List[List[MatrixData]] | str, values: ValidationInfo) -> str:
+    def matrix_validator(cls, matrix: list[list[MatrixData]] | str, values: ValidationInfo) -> str:
         return validate_matrix(matrix, values.data)
 
     @override
     def to_dto(self) -> CommandDTO:
+        assert isinstance(self.matrix, str)
         return CommandDTO(
             action=self.command_name.value,
-            args={"filename": self.filename, "matrix": strip_matrix_protocol(self.matrix)},
+            args={"filename": self.filename, "matrix": self.matrix},
             study_version=self.study_version,
         )
 
     @override
     def get_inner_matrices(self) -> InnerMatrices:
-        assert_this(isinstance(self.matrix, str))
-        return InnerMatrices(matrices=[strip_matrix_protocol(self.matrix)])
+        assert isinstance(self.matrix, str)
+        return InnerMatrices(matrices=[self.matrix])
 
 
 class CreateXpansionWeight(AbstractCreateXpansionMatrix):
@@ -63,10 +62,10 @@ class CreateXpansionWeight(AbstractCreateXpansionMatrix):
     command_name: CommandName = CommandName.CREATE_XPANSION_WEIGHT
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         assert isinstance(self.matrix, str)
-        study_data.save_xpansion_weight(self.filename, self.matrix)
-        return command_succeeded(message=f"Xpansion weight {self.filename} created successfully")
+        study_data.save_xpansion_weight({self.filename: self.matrix})
+        return command_succeeded(message=f"Xpansion weight {self.filename} created successfully", result=None)
 
 
 class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
@@ -77,7 +76,7 @@ class CreateXpansionCapacity(AbstractCreateXpansionMatrix):
     command_name: CommandName = CommandName.CREATE_XPANSION_CAPACITY
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         assert isinstance(self.matrix, str)
-        study_data.save_xpansion_capacity(self.filename, self.matrix)
-        return command_succeeded(message=f"Xpansion capacity {self.filename} created successfully")
+        study_data.save_xpansion_capacity({self.filename: self.matrix})
+        return command_succeeded(message=f"Xpansion capacity {self.filename} created successfully", result=None)

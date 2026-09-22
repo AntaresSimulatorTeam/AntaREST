@@ -13,6 +13,9 @@
  */
 
 import i18n from "@/i18n";
+import { jobQueries } from "@/queries/jobs/queries";
+import { outputKeys } from "@/queries/outputs/keys";
+import { queryClient } from "@/queries/queryClient";
 import { getStudy } from "@/redux/selectors";
 import { TASK_TYPES_MANAGED } from "@/routes/_authenticated/tasks/-components/utils";
 import { includes } from "@/utils/tsUtils";
@@ -37,7 +40,7 @@ import { TaskType } from "../api/tasks/constants";
 import { getConfig } from "../config";
 import { isStringEmpty, isUserExpired } from "../utils";
 import { WsChannel, WsEventType } from "./constants";
-import type { WsEvent, WsEventListener } from "./types";
+import type { StudyJobEvent, WsEvent, WsEventListener } from "./types";
 
 const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
@@ -64,9 +67,9 @@ export function initWs(dispatch: AppDispatch, user?: UserInfo): WebSocket {
   if (!globalListenerAdded) {
     eventListeners.push(
       makeStudyListener(dispatch),
-      makeStudyJobStatusListener(dispatch),
+      makeStudyJobListener(dispatch),
       makeMaintenanceListener(dispatch),
-      makeStudyDataListener(dispatch),
+      makeStudyMapListener(dispatch),
       makeNotificationListener(dispatch),
     );
     globalListenerAdded = true;
@@ -224,28 +227,51 @@ function makeStudyListener(dispatch: AppDispatch): WsEventListener {
   };
 }
 
-function makeStudyJobStatusListener(dispatch: AppDispatch): WsEventListener {
+function makeStudyJobListener(dispatch: AppDispatch): WsEventListener {
   const unsubscribeById: Record<JobDTO["id"], VoidFunction> = {};
+
+  const updateJobQueries = (event: StudyJobEvent) => {
+    const receivedJob = adaptJobDtoToJob(event.payload);
+
+    // Update job list if exists in cache
+    queryClient.setQueryData(jobQueries.list(receivedJob.studyId).queryKey, (old = []) =>
+      // The job may not exist in the list if it was started by another user
+      old.some((j) => j.id === receivedJob.id)
+        ? old.map((j) => (j.id === receivedJob.id ? receivedJob : j))
+        : [...old, receivedJob],
+    );
+
+    // Invalidate outputs list when job completes, as this indicates a new output has been added
+    if (event.type === WsEventType.StudyJobCompleted) {
+      queryClient.invalidateQueries({ queryKey: outputKeys.list(receivedJob.studyId) });
+    }
+  };
 
   return function listener(e: WsEvent) {
     switch (e.type) {
       case WsEventType.StudyJobStarted: {
         const unsubscribe = subscribeWsChannels(WsChannel.JobStatus + e.payload.id);
         unsubscribeById[e.payload.id] = unsubscribe;
+        updateJobQueries(e);
         break;
       }
       case WsEventType.StudyJobCompleted:
         unsubscribeById[e.payload.id]?.();
         dispatch(refreshStudySynthesis(adaptJobDtoToJob(e.payload)));
+        updateJobQueries(e);
+        break;
+      case WsEventType.StudyJobStatusUpdate:
+      case WsEventType.StudyJobCancelled:
+        updateJobQueries(e);
         break;
     }
   };
 }
 
-function makeStudyDataListener(dispatch: AppDispatch): WsEventListener {
+function makeStudyMapListener(dispatch: AppDispatch): WsEventListener {
   return function listener(e: WsEvent) {
     switch (e.type) {
-      case WsEventType.StudyDataEdited:
+      case WsEventType.StudyMapEdited:
         dispatch(refreshStudySynthesis(e.payload));
         break;
     }

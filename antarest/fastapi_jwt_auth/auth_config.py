@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from datetime import timedelta
-from typing import Callable, List
 
 from pydantic import ValidationError
 
@@ -56,7 +56,7 @@ class AuthConfig:
         return "headers" in self._token_location
 
     @classmethod
-    def load_config(cls, settings: Callable[..., List[tuple]]) -> "AuthConfig":
+    def load_config(cls, settings: Callable[..., list[tuple]]) -> "AuthConfig":
         try:
             config = LoadConfig(**{key.lower(): value for key, value in settings()})
 

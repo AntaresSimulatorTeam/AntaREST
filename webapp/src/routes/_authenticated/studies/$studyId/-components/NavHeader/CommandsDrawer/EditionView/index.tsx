@@ -13,7 +13,6 @@
  */
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
-import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import EmptyView from "@/components/page/EmptyView";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { TaskEventPayload, WsEvent, WsEventTypeValue } from "@/services/webSocket/types";
@@ -27,7 +26,6 @@ import debug from "debug";
 import debounce from "lodash/debounce";
 import { useSnackbar } from "notistack";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { DropResult } from "react-beautiful-dnd";
 import { useTranslation } from "react-i18next";
 import { useMountedState } from "react-use";
 import useEnqueueErrorSnackbar from "../../../../../../../../hooks/useEnqueueErrorSnackbar";
@@ -36,13 +34,9 @@ import { TaskStatus } from "../../../../../../../../services/api/tasks/constants
 import {
   applyCommands,
   deleteCommand,
-  exportCommandsMatrices,
-  getCommand,
   getCommands,
   getStudyTask,
-  moveCommand,
   replaceCommands,
-  updateCommand,
 } from "../../../../../../../../services/api/variant";
 import {
   addWsEventListener,
@@ -58,7 +52,6 @@ import {
   fromCommandDTOToCommandItem,
   fromCommandDTOToJsonCommand,
   isTaskFinal,
-  reorder,
   updateCommandResults,
 } from "./utils";
 
@@ -77,7 +70,6 @@ function EditionView(props: Props) {
   const [openClearCommandsDialog, setOpenClearCommandsDialog] = useState(false);
   const [openDeleteCommandDialog, setOpenDeleteCommandDialog] = useState(-1);
   const [openExportCommandsDialog, setOpenExportCommandsDialog] = useState(false);
-  const [exportMatrices, setExportMatrices] = useState(false);
   const [generationStatus, setGenerationStatus] = useState(false);
   const [generationTaskId, setGenerationTaskId] = useState<string>();
   const [currentCommandGenerationIndex, setCurrentCommandGenerationIndex] = useState<number>(-1);
@@ -85,96 +77,20 @@ function EditionView(props: Props) {
   const [commands, setCommands] = useState<CommandItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const taskFetchPeriod = 3000;
-  const taskTimeoutId = useRef<NodeJS.Timeout>();
-
-  const onDragEnd = async ({ destination, source }: DropResult) => {
-    // dropped outside the list or same place
-    if (!destination || source.index === destination.index) {
-      return;
-    }
-    const oldCommands = commands.concat([]);
-    try {
-      const elm = commands[source.index];
-      const newItems = reorder(commands, source.index, destination.index);
-      setCommands(newItems.map((item) => ({ ...item, results: undefined })));
-      await moveCommand(studyId, elm.id as string, destination.index);
-      enqueueSnackbar(t("variants.success.commandMoved"), {
-        variant: "success",
-      });
-    } catch (e) {
-      setCommands(oldCommands);
-      enqueueErrorSnackbar(t("variants.error.moveCommand"), e as AxiosError);
-    }
-  };
-
-  const onSave = async (index: number) => {
-    try {
-      const elm = commands[index];
-      if (elm.updated) {
-        await updateCommand(studyId, elm.id as string, elm);
-        let tmpCommand: CommandItem[] = [];
-        tmpCommand = tmpCommand.concat(commands);
-        tmpCommand[index].updated = false;
-        setCommands(tmpCommand);
-        enqueueSnackbar(t("variants.success.save"), {
-          variant: "success",
-        });
-      }
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.commandUpdated"), e as AxiosError);
-    }
-  };
+  const taskTimeoutId = useRef<NodeJS.Timeout>(undefined);
 
   const onDelete = async (index: number) => {
     setOpenDeleteCommandDialog(index);
   };
 
-  const onArgsUpdate = (index: number, args: object) => {
-    let tmpCommand: CommandItem[] = [];
-    tmpCommand = tmpCommand.concat(commands);
-    tmpCommand[index].args = { ...args };
-    tmpCommand[index].updated = true;
-    setCommands(tmpCommand);
-  };
-
-  const onCommandImport = async (index: number, json: object) => {
-    try {
-      let tmpCommand: CommandItem[] = [];
-      tmpCommand = tmpCommand.concat(commands);
-      const elm = tmpCommand[index];
-      elm.args = { ...json };
-      elm.updated = false;
-      await updateCommand(studyId, elm.id as string, elm);
-      setCommands(tmpCommand);
-      enqueueSnackbar(t("variants.success.import"), {
-        variant: "success",
-      });
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.import"), e as AxiosError);
-    }
-  };
-
-  const onCommandExport = async (index: number) => {
-    try {
-      const elm = await getCommand(studyId, commands[index].id as string);
-      exportJson({ action: elm.action, args: elm.args }, `${elm.id}_command.json`);
-    } catch (e) {
-      enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
-    }
-  };
-
   const onGlobalExport = async () => {
     try {
       const items = await getCommands(studyId);
-      if (exportMatrices) {
-        await exportCommandsMatrices(studyId);
-      }
       exportJson(fromCommandDTOToJsonCommand(items), `${studyId}_commands.json`);
     } catch (e) {
       enqueueErrorSnackbar(t("variants.error.export"), e as AxiosError);
     } finally {
       if (isMounted()) {
-        setExportMatrices(false);
         setOpenExportCommandsDialog(false);
       }
     }
@@ -454,7 +370,7 @@ function EditionView(props: Props) {
               />
             </Tooltip>
             <a
-              href="https://antares-web.readthedocs.io/en/latest/user-guide/3-variant_manager/"
+              href="https://antares-doc.readthedocs.io/en/latest/tutorials/create-variant/"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -484,12 +400,7 @@ function EditionView(props: Props) {
             generationStatus={generationStatus}
             expandedIndex={expandedIndex}
             generationIndex={currentCommandGenerationIndex}
-            onDragEnd={onDragEnd}
             onDelete={onDelete}
-            onArgsUpdate={onArgsUpdate}
-            onSave={onSave}
-            onCommandImport={onCommandImport}
-            onCommandExport={onCommandExport}
             onExpanded={onExpanded}
           />
         </Body>
@@ -528,13 +439,7 @@ function EditionView(props: Props) {
           open={openExportCommandsDialog}
           onConfirm={onGlobalExport}
           onCancel={() => setOpenExportCommandsDialog(false)}
-        >
-          <CheckBoxFE
-            value={exportMatrices}
-            label={t("variants.commands.exportMatrices")}
-            onChange={() => setExportMatrices(!exportMatrices)}
-          />
-        </ConfirmationDialog>
+        />
       )}
     </Root>
   );

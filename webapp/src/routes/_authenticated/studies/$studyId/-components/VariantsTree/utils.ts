@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata, VariantTree } from "@/types/types";
+import type { Study } from "@/services/api/studies/types";
+import type { VariantTree } from "@/services/api/studies/variants/types";
 import { COLORS } from "./constants";
 
 export interface LayoutNode {
@@ -35,7 +36,7 @@ interface NodeColors {
   verticalLine: string;
 }
 
-function buildLeafNode(study: StudyMetadata): LayoutNode {
+function buildLeafNode(study: Study): LayoutNode {
   return {
     name: study.name,
     attributes: { id: study.id },

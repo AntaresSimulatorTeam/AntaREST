@@ -10,7 +10,7 @@
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
 [![React](https://img.shields.io/badge/react-18.x-blue.svg)](https://reactjs.org/)
 
-[Documentation](https://antares-web.readthedocs.io/) • [Installation](#installation) • [Contributing](./CONTRIBUTING.md) • [Issues](https://github.com/AntaresSimulatorTeam/AntaREST/issues)
+[Documentation](https://antares-web.readthedocs.io/) • [Installation](#installation) • [Contributing](./contributing.md) • [Issues](https://github.com/AntaresSimulatorTeam/AntaREST/issues)
 
 </div>
 
@@ -20,9 +20,15 @@
 
 ## About
 
-**Antares Web** is a web platform developed by RTE to manage, configure, and interact with Antares Simulator, RTE’s adequacy simulation software for power system studies, [Antares Simulator](https://antares-simulator.org). Antares Simulator is an open-source power system simulator that enables detailed modeling of energy consumption, generation, and transportation, performing probabilistic simulations across year-long scenarios with 8760 hourly time-frames.
+**Antares Web** is a web platform developed by RTE to manage, configure, 
+and interact with Antares Simulator which is part of 
+[Antares](https://antares-doc.readthedocs.io/en/latest/), RTE backed adequacy simulation software 
+for power system studies. Antares Simulator is an open-source power system simulator 
+that enables detailed modeling of energy consumption, generation, and transportation, 
+performing probabilistic simulations across year-long scenarios with 8760 hourly time-frames.
 
-Antares Web provides a modern REST API and web interface for managing Antares Simulator studies, adding powerful features for collaboration, storage optimization, and advanced editing capabilities.
+Antares Web provides a modern REST API and web interface for managing Antares Simulator studies, 
+adding powerful features for collaboration, storage optimization, and advanced editing capabilities.
 
 ### Key Features
 
@@ -62,7 +68,7 @@ Antares Web provides a modern REST API and web interface for managing Antares Si
 Before you begin, ensure you have the following installed:
 
 - **Python**: 3.11.x ([Download](https://www.python.org/downloads/))
-- **Node.js**: 22.13.0 ([Download](https://nodejs.org/))
+- **Node.js**: 22.23.2 ([Download](https://nodejs.org/))
 - **Git**: Latest version ([Download](https://git-scm.com/))
 
 Optional (for specific deployment modes):
@@ -83,19 +89,10 @@ Optional (for specific deployment modes):
    cd AntaREST
    ```
 
-2. **Set up Python environment**
+2. **Install Python dependencies**
 
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   python3 -m pip install --upgrade pip
-   ```
-
-3. **Install Python dependencies**
-
-   ```bash
-   pip install -e .                     # Install package in editable mode
-   pip install -r requirements-dev.txt  # Install development dependencies
+   uv sync  # Install all dependencies including dev
    ```
 
 4. **Install frontend dependencies**
@@ -124,7 +121,8 @@ Run with default configuration:
 docker run -p 8080:5000 -e GUNICORN_WORKERS=1 antarest
 ```
 
-For production deployment with external database and Redis, see the [deployment documentation](https://antares-web.readthedocs.io/en/latest/developer-guide/install/2-DEPLOY.html).
+For production deployment with external database and Redis, see the 
+[deployment documentation](https://antares-web.readthedocs.io/en/latest/developer-guide/install/2-DEPLOY.html).
 
 ## Usage
 
@@ -149,10 +147,12 @@ The API will be available at `http://localhost:8080` and the frontend at `http:/
 ```bash
 export ANTAREST_CONF=resources/application.yaml
 export GUNICORN_WORKERS=4
-gunicorn --config conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
+uv run gunicorn --config conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 ```
 
-**Note**: In production, we now use an alternative deployment mode where Gunicorn is not used for load balancing. Instead, we start multiple independent workers on different ports, allowing upstream load balancing to be handled by tools like nginx.
+**Note**: In production, we now use an alternative deployment mode where Gunicorn is not used 
+for load balancing. Instead, we start multiple independent workers on different ports, 
+allowing upstream load balancing to be handled by tools like nginx.
 
 ### API Documentation
 
@@ -209,16 +209,17 @@ mypy
 
 ## Documentation
 
-- **Full Documentation**: [antares-web.readthedocs.io](https://antares-web.readthedocs.io/)
-- **Antares Simulator**: [antares-simulator.readthedocs.io](https://antares-simulator.readthedocs.io/)
+- **Antares user documentation including on using Antares Web**: [antares-doc.readthedocs.io](https://antares-doc.readthedocs.io/en/latest/)
+- **Antares Web technical documentation**: [antares-web.readthedocs.io](https://antares-web.readthedocs.io/en/latest/)
 
 ---
 
 ## Contributing
 
-We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
+We welcome contributions from the community! Whether you're fixing bugs, 
+adding features, or improving documentation, your help is appreciated.
 
-Please read our [Contributing Guide](./CONTRIBUTING.md) to learn about:
+Please read our [Contributing Guide](./contributing.md) to learn about:
 - Setting up your development environment
 - Code style and standards
 - Submitting pull requests
@@ -230,7 +231,7 @@ Please read our [Contributing Guide](./CONTRIBUTING.md) to learn about:
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-Copyright © 2007-2025 RTE (https://www.rte-france.com)
+Copyright © 2007-2026 RTE (https://www.rte-france.com)
 
 ---
 

@@ -26,7 +26,7 @@ from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
+from tests.helpers import build_dao_from_file_study, file_study_interface
 
 hydro_ini_content = {
     "input": {
@@ -145,14 +145,15 @@ class TestHydroManagement:
     ) -> None:
         for file_study in [empty_study_880, empty_study_920]:
             study = file_study_interface(file_study)
+            dao = build_dao_from_file_study(file_study, command_context)
             study_version = file_study.config.version
             assert hydro_manager.get_all_hydro_properties(study) == {}  # no areas
 
             # Create 2 areas
             cmd = CreateArea(area_name="FR", command_context=command_context, study_version=study_version)
-            cmd.apply(file_study)
+            cmd.apply(dao)
             cmd = CreateArea(area_name="be", command_context=command_context, study_version=study_version)
-            cmd.apply(file_study)
+            cmd.apply(dao)
 
             # Checks default values
             default_properties = HydroProperties(

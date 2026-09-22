@@ -16,16 +16,16 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Any, AnyStr, List, Optional
+from typing import Any, AnyStr
 
 import pandas
 import pytest
 from pandas.errors import EmptyDataError
 
 from antarest.core.exceptions import UnsupportedStudyVersion
+from antarest.core.serde.ini_common import DUPLICATE_KEYS
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
 from antarest.study.storage.study_upgrader import (
     InvalidUpgrade,
     StudyUpgrader,
@@ -74,7 +74,7 @@ class TestCheckVersionCoherence:
     @pytest.mark.parametrize(
         "from_version, target_version, message",
         [
-            ("1000", "710", "Version '1000' isn't among supported versions"),
+            ("1020", "710", "Version '1020' isn't among supported versions"),
             ("820", "32", "Version '32' isn't among supported versions"),
         ],
     )
@@ -161,7 +161,7 @@ def assert_study_antares_file_is_updated(tmp_path: Path, target_version: str) ->
     assert version_line == f"version = {target_version}"
 
 
-def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
+def assert_settings_are_updated(tmp_path: Path, old_values: list[str]) -> None:
     general_data_path = tmp_path / "settings" / "generaldata.ini"
     reader = IniReader(DUPLICATE_KEYS)
     data = reader.read(general_data_path)
@@ -202,7 +202,7 @@ def assert_settings_are_updated(tmp_path: Path, old_values: List[str]) -> None:
     assert other_preferences["accurate-shave-peaks-include-short-term-storage"] is False
 
 
-def get_old_settings_values(tmp_path: Path) -> List[str]:
+def get_old_settings_values(tmp_path: Path) -> list[str]:
     general_data_path = tmp_path / "settings" / "generaldata.ini"
     reader = IniReader(DUPLICATE_KEYS)
     data = reader.read(general_data_path)
@@ -316,7 +316,7 @@ def assert_folder_is_created(path: Path) -> None:
     assert (path / "series").is_dir()
 
 
-def are_same_dir(dir1: AnyStr, dir2: AnyStr, ignore: Optional[List[str]] = None) -> bool:
+def are_same_dir(dir1: AnyStr, dir2: AnyStr, ignore: list[str] | None = None) -> bool:
     dirs_cmp = filecmp.dircmp(dir1, dir2, ignore=ignore)
     if len(dirs_cmp.left_only) > 0 or len(dirs_cmp.right_only) > 0 or len(dirs_cmp.funny_files) > 0:
         return False
@@ -329,8 +329,8 @@ def are_same_dir(dir1: AnyStr, dir2: AnyStr, ignore: Optional[List[str]] = None)
         # ignore study.ico
         if common_file == "study.ico":
             continue
-        with open(file_1, "r", encoding="utf-8") as f1:
-            with open(file_2, "r", encoding="utf-8") as f2:
+        with open(file_1, encoding="utf-8") as f1:
+            with open(file_2, encoding="utf-8") as f2:
                 content_1 = f1.read().splitlines(keepends=False)
                 content_2 = f2.read().splitlines(keepends=False)
                 if content_1 != content_2:

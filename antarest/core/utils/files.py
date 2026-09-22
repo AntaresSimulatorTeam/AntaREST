@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 import contextlib
 import uuid
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 
 @contextlib.contextmanager

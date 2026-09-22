@@ -59,7 +59,7 @@ class TestSTStorage:
         assert res.json() == {
             "id": internal_study_id,
             "name": "STA-mini",
-            "version": min_study_version,
+            "version": "8.6",
             "author": "Andrea SGATTONI",
             "editor": "Andrea SGATTONI",
             "created": ANY,  # ISO8601 Date/time
@@ -74,6 +74,7 @@ class TestSTStorage:
             "horizon": "2030",
             "folder": "STA-mini",
             "tags": [],
+            "storage_mode": "filesystem",
             "directory_id": None,
             "parent_id": None,
         }
@@ -93,7 +94,7 @@ class TestSTStorage:
         # =============================================
 
         # First, we will define a short-term storage in the geographical
-        # area "FR" called "Siemens Battery" with the bellow arguments.
+        # area "FR" called "Siemens Battery" with the below arguments.
         # We will use the default values for the time series:
         # - `pmax_injection`: Charge capacity,
         # - `pmax_withdrawal`: Discharge capacity,
@@ -128,7 +129,7 @@ class TestSTStorage:
         # Then, it is possible to update a time series.
         # For instance, we want to initialize the `inflows` time series
         # with random values (for this demo).
-        # To do that, we can use the `replace_matrix` command like bellow:
+        # To do that, we can use the `replace_matrix` command like below:
         siemens_battery_id = transform_name_to_id(siemens_battery)
         inflows = np.random.randint(0, 1001, size=(8760, 1))
         args1 = {

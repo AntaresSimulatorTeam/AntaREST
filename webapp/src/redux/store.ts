@@ -13,10 +13,11 @@
  */
 
 import { configureStore } from "@reduxjs/toolkit";
-import type { ThunkAction } from "redux-thunk";
 import type { AnyAction } from "redux";
+import type { ThunkAction } from "redux-thunk";
 import rootReducer, { type AppState } from "./ducks";
 import localStorageMiddleware from "./middlewares/localStorageMiddleware";
+import tanstackQueryMiddleware from "./middlewares/tanstackQueryMiddleware";
 
 const store = configureStore({
   reducer: rootReducer,
@@ -25,7 +26,7 @@ const store = configureStore({
       serializableCheck: {
         ignoreActions: true,
       },
-    }).prepend(localStorageMiddleware.middleware),
+    }).prepend(localStorageMiddleware.middleware, tanstackQueryMiddleware.middleware),
 });
 
 export type AppStore = typeof store;

@@ -12,22 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import * as RA from "ramda-adjunct";
 import type { FolderDTO } from "@/queries/explorer/schemas";
-import type { StudiesState, StudyFilters } from "@/redux/ducks/studies";
+import type { StudyFilters } from "@/redux/ducks/studies";
 import type { UIState } from "@/redux/ducks/ui";
-import type { TableTemplate } from "@/routes/_authenticated/studies/$studyId/explore/tablemode/-utils";
+import type { ViewMode } from "@/routes/_authenticated/studies/-components/StudiesList/types";
 import type { StudySortConfig, UserInfo } from "@/types/types";
+import * as RA from "ramda-adjunct";
 import packages from "../../../package.json";
-import { TABLE_MODE_TYPES_ALIASES } from "../api/studies/tableMode/constants";
 
 export const StorageKey = {
   AuthUser: "authUser",
+  GdprAccepted: "gdprAccepted",
   // Studies
-  StudiesFavorites: "studies.favorites",
   StudiesSort: "studies.sort",
   StudiesFilters: "studies.filters",
-  StudiesModelTableModeTemplates: "studies.model.tableMode.templates",
+  StudiesViewMode: "studies.viewMode",
   StudyTreeFolders: "studyTree.folders",
   // UI
   UIMenuCollapsed: "ui.menuCollapsed",
@@ -42,10 +41,10 @@ const SHARED_KEYS = [StorageKey.AuthUser];
 
 interface TypeFromKey {
   [StorageKey.AuthUser]: UserInfo;
-  [StorageKey.StudiesFavorites]: StudiesState["favorites"];
+  [StorageKey.GdprAccepted]: boolean;
   [StorageKey.StudiesSort]: Partial<StudySortConfig>;
   [StorageKey.StudiesFilters]: Partial<StudyFilters>;
-  [StorageKey.StudiesModelTableModeTemplates]: TableTemplate[];
+  [StorageKey.StudiesViewMode]: ViewMode;
   [StorageKey.StudyTreeFolders]: FolderDTO[];
   [StorageKey.TasksFilterUser]: string;
   [StorageKey.UIMenuCollapsed]: UIState["menuOpen"];
@@ -70,18 +69,7 @@ function getItem<T extends Key>(key: T): TypeFromKey[T] | null {
     if (serializedState === null) {
       return null;
     }
-    const res = JSON.parse(serializedState);
-
-    // Convert deprecated types to new ones (breaking change from v2.16.8)
-    if (key === StorageKey.StudiesModelTableModeTemplates) {
-      return res.map((template: Record<string, unknown>) => ({
-        ...template,
-        // @ts-expect-error To ignore error TS2551
-        type: TABLE_MODE_TYPES_ALIASES[template.type] ?? template.type,
-      }));
-    }
-
-    return res;
+    return JSON.parse(serializedState);
   } catch {
     return null;
   }

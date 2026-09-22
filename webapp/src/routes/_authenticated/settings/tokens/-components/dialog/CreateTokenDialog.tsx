@@ -52,7 +52,7 @@ function CreateTokenDialog({ open, reloadFetchTokens, onCancel }: Props) {
   };
 
   const handleSubmitSuccessful = (
-    data: SubmitHandlerPlus<TokenFormDefaultValues>,
+    _data: SubmitHandlerPlus<TokenFormDefaultValues>,
     tokenValue: string,
   ) => {
     setTokenValueToDisplay(tokenValue);
@@ -86,7 +86,7 @@ function CreateTokenDialog({ open, reloadFetchTokens, onCancel }: Props) {
       />
       <OkDialog
         open={!!tokenValueToDisplay}
-        title={t("settings.message.printToken") as string}
+        title={t("settings.message.printToken")}
         onOk={handleOk}
       >
         <Paper

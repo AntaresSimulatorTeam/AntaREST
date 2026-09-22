@@ -12,30 +12,22 @@
  * This file is part of the Antares project.
  */
 
+import TreeItemEnhanced from "@/components/TreeItemEnhanced";
+import { TREE_ROOT_NAME } from "@/components/utils/constants";
+import FavoriteDirectoryToggle from "@/routes/-shared/components/studies/FavoriteToggle/FavoriteDirectoryToggle";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import { Box, IconButton, Tooltip } from "@mui/material";
+import { IconButton, Stack, Typography } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
-import TreeItemEnhanced from "@/components/TreeItemEnhanced";
-import { ROOT_NODE_NAME } from "@/components/utils/constants";
+import { actionButtonStyles, nodeActionsContainerStyles } from "../styles";
 import EditableTreeItem from "./EditableTreeItem";
-import {
-  actionButtonStyles,
-  addSubDirectoryIconStyles,
-  deleteIconStyles,
-  nodeActionsContainerStyles,
-  nodeLabelContainerStyles,
-  renameIconStyles,
-  treeItemStyles,
-  treeNodeIcons,
-} from "./styles";
+import { treeItemStyles, treeNodeIcons } from "./styles";
 import type { ManagedTreeNodeProps } from "./types";
 
 function ManagedTreeNode({
   node,
-  onNodeClick,
   selectedPath,
   onAddSubDirectory,
   onSaveSubDirectory,
@@ -52,9 +44,7 @@ function ManagedTreeNode({
   isDeletePending,
 }: ManagedTreeNodeProps) {
   const { children, path, name, id } = node;
-  const isRootNode = name === ROOT_NODE_NAME;
-  const hasChildren = children.length > 0;
-
+  const isRootNode = name === TREE_ROOT_NAME;
   const sortedChildren = useMemo(
     () => R.sortBy(R.compose(R.toLower, R.prop("name")), children),
     [children],
@@ -90,38 +80,32 @@ function ManagedTreeNode({
   // Root node is just a container - it doesn't render itself, only its children
   // Children of root node are top-level directories (parentId === null in the API)
   if (isRootNode) {
-    return (
-      <>
-        {sortedChildren.map((child) => (
-          <ManagedTreeNode
-            key={child.id}
-            node={child}
-            onNodeClick={onNodeClick}
-            selectedPath={selectedPath}
-            onAddSubDirectory={onAddSubDirectory}
-            onSaveSubDirectory={onSaveSubDirectory}
-            onCancelSubDirectory={onCancelSubDirectory}
-            isCreatingSubDirectory={isCreatingSubDirectory}
-            isCreatePending={isCreatePending}
-            onStartUpdate={onStartUpdate}
-            onSaveUpdate={onSaveUpdate}
-            onCancelUpdate={onCancelUpdate}
-            isUpdating={isUpdating}
-            isUpdatePending={isUpdatePending}
-            onDelete={onDelete}
-            isDeleting={isDeleting}
-            isDeletePending={isDeletePending}
-          />
-        ))}
-      </>
-    );
+    return sortedChildren.map((child) => (
+      <ManagedTreeNode
+        key={child.id}
+        node={child}
+        selectedPath={selectedPath}
+        onAddSubDirectory={onAddSubDirectory}
+        onSaveSubDirectory={onSaveSubDirectory}
+        onCancelSubDirectory={onCancelSubDirectory}
+        isCreatingSubDirectory={isCreatingSubDirectory}
+        isCreatePending={isCreatePending}
+        onStartUpdate={onStartUpdate}
+        onSaveUpdate={onSaveUpdate}
+        onCancelUpdate={onCancelUpdate}
+        isUpdating={isUpdating}
+        isUpdatePending={isUpdatePending}
+        onDelete={onDelete}
+        isDeleting={isDeleting}
+        isDeletePending={isDeletePending}
+      />
+    ));
   }
 
   // If this directory is in update mode, render editable item
   if (isUpdating(id)) {
     return (
       <EditableTreeItem
-        itemId={path}
         initialValue={name}
         isEditing
         isPending={isUpdatePending}
@@ -135,39 +119,38 @@ function ManagedTreeNode({
     <TreeItemEnhanced
       itemId={path}
       label={
-        <Box sx={nodeLabelContainerStyles}>
-          <Tooltip title={name}>
-            <Box
-              component="span"
-              sx={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
-            >
-              {name}
-            </Box>
-          </Tooltip>
-          <Box sx={nodeActionsContainerStyles}>
+        <Stack justifyContent="space-between" spacing={1}>
+          <Typography variant="body2" noWrap>
+            {name}
+          </Typography>
+          <Stack spacing={0.25} sx={nodeActionsContainerStyles}>
+            <FavoriteDirectoryToggle
+              directoryId={id}
+              slotProps={{ icon: { fontSize: "extra-small" } }}
+              sx={actionButtonStyles}
+            />
             <IconButton size="small" onClick={handleAddSubDirectory} sx={actionButtonStyles}>
-              <CreateNewFolderIcon sx={addSubDirectoryIconStyles} />
+              <CreateNewFolderIcon fontSize="extra-small" />
             </IconButton>
             <IconButton size="small" onClick={handleStartUpdate} sx={actionButtonStyles}>
-              <EditIcon sx={renameIconStyles} />
+              <EditIcon fontSize="extra-small" />
             </IconButton>
             <IconButton size="small" onClick={handleDelete} sx={actionButtonStyles}>
-              <DeleteIcon sx={deleteIconStyles} />
+              <DeleteIcon fontSize="extra-small" color="error" />
             </IconButton>
-          </Box>
-        </Box>
+          </Stack>
+        </Stack>
       }
-      onClick={() => onNodeClick(path)}
       slots={{
-        collapseIcon: hasChildren ? treeNodeIcons.folderOpen : undefined,
-        expandIcon: hasChildren ? treeNodeIcons.folder : undefined,
+        collapseIcon: treeNodeIcons.folderOpen,
+        expandIcon: treeNodeIcons.folder,
+        endIcon: treeNodeIcons.folder,
       }}
       sx={treeItemStyles}
     >
       {/* Show editable item when creating a subdirectory under this directory */}
       {isCreatingSubDirectory(id) && (
         <EditableTreeItem
-          itemId={`temp-${id}-${Date.now()}`}
           isEditing
           isPending={isCreatePending}
           onSave={onSaveSubDirectory(id)} // id is the parentId for the new subdirectory
@@ -180,7 +163,6 @@ function ManagedTreeNode({
         <ManagedTreeNode
           key={child.id}
           node={child}
-          onNodeClick={onNodeClick}
           selectedPath={selectedPath}
           onAddSubDirectory={onAddSubDirectory}
           onSaveSubDirectory={onSaveSubDirectory}

@@ -12,7 +12,6 @@
 
 import copy
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Type
 
 from antares.study.version import StudyVersion
 
@@ -29,6 +28,7 @@ from antarest.study.storage.variantstudy.model.command.create_district import Cr
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
     CreateSTStorageAdditionalConstraints,
@@ -56,6 +56,7 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_storage_c
     RemoveMultipleSTStorageConstraints,
 )
 from antarest.study.storage.variantstudy.model.command.remove_renewables_cluster import RemoveRenewablesCluster
+from antarest.study.storage.variantstudy.model.command.remove_reserve_definitions import RemoveReserveDefinitions
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
@@ -64,8 +65,26 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource 
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
 from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation import ReplaceHydroAllocation
 from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
+from antarest.study.storage.variantstudy.model.command.replace_hydro_reserve_certifications import (
+    ReplaceHydroReserveCertifications,
+)
+from antarest.study.storage.variantstudy.model.command.replace_hydro_reserve_symmetries import (
+    ReplaceHydroReserveSymmetries,
+)
 from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
+from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_certifications import (
+    ReplaceStStorageReserveCertifications,
+)
+from antarest.study.storage.variantstudy.model.command.replace_st_storage_reserve_symmetries import (
+    ReplaceStStorageReserveSymmetries,
+)
+from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_certifications import (
+    ReplaceThermalReserveCertifications,
+)
+from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_symmetries import (
+    ReplaceThermalReserveSymmetries,
+)
 from antarest.study.storage.variantstudy.model.command.replace_user_resource import ReplaceUserResource
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_adequacy_criterion import (
     ReplaceXpansionAdequacyCriterion,
@@ -94,6 +113,10 @@ from antarest.study.storage.variantstudy.model.command.update_optimization_prefe
 from antarest.study.storage.variantstudy.model.command.update_playlist import UpdatePlaylist
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command.update_renewables_clusters import UpdateRenewablesClusters
+from antarest.study.storage.variantstudy.model.command.update_reserve_definitions import UpdateReserveDefinitions
+from antarest.study.storage.variantstudy.model.command.update_reserves_global_parameters import (
+    UpdateReservesGlobalParameters,
+)
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command.update_st_storage_additional_constraints import (
     UpdateSTStorageAdditionalConstraints,
@@ -106,7 +129,7 @@ from antarest.study.storage.variantstudy.model.command.update_xpansion_settings 
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
+COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.CREATE_AREA.value: CreateArea,
     CommandName.UPDATE_AREAS_PROPERTIES.value: UpdateAreasProperties,
     CommandName.UPDATE_AREA_UI.value: UpdateAreaUI,
@@ -171,6 +194,16 @@ COMMAND_MAPPING: Dict[str, Type[ICommand]] = {
     CommandName.CONVERT_HYDRO_PMAX.value: ConvertHydroPmax,
     CommandName.CREATE_USER_RESOURCE.value: ReplaceUserResource,
     CommandName.REPLACE_USER_RESOURCE.value: ReplaceUserResource,
+    CommandName.UPDATE_RESERVES_GLOBAL_PARAMETERS.value: UpdateReservesGlobalParameters,
+    CommandName.CREATE_RESERVE_DEFINITION.value: CreateReserveDefinition,
+    CommandName.UPDATE_RESERVE_DEFINITIONS.value: UpdateReserveDefinitions,
+    CommandName.REMOVE_RESERVE_DEFINITIONS.value: RemoveReserveDefinitions,
+    CommandName.REPLACE_THERMAL_RESERVE_SYMMETRIES.value: ReplaceThermalReserveSymmetries,
+    CommandName.REPLACE_THERMAL_RESERVE_CERTIFICATIONS.value: ReplaceThermalReserveCertifications,
+    CommandName.REPLACE_ST_STORAGE_RESERVE_SYMMETRIES.value: ReplaceStStorageReserveSymmetries,
+    CommandName.REPLACE_ST_STORAGE_RESERVE_CERTIFICATIONS.value: ReplaceStStorageReserveCertifications,
+    CommandName.REPLACE_HYDRO_RESERVE_CERTIFICATIONS.value: ReplaceHydroReserveCertifications,
+    CommandName.REPLACE_HYDRO_RESERVE_SYMMETRIES.value: ReplaceHydroReserveSymmetries,
 }
 
 
@@ -197,7 +230,7 @@ class CommandFactory:
         )
 
     def _to_single_command(
-        self, action: str, args: JSON, version: int, study_version: StudyVersion, command_id: Optional[str]
+        self, action: str, args: JSON, version: int, study_version: StudyVersion, command_id: str | None
     ) -> ICommand:
         """Convert a single CommandDTO to ICommand."""
         if action in COMMAND_MAPPING:
@@ -213,7 +246,7 @@ class CommandFactory:
             return command_class.model_validate(data, context=CommandValidationContext(version=version))
         raise NotImplementedError(action)
 
-    def to_command(self, command_dto: CommandDTO) -> List[ICommand]:
+    def to_command(self, command_dto: CommandDTO) -> list[ICommand]:
         """
         Convert a CommandDTO to a list of ICommand.
 

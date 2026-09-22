@@ -12,12 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import FolderIcon from "@mui/icons-material/Folder";
-import { Box } from "@mui/material";
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import CustomScrollbar from "@/components/CustomScrollbar";
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import RootPage from "@/components/page/RootPage";
 import SplitView from "@/components/page/SplitView";
@@ -26,6 +20,11 @@ import { directoryQueries } from "@/queries/directories/queries";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudiesStatus, getStudyIdsFilteredAndSorted } from "@/redux/selectors";
 import { FetchStatus } from "@/redux/utils";
+import FolderIcon from "@mui/icons-material/Folder";
+import { Box } from "@mui/material";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import FiltersDrawer from "./-components/FiltersDrawer";
 import HeaderActions from "./-components/HeaderActions";
 import RefreshButton from "./-components/RefreshButton";
@@ -55,13 +54,9 @@ function Studies() {
       titleIcon={FolderIcon}
       headerActions={<HeaderActions onOpenFilterClick={() => setOpenFilter(true)} />}
     >
-      <SplitView splitId="studies" minSize={[300, 800]}>
+      <SplitView splitId="studies" minSize={[250, 300]}>
         {/* Left - Studies tree explorer */}
-        <CustomScrollbar>
-          <Box sx={{ overflow: "auto" }}>
-            <StudyTree />
-          </Box>
-        </CustomScrollbar>
+        <StudyTree />
 
         {/* Right - Studies list */}
         <ViewWrapper flex disablePadding>

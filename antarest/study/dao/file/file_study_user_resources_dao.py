@@ -11,11 +11,18 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from pathlib import PurePosixPath
-from typing import TYPE_CHECKING, Any, Iterator, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, ResourceCreationNotAllowed, ResourceDeletionNotAllowed
+from antarest.core.exceptions import (
+    ChildNotFoundError,
+    ResourceCreationNotAllowed,
+    ResourceDeletionNotAllowed,
+    UserResourceIsAFolder,
+    UserResourceNotFound,
+)
+from antarest.core.utils.utils import is_path_safe
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.user_resources_dao import UserResourcesDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -39,40 +46,68 @@ class FileStudyUserResourceDao(UserResourcesDao, ABC):
         pass
 
     @override
-    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
-        blob_service = self.get_impl()._blob_service
+    def get_all_user_resources(self) -> list[UserResourceDataCreation]:
+        result = []
+        blob_service = self.get_impl().blob_service
         user_path = self.get_file_study().config.study_path / "user"
         if user_path.exists():
-            all_files = user_path.rglob("*")
             expansion_folder = user_path / "expansion"
-            for file in all_files:
-                if file.is_file() and not file.is_relative_to(expansion_folder):
-                    content = file.read_bytes()
-                    blob_id = blob_service.save(content)
-                    yield UserResourceDataCreation(
-                        path=PurePosixPath(file.relative_to(user_path).as_posix()),
-                        resource_type=ResourceType.FILE,
-                        blob_id=blob_id,
+            for item in user_path.rglob("*"):
+                if item.is_relative_to(expansion_folder):
+                    continue
+                rel_path = PurePosixPath(item.relative_to(user_path).as_posix())
+                if item.is_file():
+                    blob_id = blob_service.save(item.read_bytes())
+                    result.append(
+                        UserResourceDataCreation(path=rel_path, resource_type=ResourceType.FILE, blob_id=blob_id)
                     )
+                elif item.is_dir() and not any(item.iterdir()):
+                    result.append(
+                        UserResourceDataCreation(path=rel_path, resource_type=ResourceType.FOLDER, blob_id=None)
+                    )
+        return result
 
     @override
-    def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
-        url = [item for item in resource_data.path.parts if item]
+    def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
+        # Ensures the given path is relative to the `user` folder
+        user_folder = self.get_file_study().config.study_path / "user"
+        if not is_path_safe(user_folder, resource_path.as_posix()):
+            raise UserResourceNotFound(resource_path.as_posix())
+
+        fs_path = user_folder.joinpath(resource_path)
+        if not fs_path.exists():
+            raise UserResourceNotFound(resource_path.as_posix())
+        if fs_path.is_dir():
+            raise UserResourceIsAFolder(resource_path.as_posix())
+        return fs_path.read_bytes()
+
+    @override
+    def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
         study_tree = self.get_file_study().tree
         user_node = cast(User, study_tree.get_node(["user"]))
-        if not is_url_writeable(user_node, url):
-            raise ResourceCreationNotAllowed(f"you are not allowed to create a resource here: {resource_data.path}")
 
-        content: bytes | dict[str, str] = {}
-        if resource_data.blob_id:
-            # We need to fetch the actual content inside the blob store
-            content = self.get_impl()._blob_service.get(resource_data.blob_id)
+        # First, we validate all urls
+        resource_url_mapping = []
+        for resource in resource_data:
+            url = [item for item in resource.path.parts if item]
+            resource_url_mapping.append((url, resource))
 
-        # Creates the tree recursively to be able to create a resource inside a non-existing folder.
-        nested_dict: dict[str, Any] = {url[-1]: content}
-        for key in reversed(url[:-1]):
-            nested_dict = {key: nested_dict}
-        study_tree.save({"user": nested_dict})
+            if not is_url_writeable(user_node, url):
+                raise ResourceCreationNotAllowed(f"you are not allowed to create a resource here: {resource.path}")
+
+        for url, resource in resource_url_mapping:
+            content: bytes | dict[str, str] = {}
+            if resource.blob_id:
+                # We need to fetch the actual content inside the blob store
+                content = self.get_impl().blob_service.get(resource.blob_id)
+
+            # As `content` might be very heavy in Memory, we dump it everytime even if it takes a bit longer
+
+            # Creates the tree recursively to be able to create a resource inside a non-existing folder.
+            nested_dict: dict[str, Any] = {url[-1]: content}
+            for key in reversed(url[:-1]):
+                nested_dict = {key: nested_dict}
+            study_tree.save({"user": nested_dict})
 
     @override
     def delete_user_resource(self, resource_path: PurePosixPath) -> None:

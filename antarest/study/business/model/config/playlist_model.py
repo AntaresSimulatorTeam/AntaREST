@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from pydantic import PositiveInt
+from pydantic import ConfigDict, PositiveInt, RootModel
 
 from antarest.core.serde import AntaresBaseModel
 
@@ -22,6 +22,14 @@ class PlaylistValues(AntaresBaseModel):
 class PlaylistValuesUpdate(AntaresBaseModel):
     status: bool | None = None
     weight: float | int | None = None
+
+
+class PlaylistRootModel(RootModel[dict[int, PlaylistValues]]):
+    model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
+
+
+class PlaylistUpdateRootModel(RootModel[dict[int, PlaylistValuesUpdate]]):
+    model_config = ConfigDict(json_schema_extra={"example": {"1": {"status": False, "weight": 0.4}}})
 
 
 class Playlist(AntaresBaseModel, extra="forbid"):

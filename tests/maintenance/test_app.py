@@ -13,9 +13,9 @@
 """Tests for Celery app configuration."""
 
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 from unittest import mock
 from unittest.mock import Mock
 
@@ -23,7 +23,7 @@ import pytest
 
 from antarest.core.config import Config
 from antarest.core.exceptions import ConfigurationError
-from antarest.maintenance.app import _mask_url_credentials, _setup_periodic_tasks, celery_app
+from antarest.maintenance.app import _init_worker, _mask_url_credentials, _setup_periodic_tasks, celery_app
 from antarest.maintenance.config import get_config, load_config
 
 
@@ -103,6 +103,11 @@ class TestSetupPeriodicTasks:
         config.storage.auto_archive_sleeping_time = 1800
         config.storage.auto_archive_cron = None
         config.storage.watcher_scan_sleeping_time = 120
+        config.storage.tasks_gc_sleeping_time = 3600
+        config.storage.disk_usage_log_sleeping_time = 300
+        config.storage.disk_usage_log_cron = None
+        config.storage.disk_space_analyzer_sleeping_time = 300
+        config.storage.disk_space_analyzer_cron = None
 
         with mock.patch("antarest.maintenance.app.get_config", return_value=config):
             _setup_periodic_tasks(sender=sender)
@@ -112,6 +117,35 @@ class TestSetupPeriodicTasks:
         assert calls[1][0][0] == 43200
         assert calls[2][0][0] == 1800
         assert calls[3][0][0] == 120
+        assert calls[5][0][0] == 3600
 
         names = [c[1]["name"] for c in calls]
-        assert names == ["matrices_cleaner", "blobs_cleaner", "auto_archiver", "watcher_scan", "variable_view_cleaner"]
+        assert names == [
+            "matrices_cleaner",
+            "blobs_cleaner",
+            "auto_archiver",
+            "watcher_scan",
+            "variable_view_cleaner",
+            "tasks_cleaner",
+            "disk_usage",
+            "disk_space_analyzer",
+            "cache_launcher_load",
+        ]
+
+
+class TestInitWorker:
+    def test_sets_maintenance_ctx_on_success(self, with_no_maintenance_ctx):
+        fake_ctx = Mock()
+        with mock.patch("antarest.maintenance.app.MaintenanceContext.create", return_value=fake_ctx):
+            _init_worker()
+
+        assert celery_app.conf.maintenance_ctx is fake_ctx
+
+    def test_aborts_worker_startup_when_context_creation_fails(self, with_no_maintenance_ctx):
+        with (
+            mock.patch("antarest.maintenance.app.MaintenanceContext.create", side_effect=ValueError("boom")),
+            pytest.raises(SystemExit),
+        ):
+            _init_worker()
+
+        assert celery_app.conf.get("maintenance_ctx") is None

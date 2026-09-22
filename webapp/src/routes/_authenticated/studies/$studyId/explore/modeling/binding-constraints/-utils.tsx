@@ -14,8 +14,7 @@
 
 import type { Options } from "@/components/fieldEditors/SelectFE";
 import StatusDot from "@/components/icons/StatusDot";
-import type { RouteListItem } from "@/components/page/ListView";
-import type { QueryList } from "@/queries/types";
+import type { RouterListViewItem } from "@/components/page/list/RouterListView";
 import { isQueryListItemOptimistic } from "@/queries/utils";
 import type {
   BindingConstraint,
@@ -76,9 +75,7 @@ export const DEFAULT_CONSTRAINT_VALUES = {
 // Functions
 ////////////////////////////////////////////////////////////////
 
-export function bindingConstraintsToList(
-  constraints: QueryList<BindingConstraint>,
-): RouteListItem[] {
+export function bindingConstraintsToList(constraints: BindingConstraint[]): RouterListViewItem[] {
   const list = constraints.map((constraint) => ({
     id: constraint.id,
     label: constraint.name,

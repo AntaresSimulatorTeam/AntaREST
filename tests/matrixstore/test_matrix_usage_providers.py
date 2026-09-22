@@ -20,9 +20,9 @@ import polars as pl
 import pytest
 from typing_extensions import override
 
-from antarest.core.config import DEFAULT_WORKSPACE_NAME, InternalMatrixFormat
+from antarest.blobstore.in_memory import InMemoryBlobService
+from antarest.core.config import InternalMatrixFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
 from antarest.login.model import Group
 from antarest.login.repository import GroupRepository
 from antarest.login.service import LoginService
@@ -31,15 +31,16 @@ from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixDataSetUpdateDTO, MatrixInfoDTO, MatrixReference
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
 from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
+from antarest.output.model import OutputVariablesType
+from antarest.output.variable_view.db import OutputVariablesViewsModel
+from antarest.output.variable_view.matrix_usage_provider import OutputVariablesMatrixUsageProvider
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
-from antarest.study.model import MatrixFrequency, RawStudy
-from antarest.study.output.output_model import OutputVariablesType, OutputVariablesViewsModel
-from antarest.study.output.variables_matrix_usage_provider import OutputVariablesMatrixUsageProvider
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.model import STUDY_VERSION_9_3, MatrixFrequency, RawStudy, StorageMode
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawStudyMatrixUsageProvider
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
+from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
     ConstantsMatrixUsageProvider,
 )
@@ -56,24 +57,32 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import create_raw_study, with_admin_user, with_db_context
+from tests.conftest import empty_study_fixture
+from tests.helpers import build_dao_from_file_study, create_raw_study, with_admin_user, with_db_context
 
 
 @pytest.fixture
 @with_db_context
 def raw_studies_matrix_usage_provider(
-    raw_study_service: RawStudyService, matrix_service: ISimpleMatrixService
+    raw_study_service: RawStudyService,
+    matrix_service: ISimpleMatrixService,
+    storage_mapping: dict[StorageMode, IStudyStorage],
 ) -> RawStudyMatrixUsageProvider:
-    return RawStudyMatrixUsageProvider(StudyMetadataRepository(raw_study_service.cache), matrix_service)
+    return RawStudyMatrixUsageProvider(StudyMetadataRepository(), matrix_service, storage_mapping)
+
+
+@pytest.fixture
+def storage_mapping(raw_study_service: RawStudyService) -> dict[StorageMode, IStudyStorage]:
+    return raw_study_service._storage_mapping
 
 
 @pytest.fixture
 def command_matrix_usage_provider(
-    variant_study_repository: VariantStudyRepository, command_factory: CommandFactory
+    variant_study_repository: VariantStudyRepository,
+    command_factory: CommandFactory,
+    storage_mapping: dict[StorageMode, IStudyStorage],
 ) -> CommandMatrixUsageProvider:
-    command_matrix_usage_provider = CommandMatrixUsageProvider(variant_study_repository, command_factory)
-
-    return command_matrix_usage_provider
+    return CommandMatrixUsageProvider(variant_study_repository, command_factory, storage_mapping)
 
 
 @pytest.fixture
@@ -114,6 +123,7 @@ def test_raw_studies_matrix_usage_provider(
     raw_study_service: RawStudyService,
     tmp_path: Path,
     command_context: CommandContext,
+    fs_dao: FileStudyTreeDao,
 ) -> None:
     matrix_name1 = "matrix_name1"
     matrix_name2 = "matrix_name2"
@@ -121,19 +131,8 @@ def test_raw_studies_matrix_usage_provider(
     matrix_name4 = "matrix_name4"
     matrices_name = ["matrix_name1", "matrix_name2", "matrix_name3"]
 
-    now = current_time()
-    metadata_raw_study = create_raw_study(
-        id="study1",
-        workspace=DEFAULT_WORKSPACE_NAME,
-        path=str(tmp_path / "studies"),
-        version="720",
-        created_at=now,
-        updated_at=now,
-    )
-
     with db():
-        FileStudyDaoFactory(command_context, raw_study_service.study_factory).create_study_dao(metadata_raw_study)
-        study_path = Path(metadata_raw_study.path)
+        study_path = tmp_path / "my_study"  # Created by the `fs_dao` fixture
         input_path = study_path / "input"
         expansion_path = study_path / "user" / "expansion"
         expansion_path.mkdir(parents=True, exist_ok=True)
@@ -146,8 +145,6 @@ def test_raw_studies_matrix_usage_provider(
         (input_path / f"{matrix_name4}.txt").write_text(f"matrix://{matrix_name4}")
         # Not in `input` or `expansion` folder -> Should not appear
         (study_path / f"{matrix_name4}.link").write_text(f"matrix://{matrix_name4}")
-
-        raw_studies_matrix_usage_provider.study_metadata_repo.save(metadata_raw_study)
 
         matrices_references = raw_studies_matrix_usage_provider.get_matrix_usage()
         matrices_references_id = [matrix_reference.matrix_id for matrix_reference in matrices_references]
@@ -212,28 +209,35 @@ def test_command_matrix_usage_provider(
 @with_db_context
 @with_admin_user
 def test_command_matrix_usage_provider_with_snapshot(
-    empty_study_930: FileStudy, variant_study_service: VariantStudyService, command_context: CommandContext
+    tmp_path: Path, variant_study_service: VariantStudyService
 ) -> None:
     # Create a real matrix_service
-    bucket_dir = (
-        variant_study_service.command_factory.command_context.matrix_service.matrix_content_repository.bucket_dir
-    )
     matrix_service = MatrixService(
         repo=MatrixRepository(db.session),
         repo_dataset=MatrixDataSetRepository(db.session),
-        matrix_content_repository=MatrixContentRepository(bucket_dir, InternalMatrixFormat.TSV),
+        matrix_content_repository=MatrixContentRepository(tmp_path, InternalMatrixFormat.TSV),
         file_transfer_manager=Mock(),
         task_service=Mock(),
         config=Mock(),
         user_service=Mock(),
     )
-    variant_study_service.command_factory.command_context.matrix_service = matrix_service
+    # Create a command_context object based on this matrix_service
+    constants = GeneratorMatrixConstants(matrix_service=matrix_service)
+    constants.init_constant_matrices()
+    command_context = CommandContext(
+        generator_matrix_constants=constants,
+        matrix_service=matrix_service,
+        blob_service=InMemoryBlobService(),
+    )
+
+    # Create a FileStudy based on the matrix_service
+    study = empty_study_fixture(STUDY_VERSION_9_3, matrix_service, tmp_path)
 
     # Create a RawStudy with 1 area and 1 thermal
-    study = empty_study_930
+    dao = build_dao_from_file_study(study, command_context)
     version = study.config.version
     create_area_cmd = CreateArea(area_name="fr", command_context=command_context, study_version=version)
-    output = create_area_cmd.apply(study)
+    output = create_area_cmd.apply(dao)
     assert output.status
     assert create_area_cmd.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=False)
     cmd = CreateCluster(
@@ -242,7 +246,7 @@ def test_command_matrix_usage_provider_with_snapshot(
         command_context=command_context,
         study_version=version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
 
     # Add the study in DB
@@ -259,14 +263,18 @@ def test_command_matrix_usage_provider_with_snapshot(
         command_context=command_context, study_version=version, thermal_outage_details=False
     )
     assert command.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=True)
-    variant_study_service.append_command(variant_study.id, command.to_dto())
+    variant_study_service.append_commands(variant_study.id, [command.to_dto()])
 
     # Generate the snapshot
-    variant_study_service.get_raw(variant_study)
+    variant_study_service.generate(variant_study)
 
     # Ensures the provider sees matrices in the snapshot as the variant contains the command `GenerateThermalClusterTimeSeries`.
     # This way it won't be cleaned by the garbage collector.
-    provider = CommandMatrixUsageProvider(variant_study_service.repository, variant_study_service.command_factory)
+    provider = CommandMatrixUsageProvider(
+        variant_study_service.repository,
+        variant_study_service.command_factory,
+        variant_study_service.raw_study_service._storage_mapping,
+    )
     used_matrices = list(provider.get_matrix_usage())
     assert len(used_matrices) > 0
 
@@ -281,9 +289,9 @@ def test_command_matrix_usage_provider_with_snapshot(
     variant_study = variant_study_service.create_variant_study(parent_id, "variant_study2")
     command = CreateArea(area_name="be", command_context=command_context, study_version=version)
     assert command.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=False)
-    variant_study_service.append_command(variant_study.id, command.to_dto())
+    variant_study_service.append_commands(variant_study.id, [command.to_dto()])
     # Generate its snapshot
-    variant_study_service.get_raw(variant_study)
+    variant_study_service.generate(variant_study)
     # Ensures no matrix is used even if the snapshot exists
     used_matrices = list(provider.get_matrix_usage())
     assert len(used_matrices) == 0
@@ -309,7 +317,8 @@ def test_constants_matrix_usage_provider(constants_matrix_usage_provider: Consta
     assert constants_id == matrix_ref_ids
 
 
-def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user: Any) -> None:
+def test_dataset_matrix_usage_provider(matrix_service_on_disk: MatrixService, admin_user: Any) -> None:
+    matrix_service = matrix_service_on_disk
     with db():
         group_repo = GroupRepository()
         group = group_repo.save(Group(name="groupA", id="groupA"))
@@ -344,7 +353,8 @@ def test_dataset_matrix_usage_provider(matrix_service: MatrixService, admin_user
 
 
 @with_db_context
-def test_output_variables_matrix_usage_provider(matrix_service: MatrixService) -> None:
+def test_output_variables_matrix_usage_provider(matrix_service_on_disk: MatrixService) -> None:
+    matrix_service = matrix_service_on_disk
     # Create a matrix to avoid ForeignKey issue
     matrix_id = matrix_service.create(pl.DataFrame([0]))
 

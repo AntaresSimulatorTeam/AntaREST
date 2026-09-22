@@ -13,8 +13,9 @@
 import logging
 import textwrap
 import typing as t
+from collections.abc import Iterable, Mapping
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any
 from zipfile import ZipFile
 
 import pytest
@@ -49,6 +50,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_st_storage_additional_constraints,
     _parse_thermal,
     build,
+    parse_area,
     parse_outputs,
     parse_simulation,
 )
@@ -359,6 +361,7 @@ def test_parse_area__extra_area(study_path: Path) -> None:
     """
     (study_path / "input/areas/fr/optimization.ini").write_text(content)
 
+    all_filters = ["hourly", "daily", "weekly", "monthly", "annual"]
     config = FileStudyTreeConfig(
         study_path=study_path,
         path=study_path,
@@ -379,13 +382,83 @@ def test_parse_area__extra_area(study_path: Path) -> None:
                 links={},
                 thermals=[],
                 renewables=[],
-                filters_synthesis=[],
-                filters_year=[],
+                # No optimization.ini → simulator default = all filters enabled.
+                filters_synthesis=all_filters,
+                filters_year=all_filters,
                 st_storages=[],
             ),
         },
     )
     assert build(study_path, "id") == config
+
+
+_ALL_FILTERS = ["hourly", "daily", "weekly", "monthly", "annual"]
+
+
+def test_parse_area_no_optimization_ini_defaults_to_all_filters(study_path: Path) -> None:
+    """Area folder exists but no optimization.ini → both filters default to all 5
+    (simulator convention: absent = all frequencies enabled)."""
+    (study_path / "input/areas/fr").mkdir(parents=True)
+
+    area = parse_area(study_path, "FR")
+    assert area.filters_synthesis == _ALL_FILTERS
+    assert area.filters_year == _ALL_FILTERS
+
+
+def test_parse_area_optimization_ini_missing_filtering_section(study_path: Path) -> None:
+    """optimization.ini exists but lacks [filtering] section → both filters default to all 5."""
+    (study_path / "input/areas/fr").mkdir(parents=True)
+    (study_path / "input/areas/fr/optimization.ini").write_text("[nodal optimization]\nnon-dispatchable-power = true\n")
+
+    area = parse_area(study_path, "FR")
+    assert area.filters_synthesis == _ALL_FILTERS
+    assert area.filters_year == _ALL_FILTERS
+
+
+def test_parse_area_only_one_filter_key_present(study_path: Path) -> None:
+    """[filtering] has one key but not the other → present one parsed, missing one defaults to all 5."""
+    (study_path / "input/areas/fr").mkdir(parents=True)
+    content = """
+    [filtering]
+    filter-synthesis = daily, monthly
+    """
+    (study_path / "input/areas/fr/optimization.ini").write_text(content)
+
+    area = parse_area(study_path, "FR")
+    assert area.filters_synthesis == ["daily", "monthly"]
+    assert area.filters_year == _ALL_FILTERS
+
+
+def test_parse_area_explicit_empty_filter_preserved(study_path: Path) -> None:
+    """`filter-synthesis = ` (key present, no value) is preserved as `[]` — user intent
+    distinct from "key absent" which defaults to all filters."""
+    (study_path / "input/areas/fr").mkdir(parents=True)
+    content = """
+    [filtering]
+    filter-synthesis =
+    filter-year-by-year = annual
+    """
+    (study_path / "input/areas/fr/optimization.ini").write_text(content)
+
+    area = parse_area(study_path, "FR")
+    assert area.filters_synthesis == []
+    assert area.filters_year == ["annual"]
+
+
+def test_parse_area_filters_normalized_to_canonical_order(study_path: Path) -> None:
+    """Comma-separated filters are normalized to canonical (HOURLY → ANNUAL) order
+    regardless of input order, and lowercased."""
+    (study_path / "input/areas/fr").mkdir(parents=True)
+    content = """
+    [filtering]
+    filter-synthesis = ANNUAL, HOURLY, monthly
+    filter-year-by-year = weekly
+    """
+    (study_path / "input/areas/fr/optimization.ini").write_text(content)
+
+    area = parse_area(study_path, "FR")
+    assert area.filters_synthesis == ["hourly", "monthly", "annual"]
+    assert area.filters_year == ["weekly"]
 
 
 # noinspection SpellCheckingInspection
@@ -717,24 +790,110 @@ def test_parse_links(study_path: Path) -> None:
     assert _parse_links_filtering(study_path, "fr") == {"l1": link}
 
 
-def test_parse_expansion_output(empty_study_880: FileStudy) -> None:
+def test_parse_links_multiple_filters(study_path: Path) -> None:
+    (study_path / "input/links/fr").mkdir(parents=True)
+    content = """
+    [l1]
+    filter-synthesis = hourly, daily, weekly
+    filter-year-by-year = monthly, annual
     """
-    Ensures we're able to parse an `expansion` simulation
-    """
-    study_path = empty_study_880.config.path
-    output_path = study_path / "output"
-    output_id = "20250521-1009exp-fake_output"
-    expansion_output = output_path / output_id
-    expansion_output.mkdir(parents=True)
-    for file in ["file_1.txt", "file_2.txt", "file_3.mps", "checkIntegrity.txt"]:
-        (expansion_output / file).touch()
+    (study_path / "input/links/fr/properties.ini").write_text(content)
 
-    ini_path = expansion_output / "about-the-study" / "parameters.ini"
+    result = _parse_links_filtering(study_path, "fr")
+    assert set(result["l1"].filters_synthesis) == {"hourly", "daily", "weekly"}
+    assert set(result["l1"].filters_year) == {"monthly", "annual"}
+
+
+def test_parse_links_missing_filter_keys_default_to_all_filters(study_path: Path) -> None:
+    (study_path / "input/links/fr").mkdir(parents=True)
+    (study_path / "input/links/fr/properties.ini").write_text("[l1]\nhurdles-cost = true\n")
+
+    result = _parse_links_filtering(study_path, "fr")
+    all_filters = {"hourly", "daily", "weekly", "monthly", "annual"}
+    assert set(result["l1"].filters_synthesis) == all_filters
+    assert set(result["l1"].filters_year) == all_filters
+
+
+def test_parse_links_multiple_destinations(study_path: Path) -> None:
+    (study_path / "input/links/fr").mkdir(parents=True)
+    content = """
+    [de]
+    filter-synthesis = annual
+
+    [be]
+    filter-year-by-year = hourly
+    """
+    (study_path / "input/links/fr/properties.ini").write_text(content)
+
+    result = _parse_links_filtering(study_path, "fr")
+    all_filters = {"hourly", "daily", "weekly", "monthly", "annual"}
+    assert result["de"].filters_synthesis == ["annual"]
+    assert set(result["de"].filters_year) == all_filters
+    assert set(result["be"].filters_synthesis) == all_filters
+    assert result["be"].filters_year == ["hourly"]
+
+
+def test_parse_links_whitespace_tolerance(study_path: Path) -> None:
+    (study_path / "input/links/fr").mkdir(parents=True)
+    content = """
+    [l1]
+    filter-synthesis =   hourly  ,  daily
+    filter-year-by-year = annual
+    """
+    (study_path / "input/links/fr/properties.ini").write_text(content)
+
+    result = _parse_links_filtering(study_path, "fr")
+    assert set(result["l1"].filters_synthesis) == {"hourly", "daily"}
+    assert result["l1"].filters_year == ["annual"]
+
+
+def test_link_to_config_round_trip() -> None:
+    from antarest.study.business.model.common import FilterOption
+    from antarest.study.business.model.link_model import Link
+
+    link = Link(
+        area1="de",
+        area2="fr",
+        filter_synthesis=[FilterOption.HOURLY, FilterOption.DAILY],
+        filter_year_by_year=[FilterOption.ANNUAL],
+    )
+
+    config = link.to_config()
+    assert config.filters_synthesis == ["hourly", "daily"]
+    assert config.filters_year == ["annual"]
+
+
+def _set_up_output(study_path: Path, output_id: str) -> None:
+    output_path = study_path / "output"
+    output = output_path / output_id
+    output.mkdir(parents=True)
+
+    ini_path = output / "about-the-study" / "parameters.ini"
     ini_path.parent.mkdir(parents=True)
 
     write_ini_file(ini_path, {"general": {"nbyears": "1", "year-by-year": False}, "output": {"synthesis": True}})
-    simulation = parse_simulation(expansion_output, output_id)
 
+
+def test_parse_simulation(empty_study_880: FileStudy) -> None:
+    """
+    Ensures we're able to parse a simulation
+    """
+    output_id = "20250521-1009eco-fake_output"
+    study_path = empty_study_880.config.path
+    _set_up_output(study_path, output_id)
+
+    output = study_path / "output" / output_id
+    for file in ["file_1.txt", "file_2.txt", "file_3.mps", "checkIntegrity.txt"]:
+        (output / file).touch()
+
+    simulation = parse_simulation(output, output_id)
+
+    # Check the simulation object
+    assert not simulation.error
+    assert simulation.mode == Mode.ECONOMY
+    assert simulation.date == "20250521-1009"
+
+    # Check the FileStudyTree object
     empty_study_880.config.outputs = {output_id: simulation}
     tree = empty_study_880.tree.build()
     output_tree = tree["output"].get()
@@ -746,6 +905,50 @@ def test_parse_expansion_output(empty_study_880: FileStudy) -> None:
     assert "file_3" not in output_tree[output_id]
     # Asserts the `economy` folder is scanned
     assert "economy" in output_tree[output_id]
+
+
+def test_parse_xpansion_simulation(empty_study_880: FileStudy) -> None:
+    """
+    Ensures we're able to parse an Xpansion simulation
+    """
+    output_id = "20250521-1009exp-fake_output"
+    study_path = empty_study_880.config.path
+    _set_up_output(study_path, output_id)
+
+    output = study_path / "output" / output_id
+
+    # 1st case: no `out.json` file, no `checkIntegrity.txt` files -> Simulation in error
+    simulation = parse_simulation(output, output_id)
+
+    assert simulation.error
+    assert simulation.mode == Mode.EXPANSION
+    assert not simulation.xpansion
+
+    # 2nd case: a wrongly formatted `out.json` file -> Simulation in error
+    (output / "expansion").mkdir()
+    json_path = output / "expansion" / "out.json"
+    json_path.write_text("This is not a valid JSON file")
+    simulation = parse_simulation(output, output_id)
+    assert simulation.error
+    assert not simulation.xpansion
+
+    # 3rd case: a correctly formatted `out.json` file but the `version` key is missing -> Simulation in error
+    json_path.write_text('{"antares_xpansion": {"wrong_key": "1.0.0"}}')
+    simulation = parse_simulation(output, output_id)
+    assert simulation.error
+    assert not simulation.xpansion
+
+    # 4th case: The `version` key is present, but the `solution` one is missing -> Simulation in error
+    json_path.write_text('{"antares_xpansion": {"version": "1.0.0"}}')
+    simulation = parse_simulation(output, output_id)
+    assert simulation.error
+    assert simulation.xpansion == "1.0.0"
+
+    # 5th case: Everything is present -> Simulation should be a success even if the `checkIntegrity` file is missing
+    json_path.write_text('{"antares_xpansion": {"version": "1.0.0"}, "solution": ""}')
+    simulation = parse_simulation(output, output_id)
+    assert not simulation.error
+    assert simulation.xpansion == "1.0.0"
 
 
 def _assert_mapping_equals(left: Mapping[str, Iterable[str]], right: Mapping[str, Iterable[str]]) -> None:

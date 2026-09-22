@@ -1,0 +1,49 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import BinaryIO
+
+
+class ILargeFileStorage(ABC):
+    """
+    Interface for storing large files, possibly larger than memory.
+
+    Typical implementations will be filesystem based or S3 based.
+    Relies on paths for the moment, could use streams if needed.
+    """
+
+    @abstractmethod
+    def read_file(self, blob_id: str, target_path: Path) -> None:
+        """
+        Reads a file from the storage system and saves it to the target path.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def write_file(self, blob_id: str, source: Path | BinaryIO) -> None:
+        """
+        Writes to storage the content provided as source.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def file_exists(self, blob_id: str) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def delete_file(self, blob_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def list_files(self) -> list[str]:
+        raise NotImplementedError()

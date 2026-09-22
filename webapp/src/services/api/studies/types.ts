@@ -12,10 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import type { StudyMetadata } from "@/types/types";
+import type z from "zod";
+import type { studySchema } from "./schemas";
+
+export type StudyDTO = z.input<typeof studySchema>;
+
+export type Study = z.output<typeof studySchema>;
 
 export interface CopyStudyParams {
-  studyId: StudyMetadata["id"];
+  studyId: Study["id"];
   studyName: string;
   outputIds?: string[];
   withOutputs?: boolean;

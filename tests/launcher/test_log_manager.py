@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def test_reading(tmp_path: Path) -> None:
-    log_manager = LogTailManager(tmp_path)
+    log_manager = LogTailManager()
 
     logs = []
 

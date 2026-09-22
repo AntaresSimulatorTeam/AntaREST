@@ -13,7 +13,7 @@
  */
 
 import client from "@/services/api/client";
-import type { FileStudyTreeConfigDTO, StudyMetadata } from "@/types/types";
+import type { StudyMetadata, StudySynthesis } from "@/types/types";
 import type { DeepPartial } from "react-hook-form";
 
 ////////////////////////////////////////////////////////////////
@@ -105,7 +105,7 @@ export interface AdvancedParamsFormFields {
   initialReservoirLevels?: string; // Not present since v9.2
   numberOfCoresMode: string;
   powerFluctuations: string;
-  renewableGenerationModelling: FileStudyTreeConfigDTO["enr_modelling"];
+  renewableGenerationModelling: StudySynthesis["enr_modelling"];
   seedHydroCosts: number;
   seedInitialReservoirLevels: number;
   seedSpilledEnergyCosts: number;

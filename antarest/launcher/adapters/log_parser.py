@@ -12,11 +12,13 @@
 
 import functools
 import re
-from typing import Callable, Iterable, Match, Optional, TypeAlias, cast
+from collections.abc import Callable, Iterable
+from re import Match
+from typing import TypeAlias, cast
 
 from antarest.core.serde import AntaresBaseModel
 
-_SearchFunc: TypeAlias = Callable[[str], Optional[Match[str]]]
+_SearchFunc: TypeAlias = Callable[[str], Match[str] | None]
 
 _compile = functools.partial(re.compile, flags=re.IGNORECASE | re.VERBOSE)
 

@@ -12,8 +12,9 @@
 
 import copy
 import fnmatch
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Dict, NamedTuple, Sequence
+from typing import NamedTuple
 
 import pandas as pd
 from antares.study.version import StudyVersion
@@ -76,7 +77,7 @@ class _MatrixProfile(NamedTuple):
         return result
 
 
-_SPECIFIC_MATRICES: Dict[str, _MatrixProfile]
+_SPECIFIC_MATRICES: dict[str, _MatrixProfile]
 """
 The dictionary ``_SPECIFIC_MATRICES`` maps file patterns to ``_MatrixProfile`` objects,
 representing non-time series matrices.

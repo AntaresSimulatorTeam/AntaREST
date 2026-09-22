@@ -13,7 +13,7 @@
  */
 
 import { TaskStatus } from "../../../../../../../../services/api/tasks/constants";
-import type { TaskDTO } from "../../../../../../../../services/api/tasks/types";
+import type { Task } from "../../../../../../../../services/api/tasks/types";
 import type { CommandDTO, CommandResultDTO } from "../../../../../../../../types/types";
 import { CommandEnum, type CommandItem, type JsonCommandItem } from "./commandTypes";
 
@@ -32,15 +32,6 @@ export const CommandList = [
   CommandEnum.REPLACE_MATRIX,
   CommandEnum.UPDATE_CONFIG,
 ];
-
-// a little function to help us with reordering the result
-export const reorder = <T>(list: T[], startIndex: number, endIndex: number): T[] => {
-  const result = Array.from(list);
-  const [removed] = result.splice(startIndex, 1);
-  result.splice(endIndex, 0, removed);
-
-  return result;
-};
 
 export const fromCommandDTOToCommandItem = (commands: CommandDTO[]): CommandItem[] => {
   return commands.map((elm) => ({
@@ -85,7 +76,7 @@ export const exportJson = (json: object, filename: string): void => {
   link.remove();
 };
 
-export const isTaskFinal = (task: TaskDTO): boolean =>
+export const isTaskFinal = (task: Task): boolean =>
   !(task.status === TaskStatus.Pending || task.status === TaskStatus.Running);
 
 export const updateCommandResults = (

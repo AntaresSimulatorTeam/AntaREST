@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { Toolbar, alpha, Typography, Tooltip, IconButton, Fade } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
+import { alpha, Fade, IconButton, Toolbar, Tooltip, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
 interface Props {
@@ -34,7 +34,7 @@ function TableToolbar({ numSelected, handleDelete }: Props) {
         sx={{
           ...(numSelected > 0 && {
             bgcolor: (theme) =>
-              alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
+              alpha(theme.vars.palette.primary.main, theme.vars.palette.action.activatedOpacity),
           }),
         }}
       >

@@ -47,7 +47,7 @@ from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from tests.helpers import file_study_interface
 
 
@@ -156,12 +156,28 @@ def test_get_xpansion_settings(xpansion_manager: XpansionManager, empty_study_81
     }
 
 
-def test_update_xpansion_settings(xpansion_manager: XpansionManager, empty_study_810: FileStudy) -> None:
+def test_update_xpansion_settings(
+    link_manager: LinkManager,
+    area_manager: AreaManager,
+    xpansion_manager: XpansionManager,
+    empty_study_810: FileStudy,
+) -> None:
     """
     Test the retrieval of the xpansion settings.
     """
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
+
+    # Projection references candidate "foo", which must exist beforehand.
+    make_areas(area_manager, study)
+    make_link(link_manager, study)
+    xpansion_manager.add_candidate(
+        study,
+        XpansionCandidateCreation.model_validate(
+            {"name": "foo", "link": "area1 - area2", "annual-cost-per-mw": 1, "max-investment": 1}
+        ),
+    )
 
     new_settings_obj = {
         "optimality_gap": 4.0,
@@ -210,7 +226,8 @@ def test_add_candidate(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
 
     actual = study.get_files().tree.get(["user", "expansion", "candidates"])
@@ -261,7 +278,8 @@ def test_add_candidate(
 def test_add_candidate_with_weird_names(
     link_manager: LinkManager, area_manager: AreaManager, xpansion_manager: XpansionManager, empty_study_810: FileStudy
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -289,7 +307,8 @@ def test_get_candidate(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -323,7 +342,8 @@ def test_get_candidates(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -356,7 +376,8 @@ def test_update_candidates(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -390,7 +411,8 @@ def test_delete_candidate(
     xpansion_manager: XpansionManager,
     empty_study_810: FileStudy,
 ) -> None:
-    study = file_study_interface(empty_study_810)
+    matrix_service = xpansion_manager._command_context.matrix_service
+    study = file_study_interface(empty_study_810, matrix_service)
     xpansion_manager.create_xpansion_configuration(study)
     make_areas(area_manager, study)
     make_link(link_manager, study)
@@ -527,7 +549,7 @@ def test_add_resources(xpansion_manager: XpansionManager, study: StudyInterface)
 
     assert filename3 in study.get_files().tree.get(["user", "expansion", "weights"])
     matrix_node = study.get_files().tree.get_node(["user", "expansion", "weights", filename3])
-    assert isinstance(matrix_node, MatrixNode)
+    assert isinstance(matrix_node, InputSeriesMatrix)
     matrix = matrix_node.parse_as_dataframe()
     expected_matrix = pl.DataFrame(np.array([[2.0]]), schema=["0"])
     assert_frame_equal(matrix, expected_matrix)
@@ -611,14 +633,14 @@ def test_add_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> N
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "capa"])
     matrix_node = study.get_files().tree.get_node(["user", "expansion", "capa", filename1])
-    assert isinstance(matrix_node, MatrixNode)
+    assert isinstance(matrix_node, InputSeriesMatrix)
     matrix = matrix_node.parse_as_dataframe()
     expected_matrix = pl.DataFrame(np.array([[0.0]]), schema=["0"])
     assert_frame_equal(matrix, expected_matrix)
 
     assert filename2 in study.get_files().tree.get(["user", "expansion", "capa"])
     matrix_node = study.get_files().tree.get_node(["user", "expansion", "capa", filename2])
-    assert isinstance(matrix_node, MatrixNode)
+    assert isinstance(matrix_node, InputSeriesMatrix)
     matrix = matrix_node.parse_as_dataframe()
     expected_matrix = pl.DataFrame(np.array([[1.0]]), schema=["0"])
     assert_frame_equal(matrix, expected_matrix)

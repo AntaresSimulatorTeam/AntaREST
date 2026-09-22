@@ -37,12 +37,12 @@ import type { Job } from "@/services/api/launcher/jobs/types";
 import { downloadJobOutput, killStudy } from "@/services/api/study";
 import { getTask, getTasks } from "@/services/api/tasks";
 import { TaskStatus } from "@/services/api/tasks/constants";
-import type { TaskDTO } from "@/services/api/tasks/types";
+import type { Task, TaskTypeValue } from "@/services/api/tasks/types";
 import { convertUTCToLocalTime } from "@/services/utils/index";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { WsEvent } from "@/services/webSocket/types";
 import { addWsEventListener, subscribeWsChannels } from "@/services/webSocket/ws";
-import type { LaunchJobsProgress, TaskView } from "@/types/types";
+import type { JobsProgressById, TaskView } from "@/types/types";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import BlockIcon from "@mui/icons-material/Block";
 import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
@@ -50,11 +50,11 @@ import DownloadIcon from "@mui/icons-material/Download";
 import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import InfoIcon from "@mui/icons-material/Info";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 import { Box, Chip, CircularProgress, Tooltip, Typography, colors, useTheme } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import type { AxiosError } from "axios";
 import debug from "debug";
-import debounce from "lodash/debounce";
 import moment from "moment";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -62,6 +62,7 @@ import { useMount } from "react-use";
 import JobTableView from "./-components/JobTableView";
 import LaunchJobLogView from "./-components/LaunchJobLogView";
 import { TASK_TYPES_MANAGED } from "./-components/utils";
+import useDebounce from "@/hooks/useDebounce";
 
 export const Route = createFileRoute("/_authenticated/tasks/")({
   component: Tasks,
@@ -75,14 +76,14 @@ function Tasks() {
   const theme = useTheme();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [downloads, setDownloads] = useState<FileDownload[]>([]);
-  const [tasks, setTasks] = useState<TaskDTO[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [openConfirmationDialog, setOpenConfirmationDialog] = useState<string | undefined>();
   const [messageModalOpen, setMessageModalOpen] = useState<string | undefined>();
   const studies = useAppSelector(getStudies);
   const usersByID = useAppSelector(getUsersById);
   const dispatch = useAppDispatch();
-  const [studyJobsProgress, setStudyJobsProgress] = useState<LaunchJobsProgress>({});
+  const [studyJobsProgress, setStudyJobsProgress] = useState<JobsProgressById>({});
 
   useMount(() => {
     dispatch(resetTaskNotifications());
@@ -110,8 +111,7 @@ function Tasks() {
       setTasks(
         allTasks.filter(
           (task) =>
-            !task.completion_date_utc ||
-            moment.utc(task.completion_date_utc).isAfter(dateThreshold),
+            !task.completionDateUtc || moment.utc(task.completionDateUtc).isAfter(dateThreshold),
         ),
       );
 
@@ -137,20 +137,34 @@ function Tasks() {
   };
 
   const renderStatus = (job: Job) => {
-    let color = theme.palette.grey[400];
+    let color = theme.vars.palette.grey[400];
     if (job.status === "success") {
-      color = theme.palette.success.main;
+      color = theme.vars.palette.success.main;
     } else if (job.status === "failed") {
-      color = theme.palette.error.main;
+      color = theme.vars.palette.error.main;
     } else if (job.status === "running") {
-      color = theme.palette.warning.main;
+      color = theme.vars.palette.warning.main;
     }
     return <FiberManualRecordIcon style={{ color, fontSize: "10px", marginRight: "8px" }} />;
   };
 
+  // A job is still waiting for its scheduled time as long as it hasn't started running yet.
+  const isJobScheduled = (job: Job) => job.status === "pending" && !!job.scheduledAt;
+
   const renderTags = (job: Job) => {
     return (
       <Box sx={{ ml: 2 }}>
+        {isJobScheduled(job) && (
+          <Tooltip
+            title={t("tasks.scheduledAt", { date: convertUTCToLocalTime(job.scheduledAt || "") })}
+          >
+            <Chip
+              icon={<ScheduleIcon sx={{ color: "white !important" }} />}
+              label={t("tasks.scheduled")}
+              sx={{ m: 0.25, color: "white", bgcolor: colors.blueGrey[400] }}
+            />
+          </Tooltip>
+        )}
         {job.launcherParams?.xpansion?.enabled && (
           <Chip label="Xpansion" sx={{ m: 0.25, color: "white", bgcolor: colors.indigo[300] }} />
         )}
@@ -164,7 +178,7 @@ function Tasks() {
     );
   };
 
-  const exportJobOutput = debounce(
+  const exportJobOutput = useDebounce(
     async (jobId: string): Promise<void> => {
       try {
         await downloadJobOutput(jobId);
@@ -172,8 +186,7 @@ function Tasks() {
         enqueueErrorSnackbar(t("study.error.exportOutput"), e as AxiosError);
       }
     },
-    2000,
-    { leading: true },
+    { wait: 2000, leading: true },
   );
 
   const killTask = (jobId: string) => {
@@ -300,7 +313,7 @@ function Tasks() {
         action: (
           <Box display="flex" alignItems="center" justifyContent="flex-end">
             <Box display="flex" alignItems="center" justifyContent="flex-end">
-              {job.status === "running" ? (
+              {job.status === "running" || isJobScheduled(job) ? (
                 <Tooltip title={t("study.killStudy") as string}>
                   <BlockIcon
                     sx={{
@@ -338,7 +351,7 @@ function Tasks() {
         date: job.completionDate || job.creationDate,
         type: "LAUNCH",
         status: job.status === "running" ? "running" : "",
-        userName: job.owner ? usersByID[job.owner.id]?.name || job.owner.name : "",
+        userName: job.owner ? usersByID[Number(job.owner.id)]?.name || job.owner.name : "",
         launcher: job.launcher,
       })),
     [jobs, studyJobsProgress, studies],
@@ -416,13 +429,13 @@ function Tasks() {
           >
             <Box width="165px" display="flex" justifyContent="flex-start" alignItems="center">
               <CalendarTodayIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
-              {convertUTCToLocalTime(task.creation_date_utc)}
+              {convertUTCToLocalTime(task.creationDateUtc)}
             </Box>
             <Box width="165px" display="flex" justifyContent="flex-start" alignItems="center">
-              {task.completion_date_utc && (
+              {task.completionDateUtc && (
                 <>
                   <EventAvailableIcon sx={{ fontSize: 16, marginRight: "0.5em" }} />
-                  {convertUTCToLocalTime(task.completion_date_utc)}
+                  {convertUTCToLocalTime(task.completionDateUtc)}
                 </>
               )}
             </Box>
@@ -430,7 +443,7 @@ function Tasks() {
         ),
         action: (
           <Box>
-            {!task.completion_date_utc && (
+            {!task.completionDateUtc && (
               <Tooltip title={t("global.loading") as string}>
                 <CircularProgress color="primary" style={{ width: "18px", height: "18px" }} />
               </Tooltip>
@@ -453,8 +466,8 @@ function Tasks() {
             )}
           </Box>
         ),
-        date: task.completion_date_utc || task.creation_date_utc,
-        type: task.type || "UNKNOWN",
+        date: task.completionDateUtc || task.creationDateUtc,
+        type: (task.type ?? "UNKNOWN") as TaskTypeValue | "UNKNOWN",
         status: task.status === TaskStatus.Running ? "running" : "",
         userName: (task.owner && usersByID[task.owner]?.name) || "",
       })),

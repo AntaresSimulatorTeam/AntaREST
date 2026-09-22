@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Dict
 
 from antarest.core.config import Config, LocalConfig, SlurmConfig
 from antarest.core.interfaces.cache import ICache
@@ -30,8 +29,8 @@ class FactoryLauncher:
         callbacks: LauncherCallbacks,
         event_bus: IEventBus,
         cache: ICache,
-    ) -> Dict[str, AbstractLauncher]:
-        dict_launchers: Dict[str, AbstractLauncher] = {}
+    ) -> dict[str, AbstractLauncher]:
+        dict_launchers: dict[str, AbstractLauncher] = {}
         for cfg in config.launcher.configs or []:
             if isinstance(cfg, SlurmConfig):
                 dict_launchers[cfg.id] = SlurmLauncher(

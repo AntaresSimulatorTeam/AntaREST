@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Union
 
 from antarest.core.roles import RoleType
 from antarest.core.serde import AntaresBaseModel
@@ -35,7 +34,7 @@ class JWTUser(AntaresBaseModel):
     id: int
     type: str
     impersonator: int
-    groups: List[JWTGroup] = []
+    groups: list[JWTGroup] = []
 
     def is_admin_token(self) -> bool:
         """
@@ -51,7 +50,7 @@ class JWTUser(AntaresBaseModel):
         """
         return "admin" in [g.id for g in self.groups]
 
-    def is_in_group(self, groups: Union[Group, List[Group]]) -> bool:
+    def is_in_group(self, groups: Group | list[Group]) -> bool:
         """
 
         Args:
@@ -65,7 +64,7 @@ class JWTUser(AntaresBaseModel):
 
         return any(self.is_in_group(g) for g in groups)
 
-    def is_group_admin(self, groups: Union[Group, List[Group]]) -> bool:
+    def is_group_admin(self, groups: Group | list[Group]) -> bool:
         """
 
         Args:

@@ -20,7 +20,7 @@ class InputThermalSeries(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            a: InputThermalSeriesArea(self.matrix_mapper, self.config.next_file(a), area=a)
+            a: InputThermalSeriesArea(self.matrix_storage_context, self.config.next_file(a), area=a)
             for a in self.config.area_names()
         }
         return children

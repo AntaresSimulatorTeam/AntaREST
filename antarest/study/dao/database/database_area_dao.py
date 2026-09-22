@@ -17,20 +17,26 @@ This module provides database-backed storage for areas when storage_mode=DATABAS
 """
 
 import json
-from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import Any
 
 import polars as pl
 from sqlalchemy import Row, Table, case, delete, insert, select, update
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, LayerNotFound
+from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.dao.api.area_dao import AreaDao
-from antarest.study.dao.database.common import serialize_frequency_filters, validate_area_exists
+from antarest.study.dao.common import AreaId, AreaName, AreaSeriesMapping, AreaUiMapping, SeriesId
+from antarest.study.dao.database.common import (
+    get_all_area_matrices,
+    save_area_matrix,
+    serialize_frequency_filters,
+    validate_area_exists,
+)
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.area import (
     AREA_TABLE,
     AREA_UI_TABLE,
@@ -41,64 +47,61 @@ from antarest.study.dao.database.models.area import (
     WIND_TABLE,
 )
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
-from antarest.study.dao.database.sql_utils import upsert_one
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_4_fixed_hourly,
+    default_8_fixed_hourly,
+    default_scenario_hourly,
+)
 
-if TYPE_CHECKING:
-    from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 
-
-class DatabaseAreaDao(AreaDao):
+class DatabaseAreaDao(AreaDao, DatabaseDaoBase):
     """Database implementation of AreaDao"""
 
-    def __init__(self, study_id: str, db_session: Session) -> None:
-        """
-        Initialize DatabaseAreaDao with dependencies.
-
-        Args:
-            study_id: The study ID for database queries.
-            db_session: SQLAlchemy session for database operations.
-        """
-        self._study_id = study_id
-        self._db_session = db_session
-
-    def get_study_id(self) -> str:
-        """Get the study ID for database queries."""
-        return self._study_id
-
-    def get_session(self) -> Session:
-        """Get the SQLAlchemy session for database operations."""
-        return self._db_session
-
-    @abstractmethod
-    def get_impl(self) -> "DatabaseStudyDao":
-        pass
+    def _convert_area_properties_to_row(
+        self, area_properties: AreaProperties, area_id: AreaId, area_name: AreaName
+    ) -> dict[str, Any]:
+        return {
+            "study_data_id": self._study_data_id,
+            "area_id": area_id,
+            "area_name": area_name,
+            "energy_cost_unsupplied": area_properties.energy_cost_unsupplied,
+            "energy_cost_spilled": area_properties.energy_cost_spilled,
+            "non_dispatch_power": area_properties.non_dispatch_power,
+            "dispatch_hydro_power": area_properties.dispatch_hydro_power,
+            "other_dispatch_power": area_properties.other_dispatch_power,
+            "spread_unsupplied_energy_cost": area_properties.spread_unsupplied_energy_cost,
+            "spread_spilled_energy_cost": area_properties.spread_spilled_energy_cost,
+            "filter_synthesis": serialize_frequency_filters(area_properties.filter_synthesis),
+            "filter_by_year": serialize_frequency_filters(area_properties.filter_by_year),
+            "adequacy_patch_mode": area_properties.adequacy_patch_mode,
+        }
 
     @override
     def get_all_area_ids(self) -> list[str]:
         """
         Retrieve all physical areas of a study.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_data_id = self._study_data_id
+        session = self._db_session
 
-        stmt = select(AREA_TABLE.c.area_id).where(AREA_TABLE.c.study_id == study_id)
+        stmt = select(AREA_TABLE.c.area_id).where(AREA_TABLE.c.study_data_id == study_data_id)
         result = session.execute(stmt)
 
         return [row.area_id for row in result]
 
     @override
-    def get_all_areas_info(self) -> List[AreaInfo]:
+    def get_all_areas_info(self) -> list[AreaInfo]:
         """
         Retrieve all physical areas of a study.
 
         Returns:
             The list of areas with their basic information.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_data_id = self._study_data_id
+        session = self._db_session
 
-        stmt = select(AREA_TABLE.c.area_id, AREA_TABLE.c.area_name).where(AREA_TABLE.c.study_id == study_id)
+        stmt = select(AREA_TABLE.c.area_id, AREA_TABLE.c.area_name).where(AREA_TABLE.c.study_data_id == study_data_id)
         result = session.execute(stmt)
 
         thermal_clusters = self.get_impl().get_all_thermals()
@@ -111,33 +114,33 @@ class DatabaseAreaDao(AreaDao):
         return areas_info
 
     @override
-    def get_all_areas_ui_info(self) -> Dict[str, AreaUIData]:
+    def get_all_areas_ui_info(self) -> dict[str, AreaUIData]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
         Returns:
             A dictionary mapping area IDs to their UI data.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_data_id = self._study_data_id
+        session = self._db_session
 
         # Single query to get all areas and their UI info
-        stmt = select(AREA_UI_TABLE).where(AREA_UI_TABLE.c.study_id == study_id)
+        stmt = select(AREA_UI_TABLE).where(AREA_UI_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt)
 
         # Group UI rows by area_id
-        ui_by_area: Dict[str, List[Any]] = {}
+        ui_by_area: dict[str, list[Any]] = {}
         for row in rows:
             area_id = row.area_id
             ui_by_area.setdefault(area_id, []).append(row)
 
         # Build result
-        result: Dict[str, AreaUIData] = {}
+        result: dict[str, AreaUIData] = {}
         for area_id, ui_rows in ui_by_area.items():
-            ui_dict: Dict[str, int | str] = {}
-            layer_x: Dict[str, int] = {}
-            layer_y: Dict[str, int] = {}
-            layer_color: Dict[str, str] = {}
+            ui_dict: dict[str, int | str] = {}
+            layer_x: dict[str, int] = {}
+            layer_y: dict[str, int] = {}
+            layer_color: dict[str, str] = {}
 
             # Find default layer
             default_ui = next((row for row in ui_rows if row.layer_id == DEFAULT_LAYER_ID), None)
@@ -149,7 +152,7 @@ class DatabaseAreaDao(AreaDao):
                     "color_r": default_ui.color_r,
                     "color_g": default_ui.color_g,
                     "color_b": default_ui.color_b,
-                    "layers": " ".join(sorted([row.layer_id for row in ui_rows if row.layer_id != DEFAULT_LAYER_ID])),
+                    "layers": " ".join(sorted([row.layer_id for row in ui_rows], key=int)),
                 }
 
             # Build layer-specific data
@@ -177,14 +180,14 @@ class DatabaseAreaDao(AreaDao):
         Raises:
             AreaNotFound: If the area does not exist.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_data_id = self._study_data_id
+        session = self._db_session
 
         # Fetch both specified layer and default layer in one query
         layers_to_fetch = [layer, DEFAULT_LAYER_ID] if layer != DEFAULT_LAYER_ID else [DEFAULT_LAYER_ID]
 
         stmt = select(AREA_UI_TABLE).where(
-            (AREA_UI_TABLE.c.study_id == study_id)
+            (AREA_UI_TABLE.c.study_data_id == study_data_id)
             & (AREA_UI_TABLE.c.area_id == area_id)
             & (AREA_UI_TABLE.c.layer_id.in_(layers_to_fetch))
         )
@@ -192,7 +195,7 @@ class DatabaseAreaDao(AreaDao):
 
         # If no UI found, check if area exists (to raise proper error)
         if not rows:
-            validate_area_exists(session, study_id, area_id)
+            validate_area_exists(session, study_data_id, area_id)
             return AreaUI()
 
         # Prefer specified layer, fall back to default
@@ -204,45 +207,24 @@ class DatabaseAreaDao(AreaDao):
         return AreaUI()
 
     @override
-    def save_area(self, area_name: str) -> None:
-        """
-        Create a new area in the study.
+    def save_areas_with_properties(self, data: dict[AreaName, AreaProperties]) -> None:
+        values = []
+        for area_name, properties in data.items():
+            area_id = transform_name_to_id(area_name)
+            values.append(self._convert_area_properties_to_row(properties, area_id, area_name))
 
-        Args:
-            area_name: The name of the area to create.
-
-        Raises:
-            ValueError: If the area already exists.
-        """
-        study_id = self.get_study_id()
-        session = self.get_session()
-
-        area_id = transform_name_to_id(area_name)
-
-        # Insert new area
-        area_properties = AreaProperties()
-        stmt_area = insert(AREA_TABLE).values(
-            study_id=study_id,
-            area_id=area_id,
-            area_name=area_name,
-            energy_cost_unsupplied=area_properties.energy_cost_unsupplied,
-            energy_cost_spilled=area_properties.energy_cost_spilled,
-            non_dispatch_power=area_properties.non_dispatch_power,
-            dispatch_hydro_power=area_properties.dispatch_hydro_power,
-            other_dispatch_power=area_properties.other_dispatch_power,
-            spread_unsupplied_energy_cost=area_properties.spread_unsupplied_energy_cost,
-            spread_spilled_energy_cost=area_properties.spread_spilled_energy_cost,
-            filter_synthesis=serialize_frequency_filters(area_properties.filter_synthesis),
-            filter_by_year=serialize_frequency_filters(area_properties.filter_by_year),
-            adequacy_patch_mode=area_properties.adequacy_patch_mode,
-        )
+        stmt = insert(AREA_TABLE).values(values)
         try:
-            session.execute(stmt_area)
+            session = self._db_session
+            session.execute(stmt)
+            session.commit()
         except IntegrityError as e:
-            raise ValueError(f"Area '{area_name}' already exists and could not be created") from e
-
-        # The commit is handled inside the next method.
-        self._create_new_ui(area_id, DEFAULT_LAYER_ID, AreaUI())
+            session.rollback()
+            # Means an area already existed
+            existing_ids = set(self.get_all_area_ids())
+            invalid_ids = {transform_name_to_id(area_name) for area_name in data} - existing_ids
+            ids_formatted = ", ".join(f"'{a}'" for a in invalid_ids)
+            raise ValueError(f"Areas '{ids_formatted}' already exist and could not be created") from e
 
     @override
     def delete_area(self, area_id: str) -> None:
@@ -255,13 +237,13 @@ class DatabaseAreaDao(AreaDao):
         Raises:
             AreaNotFound: If the area does not exist.
         """
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_data_id = self._study_data_id
+        session = self._db_session
 
-        validate_area_exists(session, study_id, area_id)
+        validate_area_exists(session, study_data_id, area_id)
 
         # Remove area from districts that reference it
-        stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_id == study_id)
+        stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_data_id == study_data_id)
         district_rows = session.execute(stmt).fetchall()
 
         for row in district_rows:
@@ -274,7 +256,10 @@ class DatabaseAreaDao(AreaDao):
 
                 session.execute(
                     update(DISTRICT_TABLE)
-                    .where((DISTRICT_TABLE.c.study_id == study_id) & (DISTRICT_TABLE.c.district_id == row.district_id))
+                    .where(
+                        (DISTRICT_TABLE.c.study_data_id == study_data_id)
+                        & (DISTRICT_TABLE.c.district_id == row.district_id)
+                    )
                     .values(
                         add_areas=json.dumps(list(add_areas)),
                         subtract_areas=json.dumps(list(subtract_areas)),
@@ -282,48 +267,51 @@ class DatabaseAreaDao(AreaDao):
                 )
 
         # Delete area
-        delete_stmt = delete(AREA_TABLE).where((AREA_TABLE.c.study_id == study_id) & (AREA_TABLE.c.area_id == area_id))
+        delete_stmt = delete(AREA_TABLE).where(
+            (AREA_TABLE.c.study_data_id == study_data_id) & (AREA_TABLE.c.area_id == area_id)
+        )
         session.execute(delete_stmt)
         session.commit()
 
     @override
-    def save_area_ui(self, area_id: str, layer: str, area_ui_data: AreaUI) -> None:
-        """
-        Save an area's UI properties (position and color) for a specific layer.
-
-        Args:
-            area_id: The area identifier.
-            layer: The layer identifier (typically "0", "1", etc.).
-            area_ui_data: The UI properties to save (x, y, color_rgb).
-
-        Raises:
-            AreaNotFound: If the area does not exist.
-            LayerNotFound: If the layer does not exist.
-        """
-        study_id = self.get_study_id()
-        session = self.get_session()
+    def save_area_ui(self, data: AreaUiMapping) -> None:
+        study_data_id = self._study_data_id
+        session = self._db_session
 
         # Set values
-        r, g, b = area_ui_data.color_rgb
-        values = {
-            "study_id": study_id,
-            "area_id": area_id,
-            "layer_id": layer,
-            "x": area_ui_data.x,
-            "y": area_ui_data.y,
-            "color_r": r,
-            "color_g": g,
-            "color_b": b,
-        }
+        values = []
+        for area_id, value in data.items():
+            for layer, area_ui in value.items():
+                r, g, b = area_ui.color_rgb
+                values.append(
+                    {
+                        "study_data_id": study_data_id,
+                        "area_id": area_id,
+                        "layer_id": layer,
+                        "x": area_ui.x,
+                        "y": area_ui.y,
+                        "color_r": r,
+                        "color_g": g,
+                        "color_b": b,
+                    }
+                )
+
         # Performs the DB request
         try:
-            upsert_one(session, AREA_UI_TABLE, values)
+            upsert_multiple(session, AREA_UI_TABLE, values)
         except IntegrityError as e:
+            session.rollback()
             # Could raise for area not found or layer not found.
-            if not self.get_impl().layer_exists(layer):
-                raise LayerNotFound(layer) from e
-            else:
-                raise AreaNotFound(area_id) from e
+
+            # First check the areas
+            if invalid_areas := self.get_impl().get_invalid_area_ids(list(data)):
+                raise AreaNotFound(*invalid_areas) from e
+            # Then the layers
+            for value in data.values():
+                for layer in value:
+                    if not self.get_impl().layer_exists(layer):
+                        raise LayerNotFound(layer) from e
+
         session.commit()
 
     @override
@@ -337,7 +325,7 @@ class DatabaseAreaDao(AreaDao):
         return list(invalid_areas)
 
     @override
-    def save_layer_areas(self, layer_id: str, area_ids: List[str]) -> None:
+    def save_layer_areas(self, layer_id: str, area_ids: list[str]) -> None:
         """
         Update the areas associated with a specific layer.
 
@@ -353,8 +341,8 @@ class DatabaseAreaDao(AreaDao):
         if not self.get_impl().layer_exists(layer_id):
             raise LayerNotFound(layer_id)
 
-        study_id = self.get_study_id()
-        session = self.get_session()
+        study_data_id = self._study_data_id
+        session = self._db_session
 
         # Get all areas and which ones already have this layer
         stmt = (
@@ -366,11 +354,11 @@ class DatabaseAreaDao(AreaDao):
                 AREA_TABLE.outerjoin(
                     AREA_UI_TABLE,
                     (AREA_TABLE.c.area_id == AREA_UI_TABLE.c.area_id)
-                    & (AREA_UI_TABLE.c.study_id == study_id)
+                    & (AREA_UI_TABLE.c.study_data_id == study_data_id)
                     & (AREA_UI_TABLE.c.layer_id == layer_id),
                 )
             )
-            .where(AREA_TABLE.c.study_id == study_id)
+            .where(AREA_TABLE.c.study_data_id == study_data_id)
         )
 
         all_area_ids = set()
@@ -390,7 +378,7 @@ class DatabaseAreaDao(AreaDao):
         to_remove = areas_with_layer - target_area_ids
         if to_remove:
             stmt_delete = delete(AREA_UI_TABLE).where(
-                (AREA_UI_TABLE.c.study_id == study_id)
+                (AREA_UI_TABLE.c.study_data_id == study_data_id)
                 & (AREA_UI_TABLE.c.area_id.in_(to_remove))
                 & (AREA_UI_TABLE.c.layer_id == layer_id)
             )
@@ -401,7 +389,7 @@ class DatabaseAreaDao(AreaDao):
         if to_add:
             # Batch fetch all default UIs for areas to add
             stmt_defaults = select(AREA_UI_TABLE).where(
-                (AREA_UI_TABLE.c.study_id == study_id)
+                (AREA_UI_TABLE.c.study_data_id == study_data_id)
                 & (AREA_UI_TABLE.c.area_id.in_(to_add))
                 & (AREA_UI_TABLE.c.layer_id == DEFAULT_LAYER_ID)
             )
@@ -414,7 +402,7 @@ class DatabaseAreaDao(AreaDao):
                     ui = default_uis[aid]
                     insert_values.append(
                         {
-                            "study_id": study_id,
+                            "study_data_id": study_data_id,
                             "area_id": aid,
                             "layer_id": layer_id,
                             "x": ui.x,
@@ -433,7 +421,7 @@ class DatabaseAreaDao(AreaDao):
     def _create_new_ui(self, area_id: str, layer: str, area_ui: AreaUI) -> None:
         r, g, b = area_ui.color_rgb
         stmt_insert = insert(AREA_UI_TABLE).values(
-            study_id=self.get_study_id(),
+            study_data_id=self._study_data_id,
             area_id=area_id,
             layer_id=layer,
             x=area_ui.x,
@@ -442,69 +430,83 @@ class DatabaseAreaDao(AreaDao):
             color_g=g,
             color_b=b,
         )
-        self.get_session().execute(stmt_insert)
-        self.get_session().commit()
+        self._db_session.execute(stmt_insert)
+        self._db_session.commit()
 
-    def _get_matrix(self, area_id: str, table: Table) -> pl.DataFrame:
+    def _get_matrix(self, area_id: str, table: Table) -> SeriesId:
         row = self._get_matrix_row(area_id, table)
         if not row:
             raise AreaNotFound(area_id)
-        return self.get_impl().get_matrix(row.matrix_id)
+        return str(row.matrix_id)
 
     def _get_matrix_row(self, area_id: str, table: Table) -> Row[Any] | None:
-        study_id = self.get_study_id()
-        session = self.get_session()
-        stmt = select(table).where((table.c.study_id == study_id) & (table.c.area_id == area_id))
+        study_data_id = self._study_data_id
+        session = self._db_session
+        stmt = select(table).where((table.c.study_data_id == study_data_id) & (table.c.area_id == area_id))
 
         return session.execute(stmt).fetchone()
 
-    def _save_matrix(self, area_id: str, table: Table, matrix_id: str) -> None:
-        session = self.get_session()
-        study_id = self.get_study_id()
-
-        values = {"study_id": study_id, "area_id": area_id, "matrix_id": matrix_id}
-        try:
-            upsert_one(session, table, values)
-        except IntegrityError as e:
-            raise AreaNotFound(area_id) from e
-        session.commit()
-
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, LOAD_TABLE)
+        matrix_id = self._get_matrix(area_id, LOAD_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_misc_gen(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, MISC_GEN_TABLE)
+        matrix_id = self._get_matrix(area_id, MISC_GEN_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_8_fixed_hourly)
 
     @override
     def get_reserves(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, RESERVES_TABLE)
+        matrix_id = self._get_matrix(area_id, RESERVES_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_4_fixed_hourly)
 
     @override
     def get_solar(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, SOLAR_TABLE)
+        matrix_id = self._get_matrix(area_id, SOLAR_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
     def get_wind(self, area_id: str) -> pl.DataFrame:
-        return self._get_matrix(area_id, WIND_TABLE)
+        matrix_id = self._get_matrix(area_id, WIND_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
 
     @override
-    def save_load(self, area_id: str, series_id: str) -> None:
-        self._save_matrix(area_id, LOAD_TABLE, series_id)
+    def get_all_load(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_data_id, self._db_session, LOAD_TABLE)
 
     @override
-    def save_misc_gen(self, area_id: str, series_id: str) -> None:
-        self._save_matrix(area_id, MISC_GEN_TABLE, series_id)
+    def get_all_misc_gen(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_data_id, self._db_session, MISC_GEN_TABLE)
 
     @override
-    def save_reserves(self, area_id: str, series_id: str) -> None:
-        self._save_matrix(area_id, RESERVES_TABLE, series_id)
+    def get_all_reserves(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_data_id, self._db_session, RESERVES_TABLE)
 
     @override
-    def save_solar(self, area_id: str, series_id: str) -> None:
-        self._save_matrix(area_id, SOLAR_TABLE, series_id)
+    def get_all_solar(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_data_id, self._db_session, SOLAR_TABLE)
 
     @override
-    def save_wind(self, area_id: str, series_id: str) -> None:
-        self._save_matrix(area_id, WIND_TABLE, series_id)
+    def get_all_wind(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_data_id, self._db_session, WIND_TABLE)
+
+    @override
+    def save_load(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, LOAD_TABLE)
+
+    @override
+    def save_misc_gen(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, MISC_GEN_TABLE)
+
+    @override
+    def save_reserves(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, RESERVES_TABLE)
+
+    @override
+    def save_solar(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, SOLAR_TABLE)
+
+    @override
+    def save_wind(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, WIND_TABLE)

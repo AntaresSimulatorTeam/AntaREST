@@ -50,4 +50,4 @@ def clean_blobs_task(self: MaintenanceTask) -> GarbageCollectorTaskResult:
         logger.warning(f"Blob GC retry attempt {self.request.retries}/3")
 
     ctx = self.context
-    return clean_blobs(ctx.blob_service, ctx.config.storage.blob_gc_dry_run)
+    return clean_blobs(ctx.blob_service, ctx.config.storage.blob_gc_dry_run, lock_folder=ctx.config.storage.tmp_dir)

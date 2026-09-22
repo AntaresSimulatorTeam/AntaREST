@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
 
 import pandas as pd
 from typing_extensions import override
@@ -22,17 +21,17 @@ from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
 class OutputSynthesis(LazyNode[JSON, bytes, bytes]):
     @override
-    def get_lazy_content(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False) -> str:
+    def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
         return f"matrix://{self.config.path.name}"  # prefix used by the front to parse the back-end response
 
     @override
     def load(
-        self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False, formatted: bool = True
+        self, url: list[str] | None = None, depth: int = -1, expanded: bool = False, formatted: bool = True
     ) -> JSON:
         file_path = self.config.path
         df = pd.read_csv(file_path, sep="\t")
         return df.to_dict(orient="split", index=False)
 
     @override
-    def dump(self, data: bytes, url: Optional[List[str]] = None) -> None:
+    def dump(self, data: bytes, url: list[str] | None = None) -> None:
         raise MustNotModifyOutputException(self.config.path.name)

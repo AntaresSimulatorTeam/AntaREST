@@ -14,7 +14,8 @@
 Object model used to read and update area configuration.
 """
 
-from typing import Any, Dict, Mapping, MutableMapping, Set
+from collections.abc import Mapping, MutableMapping
+from typing import Any
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, field_validator, model_validator
@@ -29,10 +30,13 @@ from antarest.study.business.model.area_properties_model import (
     parse_filters,
     serialize_filters,
 )
+from antarest.study.business.model.common import FILTER_VALUES
 from antarest.study.storage.rawstudy.model.filesystem.config.ini_properties import IniProperties
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import (
     validate_filtering,
 )
+
+_ALL_FILTERS_INI = ", ".join(str(f) for f in FILTER_VALUES)
 
 
 class AreaUIStyle(IniProperties):
@@ -47,7 +51,7 @@ class AreaUIStyle(IniProperties):
     color_b: int = Field(default=44, description="blue component of the area color")
 
     @override
-    def to_config(self) -> Dict[str, Any]:
+    def to_config(self) -> dict[str, Any]:
         return {"x": self.x, "y": self.y, "color_r": self.color_r, "color_g": self.color_g, "color_b": self.color_b}
 
 
@@ -61,11 +65,11 @@ class AreaUIFileData(IniProperties):
         default_factory=AreaUIStyle,
         description="style of the area in the map: coordinates and color",
     )
-    layers: Set[int] = Field(
+    layers: set[int] = Field(
         default_factory=lambda: {0},
         description="layers where the area is visible",
     )
-    layer_styles: Dict[int, AreaUIStyle] = Field(
+    layer_styles: dict[int, AreaUIStyle] = Field(
         default_factory=dict,
         description="style of the area in each layer",
         alias="layerStyles",
@@ -110,7 +114,7 @@ class AreaUIFileData(IniProperties):
         if ui_section:
             # If `layers` is a single integer, convert it to `str` first
             layers = str(ui_section.pop("layers", "0"))
-            values["layers"] = set([int(layer) for layer in layers.split()])
+            values["layers"] = {int(layer) for layer in layers.split()}
             style = values["style"]
             style.x = ui_section.pop("x", style.x)
             style.y = ui_section.pop("y", style.y)
@@ -135,7 +139,7 @@ class AreaUIFileData(IniProperties):
             for layer, y in layer_y_section.items():
                 layer_styles[layer].y = int(y)
             for layer, color in layer_color_section.items():
-                r, g, b = [int(c) for c in color.split(",")]
+                r, g, b = (int(c) for c in color.split(","))
                 layer_styles[layer].color_r = r
                 layer_styles[layer].color_g = g
                 layer_styles[layer].color_b = b
@@ -145,8 +149,8 @@ class AreaUIFileData(IniProperties):
         return values
 
     @override
-    def to_config(self) -> Dict[str, Dict[str, Any]]:
-        obj: Dict[str, Dict[str, Any]] = {
+    def to_config(self) -> dict[str, dict[str, Any]]:
+        obj: dict[str, dict[str, Any]] = {
             "ui": {},
             "layerX": {},
             "layerY": {},
@@ -167,8 +171,8 @@ class OptimizationFileData(AntaresBaseModel):
     class FilteringSection(AntaresBaseModel):
         model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
 
-        filter_synthesis: str = Field("")
-        filter_year_by_year: str = Field("")
+        filter_synthesis: str = Field(default=_ALL_FILTERS_INI)
+        filter_year_by_year: str = Field(default=_ALL_FILTERS_INI)
 
         @field_validator("filter_synthesis", "filter_year_by_year", mode="before")
         def _validate_filtering(cls, v: Any) -> str:

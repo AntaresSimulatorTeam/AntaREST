@@ -13,7 +13,7 @@
 import importlib
 import itertools
 import pkgutil
-from typing import Any, Dict, Optional, Set
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -21,7 +21,13 @@ import pytest
 from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
+from antarest.study.model import (
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_9_3,
+    STUDY_VERSION_10_2,
+)
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import (
     GeneratorMatrixConstants,
 )
@@ -255,7 +261,17 @@ COMMANDS = [
             study_version=STUDY_VERSION_8_8,
             version=2,
         ),
-        None,
+        {
+            "matrices": {"greaterTermMatrix": "fake_matrix"},
+            "parameters": {
+                "enabled": False,
+                "filterSynthesis": "weekly",
+                "group": "group 1",
+                "name": "name",
+                "operator": "equal",
+                "timeStep": "hourly",
+            },
+        },
         id="create_binding_constraint",
     ),
     pytest.param(
@@ -272,7 +288,7 @@ COMMANDS = [
             study_version=STUDY_VERSION_8_8,
             version=2,
         ),
-        None,
+        [{"matrices": {"equalTermMatrix": "fake_matrix"}, "parameters": {"name": "name"}}],
         id="create_binding_constraint_list",
     ),
     pytest.param(
@@ -594,24 +610,22 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_SCENARIO_BUILDER.value,
-            version=2,
+            version=3,
             args={
                 "data": {
-                    "ruleset test": {
-                        "binding_constraints": {},
-                        "hydro": {},
-                        "hydro_final_levels": {},
-                        "hydro_generation_power": {},
-                        "hydro_initial_levels": {},
-                        "load": {"area1": {"0": 1}},
-                        "ntc": {"area1 / area2": {"1": 23}},
-                        "renewable": {},
-                        "solar": {},
-                        "storage_constraints": {},
-                        "storage_inflows": {},
-                        "thermal": {"area1": {"thermal": {"1": ""}}},
-                        "wind": {},
-                    }
+                    "binding_constraints": {},
+                    "hydro": {},
+                    "hydro_final_levels": {},
+                    "hydro_generation_power": {},
+                    "hydro_initial_levels": {},
+                    "load": {"area1": {"0": 1}},
+                    "ntc": {"area1 / area2": {"1": 23}},
+                    "renewable": {},
+                    "solar": {},
+                    "storage_constraints": {},
+                    "storage_inflows": {},
+                    "thermal": {"area1": {"thermal": {"1": ""}}},
+                    "wind": {},
                 }
             },
             study_version=STUDY_VERSION_8_8,
@@ -646,8 +660,8 @@ COMMANDS = [
         ),
         {
             "area_id": "area 1",
-            "inflows": "matrix://df9b25e1-e3f7-4a57-8182-0ff9791439e5",
-            "lower_rule_curve": "matrix://8ce4fcea-cc97-4d2c-b641-a27a53454612",
+            "inflows": "df9b25e1-e3f7-4a57-8182-0ff9791439e5",
+            "lower_rule_curve": "8ce4fcea-cc97-4d2c-b641-a27a53454612",
             "parameters": {
                 "efficiency": 1.0,
                 "enabled": True,
@@ -659,9 +673,9 @@ COMMANDS = [
                 "reservoirCapacity": 0.0,
                 "withdrawalNominalCapacity": 0.0,
             },
-            "pmax_injection": "matrix://59ea6c83-6348-466d-9530-c35c51ca4c37",
-            "pmax_withdrawal": "matrix://5f988548-dadc-4bbb-8ce8-87a544dbf756",
-            "upper_rule_curve": "matrix://8ce614c8-c687-41af-8b24-df8a49cc52af",
+            "pmax_injection": "59ea6c83-6348-466d-9530-c35c51ca4c37",
+            "pmax_withdrawal": "5f988548-dadc-4bbb-8ce8-87a544dbf756",
+            "upper_rule_curve": "8ce614c8-c687-41af-8b24-df8a49cc52af",
         },
         id="create_st_storage",
     ),
@@ -714,8 +728,8 @@ COMMANDS = [
         [
             {
                 "area_id": "area 1",
-                "inflows": "matrix://df9b25e1-e3f7-4a57-8182-0ff9791439e5",
-                "lower_rule_curve": "matrix://8ce4fcea-cc97-4d2c-b641-a27a53454612",
+                "inflows": "df9b25e1-e3f7-4a57-8182-0ff9791439e5",
+                "lower_rule_curve": "8ce4fcea-cc97-4d2c-b641-a27a53454612",
                 "parameters": {
                     "efficiency": 1.0,
                     "enabled": True,
@@ -727,14 +741,14 @@ COMMANDS = [
                     "reservoirCapacity": 0.0,
                     "withdrawalNominalCapacity": 0.0,
                 },
-                "pmax_injection": "matrix://59ea6c83-6348-466d-9530-c35c51ca4c37",
-                "pmax_withdrawal": "matrix://5f988548-dadc-4bbb-8ce8-87a544dbf756",
-                "upper_rule_curve": "matrix://8ce614c8-c687-41af-8b24-df8a49cc52af",
+                "pmax_injection": "59ea6c83-6348-466d-9530-c35c51ca4c37",
+                "pmax_withdrawal": "5f988548-dadc-4bbb-8ce8-87a544dbf756",
+                "upper_rule_curve": "8ce614c8-c687-41af-8b24-df8a49cc52af",
             },
             {
                 "area_id": "area 1",
-                "inflows": "matrix://e8923768-9bdd-40c2-a6ea-2da2523be727",
-                "lower_rule_curve": "matrix://16c7c3ae-9824-4ef2-aa68-51145884b025",
+                "inflows": "e8923768-9bdd-40c2-a6ea-2da2523be727",
+                "lower_rule_curve": "16c7c3ae-9824-4ef2-aa68-51145884b025",
                 "parameters": {
                     "efficiency": 0.94,
                     "enabled": True,
@@ -746,9 +760,9 @@ COMMANDS = [
                     "reservoirCapacity": 0.0,
                     "withdrawalNominalCapacity": 0.0,
                 },
-                "pmax_injection": "matrix://3f5b3746-3995-49b7-a6da-622633472e05",
-                "pmax_withdrawal": "matrix://4b64a31f-927b-4887-b4cd-adcddd39bdcd",
-                "upper_rule_curve": "matrix://9a6104e9-990a-415f-a6e2-57507e13b58c",
+                "pmax_injection": "3f5b3746-3995-49b7-a6da-622633472e05",
+                "pmax_withdrawal": "4b64a31f-927b-4887-b4cd-adcddd39bdcd",
+                "upper_rule_curve": "9a6104e9-990a-415f-a6e2-57507e13b58c",
             },
         ],
         id="create_st_storage_list",
@@ -1057,6 +1071,116 @@ COMMANDS = [
         None,
         id="convert_hydro_pmax_daily",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_RESERVE_DEFINITION.value,
+            args={
+                "area_id": "paris",
+                "parameters": {"name": "Reserve 1", "type": "up"},
+            },
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="create_reserve_definition",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_RESERVE_DEFINITIONS.value,
+            args={"reserve_properties": {"paris": {"reserve 1": {"failureCost": 500.0}}}},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="update_reserve_definitions",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_RESERVE_DEFINITIONS.value,
+            args={"area_id": "paris", "reserve_ids": ["reserve 1"]},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="remove_reserve_definitions",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_THERMAL_RESERVE_CERTIFICATIONS.value,
+            args={
+                "area_id": "fr",
+                "certifications": {
+                    "r1": {
+                        "th1": {
+                            "max_power": 3.2,
+                            "max_power_off": 1.2,
+                            "participation_cost": 0,
+                            "participation_cost_off": 4,
+                        }
+                    }
+                },
+            },
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="replace_thermal_reserve_certifications",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_THERMAL_RESERVE_SYMMETRIES.value,
+            args={"area_id": "paris", "symmetries": {"th1": [["r1", "r2", "r3"]]}},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="replace_thermal_reserve_symmetries",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_ST_STORAGE_RESERVE_CERTIFICATIONS.value,
+            args={
+                "area_id": "fr",
+                "certifications": {
+                    "r1": {
+                        "sts1": {"participation_cost": 2.5, "max_release": 3.2, "max_store": 1.2},
+                        "sts2": {"participation_cost": 0.0, "max_release": 0.0, "max_store": 0.0},
+                    }
+                },
+            },
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="replace_st_storage_reserve_certifications",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_ST_STORAGE_RESERVE_SYMMETRIES.value,
+            args={"area_id": "paris", "symmetries": {"sts1": [["r1", "r2", "r3"]]}},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="replace_st_storage_reserve_symmetries",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_HYDRO_RESERVE_CERTIFICATIONS.value,
+            args={
+                "area_id": "fr",
+                "certifications": {
+                    "r1": {"participation_cost": 2.5, "max_release": 3.2, "max_store": 1.2},
+                    "r2": {"participation_cost": 0.0, "max_release": 0.0, "max_store": 0.0},
+                },
+            },
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="replace_hydro_reserve_certifications",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REPLACE_HYDRO_RESERVE_SYMMETRIES.value,
+            args={"area_id": "paris", "symmetries": [["r1", "r2", "r3"], ["r2", "r4"]]},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="replace_hydro_reserve_symmetries",
+    ),
 ]
 
 
@@ -1079,7 +1203,7 @@ def command_factory() -> CommandFactory:
 
 
 class TestCommandFactory:
-    def _get_command_classes(self) -> Set[str]:
+    def _get_command_classes(self) -> set[str]:
         """
         Imports all modules from the `antarest.study.storage.variantstudy.model.command` package
         and creates a set of command class names derived from the `ICommand` abstract class.
@@ -1101,7 +1225,7 @@ class TestCommandFactory:
     def test_command_factory(
         self,
         command_dto: CommandDTO,
-        expected_args: Optional[Dict[str, Any]],
+        expected_args: dict[str, Any] | None,
         command_factory: CommandFactory,
     ) -> None:
         commands = command_factory.to_command(command_dto=command_dto)
@@ -1307,7 +1431,7 @@ def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory)
     assert dto.version == 2
     assert dto.args == {
         "matrices": {
-            "lessTermMatrix": "matrix://matrix",
+            "lessTermMatrix": "matrix",
         },
         "parameters": {
             "comments": "",
@@ -1425,14 +1549,12 @@ def test_parse_update_scenario_builder_v1(command_factory: CommandFactory) -> No
     command = commands[0]
     dto = command.to_dto()
     assert dto.action == "update_scenario_builder"
-    assert dto.version == 2
+    assert dto.version == 3
     assert dto.args == {
         "data": {
-            "ruleset test": {
-                "load": {"area1": {"0": 1}},
-                "ntc": {"area1 / area2": {"1": 23}},
-                "thermal": {"area1": {"thermal": {"1": ""}}},
-            }
+            "load": {"area1": {"0": 1}},
+            "ntc": {"area1 / area2": {"1": 23}},
+            "thermal": {"area1": {"thermal": {"1": ""}}},
         }
     }
 

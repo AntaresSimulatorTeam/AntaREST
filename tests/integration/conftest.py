@@ -14,8 +14,8 @@ import sys
 import typing as t
 import uuid
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 import jinja2
 import pytest
@@ -24,10 +24,17 @@ from fastapi import FastAPI
 from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
+from antarest.core.config import Config
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.utils.archives import archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
-from antarest.main import fastapi_app
+from antarest.login.model import init_admin_user
+from antarest.main import (
+    base_fastapi_app,
+    init_db,
+    inject_services,
+)
 from antarest.service_creator import Services
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
@@ -39,6 +46,43 @@ PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists
 RESOURCES_DIR = PROJECT_DIR.joinpath("resources")
 
 RUN_ON_WINDOWS = sys.platform == "win32"
+
+
+def _render_config(config_path: Path, db_url: str, tmp_path: Path) -> None:
+    matrix_dir = tmp_path / "matrix_store"
+    blob_dir = tmp_path / "blob_store"
+    archive_dir = tmp_path / "archive_dir"
+    tmp_dir = tmp_path / "tmp"
+    default_workspace = tmp_path / "internal_workspace"
+    ext_workspace_path = tmp_path / "ext_workspace"
+    output_archive_dir = tmp_path / "output_archives"
+    output_variables_dir = tmp_path / "output_variables"
+    output_out_of_study_storage_dir = tmp_path / "all_outputs"
+
+    for d in (matrix_dir, blob_dir, archive_dir, tmp_dir, default_workspace, ext_workspace_path):
+        d.mkdir(exist_ok=True)
+
+    template_loader = jinja2.FileSystemLoader(searchpath=ASSETS_DIR)
+    template_env = jinja2.Environment(loader=template_loader)
+    template = template_env.get_template("config.template.yml")
+
+    launcher_name = "launcher_mock.bat" if RUN_ON_WINDOWS else "launcher_mock.sh"
+    with open(config_path, "w") as fh:
+        fh.write(
+            template.render(
+                db_url=db_url,
+                default_workspace_path=str(default_workspace),
+                ext_workspace_path=str(ext_workspace_path),
+                matrix_dir=str(matrix_dir),
+                blob_dir=str(blob_dir),
+                archive_dir=str(archive_dir),
+                tmp_dir=str(tmp_dir),
+                launcher_mock=ASSETS_DIR / launcher_name,
+                output_archive_dir=str(output_archive_dir),
+                output_variables_dir=str(output_variables_dir),
+                output_out_of_study_storage_dir=str(output_out_of_study_storage_dir),
+            )
+        )
 
 
 @pytest.fixture(scope="session")
@@ -53,7 +97,14 @@ def initial_db_file(tmp_path_factory: TempPathFactory) -> Path:
     engine = create_engine(db_url, echo=False)
     Base.metadata.create_all(engine)
 
+    init_admin_user(engine, {}, "admin")
+
     return db_path
+
+
+@pytest.fixture(scope="session")
+def base_app(tmp_path_factory: TempPathFactory) -> FastAPI:
+    return base_fastapi_app("", "")
 
 
 @pytest.fixture
@@ -67,53 +118,29 @@ def db_path(tmp_path: Path, initial_db_file: Path) -> Path:
 
 
 @pytest.fixture
-def app_and_services(tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, Services]]:
+def app_and_services(base_app: FastAPI, tmp_path: Path, db_path: Path) -> Iterable[tuple[FastAPI, Services]]:
+    app = base_app
+
     db_url = f"sqlite:///{db_path}"
 
-    # Prepare the directories used by the repos
-    matrix_dir = tmp_path / "matrix_store"
-    blob_dir = tmp_path / "blob_store"
-    archive_dir = tmp_path / "archive_dir"
-    tmp_dir = tmp_path / "tmp"
-    default_workspace = tmp_path / "internal_workspace"
+    # Extract the sample study into the per-test ext_workspace
     ext_workspace_path = tmp_path / "ext_workspace"
-
-    matrix_dir.mkdir()
-    blob_dir.mkdir()
-    archive_dir.mkdir()
-    tmp_dir.mkdir()
-    default_workspace.mkdir()
-    ext_workspace_path.mkdir()
-
-    # Extract the sample study
+    ext_workspace_path.mkdir(exist_ok=True)
     sta_mini_zip_path = ASSETS_DIR.joinpath("STA-mini.zip")
     with zipfile.ZipFile(sta_mini_zip_path) as zip_output:
         zip_output.extractall(path=ext_workspace_path)
 
-    # Generate a "config.yml" file for the app
-    template_loader = jinja2.FileSystemLoader(searchpath=ASSETS_DIR)
-    template_env = jinja2.Environment(loader=template_loader)
-    template = template_env.get_template("config.template.yml")
-
+    # Generate a per-test config with proper workspace paths
     config_path = tmp_path / "config.yml"
-    launcher_name = "launcher_mock.bat" if RUN_ON_WINDOWS else "launcher_mock.sh"
-    with open(config_path, "w") as fh:
-        fh.write(
-            template.render(
-                db_url=db_url,
-                default_workspace_path=str(default_workspace),
-                ext_workspace_path=str(ext_workspace_path),
-                matrix_dir=str(matrix_dir),
-                blob_dir=str(blob_dir),
-                archive_dir=str(archive_dir),
-                tmp_dir=str(tmp_dir),
-                launcher_mock=ASSETS_DIR / launcher_name,
-            )
-        )
+    _render_config(config_path, db_url, tmp_path)
+    config = Config.from_yaml_file(res=RESOURCES_DIR, file=config_path)
+    init_db(config, config_path, auto_upgrade=False, init_admin=False)
+    services = inject_services(app, config)
 
-    app, services = fastapi_app(config_path, RESOURCES_DIR, mount_front=False)
+    # Start the watcher so it scans the ext_workspace
+    services.watcher.start()
 
-    def is_study_scanned() -> None:
+    def is_study_scanned() -> bool:
         with db():
             studies = services.study.get_studies_information(
                 StudyFilter(access_permissions=AccessPermissions.for_user(DEFAULT_ADMIN_USER))
@@ -142,9 +169,10 @@ def study_service(services: Services) -> StudyService:
 
 
 @pytest.fixture(name="client")
-def client_fixture(app: FastAPI) -> TestClient:
+def client_fixture(app: FastAPI) -> Iterable[TestClient]:
     """Get the webservice client used for unit testing"""
-    return TestClient(app, raise_server_exceptions=False)
+    with TestClient(app, raise_server_exceptions=False) as client:
+        yield client
 
 
 @pytest.fixture(name="admin_access_token")
@@ -200,3 +228,22 @@ def internal_study_fixture(
     res.raise_for_status()
     study_ids = t.cast(t.Iterable[str], res.json())
     return next(iter(study_ids))
+
+
+@pytest.fixture(scope="session")
+def sta_mini_zip_path(project_path: Path) -> Path:
+    return project_path / "examples/studies/STA-mini.zip"
+
+
+@pytest.fixture(scope="session")
+def output_zip(tmp_path_factory: pytest.TempPathFactory, sta_mini_zip_path: Path) -> Path:
+    extraction_dir = tmp_path_factory.mktemp(basename="study_extraction")
+
+    with zipfile.ZipFile(sta_mini_zip_path, "r") as zf:
+        zf.extractall(extraction_dir)
+    output_dir = extraction_dir / "STA-mini" / "output" / "20201014-1427eco"
+
+    output_zip_dir = tmp_path_factory.mktemp(basename="output")
+    output_zip = output_zip_dir / "output.zip"
+    archive_dir(output_dir, output_zip, remove_source_dir=True)
+    return output_zip

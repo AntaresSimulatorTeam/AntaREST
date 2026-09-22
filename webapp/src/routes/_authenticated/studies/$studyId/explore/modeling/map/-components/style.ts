@@ -71,7 +71,7 @@ export const NodeDefault = styled(Chip)<NodeProps>(({ theme, nodecolor, rgbcolor
     fontSize: 20,
     marginLeft: 5,
     "&:hover": {
-      color: theme.palette.primary.main,
+      color: theme.vars.palette.primary.main,
     },
   },
   "& .MuiChip-label": {

@@ -14,18 +14,6 @@
 
 import { Box, StepConnector, stepConnectorClasses, styled } from "@mui/material";
 
-export const JobRoot = styled(Box, {
-  shouldForwardProp: (prop) => prop !== "jobLength",
-})<{ jobLength: number }>(({ theme, jobLength }) => ({
-  width: "100%",
-  flex: 1,
-  display: "flex",
-  justifyContent: jobLength > 0 ? "flex-start" : "center",
-  alignItems: jobLength > 0 ? "flex-start" : "center",
-  overflowX: "hidden",
-  overflowY: "auto",
-}));
-
 export const QontoConnector = styled(StepConnector)(({ theme }) => ({
   [`&.${stepConnectorClasses.disabled}`]: {
     [`& .${stepConnectorClasses.line}`]: {
@@ -34,18 +22,23 @@ export const QontoConnector = styled(StepConnector)(({ theme }) => ({
   },
 }));
 
-export const QontoStepIconRoot = styled("div")(({ theme }) => ({
-  color: theme.palette.mode === "dark" ? theme.palette.grey[700] : "#eaeaf0",
-  display: "flex",
-  width: "24px",
-  justifyContent: "center",
-  alignItems: "center",
-  "& .QontoStepIcon-inprogress": {
-    width: 16,
-    height: 16,
-    color: theme.palette.primary.main,
+export const QontoStepIconRoot = styled("div")(({ theme }) => [
+  {
+    color: "#eaeaf0",
+    display: "flex",
+    width: "24px",
+    justifyContent: "center",
+    alignItems: "center",
+    "& .QontoStepIcon-inprogress": {
+      width: 16,
+      height: 16,
+      color: theme.vars.palette.primary.main,
+    },
   },
-}));
+  theme.applyStyles("dark", {
+    color: theme.vars.palette.grey[700],
+  }),
+]);
 
 export const StepLabelRoot = styled(Box)(({ theme }) => ({
   width: "100%",

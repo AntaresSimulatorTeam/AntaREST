@@ -14,6 +14,7 @@
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useOperationInProgressCount from "@/hooks/useOperationInProgressCount";
+import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import useUpdatedRef from "@/hooks/useUpdatedRef";
 import { toError } from "@/utils/fnUtils";
 import { appendColon } from "@/utils/i18nUtils";
@@ -32,6 +33,7 @@ import {
   type MRT_ColumnDef,
   type MRT_RowSelectionState,
 } from "material-react-table";
+import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -39,27 +41,48 @@ import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import RouterLink from "../router/RouterLink";
 import CreateDialog from "./CreateDialog";
 import DuplicateDialog from "./DuplicateDialog";
-import type { TRow } from "./types";
-import { generateUniqueValue, getTableOptionsForAlign } from "./utils";
+import type { RowData } from "./types";
+import { generateUniqueValue, getDarkModeFixStyles, getTableOptionsForAlign } from "./utils";
 
 export interface GroupedDataTableProps<
   TGroups extends string[],
-  TData extends TRow<TGroups[number]>,
+  TData extends RowData<TGroups[number]>,
 > {
   data: TData[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: Array<MRT_ColumnDef<TData, any>>;
-  groups: TGroups;
+  /**
+   * Omit to disable grouping. When omitted, the group column and grouping
+   * behavior are removed and the create dialog skips the group field.
+   */
+  groups?: TGroups;
   allowNewGroups?: boolean;
-  onCreate?: (values: TRow<TGroups[number]>) => Promise<TData>;
+  onCreate?: (values: RowData<TGroups[number]> & Partial<TData>) => Promise<TData>;
+  /**
+   * Render a custom create dialog instead of the built-in one.
+   * Useful when creation requires fields the built-in dialog doesn't handle.
+   */
+  renderCreateDialog?: (props: {
+    open: boolean;
+    onClose: VoidFunction;
+    onSubmit: (values: RowData<TGroups[number]> & Partial<TData>) => Promise<void>;
+    existingNames: Array<RowData["name"]>;
+  }) => React.ReactNode;
   onDuplicate?: (row: TData, newName: string) => Promise<TData>;
   onDelete?: (rows: TData[]) => PromiseAny | void;
   onNameClick?: (row: TData) => void;
   nameLinkOptions?: (row: TData) => ToOptions;
   onDataChange?: (data: TData[]) => void;
+  readOnly?: boolean;
   isLoading?: boolean;
   deleteConfirmationMessage?: string | ((rows: TData[]) => string);
-  fillPendingRow?: (pendingRow: TRow<TGroups[number]>) => TRow<TGroups[number]> & Partial<TData>;
+  /**
+   * Extra actions rendered next to the built-in Add/Duplicate/Delete buttons.
+   */
+  toolbarActions?: React.ReactNode;
+  fillPendingRow?: (
+    pendingRow: RowData<TGroups[number]>,
+  ) => RowData<TGroups[number]> & Partial<TData>;
 }
 
 // Use ids to identify default columns (instead of `accessorKey`),
@@ -68,49 +91,88 @@ export interface GroupedDataTableProps<
 const GROUP_COLUMN_ID = "_group";
 const NAME_COLUMN_ID = "_name";
 
-function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[number]>>({
+function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroups[number]>>({
   data,
   columns,
   groups,
   allowNewGroups = false,
   onCreate,
+  renderCreateDialog,
   onDuplicate,
   onDelete,
   onNameClick,
   nameLinkOptions,
   onDataChange,
+  readOnly = false,
   isLoading,
   deleteConfirmationMessage,
   fillPendingRow,
+  toolbarActions,
 }: GroupedDataTableProps<TGroups, TData>) {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState<"add" | "duplicate" | "delete" | "">("");
   const [tableData, setTableData] = useState(data);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const callbacksRef = useUpdatedRef({ onNameClick, nameLinkOptions });
-  const pendingRows = useRef<Array<TRow<TGroups[number]>>>([]);
+  const callbacksRef = useUpdatedRef({ onNameClick, nameLinkOptions, readOnly });
+  const pendingRows = useRef<Array<RowData<TGroups[number]>>>([]);
   const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
-
-  useEffect(() => setTableData(data), [data]);
+  const { isDarkMode } = useThemeColorScheme();
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => onDataChange?.(tableData), [tableData]);
 
+  // Keep rows in sync when their source data changes outside this component's own
+  // create/duplicate/delete handlers.
+  useEffect(() => {
+    setTableData((prev) => {
+      // NOTE: matching by `name` is fragile it breaks if a consumer ever allows
+      // renaming rows from outside (the renamed row keeps stale values), and rows
+      // sharing a name collapse onto the last one. Match on a stable id once
+      // `RowData` exposes one.
+      const dataByName = R.indexBy((d) => d.name, data);
+      let hasChanges = false;
+
+      const next = prev.map((row) => {
+        if (isPendingRow(row)) {
+          return row;
+        }
+
+        const updatedRow = dataByName[row.name];
+
+        if (!updatedRow || R.equals(updatedRow, row)) {
+          return row;
+        }
+
+        hasChanges = true;
+
+        return updatedRow;
+      });
+
+      // Bail out with the same reference if nothing changed, to avoid unnecessary re-renders.
+      return hasChanges ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
+
   const existingNames = useMemo(() => tableData.map((row) => row.name.toLowerCase()), [tableData]);
 
-  const tableColumns = useMemo<Array<MRT_ColumnDef<TData>>>(
-    () => [
-      {
-        accessorKey: "group",
-        header: t("global.group"),
-        id: GROUP_COLUMN_ID,
-        size: 50,
-        filterVariant: "autocomplete",
-        filterSelectOptions: groups,
-        footer: appendColon(t("global.total")),
-        ...getTableOptionsForAlign("left"),
-      },
+  const hasGroups = groups !== undefined;
+
+  const tableColumns = useMemo<Array<MRT_ColumnDef<TData>>>(() => {
+    const groupColumn: MRT_ColumnDef<TData> = {
+      accessorKey: "group",
+      header: t("global.group"),
+      id: GROUP_COLUMN_ID,
+      size: 50,
+      filterVariant: "autocomplete",
+      filterSelectOptions: groups,
+      footer: appendColon(t("global.total")),
+      ...getTableOptionsForAlign("left"),
+    };
+
+    return [
+      ...(hasGroups ? [groupColumn] : []),
       {
         accessorKey: "name",
         header: t("global.name"),
@@ -119,9 +181,9 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
         filterVariant: "autocomplete",
         filterSelectOptions: existingNames,
         Cell: ({ renderedCellValue, row }) => {
-          const { onNameClick, nameLinkOptions } = callbacksRef.current;
+          const { onNameClick, nameLinkOptions, readOnly } = callbacksRef.current;
 
-          if (isPendingRow(row.original)) {
+          if (isPendingRow(row.original) || readOnly) {
             return renderedCellValue;
           }
 
@@ -172,22 +234,23 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
             },
           }) as MRT_ColumnDef<TData>,
       ),
-    ],
+    ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [columns, t, ...groups],
-  );
+  }, [columns, t, hasGroups, ...(groups ?? [])]);
 
   const table = useMaterialReactTable({
     data: tableData,
     columns: tableColumns,
     initialState: {
-      grouping: [GROUP_COLUMN_ID],
       density: "compact",
-      expanded: true,
-      columnPinning: { left: [GROUP_COLUMN_ID] },
+      ...(hasGroups && {
+        grouping: [GROUP_COLUMN_ID],
+        expanded: true,
+        columnPinning: { left: [GROUP_COLUMN_ID] },
+      }),
     },
     state: { isLoading, isSaving: totalOps > 0, rowSelection },
-    enableGrouping: true,
+    enableGrouping: hasGroups,
     enableStickyFooter: true,
     enableStickyHeader: true,
     enableColumnDragging: false,
@@ -197,6 +260,10 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
     positionToolbarAlertBanner: "none",
     // Rows
     muiTableBodyRowProps: ({ row }) => {
+      if (readOnly) {
+        return {};
+      }
+
       const isPending = isPendingRow(row.original);
 
       return {
@@ -232,6 +299,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
             startIcon={<AddCircleOutlineIcon />}
             variant="contained"
             onClick={() => setOpenDialog("add")}
+            disabled={readOnly}
           >
             {t("button.add")}
           </Button>
@@ -241,7 +309,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
             startIcon={<ContentCopyIcon />}
             variant="outlined"
             onClick={() => setOpenDialog("duplicate")}
-            disabled={table.getSelectedRowModel().rows.length !== 1}
+            disabled={readOnly || table.getSelectedRowModel().rows.length !== 1}
           >
             {t("global.duplicate")}
           </Button>
@@ -252,11 +320,12 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
             color="error"
             variant="outlined"
             onClick={() => setOpenDialog("delete")}
-            disabled={table.getSelectedRowModel().rows.length === 0}
+            disabled={readOnly || table.getSelectedRowModel().rows.length === 0}
           >
             {t("global.delete")}
           </Button>
         )}
+        {toolbarActions}
       </Box>
     ),
     renderToolbarInternalActions: ({ table }) => (
@@ -284,6 +353,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
     // Styles
     muiTablePaperProps: { sx: { display: "flex", flexDirection: "column" } }, // Allow to have scroll
     ...getTableOptionsForAlign("right"),
+    ...getDarkModeFixStyles(isDarkMode),
   });
 
   const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
@@ -293,7 +363,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   // Optimistic
   ////////////////////////////////////////////////////////////////
 
-  const addPendingRow = (row: TRow<TGroups[number]>) => {
+  const addPendingRow = (row: RowData<TGroups[number]>) => {
     const pendingRow = fillPendingRow?.(row) || row;
 
     pendingRows.current.push(pendingRow);
@@ -305,14 +375,14 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
     return pendingRow;
   };
 
-  const removePendingRow = (row: TRow<TGroups[number]>) => {
+  const removePendingRow = (row: RowData<TGroups[number]>) => {
     if (isPendingRow(row)) {
       pendingRows.current = pendingRows.current.filter((r) => r !== row);
       setTableData((prev) => prev.filter((r) => r !== row));
     }
   };
 
-  function isPendingRow(row: TRow<TGroups[number]>) {
+  function isPendingRow(row: RowData<TGroups[number]>) {
     return pendingRows.current.includes(row);
   }
 
@@ -326,7 +396,7 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: TRow<TGroups[number]>) => {
+  const handleCreate = async (values: RowData<TGroups[number]> & Partial<TData>) => {
     closeDialog();
 
     if (!onCreate) {
@@ -407,16 +477,26 @@ function GroupedDataTable<TGroups extends string[], TData extends TRow<TGroups[n
   return (
     <>
       <MaterialReactTable table={table} />
-      {openDialog === "add" && (
-        <CreateDialog
-          open
-          onClose={closeDialog}
-          groups={groups}
-          allowNewGroups={allowNewGroups}
-          existingNames={existingNames}
-          onSubmit={handleCreate}
-        />
-      )}
+      {openDialog === "add" &&
+        (renderCreateDialog ? (
+          renderCreateDialog({
+            open: true,
+            onClose: closeDialog,
+            onSubmit: handleCreate,
+            existingNames,
+          })
+        ) : (
+          <CreateDialog
+            open
+            onClose={closeDialog}
+            groups={groups}
+            allowNewGroups={allowNewGroups}
+            existingNames={existingNames}
+            onSubmit={(values: RowData) =>
+              handleCreate(values as RowData<TGroups[number]> & Partial<TData>)
+            }
+          />
+        ))}
       {openDialog === "duplicate" && selectedRow && (
         <DuplicateDialog
           open

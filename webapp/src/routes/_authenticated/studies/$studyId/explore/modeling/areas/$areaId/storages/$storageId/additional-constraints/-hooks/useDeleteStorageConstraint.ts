@@ -82,6 +82,7 @@ function useDeleteStorageConstraint() {
       enqueueErrorSnackbar(
         t("study.modeling.storages.additionalConstraints.delete.error", {
           name:
+            constraintToDelete?.name ||
             queryClient.getQueryData(queryListKey)?.find((c) => c.id === constraintId)?.name ||
             constraintId,
         }),

@@ -32,11 +32,28 @@ const folderPredicate = R.curry((filters: StudyFilters, study: StudyMetadata) =>
       return false;
     }
 
-    // If directoryId is null, show studies with no directoryId (home/default)
-    // Otherwise, show only studies in the selected directory
-    return managed.directoryId === null
-      ? study.directoryId === null
-      : study.directoryId === managed.directoryId;
+    // Root (null directoryId):
+    // showDescendants=false: show only studies with no directory (directoryId === null).
+    // showDescendants=true: show all managed studies (global scope).
+    if (managed.directoryId === null) {
+      return managed.showDescendants ? true : study.directoryId === null;
+    }
+
+    // A specific directory is selected.
+    // showDescendants=false: show only studies directly in the selected directory.
+    // showDescendants=true: show studies in the selected dir + all descendants.
+    if (!managed.showDescendants) {
+      return study.directoryId === managed.directoryId;
+    }
+
+    // directoryIds is the pre-computed set: selected dir + all descendants.
+    // It is always non-null here because directoryId and directoryIds are set
+    // together by every navigation handler.
+    return (
+      !!managed.directoryIds &&
+      !!study.directoryId &&
+      managed.directoryIds.includes(study.directoryId)
+    );
   }
 
   // activeTree === "external"
@@ -45,16 +62,15 @@ const folderPredicate = R.curry((filters: StudyFilters, study: StudyMetadata) =>
     return false;
   }
 
-  const workspacePath = `/${study.workspace}`;
-  const studyPath = study.folder
-    ? `${workspacePath}/${R.dropLast(1, study.folder.split("/")).join("/")}`
-    : workspacePath;
+  const workspace = `/${study.workspace}`;
+  const directory = study.folder ? study.folder.split("/").filter(Boolean).slice(0, -1) : [];
+  const studyPath = directory.length > 0 ? `${workspace}/${directory.join("/")}` : workspace;
 
   return external.path === ""
     ? true // home: show all external studies
-    : external.strictPath
-      ? studyPath === external.path
-      : `${studyPath}/`.startsWith(`${external.path}/`);
+    : external.showDescendants
+      ? `${studyPath}/`.startsWith(`${external.path}/`)
+      : studyPath === external.path;
 });
 
 const searchPredicate = R.curry((search: StudyFilters["search"], study: StudyMetadata) => {

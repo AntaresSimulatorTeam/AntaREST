@@ -38,6 +38,7 @@ interface MatrixActionsProps {
   canImport?: boolean;
   enableFilters?: boolean;
   enableResize?: boolean;
+  readOnly?: boolean;
 }
 
 function MatrixActions({
@@ -52,6 +53,7 @@ function MatrixActions({
   canImport = false,
   enableFilters = false,
   enableResize = false,
+  readOnly = false,
 }: MatrixActionsProps) {
   const { t } = useTranslation();
   const { isSubmitting, updateCount, undo, redo, canUndo, canRedo, isDirty } = useMatrixContext();
@@ -94,12 +96,13 @@ function MatrixActions({
       <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
       {(enableResize || enableFilters) && (
         <>
-          {enableResize && <MatrixResize />}
+          {enableResize && !readOnly && <MatrixResize />}
           {enableFilters && (
             <MatrixFilter
               dateTime={dateTime}
               isTimeSeries={isTimeSeries}
               timeFrequency={timeFrequency}
+              readOnly={readOnly}
             />
           )}
           <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />

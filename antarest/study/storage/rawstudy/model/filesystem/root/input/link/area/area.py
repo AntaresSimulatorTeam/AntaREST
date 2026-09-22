@@ -11,12 +11,12 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_6_fixed_hourly,
     default_8_fixed_hourly,
@@ -28,14 +28,14 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.prope
 
 
 class InputLinkArea(FolderNode):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig, area: str):
-        super().__init__(matrix_mapper, config)
+    def __init__(self, matrix_storage_context: MatrixStorageContext, config: FileStudyTreeConfig, area: str):
+        super().__init__(matrix_storage_context, config)
         self.area = area
 
     @override
     def build(self) -> TREE:
         children: TREE
-        ctx = self.matrix_mapper
+        ctx = self.matrix_storage_context
         cfg = self.config
         if cfg.version < STUDY_VERSION_8_2:
             children = {

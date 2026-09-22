@@ -20,6 +20,7 @@ import StudyPathFE from "@/routes/-shared/components/studies/StudyPathFE";
 import { createFolder } from "@/services/api/studies/raw";
 import type { StudyMetadata } from "@/types/types";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
+import { useNavigate } from "@tanstack/react-router";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import DebugContext from "../../DebugContext";
@@ -36,8 +37,9 @@ const defaultValues = { folder: "", openFolder: false };
 type DefaultValues = typeof defaultValues;
 
 function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
-  const { setPathSearchParam, reloadTree } = useContext(DebugContext);
+  const { reloadTree } = useContext(DebugContext);
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -61,7 +63,11 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
     await reloadTree();
 
     if (openFolder) {
-      setPathSearchParam(toPath(folder));
+      navigate({
+        to: "/studies/$studyId/explore/debug",
+        params: { studyId },
+        search: { path: toPath(folder) },
+      });
     }
   };
 
@@ -72,7 +78,7 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
   return (
     <FormDialog
       open={open}
-      title={t("study.debug.folder.new")}
+      title={t("study.fileExplorer.folder.new")}
       titleIcon={CreateNewFolderIcon}
       config={{ defaultValues }}
       onCancel={onCancel}
@@ -84,13 +90,14 @@ function CreateFolderDialog({ open, onCancel, studyId, parentPath }: Props) {
       {({ control }) => (
         <Fieldset fullFieldWidth>
           <StudyPathFE
-            helperText={t("study.debug.folder.new.name.helper")}
             name="folder"
             control={control}
             rules={{ required: t("form.field.required") }}
+            helperText={t("study.fileExplorer.folder.new.name.helper")}
+            disableAdornment
           />
           <CheckBoxFE
-            label={t("study.debug.folder.new.openDirectory")}
+            label={t("study.fileExplorer.folder.new.openDirectory")}
             name="openFolder"
             control={control}
           />

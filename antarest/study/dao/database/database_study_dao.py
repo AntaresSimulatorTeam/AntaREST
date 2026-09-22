@@ -17,8 +17,7 @@ This DAO provides database-backed storage for studies when storage_mode=DATABASE
 Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
 """
 
-from pathlib import PurePosixPath
-from typing import Iterator, Optional, Self, Sequence
+from typing import Self
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -26,35 +25,43 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.blobstore.service import IBlobService
+from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.study.business.model.binding_constraint_model import BindingConstraint
-from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
-from antarest.study.business.model.sts_model import (
-    STStorage,
-    STStorageAdditionalConstraint,
-    STStorageAdditionalConstraintsMap,
-)
-from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
-from antarest.study.business.model.user_model import UserResourceDataCreation
-from antarest.study.business.model.xpansion_model import (
-    XpansionAdequacyCriterion,
-    XpansionCandidate,
-    XpansionResourceFileType,
-    XpansionSettings,
-    XpansionSettingsUpdate,
-)
+from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase, StudyDaoContext
 from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
 from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
+from antarest.study.dao.database.database_binding_constraint_dao import DatabaseBindingConstraintDao
 from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
 from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
 from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
 from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
 from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
+from antarest.study.dao.database.database_reserve_certification_dao import (
+    DatabaseReserveCertificationDao,
+)
+from antarest.study.dao.database.database_reserve_definition_dao import DatabaseReserveDefinitionDao
+from antarest.study.dao.database.database_reserve_symmetries_dao import DatabaseReserveSymmetriesDao
+from antarest.study.dao.database.database_reserves_global_parameters_dao import DatabaseReservesGlobalParametersDao
+from antarest.study.dao.database.database_scenario_builder_dao import DatabaseScenarioBuilderDao
+from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
 from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
+from antarest.study.dao.database.database_thematic_trimming_dao import DatabaseThematicTrimmingDao
 from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
-from antarest.study.model import Study
+from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
+from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
+from antarest.study.dao.database.gems.database_library_dao import DatabaseGemsLibraryDao
+from antarest.study.dao.database.gems.database_taxonomy_dao import DatabaseGemsTaxonomyDao
+from antarest.study.dao.database.models.comments import COMMENTS_TABLE
+from antarest.study.dtos import StudyDataSynthesis
+from antarest.study.model import Study, StudyMetadataUpdate
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import MatrixSupplier
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class DatabaseStudyDao(
@@ -68,31 +75,119 @@ class DatabaseStudyDao(
     DatabaseThermalDao,
     DatabaseStudySettingsDao,
     DatabaseRenewableDao,
+    DatabaseUserResourcesDao,
+    DatabaseStStorageDao,
+    DatabaseThematicTrimmingDao,
+    DatabaseScenarioBuilderDao,
+    DatabaseXpansionDao,
+    DatabaseBindingConstraintDao,
+    DatabaseReservesGlobalParametersDao,
+    DatabaseReserveDefinitionDao,
+    DatabaseReserveCertificationDao,
+    DatabaseReserveSymmetriesDao,
+    DatabaseGemsLibraryDao,
+    DatabaseGemsTaxonomyDao,
 ):
     """
     Database implementation of StudyDao.
     """
 
-    def __init__(self, study_id: str, db_session: Session, matrix_service: ISimpleMatrixService) -> None:
+    def __init__(
+        self,
+        study_id: str,
+        study_data_id: int,
+        db_session: Session,
+        matrix_service: ISimpleMatrixService,
+        blob_service: IBlobService,
+        generator_matrix_constants: GeneratorMatrixConstants,
+    ) -> None:
         """
         Initialize DatabaseStudyDao.
 
         Args:
             study_id: The study ID for database queries
             db_session: SQLAlchemy session for database operations
+            matrix_service: Matrix storage service
+            blob_service: Blobs storage service
+            generator_matrix_constants: Predefined matrix constants generator
         """
-        DatabaseAreaDao.__init__(self, study_id, db_session)
-        DatabaseAreaPropertiesDao.__init__(self, study_id, db_session)
-        DatabaseDistrictDao.__init__(self, study_id, db_session)
-        DatabaseLinkDao.__init__(self, study_id, db_session)
-        DatabaseLayerDao.__init__(self, study_id, db_session)
-        DatabaseHydroDao.__init__(self, study_id, db_session)
-        DatabaseThermalDao.__init__(self, study_id, db_session)
-        DatabaseStudySettingsDao.__init__(self, study_id, db_session)
-        DatabaseRenewableDao.__init__(self, study_id, db_session)
+        DatabaseDaoBase.__init__(self, StudyDaoContext(study_id, study_data_id, db_session))
         self._matrix_service = matrix_service
+        self._blob_service = blob_service
+        self._generator_matrix_constants = generator_matrix_constants
+
+    @override
+    @property
+    def matrix_service(self) -> ISimpleMatrixService:
+        return self._matrix_service
+
+    @property
+    @override
+    def blob_service(self) -> IBlobService:
+        return self._blob_service
+
+    @override
+    @property
+    def generator_matrix_constants(self) -> GeneratorMatrixConstants:
+        return self._generator_matrix_constants
 
     # Implementation of abstract methods required by StudyDao
+    @override
+    def get_study_id(self) -> str:
+        return self._study_id
+
+    @override
+    def get_synthesis(self) -> StudyDataSynthesis:
+        study_id = self._study_id
+        version = self.get_version()
+
+        areas_info = self.get_all_areas_info()
+        area_names = {a.id: a.name for a in areas_info}
+        area_ids = list(area_names.keys())
+
+        # Links organized by source area → target area
+        links_by_area: dict[str, dict[str, LinkConfig]] = {aid: {} for aid in area_ids}
+        for link in self.get_links():
+            link_config = LinkConfig(
+                filters_synthesis=list(link.filter_synthesis),
+                filters_year=list(link.filter_year_by_year),
+            )
+            links_by_area[link.area1][link.area2] = link_config
+
+        thermals = self.get_all_thermals()
+        renewables = self.get_all_renewables()
+        st_storages = self.get_all_st_storages()
+        additional_constraints = self.get_all_st_storage_additional_constraints()
+        area_properties = self.get_all_area_properties()
+
+        areas: dict[str, AreaConfig] = {}
+        for area_id in area_ids:
+            props = area_properties.get(area_id, AreaProperties())
+            areas[area_id] = AreaConfig(
+                name=area_names[area_id],
+                links=links_by_area.get(area_id, {}),
+                thermals=list(thermals.get(area_id, {}).values()),
+                renewables=list(renewables.get(area_id, {}).values()),
+                filters_synthesis=sort_filter_options(props.filter_synthesis),
+                filters_year=sort_filter_options(props.filter_by_year),
+                st_storages=list(st_storages.get(area_id, {}).values()),
+                st_storages_additional_constraints=additional_constraints.get(area_id, {}),
+            )
+
+        districts = {d.id: d for d in self.get_districts()}
+
+        advanced = self.get_advanced_parameters()
+        enr_modelling = EnrModelling(advanced.renewable_generation_modelling.value)
+
+        return StudyDataSynthesis.model_construct(
+            study_id=study_id,
+            version=version,
+            areas=areas,
+            districts=districts,
+            bindings=[],
+            enr_modelling=enr_modelling,
+        )
+
     @override
     def get_version(self) -> StudyVersion:
         """
@@ -111,14 +206,21 @@ class DatabaseStudyDao(
 
     @override
     def get_comments(self) -> str:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_data_id == self._study_data_id)
+        comments = self._db_session.execute(stmt).scalar_one_or_none()
+        return comments if comments is not None else ""
 
     @override
     def save_comments(self, comments: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        upsert_one(self._db_session, COMMENTS_TABLE, {"study_data_id": self._study_data_id, "comments": comments})
+        self._db_session.commit()
 
     @override
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
+        pass
+
+    @override
+    def update_cache(self) -> None:
         pass
 
     @override
@@ -135,304 +237,11 @@ class DatabaseStudyDao(
             "get_file_study() is not supported in database storage mode. Use database-specific methods instead."
         )
 
-    def get_matrix(self, matrix_id: str) -> pl.DataFrame:
-        return self._matrix_service.get(matrix_id)
+    def get_matrix(self, matrix_id: str, default_empty_supplier: MatrixSupplier | None) -> pl.DataFrame:
+        matrix = self._matrix_service.get(matrix_id)
 
-    @override
-    def save_constraints(self, constraints: Sequence[BindingConstraint]) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        if matrix.is_empty() and default_empty_supplier is not None:
+            # We have to return the given default matrix
+            return create_polars_dataframe(default_empty_supplier())
 
-    @override
-    def save_constraint_values_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_constraint_less_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_constraint_greater_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_constraint_equal_term_matrix(self, constraint_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_constraints(self, constraints: list[BindingConstraint]) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_constraints(self) -> dict[str, BindingConstraint]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_constraint(self, constraint_id: str) -> BindingConstraint:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage(self, area_id: str, st_storage: STStorage) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storages(self, area_id: str, storages: Sequence[STStorage]) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_pmax_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_lower_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_upper_rule_curve(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_inflows(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_cost_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_cost_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_cost_level(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_cost_variation_injection(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str, series_id: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_st_storage(self, area_id: str, storage: STStorage) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_st_storage_additional_constraints(self, area_id: str, storage_id: str, constraints: list[str]) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_constraint_matrix(
-        self, area_id: str, storage_id: str, constraint_id: str, series_id: str
-    ) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_st_storage_additional_constraints(
-        self, area_id: str, storage_id: str, constraints: list[STStorageAdditionalConstraint]
-    ) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_st_storages_for_area(self, area_id: str) -> Sequence[STStorage]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def st_storage_exists(self, area_id: str, storage_id: str) -> bool:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_pmax_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_pmax_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_lower_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_upper_rule_curve(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_inflows(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_cost_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_cost_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_cost_level(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_cost_variation_injection(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_st_storage_additional_constraints(self) -> STStorageAdditionalConstraintsMap:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_st_storage_additional_constraints(
-        self, area_id: str, storage_id: str
-    ) -> list[STStorageAdditionalConstraint]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_xpansion_candidate(self, candidate_name: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_settings(self, settings: XpansionSettings) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def create_xpansion_configuration(self) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_xpansion_configuration(self) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_capacity(self, filename: str, series: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_weight(self, filename: str, series: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_all_xpansion_candidates(self) -> list[XpansionCandidate]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_xpansion_candidate(self, candidate_id: str) -> XpansionCandidate:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def checks_xpansion_candidate_coherence(self, candidate: XpansionCandidate) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def checks_xpansion_candidate_can_be_deleted(self, candidate_name: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_xpansion_settings(self) -> XpansionSettings:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def checks_xpansion_settings_are_correct(self, settings: XpansionSettingsUpdate) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_xpansion_resources(self, resource_type: XpansionResourceFileType) -> list[str]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def checks_xpansion_resource_can_be_deleted(self, resource_type: XpansionResourceFileType, filename: str) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_thematic_trimming(self, trimming: ThematicTrimming) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_thematic_trimming(self) -> ThematicTrimming:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def delete_user_resource(self, resource_path: PurePosixPath) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def save_scenario_builder(self, rulesets: Rulesets) -> None:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_rulesets(self) -> Rulesets:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    @override
-    def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
-
-    # User resources
-    @override
-    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
-        raise NotImplementedError("This method is not yet implemented for database storage mode")
+        return matrix

@@ -15,6 +15,7 @@
 import UploadFileButton from "@/components/buttons/UploadFileButton";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import EmptyView from "@/components/page/EmptyView";
+import RouterListItemButton from "@/components/router/RouterListItemButton";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
@@ -30,13 +31,13 @@ import {
   IconButton,
   List,
   ListItem,
-  ListItemButton,
   ListItemIcon,
   ListItemText,
   ListSubheader,
   Menu,
   MenuItem,
 } from "@mui/material";
+import { useParams } from "@tanstack/react-router";
 import { Fragment, useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -52,7 +53,8 @@ import { Filename, Menubar } from "../styles";
 import CreateFolderDialog from "./CreateFolderDialog";
 
 function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProps) {
-  const { setPathSearchParam, reloadTree } = useContext(DebugContext);
+  const params = useParams({ from: "/_authenticated/studies/$studyId/explore/debug/" });
+  const { reloadTree } = useContext(DebugContext);
   const { t } = useTranslation();
   const study = useStudy();
   const replaceAction = useConfirm();
@@ -78,7 +80,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
     const childWithSameName = treeFolder[file.name];
     if (childWithSameName) {
       if (isFolder(childWithSameName)) {
-        throw new Error(t("study.debug.folder.upload.error.replaceFolder"));
+        throw new Error(t("study.fileExplorer.folder.upload.error.replaceFolder"));
       }
 
       return replaceAction.showConfirm();
@@ -133,10 +135,11 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
                     onClick={() => setOpenCreateFolderDialog(true)}
                     startIcon={<CreateNewFolderIcon />}
                   >
-                    {t("study.debug.folder.new")}
+                    {t("study.fileExplorer.folder.new")}
                   </Button>
                   <UploadFileButton
                     studyId={studyId}
+                    studyStorageMode="filesystem"
                     path={(file) => `${filePath}/${file.name}`}
                     onUploadSuccessful={reloadTree}
                     validate={handleValidateUpload}
@@ -185,7 +188,11 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
                   }
                   disablePadding
                 >
-                  <ListItemButton onClick={() => setPathSearchParam(path)}>
+                  <RouterListItemButton
+                    to="/studies/$studyId/explore/debug"
+                    params={params}
+                    search={{ path }}
+                  >
                     <ListItemIcon>
                       <Icon />
                     </ListItemIcon>
@@ -198,21 +205,25 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
                         },
                       }}
                     />
-                  </ListItemButton>
+                  </RouterListItemButton>
                 </ListItem>
                 {isNotLast && <Divider variant="fullWidth" />}
               </Fragment>
             );
           })
         ) : (
-          <EmptyView title={t("study.debug.folder.empty")} icon={getFileIcon("folder")} />
+          <EmptyView title={t("study.fileExplorer.folder.empty")} icon={getFileIcon("folder")} />
         )}
       </List>
       {/* Items menu */}
       <Menu anchorEl={menuData?.anchorEl} open={!!menuData} onClose={handleMenuClose}>
-        <MenuItem onClick={handleDeleteClick}>
-          <DeleteIcon sx={{ mr: 1 }} fontSize="small" />
-          {t("global.delete")}
+        <MenuItem onClick={handleDeleteClick} dense>
+          <ListItemIcon>
+            <DeleteIcon color="error" />
+          </ListItemIcon>
+          <ListItemText slotProps={{ primary: { color: "error" } }}>
+            {t("global.delete")}
+          </ListItemText>
         </MenuItem>
       </Menu>
       <CreateFolderDialog
@@ -223,7 +234,7 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
       />
       {/* Confirm file replacement */}
       <ConfirmationDialog
-        title={t("study.debug.folder.upload.replaceFileConfirm.title")}
+        title={t("study.fileExplorer.folder.upload.replaceFileConfirm.title")}
         confirmButtonText={t("global.replace")}
         cancelButtonText={t("global.cancel")}
         maxWidth="xs"
@@ -231,14 +242,14 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
         onConfirm={replaceAction.yes}
         onCancel={replaceAction.no}
       >
-        {t("study.debug.folder.upload.replaceFileConfirm.message")}
+        {t("study.fileExplorer.folder.upload.replaceFileConfirm.message")}
       </ConfirmationDialog>
       {/* Confirm file/folder deletion */}
       <ConfirmationDialog
         title={
           deleteAction.data?.isFolder
-            ? t("study.debug.folder.deleteConfirm.title")
-            : t("study.debug.file.deleteConfirm.title")
+            ? t("study.fileExplorer.folder.deleteConfirm.title")
+            : t("study.fileExplorer.file.deleteConfirm.title")
         }
         titleIcon={deleteAction.data?.isFolder ? FolderDeleteIcon : DeleteIcon}
         confirmButtonText={t("global.delete")}
@@ -249,10 +260,12 @@ function Folder({ filename, filePath, treeData, canEdit, studyId }: DataCompProp
         onCancel={deleteAction.no}
       >
         {deleteAction.data?.isFolder
-          ? t("study.debug.folder.deleteConfirm.message", {
+          ? t("study.fileExplorer.folder.deleteConfirm.message", {
               folderName: deleteAction.data?.filename,
             })
-          : t("study.debug.file.deleteConfirm.message", { fileName: deleteAction.data?.filename })}
+          : t("study.fileExplorer.file.deleteConfirm.message", {
+              fileName: deleteAction.data?.filename,
+            })}
       </ConfirmationDialog>
     </>
   );

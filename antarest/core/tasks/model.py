@@ -13,9 +13,10 @@
 import uuid
 from datetime import datetime
 from enum import Enum, StrEnum
-from typing import TYPE_CHECKING, Annotated, Any, List, Optional, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, TypeAlias
 
 from pydantic import BeforeValidator, PlainSerializer, WithJsonSchema
+from pydantic.alias_generators import to_camel
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
@@ -35,6 +36,7 @@ class TaskType(StrEnum):
     COPY = "COPY"
     ARCHIVE = "ARCHIVE"
     UNARCHIVE = "UNARCHIVE"
+    REPAIR_STUDY = "REPAIR_STUDY"
     SCAN = "SCAN"
     UPGRADE_STUDY = "UPGRADE_STUDY"
     THERMAL_CLUSTER_SERIES_GENERATION = "THERMAL_CLUSTER_SERIES_GENERATION"
@@ -91,11 +93,11 @@ TaskStatusStr: TypeAlias = Annotated[
 ]
 
 
-class TaskResult(AntaresBaseModel, extra="forbid"):
+class TaskResult(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     success: bool
     message: str
     # Can be used to store json serialized result
-    return_value: Optional[str] = None
+    return_value: str | None = None
 
 
 class TaskLogDTO(AntaresBaseModel, extra="forbid"):
@@ -113,32 +115,32 @@ class TaskEventPayload(AntaresBaseModel, extra="forbid"):
     id: str
     message: str
     type: TaskType
-    study_id: Optional[str] = None
+    study_id: str | None = None
 
 
-class TaskDTO(AntaresBaseModel, extra="forbid"):
+class TaskDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     id: str
     name: str
-    owner: Optional[int] = None
+    owner: int | None = None
     status: TaskStatus
     creation_date_utc: str
-    completion_date_utc: Optional[str] = None
-    result: Optional[TaskResult] = None
-    logs: Optional[List[TaskLogDTO]] = None
-    type: Optional[str] = None
-    ref_id: Optional[str] = None
-    progress: Optional[int] = None
+    completion_date_utc: str | None = None
+    result: TaskResult | None = None
+    logs: list[TaskLogDTO] | None = None
+    type: TaskType | None = None
+    ref_id: str | None = None
+    progress: int | None = None
 
 
 class TaskListFilter(AntaresBaseModel, extra="forbid"):
-    status: List[TaskStatusStr] = []
-    name: Optional[str] = None
-    type: List[TaskType] = []
-    ref_id: Optional[str] = None
-    from_creation_date_utc: Optional[float] = None
-    to_creation_date_utc: Optional[float] = None
-    from_completion_date_utc: Optional[float] = None
-    to_completion_date_utc: Optional[float] = None
+    status: list[TaskStatusStr] = []
+    name: str | None = None
+    type: list[TaskType] = []
+    ref_id: str | None = None
+    from_creation_date_utc: float | None = None
+    to_creation_date_utc: float | None = None
+    from_completion_date_utc: float | None = None
+    to_completion_date_utc: float | None = None
 
 
 class TaskJobLog(Base):
@@ -177,20 +179,20 @@ class TaskJob(Base):
     name: Mapped[str] = mapped_column(String(), nullable=False, index=True)
     status: Mapped[int] = mapped_column(Integer(), default=lambda: TaskStatus.PENDING.value, index=True)
     creation_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
-    completion_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=None)
-    result_msg: Mapped[Optional[str]] = mapped_column(String(), nullable=True, default=None)
-    result: Mapped[Optional[str]] = mapped_column(String(), nullable=True, default=None)
-    result_status: Mapped[Optional[bool]] = mapped_column(Boolean(), nullable=True, default=None)
-    type: Mapped[Optional[str]] = mapped_column(String(), nullable=True, default=None, index=True)
-    progress: Mapped[Optional[int]] = mapped_column(Integer(), nullable=True, default=None)
-    owner_id: Mapped[Optional[int]] = mapped_column(
+    completion_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None)
+    result_msg: Mapped[str | None] = mapped_column(String(), nullable=True, default=None)
+    result: Mapped[str | None] = mapped_column(String(), nullable=True, default=None)
+    result_status: Mapped[bool | None] = mapped_column(Boolean(), nullable=True, default=None)
+    type: Mapped[str | None] = mapped_column(String(), nullable=True, default=None, index=True)
+    progress: Mapped[int | None] = mapped_column(Integer(), nullable=True, default=None)
+    owner_id: Mapped[int | None] = mapped_column(
         Integer(),
         ForeignKey("identities.id", name="fk_taskjob_identity_id", ondelete="SET NULL"),
         nullable=True,
         default=None,
         index=True,
     )
-    ref_id: Mapped[Optional[str]] = mapped_column(
+    ref_id: Mapped[str | None] = mapped_column(
         String(),
         ForeignKey("study.id", name="fk_taskjob_study_id", ondelete="CASCADE"),
         nullable=True,
@@ -200,7 +202,7 @@ class TaskJob(Base):
 
     # Define a one-to-many relationship between `TaskJob` and `TaskJobLog`.
     # If the TaskJob is deleted, all attached logs must also be deleted in cascade.
-    logs: Mapped[List["TaskJobLog"]] = relationship(
+    logs: Mapped[list["TaskJobLog"]] = relationship(
         "TaskJobLog", back_populates="job", cascade="all, delete, delete-orphan"
     )
 

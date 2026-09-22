@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { Decimal } from "decimal.js-light";
 import { produce } from "immer";
 import { useCallback, useState } from "react";
 import { useMatrixContext } from "../../../context/MatrixContext";
@@ -125,26 +126,34 @@ function applyOperationToValue(
   operationType: string,
   operationValue: number,
 ): number {
+  if (operationType === Operation.Eq) {
+    return operationValue;
+  }
+
+  if (operationType === Operation.Abs) {
+    return Math.abs(currentValue);
+  }
+
+  const a = new Decimal(currentValue);
+  const b = new Decimal(operationValue);
+  let result: Decimal;
+
   switch (operationType) {
-    case Operation.Eq:
-      return operationValue;
-
     case Operation.Add:
-      return currentValue + operationValue;
-
+      result = a.plus(b);
+      break;
     case Operation.Sub:
-      return currentValue - operationValue;
-
+      result = a.minus(b);
+      break;
     case Operation.Mul:
-      return currentValue * operationValue;
-
+      result = a.times(b);
+      break;
     case Operation.Div:
-      return operationValue !== 0 ? currentValue / operationValue : currentValue;
-
-    case Operation.Abs:
-      return Math.abs(currentValue);
-
+      result = b.isZero() ? a : a.dividedBy(b);
+      break;
     default:
       return currentValue;
   }
+
+  return result.toDecimalPlaces(Math.max(a.decimalPlaces(), b.decimalPlaces())).toNumber();
 }

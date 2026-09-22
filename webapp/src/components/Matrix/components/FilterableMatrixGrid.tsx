@@ -13,51 +13,34 @@
  */
 
 import { Box } from "@mui/material";
-import { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { MatrixProvider } from "../context/MatrixContext";
 import type { TimeFrequencyType } from "../shared/types";
-import MatrixFilter, { type MatrixFilterHandle } from "./MatrixFilter";
+import MatrixFilter from "./MatrixFilter";
 
+import type { MatrixFilterProps } from "./MatrixFilter/types";
 import MatrixGrid, { type MatrixGridProps } from "./MatrixGrid";
 
 export interface FilterableMatrixGridProps extends MatrixGridProps {
   timeFrequency?: TimeFrequencyType;
+  ref?: MatrixFilterProps["ref"];
 }
 
-export interface FilterableMatrixGridHandle {
-  toggleFilter: () => void;
-}
-
-function FilterableMatrixGrid(
-  {
-    data,
-    rows,
-    columns,
-    dateTime,
-    aggregates,
-    rowHeaders,
-    onCellEdit,
-    onMultipleCellsEdit,
-    readOnly = true,
-    showPercent,
-    showStats = true,
-    timeFrequency,
-  }: FilterableMatrixGridProps,
-  ref: React.ForwardedRef<FilterableMatrixGridHandle>,
-) {
-  const matrixFilterRef = useRef<MatrixFilterHandle>(null);
-
-  // Expose filter toggle functionality via ref
-  useImperativeHandle(
-    ref,
-    () => ({
-      toggleFilter: () => {
-        matrixFilterRef.current?.toggle();
-      },
-    }),
-    [],
-  );
-
+function FilterableMatrixGrid({
+  data,
+  rows,
+  columns,
+  dateTime,
+  aggregates,
+  rowHeaders,
+  onCellEdit,
+  onMultipleCellsEdit,
+  readOnly = true,
+  showPercent,
+  showStats = true,
+  timeFrequency,
+  ref,
+}: FilterableMatrixGridProps) {
   // Create minimal context value for MatrixProvider
   // Only includes what's necessary for filtering functionality
   const contextValue = useMemo(
@@ -101,7 +84,7 @@ function FilterableMatrixGrid(
         {/* Hidden MatrixFilter that can be triggered from outside via ref */}
         <Box sx={{ display: "none" }}>
           <MatrixFilter
-            ref={matrixFilterRef}
+            ref={ref}
             dateTime={dateTime}
             isTimeSeries={isTimeSeries}
             timeFrequency={timeFrequency}
@@ -131,4 +114,4 @@ function FilterableMatrixGrid(
   );
 }
 
-export default forwardRef(FilterableMatrixGrid);
+export default FilterableMatrixGrid;

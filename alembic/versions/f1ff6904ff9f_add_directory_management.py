@@ -10,7 +10,6 @@ Create Date: 2025-10-09
 """
 import uuid
 from pathlib import PurePosixPath
-from typing import Dict
 
 import sqlalchemy as sa
 from sqlalchemy.sql import and_, column, select, table
@@ -99,7 +98,7 @@ def upgrade() -> None:
     )
 
     # Cache for created directories: path -> directory_id
-    directory_cache: Dict[str, str] = {}
+    directory_cache: dict[str, str] = {}
 
     # Batch data to insert
     directories_to_insert = []

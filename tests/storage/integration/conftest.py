@@ -14,10 +14,10 @@ import datetime
 import shutil
 import zipfile
 from pathlib import Path
+from subprocess import run
 from unittest.mock import Mock
 from zipfile import ZipFile
 
-import py7zr
 import pytest
 
 from antarest.blobstore.repository import BlobContentRepository
@@ -26,19 +26,17 @@ from antarest.core.cache.business.local_chache import LocalCache
 from antarest.core.config import (
     CacheConfig,
     Config,
-    InternalMatrixFormat,
     SecurityConfig,
     StorageConfig,
     WorkspaceConfig,
 )
 from antarest.core.tasks.service import ITaskService
 from antarest.login.model import User
-from antarest.matrixstore.repository import MatrixContentRepository
-from antarest.matrixstore.service import SimpleMatrixService
+from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
+from antarest.output.service import OutputService
 from antarest.service_creator import build_output_service
 from antarest.study.main import build_study_service
-from antarest.study.model import DEFAULT_WORKSPACE_NAME
-from antarest.study.output.output_service import OutputService
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, StorageMode
 from antarest.study.service import StudyService
 from tests.helpers import create_raw_study
 
@@ -58,8 +56,7 @@ def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path
     with zipfile.ZipFile(sta_mini_zip_path, "r") as zf:
         zf.extractall(sta_mini_zip_path.parent)
     extracted_dir_path = sta_mini_zip_path.parent / "STA-mini"
-    with py7zr.SevenZipFile(target, "w") as szf:
-        szf.writeall(extracted_dir_path, arcname="")
+    run(["7z", "a", str(sta_mini_zip_path.parent / "STA-mini.7z"), str(extracted_dir_path), "-r"], check=True)
     shutil.rmtree(extracted_dir_path)
     return target
 
@@ -97,6 +94,7 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
         created_at=datetime.datetime.fromtimestamp(1480683452),
         updated_at=datetime.datetime.fromtimestamp(1602678639),
         version="700",
+        storage_mode=StorageMode.FILESYSTEM,
     )
     repo.get_all.return_value = [md]
 
@@ -119,10 +117,7 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
     job_result_repository.find_by_study.return_value = []
 
     # Matrices
-    matrix_path = tmp_path / "matrices"
-    matrix_path.mkdir()
-    matrix_content_repository = MatrixContentRepository(bucket_dir=matrix_path, format=InternalMatrixFormat.TSV)
-    matrix_service = SimpleMatrixService(matrix_content_repository=matrix_content_repository)
+    matrix_service = InMemorySimpleMatrixService()
 
     # Blob
     blob_path = tmp_path / "blob"
@@ -133,22 +128,20 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
     cache = LocalCache(config=config.cache)
 
     # Final object
-    study_service = build_study_service(
-        app_ctxt=Mock(),
+    study_service, _ = build_study_service(
+        config=config,
         cache=cache,
         file_transfer_manager=Mock(),
         task_service=task_service_mock,
         user_service=user_service,
         matrix_service=matrix_service,
         blob_service=blob_service,
-        config=config,
         metadata_repository=repo,
         variant_repository=variant_repo,
         job_result_repository=job_result_repository,
     )
 
     output_service = build_output_service(
-        app_ctxt=Mock(),
         study_service=study_service,
         config=config,
         cache=cache,

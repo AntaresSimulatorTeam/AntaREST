@@ -16,11 +16,13 @@ from antarest.study.business.model.layer_model import LayerCreation
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestCreateLayer:
     def test_create_layer_success(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         command = CreateLayer(
             parameters=LayerCreation(name="Test Layer1"),
@@ -28,9 +30,7 @@ class TestCreateLayer:
             study_version=empty_study.config.version,
         )
 
-        output = command.apply(
-            study_data=empty_study,
-        )
+        output = command.apply(dao)
 
         assert output.status
 
@@ -44,9 +44,7 @@ class TestCreateLayer:
             study_version=empty_study.config.version,
         )
 
-        output = command.apply(
-            study_data=empty_study,
-        )
+        output = command.apply(dao)
 
         assert output.status
 
@@ -56,6 +54,7 @@ class TestCreateLayer:
 
     def test_create_layer_with_explicit_id(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         # Create a layer with an explicit ID
         command = CreateLayer(
@@ -64,9 +63,7 @@ class TestCreateLayer:
             study_version=empty_study.config.version,
         )
 
-        output = command.apply(
-            study_data=empty_study,
-        )
+        output = command.apply(dao)
 
         assert output.status
 

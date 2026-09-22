@@ -12,7 +12,6 @@
 import logging
 import uuid
 from pathlib import PurePosixPath
-from typing import Optional
 
 from antarest.core.model import StudyPermissionType
 from antarest.study.directory_exceptions import (
@@ -126,7 +125,7 @@ class DirectoryService:
         # Delete the directory
         self.repository.delete(directory_id)
 
-    def get_directory_by_path(self, folder_path: str) -> Optional[str]:
+    def get_directory_by_path(self, folder_path: str) -> str | None:
         """
         Get or create directory ID from a folder path.
         Creates missing directories automatically with the specified owner and groups.

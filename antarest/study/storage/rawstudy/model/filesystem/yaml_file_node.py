@@ -35,7 +35,7 @@ class YAMLReader(IReader):
 
         if isinstance(path, (Path, str)):
             try:
-                with open(path, mode="r", encoding="utf-8") as f:
+                with open(path, encoding="utf-8") as f:
                     content = f.read()
             except FileNotFoundError:
                 # If the file is missing, an empty dictionary is returned,
@@ -63,8 +63,8 @@ class YAMLWriter(IniWriter):
 
     @override
     def write(self, data: JSON, path: Path) -> None:
-        with open(path, "wb") as fh:
-            fh.write(yaml.safe_dump(data).encode("utf-8"))
+        with open(path, "w", encoding="utf-8") as fh:
+            yaml.safe_dump(data, fh)
 
 
 class YAMLFileNode(IniFileNode):

@@ -12,12 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { voidFn } from "@/utils/fnUtils";
 import { createContext } from "react";
 import type { getTreeData } from "../-utils";
 
 const defaultDebugContextValue = {
-  setPathSearchParam: voidFn<[string]>,
   reloadTree: (): ReturnType<typeof getTreeData> => Promise.resolve({}),
   isTreeLoading: false,
 };

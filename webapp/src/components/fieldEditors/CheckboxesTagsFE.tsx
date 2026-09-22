@@ -22,10 +22,11 @@ import {
   type AutocompleteProps,
   type AutocompleteValue,
 } from "@mui/material";
+import type React from "react";
 import type { FieldPath, FieldValues } from "react-hook-form";
 
-interface CheckboxesTagsFEProps<
-  T,
+export interface CheckboxesTagsFEProps<
+  T = string,
   DisableClearable extends boolean | undefined = undefined,
   FreeSolo extends boolean | undefined = undefined,
 > extends Omit<
@@ -37,6 +38,7 @@ interface CheckboxesTagsFEProps<
   helperText?: string;
   inputRef?: React.Ref<unknown>;
   name?: string;
+  placeholder?: string;
   onChange?: (
     event: React.SyntheticEvent & {
       target: {
@@ -63,11 +65,14 @@ function CheckboxesTagsFE<
   inputRef,
   onChange,
   name = "",
+  placeholder,
+  slotProps,
   ...rest
 }: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>) {
   return (
     <Autocomplete
       {...rest}
+      slotProps={{ chip: { size: "small" }, ...slotProps }}
       getOptionLabel={getOptionLabel}
       multiple
       disableCloseOnSelect
@@ -93,16 +98,21 @@ function CheckboxesTagsFE<
           {getOptionLabel(option)}
         </li>
       )}
-      renderInput={(params) => (
-        <TextField
-          name={name}
-          label={label}
-          error={error}
-          helperText={helperText}
-          inputRef={inputRef}
-          {...params}
-        />
-      )}
+      renderInput={(params) => {
+        return (
+          <TextField
+            name={name}
+            label={label}
+            placeholder={placeholder}
+            error={error}
+            helperText={helperText}
+            inputRef={inputRef}
+            {...params}
+            // Size overrides are not passed to the input (`renderInput` prop)
+            size={params.size || rest.size}
+          />
+        );
+      }}
     />
   );
 }
@@ -122,4 +132,4 @@ export default CheckboxesTagsFEWithRHF as <
 >(
   props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> &
     CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>,
-) => JSX.Element;
+) => React.ReactElement;

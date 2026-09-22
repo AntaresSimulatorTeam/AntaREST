@@ -11,16 +11,17 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from typing import Sequence
+from collections.abc import Sequence
 
 import polars as pl
 
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.dao.common import AreaId, ThermalId, ThermalSeriesMapping
 
 
 class ReadOnlyThermalDao(ABC):
     @abstractmethod
-    def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
+    def get_all_thermals(self) -> dict[AreaId, dict[ThermalId, ThermalCluster]]:
         """
         Returns a mapping of area ID to cluster IDs to cluster.
 
@@ -60,36 +61,52 @@ class ReadOnlyThermalDao(ABC):
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
+        raise NotImplementedError()
+
 
 class ThermalDao(ReadOnlyThermalDao):
     @abstractmethod
-    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
+    def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
+    def save_thermal_prepro(self, series: ThermalSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_modulation(self, series: ThermalSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_series(self, series: ThermalSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_fuel_cost(self, series: ThermalSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_co2_cost(self, series: ThermalSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def delete_thermal(self, area_id: str, thermal_id: str) -> None:
+    def delete_thermal(self, area_id: AreaId, thermal_id: ThermalId) -> None:
         raise NotImplementedError()

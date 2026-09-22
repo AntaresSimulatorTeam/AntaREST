@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, Dict, TypeAlias, cast
+from typing import Annotated, Any, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, PositiveInt, model_validator
@@ -108,7 +108,7 @@ class GeneralConfig(AntaresBaseModel):
     thematic_trimming: bool | None = None  # Since v7.1
 
     @model_validator(mode="before")
-    def day_fields_validation(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def day_fields_validation(cls, values: dict[str, Any]) -> dict[str, Any]:
         first_day = values.get("first_day")
         last_day = values.get("last_day")
         leap_year = values.get("leap_year")

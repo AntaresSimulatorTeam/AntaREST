@@ -12,15 +12,17 @@
 
 
 from antarest.study.business.model.xpansion_model import XpansionSettingsUpdate
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_xpansion_settings import UpdateXpansionSettings
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestUpdateXpansionSettings:
     @staticmethod
-    def set_up(empty_study: FileStudy) -> None:
+    def set_up(empty_study: FileStudy, command_context: CommandContext) -> FileStudyTreeDao:
         empty_study.tree.save(
             {
                 "user": {
@@ -50,10 +52,11 @@ class TestUpdateXpansionSettings:
         xpansion_path = study_path / "user" / "expansion"
         (xpansion_path / "capa" / "capa1.txt").touch()
         (xpansion_path / "weights" / "weights1.txt").touch()
+        return build_dao_from_file_study(empty_study, command_context)
 
     def test_nominal_case(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
-        self.set_up(empty_study)
+        dao = self.set_up(empty_study, command_context)
 
         # Add yearly_weights
         new_constraint = XpansionSettingsUpdate.model_validate({"yearly_weights": "weights1.txt"})
@@ -62,7 +65,7 @@ class TestUpdateXpansionSettings:
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status, output.message
         # Checks DTO
         assert cmd.to_dto().args == {"settings": {"yearly-weights": "weights1.txt"}}
@@ -77,7 +80,7 @@ class TestUpdateXpansionSettings:
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status, output.message
         # Checks DTO
         assert cmd.to_dto().args == {"settings": {"optimality_gap": 12.0}}
@@ -87,7 +90,7 @@ class TestUpdateXpansionSettings:
 
     def test_error_cases(self, empty_study_870: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_870
-        self.set_up(empty_study)
+        dao = self.set_up(empty_study, command_context)
 
         # Try to update with a non-existing weight
         new_constraint = XpansionSettingsUpdate.model_validate({"yearly_weights": "test"})
@@ -96,7 +99,7 @@ class TestUpdateXpansionSettings:
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status is False
         assert "Additional weights file 'test' does not exist" in output.message
 
@@ -107,6 +110,6 @@ class TestUpdateXpansionSettings:
             command_context=command_context,
             study_version=STUDY_VERSION_8_7,
         )
-        output = cmd.apply(study_data=empty_study)
+        output = cmd.apply(study_dao=dao)
         assert output.status is False
         assert "Additional constraints file 'test' does not exist" in output.message

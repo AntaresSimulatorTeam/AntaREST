@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict
+from typing import Any
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
@@ -25,6 +25,7 @@ from antarest.study.business.model.config.general_model import (
     initialize_general_config_against_version,
     validate_general_config_version,
 )
+from antarest.study.business.model.scenario_builder_model import DEFAULT_RULESET_NAME
 from antarest.study.model import STUDY_VERSION_8
 
 
@@ -50,9 +51,12 @@ class GeneralFileData(AntaresBaseModel):
     derated: bool | None = Field(default=None)
     custom_scenario: bool | None = Field(default=None, alias="custom-scenario")
     custom_ts_numbers: bool | None = Field(default=None, alias="custom-ts-numbers")
+    active_rules_scenario: str | None = Field(default=None, alias="active-rules-scenario")
 
     def to_model(self) -> GeneralConfig:
-        data = self.model_dump(exclude_none=True, exclude={"derated", "custom_scenario", "custom_ts_numbers"})
+        data = self.model_dump(
+            exclude_none=True, exclude={"derated", "custom_scenario", "custom_ts_numbers", "active_rules_scenario"}
+        )
         if self.derated is True:
             data["building_mode"] = BuildingMode.DERATED
         elif self.custom_scenario is True:
@@ -72,10 +76,12 @@ class GeneralFileData(AntaresBaseModel):
                 data["custom_scenario"] = config.building_mode == BuildingMode.CUSTOM
             else:
                 data["custom_ts_numbers"] = config.building_mode == BuildingMode.CUSTOM
+        if config.building_mode == BuildingMode.CUSTOM:
+            data["active_rules_scenario"] = DEFAULT_RULESET_NAME.lower()
         return cls.model_validate(data)
 
 
-def parse_general_config(data: Dict[str, Any], version: StudyVersion) -> GeneralConfig:
+def parse_general_config(data: dict[str, Any], version: StudyVersion) -> GeneralConfig:
     config_data = data["general"]
     config_data.update(data["output"])
     config = GeneralFileData.model_validate(config_data).to_model()
@@ -84,11 +90,11 @@ def parse_general_config(data: Dict[str, Any], version: StudyVersion) -> General
     return config
 
 
-def serialize_simulation_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
+def serialize_simulation_config(config: GeneralConfig, study_version: StudyVersion) -> dict[str, Any]:
     file_data = GeneralFileData.from_model(config, study_version)
     return file_data.model_dump(by_alias=True, exclude_none=True, exclude={"simulation_synthesis", "mc_scenario"})
 
 
-def serialize_output_config(config: GeneralConfig, study_version: StudyVersion) -> Dict[str, Any]:
+def serialize_output_config(config: GeneralConfig, study_version: StudyVersion) -> dict[str, Any]:
     file_data = GeneralFileData.from_model(config, study_version)
     return file_data.model_dump(by_alias=True, exclude_none=True, include={"simulation_synthesis", "mc_scenario"})

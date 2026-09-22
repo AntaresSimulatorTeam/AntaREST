@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from enum import StrEnum
-from typing import Optional
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict
@@ -36,7 +35,7 @@ class CompatibilityParameters(AntaresBaseModel):
 class CompatibilityParametersUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    hydro_pmax: Optional[HydroPmax] = None
+    hydro_pmax: HydroPmax | None = None
 
 
 def update_compatibility_parameters(

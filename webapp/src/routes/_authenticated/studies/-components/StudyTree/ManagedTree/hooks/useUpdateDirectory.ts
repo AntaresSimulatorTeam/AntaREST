@@ -12,13 +12,13 @@
  * This file is part of the Antares project.
  */
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { directoryMutations } from "@/queries/directories/mutations";
 import { directoryQueries } from "@/queries/directories/queries";
 import type { Directory } from "@/services/api/directories/types";
 import { toError } from "@/utils/fnUtils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 interface UseUpdateDirectoryOptions {
   onSuccess?: () => void;
@@ -61,6 +61,11 @@ export function useUpdateDirectory(options?: UseUpdateDirectoryOptions) {
       // Update the directory in the list with server response
       queryClient.setQueryData(directoryQueries.list().queryKey, (old) =>
         old?.map((dir) => (dir.id === id ? data : dir)),
+      );
+
+      // Update the directory name in favorites if it exists there
+      queryClient.setQueryData(directoryQueries.favorites().queryKey, (old) =>
+        old?.map((fav) => (fav.directoryId === id ? { ...fav, directoryName: data.name } : fav)),
       );
 
       // No need to invalidate since we're updating the cache directly

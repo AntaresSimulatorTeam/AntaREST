@@ -12,7 +12,9 @@
 
 """Integration tests for the matrix garbage collection task."""
 
+import tempfile
 from datetime import timedelta
+from pathlib import Path
 
 import polars as pl
 
@@ -26,8 +28,9 @@ from antarest.matrixstore.service import MatrixService
 class TestCleanMatricesIntegration:
     """Integration tests for clean_matrices using real database and services."""
 
-    def test_deletes_old_unused_matrices(self, matrix_service: MatrixService) -> None:
+    def test_deletes_old_unused_matrices(self, real_matrix_service: MatrixService) -> None:
         """Test that old unused matrices are deleted."""
+        matrix_service = real_matrix_service
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
         with db():
@@ -42,9 +45,7 @@ class TestCleanMatricesIntegration:
             db.session.commit()
 
         result = clean_matrices(
-            matrix_service=matrix_service,
-            dry_run=False,
-            retention_time=3600,
+            matrix_service=matrix_service, dry_run=False, retention_time=3600, lock_folder=Path(tempfile.gettempdir())
         )
 
         assert isinstance(result, GarbageCollectorTaskResult)
@@ -56,8 +57,9 @@ class TestCleanMatricesIntegration:
             matrices_after = matrix_service.get_matrices()
             assert not any(m.id == matrix_id for m in matrices_after)
 
-    def test_keeps_recent_unused_matrices(self, matrix_service: MatrixService) -> None:
+    def test_keeps_recent_unused_matrices(self, real_matrix_service: MatrixService) -> None:
         """Test that recent unused matrices are NOT deleted."""
+        matrix_service = real_matrix_service
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
         with db():
@@ -67,6 +69,7 @@ class TestCleanMatricesIntegration:
             matrix_service=matrix_service,
             dry_run=False,
             retention_time=3600,
+            lock_folder=Path(tempfile.gettempdir()),
         )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -76,8 +79,9 @@ class TestCleanMatricesIntegration:
             matrices_after = matrix_service.get_matrices()
             assert any(m.id == matrix_id for m in matrices_after)
 
-    def test_dry_run_does_not_delete(self, matrix_service: MatrixService) -> None:
+    def test_dry_run_does_not_delete(self, real_matrix_service: MatrixService) -> None:
         """Test that dry_run mode does not delete matrices."""
+        matrix_service = real_matrix_service
         matrix_data = pl.DataFrame([[1, 2], [3, 4]])
 
         with db():
@@ -93,6 +97,7 @@ class TestCleanMatricesIntegration:
             matrix_service=matrix_service,
             dry_run=True,
             retention_time=3600,
+            lock_folder=Path(tempfile.gettempdir()),
         )
 
         assert result.status == BackGroundTaskStatus.SUCCESS
@@ -103,12 +108,14 @@ class TestCleanMatricesIntegration:
             matrices_after = matrix_service.get_matrices()
             assert any(m.id == matrix_id for m in matrices_after)
 
-    def test_returns_success_with_no_matrices(self, matrix_service: MatrixService) -> None:
+    def test_returns_success_with_no_matrices(self, real_matrix_service: MatrixService) -> None:
         """Test successful execution when there are no matrices."""
+        matrix_service = real_matrix_service
         result = clean_matrices(
             matrix_service=matrix_service,
             dry_run=False,
             retention_time=3600,
+            lock_folder=Path(tempfile.gettempdir()),
         )
 
         assert result.status == BackGroundTaskStatus.SUCCESS

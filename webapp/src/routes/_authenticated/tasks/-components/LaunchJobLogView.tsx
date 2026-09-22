@@ -18,7 +18,7 @@ import type { Job } from "@/services/api/launcher/jobs/types";
 import { getStudyJobLog } from "@/services/api/study";
 import ErrorIcon from "@mui/icons-material/Error";
 import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-import { Box, Tooltip } from "@mui/material";
+import { Badge, IconButton, Tooltip } from "@mui/material";
 import type { AxiosError } from "axios";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -38,7 +38,11 @@ function LaunchJobLogView(props: PropsType) {
   const [logModalContent, setLogModalContent] = useState<string | undefined>();
   const [logModalContentLoading, setLogModalContentLoading] = useState<boolean>(false);
 
-  const openLogView = (jobId: string, errorLogs = false) => {
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleOpenLogView = (jobId: string, errorLogs = false) => {
     setJobIdDetail(jobId);
     setLogModalContentLoading(true);
     setFollowLogs(!errorLogs);
@@ -54,50 +58,33 @@ function LaunchJobLogView(props: PropsType) {
     })();
   };
 
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
   return (
-    <Box display="flex">
+    <>
       {logButton && (
-        <Tooltip title={t("global.logs") as string}>
-          <Box
-            sx={{
-              width: "auto",
-              height: "24px",
-              cursor: "pointer",
-              m: 0.5,
-              "& svg:first-of-type": {
-                color: "action.active",
-              },
-            }}
-          >
-            <InsertDriveFileIcon sx={{ fontSize: 22 }} onClick={() => openLogView(job.id)} />
-          </Box>
+        <Tooltip title={t("global.logs")}>
+          <IconButton onClick={() => handleOpenLogView(job.id)} size="small">
+            <InsertDriveFileIcon />
+          </IconButton>
         </Tooltip>
       )}
       {logErrorButton && (
-        <Tooltip title={t("global.errorLogs") as string}>
-          <Box
-            sx={{
-              position: "relative",
-              width: "auto",
-              height: "24px",
-              cursor: "pointer",
-              m: 0.5,
-              "& svg:first-of-type": {
-                color: "action.active",
-              },
-              "& svg:last-of-type": {
-                position: "absolute",
-                bottom: 0,
-                right: 0,
-                fontSize: 12,
-                color: "error.light",
-              },
-            }}
-            onClick={() => openLogView(job.id, true)}
-          >
-            <InsertDriveFileIcon sx={{ fontSize: 22 }} />
-            <ErrorIcon />
-          </Box>
+        <Tooltip title={t("global.errorLogs")}>
+          <IconButton onClick={() => handleOpenLogView(job.id, true)} size="small">
+            <Badge
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "right",
+              }}
+              overlap="circular"
+              badgeContent={<ErrorIcon sx={{ fontSize: 12, color: "error.light" }} />}
+            >
+              <InsertDriveFileIcon />
+            </Badge>
+          </IconButton>
         </Tooltip>
       )}
       <LogModal
@@ -108,7 +95,7 @@ function LaunchJobLogView(props: PropsType) {
         loading={logModalContentLoading}
         close={() => setJobIdDetail(undefined)}
       />
-    </Box>
+    </>
   );
 }
 

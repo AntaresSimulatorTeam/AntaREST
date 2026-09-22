@@ -12,31 +12,45 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
-import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import CustomScrollbar from "@/components/CustomScrollbar";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters, updateStudySortConfig } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters, getStudySortConfig } from "@/redux/selectors";
+import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
+import type { Study } from "@/services/api/studies/types";
 import { scanFolder } from "@/services/api/study";
 import type { StudySortConfig } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
+import { Box } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { ViewMode } from "../types";
 import BatchActions from "./BatchActions";
 import FilterControls from "./FilterControls";
+import { useBreadcrumbs } from "./hooks/useBreadcrumbs";
 import NavigationBreadcrumbs from "./NavigationBreadcrumbs";
-import ScanFolderDialog from "./ScanFolderDialog";
-import type { BreadcrumbItem, HeaderProps } from "./types";
-import { useBreadcrumbs } from "./useBreadcrumbs";
+import ScanDirectoryDialog from "./ScanDirectoryDialog";
+import type { BreadcrumbItem } from "./types";
+
+export interface Props {
+  studyIds: Array<Study["id"]>;
+  selectedStudyIds: Array<Study["id"]>;
+  setSelectedStudyIds: (ids: Array<Study["id"]>) => void;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
+}
 
 function Header({
   studyIds,
   selectedStudyIds,
   setSelectedStudyIds,
-  setStudiesToLaunch,
-}: HeaderProps) {
+  viewMode,
+  onViewModeChange,
+}: Props) {
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
@@ -47,19 +61,24 @@ function Header({
   const sortConfig = useAppSelector(getStudySortConfig);
 
   // Local state
-  const [confirmFolderScan, setConfirmFolderScan] = useState(false);
+  const [confirmDirectoryScan, setConfirmDirectoryScan] = useState(false);
   const [isRecursiveScan, setIsRecursiveScan] = useState(false);
 
-  // Derived state
   const isDesktopMode = import.meta.env.MODE === "desktop";
   const isReferenceStudyTypeActive = filters.type === "references";
   const canScan = activeTree === "external" && external.path !== "";
+  const showDescendants =
+    activeTree === "external" ? external.showDescendants : managed.showDescendants;
+  const isExternalRoot = activeTree === "external" && external.path === "";
+
+  const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   // Breadcrumb navigation
   const breadcrumbItems = useBreadcrumbs({
     activeTree,
     managedDirectoryId: managed.directoryId,
     externalPath: external.path,
+    directories,
   });
 
   ////////////////////////////////////////////////////////////////
@@ -71,51 +90,44 @@ function Header({
       dispatch(
         updateStudyFilters({
           activeTree: "managed",
-          managed: { directoryId: item.id },
+          managed: {
+            directoryId: item.id,
+            directoryIds: item.id ? getDescendantIds(item.id, directories) : null,
+          },
         }),
       );
     } else {
       dispatch(
         updateStudyFilters({
           activeTree: "external",
-          external: { path: item.path ?? "", strictPath: external.strictPath },
+          external: { path: item.path ?? "" },
         }),
       );
     }
   };
 
-  const handleToggleStrictPath = () => {
+  const handleToggleShowDescendants = (value: boolean) => {
     if (activeTree === "external") {
-      dispatch(
-        updateStudyFilters({
-          external: { ...external, strictPath: !external.strictPath },
-        }),
-      );
+      dispatch(updateStudyFilters({ external: { showDescendants: value } }));
+    } else {
+      dispatch(updateStudyFilters({ managed: { showDescendants: value } }));
     }
   };
 
   const handleToggleStudyType = () => {
-    dispatch(updateStudyFilters({ type: filters.type !== "references" ? "references" : "all" }));
+    dispatch(updateStudyFilters({ type: isReferenceStudyTypeActive ? "all" : "references" }));
   };
 
   const handleSortChange = (config: StudySortConfig) => {
     dispatch(updateStudySortConfig(config));
   };
 
-  const handleLaunchStudies = () => {
-    setStudiesToLaunch(selectedStudyIds);
-  };
-
-  const handleDeselectAll = () => {
-    setSelectedStudyIds([]);
-  };
-
   const handleOpenScanDialog = () => {
-    setConfirmFolderScan(true);
+    setConfirmDirectoryScan(true);
   };
 
   const handleCloseScanDialog = () => {
-    setConfirmFolderScan(false);
+    setConfirmDirectoryScan(false);
     setIsRecursiveScan(false);
   };
 
@@ -132,7 +144,7 @@ function Header({
   };
 
   const handleToggleRecursiveScan = () => {
-    setIsRecursiveScan(!isRecursiveScan);
+    setIsRecursiveScan((prev) => !prev);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -155,34 +167,35 @@ function Header({
             <NavigationBreadcrumbs
               items={breadcrumbItems}
               studyCount={studyIds.length}
-              onNavigate={handleNavigate}
               activeTree={activeTree}
+              onNavigate={handleNavigate}
             />
           </Box>
 
           <BatchActions
-            selectedCount={selectedStudyIds.length}
-            onLaunch={handleLaunchStudies}
-            onDeselectAll={handleDeselectAll}
+            selectedStudyIds={selectedStudyIds}
+            setSelectedStudyIds={setSelectedStudyIds}
           />
 
           <FilterControls
-            activeTree={activeTree}
-            strictPath={external.strictPath}
+            showDescendants={showDescendants}
+            isExternalRoot={isExternalRoot}
             isReferenceTypeActive={isReferenceStudyTypeActive}
             canScan={canScan}
             sortConfig={sortConfig}
-            onToggleStrictPath={handleToggleStrictPath}
+            viewMode={viewMode}
+            onToggleShowDescendants={handleToggleShowDescendants}
             onToggleStudyType={handleToggleStudyType}
-            onScanFolder={handleOpenScanDialog}
+            onScanDirectory={handleOpenScanDialog}
             onSortChange={handleSortChange}
+            onViewModeChange={onViewModeChange}
           />
         </Box>
       </CustomScrollbar>
 
-      <ScanFolderDialog
-        open={confirmFolderScan}
-        folderPath={external.path}
+      <ScanDirectoryDialog
+        open={confirmDirectoryScan}
+        directoryPath={external.path}
         isRecursive={isRecursiveScan}
         showRecursiveOption={!isDesktopMode}
         onConfirm={handleConfirmScan}

@@ -41,6 +41,9 @@ declare module "jsoneditor" {
       index: number;
       onChange: () => void;
     };
-    menu: HTMLDivElement;
+    /**
+     * `mainMenuBar` must be set to `true`.
+     */
+    menu?: HTMLDivElement;
   }
 }

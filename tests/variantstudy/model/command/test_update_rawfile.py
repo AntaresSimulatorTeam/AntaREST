@@ -18,10 +18,12 @@ from typing import cast
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_raw_file import UpdateRawFile
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 def test_update_rawfile(empty_study_880: FileStudy, command_context: CommandContext) -> None:
     empty_study = empty_study_880
+    dao = build_dao_from_file_study(empty_study, command_context)
     data_path = Path(os.path.dirname(__file__)) / "data.png"
     data = base64.b64encode(data_path.read_bytes()).decode("utf-8")
 
@@ -36,7 +38,7 @@ def test_update_rawfile(empty_study_880: FileStudy, command_context: CommandCont
 
     assert len(command.get_inner_matrices().matrices) == 0
 
-    res = command.apply(empty_study)
+    res = command.apply(dao)
     assert res.status
     new_data = empty_study.tree.get(["settings", "resources", "study"])
     assert original_data != new_data

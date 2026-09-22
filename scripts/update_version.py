@@ -141,6 +141,11 @@ def upgrade_version(new_version: str, new_date: str) -> None:
             '"version":.*',
             f'"version": "{new_version}",',
         ),
+        (
+            "uv.lock",
+            'name = "antarest"\nversion = .*',
+            f'name = "antarest"\nversion = "{new_version}"',
+        ),
     ]
     print(f"Updating files to version {new_version}...")
     for rel_path, search, replace in files_to_patch:

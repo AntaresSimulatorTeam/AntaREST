@@ -1,0 +1,70 @@
+# Deployments
+
+This application can be used in two modes:
+
+- a production dockerized environment
+- a local desktop application
+
+## Production server deployment
+
+The production server deployment uses `docker` and `docker-compose` to run the following containers:
+
+- antarest: the web application workers
+- antarest-watcher: the workspace scanner worker
+- antarest-matrix-gc: the matrices garbage collector worker 
+- redis: the cache that allows the multiple application server workers to synchronize
+- postgresql: the database
+- nginx: the web server front end (can be used to set up ssl)
+
+The following example shows how to deploy this simple base environment.
+
+### Example deployment steps
+
+Requirements:
+
+- a linux host
+- docker
+- docker-compose
+
+These steps should work on any linux system with docker and docker-compose installed.
+
+1. First, the steps 1 and 3 of the [quick start build](./installation.md#quick-start) must have been done. So this guide will assume that you have previously cloned the [code repository](https://github.com/AntaresSimulatorTeam/AntaREST),
+   the frontend built and that your working directory is at the root of the project.
+
+2. Then download and unzip AntaresSimulator binaries:
+
+   ```shell
+   wget https://github.com/AntaresSimulatorTeam/Antares_Simulator/releases/download/v8.8.17/antares-8.8.17-Ubuntu-22.04.tar.gz
+   tar xzf antares-8.8.17-Ubuntu-22.04.tar.gz
+   ```
+
+3. Build the docker image
+
+   ```shell
+   docker build -t antarest:latest .
+   ```
+
+4. Prepare the environment (This is important, in order to prevent docker containers to write files into your file system with root permissions.)  
+
+   a. Copy `docker-compose.override.yml.example` to `docker-compose.override.yml` and replace the UID and GUI values with your user's one.
+
+      You can get these values by running the following commands:
+
+      - UID: `id -u`
+      - GID: `id -g`
+
+   b. Create the directory `resources/deploy/db`
+
+5. Run the following command to spin up the application containers:  
+
+   ```shell
+   docker-compose up
+   ```
+
+6. You can then access the application at http://localhost
+
+7. To stop the application you can juste hit "CTRL-C" to end the containers.
+   
+This is an example of a deployment.
+You'll have to edit your own `docker-compose.yml` file and 
+[`application.yaml` configuration](./configuration.md) to customize it to your needs.

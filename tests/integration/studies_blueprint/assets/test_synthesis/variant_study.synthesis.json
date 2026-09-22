@@ -1,9 +1,17 @@
 {
-  "study_path": "DUMMY_VALUE",
-  "path": "DUMMY_VALUE",
   "study_id": "DUMMY_VALUE",
-  "version": 700,
-  "output_path": "DUMMY_VALUE",
+  "version": "7.0",
+  "districts": {
+    "all areas": {
+      "id": "all areas",
+      "output": false,
+      "comments": "Spatial aggregates on all areas",
+      "addAreas": [],
+      "subtractAreas": [],
+      "name": "All areas",
+      "applyFilter": "add-all"
+    }
+  },
   "areas": {
     "de": {
       "name": "DE",
@@ -379,7 +387,8 @@
         "annual"
       ],
       "st_storages": [],
-      "st_storages_additional_constraints": {}
+      "st_storages_additional_constraints": {},
+      "reserves": []
     },
     "es": {
       "name": "ES",
@@ -755,7 +764,8 @@
         "annual"
       ],
       "st_storages": [],
-      "st_storages_additional_constraints": {}
+      "st_storages_additional_constraints": {},
+      "reserves": []
     },
     "fr": {
       "name": "FR",
@@ -1126,7 +1136,8 @@
         "hourly"
       ],
       "st_storages": [],
-      "st_storages_additional_constraints": {}
+      "st_storages_additional_constraints": {},
+      "reserves": []
     },
     "it": {
       "name": "IT",
@@ -1490,24 +1501,10 @@
         "hourly"
       ],
       "st_storages": [],
-      "st_storages_additional_constraints": {}
-    }
-  },
-  "districts": {
-    "all areas": {
-      "name": "All areas",
-      "applyFilter": "add-all",
-      "addAreas": [],
-      "subtractAreas": [],
-      "output": false,
-      "comments": "Spatial aggregates on all areas",
-      "id": "all areas"
+      "st_storages_additional_constraints": {},
+      "reserves": []
     }
   },
   "outputs": {},
-  "bindings": [],
-  "store_new_set": true,
-  "archive_input_series": [],
-  "enr_modelling": "aggregated",
-  "archive_path": null
+  "enr_modelling": "aggregated"
 }

@@ -11,12 +11,17 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional
 
 from sqlalchemy import delete, select
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.launcher.model import JobResult, SolverPresetsDB
+from antarest.launcher.model import (
+    JobResult,
+    LauncherLoad,
+    LauncherRuntimeConfig,
+    SlurmRuntimeConfigDB,
+    SolverPresetsDB,
+)
 from antarest.study.model import Study
 
 logger = logging.getLogger(__name__)
@@ -38,16 +43,18 @@ class JobResultRepository:
         db.session.commit()
         return merged_job
 
-    def save_all(self, jobs: List[JobResult]) -> None:
+    def save_all(self, jobs: list[JobResult]) -> None:
         logger.debug(f"Saving {len(jobs)} new JobResults")
+        if not jobs:
+            return
         db.session.add_all(jobs)
         db.session.commit()
 
-    def get(self, id: str) -> Optional[JobResult]:
+    def get(self, id: str) -> JobResult | None:
         logger.debug(f"Retrieving JobResult {id}")
         return db.session.get(JobResult, id)
 
-    def get_all(self, filter_orphan: bool = False, latest: Optional[int] = None) -> List[JobResult]:
+    def get_all(self, filter_orphan: bool = False, latest: int | None = None) -> list[JobResult]:
         logger.debug("Retrieving all JobResults")
 
         stmt = select(JobResult)
@@ -61,16 +68,16 @@ class JobResultRepository:
 
         return list(db.session.scalars(stmt).all())
 
-    def get_running(self) -> List[JobResult]:
+    def get_running(self) -> list[JobResult]:
         stmt = select(JobResult).where(JobResult.completion_date.is_(None))
         return list(db.session.scalars(stmt).all())
 
-    def find_by_study(self, study_id: str) -> List[JobResult]:
+    def find_by_study(self, study_id: str) -> list[JobResult]:
         logger.debug(f"Retrieving JobResults from study {study_id}")
         stmt = select(JobResult).where(JobResult.study_id == study_id)
         return list(db.session.scalars(stmt).all())
 
-    def find_by_study_and_output_ids(self, study_id: str, output_ids: List[str]) -> List[JobResult]:
+    def find_by_study_and_output_ids(self, study_id: str, output_ids: list[str]) -> list[JobResult]:
         logger.debug(f"Retrieving JobResults from study {study_id}")
         stmt = select(JobResult).where(JobResult.study_id == study_id).where(JobResult.output_id.in_(output_ids))
         return list(db.session.scalars(stmt).all())
@@ -104,11 +111,11 @@ class SolverPresetsRepository:
         db.session.commit()
         return merged_config
 
-    def get(self, id: str) -> Optional[SolverPresetsDB]:
+    def get(self, id: str) -> SolverPresetsDB | None:
         logger.debug(f"Retrieving SolverPresetsModel {id}")
         return db.session.get(SolverPresetsDB, id)
 
-    def get_all(self) -> List[SolverPresetsDB]:
+    def get_all(self) -> list[SolverPresetsDB]:
         logger.debug("Retrieving all SolverPresetsModel")
         stmt = select(SolverPresetsDB)
         return list(db.session.scalars(stmt).all())
@@ -117,4 +124,36 @@ class SolverPresetsRepository:
         logger.debug(f"Deleting SolverPresetsModel {id}")
         stmt = delete(SolverPresetsDB).where(SolverPresetsDB.id == id)
         db.session.execute(stmt)
+        db.session.commit()
+
+
+class LauncherRuntimeConfigRepository:
+    def get(self, launcher_id: str) -> LauncherRuntimeConfig:
+        logger.debug(f"Retrieving LauncherRuntimeConfig {launcher_id}")
+        slurm_db = db.session.get(SlurmRuntimeConfigDB, launcher_id)
+        slurm = slurm_db.to_model() if slurm_db is not None else None
+        return LauncherRuntimeConfig(slurm=slurm)
+
+    def save(self, launcher_id: str, config: LauncherRuntimeConfig) -> LauncherRuntimeConfig:
+        logger.debug(f"Saving LauncherRuntimeConfig {launcher_id}")
+        if config.slurm is None:
+            existing = db.session.get(SlurmRuntimeConfigDB, launcher_id)
+            if existing is not None:
+                db.session.delete(existing)
+            db.session.commit()
+            return LauncherRuntimeConfig(slurm=None)
+
+        merged_slurm = db.session.merge(SlurmRuntimeConfigDB.from_model(launcher_id, config.slurm))
+        db.session.commit()
+        return LauncherRuntimeConfig(slurm=merged_slurm.to_model())
+
+
+class LauncherLoadRepository:
+    def get_launcher_load(self, launcher_name: str) -> LauncherLoad | None:
+        return db.session.get(LauncherLoad, launcher_name)
+
+    def update_all_launcher_loads(self, loads: list[LauncherLoad]) -> None:
+        for launcher_cache in loads:
+            db.session.merge(launcher_cache)
+
         db.session.commit()

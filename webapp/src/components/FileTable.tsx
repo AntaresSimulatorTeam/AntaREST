@@ -99,7 +99,7 @@ function FileTable(props: PropType) {
               <TableRow
                 sx={(theme) => ({
                   "&> th": {
-                    borderBottom: `solid 1px ${theme.palette.divider}`,
+                    borderBottom: `solid 1px ${theme.vars.palette.divider}`,
                   },
                 })}
               >
@@ -116,7 +116,7 @@ function FileTable(props: PropType) {
                   sx={(theme) => ({
                     "&> th, >td": {
                       borderBottom: "solid 1px",
-                      borderColor: theme.palette.divider,
+                      borderColor: theme.vars.palette.divider,
                     },
                   })}
                 >

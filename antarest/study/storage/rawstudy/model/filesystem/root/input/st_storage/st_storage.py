@@ -30,12 +30,12 @@ class InputSTStorage(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "clusters": InputSTStorageClusters(self.matrix_mapper, self.config.next_file("clusters")),
-            "series": InputSTStorageSeries(self.matrix_mapper, self.config.next_file("series")),
+            "clusters": InputSTStorageClusters(self.matrix_storage_context, self.config.next_file("clusters")),
+            "series": InputSTStorageSeries(self.matrix_storage_context, self.config.next_file("series")),
         }
         if self.config.version >= STUDY_VERSION_9_2 and (self.config.path / "constraints").exists():
             children["constraints"] = InputSTStorageConstraints(
-                self.matrix_mapper, self.config.next_file("constraints")
+                self.matrix_storage_context, self.config.next_file("constraints")
             )
 
         return children

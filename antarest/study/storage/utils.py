@@ -11,21 +11,26 @@
 # This file is part of the Antares project.
 
 import calendar
+import contextlib
+import io
 import logging
 import math
 import os
 import re
 import shutil
-import tempfile
+from collections.abc import Sequence
 from datetime import datetime, timedelta
+from io import StringIO
 from pathlib import Path
-from typing import List, Optional, Sequence, cast
+from typing import TYPE_CHECKING, Any, BinaryIO, cast
 from uuid import uuid4
 from zipfile import ZipFile
 
+import polars as pl
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
 from antares.study.version.upgrade_app import is_temporary_upgrade_dir
+from pydantic import ConfigDict
 
 from antarest.core.config import Config, WorkspaceConfig
 from antarest.core.exceptions import (
@@ -40,29 +45,36 @@ from antarest.core.interfaces.cache import (
     study_config_cache_key,
     study_raw_cache_key,
 )
-from antarest.core.model import PermissionInfo, StudyPermissionType
+from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
 from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
+from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
-from antarest.core.utils.archives import is_archive_format
-from antarest.core.utils.utils import StopWatch
-from antarest.login.model import Group
-from antarest.login.utils import require_current_user
-from antarest.study.business.model.config.general_model import Mode
+from antarest.core.utils.archives import extract_archive_from_path, extract_archive_from_stream
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time, is_path_safe
+from antarest.login.model import Group, Identity
+from antarest.login.utils import get_user_impersonator, require_current_user
+from antarest.output.filestudy.metadata import parse_output_config
+from antarest.output.model.download import MatrixIndex
+from antarest.study.business.model.config.general_model import GeneralConfig, Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_REFERENCE_TEMPLATES,
-    STUDY_VERSION_9_0,
     MatrixFrequency,
-    MatrixIndex,
+    RawStudy,
+    StorageMode,
     Study,
+    StudyContentStatus,
     StudyFolder,
+    StudyMetadataCopy,
     StudyMetadataDTO,
 )
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.rawstudy.model.helpers import FileStudyHelpers
+from antarest.study.storage.rawstudy.model.helpers import parse_input_config
+
+if TYPE_CHECKING:
+    from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 logger = logging.getLogger(__name__)
 
@@ -71,44 +83,9 @@ TS_GEN_PREFIX = "~"
 TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
 
 
-def update_antares_info(metadata: Study, study_tree: FileStudyTree, update_author: bool) -> None:
-    """
-    Update antares study information in the study.antares file.
-
-    Args:
-        metadata: Study metadata containing name, version, dates, etc.
-        study_tree: File study tree to update
-        update_author: Whether to update the author field
-    """
-    study_data_info = study_tree.get(["study"])
-    antares_info = study_data_info["antares"]
-
-    author = metadata.author
-    editor = metadata.editor
-
-    # Update basic fields
-    antares_info["caption"] = metadata.name
-    antares_info["created"] = _format_timestamp(metadata.created_at)
-    antares_info["lastsave"] = _format_timestamp(metadata.updated_at)
-    antares_info["version"] = _format_version(metadata.version)
-    antares_info["editor"] = editor
-
-    # Update author-related fields if additional_data exists
-    if update_author:
-        antares_info["author"] = author
-
-    study_tree.save(study_data_info, ["study"])
-
-
-def _format_timestamp(dt: Optional[datetime]) -> str:
-    """Format datetime as timestamp string or '0' if None."""
-    return str(dt.timestamp()) if dt is not None else "0"
-
-
-def _format_version(version_str: str) -> str:
-    """Format version string according to version rules."""
-    version = StudyVersion.parse(version_str)
-    return f"{version:2d}" if version >= STUDY_VERSION_9_0 else f"{version:ddd}"
+def format_timestamp(dt: datetime | None) -> float:
+    """Format datetime as a timestamp float or 0 if None."""
+    return dt.timestamp() if dt is not None else 0
 
 
 def fix_study_root(study_path: Path) -> None:
@@ -118,10 +95,6 @@ def fix_study_root(study_path: Path) -> None:
     Args:
         study_path: the study initial root path
     """
-    # TODO: what if it is a zipped output ?
-    if is_archive_format(study_path.suffix):
-        return None
-
     if not study_path.is_dir():
         raise StudyValidationError("Not a directory: '{study_path}'")
 
@@ -152,7 +125,10 @@ def find_single_output_path(all_output_path: Path) -> Path:
     if len(children) == 1:
         if children[0].endswith(".zip"):
             return all_output_path / children[0]
-        return find_single_output_path(all_output_path / children[0])
+        only_child = all_output_path / children[0]
+        if only_child.is_dir():
+            return find_single_output_path(only_child)
+        return only_child
     return all_output_path
 
 
@@ -164,18 +140,21 @@ def is_output_archived(path_output: Path) -> bool:
     return any((path_output.parent / (path_output.name + suffix)).exists() for suffix in suffixes)
 
 
-def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None) -> str:
+def extract_output_name(path_output: Path, new_suffix_name: str | None = None) -> str:
+    """
+    Constructs the full output name such as "20201014-1422eco-hello" from the info.antares-output file content.
+
+    If new_suffix_name is provided, replaces the part suffix part ("hello" in the example) with that new suffix,
+    and updates the file so that it's consistent with that new suffix.
+
+    Warning: the update part will not work for zip files, which don't allow in place updates.
+    """
     ini_reader = IniReader()
     archived = is_output_archived(path_output)
     if archived:
-        temp_dir = tempfile.TemporaryDirectory()
-        s = StopWatch()
         with ZipFile(path_output, "r") as zip_obj:
-            zip_obj.extract("info.antares-output", temp_dir.name)
-            info_antares_output = ini_reader.read(Path(temp_dir.name) / "info.antares-output")
-        s.log_elapsed(lambda x: logger.info(f"info.antares_output has been read in {x}s"))
-        temp_dir.cleanup()
-
+            content = zip_obj.read("info.antares-output")
+            info_antares_output = ini_reader.read(StringIO(content.decode("utf-8")))
     else:
         info_antares_output = ini_reader.read(path_output / "info.antares-output")
 
@@ -190,8 +169,7 @@ def extract_output_name(path_output: Path, new_suffix_name: Optional[str] = None
         suffix_name = new_suffix_name
         general_info["name"] = suffix_name
         if not archived:
-            ini_writer = IniWriter()
-            ini_writer.write(info_antares_output, path_output / "info.antares-output")
+            IniWriter().write(info_antares_output, path_output / "info.antares-output")
         else:
             logger.warning("Could not rewrite the new name inside the output: the output is archived")
 
@@ -252,7 +230,7 @@ def assert_permission_on_studies(
         raise UserHasNotPermissionError(msg)
 
 
-def assert_permission(study: Optional[Study | StudyMetadataDTO], permission_type: StudyPermissionType) -> None:
+def assert_permission(study: Study | StudyMetadataDTO | None, permission_type: StudyPermissionType) -> None:
     """
     Assert user has permission to edit or read study.
 
@@ -291,10 +269,92 @@ MONTHS = {
 DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
-def get_start_date(
-    file_study: FileStudy,
-    output_id: Optional[str] = None,
-    level: MatrixFrequency = MatrixFrequency.HOURLY,
+class SimulationRangeDefinition(AntaresBaseModel):
+    """
+    Definition of the time range for a simulation.
+
+    Together, the starting month, january 1st and leapyear define the 12-months target range.
+    Then the actually simulated range may be reduced with simulation_start and simulation_end
+    parameters, which define the first and last day to be simulated in that 12-months range.
+    first_weekday is only used for weekly aggregation of data in the output, it defines on which
+    day the week starts.
+
+    Attributes:
+        starting_month: index of the month in which the simulation starts (1-12)
+        january_1st_weekday: weekday of january 1st in the simulated year
+        leap_year: whether the simulated year is a leap year
+        start_day: first day of the actual simulated range inside the 12-months range
+        end_day: last day of the actual simulated range inside the 12-months range
+        first_weekday: only used to determine where weeks should be "cut", when computing weekly aggregates.
+    """
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    # together, those parameters define the 12-months range
+    starting_month: int
+    january_1st_weekday: int
+    leap_year: bool
+
+    # possible reduction of simulated range
+    start_day: int
+    end_day: int
+
+    # defines where weeks are "cut" in weekly aggregation of outputs
+    first_weekday: int
+
+
+def parse_simulation_range(config: dict[str, Any]) -> SimulationRangeDefinition:
+    """
+    Parses a dictionary as defined in the "general" section of generaldata.ini or parameters.ini
+    """
+
+    starting_month = cast(str, config.get("first-month-in-year"))
+    starting_day = cast(str, config.get("january.1st"))
+    leapyear = cast(bool, config.get("leapyear"))
+    first_week_day = cast(str, config.get("first.weekday"))
+    simulation_start = cast(int, config.get("simulation.start"))
+    simulation_end = cast(int, config.get("simulation.end"))
+
+    starting_month_index = MONTHS[starting_month.title()]
+    starting_day_index = DAY_NAMES.index(starting_day.title())
+    first_week_day_index = DAY_NAMES.index(first_week_day)
+
+    return SimulationRangeDefinition(
+        starting_month=starting_month_index,
+        january_1st_weekday=starting_day_index,
+        leap_year=leapyear,
+        start_day=simulation_start,
+        end_day=simulation_end,
+        first_weekday=first_week_day_index,
+    )
+
+
+def extract_simulation_range_from_model(general: GeneralConfig) -> SimulationRangeDefinition:
+    starting_month = general.first_month
+    starting_day = general.first_january
+    leapyear = general.leap_year
+    first_week_day = general.first_week_day
+    simulation_start = general.first_day
+    simulation_end = general.last_day
+
+    starting_month_index = MONTHS[starting_month.title()]
+    starting_day_index = DAY_NAMES.index(starting_day.title())
+    first_week_day_index = DAY_NAMES.index(first_week_day)
+
+    return SimulationRangeDefinition(
+        starting_month=starting_month_index,
+        january_1st_weekday=starting_day_index,
+        leap_year=leapyear,
+        start_day=simulation_start,
+        end_day=simulation_end,
+        first_weekday=first_week_day_index,
+    )
+
+
+def get_matrix_index(
+    simulation_range: SimulationRangeDefinition,
+    is_output: bool,
+    level: MatrixFrequency,
 ) -> MatrixIndex:
     """
     Retrieve the index (start date and step count) for output or input matrices
@@ -305,16 +365,13 @@ def get_start_date(
         level: granularity of the steps
 
     """
-    config = FileStudyHelpers.get_config(file_study, output_id)["general"]
-    starting_month = cast(str, config.get("first-month-in-year"))
-    starting_day = cast(str, config.get("january.1st"))
-    leapyear = cast(bool, config.get("leapyear"))
-    first_week_day = cast(str, config.get("first.weekday"))
-    start_offset = cast(int, config.get("simulation.start"))
-    end = cast(int, config.get("simulation.end"))
+    starting_month_index = simulation_range.starting_month
+    starting_day_index = simulation_range.january_1st_weekday
+    leapyear = simulation_range.leap_year
+    first_week_day_index = simulation_range.first_weekday
+    start_offset = simulation_range.start_day
+    end = simulation_range.end_day
 
-    starting_month_index = MONTHS[starting_month.title()]
-    starting_day_index = DAY_NAMES.index(starting_day.title())
     target_year = 2018
     while True:
         if leapyear == calendar.isleap(target_year + (starting_month_index > 2)):
@@ -323,12 +380,10 @@ def get_start_date(
                 break
         target_year += 1
 
-    start_offset_days = timedelta(days=(0 if output_id is None else start_offset - 1))
+    start_offset_days = timedelta(days=(0 if not is_output else start_offset - 1))
     start_date = datetime(target_year, starting_month_index, 1) + start_offset_days
 
-    def _get_steps(
-        daily_steps: int, temporality: MatrixFrequency, begin_date: datetime, is_output: Optional[str] = None
-    ) -> int:
+    def _get_steps(daily_steps: int, temporality: MatrixFrequency, begin_date: datetime, is_output: bool) -> int:
         temporality_mapping = {
             MatrixFrequency.DAILY: daily_steps,
             MatrixFrequency.HOURLY: daily_steps * 24,
@@ -344,10 +399,9 @@ def get_start_date(
 
         return temporality_mapping[temporality]
 
-    days_count = MATRIX_INPUT_DAYS_COUNT if output_id is None else end - start_offset + 1
-    steps = _get_steps(days_count, level, start_date, output_id)
+    days_count = MATRIX_INPUT_DAYS_COUNT if not is_output else end - start_offset + 1
+    steps = _get_steps(days_count, level, start_date, is_output)
 
-    first_week_day_index = DAY_NAMES.index(first_week_day)
     first_week_offset = 0
     for first_week_offset in range(7):
         first_day = start_date + timedelta(days=first_week_offset)
@@ -363,22 +417,31 @@ def get_start_date(
     )
 
 
-def is_folder_safe(workspace: WorkspaceConfig, folder: str) -> bool:
+def get_start_date(
+    study_path: Path | None = None,
+    output_path: Path | None = None,
+    level: MatrixFrequency = MatrixFrequency.HOURLY,
+) -> MatrixIndex:
     """
-    Check if the provided folder path is safe to prevent path traversal attack.
+    Retrieve the index (start date and step count) for output or input matrices
 
     Args:
-        workspace: The workspace name.
-        folder: The folder path.
+        study_path: If provided, we'll retrieve the start date of the input matrices
+        output_path: If provided, we'll retrieve the start date of the output matrices
+        level: granularity of the steps
 
-    Returns:
-        `True` if the folder path is safe, `False` otherwise.
     """
-    requested_path = workspace.path / folder
-    requested_path = requested_path.resolve()
-    safe_dir = workspace.path.resolve()
-    # check whether the requested path is a subdirectory of the workspace
-    return requested_path.is_relative_to(safe_dir)
+
+    if study_path:
+        data = parse_input_config(study_path)
+    elif output_path:
+        data = parse_output_config(output_path)
+    else:
+        raise ValueError("Either study_path or output_path must be provided")
+
+    config = data["general"]
+    simulation_range = parse_simulation_range(config)
+    return get_matrix_index(simulation_range, is_output=output_path is not None, level=level)
 
 
 def is_study_folder(path: Path) -> bool:
@@ -400,7 +463,7 @@ def get_workspace_from_config(config: Config, workspace_name: str, default_allow
 
 
 def get_folder_from_workspace(workspace: WorkspaceConfig, folder: str) -> Path:
-    if not is_folder_safe(workspace, folder):
+    if not is_path_safe(workspace.path, folder):
         raise FolderNotFoundInWorkspace(f"Invalid path for folder: {folder} in workspace {workspace}")
     folder_path = workspace.path / folder
     if not folder_path.is_dir():
@@ -420,7 +483,7 @@ def is_ts_gen_tmp_dir(path: Path) -> bool:
     return path.name.startswith(TS_GEN_PREFIX) and "".join(path.suffixes[-2:]) == TS_GEN_SUFFIX and path.is_dir()
 
 
-def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: List[str]) -> bool:
+def should_ignore_folder_for_scan(path: Path, filter_in: list[str], filter_out: list[str]) -> bool:
     if is_aw_no_scan(path):
         logger.info(f"No scan directive file found. Will skip further scan of folder {path}")
         return True
@@ -440,7 +503,7 @@ def should_ignore_folder_for_scan(path: Path, filter_in: List[str], filter_out: 
     )
 
 
-def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_hidden_file: bool = False) -> bool:
+def has_children(path: Path, filter_in: list[str], filter_out: list[str], show_hidden_file: bool = False) -> bool:
     for sub_path in path.iterdir():
         try:
             show = show_hidden_file or not sub_path.name.startswith(".")
@@ -454,11 +517,11 @@ def has_children(path: Path, filter_in: List[str], filter_out: List[str], show_h
 def rec_scan_for_studies(
     path: Path,
     workspace: str,
-    groups: List[Group],
-    filter_in: List[str],
-    filter_out: List[str],
-    max_depth: Optional[int] = None,
-) -> List[StudyFolder]:
+    groups: list[Group],
+    filter_in: list[str],
+    filter_out: list[str],
+    max_depth: int | None = None,
+) -> list[StudyFolder]:
     """
     Recursively scan a directory for studies.
 
@@ -487,7 +550,7 @@ def rec_scan_for_studies(
             logger.info(f"Scan was configured to not go any deeper, max_depth: {max_depth}")
             return []
 
-        folders: List[StudyFolder] = []
+        folders: list[StudyFolder] = []
         if path.is_dir():
             for child in path.iterdir():
                 child_max_depth = max_depth - 1 if max_depth is not None else None
@@ -499,3 +562,123 @@ def rec_scan_for_studies(
     except Exception as e:
         logger.error(f"Failed to scan dir {path}", exc_info=e)
         return []
+
+
+def get_disk_usage(path: Path) -> int:
+    """Calculate the total disk usage (in bytes) for a given Path."""
+    if path.is_file():
+        return os.path.getsize(path)
+    total_size = 0
+    with contextlib.suppress(FileNotFoundError, PermissionError):
+        with os.scandir(path) as it:
+            for entry in it:
+                with contextlib.suppress(FileNotFoundError, PermissionError):
+                    if entry.is_file():
+                        total_size += entry.stat().st_size
+                    elif entry.is_dir():
+                        total_size += get_disk_usage(path=Path(entry.path))
+    return total_size
+
+
+def get_user_name_from_id(user_id: int) -> str:
+    """
+    Utility method that retrieves a user's name based on their id.
+    Args:
+        user_id: user id (user must exist)
+    Returns: String representing the user's name
+    """
+    user_obj: Identity | None = db.session.get(Identity, user_id)
+    if user_obj is None:
+        return "Unnamed"
+    return str(user_obj.name)
+
+
+def get_current_user_name() -> str:
+    return get_user_name_from_id(get_user_impersonator())
+
+
+def build_raw_study_from_source(src_study: Study, path: Path, metadata: StudyMetadataCopy) -> RawStudy:
+    dest_id = str(uuid4())
+    now_utc = current_time()
+    dest_study = RawStudy(
+        id=dest_id,
+        name=metadata.name,
+        workspace=DEFAULT_WORKSPACE_NAME,
+        path=str(path / dest_id) if src_study.storage_mode == StorageMode.FILESYSTEM else None,
+        created_at=now_utc,
+        updated_at=now_utc,
+        version=src_study.version,
+        author=src_study.author,
+        editor=get_current_user_name(),
+        horizon=src_study.horizon,
+        public_mode=PublicMode.NONE if metadata.groups else PublicMode.READ,
+        groups=metadata.groups,
+        owner=metadata.owner,
+        directory_id=metadata.directory_id,
+        storage_mode=src_study.storage_mode,
+        content_status=StudyContentStatus.VALID,
+    )
+    return dest_study
+
+
+def extract_data_to_dir(dst_path: Path, source: Path | BinaryIO, tmp_dir: Path) -> None:
+    """
+    The source is extracted to the filesystem inside the `dst_path` attribute.
+    """
+    try:
+        if isinstance(source, Path):
+            extract_archive_from_path(source, dst_path)
+        else:
+            extract_archive_from_stream(source, dst_path, tmp_dir=tmp_dir)
+        fix_study_root(dst_path)
+    except Exception:
+        shutil.rmtree(dst_path, ignore_errors=True)
+        raise
+
+
+def update_study_from_raw_metadata(study: Study, file_study: "FileStudy") -> None:
+    """
+    The given `study` object needs to be updated according to the real filesystem data inside `FileStudy`
+    """
+    try:
+        raw_meta = file_study.tree.get(["study", "antares"])
+
+        if study.editor:
+            raw_meta["editor"] = study.editor
+            file_study.tree.save(raw_meta, ["study", "antares"])
+
+        study.name = raw_meta["caption"]
+        study.version = str(raw_meta["version"])
+        study.created_at = datetime.utcfromtimestamp(raw_meta["created"])
+        study.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
+
+        logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
+        horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
+        study_antares = file_study.tree.get(url=["study", "antares"])
+
+        author = study_antares.get("author")
+        editor = study_antares.get("editor", author)
+        if not isinstance(author, str):
+            raise TypeError(f"Invalid author type: {type(author)!r}")
+        if not isinstance(editor, str):
+            raise TypeError(f"Invalid editor type: {type(editor)!r}")
+        if not isinstance(horizon, (str, int)):
+            raise TypeError(f"Invalid horizon type: {type(horizon)!r}")
+        study.horizon = horizon
+        study.author = author
+        study.editor = editor
+
+    except Exception as e:
+        logger.error("Failed to fetch study %s raw study!", str(study.path), exc_info=e)
+        study.name = study.name or "unnamed"
+        study.created_at = study.created_at or current_time()
+        study.updated_at = study.updated_at or current_time()
+        study.author = study.author or "Unknown"
+        study.editor = study.editor or "Unknown"
+
+
+def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
+    if df.is_empty() and isinstance(path_or_buf, Path):
+        path_or_buf.write_bytes(b"")
+    else:
+        df.write_csv(path_or_buf, separator="\t", include_header=False)

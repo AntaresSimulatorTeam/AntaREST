@@ -10,21 +10,35 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Sequence
+from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any, Callable
 
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, ThermalClusterConfigNotFound, ThermalClusterNotFound
+from antarest.core.exceptions import (
+    AreaNotFound,
+    ChildNotFoundError,
+    ThermalClusterConfigNotFound,
+    ThermalClusterNotFound,
+)
 from antarest.core.utils.utils import remove_first_match
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.thermal_dao import ThermalDao
+from antarest.study.dao.common import AreaId, ThermalId, ThermalSeriesMapping
+from antarest.study.dao.file.common import (
+    check_area_exists,
+    get_thermal_reserve_participations_as_yaml_content,
+    get_thermal_reserve_path,
+)
+from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
     serialize_thermal_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -32,6 +46,26 @@ if TYPE_CHECKING:
 _CLUSTER_PATH = "input/thermal/clusters/{area_id}/list/{cluster_id}"
 _CLUSTERS_PATH = "input/thermal/clusters/{area_id}/list"
 _ALL_CLUSTERS_PATH = "input/thermal/clusters"
+
+
+def _get_co2_cost_matrix_path(area_id: AreaId, thermal_id: ThermalId) -> list[str]:
+    return ["input", "thermal", "series", area_id, thermal_id, "CO2Cost"]
+
+
+def _get_fuel_cost_matrix_path(area_id: AreaId, thermal_id: ThermalId) -> list[str]:
+    return ["input", "thermal", "series", area_id, thermal_id, "fuelCost"]
+
+
+def _get_series_matrix_path(area_id: AreaId, thermal_id: ThermalId) -> list[str]:
+    return ["input", "thermal", "series", area_id, thermal_id, "series"]
+
+
+def _get_modulation_matrix_path(area_id: AreaId, thermal_id: ThermalId) -> list[str]:
+    return ["input", "thermal", "prepro", area_id, thermal_id, "modulation"]
+
+
+def _get_prepro_matrix_path(area_id: AreaId, thermal_id: ThermalId) -> list[str]:
+    return ["input", "thermal", "prepro", area_id, thermal_id, "data"]
 
 
 class FileStudyThermalDao(ThermalDao, ABC):
@@ -69,7 +103,10 @@ class FileStudyThermalDao(ThermalDao, ABC):
     @override
     def get_all_thermals_for_area(self, area_id: str) -> Sequence[ThermalCluster]:
         file_study = self.get_file_study()
-        clusters_data = self._get_all_thermals_for_area(file_study, area_id)
+        try:
+            clusters_data = self._get_all_thermals_for_area(file_study, area_id)
+        except ChildNotFoundError:
+            raise AreaNotFound(area_id)
         return [parse_thermal_cluster(file_study.config.version, c) for c in clusters_data.values()]
 
     @override
@@ -78,88 +115,100 @@ class FileStudyThermalDao(ThermalDao, ABC):
         path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
         try:
             cluster_data = file_study.tree.get(path.split("/"), depth=1)
+        except ChildNotFoundError:
+            raise AreaNotFound(area_id)
         except KeyError:
             raise ThermalClusterNotFound(area_id, thermal_id) from None
         return parse_thermal_cluster(file_study.config.version, cluster_data)
 
     @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:
-        file_study = self.get_file_study()
-        path = _CLUSTER_PATH.format(area_id=area_id, cluster_id=thermal_id)
-        try:
-            file_study.tree.get(path.split("/"), depth=1)
-            return True
-        except (KeyError, ChildNotFoundError):
-            return False
+        config = self.get_file_study().config
+        if area_id in config.areas:
+            thermals = config.areas[area_id].thermals
+            return thermal_id.lower() in {th.id.lower() for th in thermals}
+        return False
 
     @override
     def get_thermal_prepro(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "thermal", "prepro", area_id, thermal_id, "data"])
+        return self.get_impl().get_matrix(_get_prepro_matrix_path(area_id, thermal_id))
 
     @override
     def get_thermal_modulation(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "thermal", "prepro", area_id, thermal_id, "modulation"])
+        return self.get_impl().get_matrix(_get_modulation_matrix_path(area_id, thermal_id))
 
     @override
     def get_thermal_series(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "series"])
+        return self.get_impl().get_matrix(_get_series_matrix_path(area_id, thermal_id))
 
     @override
     def get_thermal_fuel_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
+        return self.get_impl().get_matrix(_get_fuel_cost_matrix_path(area_id, thermal_id))
 
     @override
     def get_thermal_co2_cost(self, area_id: str, thermal_id: str) -> pl.DataFrame:
-        return self.get_impl().get_matrix(["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
+        return self.get_impl().get_matrix(_get_co2_cost_matrix_path(area_id, thermal_id))
 
     @override
-    def save_thermal(self, area_id: str, thermal: ThermalCluster) -> None:
-        study_data = self.get_file_study()
-        self._update_thermal_config(study_data.config, area_id, thermal)
-
-        study_data.tree.save(
-            serialize_thermal_cluster(study_data.config.version, thermal),
-            ["input", "thermal", "clusters", area_id, "list", thermal.id],
-        )
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
+        return self._get_thermal_matrices(_get_co2_cost_matrix_path)
 
     @override
-    def save_thermals(self, area_id: str, thermals: Sequence[ThermalCluster]) -> None:
-        study_data = self.get_file_study()
-        ini_content = self._get_all_thermals_for_area(study_data, area_id)
-        for thermal in thermals:
-            self._update_thermal_config(study_data.config, area_id, thermal)
-            ini_content[thermal.id] = serialize_thermal_cluster(study_data.config.version, thermal)
-        study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
+        return self._get_thermal_matrices(_get_fuel_cost_matrix_path)
 
     @override
-    def save_thermal_prepro(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "thermal", "prepro", area_id, thermal_id, "data"])
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
+        return self._get_thermal_matrices(_get_series_matrix_path)
 
     @override
-    def save_thermal_modulation(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "thermal", "prepro", area_id, thermal_id, "modulation"])
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
+        return self._get_thermal_matrices(_get_modulation_matrix_path)
 
     @override
-    def save_thermal_series(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "series"])
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
+        return self._get_thermal_matrices(_get_prepro_matrix_path)
 
     @override
-    def save_thermal_fuel_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
-        study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "fuelCost"])
+    def save_thermal_prepro(self, series: ThermalSeriesMapping) -> None:
+        self._save_thermal_matrices(series, _get_prepro_matrix_path)
 
     @override
-    def save_thermal_co2_cost(self, area_id: str, thermal_id: str, series_id: str) -> None:
+    def save_thermal_modulation(self, series: ThermalSeriesMapping) -> None:
+        self._save_thermal_matrices(series, _get_modulation_matrix_path)
+
+    @override
+    def save_thermal_series(self, series: ThermalSeriesMapping) -> None:
+        self._save_thermal_matrices(series, _get_series_matrix_path)
+
+    @override
+    def save_thermal_fuel_cost(self, series: ThermalSeriesMapping) -> None:
+        self._save_thermal_matrices(series, _get_fuel_cost_matrix_path)
+
+    @override
+    def save_thermal_co2_cost(self, series: ThermalSeriesMapping) -> None:
+        self._save_thermal_matrices(series, _get_co2_cost_matrix_path)
+
+    @override
+    def save_thermals(self, data: dict[AreaId, list[ThermalCluster]]) -> None:
         study_data = self.get_file_study()
-        study_data.tree.save(series_id, ["input", "thermal", "series", area_id, thermal_id, "CO2Cost"])
+        for area_id, thermals in data.items():
+            # Ensures the area exists
+            check_area_exists(study_data.config, area_id)
+            # Save the new content
+            ini_content = self._get_all_thermals_for_area(study_data, area_id)
+            for thermal in thermals:
+                self._update_thermal_config(study_data.config, area_id, thermal)
+                ini_content[thermal.id] = serialize_thermal_cluster(study_data.config.version, thermal)
+            study_data.tree.save(ini_content, ["input", "thermal", "clusters", area_id, "list"])
 
     @override
     def delete_thermal(self, area_id: str, thermal_id: str) -> None:
         study_data = self.get_file_study()
+        check_area_exists(study_data.config, area_id)
         cluster_id = thermal_id.lower()
+        if not any(c.id.lower() == cluster_id for c in study_data.config.areas[area_id].thermals):
+            raise ThermalClusterNotFound(area_id, thermal_id)
         paths = [
             ["input", "thermal", "clusters", area_id, "list", cluster_id],
             ["input", "thermal", "prepro", area_id, cluster_id],
@@ -176,8 +225,46 @@ class FileStudyThermalDao(ThermalDao, ABC):
             study_data.tree.delete(path)
 
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
+        self._remove_thermal_reserve_certifications(area_id, cluster_id)
+
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
+
+    def _get_thermal_matrices(self, url_getter: Callable[[AreaId, ThermalId], list[str]]) -> ThermalSeriesMapping:
+        study_data = self.get_file_study()
+        matrix_nodes = {}
+
+        areas = study_data.config.areas
+        for area_id, value in areas.items():
+            for thermal in value.thermals:
+                thermal_id = thermal.id.lower()
+                url = url_getter(area_id, thermal_id)
+                node = study_data.tree.get_node(url)
+                assert isinstance(node, InputSeriesMatrix)
+                matrix_nodes[node] = (area_id, thermal_id)
+
+        result: ThermalSeriesMapping = {}
+
+        matrices_mapping = self.get_impl().get_matrices_ids(list(matrix_nodes))
+
+        for node, matrix_id in matrices_mapping.items():
+            area_id, thermal_id = matrix_nodes[node]
+            result.setdefault(area_id, {})[thermal_id] = matrix_id
+
+        return result
+
+    def _save_thermal_matrices(
+        self, series: ThermalSeriesMapping, url_getter: Callable[[AreaId, ThermalId], list[str]]
+    ) -> None:
+        matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
+        study_data = self.get_file_study()
+        for area_id, value in series.items():
+            for thermal_id, series_id in value.items():
+                url = url_getter(area_id, thermal_id)
+                node = study_data.tree.get_node(url)
+                assert isinstance(node, InputSeriesMatrix)
+                matrices_mapping.setdefault(series_id, []).append(node)
+        self.get_impl().save_matrices(matrices_mapping)
 
     @staticmethod
     def _get_all_thermals_for_area(file_study: FileStudy, area_id: str) -> dict[str, Any]:
@@ -190,8 +277,12 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
     @staticmethod
     def _update_thermal_config(study_data: FileStudyTreeConfig, area_id: str, thermal: ThermalCluster) -> None:
-        if area_id not in study_data.areas:
-            raise ValueError(f"The area '{area_id}' does not exist")
+        check_area_exists(study_data, area_id)
+
+        # Mirror the DB read path which initializes version-specific defaults
+        # (nh3, so2, cost_generation, ...) so consumers reading from `config`
+        # see the same fully-populated cluster as the DB DAO returns.
+        initialize_thermal_cluster(thermal, study_data.version)
 
         for k, existing_cluster in enumerate(study_data.areas[area_id].thermals):
             if existing_cluster.id == thermal.id:
@@ -216,3 +307,25 @@ class FileStudyThermalDao(ThermalDao, ABC):
                     del ruleset[key]
 
         study_data.tree.save(rulesets, ["settings", "scenariobuilder"])
+
+    def _remove_thermal_reserve_certifications(self, area_id: str, thermal_id: str) -> None:
+        """
+        # Cascade: Remove any reserve certification attached to the deleted cluster.
+        # Avoids leaving orphan sections in `input/thermal/clusters/<area>/reserve-participations.yml`.
+        """
+        file_study = self.get_file_study()
+        if file_study.config.version < STUDY_VERSION_10_2:
+            # Reserves only exist in version 10.2+
+            return
+
+        thermal_exists = False
+        yaml_content = get_thermal_reserve_participations_as_yaml_content(area_id, file_study)
+        for k, participation in enumerate(yaml_content["participations"]):
+            if participation["cluster"] == thermal_id:
+                thermal_exists = True
+                del yaml_content["participations"][k]
+                break
+
+        if thermal_exists:
+            # Avoid performing an empty save if there is no thermal to remove
+            file_study.tree.save(yaml_content, get_thermal_reserve_path(area_id))

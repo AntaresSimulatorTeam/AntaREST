@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict
+from typing import Any
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json, to_json
@@ -31,7 +31,7 @@ class IniProperties(
     Base class for configuration sections.
     """
 
-    def to_config(self) -> Dict[str, Any]:
+    def to_config(self) -> dict[str, Any]:
         """
         Convert the object to a dictionary for writing to a configuration file (`*.ini`).
 

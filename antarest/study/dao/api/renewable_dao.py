@@ -11,11 +11,12 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from typing import Sequence
+from collections.abc import Sequence
 
 import polars as pl
 
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.dao.common import AreaId, RenewableSeriesMapping
 
 
 class ReadOnlyRenewableDao(ABC):
@@ -39,6 +40,10 @@ class ReadOnlyRenewableDao(ABC):
     def get_renewable_series(self, area_id: str, renewable_id: str) -> pl.DataFrame:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_renewables_series(self) -> RenewableSeriesMapping:
+        raise NotImplementedError()
+
 
 class RenewableDao(ReadOnlyRenewableDao):
     @abstractmethod
@@ -46,11 +51,11 @@ class RenewableDao(ReadOnlyRenewableDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_renewables(self, area_id: str, renewables: Sequence[RenewableCluster]) -> None:
+    def save_renewables(self, data: dict[AreaId, list[RenewableCluster]]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_renewable_series(self, area_id: str, renewable_id: str, series_id: str) -> None:
+    def save_renewable_series(self, series: RenewableSeriesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod

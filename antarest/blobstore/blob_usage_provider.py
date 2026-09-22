@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Iterable
+from collections.abc import Iterable
 
 from antarest.blobstore.model import BlobReference
 

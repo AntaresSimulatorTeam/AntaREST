@@ -27,8 +27,8 @@ export function useOperationControls({
   setFilter,
   onApplyOperation,
 }: UseOperationControlsProps) {
-  // Local state for the operation value to avoid unnecessary re-renders
-  const [value, setValue] = useState<number>(filter.operation.value);
+  // Local state allows clearing the field (undefined = empty/cleared).
+  const [value, setValue] = useState<number | undefined>(filter.operation.value);
 
   const hasValidFilters = useMemo(
     () =>
@@ -50,13 +50,19 @@ export function useOperationControls({
   );
 
   const handleValueChange = useCallback(
-    (newValue: number) => {
-      setValue(newValue);
-      setFilter(
-        produce((draft) => {
-          draft.operation.value = newValue;
-        }),
-      );
+    (newValue: string) => {
+      const parsed = Number.parseFloat(newValue);
+
+      if (Number.isFinite(parsed)) {
+        setValue(parsed);
+        setFilter(
+          produce((draft) => {
+            draft.operation.value = parsed;
+          }),
+        );
+      } else {
+        setValue(undefined);
+      }
     },
     [setFilter],
   );

@@ -15,6 +15,7 @@
 import type { MatrixDataDTO } from "@/components/Matrix/shared/types";
 import { getStudyData } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
+import { sanitizeJsonResponse } from "@/utils/apiUtils";
 import type { SvgIconComponent } from "@mui/icons-material";
 import BlockIcon from "@mui/icons-material/Block";
 import DataObjectIcon from "@mui/icons-material/DataObject";
@@ -163,20 +164,6 @@ export function isInOutputFolder(path: string): boolean {
   return path.startsWith("output/");
 }
 
-/**
- * Determines if .txt files content is empty
- *
- * @param text - Content of .txt to check
- * @returns boolean indicating if content is effectively empty
- */
-export function isEmptyContent(text: string | string[]): boolean {
-  if (Array.isArray(text)) {
-    return !text || text.every((line) => typeof line === "string" && !line.trim());
-  }
-
-  return typeof text === "string" && !text.trim();
-}
-
 export async function getTreeData(studyId: StudyMetadata["id"]) {
   const treeData = await getStudyData<TreeFolder>(studyId, "", -1);
   return R.omit(["Desktop", "study", "logs"], treeData);
@@ -245,11 +232,7 @@ function parseResponse(res: string | MatrixDataDTO): string {
   }
 
   try {
-    // Handle case where API returns unparsed JSON string
-    // Replace special numeric values with their string representations
-    const sanitizedJson = res.replace(/NaN/g, '"NaN"').replace(/Infinity/g, '"Infinity"');
-
-    const parsed = JSON.parse(sanitizedJson);
+    const parsed = sanitizeJsonResponse<MatrixDataDTO>(res);
     return formatMatrixToString(parsed.data);
   } catch {
     // If JSON parsing fails, assume it's plain text

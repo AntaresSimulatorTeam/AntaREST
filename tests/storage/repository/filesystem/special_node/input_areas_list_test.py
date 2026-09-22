@@ -58,7 +58,7 @@ IT
             ),
         },
     )
-    node = InputAreasList(matrix_mapper=Mock(), config=config)
+    node = InputAreasList(matrix_storage_context=Mock(), config=config)
 
     assert ["FR", "DE", "IT"] == node.get()
 

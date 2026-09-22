@@ -12,40 +12,51 @@
  * This file is part of the Antares project.
  */
 
-import { Box, Typography } from "@mui/material";
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import useUpdatedRef from "@/hooks/useUpdatedRef";
+import usePrevious from "react-use/lib/usePrevious";
 import * as R from "ramda";
-import { useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters } from "@/redux/selectors";
+import { Box, Typography } from "@mui/material";
+import { SimpleTreeView } from "@mui/x-tree-view";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import DeleteDirectoryDialog from "./DeleteDirectoryDialog";
 import EditableTreeItem from "./EditableTreeItem";
 import { useDeleteDirectoryDialog } from "./hooks/useDeleteDirectoryDialog";
 import { useDirectoryOperations } from "./hooks/useDirectoryOperations";
 import ManagedTreeNode from "./ManagedTreeNode";
 import type { ManagedTreeProps } from "./types";
-import { buildDirectoryTree, getDirectoryPath } from "./utils";
+import { buildDirectoryTree, getDescendantIds, getDirectoryPath } from "./utils";
 
 function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreeProps) {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId, R.T);
+  const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId);
+  const isActive = useAppSelector((state) => getStudyFilters(state).activeTree === "managed");
 
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   const directoryTree = useMemo(() => buildDirectoryTree(directories), [directories]);
 
-  const initialExpandedItems = useMemo(
-    () => (directoryId ? getDirectoryPath(directoryTree, directoryId) : []),
-    [directoryTree, directoryId],
+  const prevDirectoryId = usePrevious(directoryId);
+  const [expandedItems, setExpandedItems] = useState<string[]>(() =>
+    directoryId ? getDirectoryPath(directoryTree, directoryId) : [],
   );
 
-  const [expandedItems, setExpandedItems] = useState<string[]>(() => initialExpandedItems);
+  // When `directoryId` changes externally (e.g. from a study card's folder link),
+  // ensure all ancestors of the newly selected directory are expanded.
+  if (prevDirectoryId !== directoryId) {
+    const required = directoryId ? getDirectoryPath(directoryTree, directoryId) : [];
+    const missing = R.difference(required, expandedItems);
+    if (missing.length > 0) {
+      setExpandedItems([...expandedItems, ...missing]);
+    }
+  }
 
   const deleteDialog = useDeleteDirectoryDialog(directoryTree);
 
@@ -56,23 +67,32 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
     },
   });
 
-  // Sync external isCreatingDirectory prop with internal state
-  // When parent triggers root directory creation, start with null parentId
+  // `operations.create.start` is recreated on every render (plain arrow function
+  // returned from useDirectoryOperations).
+  // Including it in the useEffect dependency array would cause an infinite loop.
+  //
+  // useUpdatedRef keeps a ref always pointing to the latest value via useLayoutEffect,
+  // so the effect can safely call the latest `start` without listing it as a dependency.
+  const startCreatingRef = useUpdatedRef(operations.create.start);
+
   useEffect(() => {
     if (isCreatingDirectory) {
-      operations.create.start(null); // null = create at root level (no parent)
+      startCreatingRef.current(null); // null = create at root level (no parent)
     }
-  }, [isCreatingDirectory, operations.create]);
+  }, [isCreatingDirectory, startCreatingRef]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleNodeClick = (itemId: string) => {
+  const handleItemClick = (_event: React.MouseEvent, itemId: string) => {
     dispatch(
       updateStudyFilters({
         activeTree: "managed",
-        managed: { directoryId: itemId },
+        managed: {
+          directoryId: itemId,
+          directoryIds: getDescendantIds(itemId, directories),
+        },
       }),
     );
   };
@@ -142,25 +162,25 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
 
   return (
     <>
+      {/* Root level directory creation - rendered outside SimpleTreeView to avoid
+          MUI tree focus context interfering with TextField's InputBase useEffect */}
+      {operations.create.isActive(null) && (
+        <EditableTreeItem
+          isEditing
+          isPending={operations.create.isPending}
+          onSave={handleSaveDirectory(null)}
+          onCancel={handleCancelDirectory}
+        />
+      )}
+
       <SimpleTreeView
         expandedItems={expandedItems}
         onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
-        defaultSelectedItems={directoryId || ""}
+        selectedItems={isActive ? directoryId : null}
+        onItemClick={handleItemClick}
       >
-        {/* Root level directory creation */}
-        {operations.create.isActive(null) && (
-          <EditableTreeItem
-            itemId={`temp-root-${Date.now()}`}
-            isEditing
-            isPending={operations.create.isPending}
-            onSave={handleSaveDirectory(null)} // null = save as root level directory
-            onCancel={handleCancelDirectory}
-          />
-        )}
-
         <ManagedTreeNode
           node={directoryTree}
-          onNodeClick={handleNodeClick}
           selectedPath={directoryId || ""}
           onAddSubDirectory={handleAddSubDirectory}
           onSaveSubDirectory={handleSaveDirectory}

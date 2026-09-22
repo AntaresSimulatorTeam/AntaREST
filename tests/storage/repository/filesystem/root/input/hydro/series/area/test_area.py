@@ -17,10 +17,9 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
-from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_scenario_daily,
     default_scenario_hourly,
@@ -31,12 +30,10 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.series.ar
 BEFORE_650 = {
     "mod": {
         "default_empty": default_scenario_monthly().tolist(),
-        "freq": MatrixFrequency.MONTHLY,
         "nb_columns": None,
     },
     "ror": {
         "default_empty": default_scenario_hourly().tolist(),
-        "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
 }
@@ -44,12 +41,10 @@ BEFORE_650 = {
 AFTER_650 = {
     "mod": {
         "default_empty": default_scenario_daily().tolist(),
-        "freq": MatrixFrequency.DAILY,
         "nb_columns": None,
     },
     "ror": {
         "default_empty": default_scenario_hourly().tolist(),
-        "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
 }
@@ -57,17 +52,14 @@ AFTER_650 = {
 AFTER_860 = {
     "mod": {
         "default_empty": default_scenario_daily().tolist(),
-        "freq": MatrixFrequency.DAILY,
         "nb_columns": None,
     },
     "ror": {
         "default_empty": default_scenario_hourly().tolist(),
-        "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
     "mingen": {
         "default_empty": default_scenario_hourly().tolist(),
-        "freq": MatrixFrequency.HOURLY,
         "nb_columns": None,
     },
 }
@@ -87,7 +79,7 @@ class TestInputHydroSeriesArea:
         version: str,
         expected: dict[str, Any],
     ) -> None:
-        resolver = Mock(spec=MatrixUriMapper)
+        resolver = MatrixStorageContext(matrix_service=Mock(), is_managed=True)
         context = resolver
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
@@ -99,7 +91,7 @@ class TestInputHydroSeriesArea:
         )
 
         node = area.InputHydroSeriesArea(
-            matrix_mapper=context,
+            matrix_storage_context=context,
             config=config,
             children_glob_exceptions=None,
         )
@@ -109,9 +101,5 @@ class TestInputHydroSeriesArea:
         actual_obj = {}
         for key, value in actual.items():
             assert isinstance(value, InputSeriesMatrix)
-            actual_obj[key] = {
-                "default_empty": value.default_empty().tolist(),
-                "freq": value.freq,
-                "nb_columns": value.nb_columns,
-            }
+            actual_obj[key] = {"default_empty": value.default_empty().tolist(), "nb_columns": value.nb_columns}
         assert actual_obj == expected

@@ -12,22 +12,15 @@
 import itertools
 import logging
 import uuid
-from typing import Callable, List, Optional, Union, cast
 
 from antarest.core.utils.utils import StopWatch
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.utils import update_antares_info
-from antarest.study.storage.variantstudy.model.command.common import CommandOutput, command_failed
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.storage.variantstudy.model.command.common import command_failed
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
-from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO, NewDetailsDTO
 
 logger = logging.getLogger(__name__)
-
-APPLY_CALLBACK = Callable[[ICommand, Union[FileStudyTreeConfig, FileStudy], Optional[ICommandListener]], CommandOutput]
 
 
 class CmdNotifier:
@@ -36,16 +29,12 @@ class CmdNotifier:
         self.study_id = study_id
         self.total_count = total_count
 
-    def __call__(self, x: float) -> None:
-        logger.info(f"Command {self.index}/{self.total_count} [{self.study_id}] applied in {x}s")
+    def log(self, elapsed: float) -> None:
+        logger.info(f"Command {self.index}/{self.total_count} [{self.study_id}] applied in {elapsed}s")
 
 
-def _generate(
-    commands: List[List[ICommand]],
-    data: FileStudy,
-    applier: APPLY_CALLBACK,
-    metadata: VariantStudy,
-    listener: Optional[ICommandListener] = None,
+def apply_commands_to_variant(
+    commands: list[list[ICommand]], metadata: VariantStudy, study: StudyDao
 ) -> GenerationResultInfoDTO:
     stopwatch = StopWatch()
     # Apply commands
@@ -54,16 +43,14 @@ def _generate(
     logger.info("Applying commands")
 
     # Flatten the list of commands
-    all_commands: List[ICommand] = list(itertools.chain.from_iterable(commands))
+    all_commands: list[ICommand] = list(itertools.chain.from_iterable(commands))
 
     # Prepare the stopwatch
     cmd_notifier = CmdNotifier(metadata.id, len(all_commands))
-    stopwatch.reset_current()
-
     # Store all the outputs
     for index, cmd in enumerate(all_commands, 1):
         try:
-            output = applier(cmd, data, listener)
+            output = cmd.apply(study)
         except Exception as e:
             # Unhandled exception
             output = command_failed(message=f"Error while applying command {cmd.command_name}")
@@ -79,7 +66,7 @@ def _generate(
         results.details.append(detail)
 
         cmd_notifier.index = index
-        stopwatch.log_elapsed(cmd_notifier)
+        cmd_notifier.log(stopwatch.lap())
 
         # stop variant generation as soon as a command fails
         if not output.status:
@@ -92,37 +79,5 @@ def _generate(
 
     results.success = all(detail["status"] for detail in results.details)  # type: ignore
 
-    data_type = isinstance(data, FileStudy)
-    stopwatch.log_elapsed(
-        lambda x: logger.info(
-            f"Variant generation done in {x}s" if data_type else f"Variant light generation done in {x}s"
-        ),
-        since_start=True,
-    )
+    logger.info(f"Variant generation done in {stopwatch.since_start}s")
     return results
-
-
-def apply_commands_to_variant(
-    commands: List[List[ICommand]],
-    metadata: VariantStudy,
-    study: FileStudy,
-    listener: Optional[ICommandListener] = None,
-) -> GenerationResultInfoDTO:
-    # Build file study
-    logger.info("Building study tree")
-    update_antares_info(metadata, study.tree, update_author=True)
-
-    return _generate(
-        commands,
-        study,
-        lambda command, data, _listener: command.apply(
-            FileStudyTreeDao(
-                cast(FileStudy, data),
-                command.command_context.generator_matrix_constants,
-                command.command_context.blob_service,
-            ),
-            _listener,
-        ),
-        metadata,
-        listener,
-    )

@@ -29,4 +29,5 @@ def clean_variable_views_task(self: MaintenanceTask) -> GarbageCollectorTaskResu
     return clean_variable_views(
         dry_run=ctx.config.storage.variable_view_gc_dry_run,
         retention_time=ctx.config.storage.variable_view_gc_retention_days,
+        lock_folder=ctx.config.storage.tmp_dir,
     )

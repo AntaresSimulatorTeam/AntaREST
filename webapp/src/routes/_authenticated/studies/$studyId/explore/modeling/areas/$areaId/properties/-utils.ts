@@ -16,7 +16,7 @@
 // Enums
 ////////////////////////////////////////////////////////////////
 
-import type { DeepPartial } from "redux";
+import type { DeepPartial } from "react-hook-form";
 import client from "../../../../../../../../../services/api/client";
 import type { Area, StudyMetadata } from "../../../../../../../../../types/types";
 

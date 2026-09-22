@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import DataGrid from "@/components/DataGrid";
+import DataGrid, { type DataGridHandle } from "@/components/DataGrid";
 import {
   CompactSelection,
   GridCellKind,
@@ -22,11 +22,12 @@ import {
   type GridSelection,
   type Item,
 } from "@glideapps/glide-data-grid";
-import { useCallback, useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MatrixContext } from "../../context/MatrixContext";
 import { useColumnMapping } from "../../hooks/useColumnMapping";
 import { useGridCellContent } from "../../hooks/useGridCellContent";
+import { useMatrixPasteInterceptor } from "../../hooks/useMatrixPasteInterceptor";
 import { useSelectionStats } from "../../hooks/useSelectionStats";
 import { Column } from "../../shared/constants";
 import type {
@@ -36,7 +37,7 @@ import type {
   MatrixAggregates,
   NonEmptyMatrix,
 } from "../../shared/types";
-import { formatGridNumber } from "../../shared/utils";
+import { computeColumnWidths, formatGridNumber } from "../../shared/utils";
 import MatrixStats from "../MatrixStats";
 
 export interface MatrixGridProps {
@@ -50,6 +51,11 @@ export interface MatrixGridProps {
   height?: string;
   onCellEdit?: (update: GridUpdate) => void;
   onMultipleCellsEdit?: (updates: GridUpdate[]) => void;
+  /**
+   * Called on paste with the full updated matrix (same shape as `data`). Omit this prop
+   * to make paste a no-op (e.g. for read-only standalone usage).
+   */
+  onBulkPaste?: (newData: number[][]) => void;
   readOnly?: boolean;
   showPercent?: boolean;
   showStats?: boolean;
@@ -66,6 +72,7 @@ function MatrixGrid({
   height = "100%",
   onCellEdit,
   onMultipleCellsEdit,
+  onBulkPaste,
   readOnly,
   showPercent,
   showStats = true,
@@ -193,6 +200,32 @@ function MatrixGrid({
     data: filteredData,
     selection: gridSelection,
     gridToData,
+  });
+
+  const dataGridRef = useRef<DataGridHandle>(null);
+
+  const handleBulkPaste = useCallback(
+    (newData: number[][]) => {
+      onBulkPaste?.(newData);
+      const updates = computeColumnWidths(newData, columns, gridToData);
+      if (updates.size > 0) {
+        dataGridRef.current?.resizeColumns(updates);
+      }
+    },
+    [onBulkPaste, columns, gridToData],
+  );
+
+  useMatrixPasteInterceptor({
+    readOnly: !!readOnly,
+    data,
+    columns,
+    visibleColumns,
+    visibleRows,
+    filterActive: filterPreview.active,
+    gridSelection,
+    gridToData,
+    getDataRowIndex,
+    onBulkPaste: onBulkPaste ? handleBulkPaste : undefined,
   });
 
   ////////////////////////////////////////////////////////////////
@@ -388,6 +421,7 @@ function MatrixGrid({
   return (
     <>
       <DataGrid
+        ref={dataGridRef}
         key={`matrix-grid-${columns.length}-${data.length}`}
         width={width}
         height={height}
@@ -397,7 +431,10 @@ function MatrixGrid({
         onCellEdited={handleCellEdited}
         onCellsEdited={handleCellsEdited}
         getCellsForSelection
-        onPaste={!readOnly}
+        // Disable glide-data-grid's own Ctrl+V handler: its async `Number.parseFloat` path
+        // races our locale-aware capture-phase listener and wins the last write, corrupting
+        // thousand-separator values like "4,567" into 4.
+        keybindings={{ paste: false }}
         fillHandle={!readOnly}
         onKeyDown={readOnly ? undefined : handleKeyDown}
         allowedFillDirections="any"

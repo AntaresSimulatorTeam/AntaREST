@@ -15,7 +15,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import FieldSkeleton from "@/components/fieldEditors/FieldSkeleton";
 import useUpdatedRef from "@/hooks/useUpdatedRef";
-import hoistNonReactStatics from "hoist-non-react-statics";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
 import React, { useMemo } from "react";
@@ -253,7 +252,7 @@ function reactHookFormSupport<TValue>(options: ReactHookFormSupport<TValue> = {}
 
     WithReactHookForm.displayName = `WithReactHookForm(${getComponentDisplayName(FieldEditor)})`;
 
-    return hoistNonReactStatics(WithReactHookForm, FieldEditor);
+    return WithReactHookForm;
   }
 
   return withReactHookForm;

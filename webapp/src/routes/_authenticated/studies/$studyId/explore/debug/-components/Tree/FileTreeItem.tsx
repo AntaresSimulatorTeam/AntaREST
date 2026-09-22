@@ -12,11 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import TreeItemEnhanced from "@/components/TreeItemEnhanced";
+import RouterTreeItem from "@/components/router/RouterTreeItem";
 import { Box, Tooltip } from "@mui/material";
-import { useContext } from "react";
+import { useParams } from "@tanstack/react-router";
 import { getFileIcon, getFileType, isFolder, type TreeData } from "../../-utils";
-import DebugContext from "../DebugContext";
 
 interface Props {
   name: string;
@@ -26,27 +25,16 @@ interface Props {
 }
 
 function FileTreeItem({ name, treeData, path, disabled }: Props) {
-  const { setPathSearchParam } = useContext(DebugContext);
+  const params = useParams({ from: "/_authenticated/studies/$studyId/explore/debug/" });
   const filePath = path ? `${path}/${name}` : name;
   const fileType = getFileType(treeData);
   const FileIcon = getFileIcon(fileType);
 
-  ////////////////////////////////////////////////////////////////
-  // Event handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleClick = () => {
-    if (!disabled) {
-      setPathSearchParam(filePath);
-    }
-  };
-
-  ////////////////////////////////////////////////////////////////
-  // JSX
-  ////////////////////////////////////////////////////////////////
-
   return (
-    <TreeItemEnhanced
+    <RouterTreeItem
+      to="/studies/$studyId/explore/debug"
+      params={params}
+      search={{ path: filePath }}
       itemId={filePath}
       label={
         <Tooltip title={name}>
@@ -64,7 +52,6 @@ function FileTreeItem({ name, treeData, path, disabled }: Props) {
           </Box>
         </Tooltip>
       }
-      onClick={handleClick}
       disabled={disabled}
     >
       {isFolder(treeData) &&
@@ -77,7 +64,7 @@ function FileTreeItem({ name, treeData, path, disabled }: Props) {
             disabled={disabled}
           />
         ))}
-    </TreeItemEnhanced>
+    </RouterTreeItem>
   );
 }
 

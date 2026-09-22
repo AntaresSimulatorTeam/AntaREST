@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional, TypeAlias, cast
+from typing import Any, TypeAlias, cast
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
@@ -63,7 +63,7 @@ class RenewableClusterGroup(EnumIgnoreCase):
 
     @classmethod
     @override
-    def _missing_(cls, value: object) -> Optional["RenewableClusterGroup"]:
+    def _missing_(cls, value: object) -> "RenewableClusterGroup | None":
         """
         Retrieves the default group or the matched group when an unknown value is encountered.
         """
@@ -74,10 +74,10 @@ class RenewableClusterGroup(EnumIgnoreCase):
                 return cast(RenewableClusterGroup, super()._missing_(value))
             # If a group is not found, return the default group ('OTHER1' by default).
             return cls.OTHER1
-        return cast(Optional["RenewableClusterGroup"], super()._missing_(value))
+        return cast("RenewableClusterGroup | None", super()._missing_(value))
 
 
-Group: TypeAlias = Optional[LowerCaseStr]
+Group: TypeAlias = LowerCaseStr | None
 
 
 class RenewableCluster(AntaresBaseModel):
@@ -114,11 +114,11 @@ class RenewableClusterCreation(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     name: ItemName
-    enabled: Optional[bool] = None
-    unit_count: Optional[int] = Field(default=None, ge=1)
-    nominal_capacity: Optional[float] = Field(default=None, ge=0)
+    enabled: bool | None = None
+    unit_count: int | None = Field(default=None, ge=1)
+    nominal_capacity: float | None = Field(default=None, ge=0)
     group: Group = None
-    ts_interpretation: Optional[TimeSeriesInterpretation] = None
+    ts_interpretation: TimeSeriesInterpretation | None = None
 
     @classmethod
     def from_cluster(cls, cluster: RenewableCluster) -> "RenewableClusterCreation":
@@ -151,11 +151,11 @@ class RenewableClusterUpdate(AntaresBaseModel):
             del data["name"]
         return data
 
-    enabled: Optional[bool] = None
-    unit_count: Optional[int] = Field(default=None, ge=1)
-    nominal_capacity: Optional[float] = Field(default=None, ge=0)
+    enabled: bool | None = None
+    unit_count: int | None = Field(default=None, ge=1)
+    nominal_capacity: float | None = Field(default=None, ge=0)
     group: Group = None
-    ts_interpretation: Optional[TimeSeriesInterpretation] = None
+    ts_interpretation: TimeSeriesInterpretation | None = None
 
 
 RenewableClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, RenewableClusterUpdate]]

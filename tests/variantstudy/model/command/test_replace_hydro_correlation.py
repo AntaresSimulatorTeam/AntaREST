@@ -10,13 +10,15 @@
 #
 # This file is part of the Antares project.
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationArea
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
-def _set_up(study: FileStudy, command_context: CommandContext) -> None:
+def _set_up(study: FileStudy, command_context: CommandContext) -> FileStudyTreeDao:
     # Creates several areas with different correlations
     correlation_cfg = {
         "N?%N?": 1.0,  # Write the area name in the file to ensure we're able to read the data
@@ -26,17 +28,17 @@ def _set_up(study: FileStudy, command_context: CommandContext) -> None:
         "e%w": 0.1,
     }
 
+    dao = build_dao_from_file_study(study, command_context)
     for area_name in ["N?", "s", "e", "w"]:
-        CreateArea(area_name=area_name, command_context=command_context, study_version=study.config.version).apply(
-            study
-        )
+        CreateArea(area_name=area_name, command_context=command_context, study_version=study.config.version).apply(dao)
 
     study.tree.save(correlation_cfg, ["input", "hydro", "prepro", "correlation", "annual"])
+    return dao
 
 
 def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_930
-    _set_up(study, command_context)
+    dao = _set_up(study, command_context)
 
     cmd = ReplaceHydroCorrelation(
         area_id="e",
@@ -49,7 +51,7 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
         command_context=command_context,
         study_version=study.config.version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert output.status
 
     # Checks the ini content
@@ -71,7 +73,7 @@ s%w = 0.6
 
 def test_error_case(empty_study_930: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_930
-    _set_up(study, command_context)
+    dao = _set_up(study, command_context)
 
     # Fake area
     cmd = ReplaceHydroCorrelation(
@@ -80,7 +82,7 @@ def test_error_case(empty_study_930: FileStudy, command_context: CommandContext)
         command_context=command_context,
         study_version=study.config.version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert not output.status
     assert "Area is not found: 'fake_area'" in output.message
 
@@ -91,6 +93,6 @@ def test_error_case(empty_study_930: FileStudy, command_context: CommandContext)
         command_context=command_context,
         study_version=study.config.version,
     )
-    output = cmd.apply(study)
+    output = cmd.apply(dao)
     assert not output.status
     assert "Area is not found: 'fake_area'" in output.message

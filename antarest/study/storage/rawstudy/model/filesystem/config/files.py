@@ -11,53 +11,59 @@
 # This file is part of the Antares project.
 
 import io
-import json
 import logging
 import re
 import tempfile
 import zipfile
+from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+from typing import Any, cast
 
 from antares.study.version import StudyVersion
 
 from antarest.core.model import JSON
-from antarest.core.serde.ini_reader import IniReader
+from antarest.core.serde.ini_common import DUPLICATE_KEYS
+from antarest.core.serde.ini_reader import IniReader, IReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
-from antarest.study.business.model.binding_constraint_model import (
-    BindingConstraint,
-)
+from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.common import FILTER_VALUES
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_8_6, STUDY_VERSION_9_2
+from antarest.study.model import (
+    STUDY_VERSION_8_1,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_10_2,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import (
     parse_binding_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.district import parse_district
-from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import (
-    SimulationParsingError,
-    XpansionParsingError,
-)
+from antarest.study.storage.rawstudy.model.filesystem.config.exceptions import SimulationParsingError
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
+from antarest.study.storage.rawstudy.model.filesystem.config.link import parse_link
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
+    BindingConstraintConfig,
     FileStudyTreeConfig,
     LinkConfig,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.renewable import parse_renewable_cluster
+from antarest.study.storage.rawstudy.model.filesystem.config.reserve_definition import parse_reserve_definition
 from antarest.study.storage.rawstudy.model.filesystem.config.st_storage import (
     parse_st_storage,
     parse_st_storage_additional_constraint,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import parse_thermal_cluster
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import extract_filtering
-from antarest.study.storage.rawstudy.model.filesystem.root.settings.generaldata import DUPLICATE_KEYS
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 
 logger = logging.getLogger(__name__)
 
@@ -66,20 +72,21 @@ class FileType(Enum):
     TXT = "txt"
     SIMPLE_INI = "simple_ini"
     MULTI_INI = "multi_ini"
+    YAML = "yaml"
 
 
 def extract_data_from_archive(
     root: Path,
     posix_path: str,
-    reader: IniReader,
-) -> Dict[str, Any]:
+    reader: IReader,
+) -> dict[str, Any]:
     """
     Extract and process data from various types of files.
 
      Args:
           root: 7zip or ZIP file containing the study.
           posix_path: Relative path to the file to extract.
-          reader: IniReader object to use for processing the file.
+          reader: IReader object to use for processing the file.
 
     Returns:
         The content of the file, processed according to its type:
@@ -93,7 +100,7 @@ def extract_data_from_archive(
         return {}
 
 
-def build(study_path: Path, study_id: str, output_path: Optional[Path] = None) -> "FileStudyTreeConfig":
+def build(study_path: Path, study_id: str, output_path: Path | None = None) -> "FileStudyTreeConfig":
     """
     Extracts data from the filesystem to build a study config.
 
@@ -122,7 +129,7 @@ def build(study_path: Path, study_id: str, output_path: Optional[Path] = None) -
         areas=_parse_areas(study_path),
         districts=_parse_sets(study_path),
         outputs=parse_outputs(outputs_dir),
-        bindings=_parse_bindings(study_path),
+        bindings=[BindingConstraintConfig.from_constraint(bc) for bc in _parse_bindings(study_path)],
         store_new_set=sns,
         archive_input_series=asi,
         enr_modelling=enr_modelling,
@@ -165,9 +172,13 @@ def _extract_data_from_file(
             except FileNotFoundError:
                 return []
 
-    elif file_type in {FileType.MULTI_INI, FileType.SIMPLE_INI}:
+    elif file_type in {FileType.MULTI_INI, FileType.SIMPLE_INI, FileType.YAML}:
+        if file_type == FileType.YAML:
+            reader: IReader = YAMLReader()
+        else:
+            reader = IniReader(multi_ini_keys)
+
         # Parse the file as a dictionary of keys/values, return an empty dictionary if missing.
-        reader = IniReader(multi_ini_keys)
         if is_archive:
             return extract_data_from_archive(root, posix_path, reader)
         else:
@@ -175,6 +186,10 @@ def _extract_data_from_file(
                 return reader.read(output_data_path)
             except FileNotFoundError:
                 return {}
+
+    elif file_type == FileType.YAML:
+        reader = YAMLReader()
+        return reader.read(output_data_path)
 
     else:  # pragma: no cover
         raise NotImplementedError(file_type)
@@ -192,7 +207,7 @@ def _parse_version(path: Path) -> StudyVersion:
     return StudyVersion.parse(version)
 
 
-def _parse_parameters(path: Path) -> Tuple[bool, List[str], str]:
+def _parse_parameters(path: Path) -> tuple[bool, list[str], str]:
     general = _extract_data_from_file(
         root=path,
         inside_root_path=Path("settings/generaldata.ini"),
@@ -200,14 +215,14 @@ def _parse_parameters(path: Path) -> Tuple[bool, List[str], str]:
     )
 
     store_new_set: bool = general.get("output", {}).get("storenewset", False)
-    archive_input_series: List[str] = [
+    archive_input_series: list[str] = [
         e.strip() for e in general.get("output", {}).get("archives", "").strip().split(",") if e.strip()
     ]
     enr_modelling: str = general.get("other preferences", {}).get("renewable-generation-modelling", "aggregated")
     return store_new_set, archive_input_series, enr_modelling
 
 
-def _parse_bindings(root: Path) -> List[BindingConstraint]:
+def _parse_bindings(root: Path) -> list[BindingConstraint]:
     bindings = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/bindingconstraints/bindingconstraints.ini"),
@@ -217,7 +232,7 @@ def _parse_bindings(root: Path) -> List[BindingConstraint]:
     return [parse_binding_constraint(version, bc) for bc in bindings.values()]
 
 
-def _parse_sets(root: Path) -> Dict[str, District]:
+def _parse_sets(root: Path) -> dict[str, District]:
     obj = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/sets.ini"),
@@ -228,7 +243,7 @@ def _parse_sets(root: Path) -> Dict[str, District]:
     return {transform_name_to_id(name): parse_district(item, transform_name_to_id(name)) for name, item in obj.items()}
 
 
-def _parse_areas(root: Path) -> Dict[str, AreaConfig]:
+def _parse_areas(root: Path) -> dict[str, AreaConfig]:
     areas = _extract_data_from_file(
         root=root,
         inside_root_path=Path("input/areas/list.txt"),
@@ -238,7 +253,7 @@ def _parse_areas(root: Path) -> Dict[str, AreaConfig]:
     return {transform_name_to_id(a): parse_area(root, a) for a in areas}
 
 
-def parse_outputs(output_path: Path) -> Dict[str, Simulation]:
+def parse_outputs(output_path: Path) -> dict[str, Simulation]:
     if not output_path.is_dir():
         return {}
     sims = {}
@@ -259,6 +274,14 @@ def parse_outputs(output_path: Path) -> Dict[str, Simulation]:
         except SimulationParsingError as exc:
             logger.warning(str(exc), exc_info=True)
     return sims
+
+
+def parse_single_output(output_path: Path, output_id: str) -> Simulation:
+    file_path = output_path / output_id
+    if file_path.exists():
+        return parse_simulation(file_path, canonical_name=output_id)
+    # Assume the output_id is a zip file
+    return parse_simulation_zip(output_path / f"{output_id}.zip")
 
 
 def parse_simulation_zip(path: Path) -> Simulation:
@@ -286,18 +309,28 @@ def parse_simulation_zip(path: Path) -> Simulation:
         return simulation
 
 
-def _parse_xpansion_version(path: Path) -> str:
+@dataclass(frozen=True)
+class XpansionSimulation:
+    version: str
+    ended_in_error: bool
+
+
+def _parse_xpansion(path: Path) -> XpansionSimulation | None:
     xpansion_json = path / "expansion" / "out.json"
+
+    if not xpansion_json.exists():
+        return None
+
     try:
         content = xpansion_json.read_text(encoding="utf-8")
         obj = from_json(content)
-        return str(obj["antares_xpansion"]["version"])
-    except FileNotFoundError:
-        return ""
-    except json.JSONDecodeError as exc:
-        raise XpansionParsingError(xpansion_json, f"invalid JSON format: {exc}") from exc
-    except KeyError as exc:
-        raise XpansionParsingError(xpansion_json, f"key '{exc}' not found in JSON object") from exc
+        version = str(obj["antares_xpansion"]["version"])
+    except Exception as e:
+        logger.warning(f"Error parsing xpansion output json file: {e}")
+        return None
+
+    ended_in_error = "solution" not in obj
+    return XpansionSimulation(version=version, ended_in_error=ended_in_error)
 
 
 _regex_simulation_mode = re.compile(r"^(\d{8}-\d{4})(eco|adq|exp)-?(.*)")
@@ -312,13 +345,6 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
             reason=f"Filename '{canonical_name}' doesn't match {_regex_simulation_mode.pattern}",
         )
 
-    try:
-        xpansion = _parse_xpansion_version(path)
-    except XpansionParsingError as exc:
-        # There is something wrong with Xpansion, let's assume it is not used!
-        logger.warning(str(exc), exc_info=True)
-        xpansion = ""
-
     ini_path = path / "about-the-study" / "parameters.ini"
     reader = IniReader(DUPLICATE_KEYS)
     try:
@@ -329,7 +355,14 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
             f"Parameters file '{ini_path.relative_to(path)}' not found",
         ) from None
 
-    error = not (path / "checkIntegrity.txt").exists()
+    xpansion_simulation = _parse_xpansion(path)
+    if xpansion_simulation:
+        error = xpansion_simulation.ended_in_error
+        xpansion_version = xpansion_simulation.version
+    else:
+        error = not (path / "checkIntegrity.txt").exists()
+        xpansion_version = ""
+
     return Simulation(
         date=match.group(1),
         mode=Mode.from_output_suffix(match.group(2)),
@@ -340,11 +373,11 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
         error=error,
         playlist=list(get_playlist(obj) or {}),
         archived=False,
-        xpansion=xpansion,
+        xpansion=xpansion_version,
     )
 
 
-def get_playlist(config: JSON) -> Optional[Dict[int, float]]:
+def get_playlist(config: JSON) -> dict[int, float] | None:
     general_config = config.get("general", {})
     nb_years = cast(int, general_config.get("nbyears"))
     playlist_activated = cast(bool, general_config.get("user-playlist", False))
@@ -384,8 +417,8 @@ def parse_area(root: Path, area: str) -> "AreaConfig":
         file_type=FileType.SIMPLE_INI,
     )
     filtering = optimization.get("filtering", {})
-    filter_synthesis = extract_filtering(filtering.get("filter-synthesis", ""))
-    filter_year_by_year = extract_filtering(filtering.get("filter-year-by-year", ""))
+    filter_synthesis = extract_filtering(filtering.get("filter-synthesis", FILTER_VALUES))
+    filter_year_by_year = extract_filtering(filtering.get("filter-year-by-year", FILTER_VALUES))
 
     st_storages = _parse_st_storage(root, area_id)
     return AreaConfig(
@@ -397,16 +430,17 @@ def parse_area(root: Path, area: str) -> "AreaConfig":
         filters_year=filter_year_by_year,
         st_storages=st_storages,
         st_storages_additional_constraints=_parse_st_storage_additional_constraints(root, area_id, st_storages),
+        reserves=_parse_reserves(root, area_id),
     )
 
 
-def _parse_thermal(root: Path, area: str) -> List[ThermalCluster]:
+def _parse_thermal(root: Path, area: str) -> list[ThermalCluster]:
     """
     Parse the thermal INI file, return an empty list if missing.
     """
     version = _parse_version(root)
     relpath = Path(f"input/thermal/clusters/{area}/list.ini")
-    config_dict: Dict[str, Any] = _extract_data_from_file(
+    config_dict: dict[str, Any] = _extract_data_from_file(
         root=root, inside_root_path=relpath, file_type=FileType.SIMPLE_INI
     )
     config_list = []
@@ -419,7 +453,7 @@ def _parse_thermal(root: Path, area: str) -> List[ThermalCluster]:
     return config_list
 
 
-def _parse_renewables(root: Path, area: str) -> List[RenewableCluster]:
+def _parse_renewables(root: Path, area: str) -> list[RenewableCluster]:
     """
     Parse the renewables INI file, return an empty list if missing.
     """
@@ -432,7 +466,7 @@ def _parse_renewables(root: Path, area: str) -> List[RenewableCluster]:
 
     # Since version 8.1 of the solver, we can use "renewable clusters" objects.
     relpath = Path(f"input/renewables/clusters/{area}/list.ini")
-    config_dict: Dict[str, Any] = _extract_data_from_file(
+    config_dict: dict[str, Any] = _extract_data_from_file(
         root=root,
         inside_root_path=relpath,
         file_type=FileType.SIMPLE_INI,
@@ -447,7 +481,7 @@ def _parse_renewables(root: Path, area: str) -> List[RenewableCluster]:
     return config_list
 
 
-def _parse_st_storage(root: Path, area: str) -> List[STStorage]:
+def _parse_st_storage(root: Path, area: str) -> list[STStorage]:
     """
     Parse the short-term storage INI file, return an empty list if missing.
     """
@@ -458,7 +492,7 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorage]:
         return []
 
     relpath = Path(f"input/st-storage/clusters/{area}/list.ini")
-    config_dict: Dict[str, Any] = _extract_data_from_file(
+    config_dict: dict[str, Any] = _extract_data_from_file(
         root=root,
         inside_root_path=relpath,
         file_type=FileType.SIMPLE_INI,
@@ -466,7 +500,7 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorage]:
     config_list = []
     for section, values in config_dict.items():
         try:
-            config_list.append(parse_st_storage(version, values))
+            config_list.append(parse_st_storage(version, values, section))
         except ValueError as exc:
             config_path = root.joinpath(relpath)
             logger.warning(f"Invalid short-term storage configuration: '{section}' in '{config_path}'", exc_info=exc)
@@ -475,7 +509,7 @@ def _parse_st_storage(root: Path, area: str) -> List[STStorage]:
 
 def _parse_st_storage_additional_constraints(
     root: Path, area: str, st_storages: list[STStorage]
-) -> dict[str, List[STStorageAdditionalConstraint]]:
+) -> dict[str, list[STStorageAdditionalConstraint]]:
     """
     Parse the additional-constraints INI file, return an empty list if missing.
     """
@@ -488,7 +522,7 @@ def _parse_st_storage_additional_constraints(
     config = {}
     for storage in st_storages:
         relpath = Path(f"input/st-storage/constraints/{area}/{storage.id}/additional-constraints.ini")
-        config_dict: Dict[str, Any] = _extract_data_from_file(
+        config_dict: dict[str, Any] = _extract_data_from_file(
             root=root,
             inside_root_path=relpath,
             file_type=FileType.SIMPLE_INI,
@@ -506,23 +540,39 @@ def _parse_st_storage_additional_constraints(
     return config
 
 
-def _parse_links_filtering(root: Path, area: str) -> Dict[str, LinkConfig]:
+def _parse_reserves(root: Path, area: str) -> list[str]:
+    """
+    Parse the reserves INI file and return the list of reserve ids
+    """
+
+    # Reserve definitions exist only since v10.2
+    version = _parse_version(root)
+    if version < STUDY_VERSION_10_2:
+        return []
+
+    relpath = Path(f"input/reserves/{area}/reserves.yml")
+    config_dict: dict[str, Any] = _extract_data_from_file(
+        root=root,
+        inside_root_path=relpath,
+        file_type=FileType.YAML,
+    )
+    reserve_ids = []
+    for obj in config_dict.get("reserves", []):
+        try:
+            reserve = parse_reserve_definition(obj)
+            reserve_ids.append(reserve.id)
+        except ValueError as exc:
+            config_path = root.joinpath(relpath)
+            logger.warning(f"Invalid reserve configuration in '{config_path}'", exc_info=exc)
+            continue
+
+    return reserve_ids
+
+
+def _parse_links_filtering(root: Path, area: str) -> dict[str, LinkConfig]:
     properties_ini = _extract_data_from_file(
         root=root,
         inside_root_path=Path(f"input/links/{area}/properties.ini"),
         file_type=FileType.SIMPLE_INI,
     )
-    links_by_ids = {link_id: LinkConfig(**obj) for link_id, obj in properties_ini.items()}
-    return links_by_ids
-
-
-def _check_build_on_solver_tests(test_dir: Path) -> None:
-    for antares_path in test_dir.rglob("study.antares"):
-        study_path = antares_path.parent
-        print(f"Checking '{study_path}'...")
-        build(study_path, "test")
-
-
-if __name__ == "__main__":
-    TEST_DIR = Path("~/Projects/antarest_data/studies/Antares_Simulator_Tests_NR").expanduser()
-    _check_build_on_solver_tests(TEST_DIR)
+    return {link_id: parse_link(obj, area, link_id).to_config() for link_id, obj in properties_ini.items()}

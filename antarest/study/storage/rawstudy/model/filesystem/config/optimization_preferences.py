@@ -9,17 +9,20 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Dict
+from typing import Any
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.config.optimization_config_model import (
+    ExportMPS,
     LegacyTransmissionCapacities,
     OptimizationPreferences,
     SimplexOptimizationRange,
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
+    initialize_optimization_preferences_against_version,
 )
 
 
@@ -37,11 +40,12 @@ class OptimizationPreferencesFileData(AntaresBaseModel):
     primary_reserve: bool | None = Field(default=None, alias="include-primaryreserve")
     strategic_reserve: bool | None = Field(default=None, alias="include-strategicreserve")
     spinning_reserve: bool | None = Field(default=None, alias="include-spinningreserve")
-    export_mps: bool | str | None = Field(default=None, alias="include-exportmps")
+    export_mps: bool | ExportMPS | None = Field(default=None, alias="include-exportmps")
     unfeasible_problem_behavior: UnfeasibleProblemBehavior | None = Field(
         default=None, alias="include-unfeasible-problem-behavior"
     )
     simplex_optimization_range: SimplexOptimizationRange | None = Field(default=None, alias="simplex-range")
+    include_reserves: bool | None = Field(default=None, alias="include-reserves")
 
     def to_model(self) -> OptimizationPreferences:
         return OptimizationPreferences.model_validate(self.model_dump(exclude_none=True))
@@ -51,8 +55,10 @@ class OptimizationPreferencesFileData(AntaresBaseModel):
         return cls.model_validate(config.model_dump())
 
 
-def parse_optimization_preferences(data: Dict[str, Any]) -> OptimizationPreferences:
-    return OptimizationPreferencesFileData.model_validate(data).to_model()
+def parse_optimization_preferences(data: dict[str, Any], version: StudyVersion) -> OptimizationPreferences:
+    preferences = OptimizationPreferencesFileData.model_validate(data).to_model()
+    initialize_optimization_preferences_against_version(preferences, version)
+    return preferences
 
 
 def serialize_optimization_preferences(config: OptimizationPreferences) -> dict[str, Any]:

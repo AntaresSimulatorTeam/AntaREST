@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ConfigDict, Field
 
@@ -32,20 +32,20 @@ class LinkFileData(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_kebab_case, populate_by_name=True, extra="forbid")
 
-    hurdles_cost: Optional[bool] = None
-    loop_flow: Optional[bool] = None
-    use_phase_shifter: Optional[bool] = None
-    transmission_capacities: Optional[TransmissionCapacity] = None
-    asset_type: Optional[AssetType] = None
-    display_comments: Optional[bool] = None
-    comments: Optional[str] = None
-    colorr: Optional[int] = Field(default=None, ge=0, le=255)
-    colorb: Optional[int] = Field(default=None, ge=0, le=255)
-    colorg: Optional[int] = Field(default=None, ge=0, le=255)
-    link_width: Optional[float] = None
-    link_style: Optional[LinkStyle] = None
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
+    hurdles_cost: bool | None = None
+    loop_flow: bool | None = None
+    use_phase_shifter: bool | None = None
+    transmission_capacities: TransmissionCapacity | None = None
+    asset_type: AssetType | None = None
+    display_comments: bool | None = None
+    comments: str | None = None
+    colorr: int | None = Field(default=None, ge=0, le=255)
+    colorb: int | None = Field(default=None, ge=0, le=255)
+    colorg: int | None = Field(default=None, ge=0, le=255)
+    link_width: float | None = None
+    link_style: LinkStyle | None = None
+    filter_synthesis: CommaSeparatedFilterOptions | None = None
+    filter_year_by_year: CommaSeparatedFilterOptions | None = None
 
     def to_model(self, area_from: str, area_to: str) -> Link:
         data = self.model_dump(exclude_none=True) | {"area1": area_from, "area2": area_to}

@@ -11,17 +11,14 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional
 
-import numpy as np
 import pandas as pd
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.core.model import JSON
-from antarest.matrixstore.matrix_uri_mapper import add_matrix_id_prefix
+from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file_as_pandas_dataframe
 from antarest.study.model import MatrixFrequency
-from antarest.study.output.utils import get_start_column, parse_output_file
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.lazy_node import LazyNode
 
@@ -39,18 +36,14 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
         self.freq = freq
 
     @override
-    def get_lazy_content(self, url: Optional[List[str]] = None, depth: int = -1, expanded: bool = False) -> str:
-        # noinspection SpellCheckingInspection
-        return add_matrix_id_prefix(self.config.path.name)
+    def get_lazy_content(self, url: list[str] | None = None, depth: int = -1, expanded: bool = False) -> str:
+        return f"matrix://{self.config.path.name}"
 
     def parse_dataframe(self) -> pd.DataFrame:
         output_first_column = get_start_column(self.freq)
         file_path = self.config.path
         try:
-            output = parse_output_file(file_path, output_first_column)
-            df = output.data.to_pandas().astype(np.float64)
-            df.columns = pd.MultiIndex.from_tuples(output.headers)  # type: ignore
-            return df
+            return parse_output_file_as_pandas_dataframe(file_path, output_first_column)
         except FileNotFoundError as e:
             # Raise 404 'Not Found' if the TSV file is not found
             logger.warning(f"Matrix file'{file_path}' not found")
@@ -73,7 +66,7 @@ class OutputSeriesMatrix(LazyNode[bytes | JSON, bytes | JSON, JSON]):
         return matrix.to_dict(orient="split", index=False)
 
     @override
-    def dump(self, data: bytes | JSON, url: Optional[List[str]] = None) -> None:
+    def dump(self, data: bytes | JSON, url: list[str] | None = None) -> None:
         raise MustNotModifyOutputException(self.config.path.name)
 
 

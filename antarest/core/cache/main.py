@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Optional
 
 from redis import Redis
 
@@ -23,7 +22,7 @@ from antarest.core.interfaces.cache import ICache
 logger = logging.getLogger(__name__)
 
 
-def build_cache(config: Config, redis_client: Optional[Redis] = None) -> ICache:  # type: ignore
+def build_cache(config: Config, redis_client: Redis | None = None) -> ICache:  # type: ignore
     cache = RedisCache(redis_client) if redis_client is not None else LocalCache(config=config.cache)
     logger.info("Redis cache" if config.redis is not None else "Local cache")
     cache.start()

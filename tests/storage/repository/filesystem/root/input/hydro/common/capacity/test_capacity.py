@@ -17,32 +17,31 @@ from unittest.mock import Mock
 
 import pytest
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
-from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity import capacity
 
 # noinspection SpellCheckingInspection
 BEFORE_650 = {
-    "maxpower_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    "maxpower_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    "reservoir_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    "reservoir_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
+    "maxpower_en": {"default_empty": [[]], "nb_columns": None},
+    "maxpower_fr": {"default_empty": [[]], "nb_columns": None},
+    "reservoir_en": {"default_empty": [[]], "nb_columns": None},
+    "reservoir_fr": {"default_empty": [[]], "nb_columns": None},
 }
 
 # noinspection SpellCheckingInspection
 AFTER_650 = {
-    "creditmodulations_en": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
-    "creditmodulations_fr": {"default_empty": [[]], "freq": MatrixFrequency.HOURLY, "nb_columns": None},
-    "inflowPattern_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    "inflowPattern_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    "maxpower_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    "maxpower_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    "reservoir_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    "reservoir_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    "waterValues_en": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
-    "waterValues_fr": {"default_empty": [[]], "freq": MatrixFrequency.DAILY, "nb_columns": None},
+    "creditmodulations_en": {"default_empty": [[]], "nb_columns": None},
+    "creditmodulations_fr": {"default_empty": [[]], "nb_columns": None},
+    "inflowPattern_en": {"default_empty": [[]], "nb_columns": None},
+    "inflowPattern_fr": {"default_empty": [[]], "nb_columns": None},
+    "maxpower_en": {"default_empty": [[]], "nb_columns": None},
+    "maxpower_fr": {"default_empty": [[]], "nb_columns": None},
+    "reservoir_en": {"default_empty": [[]], "nb_columns": None},
+    "reservoir_fr": {"default_empty": [[]], "nb_columns": None},
+    "waterValues_en": {"default_empty": [[]], "nb_columns": None},
+    "waterValues_fr": {"default_empty": [[]], "nb_columns": None},
 }
 
 
@@ -59,7 +58,7 @@ class TestInputHydroCommonCapacity:
         version: str,
         expected: dict[str, Any],
     ) -> None:
-        resolver = Mock(spec=MatrixUriMapper)
+        resolver = Mock(spec=MatrixStorageContext)
         context = resolver
         study_id = str(uuid.uuid4())
         config = FileStudyTreeConfig(
@@ -81,7 +80,7 @@ class TestInputHydroCommonCapacity:
         )
 
         node = capacity.InputHydroCommonCapacity(
-            matrix_mapper=context,
+            matrix_storage_context=context,
             config=config,
             children_glob_exceptions=None,
         )
@@ -91,9 +90,5 @@ class TestInputHydroCommonCapacity:
         actual_obj = {}
         for key, value in actual.items():
             assert isinstance(value, InputSeriesMatrix)
-            actual_obj[key] = {
-                "default_empty": [[]],
-                "freq": value.freq,
-                "nb_columns": value.nb_columns,
-            }
+            actual_obj[key] = {"default_empty": [[]], "nb_columns": value.nb_columns}
         assert actual_obj == expected

@@ -20,6 +20,7 @@ class InputLink(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            a: InputLinkArea(self.matrix_mapper, self.config.next_file(a), area=a) for a in self.config.area_names()
+            a: InputLinkArea(self.matrix_storage_context, self.config.next_file(a), area=a)
+            for a in self.config.area_names()
         }
         return children

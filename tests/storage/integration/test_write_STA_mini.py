@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 import numpy as np
 import polars as pl
@@ -138,7 +137,6 @@ def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SU
             42,
             None,
         ),
-        (f"/v1/studies/{UUID}/raw?path=input/load/prepro/fr/k", [[0]], create_polars_dataframe(data=np.array([[0.0]]))),
         (
             f"/v1/studies/{UUID}/raw?path=input/load/series/load_fr",
             [[i] for i in range(100)],
@@ -171,7 +169,7 @@ def test_sta_mini_study_antares(storage_service: StudyService, url: str, new: SU
         ),
     ],
 )
-def test_sta_mini_input(storage_service: StudyService, url: str, new: SUB_JSON, expected: Optional[SUB_JSON]) -> None:
+def test_sta_mini_input(storage_service: StudyService, url: str, new: SUB_JSON, expected: SUB_JSON | None) -> None:
     assert_with_errors(storage_service=storage_service, url=url, new=new, expected=expected)
 
 

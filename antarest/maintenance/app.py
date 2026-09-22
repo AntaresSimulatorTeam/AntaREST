@@ -50,6 +50,10 @@ class TaskName(StrEnum):
     BLOBS_CLEANER = "blobs_cleaner"
     AUTO_ARCHIVER = "auto_archiver"
     VARIABLE_VIEW_CLEANER = "variable_view_cleaner"
+    TASKS_CLEANER = "tasks_cleaner"
+    DISK_SPACE_ANALYZER = "disk_space_analyzer"
+    DISK_USAGE = "disk_usage"
+    CACHE_LAUNCHER_LOAD = "cache_launcher_load"
 
 
 def _mask_url_credentials(url: str) -> str:
@@ -101,9 +105,13 @@ def _setup_logging(**_: Any) -> None:
 def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     """Register periodic maintenance tasks (called by Beat on startup)."""
     from antarest.maintenance.tasks.auto_archive_task import setup_auto_archive_task
+    from antarest.maintenance.tasks.disk_space_analyzer_task import setup_disk_space_analyzer_task
+    from antarest.maintenance.tasks.disk_usage_log_task import setup_disk_usage_log_task
     from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
     from antarest.maintenance.tasks.gc_matrix_task import clean_matrices_task
+    from antarest.maintenance.tasks.gc_tasks_task import gc_tasks_task
     from antarest.maintenance.tasks.gc_variable_view_task import clean_variable_views_task
+    from antarest.maintenance.tasks.launcher_cache_task import save_launcher_cache_task
     from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
 
     storage = get_config().storage
@@ -114,6 +122,15 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
     sender.add_periodic_task(storage.watcher_scan_sleeping_time, watcher_scan_task.s(), name=TaskName.WATCHER_SCAN)
     sender.add_periodic_task(
         storage.variable_view_gc_sleeping_time, clean_variable_views_task.s(), name=TaskName.VARIABLE_VIEW_CLEANER
+    )
+    sender.add_periodic_task(storage.tasks_gc_sleeping_time, gc_tasks_task.s(), name=TaskName.TASKS_CLEANER)
+    setup_disk_usage_log_task(sender, storage)
+    setup_disk_space_analyzer_task(sender, storage)
+
+    sender.add_periodic_task(
+        get_config().launcher.launcher_cache_sleeping_time,
+        save_launcher_cache_task.s(),
+        name=TaskName.CACHE_LAUNCHER_LOAD,
     )
 
     logger.info(
@@ -126,8 +143,12 @@ def _setup_periodic_tasks(sender: Celery, **_: Any) -> None:
 @worker_init.connect
 def _init_worker(**_: Any) -> None:
     """Create MaintenanceContext (Worker only, not Beat)."""
-    ctx = MaintenanceContext.create(get_config())
-    celery_app.conf.maintenance_ctx = ctx
+    try:
+        ctx = MaintenanceContext.create(get_config())
+        celery_app.conf.maintenance_ctx = ctx
+    except Exception:
+        logger.critical("Failed to initialize MaintenanceContext, aborting worker startup", exc_info=True)
+        raise SystemExit(1)
     logger.info("Worker ready")
 
 

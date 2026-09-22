@@ -17,6 +17,8 @@ import FolderIcon from "@mui/icons-material/Folder";
 import LayersIcon from "@mui/icons-material/Layers";
 import LayersClearIcon from "@mui/icons-material/LayersClear";
 import RadarIcon from "@mui/icons-material/Radar";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import ViewModuleIcon from "@mui/icons-material/ViewModule";
 import { IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import SelectFE from "@/components/fieldEditors/SelectFE";
@@ -29,29 +31,34 @@ import {
   toStudySortConfig,
 } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import type { StudySortConfig } from "@/types/types";
+import type { ViewMode } from "../types";
 
 interface FilterControlsProps {
-  activeTree: "managed" | "external";
-  strictPath: boolean;
+  showDescendants: boolean;
+  isExternalRoot: boolean;
   isReferenceTypeActive: boolean;
   canScan: boolean;
   sortConfig: StudySortConfig;
-  onToggleStrictPath: () => void;
+  viewMode: ViewMode;
+  onToggleShowDescendants: (value: boolean) => void;
   onToggleStudyType: () => void;
-  onScanFolder: () => void;
+  onScanDirectory: () => void;
   onSortChange: (sortConfig: StudySortConfig) => void;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
 function FilterControls({
-  activeTree,
-  strictPath,
+  showDescendants,
+  isExternalRoot,
   isReferenceTypeActive,
   canScan,
   sortConfig,
-  onToggleStrictPath,
+  viewMode,
+  onToggleShowDescendants,
   onToggleStudyType,
-  onScanFolder,
+  onScanDirectory,
   onSortChange,
+  onViewModeChange,
 }: FilterControlsProps) {
   const { t } = useTranslation();
 
@@ -61,32 +68,52 @@ function FilterControls({
 
   return (
     <>
-      {/* Folder hierarchy toggle - only for external tree */}
-      {activeTree === "external" && (
+      {/* Directory hierarchy toggle - current dir only vs include descendants (hidden for external root) */}
+      {!isExternalRoot && (
         <ToggleButtonGroup
-          value={strictPath}
+          value={showDescendants}
           exclusive
-          onChange={onToggleStrictPath}
+          onChange={(_e, v) => v !== null && onToggleShowDescendants(v)}
           size="extra-small"
           color="primary"
         >
-          <Tooltip title={t("studies.filters.strictfolder")}>
-            <ToggleButton value={true}>
+          <Tooltip title={t("studies.filters.noDescendants")}>
+            <ToggleButton value={false}>
               <FolderIcon />
             </ToggleButton>
           </Tooltip>
-          <Tooltip title={t("studies.filters.showChildrens")}>
-            <ToggleButton value={false}>
+          <Tooltip title={t("studies.filters.showDescendants")}>
+            <ToggleButton value={true}>
               <AccountTreeIcon />
             </ToggleButton>
           </Tooltip>
         </ToggleButtonGroup>
       )}
 
-      {/* Folder scan button - only for desktop mode enabled */}
+      {/* View mode toggle */}
+      <ToggleButtonGroup
+        value={viewMode}
+        exclusive
+        onChange={(_e, v) => v !== null && onViewModeChange(v)}
+        size="extra-small"
+        color="primary"
+      >
+        <Tooltip title={t("studies.viewMode.grid")}>
+          <ToggleButton value="grid">
+            <ViewModuleIcon />
+          </ToggleButton>
+        </Tooltip>
+        <Tooltip title={t("studies.viewMode.list")}>
+          <ToggleButton value="list">
+            <ViewListIcon />
+          </ToggleButton>
+        </Tooltip>
+      </ToggleButtonGroup>
+
+      {/* Directory scan button - only for desktop mode enabled */}
       {canScan && (
         <Tooltip title={t("studies.scanFolder")}>
-          <IconButton onClick={onScanFolder}>
+          <IconButton onClick={onScanDirectory}>
             <RadarIcon />
           </IconButton>
         </Tooltip>

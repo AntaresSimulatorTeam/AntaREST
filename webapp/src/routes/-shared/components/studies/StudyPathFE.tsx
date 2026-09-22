@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { DEFAULT_WORKSPACE_NAME } from "@/components/utils/constants";
+import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import reactHookFormSupport from "@/hoc/reactHookFormSupport";
 import { validatePath, validateString } from "@/utils/validation/string";
 import { combineValidators } from "@/utils/validation/utils";
@@ -22,9 +22,10 @@ import { useTranslation } from "react-i18next";
 interface Props extends Omit<TextFieldProps, "type" | "value" | "defaultValue" | "label"> {
   value?: string;
   defaultValue?: string;
+  disableAdornment?: boolean;
 }
 
-function StudyPathFE({ slotProps, helperText, ...rest }: Props) {
+function StudyPathFE({ slotProps, helperText, disableAdornment = false, ...rest }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -36,8 +37,8 @@ function StudyPathFE({ slotProps, helperText, ...rest }: Props) {
         ...slotProps,
         input: {
           ...slotProps?.input,
-          startAdornment: (
-            <InputAdornment position="start">{`${DEFAULT_WORKSPACE_NAME}/`}</InputAdornment>
+          startAdornment: disableAdornment ? undefined : (
+            <InputAdornment position="start">{`${TREE_ROOT_NAME}/`}</InputAdornment>
           ),
         },
       }}

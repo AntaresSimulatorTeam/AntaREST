@@ -15,8 +15,7 @@
 import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudyFilters } from "@/redux/selectors";
+import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
 import { buildKey } from "@/utils/reactUtils";
 import HomeIcon from "@mui/icons-material/Home";
 import { Breadcrumbs } from "@mui/material";
@@ -28,7 +27,6 @@ import { buildExternalBreadcrumbs, buildManagedBreadcrumbs } from "./utils";
 function Breadcrumb() {
   const study = useStudy();
   const dispatch = useAppDispatch();
-  const filters = useAppSelector(getStudyFilters);
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
 
   // Build breadcrumbs based on study type (managed vs external)
@@ -57,7 +55,10 @@ function Breadcrumb() {
       dispatch(
         updateStudyFilters({
           activeTree: "managed",
-          managed: { directoryId: item.id },
+          managed: {
+            directoryId: item.id,
+            directoryIds: item.id ? getDescendantIds(item.id, directories) : null,
+          },
         }),
       );
     } else {
@@ -66,7 +67,6 @@ function Breadcrumb() {
           activeTree: "external",
           external: {
             path: item.path || "/",
-            strictPath: filters.external.strictPath,
           },
         }),
       );

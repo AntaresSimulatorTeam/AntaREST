@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import enum
-from typing import Dict, List, Optional
 
 from pydantic import ConfigDict, Field
 
@@ -36,12 +35,12 @@ class AreaInfo(AntaresBaseModel):
 
     id: str
     name: str
-    thermals: Optional[List[ThermalCluster]] = None
+    thermals: list[ThermalCluster] | None = None
 
 
 class AreaCreation(AntaresBaseModel):
     name: str
-    type: Optional[AreaType] = Field(
+    type: AreaType | None = Field(
         default=None,
         json_schema_extra={"deprecated": True},
     )
@@ -66,9 +65,9 @@ class AreaUIUpdate(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_camel_case, populate_by_name=True, extra="forbid")
 
-    x: Optional[int] = None
-    y: Optional[int] = None
-    color_rgb: Optional[tuple[int, int, int]] = None
+    x: int | None = None
+    y: int | None = None
+    color_rgb: tuple[int, int, int] | None = None
 
 
 def update_area_ui(area_ui: AreaUI, data: AreaUIUpdate) -> AreaUI:
@@ -96,21 +95,21 @@ class AreaUIData(AntaresBaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    ui: Dict[str, int | str] = Field(
+    ui: dict[str, int | str] = Field(
         default_factory=dict,
         description="Base UI properties with x, y, color_r, color_g, color_b, and layers",
     )
-    layer_x: Dict[str, int] = Field(
+    layer_x: dict[str, int] = Field(
         default_factory=dict,
         alias="layerX",
         description="X position for each layer",
     )
-    layer_y: Dict[str, int] = Field(
+    layer_y: dict[str, int] = Field(
         default_factory=dict,
         alias="layerY",
         description="Y position for each layer",
     )
-    layer_color: Dict[str, str] = Field(
+    layer_color: dict[str, str] = Field(
         default_factory=dict,
         alias="layerColor",
         description="Color string (R, G, B) for each layer",

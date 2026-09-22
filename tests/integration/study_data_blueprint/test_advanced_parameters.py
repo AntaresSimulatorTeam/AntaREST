@@ -79,7 +79,6 @@ class TestAdvancedParametersForm:
         assert res.status_code == HTTPStatus.OK, res.json()
         assert res.json() == {
             "accuracyOnCorrelation": "",
-            "accurateShavePeaksIncludeShortTermStorage": None,
             "dayAheadReserveManagement": "global",
             "hydroHeuristicPolicy": "accommodate rule curves",
             "hydroPricingMode": "fast",

@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 
 from collections import OrderedDict
-from typing import Any, Generator, Mapping, MutableMapping, Tuple
+from collections.abc import Generator, Mapping, MutableMapping
+from typing import Any
 
 from fastapi import HTTPException
 from typing_extensions import override
@@ -44,7 +45,7 @@ class CaseInsensitiveDict(MutableMapping[str, Any]):  # copy of the requests cla
     def __len__(self) -> int:
         return len(self._store)
 
-    def lower_items(self) -> Generator[Tuple[Any, Any], Any, None]:
+    def lower_items(self) -> Generator[tuple[Any, Any], Any, None]:
         return ((lowerkey, keyval[1]) for (lowerkey, keyval) in self._store.items())
 
     @override

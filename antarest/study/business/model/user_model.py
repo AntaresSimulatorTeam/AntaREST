@@ -32,8 +32,23 @@ class UserResourceDataCreation(AntaresBaseModel):
     def _validate_coherence(self) -> Self:
         if self.resource_type == ResourceType.FOLDER and self.blob_id is not None:
             raise ValueError("You cannot provide a blob_id for a folder")
+
+        if self.resource_type == ResourceType.FILE and self.blob_id is None:
+            raise ValueError("You must provide a blob_id for a file")
+
         return self
 
 
 class UserResourceDataRemoval(AntaresBaseModel):
     path: str
+
+
+class FolderTree(AntaresBaseModel):
+    name: str
+    files: list[str]
+    directories: list["FolderTree"]
+
+
+class UserResourcesTree(AntaresBaseModel):
+    files: list[str]
+    directories: list[FolderTree]

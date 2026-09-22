@@ -12,7 +12,6 @@
 
 import abc
 from abc import abstractmethod
-from typing import List, Optional
 
 from antarest.core.interfaces.eventbus import Event
 
@@ -27,11 +26,11 @@ class IEventBusBackend(abc.ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def pull_queue(self, queue: str) -> Optional[Event]:
+    def pull_queue(self, queue: str) -> Event | None:
         raise NotImplementedError
 
     @abstractmethod
-    def get_events(self) -> List[Event]:
+    def get_events(self) -> list[Event]:
         raise NotImplementedError
 
     @abstractmethod

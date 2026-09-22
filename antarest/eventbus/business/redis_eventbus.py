@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List, Optional
 
 from redis.client import Redis
 from typing_extensions import override
@@ -39,14 +38,14 @@ class RedisEventBus(IEventBusBackend):
         self.redis.rpush(queue, event.model_dump_json())
 
     @override
-    def pull_queue(self, queue: str) -> Optional[Event]:
+    def pull_queue(self, queue: str) -> Event | None:
         event = self.redis.lpop(queue)
         if event:
             return Event.model_validate_json(event)
         return None
 
     @override
-    def get_events(self) -> List[Event]:
+    def get_events(self) -> list[Event]:
         messages = []
         try:
             while msg := self.pubsub.get_message(ignore_subscribe_messages=True):

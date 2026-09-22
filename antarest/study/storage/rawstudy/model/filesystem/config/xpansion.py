@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -41,18 +41,18 @@ class XpansionCandidateFileData(AntaresBaseModel):
     name: CandidateName
     link: XpansionLinkStr
     annual_cost_per_mw: float = Field(ge=0)
-    unit_size: Optional[float] = Field(default=None, ge=0)
-    max_units: Optional[int] = Field(default=None, ge=0)
-    max_investment: Optional[float] = Field(default=None, ge=0)
-    already_installed_capacity: Optional[int] = Field(default=None, ge=0)
+    unit_size: float | None = Field(default=None, ge=0)
+    max_units: int | None = Field(default=None, ge=0)
+    max_investment: float | None = Field(default=None, ge=0)
+    already_installed_capacity: int | None = Field(default=None, ge=0)
     # this is obsolete (replaced by direct/indirect)
-    link_profile: Optional[str] = None
+    link_profile: str | None = None
     # this is obsolete (replaced by direct/indirect)
-    already_installed_link_profile: Optional[str] = None
-    direct_link_profile: Optional[str] = None
-    indirect_link_profile: Optional[str] = None
-    already_installed_direct_link_profile: Optional[str] = None
-    already_installed_indirect_link_profile: Optional[str] = None
+    already_installed_link_profile: str | None = None
+    direct_link_profile: str | None = None
+    indirect_link_profile: str | None = None
+    already_installed_direct_link_profile: str | None = None
+    already_installed_indirect_link_profile: str | None = None
 
     def to_model(self) -> XpansionCandidate:
         return XpansionCandidate.model_validate(self.model_dump(exclude_none=True))

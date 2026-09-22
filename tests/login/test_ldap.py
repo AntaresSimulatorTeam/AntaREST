@@ -20,7 +20,8 @@ from typing_extensions import override
 
 from antarest.core.config import Config, ExternalAuthConfig, SecurityConfig
 from antarest.core.roles import RoleType
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.dbmodel import Base
 from antarest.login.ldap import AuthDTO, ExternalUser, LdapService
 from antarest.login.model import UserLdap
@@ -60,7 +61,7 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler):
 
             else:
                 # Simulate an unknown user
-                res = "null".encode("utf-8")
+                res = b"null"
                 # response code is 401 (unauthorized) to simulate a wrong password
                 self.send_response(401)
 
@@ -70,7 +71,7 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(res)
 
         else:
-            res = "Not found: {self.path}".encode("utf-8")
+            res = b"Not found: {self.path}"
             self.send_response(404)
             self.send_header("Content-type", "text/plain; charset=utf-8")
             self.send_header("Content-Length", f"{len(res)}")
@@ -88,8 +89,7 @@ class TestLdapService:
         engine = create_engine("sqlite:///:memory:", echo=False)
         Base.metadata.create_all(engine)
         # noinspection SpellCheckingInspection
-        DBSessionMiddleware(
-            None,
+        init_db_singleton(
             custom_engine=engine,
             session_args={"autocommit": False, "autoflush": False},
         )

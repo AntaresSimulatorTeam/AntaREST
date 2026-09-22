@@ -71,7 +71,11 @@ function Parameters() {
         return (
           <>
             <Fieldset legend={t("study.modeling.clusters.operatingParameters")}>
-              <StringFE label={t("global.name")} name="name" control={control} disabled />
+              <SwitchFE
+                label={t("study.modeling.clusters.enabled")}
+                name="enabled"
+                control={control}
+              />
               {semver.lt(study.version, "9.3.0") ? (
                 <SelectFE
                   label={t("global.group")}
@@ -91,13 +95,9 @@ function Parameters() {
                   control={control}
                 />
               )}
+
               <SwitchFE
-                label={t("study.modeling.clusters.enabled")}
-                name="enabled"
-                control={control}
-              />
-              <SwitchFE
-                label={t("study.modeling.clusters.mustRun")}
+                label={t("study.modeling.clusters.thermal.mustRun")}
                 name="mustRun"
                 control={control}
               />
@@ -119,12 +119,20 @@ function Parameters() {
                 }}
               />
               <NumberFE
-                label={t("study.modeling.clusters.minStablePower")}
+                label={t("study.modeling.clusters.thermal.minStablePower")}
                 name="minStablePower"
                 control={control}
               />
               <NumberFE
-                label={t("study.modeling.clusters.spinning")}
+                label={t("study.modeling.clusters.thermal.co2")}
+                name="co2"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 0 }),
+                }}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.thermal.spinning")}
                 name="spinning"
                 control={control}
                 rules={{
@@ -132,7 +140,7 @@ function Parameters() {
                 }}
               />
               <NumberFE
-                label={t("study.modeling.clusters.minUpTime")}
+                label={t("study.modeling.clusters.thermal.minUpTime")}
                 name="minUpTime"
                 control={control}
                 rules={{
@@ -141,7 +149,7 @@ function Parameters() {
                 }}
               />
               <NumberFE
-                label={t("study.modeling.clusters.minDownTime")}
+                label={t("study.modeling.clusters.thermal.minDownTime")}
                 name="minDownTime"
                 control={control}
                 rules={{
@@ -164,7 +172,7 @@ function Parameters() {
                     name="efficiency"
                     control={control}
                     rules={{
-                      validate: validateNumber({ min: 0 }),
+                      validate: (v) => typeof v === "number" && validateNumber(v, { min: 0 }),
                     }}
                     disabled={!isCostGenerationEnabled}
                   />
@@ -173,7 +181,7 @@ function Parameters() {
                     name="variableOMCost"
                     control={control}
                     rules={{
-                      validate: validateNumber({ min: 0 }),
+                      validate: (v) => typeof v === "number" && validateNumber(v, { min: 0 }),
                     }}
                     disabled={!isCostGenerationEnabled}
                   />
@@ -219,22 +227,24 @@ function Parameters() {
                 control={control}
               />
             </Fieldset>
-            <Fieldset legend={t("study.modeling.clusters.thermal.pollutants")}>
-              {THERMAL_POLLUTANTS.map(
-                (name) =>
-                  (name === "co2" || semver.gte(study.version, "8.6.0")) && (
-                    <NumberFE
-                      key={name}
-                      label={t(`study.modeling.clusters.thermal.${name}`)}
-                      name={name}
-                      control={control}
-                      rules={{
-                        validate: validateNumber({ min: 0 }),
-                      }}
-                    />
-                  ),
-              )}
-            </Fieldset>
+            {semver.gte(study.version, "8.6.0") && (
+              <Fieldset
+                legend={t("study.modeling.clusters.thermal.otherEmissionRates")}
+                collapsible
+              >
+                {THERMAL_POLLUTANTS.map((name) => (
+                  <NumberFE
+                    key={name}
+                    label={t(`study.modeling.clusters.thermal.${name}`)}
+                    name={name}
+                    control={control}
+                    rules={{
+                      validate: (v) => typeof v === "number" && validateNumber(v, { min: 0 }),
+                    }}
+                  />
+                ))}
+              </Fieldset>
+            )}
             <Fieldset legend={t("study.modeling.clusters.timeSeriesGen")}>
               <SelectFE
                 label={t("study.modeling.clusters.genTs")}

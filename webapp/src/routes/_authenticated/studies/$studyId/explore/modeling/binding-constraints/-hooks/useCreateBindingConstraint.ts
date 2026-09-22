@@ -13,10 +13,9 @@
  */
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import useSafeMemo from "@/hooks/useSafeMemo";
 import { bindingConstraintMutations } from "@/queries/bindingConstraints/mutations";
 import { bindingConstraintQueries } from "@/queries/bindingConstraints/queries";
-import type { QueryListItem } from "@/queries/types";
+import { createOptimisticListItem } from "@/queries/utils";
 import type { BindingConstraint } from "@/services/api/studies/bindingConstraints/type";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
@@ -29,14 +28,13 @@ function useCreateBindingConstraint() {
   });
   const router = useRouter();
   const queryClient = useQueryClient();
-  const tempConstraintId = useSafeMemo(() => crypto.randomUUID(), []);
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
 
   const { studyId } = params;
   const { queryKey: queryListKey } = bindingConstraintQueries.list(studyId);
 
-  const isRouterMatchTempConstraint = () => {
+  const isRouterMatchTempConstraint = (tempConstraintId: string) => {
     return router.state.matches.some(
       (m) =>
         m.routeId ===
@@ -49,19 +47,19 @@ function useCreateBindingConstraint() {
     ...bindingConstraintMutations.create(studyId),
     onMutate: async (variables) => {
       const { values } = variables;
+      const tempConstraintId = crypto.randomUUID();
 
       await queryClient.cancelQueries({ queryKey: queryListKey });
 
       queryClient.setQueryData(queryListKey, (old = []) => {
         return [
           ...old,
-          {
+          createOptimisticListItem<BindingConstraint>({
             ...DEFAULT_CONSTRAINT_VALUES,
             ...values,
             id: tempConstraintId,
             name: values.name,
-            _metadata: { isOptimistic: true },
-          } satisfies QueryListItem<BindingConstraint>,
+          }),
         ];
       });
 
@@ -71,18 +69,24 @@ function useCreateBindingConstraint() {
         to: "/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId",
         params: { ...params, bindingConstraintId: tempConstraintId },
       });
-    },
-    onError: (error, variables) => {
-      queryClient.setQueryData(queryListKey, (old = []) => {
-        return old.filter((constraint) => constraint.id !== tempConstraintId);
-      });
 
+      return tempConstraintId;
+    },
+    onError: (error, variables, tempConstraintId) => {
       enqueueErrorSnackbar(
         t("study.modeling.bindingConst.create.error", { name: variables.values.name }),
         error,
       );
 
-      if (isRouterMatchTempConstraint()) {
+      if (!tempConstraintId) {
+        return;
+      }
+
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return old.filter((constraint) => constraint.id !== tempConstraintId);
+      });
+
+      if (isRouterMatchTempConstraint(tempConstraintId)) {
         router.navigate({
           to: "/studies/$studyId/explore/modeling/binding-constraints",
           params,
@@ -90,14 +94,14 @@ function useCreateBindingConstraint() {
         });
       }
     },
-    onSuccess: (newConstraint) => {
+    onSuccess: (newConstraint, _, tempConstraintId) => {
       queryClient.setQueryData(queryListKey, (old = []) => {
         return old.map((constraint) =>
           constraint.id === tempConstraintId ? newConstraint : constraint,
         );
       });
 
-      if (isRouterMatchTempConstraint()) {
+      if (isRouterMatchTempConstraint(tempConstraintId)) {
         router.navigate({
           to: ".",
           params: { ...params, bindingConstraintId: newConstraint.id },

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import polars as pl
 from typing_extensions import override
@@ -24,7 +24,6 @@ from antarest.core.exceptions import (
     XpansionCandidateDeletionError,
     XpansionConfigurationAlreadyExists,
     XpansionConfigurationDoesNotExist,
-    XpansionFileAlreadyExistsError,
     XpansionFileNotFoundError,
 )
 from antarest.study.business.model.xpansion_model import (
@@ -36,6 +35,8 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettingsUpdate,
 )
 from antarest.study.dao.api.xpansion_dao import XpansionDao
+from antarest.study.dao.common import XpansionCapacitiesMapping, XpansionConstraintsMapping, XpansionWeightsMapping
+from antarest.study.dao.file.common import check_area_exists
 from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
     parse_xpansion_adequacy_criterion,
     parse_xpansion_sensitivity_settings,
@@ -45,7 +46,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.xpansion import (
     serialize_xpansion_settings,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 if TYPE_CHECKING:
     from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -90,22 +91,72 @@ class FileStudyXpansionDao(XpansionDao, ABC):
             raise XpansionCandidateDeletionError(file_study.config.study_id, candidate_name)
 
     @override
-    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
-        candidates = self._get_all_xpansion_candidates()
-        existing_ids = {value["name"]: key for key, value in candidates.items()}
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: str | None = None) -> None:
+        self._save_xpansion_candidates([(candidate, old_id)])
 
-        if old_id:
-            # We should remove the candidate corresponding to the `old_id`
-            del candidates[existing_ids[old_id]]
+    def _save_xpansion_candidates(self, candidates: list[tuple[XpansionCandidate, str | None]]) -> None:
+        existing_candidates = self._get_all_xpansion_candidates()
+        existing_ids = {value["name"]: key for key, value in existing_candidates.items()}
 
-        new_key = existing_ids.get(candidate.name, str(len(candidates) + 1))  # The first candidate key is 1
-        candidates[new_key] = candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
-        self._save_candidates(candidates)
+        renames: dict[str, str] = {}
+        for candidate, old_id in candidates:
+            if old_id:
+                if old_id not in existing_ids:
+                    raise CandidateNotFoundError(f"The candidate '{old_id}' does not exist")
+                del existing_candidates[existing_ids[old_id]]
+                if old_id != candidate.name:
+                    renames[old_id] = candidate.name
+
+            new_key = existing_ids.get(
+                candidate.name, str(len(existing_candidates) + 1)
+            )  # The first candidate key is 1
+
+            existing_candidates[new_key] = candidate.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+        self._save_candidates(existing_candidates)
+
+        if renames:
+            self._apply_projection_renames(renames)
+
+    def _apply_projection_renames(self, renames: dict[str, str]) -> None:
+        """
+        Propagate candidate renames into the sensitivity projection list.
+
+        Candidates and projection live in separate files (``candidates.ini``
+        and ``sensitivity_in.ini``), so renames must be mirrored explicitly
+        to avoid dangling references.
+
+        :param renames: mapping ``old_name -> new_name`` for each renamed candidate.
+        """
+        file_study = self.get_file_study()
+        sensitivity_settings = self._get_sensitivity_settings(file_study)
+
+        # Early return if empty projection
+        if not sensitivity_settings.projection:
+            return
+
+        # Compute updated projection, deduplicating
+        updated = list(dict.fromkeys(renames.get(name, name) for name in sensitivity_settings.projection))
+
+        # Early return if nothing changed (no renamed candidate was referenced in projections)
+        if updated == sensitivity_settings.projection:
+            return
+
+        # Persist
+        sensitivity_settings.projection = updated
+        content = serialize_xpansion_sensitivity_settings(sensitivity_settings)
+        file_study.tree.save(content, ["user", "expansion", "sensitivity", "sensitivity_in"])
+
+    @override
+    def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
+        self._save_xpansion_candidates([(cdt, None) for cdt in candidates])
 
     @override
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
         candidates = self._get_all_xpansion_candidates()
         existing_ids = {value["name"]: key for key, value in candidates.items()}
+        if candidate_name not in existing_ids:
+            raise CandidateNotFoundError(f"The candidate '{candidate_name}' does not exist")
         del candidates[existing_ids[candidate_name]]
         # Reorder keys of the dict
         new_dict = {str(i): v for i, (k, v) in enumerate(candidates.items(), 1)}
@@ -114,7 +165,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def get_xpansion_settings(self) -> XpansionSettings:
         file_study = self.get_file_study()
-        settings = self._get_settings(file_study)
+        try:
+            settings = self._get_settings(file_study)
+        except ChildNotFoundError:
+            raise XpansionConfigurationDoesNotExist(file_study.config.study_id) from None
         sensitivity_settings = self._get_sensitivity_settings(file_study)
         settings.sensitivity_config = sensitivity_settings
         return settings
@@ -122,6 +176,13 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
         file_study = self.get_file_study()
+
+        projection = settings.sensitivity_config.projection if settings.sensitivity_config else []
+        if projection:
+            existing_names = {c["name"] for c in self._get_all_xpansion_candidates().values()}
+            missing = [name for name in projection if name not in existing_names]
+            if missing:
+                raise CandidateNotFoundError("One or more candidates in the projection do not exist")
 
         sensitivity_content = serialize_xpansion_sensitivity_settings(settings.sensitivity_config)
         file_study.tree.save(sensitivity_content, ["user", "expansion", "sensitivity", "sensitivity_in"])
@@ -150,9 +211,12 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def get_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> bytes | pl.DataFrame:
         file_study = self.get_file_study()
-        node = file_study.tree.get_node(self.get_resource_dir(resource_type) + [filename])
+        try:
+            node = file_study.tree.get_node(self.get_resource_dir(resource_type) + [filename])
+        except ChildNotFoundError:
+            raise XpansionFileNotFoundError(f"The '{resource_type.value}' file '{filename}' does not exist") from None
 
-        if isinstance(node, MatrixNode):
+        if isinstance(node, InputSeriesMatrix):
             return node.parse_as_dataframe()
 
         content = node.get()
@@ -224,19 +288,25 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     @override
     def delete_xpansion_resource(self, resource_type: XpansionResourceFileType, filename: str) -> None:
         file_study = self.get_file_study()
-        file_study.tree.delete(self.get_resource_dir(resource_type) + [filename])
+        try:
+            file_study.tree.delete(self.get_resource_dir(resource_type) + [filename])
+        except ChildNotFoundError:
+            raise XpansionFileNotFoundError(f"The '{resource_type.value}' file '{filename}' does not exist") from None
 
     @override
-    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
-        self.save_resource(XpansionResourceFileType.CONSTRAINTS, filename, content)
+    def save_xpansion_constraint(self, data: XpansionConstraintsMapping) -> None:
+        for filename, content in data.items():
+            self.save_resource(XpansionResourceFileType.CONSTRAINTS, filename, content)
 
     @override
-    def save_xpansion_capacity(self, filename: str, series: str) -> None:
-        self.save_resource(XpansionResourceFileType.CAPACITIES, filename, series)
+    def save_xpansion_capacity(self, data: XpansionCapacitiesMapping) -> None:
+        for filename, series_id in data.items():
+            self.save_resource(XpansionResourceFileType.CAPACITIES, filename, series_id)
 
     @override
-    def save_xpansion_weight(self, filename: str, series: str) -> None:
-        self.save_resource(XpansionResourceFileType.WEIGHTS, filename, series)
+    def save_xpansion_weight(self, data: XpansionWeightsMapping) -> None:
+        for filename, series_id in data.items():
+            self.save_resource(XpansionResourceFileType.WEIGHTS, filename, series_id)
 
     @override
     def save_xpansion_adequacy_criterion(self, criterion: XpansionAdequacyCriterion) -> None:
@@ -252,12 +322,55 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         content = serialize_xpansion_adequacy_criterion(criterion)
         file_study.tree.save(data=content, url=["user", "expansion", "adequacy_criterion", "adequacy_criterion"])
 
+    def _get_all_resources(self, url: list[str]) -> dict[str, str]:
+        file_study = self.get_file_study()
+        try:
+            folder_node = file_study.tree.get_node(url)
+        except ChildNotFoundError:
+            return {}
+        node_mapping = {}
+        for file_name in folder_node.get():
+            node = folder_node.get_node([file_name])
+            assert isinstance(node, InputSeriesMatrix)
+            node_mapping[node] = file_name
+
+        result = {}
+
+        matrices_mapping = self.get_impl().get_matrices_ids(list(node_mapping))
+        for node, matrix_id in matrices_mapping.items():
+            result[node_mapping[node]] = matrix_id
+
+        return result
+
+    @override
+    def get_all_xpansion_weights(self) -> XpansionWeightsMapping:
+        url = self.get_resource_dir(XpansionResourceFileType.WEIGHTS)
+        return self._get_all_resources(url)
+
+    @override
+    def get_all_xpansion_capacities(self) -> XpansionCapacitiesMapping:
+        url = self.get_resource_dir(XpansionResourceFileType.CAPACITIES)
+        return self._get_all_resources(url)
+
+    @override
+    def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
+        file_study = self.get_file_study()
+        try:
+            folder_node = file_study.tree.get_node(self.get_resource_dir(XpansionResourceFileType.CONSTRAINTS))
+        except ChildNotFoundError:
+            return {}
+
+        result: XpansionConstraintsMapping = {}
+        for file_name in folder_node.get():
+            content = folder_node.get([file_name])
+            assert isinstance(content, bytes)
+            result[file_name] = content
+
+        return result
+
     def save_resource(self, resource_type: XpansionResourceFileType, filename: str, data: bytes | str) -> None:
         file_study = self.get_file_study()
         url = self.get_resource_dir(resource_type)
-        if filename in file_study.tree.get(url):
-            raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
-
         file_study.tree.save(data=data, url=url + [filename])
 
     @staticmethod
@@ -299,8 +412,7 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         file_study = self.get_file_study()
         area_from = xpansion_candidate_dto.link.area_from
         area_to = xpansion_candidate_dto.link.area_to
-        if area_from not in file_study.config.areas:
-            raise AreaNotFound(area_from)
+        check_area_exists(file_study.config, area_from)
         if area_to not in file_study.config.get_links(area_from):
             raise LinkNotFound(f"The link from '{area_from}' to '{area_to}' not found")
 

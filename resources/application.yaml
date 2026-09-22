@@ -11,12 +11,14 @@ db:
 storage:
   tmp_dir: ./tmp
   matrixstore: ./matrices
+  matrixstore_format: "feather"
   archive_dir: ./examples/archives
   workspaces:
     default:
       path: ./examples/internal_studies/
     studies:
       path: ./examples/studies/
+
 
 launcher:
   default: local

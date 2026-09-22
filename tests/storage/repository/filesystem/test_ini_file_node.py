@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import shutil
 import textwrap
 import typing as t
 from pathlib import Path
@@ -65,30 +64,6 @@ def test_get(tmp_path: Path) -> None:
     assert node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
     assert node.get(["part2", "key_bool"])
 
-    base_name = str(tmp_path.joinpath("archived"))
-    zipped_path = Path(
-        shutil.make_archive(
-            base_name,
-            format="zip",
-            root_dir=study_dir,
-        )
-    )
-
-    zipped_node = IniFileNode(
-        config=FileStudyTreeConfig(
-            study_path=tmp_path.joinpath("archived", ini_path.name),
-            path=tmp_path.joinpath("archived", ini_path.name),
-            version=-1,
-            areas={},
-            outputs={},
-            study_id="id",
-            archive_path=zipped_path,
-        ),
-    )
-    assert zipped_node.get([]) == expected_json
-    assert zipped_node.get(["part2"]) == {"key_bool": True, "key_bool2": False}
-    assert zipped_node.get(["part2", "key_bool"])
-
 
 def test_get_depth(tmp_path: Path) -> None:
     study_dir = tmp_path.joinpath("my_study")
@@ -110,28 +85,6 @@ def test_get_depth(tmp_path: Path) -> None:
         ),
     )
     assert node.get(depth=1) == expected_json
-
-    base_name = str(tmp_path.joinpath("archived"))
-    zipped_path = Path(
-        shutil.make_archive(
-            base_name,
-            format="zip",
-            root_dir=study_dir,
-        )
-    )
-
-    zipped_node = IniFileNode(
-        config=FileStudyTreeConfig(
-            study_path=tmp_path.joinpath("archived", ini_path.name),
-            path=tmp_path.joinpath("archived", ini_path.name),
-            version=-1,
-            areas={},
-            outputs={},
-            study_id="id",
-            archive_path=zipped_path,
-        ),
-    )
-    assert zipped_node.get(depth=1) == expected_json
 
 
 def test_save(tmp_path: Path) -> None:

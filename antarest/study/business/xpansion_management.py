@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import List
 
 import polars as pl
 from fastapi import UploadFile
@@ -21,6 +20,8 @@ from antarest.core.exceptions import (
     MatrixImportFailed,
     XpansionFileAlreadyExistsError,
 )
+from antarest.core.serde.np_array import imports_matrix_from_bytes
+from antarest.core.utils.string import sanitize_for_log
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
     XpansionCandidate,
@@ -31,7 +32,6 @@ from antarest.study.business.model.xpansion_model import (
     create_xpansion_candidate,
 )
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import imports_matrix_from_bytes
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.create_xpansion_configuration import CreateXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.create_xpansion_constraint import CreateXpansionConstraint
@@ -103,7 +103,7 @@ class XpansionManager:
         logger.info(f"Getting candidate '{candidate_name}' of study '{study.id}'")
         return study.get_study_dao().get_xpansion_candidate(candidate_name)
 
-    def get_candidates(self, study: StudyInterface) -> List[XpansionCandidate]:
+    def get_candidates(self, study: StudyInterface) -> list[XpansionCandidate]:
         logger.info(f"Getting all candidates of study {study.id}")
         return study.get_study_dao().get_all_xpansion_candidates()
 
@@ -170,6 +170,7 @@ class XpansionManager:
         filename = file.filename
         if not filename:
             raise FileImportFailed("A filename is required")
+        filename = sanitize_for_log(filename, "filename must not contain newline characters.")
         logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
 
         # checks the file doesn't already exist

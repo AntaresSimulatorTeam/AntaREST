@@ -18,7 +18,6 @@ import subprocess
 import sys
 from importlib.metadata import distributions
 from pathlib import Path
-from typing import Dict
 
 from pydantic import ConfigDict
 
@@ -29,7 +28,7 @@ class VersionInfoDTO(AntaresBaseModel):
     name: str = "AntaREST"
     version: str
     gitcommit: str
-    dependencies: Dict[str, str] = {}
+    dependencies: dict[str, str] = {}
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -82,7 +81,7 @@ def get_last_commit_from_git() -> str:
         return ""
 
 
-def get_dependencies() -> Dict[str, str]:
+def get_dependencies() -> dict[str, str]:
     """
     Retrieve the list of installed dependencies and their versions.
     """
@@ -92,7 +91,7 @@ def get_dependencies() -> Dict[str, str]:
         return _get_dependencies_with_pip()
 
 
-def _get_dependencies_with_pip() -> Dict[str, str]:
+def _get_dependencies_with_pip() -> dict[str, str]:
     """
     Fallback using `pip freeze` to retrieve dependencies.
     """

@@ -11,22 +11,18 @@
 # This file is part of the Antares project.
 
 import contextlib
-import io
 import logging
 import os
 import tempfile
-import zipfile
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, cast
 
-import py7zr
 import pydantic_core
 from filelock import FileLock
 from typing_extensions import override
 
-from antarest.core.exceptions import ShouldNotHappenException
 from antarest.core.model import JSON, SUB_JSON
 from antarest.core.serde.ini_reader import (
     IniReader,
@@ -213,7 +209,7 @@ def _match_option(data: JSON, section: str, option: str) -> OptionMatch:
     )
 
 
-def _match_url(data: JSON, url: List[str], depth: int | None = None) -> IniMatch:
+def _match_url(data: JSON, url: list[str], depth: int | None = None) -> IniMatch:
     if len(url) == 2:
         return _match_option(data, section=url[0], option=url[1])
     elif len(url) == 1:
@@ -228,15 +224,15 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     def __init__(
         self,
         config: FileStudyTreeConfig,
-        reader: Optional[IReader] = None,
-        writer: Optional[IniWriter] = None,
+        reader: IReader | None = None,
+        writer: IniWriter | None = None,
     ):
         super().__init__(config)
         self.path = config.path
         self.reader = reader or IniReader()
         self.writer = writer or IniWriter()
 
-    def _get_filtering_kwargs(self, url: List[str]) -> Dict[str, str]:
+    def _get_filtering_kwargs(self, url: list[str]) -> dict[str, str]:
         """
         Extracts the filtering arguments from the URL components.
 
@@ -260,7 +256,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
     @override
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -274,32 +270,19 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
         url = url or []
         kwargs = self._get_filtering_kwargs(url)
 
-        if self.config.archive_path:
-            inside_archive_path = self.config.path.relative_to(self.config.archive_path.with_suffix("")).as_posix()
-            if self.config.archive_path.suffix == ".zip":
-                with zipfile.ZipFile(self.config.archive_path, mode="r") as zipped_folder:
-                    with io.TextIOWrapper(zipped_folder.open(inside_archive_path)) as f:
-                        data = self.reader.read(f, **kwargs)
-            elif self.config.archive_path.suffix == ".7z":
-                with py7zr.SevenZipFile(self.config.archive_path, mode="r") as zipped_folder:
-                    with io.TextIOWrapper(zipped_folder.read([inside_archive_path])[inside_archive_path]) as f:
-                        data = self.reader.read(f, **kwargs)
-            else:
-                raise ShouldNotHappenException(f"Unsupported archived study format: {self.config.archive_path.suffix}")
-        else:
-            data = self.reader.read(self.path, **kwargs)
+        data = self.reader.read(self.path, **kwargs)
 
         return _match_url(data, url, depth).get_part()
 
     @override
     def get_node_and_remainder(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> tuple[INode[SUB_JSON, SUB_JSON, JSON], list[str]]:
         return self, url or []
 
     @override
-    def save(self, data: SUB_JSON, url: Optional[List[str]] = None) -> None:
+    def save(self, data: SUB_JSON, url: list[str] | None = None) -> None:
         self._assert_not_in_zipped_file()
         url = url or []
         with FileLock(
@@ -319,7 +302,7 @@ class IniFileNode(INode[SUB_JSON, SUB_JSON, JSON]):
             self.writer.write(updated_data, self.path)
 
     @override
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         """
         Deletes the specified section or key from the INI file,
         or the entire INI file if no URL is provided.

@@ -24,6 +24,7 @@ export interface CustomScrollbarProps<T extends React.ElementType = "div"> {
   events?: EventListeners;
   defer?: boolean | IdleRequestOptions;
   children?: React.ReactNode;
+  style?: React.CSSProperties;
 }
 
 function CustomScrollbar<T extends React.ElementType>({

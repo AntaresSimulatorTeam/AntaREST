@@ -10,18 +10,24 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any
+
+from antares.study.version import StudyVersion
 
 from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.model import MatrixData
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_8_2
-from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
+# Legacy prefix: historically, matrix IDs were written in commands
+# with that prefix. We still need to handle those existing commands.
+MATRIX_PROTOCOL_PREFIX = "matrix://"
 
-def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]) -> str:
+
+def validate_matrix(matrix: list[list[MatrixData]] | str, values: dict[str, Any]) -> str:
     """
     Validates the matrix, stores the matrix array in the matrices repository,
     and returns a reference to the stored array.
@@ -35,7 +41,7 @@ def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]
               and checking the existence of matrices.
 
     Returns:
-        The ID of the validated matrix prefixed by "matrix://".
+        The plain SHA256 hash ID of the validated matrix (no prefix).
 
     Raises:
         TypeError: If the provided matrix is neither a matrix nor a link to a matrix.
@@ -44,49 +50,44 @@ def validate_matrix(matrix: List[List[MatrixData]] | str, values: Dict[str, Any]
 
     matrix_service: ISimpleMatrixService = values["command_context"].matrix_service
     if isinstance(matrix, list):
-        return MATRIX_PROTOCOL_PREFIX + matrix_service.create(create_polars_dataframe(matrix))
+        return matrix_service.create(create_polars_dataframe(matrix))
     elif isinstance(matrix, str):
+        # Strip any legacy "matrix://" prefix that may have been stored in older DTOs.
+        matrix = matrix.removeprefix(MATRIX_PROTOCOL_PREFIX)
         if not matrix:
             raise ValueError("The matrix ID cannot be empty")
         elif matrix_service.exists(matrix):
-            return MATRIX_PROTOCOL_PREFIX + matrix
+            return matrix
         else:
             raise ValueError(f"Matrix with id '{matrix}' does not exist")
     else:
         raise TypeError(f"The data '{matrix}' is neither a matrix nor a link to a matrix")
 
 
-def strip_matrix_protocol(matrix_uri: List[List[float]] | str | None) -> str:
-    assert isinstance(matrix_uri, str)
-    if matrix_uri.startswith(MATRIX_PROTOCOL_PREFIX):
-        return matrix_uri[len(MATRIX_PROTOCOL_PREFIX) :]
-    return matrix_uri
-
-
 class AliasDecoder:
     @staticmethod
-    def links_series(alias: str, study: FileStudy) -> str:
+    def links_series(alias: str, study_version: StudyVersion) -> str:
         data = alias.split("/")
         area_from = data[1]
         area_to = data[2]
-        if study.config.version < STUDY_VERSION_8_2:
+        if study_version < STUDY_VERSION_8_2:
             return f"input/links/{area_from}/{area_to}"
         return f"input/links/{area_from}/{area_to}_parameters"
 
     @staticmethod
-    def decode(alias: str, study: FileStudy) -> str:
+    def decode(alias: str, study_version: StudyVersion) -> str:
         alias_map = {"@links_series": AliasDecoder.links_series}
         alias_code = alias.split("/")[0]
         if alias_code in alias_map:
-            return alias_map[alias_code](alias, study)
+            return alias_map[alias_code](alias, study_version)
         raise NotImplementedError(f"Alias {alias} not implemented")
 
 
 def transform_command_to_dto(
     commands: Sequence[ICommand],
-    ref_command_dtos: Optional[Sequence[CommandDTO]] = None,
+    ref_command_dtos: Sequence[CommandDTO] | None = None,
     force_aggregate: bool = False,
-) -> List[CommandDTO]:
+) -> list[CommandDTO]:
     """
     Converts the list of input commands to DTOs.
 
@@ -99,7 +100,7 @@ def transform_command_to_dto(
     """
     if len(commands) <= 1:
         return [command.to_dto() for command in commands]
-    commands_dto: List[CommandDTO] = []
+    commands_dto: list[CommandDTO] = []
     ref_commands_dto = ref_command_dtos if ref_command_dtos is not None else [command.to_dto() for command in commands]
     prev_command = commands[0]
     cur_dto_index = 0

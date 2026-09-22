@@ -12,6 +12,9 @@
  * This file is part of the Antares project.
  */
 
+// `any` is intentional for TContext and SubmitReturnValue defaults: these types are meant to be
+// inferred at the call site. Using `unknown` would force every consumer that extends
+// FormDialogProps to explicitly specify both type arguments even when they don't care about them.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { mergeSxProp } from "@/utils/muiUtils";
 import SaveIcon from "@mui/icons-material/Save";
@@ -38,25 +41,21 @@ export interface FormDialogProps<
   onCancel: VoidFunction;
 }
 
-function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValue>(
-  props: FormDialogProps<TFieldValues, TContext, SubmitReturnValue>,
-) {
-  const {
-    config,
-    onSubmit,
-    onSubmitSuccessful,
-    onInvalid,
-    children,
-    onStateChange,
-    onCancel,
-    onClose,
-    cancelButtonText,
-    submitButtonText,
-    submitButtonIcon,
-    allowSubmitOnPristine = false,
-    ...dialogProps
-  } = props;
-
+function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValue>({
+  config,
+  onSubmit,
+  onSubmitSuccessful,
+  onInvalid,
+  children,
+  onStateChange,
+  onCancel,
+  onClose,
+  cancelButtonText,
+  submitButtonText,
+  submitButtonIcon,
+  allowSubmitOnPristine = false,
+  ...dialogProps
+}: FormDialogProps<TFieldValues, TContext, SubmitReturnValue>) {
   const formProps = {
     config,
     onSubmit,
@@ -129,7 +128,7 @@ function FormDialog<TFieldValues extends FieldValues, TContext, SubmitReturnValu
         {...formProps}
         sx={{
           ".Form__Content": {
-            px: 1, // Prevent content from touching scrollbar
+            p: 1, // Prevent content from touching scrollbar
           },
         }}
         id={formId}

@@ -14,12 +14,13 @@
 Object model used to read and update binding constraint configuration.
 """
 
-from typing import Any, Dict, List, Optional, TypeAlias
+from typing import Any, NewType, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
 from pydantic.alias_generators import to_camel
 
+from antarest.core.api_types import SanitizedStr
 from antarest.core.exceptions import InvalidConstraintTerm, InvalidFieldForVersionError
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
@@ -62,7 +63,7 @@ class BindingConstraintOperator(EnumIgnoreCase):
     EQUAL = "equal"
 
 
-OPERATOR_MATRICES_MAP: Dict[BindingConstraintOperator, List[str]] = {
+OPERATOR_MATRICES_MAP: dict[BindingConstraintOperator, list[str]] = {
     BindingConstraintOperator.EQUAL: ["eq"],
     BindingConstraintOperator.GREATER: ["gt"],
     BindingConstraintOperator.LESS: ["lt"],
@@ -85,7 +86,7 @@ DEFAULT_TIMESTEP = BindingConstraintFrequency.HOURLY
 # Binding constraint matrices
 # ==================================================
 
-MatrixType: TypeAlias = List[List[float]]
+MatrixType: TypeAlias = list[list[float]]
 
 
 class BindingConstraintMatrices(AntaresBaseModel):
@@ -95,25 +96,25 @@ class BindingConstraintMatrices(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    values: Optional[MatrixType | str] = Field(
+    values: MatrixType | str | None = Field(
         default=None,
         description="2nd member matrix for studies before v8.7",
     )
-    less_term_matrix: Optional[MatrixType | str] = Field(
+    less_term_matrix: MatrixType | str | None = Field(
         default=None,
         description="less term matrix for v8.7+ studies",
     )
-    greater_term_matrix: Optional[MatrixType | str] = Field(
+    greater_term_matrix: MatrixType | str | None = Field(
         default=None,
         description="greater term matrix for v8.7+ studies",
     )
-    equal_term_matrix: Optional[MatrixType | str] = Field(
+    equal_term_matrix: MatrixType | str | None = Field(
         default=None,
         description="equal term matrix for v8.7+ studies",
     )
 
     @model_validator(mode="before")
-    def check_matrices(cls, values: Dict[str, Optional[MatrixType | str]]) -> Dict[str, Optional[MatrixType | str]]:
+    def check_matrices(cls, values: dict[str, MatrixType | str | None]) -> dict[str, MatrixType | str | None]:
         values_matrix = values.get("values") or None
         less_term_matrix = values.get("less_term_matrix") or None
         greater_term_matrix = values.get("greater_term_matrix") or None
@@ -197,9 +198,9 @@ class ConstraintTermUpdate(AntaresBaseModel):
     """
 
     id: str
-    weight: Optional[float] = None
-    offset: Optional[int] = None
-    data: Optional[LinkTerm | ClusterTerm] = None
+    weight: float | None = None
+    offset: int | None = None
+    data: LinkTerm | ClusterTerm | None = None
 
     @model_validator(mode="before")
     def validate_term_id(cls, values: dict[str, Any]) -> dict[str, Any]:
@@ -224,14 +225,14 @@ class ConstraintTermUpdate(AntaresBaseModel):
 
 class ConstraintTerm(AntaresBaseModel):
     weight: float
-    offset: Optional[int] = None
+    offset: int | None = None
     data: LinkTerm | ClusterTerm
 
     def generate_id(self) -> str:
         return self.data.generate_id()
 
     def update_from(self, updated_term: ConstraintTermUpdate) -> "ConstraintTerm":
-        if updated_term.weight:
+        if updated_term.weight is not None:
             self.weight = updated_term.weight
 
         if updated_term.data:
@@ -246,6 +247,8 @@ class ConstraintTerm(AntaresBaseModel):
 # ==================================================
 # Binding constraint objects
 # ==================================================
+
+ConstraintId = NewType("ConstraintId", SanitizedStr)
 
 
 class BindingConstraint(AntaresBaseModel):
@@ -262,7 +265,7 @@ class BindingConstraint(AntaresBaseModel):
             data["id"] = transform_name_to_id(data["name"])
         return data
 
-    id: str
+    id: ConstraintId
     name: str
     enabled: bool = True
     time_step: BindingConstraintFrequency = DEFAULT_TIMESTEP
@@ -271,11 +274,11 @@ class BindingConstraint(AntaresBaseModel):
     terms: list[ConstraintTerm] = []
 
     # Added in 8.3
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
+    filter_year_by_year: CommaSeparatedFilterOptions | None = None
+    filter_synthesis: CommaSeparatedFilterOptions | None = None
 
     # Added in 8.7
-    group: Optional[LowerCaseStr] = None
+    group: LowerCaseStr | None = None
 
 
 class BindingConstraintCreation(AntaresBaseModel):
@@ -288,18 +291,18 @@ class BindingConstraintCreation(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     name: ItemName
-    enabled: Optional[bool] = None
-    time_step: Optional[BindingConstraintFrequency] = None
-    operator: Optional[BindingConstraintOperator] = None
-    comments: Optional[str] = None
-    terms: Optional[list[ConstraintTerm]] = None
+    enabled: bool | None = None
+    time_step: BindingConstraintFrequency | None = None
+    operator: BindingConstraintOperator | None = None
+    comments: str | None = None
+    terms: list[ConstraintTerm] | None = None
 
     # Added in 8.3
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
+    filter_year_by_year: CommaSeparatedFilterOptions | None = None
+    filter_synthesis: CommaSeparatedFilterOptions | None = None
 
     # Added in 8.7
-    group: Optional[LowerCaseStr] = None
+    group: LowerCaseStr | None = None
 
     @classmethod
     def from_constraint(cls, constraint: BindingConstraint) -> "BindingConstraintCreation":
@@ -320,18 +323,18 @@ class BindingConstraintUpdate(AntaresBaseModel):
 
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    enabled: Optional[bool] = None
-    time_step: Optional[BindingConstraintFrequency] = None
-    operator: Optional[BindingConstraintOperator] = None
-    comments: Optional[str] = None
-    terms: Optional[list[ConstraintTerm]] = None
+    enabled: bool | None = None
+    time_step: BindingConstraintFrequency | None = None
+    operator: BindingConstraintOperator | None = None
+    comments: str | None = None
+    terms: list[ConstraintTerm] | None = None
 
     # Added in 8.3
-    filter_year_by_year: Optional[CommaSeparatedFilterOptions] = None
-    filter_synthesis: Optional[CommaSeparatedFilterOptions] = None
+    filter_year_by_year: CommaSeparatedFilterOptions | None = None
+    filter_synthesis: CommaSeparatedFilterOptions | None = None
 
     # Added in 8.7
-    group: Optional[LowerCaseStr] = None
+    group: LowerCaseStr | None = None
 
 
 class BindingConstraintUpdateWithMatrices(BindingConstraintUpdate, BindingConstraintMatrices):
@@ -366,7 +369,7 @@ class BindingConstraintCreationWithMatrices(BindingConstraintCreation, BindingCo
         )
 
 
-BindingConstraintUpdates = dict[LowerCaseId, BindingConstraintUpdate]
+BindingConstraintUpdates = dict[ConstraintId, BindingConstraintUpdate]
 
 
 def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:

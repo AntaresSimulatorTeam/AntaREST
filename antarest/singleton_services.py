@@ -12,12 +12,11 @@
 
 import time
 from pathlib import Path
-from typing import Dict, List, cast
 
 from antarest.core.config import Config
 from antarest.core.interfaces.service import IService
 from antarest.core.logging.utils import configure_logger
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
+from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.utils import get_local_path
 from antarest.service_creator import (
     SESSION_ARGS,
@@ -26,25 +25,26 @@ from antarest.service_creator import (
     create_blob_gc,
     create_core_services,
     create_matrix_gc,
+    create_variable_view_gc,
     create_watcher,
     init_db_engine,
 )
 from antarest.study.storage.auto_archive_service import AutoArchiveService
 
 
-def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
+def _init(config_file: Path, services_list: list[Module]) -> list[IService]:
     res = get_local_path() / "resources"
     config = Config.from_yaml_file(res=res, file=config_file)
     engine = init_db_engine(config, False, config_file)
-    DBSessionMiddleware(None, custom_engine=engine, session_args=cast(Dict[str, bool], SESSION_ARGS))
+    init_db_singleton(custom_engine=engine, session_args=SESSION_ARGS)
     configure_logger(config)
 
-    core_services = create_core_services(None, config)
+    core_services = create_core_services(config)
 
     services: list[IService] = []
 
     if Module.WATCHER in services_list:
-        watcher = create_watcher(config=config, app_ctxt=None, study_service=core_services.study_service)
+        watcher = create_watcher(config=config, study_service=core_services.study_service)
         services.append(watcher)
 
     if Module.MATRIX_GC in services_list:
@@ -54,6 +54,10 @@ def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
     if Module.BLOB_GC in services_list:
         blob_gc = create_blob_gc(config, core_services.blob_service)
         services.append(blob_gc)
+
+    if Module.VARIABLE_VIEW_GC in services_list:
+        variable_view_gc = create_variable_view_gc(config)
+        services.append(variable_view_gc)
 
     if Module.AUTO_ARCHIVER in services_list:
         auto_archive_service = AutoArchiveService(core_services.study_service, core_services.output_service, config)
@@ -66,7 +70,7 @@ def _init(config_file: Path, services_list: List[Module]) -> list[IService]:
     return services
 
 
-def start_all_services(config_file: Path, services_list: List[Module]) -> None:
+def start_all_services(config_file: Path, services_list: list[Module]) -> None:
     """
     Start all services in a worker.
 

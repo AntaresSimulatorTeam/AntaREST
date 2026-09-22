@@ -42,6 +42,7 @@ interface BaseProps {
 interface LinkItemProps extends BaseProps {
   linkOptions: ToOptions | { href: string };
   disableAutoActive?: boolean;
+  disableAutoMainMenuOpen?: never;
   children?: never;
   onClick?: never;
 }
@@ -49,9 +50,9 @@ interface LinkItemProps extends BaseProps {
 interface CollapsibleItemProps extends BaseProps {
   linkOptions?: never;
   disableAutoActive?: never;
-  autoActive?: never;
+  disableAutoMainMenuOpen?: boolean;
   children?: React.ReactNode;
-  onClick?: VoidFunction;
+  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
 }
 
 export type SidebarItemProps = LinkItemProps | CollapsibleItemProps;
@@ -62,6 +63,7 @@ function SidebarItem({
   onClick,
   linkOptions,
   disableAutoActive,
+  disableAutoMainMenuOpen,
   children,
 }: SidebarItemProps) {
   const [expanded, setExpanded] = useState(false);
@@ -83,17 +85,17 @@ function SidebarItem({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleClick = () => {
+  const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (isCollapsible) {
       if (isMenuOpen) {
         setExpanded(!expanded);
-      } else {
+      } else if (!disableAutoMainMenuOpen) {
         dispatch(setMainMenuOpen(true));
         setExpanded(true);
       }
     }
 
-    onClick?.();
+    onClick?.(event);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -122,7 +124,7 @@ function SidebarItem({
 
   return (
     <>
-      <Tooltip title={isMenuOpen ? "" : labelText} placement="right-end">
+      <Tooltip title={isMenuOpen ? "" : labelText} placement="right">
         <ListItem disablePadding>
           {isRouterLink ? (
             <RouterListItemButton

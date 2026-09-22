@@ -15,6 +15,7 @@ from pydantic import ValidationError
 
 from antarest.core.exceptions import STStorageNotFound
 from antarest.study.business.model.sts_model import STStorageAdditionalConstraintCreation, STStorageCreation
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -74,7 +75,7 @@ class TestRemoveSTStorage:
         assert cmd.area_id == "area_fr"
         assert cmd.storage_id == "storage_1"
 
-    def test_init__invalid_storage_id(self, recent_study: FileStudy, command_context: CommandContext) -> None:
+    def test_init__invalid_storage_id(self, command_context: CommandContext) -> None:
         # When we apply the config for a new ST Storage with a bad name
         with pytest.raises(ValidationError) as ctx:
             RemoveSTStorage(
@@ -118,22 +119,22 @@ class TestRemoveSTStorage:
         actual = cmd.get_inner_matrices()
         assert actual == InnerMatrices()
 
-    def test_error_cases(self, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+    def test_error_cases(self, dao_92: StudyDao, command_context: CommandContext) -> None:
         # Create an area and a short-term storage inside it
-        study = empty_study_920
-        version = study.config.version
+        dao = dao_92
+        version = dao.get_version()
         cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
-        cmd.apply(study_data=study)
+        cmd.apply(study_dao=dao)
         cmd = CreateSTStorage(
             area_id="fr", parameters={"name": "sts_1"}, command_context=command_context, study_version=version
         )
-        cmd.apply(study_data=study)
+        cmd.apply(study_dao=dao)
 
         # Removes a storage from an unexisting area
         cmd = RemoveSTStorage(
             command_context=command_context, area_id="fake_area", storage_id="storage_1", study_version=version
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert not output.status
         assert output.message == "Short-term storage 'storage_1' in area 'fake_area' does not exist"
 
@@ -141,16 +142,16 @@ class TestRemoveSTStorage:
         cmd = RemoveSTStorage(
             command_context=command_context, area_id="fr", storage_id="fake_storage", study_version=version
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert not output.status
         assert output.message == "Short-term storage 'fake_storage' in area 'fr' does not exist"
 
-    def test_apply(self, empty_study_920: FileStudy, command_context: CommandContext) -> None:
+    def test_apply(self, dao_92: StudyDao, command_context: CommandContext) -> None:
         # Create an area and a short-term storage inside it
-        study = empty_study_920
-        version = study.config.version
+        dao = dao_92
+        version = dao.get_version()
         cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
-        cmd.apply(study_data=study)
+        cmd.apply(study_dao=dao)
 
         cmd = CreateSTStorage(
             area_id="fr",
@@ -158,7 +159,7 @@ class TestRemoveSTStorage:
             command_context=command_context,
             study_version=version,
         )
-        cmd.apply(study_data=study)
+        cmd.apply(study_dao=dao)
 
         cmd = CreateSTStorageAdditionalConstraints(
             command_context=command_context,
@@ -169,36 +170,39 @@ class TestRemoveSTStorage:
             ],
             study_version=version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status
 
-        assert "sts" in study.config.get_st_storage_ids("fr")
-        assert "constraint" in study.config.get_sts_constraint_ids("fr", "sts")
+        # Checks the config for FS Dao
+        if isinstance(dao, FileStudyTreeDao):
+            config = dao.get_file_study().config
+            assert "sts" in config.get_st_storage_ids("fr")
+            assert "constraint" in config.get_sts_constraint_ids("fr", "sts")
 
-        study_dao = FileStudyTreeDao(study, command_context.generator_matrix_constants, command_context.blob_service)
-        assert study_dao.get_st_storage("fr", "sts") is not None
+        assert dao.get_st_storage("fr", "sts") is not None
 
         cmd = RemoveSTStorage(command_context=command_context, area_id="fr", storage_id="sts", study_version=version)
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status
 
         with pytest.raises(STStorageNotFound):
-            study_dao.get_st_storage("fr", "sts")
+            dao.get_st_storage("fr", "sts")
 
-        assert "sts" not in study.config.get_st_storage_ids("fr")
-        with pytest.raises(KeyError):
-            study.config.get_sts_constraint_ids("fr", "sts")
+        # Checks the config for FS Dao
+        if isinstance(dao, FileStudyTreeDao):
+            config = dao.get_file_study().config
+            assert "sts" not in config.get_st_storage_ids("fr")
+            with pytest.raises(KeyError):
+                config.get_sts_constraint_ids("fr", "sts")
 
-    def test_apply__storage_without_constraints(
-        self, empty_study_920: FileStudy, command_context: CommandContext
-    ) -> None:
+    def test_apply__storage_without_constraints(self, dao_92: StudyDao, command_context: CommandContext) -> None:
         """Test removing a storage that has no additional constraints."""
-        study = empty_study_920
-        version = study.config.version
+        dao = dao_92
+        version = dao.get_version()
 
         # Create an area and a short-term storage WITHOUT constraints
         cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
-        cmd.apply(study_data=study)
+        cmd.apply(study_dao=dao)
 
         cmd = CreateSTStorage(
             area_id="fr",
@@ -206,13 +210,19 @@ class TestRemoveSTStorage:
             command_context=command_context,
             study_version=version,
         )
-        cmd.apply(study_data=study)
+        cmd.apply(study_dao=dao)
 
-        assert "sts" in study.config.get_st_storage_ids("fr")
-        assert study.config.get_sts_constraint_ids("fr", "sts") == []
+        # Checks the config for FS Dao
+        if isinstance(dao, FileStudyTreeDao):
+            config = dao.get_file_study().config
+            assert "sts" in config.get_st_storage_ids("fr")
+            assert config.get_sts_constraint_ids("fr", "sts") == []
 
         cmd = RemoveSTStorage(command_context=command_context, area_id="fr", storage_id="sts", study_version=version)
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status
 
-        assert "sts" not in study.config.get_st_storage_ids("fr")
+        # Checks the config for FS Dao
+        if isinstance(dao, FileStudyTreeDao):
+            config = dao.get_file_study().config
+            assert "sts" not in config.get_st_storage_ids("fr")

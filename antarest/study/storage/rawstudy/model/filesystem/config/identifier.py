@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 
 import re
-from typing import Any, Mapping, MutableMapping
+from collections.abc import Mapping, MutableMapping
+from typing import Any
 
 from pydantic import Field, model_validator
 from typing_extensions import override

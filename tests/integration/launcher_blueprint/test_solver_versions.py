@@ -26,7 +26,7 @@ def test_get_solver_versions(
     )
     res.raise_for_status()
     actual = res.json()
-    assert actual == ["700", "880"]
+    assert actual == ["700", "880", "930"]
 
     res = client.get(
         "/v1/launcher/versions",
@@ -34,7 +34,7 @@ def test_get_solver_versions(
     )
     res.raise_for_status()
     actual = res.json()
-    assert actual == ["700", "880"]
+    assert actual == ["700", "880", "930"]
 
     res = client.get(
         "/v1/launcher/versions?launcher_id=local_id",
@@ -42,7 +42,7 @@ def test_get_solver_versions(
     )
     res.raise_for_status()
     actual = res.json()
-    assert actual == ["700", "880"]
+    assert actual == ["700", "880", "930"]
 
     res = client.get(
         "/v1/launcher/versions?launcher_id=slurm",
@@ -65,4 +65,4 @@ def test_get_solver_versions__default(
     )
     res.raise_for_status()
     actual = res.json()
-    assert actual == ["700", "880"]
+    assert actual == ["700", "880", "930"]

@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
 from antarest.core.configdata.repository import ConfigDataRepository
@@ -36,7 +35,7 @@ class MaintenanceRepository(ConfigDataRepository):
             )
         )
 
-    def get_maintenance_mode(self) -> Optional[str]:
+    def get_maintenance_mode(self) -> str | None:
         config_data = self.get(
             owner=DEFAULT_ADMIN_USER.id,
             key=ConfigDataAppKeys.MAINTENANCE_MODE.value,
@@ -45,7 +44,7 @@ class MaintenanceRepository(ConfigDataRepository):
             return str(config_data.value)
         return None
 
-    def get_message_info(self) -> Optional[str]:
+    def get_message_info(self) -> str | None:
         config_data = self.get(
             owner=DEFAULT_ADMIN_USER.id,
             key=ConfigDataAppKeys.MESSAGE_INFO.value,

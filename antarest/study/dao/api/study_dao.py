@@ -10,7 +10,9 @@
 #
 # This file is part of the Antares project.
 from abc import abstractmethod
-from typing import Iterator, Sequence
+from collections.abc import Sequence
+from pathlib import PurePosixPath
+from typing import TYPE_CHECKING
 
 import polars as pl
 from antares.study.version import StudyVersion
@@ -18,7 +20,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
-from antarest.study.business.model.binding_constraint_model import BindingConstraint
+from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
 from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
@@ -27,13 +29,23 @@ from antarest.study.business.model.config.optimization_config_model import Optim
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
+from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
-from antarest.study.business.model.scenario_builder_model import AnyScenarios, Rulesets, ScenarioType
+from antarest.study.business.model.reserve_certification_model import (
+    HydroReserveCertificationMapping,
+    StorageReserveCertificationMapping,
+    ThermalReserveCertificationMapping,
+)
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
+from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
+from antarest.study.business.model.scenario_builder_model import AnyScenarios, Ruleset, ScenarioType
 from antarest.study.business.model.sts_model import (
     STStorage,
     STStorageAdditionalConstraint,
@@ -62,6 +74,8 @@ from antarest.study.dao.api.compatibility_parameters_dao import (
     ReadOnlyCompatibilityParametersDao,
 )
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
+from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
+from antarest.study.dao.api.gems_taxonomy_dao import GemsTaxonomyDao, ReadOnlyGemsTaxonomyDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
 from antarest.study.dao.api.layer_dao import LayerDao, ReadOnlyLayerDao
@@ -72,6 +86,22 @@ from antarest.study.dao.api.optimization_preferences_dao import (
 )
 from antarest.study.dao.api.playlist_config_dao import PlaylistConfigDao, ReadOnlyPlaylistConfigDao
 from antarest.study.dao.api.renewable_dao import ReadOnlyRenewableDao, RenewableDao
+from antarest.study.dao.api.reserve_certification_dao import (
+    ReadOnlyReserveCertificationDao,
+    ReserveCertificationDao,
+)
+from antarest.study.dao.api.reserve_definition_dao import (
+    ReadOnlyReserveDefinitionDao,
+    ReserveDefinitionDao,
+)
+from antarest.study.dao.api.reserve_symmetries_dao import (
+    ReadOnlyReserveSymmetriesDao,
+    ReserveSymmetriesDao,
+)
+from antarest.study.dao.api.reserves_global_parameters_dao import (
+    ReadOnlyReservesGlobalParametersDao,
+    ReservesGlobalParametersDao,
+)
 from antarest.study.dao.api.scenario_builder_dao import ReadOnlyScenarioBuilderDao, ScenarioBuilderDao
 from antarest.study.dao.api.st_storage_dao import ReadOnlySTStorageDao, STStorageDao
 from antarest.study.dao.api.thematic_trimming_dao import ReadOnlyThematicTrimmingDao, ThematicTrimmingDao
@@ -79,7 +109,33 @@ from antarest.study.dao.api.thermal_dao import ReadOnlyThermalDao, ThermalDao
 from antarest.study.dao.api.timeseries_config_dao import ReadOnlyTimeSeriesConfigDao, TimeSeriesConfigDao
 from antarest.study.dao.api.user_resources_dao import ReadOnlyUserResourcesDao, UserResourcesDao
 from antarest.study.dao.api.xpansion_dao import ReadOnlyXpansionDao, XpansionDao
+from antarest.study.dao.common import (
+    AreaId,
+    AreaSeriesMapping,
+    BindingConstraintSeriesMapping,
+    HydroReserveSymmetriesMapping,
+    LinkSeriesMapping,
+    RenewableSeriesMapping,
+    ReserveDefinitionsMapping,
+    ReserveNeedsMapping,
+    StStorageConstraintSeriesMapping,
+    StStorageId,
+    STStorageReserveSymmetriesMapping,
+    StStorageSeriesMapping,
+    ThermalId,
+    ThermalReserveSymmetriesMapping,
+    ThermalSeriesMapping,
+    XpansionCapacitiesMapping,
+    XpansionConstraintsMapping,
+    XpansionWeightsMapping,
+)
+from antarest.study.dtos import StudyDataSynthesis
+from antarest.study.model import StudyMetadataUpdate
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+if TYPE_CHECKING:
+    from antarest.matrixstore.service import ISimpleMatrixService
+    from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 
 
 class ReadOnlyStudyDao(
@@ -104,13 +160,35 @@ class ReadOnlyStudyDao(
     ReadOnlyAreaPropertiesDao,
     ReadOnlyScenarioBuilderDao,
     ReadOnlyAreaDao,
+    ReadOnlyReservesGlobalParametersDao,
+    ReadOnlyReserveDefinitionDao,
+    ReadOnlyReserveCertificationDao,
+    ReadOnlyReserveSymmetriesDao,
+    ReadOnlyGemsLibraryDao,
+    ReadOnlyGemsTaxonomyDao,
 ):
+    @abstractmethod
+    def get_study_id(self) -> str:
+        raise NotImplementedError()
+
     @abstractmethod
     def get_version(self) -> StudyVersion:
         raise NotImplementedError()
 
     @abstractmethod
     def get_comments(self) -> str:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_synthesis(self) -> StudyDataSynthesis:
+        raise NotImplementedError()
+
+    @property
+    def matrix_service(self) -> "ISimpleMatrixService":
+        raise NotImplementedError()
+
+    @property
+    def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
         raise NotImplementedError()
 
 
@@ -137,6 +215,12 @@ class StudyDao(
     ScenarioBuilderDao,
     AreaPropertiesDao,
     AreaDao,
+    ReservesGlobalParametersDao,
+    ReserveDefinitionDao,
+    ReserveCertificationDao,
+    ReserveSymmetriesDao,
+    GemsLibraryDao,
+    GemsTaxonomyDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -162,17 +246,20 @@ class StudyDao(
         raise NotImplementedError()
 
     @abstractmethod
-    def update_antares_file(self, editor: str, last_save: float) -> None:
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
         """
-        Update the study.antares file with editor and last save timestamp.
+        Update the study.antares file
 
         For file-based storage, this updates the actual file.
         For database storage, this is a no-op (metadata is stored in DB).
 
         Args:
-            editor: The name of the user who made the last edit.
-            last_save: Unix timestamp of the last save.
+            metadata: The StudyMetadata object to use
         """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def update_cache(self) -> None:
         raise NotImplementedError()
 
 
@@ -185,12 +272,30 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         self._adaptee = adaptee
 
     @override
+    def get_study_id(self) -> str:
+        return self._adaptee.get_study_id()
+
+    @override
     def get_version(self) -> StudyVersion:
         return self._adaptee.get_version()
 
     @override
     def get_comments(self) -> str:
         return self._adaptee.get_comments()
+
+    @override
+    def get_synthesis(self) -> StudyDataSynthesis:
+        return self._adaptee.get_synthesis()
+
+    @override
+    @property
+    def matrix_service(self) -> "ISimpleMatrixService":
+        return self._adaptee.matrix_service
+
+    @override
+    @property
+    def generator_matrix_constants(self) -> "GeneratorMatrixConstants":
+        return self._adaptee.generator_matrix_constants
 
     @override
     def get_links(self) -> Sequence[Link]:
@@ -215,6 +320,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
         return self._adaptee.get_link_series(area_from, area_to)
+
+    @override
+    def get_all_links_series(self) -> LinkSeriesMapping:
+        return self._adaptee.get_all_links_series()
+
+    @override
+    def get_all_links_indirect_capacities(self) -> LinkSeriesMapping:
+        return self._adaptee.get_all_links_indirect_capacities()
+
+    @override
+    def get_all_links_direct_capacities(self) -> LinkSeriesMapping:
+        return self._adaptee.get_all_links_direct_capacities()
 
     @override
     def get_all_thermals(self) -> dict[str, dict[str, ThermalCluster]]:
@@ -253,6 +370,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_thermal_co2_cost(area_id, thermal_id)
 
     @override
+    def get_all_thermals_co2_cost(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_co2_cost()
+
+    @override
+    def get_all_thermals_fuel_cost(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_fuel_cost()
+
+    @override
+    def get_all_thermals_series(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_series()
+
+    @override
+    def get_all_thermals_modulation(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_modulation()
+
+    @override
+    def get_all_thermals_prepro(self) -> ThermalSeriesMapping:
+        return self._adaptee.get_all_thermals_prepro()
+
+    @override
     def get_all_renewables(self) -> dict[str, dict[str, RenewableCluster]]:
         return self._adaptee.get_all_renewables()
 
@@ -273,28 +410,48 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_renewable_series(area_id, renewable_id)
 
     @override
-    def get_all_constraints(self) -> dict[str, BindingConstraint]:
+    def get_all_renewables_series(self) -> RenewableSeriesMapping:
+        return self._adaptee.get_all_renewables_series()
+
+    @override
+    def get_all_constraints(self) -> dict[ConstraintId, BindingConstraint]:
         return self._adaptee.get_all_constraints()
 
     @override
-    def get_constraint(self, constraint_id: str) -> BindingConstraint:
+    def get_constraint(self, constraint_id: ConstraintId) -> BindingConstraint:
         return self._adaptee.get_constraint(constraint_id)
 
     @override
-    def get_constraint_values_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_values_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_values_matrix(constraint_id)
 
     @override
-    def get_constraint_less_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_less_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_less_term_matrix(constraint_id)
 
     @override
-    def get_constraint_greater_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_greater_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_greater_term_matrix(constraint_id)
 
     @override
-    def get_constraint_equal_term_matrix(self, constraint_id: str) -> pl.DataFrame:
+    def get_constraint_equal_term_matrix(self, constraint_id: ConstraintId) -> pl.DataFrame:
         return self._adaptee.get_constraint_equal_term_matrix(constraint_id)
+
+    @override
+    def get_all_constraint_values_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_values_matrix()
+
+    @override
+    def get_all_constraint_less_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_less_term_matrix()
+
+    @override
+    def get_all_constraint_greater_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_greater_term_matrix()
+
+    @override
+    def get_all_constraint_equal_term_matrix(self) -> BindingConstraintSeriesMapping:
+        return self._adaptee.get_all_constraint_equal_term_matrix()
 
     @override
     def get_all_st_storages(self) -> dict[str, dict[str, STStorage]]:
@@ -303,6 +460,14 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_st_storages_for_area(self, area_id: str) -> Sequence[STStorage]:
         return self._adaptee.get_all_st_storages_for_area(area_id)
+
+    @override
+    def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
+        return self._adaptee.get_all_st_storage_reserve_symmetries()
+
+    @override
+    def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[StStorageId, ReserveSymmetries]:
+        return self._adaptee.get_st_storage_reserve_symmetries(area_id)
 
     @override
     def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
@@ -351,6 +516,56 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_st_storage_cost_variation_withdrawal(self, area_id: str, storage_id: str) -> pl.DataFrame:
         return self._adaptee.get_st_storage_cost_variation_withdrawal(area_id, storage_id)
+
+    @override
+    def get_all_st_storage_pmax_injection(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_pmax_injection()
+
+    @override
+    def get_all_st_storage_pmax_withdrawal(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_pmax_withdrawal()
+
+    @override
+    def get_all_st_storage_lower_rule_curve(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_lower_rule_curve()
+
+    @override
+    def get_all_st_storage_upper_rule_curve(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_upper_rule_curve()
+
+    @override
+    def get_all_st_storage_inflows(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_inflows()
+
+    @override
+    def get_all_st_storage_cost_injection(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_cost_injection()
+
+    @override
+    def get_all_st_storage_cost_withdrawal(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_cost_withdrawal()
+
+    @override
+    def get_all_st_storage_cost_level(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_cost_level()
+
+    @override
+    def get_all_st_storage_cost_variation_injection(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_cost_variation_injection()
+
+    @override
+    def get_all_st_storage_cost_variation_withdrawal(self) -> StStorageSeriesMapping:
+        return self._adaptee.get_all_st_storage_cost_variation_withdrawal()
+
+    @override
+    def get_st_storage_additional_constraint_matrix(
+        self, area_id: str, storage_id: str, constraint_id: str
+    ) -> pl.DataFrame:
+        return self._adaptee.get_st_storage_additional_constraint_matrix(area_id, storage_id, constraint_id)
+
+    @override
+    def get_all_st_storage_additional_constraint_matrices(self) -> StStorageConstraintSeriesMapping:
+        return self._adaptee.get_all_st_storage_additional_constraint_matrices()
 
     @override
     def get_all_hydro_properties(self) -> dict[str, HydroProperties]:
@@ -483,6 +698,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_xpansion_adequacy_criterion()
 
     @override
+    def get_all_xpansion_weights(self) -> XpansionWeightsMapping:
+        return self._adaptee.get_all_xpansion_weights()
+
+    @override
+    def get_all_xpansion_capacities(self) -> XpansionCapacitiesMapping:
+        return self._adaptee.get_all_xpansion_capacities()
+
+    @override
+    def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
+        return self._adaptee.get_all_xpansion_constraints()
+
+    @override
     def get_thematic_trimming(self) -> ThematicTrimming:
         return self._adaptee.get_thematic_trimming()
 
@@ -535,12 +762,8 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_all_area_properties()
 
     @override
-    def get_rulesets(self) -> Rulesets:
-        return self._adaptee.get_rulesets()
-
-    @override
-    def get_active_ruleset_name(self, default_ruleset: str = "Default Ruleset") -> str:
-        return self._adaptee.get_active_ruleset_name(default_ruleset)
+    def get_ruleset(self) -> Ruleset:
+        return self._adaptee.get_ruleset()
 
     @override
     def get_scenario_by_type(self, scenario_type: ScenarioType) -> AnyScenarios:
@@ -559,8 +782,12 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_area_ui(area_id, layer)
 
     @override
-    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
+    def get_all_user_resources(self) -> list[UserResourceDataCreation]:
         return self._adaptee.get_all_user_resources()
+
+    @override
+    def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
+        return self._adaptee.get_user_resource(resource_path)
 
     @override
     def get_load(self, area_id: str) -> pl.DataFrame:
@@ -583,6 +810,26 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_wind(area_id)
 
     @override
+    def get_all_load(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_load()
+
+    @override
+    def get_all_misc_gen(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_misc_gen()
+
+    @override
+    def get_all_reserves(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_reserves()
+
+    @override
+    def get_all_solar(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_solar()
+
+    @override
+    def get_all_wind(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_wind()
+
+    @override
     def get_hydro_max_hourly_gen_power(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_max_hourly_gen_power(area_id)
 
@@ -597,3 +844,135 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_hydro_max_daily_pump_energy(self, area_id: str) -> pl.DataFrame:
         return self._adaptee.get_hydro_max_daily_pump_energy(area_id)
+
+    @override
+    def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_maxpower()
+
+    @override
+    def get_all_hydro_reservoir(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_reservoir()
+
+    @override
+    def get_all_hydro_energy(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_energy()
+
+    @override
+    def get_all_hydro_run_of_river(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_run_of_river()
+
+    @override
+    def get_all_hydro_modulation(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_modulation()
+
+    @override
+    def get_all_hydro_credit_modulations(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_credit_modulations()
+
+    @override
+    def get_all_hydro_inflow_pattern(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_inflow_pattern()
+
+    @override
+    def get_all_hydro_water_values(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_water_values()
+
+    @override
+    def get_all_hydro_mingen(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_mingen()
+
+    @override
+    def get_all_hydro_max_hourly_gen_power(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_hourly_gen_power()
+
+    @override
+    def get_all_hydro_max_hourly_pump_power(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_hourly_pump_power()
+
+    @override
+    def get_all_hydro_max_daily_gen_energy(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_daily_gen_energy()
+
+    @override
+    def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_daily_pump_energy()
+
+    @override
+    def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
+        return self._adaptee.get_reserves_global_parameters(area_id)
+
+    @override
+    def get_all_reserves_global_parameters(self) -> dict[str, ReservesGlobalParameters]:
+        return self._adaptee.get_all_reserves_global_parameters()
+
+    @override
+    def get_all_reserve_definitions(self) -> ReserveDefinitionsMapping:
+        return self._adaptee.get_all_reserve_definitions()
+
+    @override
+    def get_all_reserve_definitions_for_area(self, area_id: str) -> Sequence[ReserveDefinition]:
+        return self._adaptee.get_all_reserve_definitions_for_area(area_id)
+
+    @override
+    def get_reserve_definition(self, area_id: str, reserve_id: str) -> ReserveDefinition:
+        return self._adaptee.get_reserve_definition(area_id, reserve_id)
+
+    @override
+    def reserve_definition_exists(self, area_id: str, reserve_id: str) -> bool:
+        return self._adaptee.reserve_definition_exists(area_id, reserve_id)
+
+    @override
+    def get_reserve_need(self, area_id: str, reserve_id: str) -> pl.DataFrame:
+        return self._adaptee.get_reserve_need(area_id, reserve_id)
+
+    @override
+    def get_all_reserve_needs(self) -> ReserveNeedsMapping:
+        return self._adaptee.get_all_reserve_needs()
+
+    @override
+    def get_all_thermal_reserve_certifications(self) -> dict[AreaId, ThermalReserveCertificationMapping]:
+        return self._adaptee.get_all_thermal_reserve_certifications()
+
+    @override
+    def get_thermal_reserve_certifications(self, area_id: AreaId) -> ThermalReserveCertificationMapping:
+        return self._adaptee.get_thermal_reserve_certifications(area_id)
+
+    @override
+    def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
+        return self._adaptee.get_all_thermal_reserve_symmetries()
+
+    @override
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
+        return self._adaptee.get_thermal_reserve_symmetries(area_id)
+
+    @override
+    def get_st_storage_reserve_certifications(self, area_id: AreaId) -> StorageReserveCertificationMapping:
+        return self._adaptee.get_st_storage_reserve_certifications(area_id)
+
+    @override
+    def get_all_st_storage_reserve_certifications(self) -> dict[AreaId, StorageReserveCertificationMapping]:
+        return self._adaptee.get_all_st_storage_reserve_certifications()
+
+    @override
+    def get_hydro_reserve_certifications(self, area_id: AreaId) -> HydroReserveCertificationMapping:
+        return self._adaptee.get_hydro_reserve_certifications(area_id)
+
+    @override
+    def get_all_hydro_reserve_certifications(self) -> dict[AreaId, HydroReserveCertificationMapping]:
+        return self._adaptee.get_all_hydro_reserve_certifications()
+
+    @override
+    def get_hydro_reserve_symmetries(self, area_id: AreaId) -> ReserveSymmetries:
+        return self._adaptee.get_hydro_reserve_symmetries(area_id)
+
+    @override
+    def get_all_hydro_reserve_symmetries(self) -> HydroReserveSymmetriesMapping:
+        return self._adaptee.get_all_hydro_reserve_symmetries()
+
+    @override
+    def get_library(self) -> GemsLibrary | None:
+        return self._adaptee.get_library()
+
+    @override
+    def get_taxonomy(self) -> GemsTaxonomy | None:
+        return self._adaptee.get_taxonomy()

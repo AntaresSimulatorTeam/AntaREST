@@ -12,14 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { SimpleTreeView } from "@mui/x-tree-view/SimpleTreeView";
+import usePrevious from "react-use/lib/usePrevious";
 import * as R from "ramda";
-import { useCallback, useMemo } from "react";
+import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import { updateStudyFilters } from "@/redux/ducks/studies";
 import { getStudyFilters } from "@/redux/selectors";
 import { getParentPaths } from "@/utils/pathUtils";
+import { SimpleTreeView } from "@mui/x-tree-view";
+import { useCallback, useMemo, useState } from "react";
 import ExternalTreeNode from "./ExternalTreeNode";
 import { useFolderExplorer } from "./hooks/useFolderExplorer";
 import { useStudyTree } from "./hooks/useStudyTree";
@@ -29,8 +30,8 @@ import type { ExternalTreeProps } from "./types";
 function ExternalTree({ studies }: ExternalTreeProps) {
   const dispatch = useAppDispatch();
   // Get current folder filter - allows to display studies in the current folder
-  const filters = useAppSelector((state) => getStudyFilters(state), R.T);
-  const path = filters.external.path;
+  const path = useAppSelector((state) => getStudyFilters(state).external.path);
+  const isActive = useAppSelector((state) => getStudyFilters(state).activeTree === "external");
 
   // Fetch workspaces (only in desktop mode)
   const { data: workspaces } = useWorkspaces();
@@ -44,6 +45,21 @@ function ExternalTree({ studies }: ExternalTreeProps) {
     studies,
     workspaces: workspacesStable,
   });
+
+  const prevPath = usePrevious(path);
+  const [expandedItems, setExpandedItems] = useState<string[]>(() =>
+    [...getParentPaths(path), path].filter(Boolean),
+  );
+
+  // When `path` changes externally (e.g. from a study card's folder link),
+  // ensure all ancestors of the newly selected path are expanded.
+  if (prevPath !== path) {
+    const required = [...getParentPaths(path), path].filter(Boolean);
+    const missing = R.difference(required, expandedItems);
+    if (missing.length > 0) {
+      setExpandedItems([...expandedItems, ...missing]);
+    }
+  }
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -59,7 +75,7 @@ function ExternalTree({ studies }: ExternalTreeProps) {
    *   (but we still want to apply the filter on clicked folders)
    */
   const handleItemExpansionToggle = useCallback(
-    async (_event: React.SyntheticEvent, itemId: string, isExpanded: boolean) => {
+    async (_event: React.SyntheticEvent | null, itemId: string, isExpanded: boolean) => {
       if (!isExpanded) {
         return;
       }
@@ -73,11 +89,11 @@ function ExternalTree({ studies }: ExternalTreeProps) {
     [explorePath, updateTreeWithFolders],
   );
 
-  const handleTreeItemClick = (itemId: string) => {
+  const handleItemClick = (_event: React.MouseEvent, itemId: string) => {
     dispatch(
       updateStudyFilters({
         activeTree: "external",
-        external: { path: itemId, strictPath: filters.external.strictPath },
+        external: { path: itemId },
       }),
     );
   };
@@ -88,9 +104,11 @@ function ExternalTree({ studies }: ExternalTreeProps) {
 
   return (
     <SimpleTreeView
-      defaultExpandedItems={[...getParentPaths(path), path]}
-      defaultSelectedItems={path}
+      expandedItems={expandedItems}
+      onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
+      selectedItems={isActive ? path : ""}
       onItemExpansionToggle={handleItemExpansionToggle}
+      onItemClick={handleItemClick}
     >
       {studiesTree.children.map((child) => (
         <ExternalTreeNode
@@ -98,7 +116,6 @@ function ExternalTree({ studies }: ExternalTreeProps) {
           node={child}
           itemsLoading={itemsLoading}
           exploredFolders={exploredFolders}
-          onNodeClick={handleTreeItemClick}
         />
       ))}
     </SimpleTreeView>

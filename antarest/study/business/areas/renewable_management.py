@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 from antares.study.version import StudyVersion
 

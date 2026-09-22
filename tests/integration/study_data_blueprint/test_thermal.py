@@ -44,6 +44,7 @@ import io
 import re
 import time
 import typing as t
+import uuid
 
 import numpy as np
 import pandas as pd
@@ -674,7 +675,7 @@ class TestThermal:
         )
 
         # Check DELETE with the wrong value of `study_id`
-        bad_study_id = "bad_study"
+        bad_study_id = str(uuid.uuid4())
         res = client.request(
             "DELETE", f"/v1/studies/{bad_study_id}/areas/{area_id}/clusters/thermal", json=[fr_gas_conventional_id]
         )
@@ -725,7 +726,7 @@ class TestThermal:
             },
         )
         assert res.status_code == 500, res.json()
-        assert f"The area '{bad_area_id}' does not exist" in res.json()["description"]
+        assert f"Area is not found: '{bad_area_id}'" in res.json()["description"]
 
         # Check POST with wrong `group`
         res = client.post(

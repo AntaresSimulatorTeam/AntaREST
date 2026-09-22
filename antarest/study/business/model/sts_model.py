@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, Optional, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, model_validator
@@ -52,7 +52,7 @@ class STStorageGroup(EnumIgnoreCase):
 Capacity: TypeAlias = Annotated[float, Field(ge=0)]
 Efficiency: TypeAlias = Annotated[float, Field(ge=0)]
 InitialLevel: TypeAlias = Annotated[float, Field(ge=0, le=1)]
-Group: TypeAlias = Optional[LowerCaseStr]
+Group: TypeAlias = LowerCaseStr | None
 
 
 class STStorage(AntaresBaseModel):
@@ -81,15 +81,15 @@ class STStorage(AntaresBaseModel):
     initial_level_optim: bool = False
 
     # Added in 8.8
-    enabled: Optional[bool] = None
+    enabled: bool | None = None
 
     # Added in 9.2
-    efficiency_withdrawal: Optional[Efficiency] = None
-    penalize_variation_injection: Optional[bool] = None
-    penalize_variation_withdrawal: Optional[bool] = None
+    efficiency_withdrawal: Efficiency | None = None
+    penalize_variation_injection: bool | None = None
+    penalize_variation_withdrawal: bool | None = None
 
     # Added in 9.3
-    allow_overflow: Optional[bool] = None
+    allow_overflow: bool | None = None
 
 
 class STStorageCreation(AntaresBaseModel):
@@ -104,18 +104,18 @@ class STStorageCreation(AntaresBaseModel):
 
     name: ItemName
 
-    injection_nominal_capacity: Optional[Capacity] = None
-    withdrawal_nominal_capacity: Optional[Capacity] = None
-    reservoir_capacity: Optional[Capacity] = None
-    efficiency: Optional[Efficiency] = None
-    initial_level: Optional[InitialLevel] = None
-    initial_level_optim: Optional[bool] = None
-    enabled: Optional[bool] = None
+    injection_nominal_capacity: Capacity | None = None
+    withdrawal_nominal_capacity: Capacity | None = None
+    reservoir_capacity: Capacity | None = None
+    efficiency: Efficiency | None = None
+    initial_level: InitialLevel | None = None
+    initial_level_optim: bool | None = None
+    enabled: bool | None = None
     group: Group = None
-    efficiency_withdrawal: Optional[Efficiency] = None
-    penalize_variation_injection: Optional[bool] = None
-    penalize_variation_withdrawal: Optional[bool] = None
-    allow_overflow: Optional[bool] = None
+    efficiency_withdrawal: Efficiency | None = None
+    penalize_variation_injection: bool | None = None
+    penalize_variation_withdrawal: bool | None = None
+    allow_overflow: bool | None = None
 
     @classmethod
     def from_storage(cls, storage: STStorage) -> "STStorageCreation":
@@ -146,18 +146,18 @@ class STStorageUpdate(AntaresBaseModel):
             del data["name"]
         return data
 
-    injection_nominal_capacity: Optional[Capacity] = None
-    withdrawal_nominal_capacity: Optional[Capacity] = None
-    reservoir_capacity: Optional[Capacity] = None
-    efficiency: Optional[Efficiency] = None
-    initial_level: Optional[InitialLevel] = None
-    initial_level_optim: Optional[bool] = None
-    enabled: Optional[bool] = None
+    injection_nominal_capacity: Capacity | None = None
+    withdrawal_nominal_capacity: Capacity | None = None
+    reservoir_capacity: Capacity | None = None
+    efficiency: Efficiency | None = None
+    initial_level: InitialLevel | None = None
+    initial_level_optim: bool | None = None
+    enabled: bool | None = None
     group: Group = None
-    efficiency_withdrawal: Optional[Efficiency] = None
-    penalize_variation_injection: Optional[bool] = None
-    penalize_variation_withdrawal: Optional[bool] = None
-    allow_overflow: Optional[bool] = None
+    efficiency_withdrawal: Efficiency | None = None
+    penalize_variation_injection: bool | None = None
+    penalize_variation_withdrawal: bool | None = None
+    allow_overflow: bool | None = None
 
 
 STStorageUpdates = dict[LowerCaseId, dict[LowerCaseId, STStorageUpdate]]
@@ -222,6 +222,36 @@ def initialize_st_storage(storage: STStorage, version: StudyVersion) -> None:
 
     if version >= STUDY_VERSION_9_3:
         _initialize_field_default(storage, "allow_overflow", False)
+
+
+def check_st_storage_complete(storage: STStorage, version: StudyVersion) -> None:
+    """
+    Raise ValueError if any version-required field on `storage` is None.
+    """
+    required: list[str] = []
+    if version >= STUDY_VERSION_8_6:
+        required.extend(
+            [
+                "injection_nominal_capacity",
+                "withdrawal_nominal_capacity",
+                "reservoir_capacity",
+                "efficiency",
+                "initial_level",
+                "initial_level_optim",
+            ]
+        )
+    if version >= STUDY_VERSION_8_8:
+        required.append("enabled")
+    if version >= STUDY_VERSION_9_2:
+        required.extend(["efficiency_withdrawal", "penalize_variation_injection", "penalize_variation_withdrawal"])
+    if version >= STUDY_VERSION_9_3:
+        required.append("allow_overflow")
+
+    missing = [f for f in required if getattr(storage, f) is None]
+    if missing:
+        raise ValueError(
+            f"Short-term storage '{storage.id}' is missing required field(s) for version {version}: {missing}"
+        )
 
 
 def check_attributes_coherence(storage: STStorage, version: StudyVersion) -> None:
@@ -325,10 +355,10 @@ class STStorageAdditionalConstraintCreation(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     name: ItemName
-    variable: Optional[AdditionalConstraintVariable] = None
-    operator: Optional[AdditionalConstraintOperator] = None
-    occurrences: Optional[list[Occurrence]] = None
-    enabled: Optional[bool] = None
+    variable: AdditionalConstraintVariable | None = None
+    operator: AdditionalConstraintOperator | None = None
+    occurrences: list[Occurrence] | None = None
+    enabled: bool | None = None
 
 
 class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
@@ -340,10 +370,10 @@ class STStorageAdditionalConstraintUpdate(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
-    variable: Optional[AdditionalConstraintVariable] = None
-    operator: Optional[AdditionalConstraintOperator] = None
-    occurrences: Optional[list[Occurrence]] = None
-    enabled: Optional[bool] = None
+    variable: AdditionalConstraintVariable | None = None
+    operator: AdditionalConstraintOperator | None = None
+    occurrences: list[Occurrence] | None = None
+    enabled: bool | None = None
 
 
 STStorageAdditionalConstraintsMap: TypeAlias = dict[AreaId, dict[LowerCaseId, list[STStorageAdditionalConstraint]]]

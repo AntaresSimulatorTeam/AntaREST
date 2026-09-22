@@ -13,7 +13,6 @@
 import logging
 import threading
 import time
-from typing import Dict, List, Optional
 
 from typing_extensions import override
 
@@ -33,7 +32,7 @@ class LocalCacheElement(AntaresBaseModel):
 
 class LocalCache(ICache):
     def __init__(self, config: CacheConfig = CacheConfig()):
-        self.cache: Dict[str, LocalCacheElement] = {}
+        self.cache: dict[str, LocalCacheElement] = {}
         self.lock = threading.Lock()
         self.checker_delay = config.checker_delay
         self.checker_thread = threading.Thread(
@@ -51,7 +50,7 @@ class LocalCache(ICache):
             time.sleep(self.checker_delay)
             with self.lock:
                 current_time = time.time()
-                to_delete: List[str] = []
+                to_delete: list[str] = []
                 for id in self.cache.keys():
                     if current_time >= self.cache[id].timeout:
                         to_delete.append(id)
@@ -69,7 +68,7 @@ class LocalCache(ICache):
             )
 
     @override
-    def get(self, id: str, refresh_duration: Optional[int] = None) -> Optional[JSON]:
+    def get(self, id: str, refresh_duration: int | None = None) -> JSON | None:
         res = None
         with self.lock:
             logger.info(f"Trying to retrieve cache key {id}")
@@ -89,7 +88,7 @@ class LocalCache(ICache):
                 del self.cache[id]
 
     @override
-    def invalidate_all(self, ids: List[str]) -> None:
+    def invalidate_all(self, ids: list[str]) -> None:
         with self.lock:
             logger.info(f"Removing cache keys {ids}")
             for id in ids:

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Optional
+from typing import Any
 
 from antares.study.version import StudyVersion
 from pydantic import Field
@@ -37,27 +37,27 @@ class HydroManagement(AntaresBaseModel, extra="forbid", populate_by_name=True, a
     leeway_up: float = Field(default=1, ge=0)
     pumping_efficiency: float = Field(default=1, ge=0)
     # v9.2 field
-    overflow_spilled_cost_difference: Optional[float] = None
+    overflow_spilled_cost_difference: float | None = None
 
 
 class HydroManagementUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
-    inter_daily_breakdown: Optional[float] = Field(default=None, ge=0)
-    intra_daily_modulation: Optional[float] = Field(default=None, ge=1)
-    inter_monthly_breakdown: Optional[float] = Field(default=None, ge=0)
-    reservoir: Optional[bool] = None
-    reservoir_capacity: Optional[float] = Field(default=None, ge=0)
-    follow_load: Optional[bool] = None
-    use_water: Optional[bool] = None
-    hard_bounds: Optional[bool] = None
-    initialize_reservoir_date: Optional[int] = Field(default=None, ge=0, le=11)
-    use_heuristic: Optional[bool] = None
-    power_to_level: Optional[bool] = None
-    use_leeway: Optional[bool] = None
-    leeway_low: Optional[float] = Field(default=None, ge=0)
-    leeway_up: Optional[float] = Field(default=None, ge=0)
-    pumping_efficiency: Optional[float] = Field(default=None, ge=0)
+    inter_daily_breakdown: float | None = Field(default=None, ge=0)
+    intra_daily_modulation: float | None = Field(default=None, ge=1)
+    inter_monthly_breakdown: float | None = Field(default=None, ge=0)
+    reservoir: bool | None = None
+    reservoir_capacity: float | None = Field(default=None, ge=0)
+    follow_load: bool | None = None
+    use_water: bool | None = None
+    hard_bounds: bool | None = None
+    initialize_reservoir_date: int | None = Field(default=None, ge=0, le=11)
+    use_heuristic: bool | None = None
+    power_to_level: bool | None = None
+    use_leeway: bool | None = None
+    leeway_low: float | None = Field(default=None, ge=0)
+    leeway_up: float | None = Field(default=None, ge=0)
+    pumping_efficiency: float | None = Field(default=None, ge=0)
     # v9.2 field
-    overflow_spilled_cost_difference: Optional[float] = None
+    overflow_spilled_cost_difference: float | None = None
 
 
 class InflowStructure(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
@@ -73,7 +73,7 @@ class InflowStructure(AntaresBaseModel, extra="forbid", populate_by_name=True, a
 
 
 class InflowStructureUpdate(AntaresBaseModel, extra="forbid", populate_by_name=True, alias_generator=to_camel):
-    inter_monthly_correlation: Optional[float] = Field(
+    inter_monthly_correlation: float | None = Field(
         default=None,
         ge=0,
         le=1,

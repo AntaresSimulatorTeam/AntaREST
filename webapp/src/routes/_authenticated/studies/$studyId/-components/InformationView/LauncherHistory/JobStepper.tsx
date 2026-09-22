@@ -16,26 +16,27 @@ import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import DigestDialog from "@/components/dialogs/DigestDialog";
 import LinearProgressWithLabel from "@/components/LinearProgressWithLabel";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import { outputQueries } from "@/queries/outputs/queries";
 import type { Job, JobStatus } from "@/services/api/launcher/jobs/types";
-import { getStudyOutputs, killStudy } from "@/services/api/study";
+import { killStudy } from "@/services/api/study";
 import { convertUTCToLocalTime } from "@/services/utils";
-import type { LaunchJobsProgress } from "@/types/types";
+import type { JobsProgressById } from "@/types/types";
 import type { EmptyObject } from "@/utils/tsUtils";
 import BlockIcon from "@mui/icons-material/Block";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import EqualizerIcon from "@mui/icons-material/Equalizer";
 import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import { Step, StepLabel, Stepper, Tooltip, Typography } from "@mui/material";
+import { IconButton, Step, StepLabel, Stepper, Tooltip, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import moment from "moment";
 import { useSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import useStudy from "../../../-hooks/useStudy";
 import LaunchJobLogView from "../../../../../tasks/-components/LaunchJobLogView";
 import {
   CancelContainer,
-  JobRoot,
   QontoConnector,
   QontoStepIconRoot,
   StepLabelRoot,
@@ -48,15 +49,6 @@ export const ColorStatus = {
   success: "success.main",
   failed: "error.main",
 } as const;
-
-const iconStyle = {
-  m: 0.5,
-  height: 22,
-  cursor: "pointer",
-  "&:hover": {
-    color: "action.hover",
-  },
-};
 
 function QontoStepIcon(props: { className: string | undefined; status: JobStatus }) {
   const { className, status } = props;
@@ -81,24 +73,21 @@ type DialogState =
   | EmptyObject;
 
 interface Props {
-  studyId: string;
   jobs: Job[];
-  jobsProgress: LaunchJobsProgress;
+  jobsProgressById: JobsProgressById;
 }
 
-function JobStepper({ studyId, jobs, jobsProgress }: Props) {
+function JobStepper({ jobs, jobsProgressById }: Props) {
   const [t] = useTranslation();
   const { enqueueSnackbar } = useSnackbar();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [dialogState, setDialogState] = useState<DialogState>({});
+  const study = useStudy();
 
-  const { data: outputs, isLoading: outputsLoading } = usePromiseWithSnackbarError(
-    () => getStudyOutputs(studyId),
-    {
-      errorMessage: t("results.error.outputs"),
-      deps: [studyId],
-    },
-  );
+  const { data: outputs } = useQuery({
+    ...outputQueries.list(study.id),
+    enabled: !study.archived,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -110,7 +99,7 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
     }
 
     const output = outputs?.find((output) => output.name === job.outputId);
-    return !!output?.settings?.output?.synthesis;
+    return !!output?.synthesis;
   };
 
   const closeDialog = () => setDialogState({});
@@ -146,12 +135,12 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <JobRoot jobLength={jobs.length}>
+    <>
       <Stepper
         activeStep={-1}
         orientation="vertical"
         connector={<QontoConnector />}
-        sx={{ width: "100%", px: 2, boxSizing: "border-box" }}
+        sx={{ pr: 1, overflow: "auto" }}
       >
         {jobs.map((job) => (
           <Step key={job.id}>
@@ -161,12 +150,12 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
                 display: "flex",
                 justifyContent: "flex-start",
                 alignItems: "flex-start",
-                mt: 1,
               }}
             >
               <StepLabelRoot>
                 <StepLabelRow>
                   <Typography
+                    variant="body2"
                     sx={{
                       height: "auto",
                       mx: 0,
@@ -182,40 +171,49 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
                       )}`}
                   </Typography>
                 </StepLabelRow>
-                <StepLabelRow mt={0.5}>{job.outputId}</StepLabelRow>
-                <StepLabelRow py={1}>
-                  <Tooltip title={t("study.copyJobId")}>
-                    <ContentCopyIcon onClick={() => copyId(job.id)} sx={iconStyle} />
-                  </Tooltip>
-                  <LaunchJobLogView job={job} logButton logErrorButton />
-                  {!outputsLoading && canDisplayDigest(job) && (
-                    <Tooltip title="Digest">
-                      <EqualizerIcon
-                        onClick={() => setDialogState({ type: "digest", job })}
-                        sx={iconStyle}
-                      />
+                {job.outputId && <StepLabelRow mt={0.5}>{job.outputId}</StepLabelRow>}
+                {!study.archived && (
+                  <StepLabelRow mt={1}>
+                    <Tooltip title={t("study.copyJobId")}>
+                      <IconButton onClick={() => copyId(job.id)} size="small">
+                        <ContentCopyIcon />
+                      </IconButton>
                     </Tooltip>
-                  )}
-                  {job.status === "running" && (
-                    <CancelContainer>
-                      <LinearProgressWithLabel
-                        value={jobsProgress[job.id]}
-                        tooltip="Progression"
-                        sx={{ width: "30%" }}
-                      />
-                      <Tooltip title={t("study.killStudy")}>
-                        <BlockIcon
-                          onClick={() => setDialogState({ type: "killJob", job })}
-                          sx={{
-                            ...iconStyle,
-                            color: "error.light",
-                            "&:hover": { color: "error.dark" },
-                          }}
-                        />
+                    <LaunchJobLogView job={job} logButton logErrorButton />
+                    {canDisplayDigest(job) && (
+                      <Tooltip title="Digest">
+                        <IconButton
+                          onClick={() => setDialogState({ type: "digest", job })}
+                          size="small"
+                        >
+                          <EqualizerIcon />
+                        </IconButton>
                       </Tooltip>
-                    </CancelContainer>
-                  )}
-                </StepLabelRow>
+                    )}
+                    {job.status === "running" && (
+                      <CancelContainer>
+                        <LinearProgressWithLabel
+                          value={jobsProgressById[job.id]}
+                          tooltip="Progression"
+                          sx={{ width: "30%" }}
+                        />
+                        <Tooltip title={t("study.killStudy")}>
+                          <IconButton
+                            onClick={() => setDialogState({ type: "killJob", job })}
+                            size="small"
+                          >
+                            <BlockIcon
+                              sx={{
+                                color: "error.light",
+                                "&:hover": { color: "error.dark" },
+                              }}
+                            />
+                          </IconButton>
+                        </Tooltip>
+                      </CancelContainer>
+                    )}
+                  </StepLabelRow>
+                )}
               </StepLabelRoot>
             </StepLabel>
           </Step>
@@ -239,7 +237,7 @@ function JobStepper({ studyId, jobs, jobsProgress }: Props) {
           onOk={closeDialog}
         />
       )}
-    </JobRoot>
+    </>
   );
 }
 

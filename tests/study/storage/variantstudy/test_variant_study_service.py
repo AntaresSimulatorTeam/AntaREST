@@ -24,12 +24,11 @@ from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PublicMode
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time, sanitize_uuid
+from antarest.core.utils.utils import current_time
 from antarest.login.model import ADMIN_ID, ADMIN_NAME, Group, User
 from antarest.login.utils import current_user_context
-from antarest.matrixstore.service import SimpleMatrixService
 from antarest.study.business.model.sts_model import STStorageCreation, STStorageGroup
-from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import Study
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -106,13 +105,6 @@ EXPECTED_DENORMALIZED = {
 
 class TestVariantStudyService:
     @pytest.mark.parametrize(
-        "denormalize",
-        [
-            pytest.param(True, id="denormalize_yes"),
-            pytest.param(False, id="denormalize_no"),
-        ],
-    )
-    @pytest.mark.parametrize(
         "from_scratch",
         [
             pytest.param(True, id="from_scratch__yes"),
@@ -125,14 +117,14 @@ class TestVariantStudyService:
         tmp_path: Path,
         variant_study_service: VariantStudyService,
         raw_study_service: RawStudyService,
-        simple_matrix_service: SimpleMatrixService,
         simple_blob_service: IBlobService,
         generator_matrix_constants: GeneratorMatrixConstants,
         study_service: StudyService,
-        # pytest parameters
-        denormalize: bool,
+        fs_dao: FileStudyTreeDao,
+        # pytest parameter
         from_scratch: bool,
     ) -> None:
+        matrix_service = generator_matrix_constants.matrix_service
         ## Prepare database objects
         # noinspection PyArgumentList
         user = User(id=1, name="admin")
@@ -148,7 +140,7 @@ class TestVariantStudyService:
         db.session.commit()
 
         ## First create a raw study (root of the variant)
-        raw_study_path = tmp_path / "My RAW Study"
+        raw_study_path = tmp_path / "my_study"
         # noinspection PyArgumentList
         raw_study = create_raw_study(
             id="my_raw_study",
@@ -167,8 +159,6 @@ class TestVariantStudyService:
         db.session.commit()
 
         ## Prepare the RAW Study
-        context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(raw_study)
         study_version = StudyVersion.parse(raw_study.version)
 
         with current_user_context(jwt_user):
@@ -176,7 +166,7 @@ class TestVariantStudyService:
 
         command_context = CommandContext(
             generator_matrix_constants=generator_matrix_constants,
-            matrix_service=simple_matrix_service,
+            matrix_service=matrix_service,
             blob_service=simple_blob_service,
         )
 
@@ -208,11 +198,7 @@ class TestVariantStudyService:
         with current_user_context(jwt_user):
             study_service.get_study_interface(variant_study).add_commands([create_area_fr, create_st_storage])
             ## Run the "generate" task
-            actual_uui = variant_study_service.generate_task(
-                variant_study,
-                denormalize=denormalize,
-                from_scratch=from_scratch,
-            )
+            actual_uui = variant_study_service.launch_generation_task(variant_study, from_scratch=from_scratch)
         assert re.fullmatch(
             r"[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}",
             actual_uui,
@@ -225,11 +211,7 @@ class TestVariantStudyService:
         snapshot_dir = internal_studies_dir.joinpath(variant_study.snapshot.id, "snapshot")
         res_study_files = {study_file.relative_to(snapshot_dir).as_posix() for study_file in snapshot_dir.rglob("*.*")}
 
-        if denormalize:
-            expected = {f.replace(".link", "") for f in EXPECTED_DENORMALIZED}
-        else:
-            expected = EXPECTED_DENORMALIZED
-        assert res_study_files == expected
+        assert res_study_files == EXPECTED_DENORMALIZED
 
     @with_db_context
     def test_clear_all_snapshots(
@@ -237,7 +219,7 @@ class TestVariantStudyService:
         tmp_path: Path,
         variant_study_service: VariantStudyService,
         raw_study_service: RawStudyService,
-        monkeypatch: pytest.MonkeyPatch,
+        fs_dao: FileStudyTreeDao,
     ) -> None:
         """
         - Test return value in case the user is not allowed to call the function,
@@ -270,7 +252,7 @@ class TestVariantStudyService:
         regular_jwt_user.is_admin_token.return_value = False
 
         # Create a raw study (root of the variant)
-        raw_study_path = tmp_path / "My RAW Study"
+        raw_study_path = tmp_path / "my_study"
         # noinspection PyArgumentList
         raw_study = create_raw_study(
             id="my_raw_study",
@@ -289,20 +271,16 @@ class TestVariantStudyService:
         db.session.add(raw_study)
         db.session.commit()
 
-        # Set up the Raw Study
-        context = variant_study_service.command_factory.command_context
-        FileStudyDaoFactory(context, raw_study_service.study_factory).create_study_dao(raw_study)
-
         # Variant studies
         variant_list = []
 
         # For each variant created
         for index in range(3):
             with current_user_context(DEFAULT_ADMIN_USER):
-                variant_study = variant_study_service.create_variant_study(raw_study.id, "Variant{}".format(str(index)))
+                variant_study = variant_study_service.create_variant_study(raw_study.id, f"Variant{str(index)}")
                 variant_list.append(variant_study)
                 # Generate a snapshot for each variant
-                variant_study_service.generate(sanitize_uuid(variant_list[index].id), False, False)
+                variant_study_service.generate(variant_list[index], False)
 
                 # Modify the `created_at` and `updated_at` attributes in DB.
                 with db():
@@ -311,8 +289,6 @@ class TestVariantStudyService:
                     variant.updated_at = datetime.datetime(2023, 12, 31)
                     db.session.merge(variant)
                     db.session.commit()
-
-            variant_study_service.get(variant_list[index])
 
         variant_study_path = Path(tmp_path).joinpath("internal_studies")
 
@@ -338,17 +314,17 @@ class TestVariantStudyService:
             assert list(variant.iterdir())
 
         # Simulate access for two old snapshots
-        variant_list[0].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=None
-        ) - datetime.timedelta(days=60)
-        variant_list[1].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=None
-        ) - datetime.timedelta(hours=6)
+        variant_list[0].last_access = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(
+            days=60
+        )
+        variant_list[1].last_access = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(
+            hours=6
+        )
 
         # Simulate access for a recent one
-        variant_list[2].last_access = datetime.datetime.now(datetime.timezone.utc).replace(
-            tzinfo=None
-        ) - datetime.timedelta(hours=1)
+        variant_list[2].last_access = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(
+            hours=1
+        )
         db.session.commit()
 
         # Clear old snapshots

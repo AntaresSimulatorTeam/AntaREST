@@ -12,8 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { mutationOptions } from "@tanstack/react-query";
 import { createDirectory, deleteDirectory, updateDirectory } from "@/services/api/directories";
+import { createFavoriteDirectory, deleteFavoriteDirectory } from "@/services/api/favorites";
+import { mutationOptions } from "@tanstack/react-query";
 import { directoryKeys } from "./keys";
 
 export const directoryMutations = {
@@ -23,18 +24,28 @@ export const directoryMutations = {
       mutationFn: createDirectory,
     });
   },
-
   update: () => {
     return mutationOptions({
       mutationKey: directoryKeys.update(),
       mutationFn: updateDirectory,
     });
   },
-
   delete: () => {
     return mutationOptions({
       mutationKey: directoryKeys.delete(),
       mutationFn: deleteDirectory,
+    });
+  },
+  createFavorite: () => {
+    return mutationOptions({
+      mutationKey: directoryKeys.createFavorite(),
+      mutationFn: createFavoriteDirectory,
+    });
+  },
+  deleteFavorite: () => {
+    return mutationOptions({
+      mutationKey: directoryKeys.deleteFavorite(),
+      mutationFn: deleteFavoriteDirectory,
     });
   },
 };

@@ -10,15 +10,14 @@
 #
 # This file is part of the Antares project.
 
-import base64
 import datetime
 import glob
 import http
 import logging
-import re
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, List, Optional, TypeVar
+from typing import Any, TypeVar
 
 from fastapi import HTTPException
 from typing_extensions import override
@@ -26,8 +25,6 @@ from typing_extensions import override
 from antarest.core.exceptions import ShouldNotHappenException
 
 logger = logging.getLogger(__name__)
-
-UUID_PATTERN = re.compile("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
 
 class DTO:
@@ -47,19 +44,12 @@ class DTO:
     def __str__(self) -> str:
         return "{}({})".format(
             type(self).__name__,
-            ", ".join(["{}={}".format(k, str(self.__dict__[k])) for k in sorted(self.__dict__)]),
+            ", ".join([f"{k}={str(self.__dict__[k])}" for k in sorted(self.__dict__)]),
         )
 
     @override
     def __repr__(self) -> str:
         return self.__str__()
-
-
-def sanitize_uuid(uuid: str) -> str:
-    if not UUID_PATTERN.match(uuid):
-        sanitized_id = base64.b64encode(uuid.encode("utf-8")).decode("utf-8")
-        raise HTTPException(status_code=http.HTTPStatus.BAD_REQUEST, detail=f"uuid {sanitized_id} is not a valid UUID")
-    return uuid
 
 
 def validate_study_name(name: str) -> str:
@@ -94,7 +84,7 @@ def sanitize_string(string: str) -> str:
     return str(glob.escape(string))
 
 
-def get_default_config_path() -> Optional[Path]:
+def get_default_config_path() -> Path | None:
     config = Path("config.yaml")
     if config.exists():
         return config
@@ -116,16 +106,63 @@ def get_local_path() -> Path:
 
 
 class StopWatch:
+    """A simple stopwatch for measuring elapsed time, with support for laps.
+
+    The stopwatch starts automatically on creation. It tracks two timers:
+    a start timer (never reset) and a lap timer (reset on each call to ``lap()``).
+
+    Properties:
+        since_start: Total time since creation (never resets).
+        elapsed: Time since the last ``lap()`` call (or creation if ``lap()`` was never called).
+
+    Methods:
+        lap(): Returns the time since the last lap and resets the lap timer.
+
+    The stopwatch can also be used directly in f-strings via ``__format__``,
+    which formats the time since the last lap.
+
+    Examples::
+
+        stopwatch = StopWatch()
+
+        do_first_step()
+        logger.info(f"First step done in {stopwatch.lap()}s")
+
+        do_second_step()
+        logger.info(f"Second step done in {stopwatch.lap()}s")
+
+        logger.info(f"Total time: {stopwatch.since_start}s")
+
+        # Using __format__ for the current lap duration without resetting:
+        do_third_step()
+        logger.info(f"Third step running for {stopwatch:.2f}s")
+    """
+
     def __init__(self) -> None:
-        self.current_time: float = time.time()
-        self.start_time = self.current_time
+        self._start: float = time.time()
+        self._lap: float = self._start
 
-    def reset_current(self) -> None:
-        self.current_time = time.time()
+    def lap(self) -> float:
+        """Return the time elapsed since the last lap (or creation), then reset the lap timer."""
+        now = time.time()
+        elapsed = now - self._lap
+        self._lap = now
+        return elapsed
 
-    def log_elapsed(self, logger_: Callable[[float], None], since_start: bool = False) -> None:
-        logger_(time.time() - (self.start_time if since_start else self.current_time))
-        self.current_time = time.time()
+    @property
+    def since_start(self) -> float:
+        """Return the time elapsed since creation. No side effects."""
+        return time.time() - self._start
+
+    @property
+    def elapsed(self) -> float:
+        """Return the time elapsed since the last lap (or creation). No side effects."""
+        return time.time() - self._lap
+
+    @override
+    def __format__(self, format_spec: str) -> str:
+        """Format the time elapsed since the last lap. No side effects (does not reset the lap timer)."""
+        return format(self.elapsed, format_spec)
 
 
 T = TypeVar("T")
@@ -133,7 +170,7 @@ T = TypeVar("T")
 
 def retry(func: Callable[[], T], attempts: int = 10, interval: float = 0.5) -> T:
     attempt = 0
-    caught_exception: Optional[Exception] = None
+    caught_exception: Exception | None = None
     while attempt < attempts:
         try:
             attempt += 1
@@ -150,18 +187,18 @@ def assert_this(b: Any) -> None:
         raise AssertionError
 
 
-def concat_files(files: List[Path], target: Path) -> None:
+def concat_files(files: list[Path], target: Path) -> None:
     with open(target, "w") as fh:
         for item in files:
-            with open(item, "r") as infile:
+            with open(item) as infile:
                 for line in infile:
                     fh.write(line)
 
 
-def concat_files_to_str(files: List[Path]) -> str:
+def concat_files_to_str(files: list[Path]) -> str:
     concat_str = ""
     for item in files:
-        with open(item, "r") as infile:
+        with open(item) as infile:
             for line in infile:
                 concat_str += line
     return concat_str
@@ -170,7 +207,7 @@ def concat_files_to_str(files: List[Path]) -> str:
 def suppress_exception(
     callback: Callable[[], T],
     logger_: Callable[[Exception], None],
-) -> Optional[T]:
+) -> T | None:
     try:
         return callback()
     except Exception as e:
@@ -179,7 +216,7 @@ def suppress_exception(
 
 
 def current_time() -> datetime.datetime:
-    return datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None)
+    return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
 
 def remove_first_match(elements: list[T], predicate: Callable[[T], bool]) -> None:
@@ -189,3 +226,21 @@ def remove_first_match(elements: list[T], predicate: Callable[[T], bool]) -> Non
     elt = next((elt for elt in elements if predicate(elt)), None)
     if elt:
         elements.remove(elt)
+
+
+def is_path_safe(parent_path: Path, sub_path: str) -> bool:
+    """
+    Check if the provided sub path is safe to prevent path traversal attack.
+
+    Args:
+        parent_path: The parent path.
+        sub_path: string representation of a path that should be relative to the parent path
+
+    Returns:
+        `True` if `sub_path` is safe, `False` otherwise.
+    """
+    requested_path = parent_path / sub_path
+    requested_path = requested_path.resolve()
+    safe_dir = parent_path.resolve()
+    # check whether the requested path is a subdirectory of the parent path
+    return requested_path.is_relative_to(safe_dir)

@@ -15,19 +15,21 @@ import logging
 import os
 import re
 import shutil
-import tempfile
 import threading
 import time
 import traceback
+from collections.abc import Awaitable, Callable
+from datetime import datetime, timezone
 from pathlib import Path
-from typing import Awaitable, Callable, Dict, List, Optional, cast
+from typing import cast
 
+import tinydb
 from antares.study.version import SolverVersion
 from antareslauncher.data_repo.data_repo_tinydb import DataRepoTinydb
+from antareslauncher.enums import XpansionMode
 from antareslauncher.main import MainParameters, run_with
 from antareslauncher.main_option_parser import MainOptionParser, ParserParameters
 from antareslauncher.study_dto import StudyDTO
-from filelock import FileLock
 from typing_extensions import override
 
 from antarest.core.config import NbCoresConfig, SlurmConfig, TimeLimitConfig
@@ -39,18 +41,23 @@ from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.archives import unzip
 from antarest.core.utils.utils import assert_this
-from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks
+from antarest.globals import ANTAREST_WORKER_ID
+from antarest.launcher.adapters.abstractlauncher import AbstractLauncher, LauncherCallbacks, SimulationLogs
 from antarest.launcher.adapters.log_manager import LogTailManager
-from antarest.launcher.model import JobStatus, LauncherLoadDTO, LauncherParametersDTO, LogType, XpansionParametersDTO
-from antarest.launcher.ssh_client import calculates_slurm_load
-from antarest.launcher.ssh_config import SSHConfigDTO
+from antarest.launcher.adapters.slurm_launcher.slurm_load import SlurmLoad
+from antarest.launcher.exceptions import NoValidOutputError
+from antarest.launcher.model import (
+    JobStatus,
+    LauncherParametersDTO,
+    LauncherRuntimeConfig,
+    LogType,
+    XpansionParametersDTO,
+)
 from antarest.login.utils import current_user_context, require_current_user
 
 logger = logging.getLogger(__name__)
 logging.getLogger("paramiko").setLevel("WARN")
 
-WORKSPACE_LOCK_FILE_NAME = ".lock"
-LOCK_FILE_NAME = "slurm_launcher_init.lock"
 LOG_DIR_NAME = "LOGS"
 STUDIES_INPUT_DIR_NAME = "STUDIES_IN"
 STUDIES_OUTPUT_DIR_NAME = "OUTPUT"
@@ -76,7 +83,7 @@ class LauncherArgs(argparse.Namespace):
 
         # known arguments
         self.other_options: str = ""
-        self.xpansion_mode: Optional[str] = None
+        self.xpansion_mode: XpansionMode | None = None
         self.time_limit: int = 0
         self.n_cpu: int = 0
         self.post_processing: bool = False
@@ -95,7 +102,7 @@ class LauncherArgs(argparse.Namespace):
             should_run_xpansion = launcher_params.xpansion is True
 
         if should_run_xpansion:
-            self.xpansion_mode = {True: "r", False: "cpp"}[launcher_params.xpansion_r_version]
+            self.xpansion_mode = XpansionMode.R if launcher_params.xpansion_r_version else XpansionMode.CPP
             if isinstance(launcher_params.xpansion, XpansionParametersDTO):
                 if launcher_params.xpansion.sensitivity_mode:
                     self._append_other_option("xpansion_sensitivity")
@@ -127,18 +134,32 @@ class LauncherArgs(argparse.Namespace):
                 )
                 self.n_cpu = nb_cores_cfg.default
 
-    def apply_post_processing(self, launcher_params: LauncherParametersDTO) -> None:
-        post_processing = launcher_params.post_processing
-        if post_processing is not None:
-            self.post_processing = post_processing
 
-    def apply_adequacy_patch(self, launcher_params: LauncherParametersDTO) -> None:
-        adequacy_patch = launcher_params.adequacy_patch
-        if adequacy_patch is not None:
-            self.post_processing = True
+def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> Path | None:
+    pattern = {
+        LogType.STDOUT: "antares-out-*",
+        LogType.STDERR: "antares-err-*",
+    }[log_type]
+    return next(iter(log_dir.glob(pattern)), None)
 
 
-class SlurmLauncher(AbstractLauncher):
+def _get_log_path(study: StudyDTO, log_type: LogType = LogType.STDOUT) -> Path | None:
+    log_dir = Path(study.job_log_dir)
+    return _get_log_path_from_log_dir(log_dir, log_type)
+
+
+def _find_log_dir(base_log_dir: Path, job_id: str) -> Path | None:
+    pattern = f"{job_id}*"
+    return next(iter(base_log_dir.glob(pattern)), None)
+
+
+def _get_logs(job_log_dir: Path) -> SimulationLogs:
+    out_log_path = next(iter(job_log_dir.glob("antares-out-*")), None)
+    err_log_path = next(iter(job_log_dir.glob("antares-err-*")), None)
+    return SimulationLogs(out_log_path, err_log_path)
+
+
+class SlurmLauncher(AbstractLauncher, SlurmLoad):
     def __init__(
         self,
         config: SlurmConfig,
@@ -147,25 +168,30 @@ class SlurmLauncher(AbstractLauncher):
         cache: ICache,
         use_private_workspace: bool = True,
         retrieve_existing_jobs: bool = False,
+        workspace_id: str = f"workspace-{ANTAREST_WORKER_ID}",
     ) -> None:
-        super().__init__(callbacks, event_bus, cache)
+        AbstractLauncher.__init__(self, callbacks, event_bus, cache)
+        SlurmLoad.__init__(self, config)
         self.slurm_config: SlurmConfig = config
         self.check_state: bool = True
         self.event_bus = event_bus
         self.event_bus.add_listener(self._create_event_listener(), [EventType.STUDY_JOB_CANCEL_REQUEST])
-        self.thread: Optional[threading.Thread] = None
-        self.job_list: List[str] = []
+        self.thread: threading.Thread | None = None
+        self.job_list: list[str] = []
+        self._running_notified: set[str] = set()
         self._check_config()
         self.antares_launcher_lock = threading.Lock()
 
-        # use an absolute path instead of `LOCK_FILE_NAME`:
-        local_workspace_dir = Path(self.slurm_config.local_workspace)
-        with FileLock(local_workspace_dir.joinpath(LOCK_FILE_NAME)):
-            self.local_workspace = self._init_workspace(use_private_workspace)
-        self.log_tail_manager = LogTailManager(local_workspace_dir)
+        self.local_workspace = self._init_workspace(use_private_workspace, workspace_id)
 
-        self.launcher_args = self._init_launcher_arguments(self.local_workspace)
-        self.launcher_params = self._init_launcher_parameters(self.local_workspace)
+        # Important: in a multi-process environment, the log directory must be shared between workers,
+        # so that all workers can expose logs of any simulation in the API
+        self.log_dir = config.local_workspace / LOG_DIR_NAME
+
+        self.log_tail_manager = LogTailManager()
+
+        self.launcher_args = self._init_launcher_arguments()
+        self.launcher_params = self._init_launcher_parameters()
 
         self.data_repo_tinydb = DataRepoTinydb(
             database_file_path=(self.launcher_params.json_dir / self.launcher_params.default_json_db_name),
@@ -179,26 +205,17 @@ class SlurmLauncher(AbstractLauncher):
             self.slurm_config.local_workspace.exists() and self.slurm_config.local_workspace.is_dir()
         )  # and check write permission
 
-    def _init_workspace(self, use_private_workspace: bool) -> Path:
+    def _init_workspace(self, use_private_workspace: bool, workspace_id: str) -> Path:
         if not use_private_workspace:
             return Path(self.slurm_config.local_workspace)
 
-        for existing_workspace in self.slurm_config.local_workspace.iterdir():
-            lock_file = existing_workspace / WORKSPACE_LOCK_FILE_NAME
-            if (
-                existing_workspace.is_dir()
-                and existing_workspace != self.slurm_config.local_workspace / LOG_DIR_NAME
-                and not lock_file.exists()
-            ):
-                logger.info(f"Initiating slurm workspace into existing directory {existing_workspace}")
-                lock_file.touch()
-                return existing_workspace
-
-        new_workspace = Path(tempfile.mkdtemp(dir=str(self.slurm_config.local_workspace)))
-        lock_file = new_workspace / WORKSPACE_LOCK_FILE_NAME
-        lock_file.touch()
-        logger.info(f"Initiating slurm workspace in new directory {new_workspace}")
-        return new_workspace
+        workspace_dir = self.slurm_config.local_workspace / workspace_id
+        if workspace_dir.exists() and workspace_dir.is_dir():
+            logger.info(f"Initiating slurm workspace into existing directory {workspace_dir}")
+        else:
+            logger.info(f"Initiating slurm workspace in new directory {workspace_dir}")
+            os.makedirs(workspace_dir)
+        return workspace_dir
 
     def _retrieve_running_jobs(self) -> None:
         if len(self.data_repo_tinydb.get_list_of_studies()) > 0:
@@ -217,7 +234,7 @@ class SlurmLauncher(AbstractLauncher):
                 except Exception:
                     # To keep the SLURM processing monitoring loop active, exceptions
                     # are caught and a message is simply displayed in the logs.
-                    logger.error(
+                    logger.exception(
                         "An uncaught exception occurred in slurm_launcher loop",
                         exc_info=True,
                     )
@@ -238,14 +255,14 @@ class SlurmLauncher(AbstractLauncher):
         self.thread = None
         logger.info("slurm_launcher loop stopped")
 
-    def _init_launcher_arguments(self, local_workspace: Optional[Path] = None) -> argparse.Namespace:
+    def _init_launcher_arguments(self) -> argparse.Namespace:
         main_options_parameters = ParserParameters(
             default_wait_time=self.slurm_config.default_wait_time,
             default_time_limit=self.slurm_config.time_limit.default * 3600,
             default_n_cpu=self.slurm_config.nb_cores.default,
-            studies_in_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_INPUT_DIR_NAME)),
-            log_dir=str((Path(self.slurm_config.local_workspace) / LOG_DIR_NAME)),
-            finished_dir=str((Path(local_workspace or self.slurm_config.local_workspace) / STUDIES_OUTPUT_DIR_NAME)),
+            studies_in_dir=str(self.local_workspace / STUDIES_INPUT_DIR_NAME),
+            log_dir=str(self.log_dir),
+            finished_dir=str(self.local_workspace / STUDIES_OUTPUT_DIR_NAME),
             ssh_config_file_is_required=False,
             ssh_configfile_path_alternate1=None,
             ssh_configfile_path_alternate2=None,
@@ -264,12 +281,13 @@ class SlurmLauncher(AbstractLauncher):
         arguments.version = False
         arguments.post_processing = False
         arguments.other_options = None
+        arguments.run_at = None
 
         return arguments
 
-    def _init_launcher_parameters(self, local_workspace: Optional[Path] = None) -> MainParameters:
+    def _init_launcher_parameters(self) -> MainParameters:
         return MainParameters(
-            json_dir=local_workspace or self.slurm_config.local_workspace,
+            json_dir=self.local_workspace,
             default_json_db_name=self.slurm_config.default_json_db_name,
             slurm_script_path=self.slurm_config.slurm_script_path,
             partition=self.slurm_config.partition,
@@ -296,40 +314,26 @@ class SlurmLauncher(AbstractLauncher):
     def _import_study_output(
         self,
         job_id: str,
-        xpansion_mode: Optional[str] = None,
-        log_dir: Optional[str] = None,
-    ) -> Optional[str]:
+        xpansion_mode: XpansionMode | None,
+        log_dir: str | None,
+    ) -> str | None:
         if xpansion_mode:
             self._import_xpansion_result(job_id, xpansion_mode)
 
-        launcher_logs: Dict[str, List[Path]] = {}
-        if log_dir is not None:
-            launcher_logs = {
-                log_name: log_path
-                for log_name, log_path in {
-                    "antares-out.log": [
-                        p
-                        for p in [SlurmLauncher._get_log_path_from_log_dir(Path(log_dir), LogType.STDOUT)]
-                        if p is not None
-                    ],
-                    "antares-err.log": [
-                        p
-                        for p in [SlurmLauncher._get_log_path_from_log_dir(Path(log_dir), LogType.STDERR)]
-                        if p is not None
-                    ],
-                }.items()
-                if log_path
-            }
+        if log_dir:
+            launcher_logs = _get_logs(Path(log_dir))
+        else:
+            launcher_logs = SimulationLogs.no_logs()
 
         # The following callback is actually calling:
         # `antarest.launcher.service.LauncherService._import_output`
         return self.callbacks.import_output(
-            job_id,
-            self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
-            launcher_logs,
+            job_id=job_id,
+            output_path=self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output",
+            additional_logs=launcher_logs,
         )
 
-    def _import_xpansion_result(self, job_id: str, xpansion_mode: str) -> None:
+    def _import_xpansion_result(self, job_id: str, xpansion_mode: XpansionMode) -> None:
         output_path = self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "output"
         if output_path.exists() and len(os.listdir(output_path)) == 1:
             output_path = output_path / os.listdir(output_path)[0]
@@ -341,7 +345,7 @@ class SlurmLauncher(AbstractLauncher):
                 unzip(unzipped_output_path, output_path)
                 output_path = unzipped_output_path
 
-            if xpansion_mode == "r":
+            if xpansion_mode == XpansionMode.R:
                 shutil.copytree(
                     self.local_workspace / STUDIES_OUTPUT_DIR_NAME / job_id / "user" / "expansion",
                     output_path / "results",
@@ -361,7 +365,7 @@ class SlurmLauncher(AbstractLauncher):
 
             study_list = self.data_repo_tinydb.get_list_of_studies()
             for study in study_list:
-                log_path = SlurmLauncher._get_log_path(study)
+                log_path = _get_log_path(study)
                 if study.with_error:
                     self.log_tail_manager.stop_tracking(log_path)
                     self._handle_failure(study)
@@ -371,6 +375,11 @@ class SlurmLauncher(AbstractLauncher):
                 else:
                     # study.started => still running
                     # study.finished => waiting for ZIP + logs retrieval (or failure)
+                    if study.started and study.name not in self._running_notified:
+                        # The job left the SLURM queue (it was PENDING, possibly held by `--begin`) and
+                        # actually started computing, so flip it to RUNNING (only once).
+                        self._running_notified.add(study.name)
+                        self.callbacks.update_status(study.name, JobStatus.RUNNING, None, None)
                     self.log_tail_manager.track(log_path, self.create_update_log(study.name))
 
             # Re-fetching the study list is necessary as new studies may have been added
@@ -400,7 +409,7 @@ class SlurmLauncher(AbstractLauncher):
                 study.xpansion_mode,
                 study.job_log_dir,
             )
-        except FileNotFoundError:
+        except (FileNotFoundError, NoValidOutputError):
             msg = "Simulation failed, output results are not available"
             self.callbacks.append_after_log(study.name, msg)
             # see antarest.launcher.service.LauncherService.update
@@ -451,37 +460,10 @@ class SlurmLauncher(AbstractLauncher):
         else:
             self.callbacks.update_status(study.name, JobStatus.SUCCESS, None, output_id)
 
-    @staticmethod
-    def _get_log_path(study: StudyDTO, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
-        log_dir = Path(study.job_log_dir)
-        return SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
-
-    @staticmethod
-    def _find_log_dir(base_log_dir: Path, job_id: str) -> Optional[Path]:
-        pattern = f"{job_id}*"
-        return next(iter(base_log_dir.glob(pattern)), None)
-
-    @staticmethod
-    def _get_log_path_from_log_dir(log_dir: Path, log_type: LogType = LogType.STDOUT) -> Optional[Path]:
-        pattern = {
-            LogType.STDOUT: "antares-out-*",
-            LogType.STDERR: "antares-err-*",
-        }[log_type]
-        return next(iter(log_dir.glob(pattern)), None)
-
-    def _clean_local_workspace(self) -> None:
-        logger.info("Cleaning up slurm workspace")
-        local_workspace = self.local_workspace
-        for filename in os.listdir(local_workspace):
-            file_path = os.path.join(local_workspace, filename)
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
-
     def _clean_up_study(self, launch_id: str) -> None:
         logger.info(f"Cleaning up study with launch_id {launch_id}")
-        self.data_repo_tinydb.remove_study(launch_id)
+        self._running_notified.discard(launch_id)
+        self._remove_study_from_workspace_db(launch_id)
         self._delete_workspace_file(self.local_workspace / STUDIES_OUTPUT_DIR_NAME / launch_id)
         self._delete_workspace_file(self.local_workspace / STUDIES_INPUT_DIR_NAME / launch_id)
         if (self.local_workspace / STUDIES_OUTPUT_DIR_NAME).exists():
@@ -496,6 +478,8 @@ class SlurmLauncher(AbstractLauncher):
         launcher_params: LauncherParametersDTO,
         version: SolverVersion,
         jwt_user: JWTUser,
+        runtime_config: LauncherRuntimeConfig | None = None,
+        run_at: datetime | None = None,
     ) -> None:
         with current_user_context(jwt_user):
             study_path = Path(self.launcher_args.studies_in) / launch_uuid
@@ -512,15 +496,22 @@ class SlurmLauncher(AbstractLauncher):
 
                     append_log(launch_uuid, "Checking study version...")
                     available_versions = self.slurm_config.antares_versions_on_remote_server
-                    if f"{version:ddd}" not in available_versions:
+                    if version not in available_versions:
                         raise VersionNotSupportedError(
                             f"Study version '{version}' is not supported. Currently supported versions are"
-                            f" {', '.join(available_versions)}"
+                            f" {', '.join([str(v) for v in available_versions])}"
                         )
                     _override_solver_version(study_path, version)
 
+                    if run_at is not None:
+                        server_time = run_at.replace(tzinfo=timezone.utc).astimezone()
+                        append_log(
+                            launch_uuid,
+                            f"Study scheduled to start at {run_at} UTC"
+                            f" ({server_time:%Y-%m-%d %H:%M:%S %Z} server time)",
+                        )
                     append_log(launch_uuid, "Submitting study to slurm launcher")
-                    launcher_args = self._apply_params(launcher_params)
+                    launcher_args = self._apply_params(launcher_params, runtime_config, run_at)
                     self._call_launcher(launcher_args, self.launcher_params)
 
                     launch_success = self._check_if_study_is_in_launcher_db(launch_uuid)
@@ -535,13 +526,13 @@ class SlurmLauncher(AbstractLauncher):
                         logger.warning(
                             f"Study {study_uuid} with job id {launch_uuid} does not seem to have been launched"
                         )
+                        self.callbacks.update_status(
+                            launch_uuid,
+                            JobStatus.FAILED,
+                            None,
+                            None,
+                        )
 
-                    self.callbacks.update_status(
-                        launch_uuid,
-                        JobStatus.RUNNING if launch_success else JobStatus.FAILED,
-                        None,
-                        None,
-                    )
                 except Exception as e:
                     stack_trace = traceback.format_exc()
                     msg = f"Failed to launch study {study_uuid}: see stack trace below:\n{stack_trace}"
@@ -563,7 +554,12 @@ class SlurmLauncher(AbstractLauncher):
         studies = self.data_repo_tinydb.get_list_of_studies()
         return any(s.name == job_id for s in studies)
 
-    def _apply_params(self, launcher_params: LauncherParametersDTO) -> argparse.Namespace:
+    def _apply_params(
+        self,
+        launcher_params: LauncherParametersDTO,
+        runtime_config: LauncherRuntimeConfig | None = None,
+        run_at: datetime | None = None,
+    ) -> argparse.Namespace:
         """
         Populate a `argparse.Namespace` object with the user parameters.
 
@@ -572,51 +568,66 @@ class SlurmLauncher(AbstractLauncher):
                 Contains the launcher parameters selected by the user.
                 If a parameter is not provided (`None`), the default value should be retrieved
                 from the configuration.
+            runtime_config:
+                Admin-set runtime configuration of the launcher (DB-backed).
+            run_at:
+                If set, the launch is scheduled to start at that (naive UTC) time using SLURM `--begin`.
 
         Returns:
             The `argparse.Namespace` object which is then passed to `antarestlauncher.main.run_with`,
             to launch a simulation using Antares Launcher.
         """
+        launcher_args = LauncherArgs(self.launcher_args)
+
         if launcher_params:
-            launcher_args = LauncherArgs(self.launcher_args)
             launcher_args.other_options = launcher_params.other_options or ""
             launcher_args.apply_xpansion_mode(launcher_params)
             launcher_args.apply_time_limit(launcher_params, self.slurm_config.time_limit)
-            launcher_args.apply_post_processing(launcher_params)
             launcher_args.apply_nb_cpu(launcher_params, self.slurm_config.nb_cores)
-            launcher_args.apply_adequacy_patch(launcher_params)
+
+            # Enable SLURM oversubscribe (job may share a compute node) when the effective number of
+            # cores (after default/clamping in `apply_nb_cpu`) is at or below the admin-set threshold.
+            slurm_runtime = runtime_config.slurm if runtime_config is not None else None
+            oversubscribe_core_threshold = slurm_runtime.oversubscribe_core_threshold if slurm_runtime else None
+            if oversubscribe_core_threshold is not None and launcher_args.n_cpu <= oversubscribe_core_threshold:
+                launcher_args.oversubscribe = True
 
             if "'" in launcher_args.other_options:
                 # The launcher will wrongly interpret single quotes, which will cause Simulation fails and
                 # could even lead to security breaches
                 raise ValueError("Other options cannot contain a single quote, you should use double quotes instead")
 
-            return launcher_args
-
-        return self.launcher_args
+        launcher_args.run_at = run_at
+        return launcher_args
 
     @override
     def run_study(
-        self, study_uuid: str, job_id: str, version: SolverVersion, launcher_parameters: LauncherParametersDTO
+        self,
+        study_uuid: str,
+        job_id: str,
+        version: SolverVersion,
+        launcher_parameters: LauncherParametersDTO,
+        runtime_config: LauncherRuntimeConfig | None = None,
+        run_at: datetime | None = None,
     ) -> None:
         user = require_current_user()
         thread = threading.Thread(
             target=self._run_study,
-            args=(study_uuid, job_id, launcher_parameters, version, user),
+            args=(study_uuid, job_id, launcher_parameters, version, user, runtime_config, run_at),
             name=f"{self.__class__.__name__}-JobRunner",
         )
         thread.start()
 
     @override
-    def get_log(self, job_id: str, log_type: LogType) -> Optional[str]:
-        log_path: Optional[Path] = None
+    def get_log(self, job_id: str, log_type: LogType) -> str | None:
+        log_path: Path | None = None
         for study in self.data_repo_tinydb.get_list_of_studies():
             if study.name == job_id:
-                log_path = SlurmLauncher._get_log_path(study, log_type)
+                log_path = _get_log_path(study, log_type)
                 if log_path:
                     return log_path.read_text()
-        if log_dir := SlurmLauncher._find_log_dir(Path(self.launcher_args.log_dir) / "JOB_LOGS", job_id):
-            log_path = SlurmLauncher._get_log_path_from_log_dir(log_dir, log_type)
+        if log_dir := _find_log_dir(Path(self.launcher_args.log_dir) / "JOB_LOGS", job_id):
+            log_path = _get_log_path_from_log_dir(log_dir, log_type)
         return log_path.read_text() if log_path else None
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
@@ -651,29 +662,13 @@ class SlurmLauncher(AbstractLauncher):
             )
 
     @override
-    def get_solver_versions(self) -> List[str]:
+    def get_solver_versions(self) -> list[SolverVersion]:
         return sorted(self.slurm_config.antares_versions_on_remote_server)
 
-    @override
-    def get_load(self) -> LauncherLoadDTO:
-        ssh_config = SSHConfigDTO(
-            config_path=Path(),
-            username=self.slurm_config.username,
-            hostname=self.slurm_config.hostname,
-            port=self.slurm_config.port,
-            private_key_file=self.slurm_config.private_key_file,
-            key_password=self.slurm_config.key_password,
-            password=self.slurm_config.password,
-        )
-        partition = self.slurm_config.partition
-        allocated_cpus, cluster_load, queued_jobs = calculates_slurm_load(ssh_config, partition)
-        args = {
-            "allocatedCpuRate": allocated_cpus,
-            "clusterLoadRate": cluster_load,
-            "nbQueuedJobs": queued_jobs,
-            "launcherStatus": "SUCCESS",
-        }
-        return LauncherLoadDTO(**args)
+    def _remove_study_from_workspace_db(self, study_name: str) -> None:
+        pk_name = self.data_repo_tinydb.db_primary_key
+        logger.info(f"Removing study '{study_name}' from database")
+        self.data_repo_tinydb.db.remove(tinydb.where(pk_name) == study_name)
 
 
 def _override_solver_version(study_path: Path, version: SolverVersion) -> None:

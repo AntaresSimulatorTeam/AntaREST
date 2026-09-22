@@ -9,14 +9,14 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-from typing import Any, Dict, Final, Optional, Self
+from typing import Any, Final, Self
 
 from antares.study.version import StudyVersion
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.renewable_cluster_model import (
+    RenewableCluster,
     RenewableClusterCreation,
     create_renewable_cluster,
     validate_renewable_cluster_against_version,
@@ -57,7 +57,7 @@ class CreateRenewablesCluster(ICommand):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_model(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def validate_model(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         # Validate parameters
         if isinstance(values["parameters"], dict):
             parameters = values["parameters"]
@@ -77,7 +77,9 @@ class CreateRenewablesCluster(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[RenewableCluster]:
         renewable = create_renewable_cluster(self.parameters, self.study_version)
         renewable_id = renewable.id
         lower_renewable_id = renewable_id.lower()
@@ -88,9 +90,11 @@ class CreateRenewablesCluster(ICommand):
 
         # Matrices
         null_matrix = self.command_context.generator_matrix_constants.get_null_matrix()
-        study_data.save_renewable_series(self.area_id, lower_renewable_id, null_matrix)
+        study_data.save_renewable_series({self.area_id: {lower_renewable_id: null_matrix}})
 
-        return command_succeeded(f"Renewable cluster '{renewable_id}' added to area '{self.area_id}'.")
+        return command_succeeded(
+            f"Renewable cluster '{renewable_id}' added to area '{self.area_id}'.", result=renewable
+        )
 
     @override
     def to_dto(self) -> CommandDTO:

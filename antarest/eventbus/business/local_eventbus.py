@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Dict, List, Optional
 
 from typing_extensions import override
 
@@ -23,15 +22,15 @@ logger = logging.getLogger(__name__)
 
 class LocalEventBus(IEventBusBackend):
     def __init__(self) -> None:
-        self.events: List[Event] = []
-        self.queues: Dict[str, List[Event]] = {}
+        self.events: list[Event] = []
+        self.queues: dict[str, list[Event]] = {}
 
     @override
     def push_event(self, event: Event) -> None:
         self.events.append(event)
 
     @override
-    def get_events(self) -> List[Event]:
+    def get_events(self) -> list[Event]:
         return self.events
 
     @override
@@ -45,7 +44,7 @@ class LocalEventBus(IEventBusBackend):
         self.queues[queue].append(event)
 
     @override
-    def pull_queue(self, queue: str) -> Optional[Event]:
+    def pull_queue(self, queue: str) -> Event | None:
         if queue in self.queues and len(self.queues[queue]) > 0:
             return self.queues[queue].pop(0)
         return None

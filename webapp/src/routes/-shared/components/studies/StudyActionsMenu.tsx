@@ -15,10 +15,11 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getLatestStudyVersion } from "@/redux/selectors";
+import type { Study } from "@/services/api/studies/types";
 import { archiveStudy, unarchiveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
-import { type SvgIconComponent } from "@mui/icons-material";
+import type { SvgIconComponent } from "@mui/icons-material";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import BoltIcon from "@mui/icons-material/Bolt";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -35,8 +36,8 @@ import { useTranslation } from "react-i18next";
 import CopyStudyDialog from "./dialogs/CopyStudyDialog";
 import DeleteStudyDialog from "./dialogs/DeleteStudyDialog";
 import ExportModal from "./dialogs/ExportModal";
+import LaunchStudiesDialog from "./dialogs/LaunchStudiesDialog";
 import MoveStudyDialog from "./dialogs/MoveStudyDialog";
-import StudyLaunchDialog from "./dialogs/StudyLaunchDialog";
 import UpdateStudyDialog from "./dialogs/UpdateStudyDialog";
 import UpgradeStudyDialog from "./dialogs/UpgradeStudyDialog";
 
@@ -54,7 +55,7 @@ interface Props {
   anchorEl: MenuProps["anchorEl"];
   onClose: VoidFunction;
   study: StudyMetadata;
-  parentStudy?: StudyMetadata;
+  parentStudy?: Study;
   variantNb?: number;
 }
 
@@ -65,6 +66,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
   const latestVersion = useAppSelector(getLatestStudyVersion);
 
   const isLatestVersion = study.version === latestVersion;
+  const isReference = study.type === "rawstudy";
   const isVariant = study.type === "variantstudy";
   const isManaged = study.managed;
   const isArchived = study.archived;
@@ -127,7 +129,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
           menuItem(!isArchived, t("global.launch"), BoltIcon, "launch"),
           menuItem(!isArchived, t("study.properties"), EditOutlinedIcon, "properties"),
           menuItem(
-            !isArchived && !isLatestVersion && !isVariant, // Display an error if the study has a variant
+            !isArchived && !isLatestVersion && isReference, // Display an error if the study has a variant
             t("study.upgrade"),
             UpgradeIcon,
             "upgrade",
@@ -138,11 +140,11 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
             isVariant ? SaveAsIcon : FileCopyOutlinedIcon,
             "copy",
           ),
-          menuItem(isManaged, t("global.move"), DriveFileMoveIcon, "move"),
+          menuItem(isManaged && isReference, t("global.move"), DriveFileMoveIcon, "move"),
           menuItem(!isArchived, t("global.export"), DownloadOutlinedIcon, "export"),
           menuItem(isArchived, t("global.unarchive"), UnarchiveOutlinedIcon, handleUnarchive),
           menuItem(
-            isManaged && !isArchived && !isVariant,
+            isManaged && isReference && !isArchived,
             t("global.archive"),
             ArchiveOutlinedIcon,
             handleArchive,
@@ -152,14 +154,14 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
       </Menu>
       {/* Keep conditional rendering for dialogs and not use only `open` property, because API calls are made on mount */}
       {openDialog === "launch" && (
-        <StudyLaunchDialog open studyIds={[study.id]} onClose={closeDialog} />
+        <LaunchStudiesDialog open studyIds={[study.id]} onClose={closeDialog} />
       )}
       {openDialog === "properties" && (
         <UpdateStudyDialog open study={study} onClose={closeDialog} />
       )}
       {openDialog === "upgrade" && <UpgradeStudyDialog open study={study} onClose={closeDialog} />}
       {openDialog === "export" && <ExportModal open study={study} onClose={closeDialog} />}
-      {openDialog === "move" && <MoveStudyDialog open study={study} onClose={closeDialog} />}
+      {openDialog === "move" && <MoveStudyDialog open studies={[study]} onClose={closeDialog} />}
       {openDialog === "copy" && <CopyStudyDialog open study={study} onClose={closeDialog} />}
       {openDialog === "delete" && (
         <DeleteStudyDialog

@@ -11,13 +11,14 @@
 # This file is part of the Antares project.
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from tests.study.dao.utils import save_area
 
 
 def test_area_with_no_clusters_are_absent_from_clusters_dict(filestudy_dao: FileStudyTreeDao) -> None:
-    filestudy_dao.save_area("germany")
-    filestudy_dao.save_area("italy")
+    save_area(filestudy_dao, "germany")
+    save_area(filestudy_dao, "italy")
 
-    filestudy_dao.save_thermal("germany", ThermalCluster(id="gas", name="Gas"))
+    filestudy_dao.save_thermals({"germany": [ThermalCluster(id="gas", name="Gas")]})
 
     clusters = filestudy_dao.get_all_thermals()
 

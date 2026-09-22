@@ -29,10 +29,12 @@ import { Route as AuthenticatedSettingsGroupsIndexRouteImport } from './routes/_
 import { Route as AuthenticatedStudiesStudyIdExploreRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/route'
 import { Route as AuthenticatedStudiesStudyIdExploreIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/index'
 import { Route as AuthenticatedStudiesStudyIdExploreXpansionRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/xpansion/route'
-import { Route as AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/tablemode/route'
+import { Route as AuthenticatedStudiesStudyIdExploreTableModesRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/table-modes/route'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/route'
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/route'
 import { Route as AuthenticatedStudiesStudyIdExploreXpansionIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/xpansion/index'
+import { Route as AuthenticatedStudiesStudyIdExploreUserResourcesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/user-resources/index'
+import { Route as AuthenticatedStudiesStudyIdExploreTableModesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/table-modes/index'
 import { Route as AuthenticatedStudiesStudyIdExploreOutputsIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/outputs/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/index'
 import { Route as AuthenticatedStudiesStudyIdExploreDebugIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/debug/index'
@@ -48,7 +50,7 @@ import { Route as AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingRout
 import { Route as AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/configuration/adequacy-patch/route'
 import { Route as AuthenticatedStudiesStudyIdExploreXpansionSettingsIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/xpansion/settings/index'
 import { Route as AuthenticatedStudiesStudyIdExploreXpansionCandidatesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/xpansion/candidates/index'
-import { Route as AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/tablemode/$tableModeId/index'
+import { Route as AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/table-modes/$tableModeId/index'
 import { Route as AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/outputs/$outputId/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingMapIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/map/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/binding-constraints/index'
@@ -74,20 +76,26 @@ import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdPropertie
 import { Route as AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdTimeSeriesRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/wind'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/solar'
-import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/misc-gen'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/load'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/route'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/route'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/route'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdParametersIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/parameters/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/index'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdPropertiesIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/properties/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/index'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
@@ -245,10 +253,10 @@ const AuthenticatedStudiesStudyIdExploreXpansionRouteRoute =
     path: '/xpansion',
     getParentRoute: () => AuthenticatedStudiesStudyIdExploreRouteRoute,
   } as any)
-const AuthenticatedStudiesStudyIdExploreTablemodeRouteRoute =
-  AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteImport.update({
-    id: '/tablemode',
-    path: '/tablemode',
+const AuthenticatedStudiesStudyIdExploreTableModesRouteRoute =
+  AuthenticatedStudiesStudyIdExploreTableModesRouteRouteImport.update({
+    id: '/table-modes',
+    path: '/table-modes',
     getParentRoute: () => AuthenticatedStudiesStudyIdExploreRouteRoute,
   } as any)
 const AuthenticatedStudiesStudyIdExploreModelingRouteRoute =
@@ -268,6 +276,19 @@ const AuthenticatedStudiesStudyIdExploreXpansionIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedStudiesStudyIdExploreXpansionRouteRoute,
+  } as any)
+const AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute =
+  AuthenticatedStudiesStudyIdExploreUserResourcesIndexRouteImport.update({
+    id: '/user-resources/',
+    path: '/user-resources/',
+    getParentRoute: () => AuthenticatedStudiesStudyIdExploreRouteRoute,
+  } as any)
+const AuthenticatedStudiesStudyIdExploreTableModesIndexRoute =
+  AuthenticatedStudiesStudyIdExploreTableModesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () =>
+      AuthenticatedStudiesStudyIdExploreTableModesRouteRoute,
   } as any)
 const AuthenticatedStudiesStudyIdExploreOutputsIndexRoute =
   AuthenticatedStudiesStudyIdExploreOutputsIndexRouteImport.update({
@@ -370,13 +391,13 @@ const AuthenticatedStudiesStudyIdExploreXpansionCandidatesIndexRoute =
     path: '/candidates/',
     getParentRoute: () => AuthenticatedStudiesStudyIdExploreXpansionRouteRoute,
   } as any)
-const AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRoute =
-  AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRouteImport.update(
+const AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRoute =
+  AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRouteImport.update(
     {
       id: '/$tableModeId/',
       path: '/$tableModeId/',
       getParentRoute: () =>
-        AuthenticatedStudiesStudyIdExploreTablemodeRouteRoute,
+        AuthenticatedStudiesStudyIdExploreTableModesRouteRoute,
     } as any,
   )
 const AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute =
@@ -586,11 +607,11 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute =
     getParentRoute: () =>
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute,
   } as any)
-const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRoute =
-  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteImport.update(
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRouteImport.update(
     {
-      id: '/reserves',
-      path: '/reserves',
+      id: '/reserves-legacy',
+      path: '/reserves-legacy',
       getParentRoute: () =>
         AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute,
     } as any,
@@ -618,6 +639,15 @@ const AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRoute 
       path: '/time-series',
       getParentRoute: () =>
         AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteImport.update(
+    {
+      id: '/reserves',
+      path: '/reserves',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute,
     } as any,
   )
 const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute =
@@ -665,6 +695,15 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesIndexRoute =
         AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute,
     } as any,
   )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRouteImport.update(
+    {
+      id: '/',
+      path: '/',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute,
+    } as any,
+  )
 const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesIndexRoute =
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesIndexRouteImport.update(
     {
@@ -708,6 +747,42 @@ const AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesR
       path: '/capacities',
       getParentRoute: () =>
         AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRouteImport.update(
+    {
+      id: '/symmetries',
+      path: '/symmetries',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRouteImport.update(
+    {
+      id: '/needs',
+      path: '/needs',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRouteImport.update(
+    {
+      id: '/general',
+      path: '/general',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRouteImport.update(
+    {
+      id: '/certifications',
+      path: '/certifications',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute,
     } as any,
   )
 const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute =
@@ -1109,7 +1184,7 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/': typeof AuthenticatedStudiesStudyIdIndexRoute
   '/studies/$studyId/explore/configuration': typeof AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteWithChildren
   '/studies/$studyId/explore/modeling': typeof AuthenticatedStudiesStudyIdExploreModelingRouteRouteWithChildren
-  '/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteWithChildren
+  '/studies/$studyId/explore/table-modes': typeof AuthenticatedStudiesStudyIdExploreTableModesRouteRouteWithChildren
   '/studies/$studyId/explore/xpansion': typeof AuthenticatedStudiesStudyIdExploreXpansionRouteRouteWithChildren
   '/studies/$studyId/explore/': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
   '/studies/$studyId/explore/configuration/adequacy-patch': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteWithChildren
@@ -1125,6 +1200,8 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/debug': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/studies/$studyId/explore/modeling/': typeof AuthenticatedStudiesStudyIdExploreModelingIndexRoute
   '/studies/$studyId/explore/outputs': typeof AuthenticatedStudiesStudyIdExploreOutputsIndexRoute
+  '/studies/$studyId/explore/table-modes/': typeof AuthenticatedStudiesStudyIdExploreTableModesIndexRoute
+  '/studies/$studyId/explore/user-resources': typeof AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute
   '/studies/$studyId/explore/xpansion/': typeof AuthenticatedStudiesStudyIdExploreXpansionIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRouteWithChildren
   '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdRouteRouteWithChildren
@@ -1143,14 +1220,15 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/modeling/binding-constraints/': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsIndexRoute
   '/studies/$studyId/explore/modeling/map': typeof AuthenticatedStudiesStudyIdExploreModelingMapIndexRoute
   '/studies/$studyId/explore/outputs/$outputId': typeof AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute
-  '/studies/$studyId/explore/tablemode/$tableModeId': typeof AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRoute
+  '/studies/$studyId/explore/table-modes/$tableModeId': typeof AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRoute
   '/studies/$studyId/explore/xpansion/candidates': typeof AuthenticatedStudiesStudyIdExploreXpansionCandidatesIndexRoute
   '/studies/$studyId/explore/xpansion/settings': typeof AuthenticatedStudiesStudyIdExploreXpansionSettingsIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteWithChildren
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteWithChildren
   '/studies/$studyId/explore/modeling/links/$linkId/time-series': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRouteWithChildren
   '/studies/$studyId/explore/modeling/areas/$areaId/load': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/misc-gen': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute
-  '/studies/$studyId/explore/modeling/areas/$areaId/reserves': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/solar': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/wind': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute
   '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdTimeSeriesRoute
@@ -1172,11 +1250,16 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/general': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/properties': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdPropertiesIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/renewables': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesIndexRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/storages': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/thermals': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsIndexRoute
   '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdParametersIndexRoute
@@ -1226,7 +1309,6 @@ export interface FileRoutesByTo {
   '/settings/tokens': typeof AuthenticatedSettingsTokensIndexRoute
   '/settings/users': typeof AuthenticatedSettingsUsersIndexRoute
   '/studies/$studyId': typeof AuthenticatedStudiesStudyIdIndexRoute
-  '/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteWithChildren
   '/studies/$studyId/explore': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
   '/studies/$studyId/explore/modeling/areas': typeof AuthenticatedStudiesStudyIdExploreModelingAreasRouteRouteWithChildren
   '/studies/$studyId/explore/modeling/links': typeof AuthenticatedStudiesStudyIdExploreModelingLinksRouteRouteWithChildren
@@ -1238,6 +1320,8 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/debug': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/studies/$studyId/explore/modeling': typeof AuthenticatedStudiesStudyIdExploreModelingIndexRoute
   '/studies/$studyId/explore/outputs': typeof AuthenticatedStudiesStudyIdExploreOutputsIndexRoute
+  '/studies/$studyId/explore/table-modes': typeof AuthenticatedStudiesStudyIdExploreTableModesIndexRoute
+  '/studies/$studyId/explore/user-resources': typeof AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute
   '/studies/$studyId/explore/xpansion': typeof AuthenticatedStudiesStudyIdExploreXpansionIndexRoute
   '/studies/$studyId/explore/configuration/adequacy-patch/perimeter': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchPerimeterRoute
   '/studies/$studyId/explore/configuration/geo-trimming/areas': typeof AuthenticatedStudiesStudyIdExploreConfigurationGeoTrimmingAreasRoute
@@ -1253,12 +1337,12 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/modeling/binding-constraints': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsIndexRoute
   '/studies/$studyId/explore/modeling/map': typeof AuthenticatedStudiesStudyIdExploreModelingMapIndexRoute
   '/studies/$studyId/explore/outputs/$outputId': typeof AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute
-  '/studies/$studyId/explore/tablemode/$tableModeId': typeof AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRoute
+  '/studies/$studyId/explore/table-modes/$tableModeId': typeof AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRoute
   '/studies/$studyId/explore/xpansion/candidates': typeof AuthenticatedStudiesStudyIdExploreXpansionCandidatesIndexRoute
   '/studies/$studyId/explore/xpansion/settings': typeof AuthenticatedStudiesStudyIdExploreXpansionSettingsIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/load': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/misc-gen': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute
-  '/studies/$studyId/explore/modeling/areas/$areaId/reserves': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/solar': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/wind': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute
   '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdTimeSeriesRoute
@@ -1277,11 +1361,16 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/general': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRoute
   '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/properties': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdPropertiesIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/renewables': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesIndexRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/reserves': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/storages': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesIndexRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/thermals': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsIndexRoute
   '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdParametersIndexRoute
@@ -1335,7 +1424,7 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/': typeof AuthenticatedStudiesStudyIdIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration': typeof AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/modeling': typeof AuthenticatedStudiesStudyIdExploreModelingRouteRouteWithChildren
-  '/_authenticated/studies/$studyId/explore/tablemode': typeof AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteWithChildren
+  '/_authenticated/studies/$studyId/explore/table-modes': typeof AuthenticatedStudiesStudyIdExploreTableModesRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/xpansion': typeof AuthenticatedStudiesStudyIdExploreXpansionRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/': typeof AuthenticatedStudiesStudyIdExploreIndexRoute
   '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch': typeof AuthenticatedStudiesStudyIdExploreConfigurationAdequacyPatchRouteRouteWithChildren
@@ -1351,6 +1440,8 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/debug/': typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   '/_authenticated/studies/$studyId/explore/modeling/': typeof AuthenticatedStudiesStudyIdExploreModelingIndexRoute
   '/_authenticated/studies/$studyId/explore/outputs/': typeof AuthenticatedStudiesStudyIdExploreOutputsIndexRoute
+  '/_authenticated/studies/$studyId/explore/table-modes/': typeof AuthenticatedStudiesStudyIdExploreTableModesIndexRoute
+  '/_authenticated/studies/$studyId/explore/user-resources/': typeof AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute
   '/_authenticated/studies/$studyId/explore/xpansion/': typeof AuthenticatedStudiesStudyIdExploreXpansionIndexRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdRouteRouteWithChildren
@@ -1369,14 +1460,15 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsIndexRoute
   '/_authenticated/studies/$studyId/explore/modeling/map/': typeof AuthenticatedStudiesStudyIdExploreModelingMapIndexRoute
   '/_authenticated/studies/$studyId/explore/outputs/$outputId/': typeof AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute
-  '/_authenticated/studies/$studyId/explore/tablemode/$tableModeId/': typeof AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRoute
+  '/_authenticated/studies/$studyId/explore/table-modes/$tableModeId/': typeof AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRoute
   '/_authenticated/studies/$studyId/explore/xpansion/candidates/': typeof AuthenticatedStudiesStudyIdExploreXpansionCandidatesIndexRoute
   '/_authenticated/studies/$studyId/explore/xpansion/settings/': typeof AuthenticatedStudiesStudyIdExploreXpansionSettingsIndexRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteWithChildren
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/load': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/misc-gen': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute
-  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/solar': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/wind': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute
   '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdTimeSeriesRoute
@@ -1398,11 +1490,16 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRoute
   '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRoute
   '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesParametersRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroIndexRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/properties/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdPropertiesIndexRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesIndexRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesIndexRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsIndexRoute
   '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/parameters/': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdParametersIndexRoute
@@ -1459,7 +1556,7 @@ export interface FileRouteTypes {
     | '/studies/$studyId/'
     | '/studies/$studyId/explore/configuration'
     | '/studies/$studyId/explore/modeling'
-    | '/studies/$studyId/explore/tablemode'
+    | '/studies/$studyId/explore/table-modes'
     | '/studies/$studyId/explore/xpansion'
     | '/studies/$studyId/explore/'
     | '/studies/$studyId/explore/configuration/adequacy-patch'
@@ -1475,6 +1572,8 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/debug'
     | '/studies/$studyId/explore/modeling/'
     | '/studies/$studyId/explore/outputs'
+    | '/studies/$studyId/explore/table-modes/'
+    | '/studies/$studyId/explore/user-resources'
     | '/studies/$studyId/explore/xpansion/'
     | '/studies/$studyId/explore/modeling/areas/$areaId'
     | '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId'
@@ -1493,14 +1592,15 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/binding-constraints/'
     | '/studies/$studyId/explore/modeling/map'
     | '/studies/$studyId/explore/outputs/$outputId'
-    | '/studies/$studyId/explore/tablemode/$tableModeId'
+    | '/studies/$studyId/explore/table-modes/$tableModeId'
     | '/studies/$studyId/explore/xpansion/candidates'
     | '/studies/$studyId/explore/xpansion/settings'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series'
     | '/studies/$studyId/explore/modeling/areas/$areaId/load'
     | '/studies/$studyId/explore/modeling/areas/$areaId/misc-gen'
-    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
     | '/studies/$studyId/explore/modeling/areas/$areaId/solar'
     | '/studies/$studyId/explore/modeling/areas/$areaId/wind'
     | '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series'
@@ -1522,11 +1622,16 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/'
     | '/studies/$studyId/explore/modeling/areas/$areaId/properties'
     | '/studies/$studyId/explore/modeling/areas/$areaId/renewables'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/'
     | '/studies/$studyId/explore/modeling/areas/$areaId/storages'
     | '/studies/$studyId/explore/modeling/areas/$areaId/thermals'
     | '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/parameters'
@@ -1576,7 +1681,6 @@ export interface FileRouteTypes {
     | '/settings/tokens'
     | '/settings/users'
     | '/studies/$studyId'
-    | '/studies/$studyId/explore/tablemode'
     | '/studies/$studyId/explore'
     | '/studies/$studyId/explore/modeling/areas'
     | '/studies/$studyId/explore/modeling/links'
@@ -1588,6 +1692,8 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/debug'
     | '/studies/$studyId/explore/modeling'
     | '/studies/$studyId/explore/outputs'
+    | '/studies/$studyId/explore/table-modes'
+    | '/studies/$studyId/explore/user-resources'
     | '/studies/$studyId/explore/xpansion'
     | '/studies/$studyId/explore/configuration/adequacy-patch/perimeter'
     | '/studies/$studyId/explore/configuration/geo-trimming/areas'
@@ -1603,12 +1709,12 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/binding-constraints'
     | '/studies/$studyId/explore/modeling/map'
     | '/studies/$studyId/explore/outputs/$outputId'
-    | '/studies/$studyId/explore/tablemode/$tableModeId'
+    | '/studies/$studyId/explore/table-modes/$tableModeId'
     | '/studies/$studyId/explore/xpansion/candidates'
     | '/studies/$studyId/explore/xpansion/settings'
     | '/studies/$studyId/explore/modeling/areas/$areaId/load'
     | '/studies/$studyId/explore/modeling/areas/$areaId/misc-gen'
-    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
     | '/studies/$studyId/explore/modeling/areas/$areaId/solar'
     | '/studies/$studyId/explore/modeling/areas/$areaId/wind'
     | '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series'
@@ -1627,11 +1733,16 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
     | '/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro'
     | '/studies/$studyId/explore/modeling/areas/$areaId/properties'
     | '/studies/$studyId/explore/modeling/areas/$areaId/renewables'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/reserves'
     | '/studies/$studyId/explore/modeling/areas/$areaId/storages'
     | '/studies/$studyId/explore/modeling/areas/$areaId/thermals'
     | '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/parameters'
@@ -1684,7 +1795,7 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/'
     | '/_authenticated/studies/$studyId/explore/configuration'
     | '/_authenticated/studies/$studyId/explore/modeling'
-    | '/_authenticated/studies/$studyId/explore/tablemode'
+    | '/_authenticated/studies/$studyId/explore/table-modes'
     | '/_authenticated/studies/$studyId/explore/xpansion'
     | '/_authenticated/studies/$studyId/explore/'
     | '/_authenticated/studies/$studyId/explore/configuration/adequacy-patch'
@@ -1700,6 +1811,8 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/debug/'
     | '/_authenticated/studies/$studyId/explore/modeling/'
     | '/_authenticated/studies/$studyId/explore/outputs/'
+    | '/_authenticated/studies/$studyId/explore/table-modes/'
+    | '/_authenticated/studies/$studyId/explore/user-resources/'
     | '/_authenticated/studies/$studyId/explore/xpansion/'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId'
     | '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId'
@@ -1718,14 +1831,15 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/'
     | '/_authenticated/studies/$studyId/explore/modeling/map/'
     | '/_authenticated/studies/$studyId/explore/outputs/$outputId/'
-    | '/_authenticated/studies/$studyId/explore/tablemode/$tableModeId/'
+    | '/_authenticated/studies/$studyId/explore/table-modes/$tableModeId/'
     | '/_authenticated/studies/$studyId/explore/xpansion/candidates/'
     | '/_authenticated/studies/$studyId/explore/xpansion/settings/'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves'
     | '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/load'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/misc-gen'
-    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/solar'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/wind'
     | '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/time-series'
@@ -1747,11 +1861,16 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries'
     | '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
     | '/_authenticated/studies/$studyId/explore/modeling/links/$linkId/time-series/parameters'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/properties/'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/'
     | '/_authenticated/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId/parameters/'
@@ -1934,11 +2053,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreXpansionRouteRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreRouteRoute
     }
-    '/_authenticated/studies/$studyId/explore/tablemode': {
-      id: '/_authenticated/studies/$studyId/explore/tablemode'
-      path: '/tablemode'
-      fullPath: '/studies/$studyId/explore/tablemode'
-      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteImport
+    '/_authenticated/studies/$studyId/explore/table-modes': {
+      id: '/_authenticated/studies/$studyId/explore/table-modes'
+      path: '/table-modes'
+      fullPath: '/studies/$studyId/explore/table-modes'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreTableModesRouteRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/modeling': {
@@ -1961,6 +2080,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/studies/$studyId/explore/xpansion/'
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreXpansionIndexRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreXpansionRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/user-resources/': {
+      id: '/_authenticated/studies/$studyId/explore/user-resources/'
+      path: '/user-resources'
+      fullPath: '/studies/$studyId/explore/user-resources'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreUserResourcesIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/table-modes/': {
+      id: '/_authenticated/studies/$studyId/explore/table-modes/'
+      path: '/'
+      fullPath: '/studies/$studyId/explore/table-modes/'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreTableModesIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreTableModesRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/outputs/': {
       id: '/_authenticated/studies/$studyId/explore/outputs/'
@@ -2067,12 +2200,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreXpansionCandidatesIndexRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreXpansionRouteRoute
     }
-    '/_authenticated/studies/$studyId/explore/tablemode/$tableModeId/': {
-      id: '/_authenticated/studies/$studyId/explore/tablemode/$tableModeId/'
+    '/_authenticated/studies/$studyId/explore/table-modes/$tableModeId/': {
+      id: '/_authenticated/studies/$studyId/explore/table-modes/$tableModeId/'
       path: '/$tableModeId'
-      fullPath: '/studies/$studyId/explore/tablemode/$tableModeId'
-      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRouteImport
-      parentRoute: typeof AuthenticatedStudiesStudyIdExploreTablemodeRouteRoute
+      fullPath: '/studies/$studyId/explore/table-modes/$tableModeId'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreTableModesRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/outputs/$outputId/': {
       id: '/_authenticated/studies/$studyId/explore/outputs/$outputId/'
@@ -2249,11 +2382,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute
     }
-    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves': {
-      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves'
-      path: '/reserves'
-      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/reserves'
-      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteImport
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
+      path: '/reserves-legacy'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/misc-gen': {
@@ -2276,6 +2409,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/studies/$studyId/explore/modeling/links/$linkId/time-series'
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves'
+      path: '/reserves'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/reserves'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro': {
       id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro'
@@ -2312,6 +2452,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesIndexRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRoute
     }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/'
+      path: '/'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/reserves/'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute
+    }
     '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/': {
       id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/'
       path: '/renewables'
@@ -2346,6 +2493,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/studies/$studyId/explore/modeling/links/$linkId/time-series/capacities'
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesCapacitiesRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdTimeSeriesRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries'
+      path: '/symmetries'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
+      path: '/needs'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
+      path: '/general'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/reserves/general'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications'
+      path: '/certifications'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/reserves/certifications'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values': {
       id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
@@ -2814,6 +2989,33 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteWithCh
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteChildren,
   )
 
+interface AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteChildren {
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRoute
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRoute
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute
+}
+
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteChildren: AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteChildren =
+  {
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesCertificationsRoute,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesGeneralRoute,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesNeedsRoute,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesSymmetriesRoute,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesIndexRoute,
+  }
+
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteWithChildren =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute._addFileChildren(
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteChildren,
+  )
+
 interface AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesRenewableIdRouteRouteChildren {
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesRenewableIdParametersRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesRenewableIdParametersRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesRenewableIdTimeSeriesRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesRenewableIdTimeSeriesRoute
@@ -2963,9 +3165,10 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsThermalIdRout
 
 interface AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRouteChildren {
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteWithChildren
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteWithChildren
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute
-  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRoute
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdIndexRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdIndexRoute
@@ -2982,12 +3185,14 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRouteRouteChildren: A
   {
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteWithChildren,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRouteRouteWithChildren,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdLoadRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdMiscGenRoute,
-    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRoute:
-      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesRoute,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesLegacyRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdSolarRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdWindRoute:
@@ -3153,19 +3358,22 @@ const AuthenticatedStudiesStudyIdExploreModelingRouteRouteWithChildren =
     AuthenticatedStudiesStudyIdExploreModelingRouteRouteChildren,
   )
 
-interface AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteChildren {
-  AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRoute: typeof AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRoute
+interface AuthenticatedStudiesStudyIdExploreTableModesRouteRouteChildren {
+  AuthenticatedStudiesStudyIdExploreTableModesIndexRoute: typeof AuthenticatedStudiesStudyIdExploreTableModesIndexRoute
+  AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRoute: typeof AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRoute
 }
 
-const AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteChildren: AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteChildren =
+const AuthenticatedStudiesStudyIdExploreTableModesRouteRouteChildren: AuthenticatedStudiesStudyIdExploreTableModesRouteRouteChildren =
   {
-    AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRoute:
-      AuthenticatedStudiesStudyIdExploreTablemodeTableModeIdIndexRoute,
+    AuthenticatedStudiesStudyIdExploreTableModesIndexRoute:
+      AuthenticatedStudiesStudyIdExploreTableModesIndexRoute,
+    AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRoute:
+      AuthenticatedStudiesStudyIdExploreTableModesTableModeIdIndexRoute,
   }
 
-const AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteWithChildren =
-  AuthenticatedStudiesStudyIdExploreTablemodeRouteRoute._addFileChildren(
-    AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteChildren,
+const AuthenticatedStudiesStudyIdExploreTableModesRouteRouteWithChildren =
+  AuthenticatedStudiesStudyIdExploreTableModesRouteRoute._addFileChildren(
+    AuthenticatedStudiesStudyIdExploreTableModesRouteRouteChildren,
   )
 
 interface AuthenticatedStudiesStudyIdExploreXpansionRouteRouteChildren {
@@ -3201,11 +3409,12 @@ const AuthenticatedStudiesStudyIdExploreXpansionRouteRouteWithChildren =
 interface AuthenticatedStudiesStudyIdExploreRouteRouteChildren {
   AuthenticatedStudiesStudyIdExploreConfigurationRouteRoute: typeof AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteWithChildren
   AuthenticatedStudiesStudyIdExploreModelingRouteRoute: typeof AuthenticatedStudiesStudyIdExploreModelingRouteRouteWithChildren
-  AuthenticatedStudiesStudyIdExploreTablemodeRouteRoute: typeof AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteWithChildren
+  AuthenticatedStudiesStudyIdExploreTableModesRouteRoute: typeof AuthenticatedStudiesStudyIdExploreTableModesRouteRouteWithChildren
   AuthenticatedStudiesStudyIdExploreXpansionRouteRoute: typeof AuthenticatedStudiesStudyIdExploreXpansionRouteRouteWithChildren
   AuthenticatedStudiesStudyIdExploreIndexRoute: typeof AuthenticatedStudiesStudyIdExploreIndexRoute
   AuthenticatedStudiesStudyIdExploreDebugIndexRoute: typeof AuthenticatedStudiesStudyIdExploreDebugIndexRoute
   AuthenticatedStudiesStudyIdExploreOutputsIndexRoute: typeof AuthenticatedStudiesStudyIdExploreOutputsIndexRoute
+  AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute: typeof AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute
   AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute: typeof AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute
 }
 
@@ -3215,8 +3424,8 @@ const AuthenticatedStudiesStudyIdExploreRouteRouteChildren: AuthenticatedStudies
       AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteWithChildren,
     AuthenticatedStudiesStudyIdExploreModelingRouteRoute:
       AuthenticatedStudiesStudyIdExploreModelingRouteRouteWithChildren,
-    AuthenticatedStudiesStudyIdExploreTablemodeRouteRoute:
-      AuthenticatedStudiesStudyIdExploreTablemodeRouteRouteWithChildren,
+    AuthenticatedStudiesStudyIdExploreTableModesRouteRoute:
+      AuthenticatedStudiesStudyIdExploreTableModesRouteRouteWithChildren,
     AuthenticatedStudiesStudyIdExploreXpansionRouteRoute:
       AuthenticatedStudiesStudyIdExploreXpansionRouteRouteWithChildren,
     AuthenticatedStudiesStudyIdExploreIndexRoute:
@@ -3225,6 +3434,8 @@ const AuthenticatedStudiesStudyIdExploreRouteRouteChildren: AuthenticatedStudies
       AuthenticatedStudiesStudyIdExploreDebugIndexRoute,
     AuthenticatedStudiesStudyIdExploreOutputsIndexRoute:
       AuthenticatedStudiesStudyIdExploreOutputsIndexRoute,
+    AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute:
+      AuthenticatedStudiesStudyIdExploreUserResourcesIndexRoute,
     AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute:
       AuthenticatedStudiesStudyIdExploreOutputsOutputIdIndexRoute,
   }

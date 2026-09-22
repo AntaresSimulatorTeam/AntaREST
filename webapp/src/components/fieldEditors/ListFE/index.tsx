@@ -21,7 +21,8 @@ import {
   type FakeChangeEventHandler,
   type InputObject,
 } from "@/utils/feUtils";
-import DragHandleIcon from "@mui/icons-material/DragHandle";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 import {
   Autocomplete,
@@ -33,15 +34,13 @@ import {
   List,
   ListItem,
   ListItemButton,
-  ListItemIcon,
   ListItemText,
   Paper,
   setRef,
   Typography,
 } from "@mui/material";
 import * as RA from "ramda-adjunct";
-import { useEffect, useId, useState } from "react";
-import { DragDropContext, Draggable, Droppable, type DropResult } from "react-beautiful-dnd";
+import { useEffect, useState, type JSX } from "react";
 import type { FieldPath, FieldValues } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
@@ -86,7 +85,6 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
   const { t } = useTranslation();
   const [listItems, setListItems] = useState(() => makeListItems(value || defaultValue || []));
   const [selectedOption, setSelectedOption] = useState<TOption | null>(null);
-  const droppableId = useId();
 
   // Update list if the FE is controlled (`defaultValue` is for uncontrolled)
   useUpdateEffect(() => {
@@ -122,15 +120,11 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
   }, [inputRef, listItems, name]);
 
   ////////////////////////////////////////////////////////////////
-  // Event Handlers
+  // Utils
   ////////////////////////////////////////////////////////////////
 
-  const onItemDragEnd = (result: DropResult) => {
-    const { source, destination } = result;
-    // It's null if dropped outside the list
-    if (destination) {
-      setListItems(RA.move(source.index, destination.index, listItems));
-    }
+  const moveItem = (fromIndex: number, toIndex: number) => {
+    setListItems(RA.move(fromIndex, toIndex, listItems));
   };
 
   ////////////////////////////////////////////////////////////////
@@ -177,64 +171,63 @@ function ListFE<TItem, TOption>(props: ListFEProps<TItem, TOption>) {
           {t("button.add")}
         </Button>
       </Box>
-      <DragDropContext onDragEnd={onItemDragEnd}>
-        <Droppable droppableId={droppableId}>
-          {(provided) => (
-            <List {...provided.droppableProps} ref={provided.innerRef} sx={{ pb: 0 }}>
-              {listItems.map((item, index) => (
-                <Draggable key={item.id} draggableId={item.id} index={index}>
-                  {(provided, snapshot) => (
-                    <ListItem
-                      key={item.id}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
-                      sx={[
-                        {
-                          ...provided.draggableProps.style,
-                        },
-                        snapshot.isDragging && {
-                          background: "rgba(255, 255, 255, 0.32)", // Like hover color
-                        },
-                      ]}
-                      ref={provided.innerRef}
-                      secondaryAction={
-                        <IconButton
-                          edge="end"
-                          onClick={() => {
-                            setListItems(listItems.filter(({ id }) => id !== item.id));
-                          }}
-                        >
-                          <RemoveCircleIcon />
-                        </IconButton>
-                      }
-                      disablePadding
-                      dense
-                    >
-                      <ListItemButton sx={{ cursor: "inherit" }} disableRipple disableGutters>
-                        <ListItemIcon sx={{ minWidth: 0, pr: 2, pl: 1 }}>
-                          <DragHandleIcon />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={getValueLabel(item.value)}
-                          title={getValueLabel(item.value)}
-                          sx={{
-                            ".MuiTypography-root": {
-                              textOverflow: "ellipsis",
-                              overflow: "hidden",
-                              whiteSpace: "nowrap",
-                            },
-                          }}
-                        />
-                      </ListItemButton>
-                    </ListItem>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </List>
-          )}
-        </Droppable>
-      </DragDropContext>
+      <List sx={{ pb: 0 }}>
+        {listItems.map((item, index) => (
+          <ListItem
+            key={item.id}
+            disableGutters
+            secondaryAction={
+              <>
+                {index > 0 && (
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      moveItem(index, index - 1);
+                    }}
+                  >
+                    <ExpandLessIcon />
+                  </IconButton>
+                )}
+                {index < listItems.length - 1 && (
+                  <IconButton
+                    size="small"
+                    onClick={() => {
+                      moveItem(index, index + 1);
+                    }}
+                  >
+                    <ExpandMoreIcon />
+                  </IconButton>
+                )}
+                <IconButton
+                  size="small"
+                  edge="end"
+                  onClick={() => {
+                    setListItems(listItems.filter(({ id }) => id !== item.id));
+                  }}
+                >
+                  <RemoveCircleIcon />
+                </IconButton>
+              </>
+            }
+            disablePadding
+            dense
+          >
+            <ListItemButton sx={{ cursor: "inherit" }} disableRipple>
+              <ListItemText
+                primary={getValueLabel(item.value)}
+                title={getValueLabel(item.value)}
+                sx={{
+                  ".MuiTypography-root": {
+                    textOverflow: "ellipsis",
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                  },
+                }}
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
       {helperText && <FormHelperText>{helperText}</FormHelperText>}
     </FormControl>
   );

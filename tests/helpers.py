@@ -15,10 +15,11 @@ import math
 import os
 import time
 import uuid
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, cast
 from unittest.mock import Mock
 
 import numpy as np
@@ -30,14 +31,17 @@ from typing_extensions import override
 from antarest.core.model import SUB_JSON
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.utils import current_user_context
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.study_interface import FileStudyInterface
-from antarest.study.model import RawStudy, Study
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.model import RawStudy, StorageMode, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from tests.conftest_instances import create_admin_user
 
 
-def dirhash(dirname: Union[str, Path], hashfunc: str = "md5") -> str:
+def dirhash(dirname: str | Path, hashfunc: str = "md5") -> str:
     """Compute a single hash for all files in a directory tree (replacement for checksumdir.dirhash)."""
     hash_constructor = getattr(hashlib, hashfunc)
     hashvalues = []
@@ -76,14 +80,14 @@ def with_admin_user(f: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
-def _assert_dict(a: Dict[str, Any], b: Dict[str, Any]) -> None:
+def _assert_dict(a: dict[str, Any], b: dict[str, Any]) -> None:
     if a.keys() != b.keys():
         raise AssertionError(f"study level has not the same keys {a.keys()} != {b.keys()}")
     for k, v in a.items():
         assert_study(v, b[k])
 
 
-def _assert_list(a: List[Any], b: List[Any]) -> None:
+def _assert_list(a: list[Any], b: list[Any]) -> None:
     for i, j in zip(a, b):
         assert_study(i, j)
 
@@ -121,13 +125,41 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
     elif isinstance(a, np.ndarray) and isinstance(b, np.ndarray):
         _assert_array(a, b)
     elif isinstance(a, np.ndarray) and isinstance(b, list):
-        _assert_list(cast(List[float], a.tolist()), b)
+        _assert_list(cast(list[float], a.tolist()), b)
     elif isinstance(a, list) and isinstance(b, np.ndarray):
-        _assert_list(a, cast(List[float], b.tolist()))
+        _assert_list(a, cast(list[float], b.tolist()))
     elif isinstance(a, float) and math.isnan(a):
         assert math.isnan(b)
     else:
         _assert_others(a, b)
+
+
+def explain_model_diff(actual: Any, expected: Any) -> str:
+    """
+    Produce a readable per-field diff between two pydantic models (or dicts).
+    Intended as a lazy assert message: `assert a == b, explain_model_diff(a, b)`.
+    Only called on assertion failure.
+    """
+
+    def _to_dict(obj: Any) -> Any:
+        if hasattr(obj, "model_dump"):
+            return obj.model_dump()
+        return obj
+
+    a = _to_dict(actual)
+    b = _to_dict(expected)
+    if not (isinstance(a, dict) and isinstance(b, dict)):
+        return f"actual={actual!r}\nexpected={expected!r}"
+
+    lines: list[str] = []
+    for key in sorted(set(a) | set(b)):
+        av = a.get(key, "<missing>")
+        bv = b.get(key, "<missing>")
+        if av != bv:
+            lines.append(f"  {key}: actual={av!r}  expected={bv!r}")
+    if not lines:
+        return "models dump identical — check types or non-dumped fields"
+    return "Field diff (actual vs expected):\n" + "\n".join(lines)
 
 
 def auto_retry_assert(predicate: Callable[..., bool], timeout: int = 2, delay: float = 0.2) -> None:
@@ -165,9 +197,9 @@ class AnyUUID:
 
 
 def create_study(
-    id: Optional[str] = None,
-    name: Optional[str] = None,
-    path: Optional[str] = None,
+    id: str | None = None,
+    name: str | None = None,
+    path: str | None = None,
     version: str = "880",
     **kwargs: Any,
 ) -> Study:
@@ -194,39 +226,29 @@ def create_study(
 
 
 def create_raw_study(
-    id: Optional[str] = None,
-    name: Optional[str] = None,
-    path: Optional[str] = None,
+    id: str | None = None,
+    name: str | None = None,
+    path: str | None = None,
     version: str = "880",
+    storage_mode: StorageMode = StorageMode.FILESYSTEM,
     **kwargs: Any,
 ) -> RawStudy:
-    """
-    Factory to create a new RawStudy object for testing purposes.
-
-    Args:
-        id: The study ID. If not provided, a new UUID is generated.
-        name: The study name. If not provided, it will be "My Study".
-        path: The study path. If not provided, a temporary path is created.
-        version: The study version. Default is "860".
-        **kwargs: Additional keyword arguments to pass to the RawStudy constructor.
-
-    Returns:
-        A new RawStudy object.
-    """
     return RawStudy(
         id=id or str(uuid.uuid4()),
         name=name or "My Study",
         path=str(path or Path("path/to/raw_study")),
         version=version,
+        storage_mode=storage_mode,
         **kwargs,
     )
 
 
 def create_variant_study(
-    id: Optional[str] = None,
-    name: Optional[str] = None,
-    path: Optional[str] = None,
+    id: str | None = None,
+    name: str | None = None,
+    path: str | None = None,
     version: str = "880",
+    storage_mode: StorageMode = StorageMode.FILESYSTEM,
     **kwargs: Any,
 ) -> VariantStudy:
     """
@@ -247,12 +269,28 @@ def create_variant_study(
         name=name or "My Study",
         path=str(path or Path("path/to/variant_study")),
         version=version,
+        storage_mode=storage_mode,
         **kwargs,
     )
 
 
-def file_study_interface(file_study: FileStudy) -> FileStudyInterface:
+def file_study_interface(
+    file_study: FileStudy, matrix_service: ISimpleMatrixService | None = None
+) -> FileStudyInterface:
     """
     Utils function to avoid declaring Mocks everywhere inside the tests
     """
-    return FileStudyInterface(file_study, Mock(), Mock())
+    return FileStudyInterface(file_study, False, Mock(), Mock(), matrix_service or Mock(), Mock())
+
+
+def build_dao_from_file_study(
+    file_study: FileStudy, command_context: CommandContext, managed: bool = False
+) -> FileStudyTreeDao:
+    return FileStudyTreeDao(
+        file_study,
+        managed,
+        command_context.generator_matrix_constants,
+        command_context.blob_service,
+        command_context.matrix_service,
+        Mock(),
+    )

@@ -20,26 +20,27 @@ import SelectFE from "../fieldEditors/SelectFE";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
 import type { SubmitHandlerPlus } from "../Form/types";
-import type { TRow } from "./types";
+import type { RowData } from "./types";
 
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  onSubmit: (values: TRow) => Promise<void>;
-  groups: string[];
-  allowNewGroups: boolean;
-  existingNames: Array<TRow["name"]>;
+  onSubmit: (values: RowData) => Promise<void>;
+  groups?: string[];
+  allowNewGroups?: boolean;
+  existingNames: Array<RowData["name"]>;
 }
 
 function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existingNames }: Props) {
   const { t } = useTranslation();
+  const hasGroups = groups !== undefined;
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values: { name, group } }: SubmitHandlerPlus<TRow>) => {
-    return onSubmit({ name: name.trim(), group });
+  const handleSubmit = ({ values: { name, group } }: SubmitHandlerPlus<RowData>) => {
+    return onSubmit(hasGroups ? { name: name.trim(), group } : { name: name.trim() });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -66,23 +67,24 @@ function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existin
             }}
             sx={{ m: 0 }}
           />
-          {allowNewGroups ? (
-            <StringFE
-              label={t("global.group")}
-              name="group"
-              datalist={groups}
-              control={control}
-              rules={{ required: t("form.field.required") }}
-            />
-          ) : (
-            <SelectFE
-              label={t("global.group")}
-              name="group"
-              control={control}
-              options={groups}
-              rules={{ required: t("form.field.required") }}
-            />
-          )}
+          {hasGroups &&
+            (allowNewGroups ? (
+              <StringFE
+                label={t("global.group")}
+                name="group"
+                datalist={groups}
+                control={control}
+                rules={{ required: t("form.field.required") }}
+              />
+            ) : (
+              <SelectFE
+                label={t("global.group")}
+                name="group"
+                control={control}
+                options={groups}
+                rules={{ required: t("form.field.required") }}
+              />
+            ))}
         </Fieldset>
       )}
     </FormDialog>

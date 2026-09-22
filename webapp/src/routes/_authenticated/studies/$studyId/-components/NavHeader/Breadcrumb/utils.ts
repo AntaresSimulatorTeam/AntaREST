@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { TREE_ROOT_NAME } from "@/components/utils/constants";
 import {
   buildDirectoryTree,
   getDirectoryPath,
@@ -117,7 +118,7 @@ export function buildManagedBreadcrumbs({
   directories,
 }: BuildManagedBreadcrumbsParams): BreadcrumbItem[] {
   const rootItem: BreadcrumbItem = {
-    label: "root",
+    label: TREE_ROOT_NAME,
     id: null,
     path: null,
   };

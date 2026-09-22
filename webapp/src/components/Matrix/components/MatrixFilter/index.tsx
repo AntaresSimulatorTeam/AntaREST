@@ -16,7 +16,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { Box, Divider, Drawer, IconButton, Tooltip } from "@mui/material";
-import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from "react";
+import { useCallback, useImperativeHandle, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
 import { useMatrixContext } from "../../context/MatrixContext";
@@ -31,14 +31,7 @@ import { COMPONENT_DIMENSIONS, DESIGN_TOKENS, DRAWER_STYLES } from "./styles";
 import type { MatrixFilterProps } from "./types";
 import { extractDatesInfo, getMatrixDimensions } from "./utils";
 
-export interface MatrixFilterHandle {
-  toggle: () => void;
-}
-
-function MatrixFilter(
-  { dateTime, isTimeSeries, timeFrequency, readOnly }: MatrixFilterProps,
-  ref: React.ForwardedRef<MatrixFilterHandle>,
-) {
+function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly, ref }: MatrixFilterProps) {
   const { t } = useTranslation();
   const { currentState, setFilterPreview } = useMatrixContext();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -106,7 +99,7 @@ function MatrixFilter(
   useImperativeHandle(
     ref,
     () => ({
-      toggle: handleDrawerToggle,
+      toggleFilter: handleDrawerToggle,
     }),
     [handleDrawerToggle],
   );
@@ -203,4 +196,4 @@ function MatrixFilter(
   );
 }
 
-export default forwardRef(MatrixFilter);
+export default MatrixFilter;
