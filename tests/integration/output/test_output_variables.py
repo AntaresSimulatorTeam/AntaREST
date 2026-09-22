@@ -327,7 +327,9 @@ def test_export_output_variables_view(client: TestClient, user_access_token: str
 
 
 @pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
-def test_get_variables_view_for_both_storage_modes(client: TestClient, user_access_token: str, storage_mode: str):
+def test_get_variables_view_for_both_storage_modes(
+    client: TestClient, user_access_token: str, storage_mode: str
+) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     # Create a Study with the 2 different storage modes.

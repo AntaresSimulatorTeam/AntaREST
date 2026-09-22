@@ -15,7 +15,7 @@ from antarest.core.tasks.model import TaskStatus
 from tests.integration.utils import wait_task_completion
 
 
-def test_output_archive_and_unarchive_disk_usage(admin_client: TestClient, internal_study_id: str):
+def test_output_archive_and_unarchive_disk_usage(admin_client: TestClient, internal_study_id: str) -> None:
 
     res = admin_client.post(
         f"/v1/studies/{internal_study_id}/copy",

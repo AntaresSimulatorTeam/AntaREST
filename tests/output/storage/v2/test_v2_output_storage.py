@@ -43,12 +43,12 @@ def init_db(db_engine: Engine) -> None:
 
 
 @pytest.fixture
-def study_repo(init_db) -> StudyMetadataRepository:
+def study_repo(init_db: None) -> StudyMetadataRepository:
     return StudyMetadataRepository()
 
 
 @pytest.fixture
-def output_repo(init_db) -> OutputV2Repository:
+def output_repo(init_db: None) -> OutputV2Repository:
     return OutputV2Repository()
 
 
@@ -97,7 +97,7 @@ def test_storage(
     lfs: ILargeFileStorage,
     study_id: str,
     output_path: Path,
-):
+) -> None:
     with db():
         # Check there is no output at first for that study
         assert not storage.output_exists(study_id="my-study", output_id=f"{EXPECTED_DATE}eco")
@@ -164,7 +164,7 @@ def test_import_archive(
     archive_format: ArchiveFormat,
     nested: bool,
     tmp_path: Path,
-):
+) -> None:
     archive_path = create_archive(archive_format, nested, output_path, tmp_path)
     with db():
         output_name = storage.import_output(study_id, archive_path)
@@ -184,7 +184,7 @@ def test_import_archive_stream(
     archive_format: ArchiveFormat,
     nested: bool,
     tmp_path: Path,
-):
+) -> None:
     archive_path = create_archive(archive_format, nested, output_path, tmp_path)
     with db():
         with open(archive_path, "rb") as archive_io:
@@ -575,7 +575,7 @@ def test_write_imported_output_to_dir(
     archive_format: ArchiveFormat,
     nested: bool,
     tmp_path: Path,
-):
+) -> None:
     archive_path = create_archive(archive_format, nested, output_path, tmp_path)
     with db():
         with open(archive_path, "rb") as archive_io:
@@ -597,7 +597,7 @@ def test_copy_output(
     study_id: str,
     output_path: Path,
     tmp_path: Path,
-):
+) -> None:
     with db():
         study_repo.save(Study(id="my-copy", name="name", version="9.2", path=""))
 
@@ -663,7 +663,7 @@ def test_import_creates_parquet_files(
     study_id: str,
     output_path: Path,
     tmp_path: Path,
-):
+) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
 
@@ -686,7 +686,7 @@ def test_parquet_areas_content(
     study_id: str,
     output_path: Path,
     tmp_path: Path,
-):
+) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
 
@@ -706,7 +706,7 @@ def test_parquet_thermal_clusters_content(
     study_id: str,
     output_path: Path,
     tmp_path: Path,
-):
+) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
 
@@ -727,7 +727,7 @@ def test_delete_removes_parquet(
     study_id: str,
     output_path: Path,
     tmp_path: Path,
-):
+) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
 
@@ -747,7 +747,7 @@ def test_copy_output_copies_parquet(
     study_id: str,
     output_path: Path,
     tmp_path: Path,
-):
+) -> None:
     with db():
         study_repo.save(Study(id="copy-target", name="name", version="9.2", path=""))
         output_name = storage.import_output(study_id, output_path)
@@ -768,7 +768,7 @@ def test_aggregate_areas_values(
     storage: V2OutputStorage,
     study_id: str,
     output_path: Path,
-):
+) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
 
@@ -795,7 +795,7 @@ def test_aggregate_with_area_filter(
     storage: V2OutputStorage,
     study_id: str,
     output_path: Path,
-):
+) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
 
@@ -818,7 +818,7 @@ def test_aggregate_with_column_filter(
     storage: V2OutputStorage,
     study_id: str,
     output_path: Path,
-):
+) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
 
@@ -842,7 +842,7 @@ def test_aggregate_thermal_clusters(
     storage: V2OutputStorage,
     study_id: str,
     output_path: Path,
-):
+) -> None:
     with db():
         output_name = storage.import_output(study_id, output_path)
 

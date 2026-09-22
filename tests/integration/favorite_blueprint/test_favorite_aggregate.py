@@ -14,7 +14,7 @@ from pathlib import Path
 from starlette.testclient import TestClient
 
 
-def test_favorite_aggregate_success_no_favorite_added(admin_client: TestClient):
+def test_favorite_aggregate_success_no_favorite_added(admin_client: TestClient) -> None:
     # using the aggregate method in order to check that no favorite is present when called
     aggregate_res = admin_client.get("/v1/favorites").json()
     assert aggregate_res["studies"] == []
@@ -22,7 +22,7 @@ def test_favorite_aggregate_success_no_favorite_added(admin_client: TestClient):
     assert aggregate_res["externalDirectories"] == []
 
 
-def test_favorite_aggregate_success_added_each_type_of_favorite(admin_client: TestClient, tmp_path: Path):
+def test_favorite_aggregate_success_added_each_type_of_favorite(admin_client: TestClient, tmp_path: Path) -> None:
     workspace_name = "ext"
     path = Path("path") / "to" / "favorite" / "directory"
     path_ws = tmp_path / "ext_workspace" / path
@@ -51,7 +51,7 @@ def test_favorite_aggregate_success_added_each_type_of_favorite(admin_client: Te
 
 def test_favorite_aggregate_success_one_user_added_two_favorites_that_cant_be_seen_by_another_user(
     admin_client: TestClient, user_access_token: str
-):
+) -> None:
     study_response = admin_client.post(
         "/v1/studies",
         params={"name": "Test Study for Favorites"},

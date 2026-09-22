@@ -15,7 +15,7 @@ from starlette.testclient import TestClient
 
 
 # TEST ADD FAVORITE EXTERNAL DIRECTORY
-def test_add_favorite_external_directory_success_added_one_favorite(admin_client: TestClient, tmp_path: Path):
+def test_add_favorite_external_directory_success_added_one_favorite(admin_client: TestClient, tmp_path: Path) -> None:
 
     workspace_name = "ext"
     # We create a path that we'll convert as a posix since we'll receive posix path everytime
@@ -33,7 +33,7 @@ def test_add_favorite_external_directory_success_added_one_favorite(admin_client
 
 def test_add_favorite_external_directory_success_two_users_added_one_and_same_favorite(
     admin_client: TestClient, tmp_path: Path, user_access_token: str
-):
+) -> None:
 
     workspace_name = "ext"
     # We create a path that we'll convert as a posix since we'll receive posix path everytime
@@ -67,7 +67,7 @@ def test_add_favorite_external_directory_success_two_users_added_one_and_same_fa
     assert response == [expected_favorite_external_directory]
 
 
-def test_add_favorite_external_directory_failure_workspace_not_found(admin_client: TestClient, tmp_path: Path):
+def test_add_favorite_external_directory_failure_workspace_not_found(admin_client: TestClient, tmp_path: Path) -> None:
     workspace_name = "workspace_not_found"
     # We create a path that we'll convert as a posix since we'll receive posix path everytime
     path = Path("path") / "to" / "favorite" / "directory"
@@ -79,7 +79,7 @@ def test_add_favorite_external_directory_failure_workspace_not_found(admin_clien
     assert response.json()["description"] == f"Workspace {workspace_name} not found"
 
 
-def test_add_favorite_external_directory_failure_path_not_found(admin_client: TestClient, tmp_path: Path):
+def test_add_favorite_external_directory_failure_path_not_found(admin_client: TestClient, tmp_path: Path) -> None:
     # checking that the favorite external directory is not added if the path does not exist
     workspace_name = "ext"
     path = tmp_path / "ext_workspace" / workspace_name
@@ -91,7 +91,7 @@ def test_add_favorite_external_directory_failure_path_not_found(admin_client: Te
     assert response.json()["description"] == f"Directory '{inexisting_dir.as_posix()}' not found"
 
 
-def test_add_favorite_external_directory_failure_folder_not_safe(admin_client: TestClient, tmp_path: Path):
+def test_add_favorite_external_directory_failure_folder_not_safe(admin_client: TestClient, tmp_path: Path) -> None:
     # checking that the favorite external directory is not added if the path is not safe
     workspace_name = "ext"
     path = tmp_path / "external_workspace" / workspace_name
@@ -102,7 +102,7 @@ def test_add_favorite_external_directory_failure_folder_not_safe(admin_client: T
 
 
 # TEST GET FAVORITES EXTERNAL DIRECTORY
-def test_get_favorite_external_directory_success_get_one_favorite(admin_client: TestClient, tmp_path: Path):
+def test_get_favorite_external_directory_success_get_one_favorite(admin_client: TestClient, tmp_path: Path) -> None:
     # creating one favorite external directory and checking that it is returned
     workspace_name = "ext"
     # We create a path that we'll convert as a posix since we'll receive posix path everytime
@@ -118,7 +118,7 @@ def test_get_favorite_external_directory_success_get_one_favorite(admin_client: 
     assert actual_favorite_list[0]["path"] == path.as_posix()
 
 
-def test_get_favorite_external_directory_success_added_two_favorite(admin_client: TestClient, tmp_path: Path):
+def test_get_favorite_external_directory_success_added_two_favorite(admin_client: TestClient, tmp_path: Path) -> None:
     # creating two favorite external directories and checking that they are returned
     workspace_name = "ext"
     # We create a path that we'll convert as a posix since we'll receive posix path everytime
@@ -142,7 +142,9 @@ def test_get_favorite_external_directory_success_added_two_favorite(admin_client
 
 
 # TEST DELETE FAVORITE EXTERNAL DIRECTORY
-def test_delete_favorite_external_directory_success_deleted_one_favorite(admin_client: TestClient, tmp_path: Path):
+def test_delete_favorite_external_directory_success_deleted_one_favorite(
+    admin_client: TestClient, tmp_path: Path
+) -> None:
     # adding an external directory to the favorite, and deleting it afterwards
     workspace_name = "ext"  # We create a path that we'll convert as a posix since we'll receive posix path everytime
     path = Path("path") / "to" / "favorite" / "directory"
@@ -160,7 +162,7 @@ def test_delete_favorite_external_directory_success_deleted_one_favorite(admin_c
     assert actual_favorite_list == []
 
 
-def test_delete_favorite_external_directory_failure_not_found(admin_client: TestClient):
+def test_delete_favorite_external_directory_failure_not_found(admin_client: TestClient) -> None:
     # trying to delete a favorite external directory that does not exist
     path = "path/to/favorite/directory"
     workspace_name = "ext"

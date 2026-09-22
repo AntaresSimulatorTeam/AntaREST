@@ -16,13 +16,14 @@ import datetime
 import tempfile
 import threading
 import time
+from collections.abc import Callable
 from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
-from antarest.maintenance.tasks.auto_archive import archive_old_studies
+from antarest.maintenance.tasks.auto_archive import AutoArchiveTaskResult, StudyToArchive, archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.output.service import OutputService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
@@ -31,7 +32,9 @@ from antarest.study.service import StudyService
 from tests.helpers import create_raw_study, create_variant_study
 
 
-def _run_concurrent_archive(second_side_effect=None) -> dict:
+def _run_concurrent_archive(
+    second_side_effect: Callable[[StudyService, int], list[StudyToArchive]] | None = None,
+) -> dict[str, AutoArchiveTaskResult]:
     """Run archive_old_studies in two threads concurrently.
 
     The first thread holds the file lock while executing; the second thread
@@ -47,14 +50,14 @@ def _run_concurrent_archive(second_side_effect=None) -> dict:
     mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
     mock_study_service.task_service = Mock()
 
-    results = {}
+    results: dict[str, AutoArchiveTaskResult] = {}
 
-    def slow_get_studies(*args, **kwargs):
+    def slow_get_studies(study_service: StudyService, threshold_days: int) -> list[StudyToArchive]:
         lock_acquired.set()
         time.sleep(0.05)
         return []
 
-    def run_first():
+    def run_first() -> None:
         with patch(
             "antarest.maintenance.tasks.auto_archive._get_studies_to_archive",
             side_effect=slow_get_studies,
@@ -63,7 +66,7 @@ def _run_concurrent_archive(second_side_effect=None) -> dict:
                 mock_study_service, mock_output_service, 60, 7, dry_run=True, lock_folder=Path(tempfile.gettempdir())
             )
 
-    def run_second():
+    def run_second() -> None:
         lock_acquired.wait(timeout=2)
         ctx = (
             patch(
@@ -232,7 +235,7 @@ class TestArchiveOldStudiesIntegration:
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert result.archived_studies == 0
 
-    def test_concurrent_archive_old_studies_is_skipped(self, db_middleware):
+    def test_concurrent_archive_old_studies_is_skipped(self, db_middleware: None) -> None:
         results = _run_concurrent_archive()
 
         assert results["first"].status == BackGroundTaskStatus.SUCCESS
@@ -240,11 +243,11 @@ class TestArchiveOldStudiesIntegration:
         assert results["second"].reason == "lock_not_acquired"
         assert results["second"].archived_studies == 0
 
-    def test_blocked_archive_is_not_run_after_lock_release(self, db_middleware):
+    def test_blocked_archive_is_not_run_after_lock_release(self, db_middleware: None) -> None:
         """Verify the second concurrent run is truly skipped, not just reported as skipped."""
         second_body_called = []
 
-        def second_side_effect(*args, **kwargs):
+        def second_side_effect(study_service: StudyService, threshold_days: int) -> list[StudyToArchive]:
             second_body_called.append(True)
             return []
 

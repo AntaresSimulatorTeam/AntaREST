@@ -25,7 +25,7 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     InitialReservoirLevel,
     SimulationCore,
 )
-from antarest.study.business.model.config.general_model import BuildingMode, GeneralConfig
+from antarest.study.business.model.config.general_model import BuildingMode, GeneralConfig, Mode
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
 )
@@ -54,7 +54,6 @@ from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_9_2
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from antarest.study.storage.utils import create_new_empty_study
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import with_admin_user

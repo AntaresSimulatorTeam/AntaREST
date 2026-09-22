@@ -13,12 +13,12 @@ import pytest
 from httpx import Headers
 from starlette.testclient import TestClient
 
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.config.optimization_config_model import (
     SimplexOptimizationRange,
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from tests.integration.prepare_proxy import PreparerProxy
 
 

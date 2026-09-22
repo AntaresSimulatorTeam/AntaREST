@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from collections.abc import Callable, Iterator
 from datetime import timedelta
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -54,7 +54,7 @@ class _FakeContext:
 
 
 @pytest.fixture
-def with_maintenance_ctx():
+def with_maintenance_ctx() -> Iterator[Callable[[LoadService], None]]:
     """Install a fake `MaintenanceContext` (exposing only `load_service`) for the duration of the
     test, and restore the previous value afterward. Mirrors `with_no_maintenance_ctx` from
     `tests/maintenance/conftest.py`, but installs a usable context instead of `None`."""
@@ -77,7 +77,9 @@ class TestSaveLauncherCacheTask:
         ),
     )
     @with_db_context
-    def test_load_read_back_from_db_is_naive_and_still_comparable(self, tmp_path: Path, with_maintenance_ctx) -> None:
+    def test_load_read_back_from_db_is_naive_and_still_comparable(
+        self, tmp_path: Path, with_maintenance_ctx: Callable[[LoadService], None]
+    ) -> None:
         slurm_load = SlurmLoad(SlurmConfig(id="local", name="name"))
         load_service = _build_load_service(tmp_path, {"local": slurm_load})
         with_maintenance_ctx(load_service)
@@ -112,7 +114,9 @@ class TestSaveLauncherCacheTask:
         assert load_service._is_outdated_load_data(stored_load) is True
 
     @with_db_context
-    def test_returns_partial_success_when_one_launcher_fails(self, tmp_path: Path, with_maintenance_ctx) -> None:
+    def test_returns_partial_success_when_one_launcher_fails(
+        self, tmp_path: Path, with_maintenance_ctx: Callable[[LoadService], None]
+    ) -> None:
         ok_load = LocalLoad()
         failing_load = Mock()
         failing_load.get_load.side_effect = SlurmError("unreachable")
@@ -129,7 +133,9 @@ class TestSaveLauncherCacheTask:
         assert load_service.launcher_cache_repository.get_launcher_load("slurm") is None
 
     @with_db_context
-    def test_returns_success_when_all_launchers_succeed(self, tmp_path: Path, with_maintenance_ctx) -> None:
+    def test_returns_success_when_all_launchers_succeed(
+        self, tmp_path: Path, with_maintenance_ctx: Callable[[LoadService], None]
+    ) -> None:
         load_service = _build_load_service(tmp_path, {"local": LocalLoad()})
         with_maintenance_ctx(load_service)
 
@@ -146,7 +152,9 @@ class TestSaveLauncherCacheTask:
         ),
     )
     @with_db_context
-    def test_caches_the_load_of_a_real_slurm_launcher(self, tmp_path: Path, with_maintenance_ctx) -> None:
+    def test_caches_the_load_of_a_real_slurm_launcher(
+        self, tmp_path: Path, with_maintenance_ctx: Callable[[LoadService], None]
+    ) -> None:
         """Uses a real `SlurmLauncher` (as built by `FactoryLauncher`/`service_creator.py` in
         production) rather than a bare `SlurmLoad`, to catch bugs in the `AbstractLauncher`/
         `AbstractLoad` multiple-inheritance wiring"""
@@ -169,7 +177,9 @@ class TestSaveLauncherCacheTask:
         assert cached_load.nb_queued_jobs == 2
 
     @with_db_context
-    def test_does_not_cache_the_load_of_a_real_local_launcher(self, tmp_path: Path, with_maintenance_ctx) -> None:
+    def test_does_not_cache_the_load_of_a_real_local_launcher(
+        self, tmp_path: Path, with_maintenance_ctx: Callable[[LoadService], None]
+    ) -> None:
         """Uses a real `LocalLauncher` (as built by `FactoryLauncher`/`service_creator.py` in
         production) rather than a bare `LocalLoad`, to catch bugs in the `AbstractLauncher`/
         `AbstractLoad` multiple-inheritance wiring."""

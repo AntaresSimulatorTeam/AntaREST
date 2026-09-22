@@ -23,7 +23,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_cont
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity import capacity
 
 # noinspection SpellCheckingInspection
-BEFORE_650 = {
+BEFORE_650: dict[str, dict[str, list[list[float]] | int | None]] = {
     "maxpower_en": {"default_empty": [[]], "nb_columns": None},
     "maxpower_fr": {"default_empty": [[]], "nb_columns": None},
     "reservoir_en": {"default_empty": [[]], "nb_columns": None},
@@ -31,7 +31,7 @@ BEFORE_650 = {
 }
 
 # noinspection SpellCheckingInspection
-AFTER_650 = {
+AFTER_650: dict[str, dict[str, list[list[float]] | int | None]] = {
     "creditmodulations_en": {"default_empty": [[]], "nb_columns": None},
     "creditmodulations_fr": {"default_empty": [[]], "nb_columns": None},
     "inflowPattern_en": {"default_empty": [[]], "nb_columns": None},
@@ -87,7 +87,7 @@ class TestInputHydroCommonCapacity:
         actual = node.build()
 
         # check the result
-        actual_obj = {}
+        actual_obj: dict[str, dict[str, list[list[float]] | int | None]] = {}
         for key, value in actual.items():
             assert isinstance(value, InputSeriesMatrix)
             actual_obj[key] = {"default_empty": [[]], "nb_columns": value.nb_columns}

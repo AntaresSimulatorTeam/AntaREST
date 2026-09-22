@@ -51,7 +51,7 @@ def test_export_study_with_both_compression(admin_client: TestClient, internal_s
 
 
 # Doing exports with both .zip and .7z
-def test_export_study_outputs(admin_client: TestClient, tmp_path) -> None:
+def test_export_study_outputs(admin_client: TestClient, tmp_path: Path) -> None:
     client = admin_client
     raw = client.post("/v1/studies?name=raw")
     export_with_output_test(client, raw.json(), tmp_path)

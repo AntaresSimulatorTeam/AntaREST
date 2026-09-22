@@ -109,7 +109,7 @@ class TestCleanBlobsIntegration:
         assert result.status == BackGroundTaskStatus.SKIPPED
         assert result.reason == "lock_not_acquired"
 
-    def test_does_not_delete_blobs_used_by_user_resources(self, simple_blob_service: BlobService):
+    def test_does_not_delete_blobs_used_by_user_resources(self, simple_blob_service: BlobService) -> None:
         # Save two blobs: one referenced by a user resource, one not
         used_blob_id = simple_blob_service.save(b"Used by user resource")
         unused_blob_id = simple_blob_service.save(b"Orphan blob")

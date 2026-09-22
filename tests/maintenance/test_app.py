@@ -134,14 +134,14 @@ class TestSetupPeriodicTasks:
 
 
 class TestInitWorker:
-    def test_sets_maintenance_ctx_on_success(self, with_no_maintenance_ctx):
+    def test_sets_maintenance_ctx_on_success(self, with_no_maintenance_ctx: None) -> None:
         fake_ctx = Mock()
         with mock.patch("antarest.maintenance.app.MaintenanceContext.create", return_value=fake_ctx):
             _init_worker()
 
         assert celery_app.conf.maintenance_ctx is fake_ctx
 
-    def test_aborts_worker_startup_when_context_creation_fails(self, with_no_maintenance_ctx):
+    def test_aborts_worker_startup_when_context_creation_fails(self, with_no_maintenance_ctx: None) -> None:
         with (
             mock.patch("antarest.maintenance.app.MaintenanceContext.create", side_effect=ValueError("boom")),
             pytest.raises(SystemExit),

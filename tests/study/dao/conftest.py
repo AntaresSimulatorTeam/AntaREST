@@ -80,7 +80,7 @@ def db_dao_930_shared() -> DatabaseStudyDao:
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_10_2(
-    request,
+    request: pytest.FixtureRequest,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
     command_context: "CommandContext",
