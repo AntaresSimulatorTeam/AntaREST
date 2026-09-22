@@ -12,6 +12,7 @@
 
 from pydantic import ConfigDict, Field
 
+from antarest.core.model import GemsId
 from antarest.core.serde import AntaresBaseModel
 
 
@@ -29,4 +30,4 @@ class GemsScenarioBuilder(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    scenarios: dict[str, list[GemsScBuilderMapping]] = Field(default_factory=dict)
+    scenarios: dict[GemsId, list[GemsScBuilderMapping]] = Field(default_factory=dict)

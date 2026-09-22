@@ -114,7 +114,18 @@ def test_real_file_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
 
 
 @pytest.mark.parametrize(
-    "line", ["load 0 = 1", "load, -1 = 1", "load, 0 = 0", "load, 0 = 1.5", ", 0 = 1", "load, 0 = 1\nload, 0 = 2"]
+    "line",
+    [
+        "load 0 = 1",
+        "load, -1 = 1",
+        "load, 0 = 0",
+        "load, 0 = 1.5",
+        ", 0 = 1",
+        "load, 0 = 1\nload, 0 = 2",
+        "Load_Group, 0 = 1",
+        "load-group, 0 = 1",
+        "load group, 0 = 1",
+    ],
 )
 def test_invalid_file(filestudy_dao_v10_2: FileStudyTreeDao, line: str) -> None:
     path = filestudy_dao_v10_2.get_file_study().config.study_path / "input/data-series/modeler-scenariobuilder.dat"
@@ -127,10 +138,10 @@ def test_invalid_file(filestudy_dao_v10_2: FileStudyTreeDao, line: str) -> None:
 def test_whitespace(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     path = filestudy_dao_v10_2.get_file_study().config.study_path / "input/data-series/modeler-scenariobuilder.dat"
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n  Load_Group , 0 = 2 \n\nLoad_Group,3=5\n")
+    path.write_text("\n  load_group , 0 = 2 \n\nload_group,3=5\n")
     assert filestudy_dao_v10_2.get_gems_scenario_builder() == GemsScenarioBuilder(
         scenarios={
-            "Load_Group": [
+            "load_group": [
                 GemsScBuilderMapping(scenario=0, time_series_index=2),
                 GemsScBuilderMapping(scenario=3, time_series_index=5),
             ]
