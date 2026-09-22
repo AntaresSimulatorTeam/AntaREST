@@ -14,7 +14,7 @@ from typing import Any, List
 from sqlalchemy import insert, select
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsSystemAlreadyExists
+from antarest.core.exceptions import GemsSystemAlreadyExists, GemsSystemNotFound
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -143,6 +143,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     def save_components(self, components: List[GemsComponent]) -> None:
         study_data_id = self._study_data_id
         session = self._db_session
+
+        if self.get_system() is None:
+            raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
         component_values = []
         parameter_values = []

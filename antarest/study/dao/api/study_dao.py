@@ -78,7 +78,7 @@ from antarest.study.dao.api.compatibility_parameters_dao import (
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao, ReadOnlyGemsScenarioBuilderDao
-from antarest.study.dao.api.gems_system_dao import ReadOnlyGemsSystemDao
+from antarest.study.dao.api.gems_system_dao import GemsSystemDao, ReadOnlyGemsSystemDao
 from antarest.study.dao.api.gems_taxonomy_dao import GemsTaxonomyDao, ReadOnlyGemsTaxonomyDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
@@ -226,6 +226,7 @@ class StudyDao(
     ReserveCertificationDao,
     ReserveSymmetriesDao,
     GemsLibraryDao,
+    GemsSystemDao,
     GemsTaxonomyDao,
     GemsScenarioBuilderDao,
 ):

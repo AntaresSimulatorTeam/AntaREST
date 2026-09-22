@@ -1,0 +1,42 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+system:
+  id: my_system
+  description: A test GEMS system
+  components:
+    - id: comp1
+      model: model1
+      scenario_group: sg1
+      parameters:
+        - id: param1
+          time_dependent: false
+          scenario_dependent: false
+          value: 3.14
+      properties:
+        - id: prop1
+          value: hello
+    - id: comp2
+      model: model2
+      parameters:
+        - id: param2
+          time_dependent: false
+          scenario_dependent: false
+          value: 42.0
+        - id: param3
+          time_dependent: false
+          scenario_dependent: false
+          value: -1.5
+      properties:
+        - id: prop2
+          value: world
+        - id: prop3
+          value: another_value

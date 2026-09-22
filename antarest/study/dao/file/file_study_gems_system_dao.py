@@ -14,6 +14,7 @@ from pathlib import Path
 
 from typing_extensions import override
 
+from antarest.core.exceptions import GemsSystemAlreadyExists, GemsSystemNotFound
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -41,30 +42,32 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
 
     @override
     def get_components(self) -> list[GemsComponent] | None:
-        file_study = self.get_file_study()
-        system_file_path = _get_gems_system_file_path(file_study.config.study_path)
-        if not system_file_path.exists():
+        system = self.get_system()
+        if system is None:
             return None
-
-        yaml_content = YAMLReader().read(system_file_path)["system"]["components"]
-        return [GemsComponent.model_validate(yaml_content)]
+        return system.components
 
     @override
     def save_system(self, system: GemsSystem) -> None:
         file_study = self.get_file_study()
         system_file_path = _get_gems_system_file_path(file_study.config.study_path)
 
+        if system_file_path.exists():
+            raise GemsSystemAlreadyExists(f"A system file already exists for study {file_study.config.study_id}")
+
         yaml_content = system.model_dump(mode="json", exclude_unset=True, by_alias=True)
-        system_file_path.mkdir(exist_ok=True)
         YAMLWriter().write({"system": yaml_content}, system_file_path)
 
     @override
     def save_components(self, components: list[GemsComponent]) -> None:
         file_study = self.get_file_study()
         system_file_path = _get_gems_system_file_path(file_study.config.study_path)
+        if not system_file_path.exists():
+            raise GemsSystemNotFound(f"No system file exists yet for study {file_study.config.study_id}")
 
-        yaml_content = [
-            component.model_dump(mode="json", exclude_unset=True, by_alias=True) for component in components
-        ]
-        system_file_path.mkdir(exist_ok=True)
-        YAMLWriter().write({"system": {"components": yaml_content}}, system_file_path)
+        system = self.get_system()
+        assert system is not None
+        updated_system = system.model_copy(update={"components": [*system.components, *components]})
+
+        yaml_content = updated_system.model_dump(mode="json", exclude_unset=True, by_alias=True)
+        YAMLWriter().write({"system": yaml_content}, system_file_path)
