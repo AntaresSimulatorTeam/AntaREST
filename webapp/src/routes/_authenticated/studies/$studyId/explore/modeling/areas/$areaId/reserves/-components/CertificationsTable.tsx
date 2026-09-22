@@ -18,6 +18,7 @@ import type {
   ProductionType,
   Reserve,
   ReserveCertification,
+  ReserveCertificationField,
 } from "@/services/api/studies/areas/reserves/types";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
@@ -37,7 +38,7 @@ export interface AssetRow {
   kind: "asset";
   id: string;
   name: string;
-  // Omitted for assets without an activation state (hydro).
+  /** Omitted for assets without an activation state (hydro). */
   enabled?: boolean;
   productionType: ProductionType;
   reserveId: Reserve["id"];
@@ -58,7 +59,7 @@ export type CertificationsTableRow = ReserveRow | AssetRow;
 interface Props {
   rows: ReserveRow[];
   productionType: ProductionType;
-  // Rendered at the start of the table toolbar (e.g. the production type select).
+  /** Rendered at the start of the table toolbar (e.g. the production type select). */
   toolbarActions?: React.ReactNode;
   readOnly?: boolean;
   isLoading?: boolean;
@@ -78,8 +79,11 @@ const clickableNameStyles = {
 };
 
 // Certification parameters differ by production type: read them by name.
-function getCertificationValue(certification: ReserveCertification, field: string) {
-  const values: Record<string, number> = certification;
+function getCertificationValue(
+  certification: ReserveCertification,
+  field: ReserveCertificationField,
+) {
+  const values: Partial<Record<ReserveCertificationField, number>> = certification;
   return values[field] ?? null;
 }
 

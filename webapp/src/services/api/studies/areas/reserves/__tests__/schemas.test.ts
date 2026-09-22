@@ -13,7 +13,8 @@
  */
 
 import { z } from "zod";
-import { HYDRO_ASSET_ID, reservesCertificationsCodecs, reservesSymmetriesCodecs } from "../schemas";
+import { HYDRO_ASSET_ID } from "../constants";
+import { reservesCertificationsCodecs, reservesSymmetriesCodecs } from "../schemas";
 
 const STORAGE_CERTIFICATION = { participationCost: 1, maxRelease: 2, maxStore: 3 };
 const THERMAL_CERTIFICATION = {

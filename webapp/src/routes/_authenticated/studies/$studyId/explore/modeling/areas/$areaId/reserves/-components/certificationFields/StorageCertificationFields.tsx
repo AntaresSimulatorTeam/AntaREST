@@ -15,15 +15,14 @@
 import NumberFE from "@/components/fieldEditors/NumberFE";
 import type { StorageReserveCertification } from "@/services/api/studies/areas/reserves/types";
 import { validateNumber } from "@/utils/validation/number";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import type { CertificationFieldsProps } from "../../-productionTypes";
 
 // Certification parameters of a storage (short-term or hydro). At least one of
 // max release / max store must be strictly positive for the certification to
 // have an effect.
-function StorageCertificationFields({
-  control,
-}: CertificationFieldsProps<StorageReserveCertification>) {
+function StorageCertificationFields() {
+  const { control } = useFormContext<StorageReserveCertification>();
   const { t } = useTranslation();
 
   const validateMaxPower = (
@@ -53,7 +52,6 @@ function StorageCertificationFields({
         name="participationCost"
         control={control}
         rules={{
-          required: t("form.field.required"),
           validate: validateNumber({ min: 0 }),
         }}
       />
@@ -62,7 +60,6 @@ function StorageCertificationFields({
         name="maxRelease"
         control={control}
         rules={{
-          required: t("form.field.required"),
           deps: ["maxStore"],
           validate: validateMaxPower,
         }}
@@ -72,7 +69,6 @@ function StorageCertificationFields({
         name="maxStore"
         control={control}
         rules={{
-          required: t("form.field.required"),
           deps: ["maxRelease"],
           validate: validateMaxPower,
         }}

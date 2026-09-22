@@ -13,6 +13,7 @@
  */
 
 import { z } from "zod";
+import { HYDRO_ASSET_ID } from "./constants";
 
 ////////////////////////////////////////////////////////////////
 // Response Schemas
@@ -49,11 +50,6 @@ export const reserveGlobalParametersSchema = z.object({
 // To add a new type: add it here, give it a certification schema below, a wire codec if its
 // payload isn't asset-keyed, and an entry in the UI registry (see `-productionTypes.ts`).
 export const productionTypeSchema = z.enum(["thermals", "storages", "hydro"]);
-
-// Hydro has no asset dimension on the wire: an area owns exactly one long-term storage, so
-// its certifications and symmetries are keyed by reserve alone. The UI models it as a single
-// asset with this ID so every production type shares the same normalized shape.
-export const HYDRO_ASSET_ID = "hydro";
 
 ////////////////////////////////////////////////////////////////
 // Certifications

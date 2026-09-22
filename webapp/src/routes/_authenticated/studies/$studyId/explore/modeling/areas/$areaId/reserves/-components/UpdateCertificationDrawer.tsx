@@ -28,7 +28,7 @@ interface Props {
   open: boolean;
   productionType: ProductionType;
   assetName: string;
-  // Omitted for assets without an activation state (hydro).
+  /** Omitted for assets without an activation state (hydro). */
   assetEnabled?: boolean;
   certification: ReserveCertification;
   onClose: VoidFunction;
@@ -72,23 +72,21 @@ function UpdateCertificationDrawer({
       config={{ defaultValues: certification }}
       onSubmit={handleSubmit}
     >
-      {({ control }) => (
-        <Fieldset fullFieldWidth>
-          {assetEnabled !== undefined && (
-            <Stack direction="row" alignItems="center" gap={1.5}>
-              <Typography variant="body2" color="text.secondary">
-                {t("study.modeling.reserves.certifications.field.enabled")}
-              </Typography>
-              <Chip
-                label={assetEnabled ? t("button.yes") : t("button.no")}
-                color={assetEnabled ? "success" : "error"}
-                sx={{ minWidth: 40 }}
-              />
-            </Stack>
-          )}
-          <CertificationFields control={control} />
-        </Fieldset>
-      )}
+      <Fieldset fullFieldWidth>
+        {assetEnabled !== undefined && (
+          <Stack direction="row" alignItems="center" gap={1.5}>
+            <Typography variant="body2" color="text.secondary">
+              {t("study.modeling.reserves.certifications.field.enabled")}
+            </Typography>
+            <Chip
+              label={assetEnabled ? t("button.yes") : t("button.no")}
+              color={assetEnabled ? "success" : "error"}
+              sx={{ minWidth: 40 }}
+            />
+          </Stack>
+        )}
+        <CertificationFields />
+      </Fieldset>
     </FormDrawer>
   );
 }

@@ -20,6 +20,7 @@ import FactoryIcon from "@mui/icons-material/Factory";
 import { Alert, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import type { ReserveAsset } from "../-productionTypes";
+import { sortByName } from "@/services/utils";
 
 interface FormValues {
   assetIds: string[];
@@ -28,10 +29,10 @@ interface FormValues {
 interface Props {
   open: boolean;
   reserveName: string;
-  // Label of the asset field, i.e. the production type's name.
+  /** Label of the asset field, i.e. the production type's name. */
   label: string;
   assets: ReserveAsset[];
-  // IDs of the assets currently certified for the reserve.
+  /** IDs of the assets currently certified for the reserve. */
   defaultValues: string[];
   onClose: VoidFunction;
   onSubmit: (assetIds: string[]) => Promise<string[]>;
@@ -91,7 +92,7 @@ function UpdateReserveAssetsDrawer({
             ) : (
               <CheckboxesTagsFE
                 label={label}
-                options={assets.map((asset) => asset.id)}
+                options={sortByName(assets).map((asset) => asset.id)}
                 getOptionLabel={(id) => assetNamesById.get(id) ?? id}
                 name="assetIds"
                 control={control}

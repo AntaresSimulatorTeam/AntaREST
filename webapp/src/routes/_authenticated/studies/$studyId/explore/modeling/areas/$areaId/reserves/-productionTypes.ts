@@ -16,13 +16,12 @@ import i18n from "@/i18n";
 import { reserveKeys } from "@/queries/reserves/keys";
 import { storageQueries } from "@/queries/storages/queries";
 import { thermalQueries } from "@/queries/thermals/queries";
-import {
-  HYDRO_ASSET_ID,
-  productionTypeSchema,
-} from "@/services/api/studies/areas/reserves/schemas";
+import { HYDRO_ASSET_ID } from "@/services/api/studies/areas/reserves/constants";
+import { productionTypeSchema } from "@/services/api/studies/areas/reserves/schemas";
 import type {
   ProductionType,
   ReserveCertification,
+  ReserveCertificationField,
   StorageReserveCertification,
   ThermalReserveCertification,
 } from "@/services/api/studies/areas/reserves/types";
@@ -30,51 +29,56 @@ import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { queryOptions, type UseSuspenseQueryOptions } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
-import type { Control } from "react-hook-form";
 import StorageCertificationFields from "./-components/certificationFields/StorageCertificationFields";
 import ThermalCertificationFields from "./-components/certificationFields/ThermalCertificationFields";
 
-// An asset that can be certified for a reserve: a thermal cluster, a short-term
-// storage, or the area's hydro. `enabled` is omitted for assets that have no
-// activation state (hydro).
+/**
+ * An asset that can be certified for a reserve: a thermal cluster, a short-term
+ * storage, or the area's hydro. `enabled` is omitted for assets that have no
+ * activation state (hydro).
+ */
 export interface ReserveAsset {
   id: string;
   name: string;
   enabled?: boolean;
 }
 
-// Each asset query fetches its own model under its own key (thermal clusters,
-// storages, ...) and narrows it to `ReserveAsset[]` via `select`: only that
-// selected type matters to consumers. The other generics are `any` so that
-// heterogeneous queries fit one type and `useSuspenseQueries` can infer it.
+/**
+ * Each asset query fetches its own model under its own key (thermal clusters,
+ * storages, ...) and narrows it to `ReserveAsset[]` via `select`: only that
+ * selected type matters to consumers. The other generics are `any` so that
+ * heterogeneous queries fit one type and `useSuspenseQueries` can infer it.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ReserveAssetsQuery = UseSuspenseQueryOptions<any, any, ReserveAsset[], any>;
 
-export interface CertificationFieldsProps<TCertification extends ReserveCertification> {
-  control: Control<TCertification>;
-}
-
-// Everything the certifications and symmetries screens need to know about a
-// production type. Adding a type means adding an entry to `PRODUCTION_TYPES`:
-// the screens themselves are agnostic.
+/**
+ * Everything the certifications and symmetries screens need to know about a
+ * production type. Adding a type means adding an entry to `PRODUCTION_TYPES`:
+ * the screens themselves are agnostic.
+ */
 export interface ProductionTypeConfig<
   TCertification extends ReserveCertification = ReserveCertification,
 > {
   labelKey: string;
   assetsQuery: (studyId: Study["id"], areaId: AreaWithId["id"]) => ReserveAssetsQuery;
   assetsHaveActivationState: boolean;
-  // Certification parameters, in display order. Each one has a translation at
-  // `study.modeling.reserves.certifications.field.<name>`.
-  certificationFields: ReadonlyArray<keyof TCertification & string>;
-  // Parameters given to a newly certified asset.
+  /**
+   * Certification parameters, in display order. Each one has a translation at
+   * `study.modeling.reserves.certifications.field.<name>`.
+   */
+  certificationFields: ReadonlyArray<ReserveCertificationField<TCertification>>;
+  /** Parameters given to a newly certified asset. */
   defaultCertification: TCertification;
-  // Whether a certification is saved but has no effect yet (e.g. a zero max
-  // power): the table then prompts the user to fill it in.
+  /**
+   * Whether a certification is saved but has no effect yet (e.g. a zero max
+   * power): the table then prompts the user to fill it in.
+   */
   isCertificationIncomplete: (certification: TCertification) => boolean;
-  // i18n key of the tooltip shown on incomplete certifications.
+  /** i18n key of the tooltip shown on incomplete certifications. */
   incompleteLabelKey: string;
-  // Form fields editing one certification, rendered inside `UpdateCertificationDrawer`.
-  CertificationFields: React.ComponentType<CertificationFieldsProps<TCertification>>;
+  /** Form fields editing one certification, rendered inside `UpdateCertificationDrawer`. */
+  CertificationFields: React.ComponentType;
 }
 
 /**

@@ -37,6 +37,10 @@ export type ProductionType = z.infer<typeof productionTypeSchema>;
 export type ThermalReserveCertification = z.infer<typeof thermalReserveCertificationSchema>;
 export type StorageReserveCertification = z.infer<typeof storageReserveCertificationSchema>;
 export type ReserveCertification = z.infer<typeof reserveCertificationSchema>;
+/** Includes the keys of each certification model, rather than only their shared keys. */
+export type ReserveCertificationField<
+  TCertification extends ReserveCertification = ReserveCertification,
+> = TCertification extends ReserveCertification ? keyof TCertification & string : never;
 export type ReservesCertifications = z.infer<typeof reservesCertificationsSchema>;
 export type ReservesSymmetries = z.infer<typeof reservesSymmetriesSchema>;
 

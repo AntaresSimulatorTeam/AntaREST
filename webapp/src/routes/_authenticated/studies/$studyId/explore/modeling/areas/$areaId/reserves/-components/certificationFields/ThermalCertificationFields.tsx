@@ -15,15 +15,14 @@
 import NumberFE from "@/components/fieldEditors/NumberFE";
 import type { ThermalReserveCertification } from "@/services/api/studies/areas/reserves/types";
 import { validateNumber } from "@/utils/validation/number";
+import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import type { CertificationFieldsProps } from "../../-productionTypes";
 
 // Certification parameters of a thermal cluster. Max power must be strictly
 // positive for the certification to have an effect, and the "off" max power
 // can't exceed it.
-function ThermalCertificationFields({
-  control,
-}: CertificationFieldsProps<ThermalReserveCertification>) {
+function ThermalCertificationFields() {
+  const { control } = useFormContext<ThermalReserveCertification>();
   const { t } = useTranslation();
 
   ////////////////////////////////////////////////////////////////
@@ -37,7 +36,6 @@ function ThermalCertificationFields({
         name="participationCost"
         control={control}
         rules={{
-          required: t("form.field.required"),
           validate: validateNumber({ min: 0 }),
         }}
       />
@@ -46,7 +44,6 @@ function ThermalCertificationFields({
         name="participationCostOff"
         control={control}
         rules={{
-          required: t("form.field.required"),
           validate: validateNumber({ min: 0 }),
         }}
       />
@@ -55,7 +52,6 @@ function ThermalCertificationFields({
         name="maxPower"
         control={control}
         rules={{
-          required: t("form.field.required"),
           deps: ["maxPowerOff"],
           validate: (value) => {
             const result = validateNumber(value, { min: 0 });
@@ -71,7 +67,6 @@ function ThermalCertificationFields({
         name="maxPowerOff"
         control={control}
         rules={{
-          required: t("form.field.required"),
           validate: (value, { maxPower }) => validateNumber(value, { min: 0, max: maxPower }),
         }}
       />
