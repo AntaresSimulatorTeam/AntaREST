@@ -884,6 +884,11 @@ class GemsSystemAlreadyExists(HTTPException):
         super().__init__(HTTPStatus.CONFLICT, message)
 
 
+class GemsSystemNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
 class GemsTaxonomyAlreadyExists(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)

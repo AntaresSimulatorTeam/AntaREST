@@ -32,6 +32,7 @@ from antarest.study.business.model.config.optimization_config_model import (
     initialize_optimization_preferences_against_version,
 )
 from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.system import GemsSystem
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -406,6 +407,45 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert second_model.ports[0].type == "flow"
     assert second_model.ports[1].id == "power_port"
     assert second_model.ports[1].type == "flow"
+
+
+def check_gems_system_integrity(system: GemsSystem) -> None:
+    assert system is not None
+    assert system.id == "my_system"
+    assert system.description == "A test GEMS system"
+    assert len(system.components) == 2
+
+    first_component = system.components[0]
+    assert first_component.id == "comp1"
+    assert first_component.model == "model1"
+    assert first_component.scenario_group == "sg1"
+    assert first_component.parameters is not None
+    assert len(first_component.parameters) == 1
+    assert first_component.parameters[0].id == "param1"
+    assert first_component.parameters[0].time_dependent is False
+    assert first_component.parameters[0].scenario_dependent is False
+    assert first_component.parameters[0].value == 3.14
+    assert first_component.properties is not None
+    assert len(first_component.properties) == 1
+    assert first_component.properties[0].id == "prop1"
+    assert first_component.properties[0].value == "hello"
+
+    second_component = system.components[1]
+    assert second_component.id == "comp2"
+    assert second_component.model == "model2"
+    assert second_component.scenario_group is None
+    assert second_component.parameters is not None
+    assert len(second_component.parameters) == 2
+    assert second_component.parameters[0].id == "param2"
+    assert second_component.parameters[0].value == 42.0
+    assert second_component.parameters[1].id == "param3"
+    assert second_component.parameters[1].value == -1.5
+    assert second_component.properties is not None
+    assert len(second_component.properties) == 2
+    assert second_component.properties[0].id == "prop2"
+    assert second_component.properties[0].value == "world"
+    assert second_component.properties[1].id == "prop3"
+    assert second_component.properties[1].value == "another_value"
 
 
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
