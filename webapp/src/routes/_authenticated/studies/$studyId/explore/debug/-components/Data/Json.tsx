@@ -110,6 +110,7 @@ function Json({ filePath, filename, studyId, canEdit }: DataCompProps) {
             {canEdit && (
               <UploadFileButton
                 studyId={studyId}
+                studyStorageMode="filesystem"
                 path={filePath}
                 accept={{ "application/json": [".json"] }}
                 onUploadSuccessful={handleUploadSuccessful}

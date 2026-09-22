@@ -26,6 +26,7 @@ from antarest.study.dao.file.file_study_compatibility_parameters import FileStud
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
 from antarest.study.dao.file.file_study_district_dao import FileStudyDistrictDao
 from antarest.study.dao.file.file_study_gems_library_dao import FileStudyGemsLibraryDao
+from antarest.study.dao.file.file_study_gems_taxonomy_dao import FileStudyGemsTaxonomyDao
 from antarest.study.dao.file.file_study_general_config_dao import FileStudyGeneralConfigDao
 from antarest.study.dao.file.file_study_hydro_dao import FileStudyHydroDao
 from antarest.study.dao.file.file_study_layer_dao import FileStudyLayerDao
@@ -84,6 +85,7 @@ class FileStudyTreeDao(
     FileStudyReserveDefinitionDao,
     FileStudyReserveCertificationDao,
     FileStudyReserveSymmetriesDao,
+    FileStudyGemsTaxonomyDao,
 ):
     """
     Implementation of study DAO over the simulator input format.
