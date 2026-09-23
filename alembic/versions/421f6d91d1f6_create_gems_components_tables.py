@@ -1,7 +1,7 @@
 """create_gems_components_tables
 
 Revision ID: 421f6d91d1f6
-Revises: e6892cbcad66
+Revises: e12d85a77641
 Create Date: 2026-09-21 10:56:39.862102
 
 """
@@ -13,7 +13,7 @@ from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = "421f6d91d1f6"
-down_revision = "e6892cbcad66"
+down_revision = "e12d85a77641"
 branch_labels = None
 depends_on = None
 
