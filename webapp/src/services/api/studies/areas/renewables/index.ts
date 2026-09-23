@@ -15,23 +15,23 @@
 import client from "@/services/api/client";
 import { nameToId } from "@/services/utils";
 import {
-  thermalClusterCreationSchema,
-  thermalClusterSchema,
-  thermalClustersSchema,
-  thermalClusterUpdateSchema,
+  renewableClusterCreationSchema,
+  renewableClusterSchema,
+  renewableClustersSchema,
+  renewableClusterUpdateSchema,
 } from "./schemas";
 import type {
-  CreateThermalClusterParams,
-  DeleteThermalClustersParams,
-  DuplicateThermalClusterParams,
-  GetThermalClusterParams,
-  ThermalCluster,
-  ThermalsAreaParams,
-  UpdateThermalClusterParams,
+  CreateRenewableClusterParams,
+  DeleteRenewableClustersParams,
+  DuplicateRenewableClusterParams,
+  GetRenewableClusterParams,
+  RenewableCluster,
+  RenewablesAreaParams,
+  UpdateRenewableClusterParams,
 } from "./types";
 
 /**
- * GET /v1/studies/{studyId}/areas/{areaId}/clusters/thermal - Lists complete thermal clusters.
+ * GET /v1/studies/{studyId}/areas/{areaId}/clusters/renewable - Lists complete renewable clusters.
  *
  * @param params - Study and area identifiers.
  * @param params.studyId - Study identifier.
@@ -39,12 +39,12 @@ import type {
  * @returns All cluster properties, with IDs normalized for existing list consumers.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getThermalClusters({
+export async function getRenewableClusters({
   studyId,
   areaId,
-}: ThermalsAreaParams): Promise<ThermalCluster[]> {
-  const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`);
-  const clusters = thermalClustersSchema.parse(res.data);
+}: RenewablesAreaParams): Promise<RenewableCluster[]> {
+  const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/clusters/renewable`);
+  const clusters = renewableClustersSchema.parse(res.data);
   // The backend model preserves name casing for backward compatibility,
   // while database storage lowercases IDs. Creation and file-backed reads can therefore
   // return different ID casing from database-backed reads.
@@ -53,7 +53,7 @@ export async function getThermalClusters({
 }
 
 /**
- * GET /v1/studies/{studyId}/areas/{areaId}/clusters/thermal/{clusterId} - Gets a thermal cluster.
+ * GET /v1/studies/{studyId}/areas/{areaId}/clusters/renewable/{clusterId} - Gets a renewable cluster.
  *
  * @param params - Study, area, and cluster identifiers.
  * @param params.studyId - Study identifier.
@@ -62,19 +62,19 @@ export async function getThermalClusters({
  * @returns The complete cluster, preserving the server's ID casing.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getThermalCluster({
+export async function getRenewableCluster({
   studyId,
   areaId,
   clusterId,
-}: GetThermalClusterParams): Promise<ThermalCluster> {
+}: GetRenewableClusterParams): Promise<RenewableCluster> {
   const res = await client.get(
-    `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${clusterId}`,
+    `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable/${clusterId}`,
   );
-  return thermalClusterSchema.parse(res.data);
+  return renewableClusterSchema.parse(res.data);
 }
 
 /**
- * POST /v1/studies/{studyId}/areas/{areaId}/clusters/thermal - Creates a thermal cluster.
+ * POST /v1/studies/{studyId}/areas/{areaId}/clusters/renewable - Creates a renewable cluster.
  *
  * @param params - Study and area identifiers and the cluster values; only name is required.
  * @param params.studyId - Study identifier.
@@ -83,18 +83,18 @@ export async function getThermalCluster({
  * @returns The created cluster, preserving the server's ID casing.
  * @throws If the values or response don't match the expected schema.
  */
-export async function createThermalCluster({
+export async function createRenewableCluster({
   studyId,
   areaId,
   values,
-}: CreateThermalClusterParams): Promise<ThermalCluster> {
-  const body = thermalClusterCreationSchema.parse(values);
-  const res = await client.post(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`, body);
-  return thermalClusterSchema.parse(res.data);
+}: CreateRenewableClusterParams): Promise<RenewableCluster> {
+  const body = renewableClusterCreationSchema.parse(values);
+  const res = await client.post(`/v1/studies/${studyId}/areas/${areaId}/clusters/renewable`, body);
+  return renewableClusterSchema.parse(res.data);
 }
 
 /**
- * PATCH /v1/studies/{studyId}/areas/{areaId}/clusters/thermal/{clusterId} - Updates a thermal cluster.
+ * PATCH /v1/studies/{studyId}/areas/{areaId}/clusters/renewable/{clusterId} - Updates a renewable cluster.
  *
  * @param params - Identifiers and the partial cluster values to update.
  * @param params.studyId - Study identifier.
@@ -104,22 +104,22 @@ export async function createThermalCluster({
  * @returns The updated cluster, preserving the server's ID casing.
  * @throws If the values or response don't match the expected schema.
  */
-export async function updateThermalCluster({
+export async function updateRenewableCluster({
   studyId,
   areaId,
   clusterId,
   values,
-}: UpdateThermalClusterParams): Promise<ThermalCluster> {
-  const body = thermalClusterUpdateSchema.parse(values);
+}: UpdateRenewableClusterParams): Promise<RenewableCluster> {
+  const body = renewableClusterUpdateSchema.parse(values);
   const res = await client.patch(
-    `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${clusterId}`,
+    `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable/${clusterId}`,
     body,
   );
-  return thermalClusterSchema.parse(res.data);
+  return renewableClusterSchema.parse(res.data);
 }
 
 /**
- * POST /v1/studies/{studyId}/areas/{areaId}/thermals/{clusterId} - Duplicates a thermal cluster.
+ * POST /v1/studies/{studyId}/areas/{areaId}/renewables/{clusterId} - Duplicates a renewable cluster.
  *
  * @param params - Source identifiers and the new name, sent as a query parameter.
  * @param params.studyId - Study identifier.
@@ -129,34 +129,34 @@ export async function updateThermalCluster({
  * @returns The duplicated cluster, preserving the server's ID casing.
  * @throws If the response doesn't match the expected schema.
  */
-export async function duplicateThermalCluster({
+export async function duplicateRenewableCluster({
   studyId,
   areaId,
   clusterId,
   newName,
-}: DuplicateThermalClusterParams): Promise<ThermalCluster> {
+}: DuplicateRenewableClusterParams): Promise<RenewableCluster> {
   const res = await client.post(
-    `/v1/studies/${studyId}/areas/${areaId}/thermals/${clusterId}`,
+    `/v1/studies/${studyId}/areas/${areaId}/renewables/${clusterId}`,
     null,
     { params: { newName } },
   );
-  return thermalClusterSchema.parse(res.data);
+  return renewableClusterSchema.parse(res.data);
 }
 
 /**
- * DELETE /v1/studies/{studyId}/areas/{areaId}/clusters/thermal - Deletes thermal clusters by ID.
+ * DELETE /v1/studies/{studyId}/areas/{areaId}/clusters/renewable - Deletes renewable clusters by ID.
  *
  * @param params - Study and area identifiers and the cluster IDs to send in the request body.
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
  * @param params.clusterIds - Cluster identifiers to delete.
  */
-export async function deleteThermalClusters({
+export async function deleteRenewableClusters({
   studyId,
   areaId,
   clusterIds,
-}: DeleteThermalClustersParams): Promise<void> {
-  await client.delete(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`, {
+}: DeleteRenewableClustersParams): Promise<void> {
+  await client.delete(`/v1/studies/${studyId}/areas/${areaId}/clusters/renewable`, {
     data: clusterIds,
   });
 }
