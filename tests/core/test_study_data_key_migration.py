@@ -131,18 +131,22 @@ def _placeholder(column: "sa.Column[Any]", tag: str) -> Any:
     raise NotImplementedError(f"No placeholder for {column.name} of type {column_type}")
 
 
-def _row(table_name: str, tag: str, **values: Any) -> Dict[str, Any]:
+def _row(table_name: str, tag: str, available_columns: set[str], **values: Any) -> Dict[str, Any]:
     """
     Complete `values` into a full row of `table_name`, reading the column definitions from the
     models rather than from the database: at the previous revision the study key columns are
     reflected as plain strings, which loses the enum values the check constraints require.
 
     Every column is given a value, nullable ones included, so that the row read back after the
-    migration can be compared to this one field by field.
+    migration can be compared to this one field by field. `available_columns` holds the columns
+    the table actually has at the seeding revision: a column a later migration adds is not one of
+    them, and must be left out of the row.
     """
     row = dict(values)
     for column in Base.metadata.tables[table_name].columns:
         if column.name in row or column.name == SURROGATE_KEY or column.autoincrement is True:
+            continue
+        if column.name not in available_columns:
             continue
         row[column.name] = None if column.nullable else _placeholder(column, tag)
     return row
@@ -155,13 +159,17 @@ def _seed_study(engine: Engine, study_id: str, tag: str) -> Dict[str, List[Dict[
     """
     metadata = sa.MetaData()
     metadata.reflect(bind=engine, only=["study", REFERENCE_TABLE, *SEEDED_TABLES])
+    available = {name: {column.name for column in table.columns} for name, table in metadata.tables.items()}
 
     seeded = {
-        table: [_row(table, tag, study_id=study_id, **row) for row in rows] for table, rows in _seeded_rows(tag).items()
+        table: [_row(table, tag, available[table], study_id=study_id, **row) for row in rows]
+        for table, rows in _seeded_rows(tag).items()
     }
 
     with engine.begin() as connection:
-        connection.execute(metadata.tables["study"].insert().values(_row("study", tag, id=study_id)))
+        connection.execute(
+            metadata.tables["study"].insert().values(_row("study", tag, available["study"], id=study_id))
+        )
         connection.execute(metadata.tables[REFERENCE_TABLE].insert().values({STRING_KEY: study_id}))
         for table in SEEDED_TABLES:
             connection.execute(metadata.tables[table].insert(), seeded[table])
@@ -275,6 +283,9 @@ def test_upgrade_replaces_the_study_key(engine: Engine, alembic_cfg: Config) -> 
     _seed_study(engine, "study-one", "one")
 
     command.upgrade(alembic_cfg, REVISION)
+    # The schema is compared to the models, so the migrations that follow have to be applied too:
+    # otherwise any column added after this revision shows up as a mismatch.
+    command.upgrade(alembic_cfg, "head")
 
     inspector = sa.inspect(engine)
     for table in SEEDED_TABLES:

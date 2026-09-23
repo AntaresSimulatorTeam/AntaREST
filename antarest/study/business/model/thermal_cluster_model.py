@@ -41,7 +41,12 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7, STUDY_VERSION_9_3
+from antarest.study.model import (
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_7,
+    STUDY_VERSION_9_3,
+    STUDY_VERSION_10_2,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
 
@@ -139,6 +144,7 @@ Spinning: TypeAlias = Annotated[float, Field(ge=0, le=100)]
 Emission: TypeAlias = Annotated[float, Field(ge=0)]
 Efficiency: TypeAlias = Annotated[float, Field(gt=0, le=100)]
 Cost: TypeAlias = Annotated[float, Field(ge=0)]
+RampRate: TypeAlias = Annotated[float, Field(gt=0)]
 Volatility: TypeAlias = Annotated[float, Field(ge=0, le=1)]
 HoursInWeek: TypeAlias = Annotated[int, PlainValidator(_validate_week_hours)]
 Group: TypeAlias = LowerCaseStr | None
@@ -201,6 +207,13 @@ class ThermalCluster(AntaresBaseModel):
     efficiency: Efficiency | None = None
     variable_o_m_cost: Cost | None = None
 
+    # Added in 10.2
+    ramp: bool | None = None
+    max_ramp_up: RampRate | None = None
+    max_ramp_down: RampRate | None = None
+    ramp_up_cost: Cost | None = None
+    ramp_down_cost: Cost | None = None
+
 
 def _creation_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
     schema["example"] = ThermalClusterCreation(
@@ -262,6 +275,13 @@ class ThermalClusterCreation(AntaresBaseModel):
     cost_generation: ThermalCostGeneration | None = None
     efficiency: Efficiency | None = None
     variable_o_m_cost: Cost | None = None
+
+    # Added in 10.2
+    ramp: bool | None = None
+    max_ramp_up: RampRate | None = None
+    max_ramp_down: RampRate | None = None
+    ramp_up_cost: Cost | None = None
+    ramp_down_cost: Cost | None = None
 
     @classmethod
     def from_cluster(cls, cluster: ThermalCluster) -> "ThermalClusterCreation":
@@ -341,6 +361,13 @@ class ThermalClusterUpdate(AntaresBaseModel):
     efficiency: Efficiency | None = None
     variable_o_m_cost: Cost | None = None
 
+    # Added in 10.2
+    ramp: bool | None = None
+    max_ramp_up: RampRate | None = None
+    max_ramp_down: RampRate | None = None
+    ramp_up_cost: Cost | None = None
+    ramp_down_cost: Cost | None = None
+
 
 ThermalClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, ThermalClusterUpdate]]
 
@@ -367,6 +394,10 @@ def validate_thermal_cluster_against_version(
         for field in ["cost_generation", "efficiency", "variable_o_m_cost"]:
             _check_min_version(cluster_data, field, version)
 
+    if version < STUDY_VERSION_10_2:
+        for field in ["ramp", "max_ramp_up", "max_ramp_down", "ramp_up_cost", "ramp_down_cost"]:
+            _check_min_version(cluster_data, field, version)
+
     if cluster_data.group is not None and version < STUDY_VERSION_9_3:
         # Performs this transformation to fit with old behavior
         # Before, when giving a fake group, we used to write `other 1` instead and not crash.
@@ -391,6 +422,12 @@ def initialize_thermal_cluster(cluster: ThermalCluster, version: StudyVersion) -
         _initialize_field_default(cluster, "efficiency", 100.0)
         _initialize_field_default(cluster, "variable_o_m_cost", 0.0)
 
+    if version >= STUDY_VERSION_10_2:
+        _initialize_field_default(cluster, "ramp", False)
+        _initialize_field_default(cluster, "ramp_up_cost", 0.0)
+        _initialize_field_default(cluster, "ramp_down_cost", 0.0)
+        # `max_ramp_up` / `max_ramp_down` have no default: leaving them unset means "no ramping limit".
+
 
 def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersion) -> None:
     """
@@ -403,6 +440,9 @@ def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersio
         required.extend(["nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"])
     if version >= STUDY_VERSION_8_7:
         required.extend(["cost_generation", "efficiency", "variable_o_m_cost"])
+    if version >= STUDY_VERSION_10_2:
+        # `max_ramp_up` / `max_ramp_down` are legitimately unset at 10.2, hence not required.
+        required.extend(["ramp", "ramp_up_cost", "ramp_down_cost"])
 
     missing = [f for f in required if getattr(cluster, f) is None]
     if missing:

@@ -154,6 +154,12 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
+            # These values are None as they are defined in v10.2+
+            "ramp": None,
+            "maxRampUp": None,
+            "maxRampDown": None,
+            "rampUpCost": None,
+            "rampDownCost": None,
         }
         assert actual == expected
 
@@ -212,6 +218,12 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
+                # These values are None as they are defined in v10.2+
+                "ramp": None,
+                "maxRampUp": None,
+                "maxRampDown": None,
+                "rampUpCost": None,
+                "rampDownCost": None,
             },
             {
                 "id": "on and must 2",
@@ -251,6 +263,12 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
+                # These values are None as they are defined in v10.2+
+                "ramp": None,
+                "maxRampUp": None,
+                "maxRampDown": None,
+                "rampUpCost": None,
+                "rampDownCost": None,
             },
             {
                 "id": "2 avail and must 2",
@@ -290,6 +308,12 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
+                # These values are None as they are defined in v10.2+
+                "ramp": None,
+                "maxRampUp": None,
+                "maxRampDown": None,
+                "rampUpCost": None,
+                "rampDownCost": None,
             },
         ]
         assert actual == expected
@@ -351,6 +375,12 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
+            # These values are None as they are defined in v10.2+
+            "ramp": None,
+            "maxRampUp": None,
+            "maxRampDown": None,
+            "rampUpCost": None,
+            "rampDownCost": None,
             "spinning": 0.0,
             "spreadCost": 0.0,
             "startupCost": 0.0,
@@ -414,6 +444,12 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
+            # These values are None as they are defined in v10.2+
+            "ramp": None,
+            "maxRampUp": None,
+            "maxRampDown": None,
+            "rampUpCost": None,
+            "rampDownCost": None,
         }
         assert actual == expected
 

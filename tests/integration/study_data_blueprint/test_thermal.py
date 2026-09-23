@@ -51,7 +51,7 @@ import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
-from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
+from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7, STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from tests.integration.utils import duration_threshold, wait_task_completion
 
@@ -330,6 +330,11 @@ class TestThermal:
                     "costGeneration": "SetManually" if version >= 870 else None,
                     "efficiency": 100.0 if version >= 870 else None,
                     "variableOMCost": 0.0 if version >= 870 else None,
+                    "ramp": False if version >= 1020 else None,
+                    "maxRampUp": None,
+                    "maxRampDown": None,
+                    "rampUpCost": 0.0 if version >= 1020 else None,
+                    "rampDownCost": 0.0 if version >= 1020 else None,
                 }
             )
 
@@ -428,6 +433,11 @@ class TestThermal:
                 "costGeneration": "SetManually" if version >= 870 else None,
                 "efficiency": 100.0 if version >= 870 else None,
                 "variableOMCost": 0.0 if version >= 870 else None,
+                "ramp": False if version >= 1020 else None,
+                "maxRampUp": None,
+                "maxRampDown": None,
+                "rampUpCost": 0.0 if version >= 1020 else None,
+                "rampDownCost": 0.0 if version >= 1020 else None,
             },
         }
         assert res.json() == expected
@@ -540,6 +550,16 @@ class TestThermal:
             json={"efficiency": 97.0},
         )
         if version >= STUDY_VERSION_8_7:
+            assert res.status_code == 200, res.json()
+        else:
+            assert res.status_code == 422, res.json()
+
+        # Update with a ramping field. Should fail for versions prior to v10.2
+        res = client.patch(
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
+            json={"maxRampUp": 10.0},
+        )
+        if version >= STUDY_VERSION_10_2:
             assert res.status_code == 200, res.json()
         else:
             assert res.status_code == 422, res.json()
