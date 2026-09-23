@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { nullishToOptional } from "@/utils/zodUtils";
 import { z } from "zod";
 import {
   COST_GENERATION_OPTIONS,
@@ -47,22 +48,22 @@ export const thermalClusterSchema = z.object({
   lawPlanned: z.enum(TS_LAW_OPTIONS),
   co2: z.number(),
   // Since v8.6; older studies may omit these fields or return null.
-  so2: z.number().nullish(),
-  nh3: z.number().nullish(),
-  nox: z.number().nullish(),
-  nmvoc: z.number().nullish(),
-  pm25: z.number().nullish(),
-  pm5: z.number().nullish(),
-  pm10: z.number().nullish(),
-  op1: z.number().nullish(),
-  op2: z.number().nullish(),
-  op3: z.number().nullish(),
-  op4: z.number().nullish(),
-  op5: z.number().nullish(),
+  so2: nullishToOptional(z.number()),
+  nh3: nullishToOptional(z.number()),
+  nox: nullishToOptional(z.number()),
+  nmvoc: nullishToOptional(z.number()),
+  pm25: nullishToOptional(z.number()),
+  pm5: nullishToOptional(z.number()),
+  pm10: nullishToOptional(z.number()),
+  op1: nullishToOptional(z.number()),
+  op2: nullishToOptional(z.number()),
+  op3: nullishToOptional(z.number()),
+  op4: nullishToOptional(z.number()),
+  op5: nullishToOptional(z.number()),
   // Since v8.7.
-  costGeneration: z.enum(COST_GENERATION_OPTIONS).nullish(),
-  efficiency: z.number().nullish(),
-  variableOMCost: z.number().nullish(),
+  costGeneration: nullishToOptional(z.enum(COST_GENERATION_OPTIONS)),
+  efficiency: nullishToOptional(z.number()),
+  variableOMCost: nullishToOptional(z.number()),
 });
 
 export const thermalClustersSchema = z.array(thermalClusterSchema);

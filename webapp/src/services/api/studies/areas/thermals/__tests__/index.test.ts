@@ -15,9 +15,9 @@
 import { queryClient } from "@/queries/queryClient";
 import { thermalQueries } from "@/queries/thermals/queries";
 import client from "@/services/api/client";
-import { ZodError } from "zod";
+import { ZodError, type z } from "zod";
 import * as api from "..";
-import type { ThermalCluster } from "../types";
+import type { thermalClusterSchema } from "../schemas";
 
 vi.mock("@/services/api/client", () => ({
   default: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -27,7 +27,7 @@ const studyId = "study-1";
 const areaId = "area-1";
 const clusterId = "gas cluster";
 const listUrl = `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`;
-const cluster: ThermalCluster = {
+const cluster: z.input<typeof thermalClusterSchema> = {
   id: "Gas Cluster",
   name: "Gas Cluster",
   group: "custom gas",
@@ -65,6 +65,7 @@ test("caches complete cluster properties so consumers can select without a detai
     ...cluster,
     group: null,
     so2: null,
+    nh3: 0,
     costGeneration: "useCostTimeseries",
     efficiency: 50,
     variableOMCost: 15,
@@ -75,7 +76,7 @@ test("caches complete cluster properties so consumers can select without a detai
   await queryClient.fetchQuery(options);
   const selected = queryClient.getQueryData(options.queryKey)?.find(({ id }) => id === clusterId);
 
-  expect(selected).toEqual({ ...response, id: clusterId });
+  expect(selected).toEqual({ ...response, id: clusterId, so2: undefined });
   expect(client.get).toHaveBeenCalledTimes(1);
   expect(client.get).toHaveBeenCalledWith(listUrl);
 });
@@ -101,12 +102,16 @@ test("creates a cluster from a name-only payload", async () => {
   expect(client.post).toHaveBeenCalledWith(listUrl, { name: "New cluster" });
 });
 
-test("patches only supplied values, including nullable fields", async () => {
-  const values = { enabled: false, so2: null, costGeneration: null };
-  const updated = { ...cluster, ...values };
+test("patches only supplied values and normalizes absent response fields", async () => {
+  const values = { enabled: false };
+  const updated = { ...cluster, ...values, so2: null, costGeneration: null };
   vi.mocked(client.patch).mockResolvedValue({ data: updated });
 
-  expect(await api.updateThermalCluster({ studyId, areaId, clusterId, values })).toEqual(updated);
+  expect(await api.updateThermalCluster({ studyId, areaId, clusterId, values })).toEqual({
+    ...updated,
+    so2: undefined,
+    costGeneration: undefined,
+  });
   expect(client.patch).toHaveBeenCalledWith(`${listUrl}/${clusterId}`, values);
 });
 
