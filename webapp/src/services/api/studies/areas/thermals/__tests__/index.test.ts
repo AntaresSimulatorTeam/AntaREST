@@ -14,7 +14,6 @@
 
 import { queryClient } from "@/queries/queryClient";
 import { thermalQueries } from "@/queries/thermals/queries";
-import * as legacy from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/-utils";
 import client from "@/services/api/client";
 import { ZodError } from "zod";
 import * as api from "..";
@@ -53,46 +52,6 @@ const cluster: ThermalCluster = {
   co2: 0,
 };
 
-const versionedProperties = {
-  so2: 1,
-  nh3: 2,
-  nox: 3,
-  nmvoc: 4,
-  pm25: 5,
-  pm5: 6,
-  pm10: 7,
-  op1: 8,
-  op2: 9,
-  op3: 10,
-  op4: 11,
-  op5: 12,
-  costGeneration: "useCostTimeseries",
-  efficiency: 50,
-  variableOMCost: 15,
-} satisfies Partial<ThermalCluster>;
-
-const callers = [
-  {
-    name: "service API",
-    list: () => api.getThermalClusters({ studyId, areaId }),
-    detail: () => api.getThermalCluster({ studyId, areaId, clusterId }),
-    create: () => api.createThermalCluster({ studyId, areaId, values: { name: "New cluster" } }),
-    update: () =>
-      api.updateThermalCluster({ studyId, areaId, clusterId, values: { enabled: false } }),
-    duplicate: () => api.duplicateThermalCluster({ studyId, areaId, clusterId, newName: "Copy" }),
-    delete: () => api.deleteThermalClusters({ studyId, areaId, clusterIds: [clusterId, "other"] }),
-  },
-  {
-    name: "legacy compatibility helpers",
-    list: () => legacy.getThermalClusters(studyId, areaId),
-    detail: () => legacy.getThermalCluster(studyId, areaId, clusterId),
-    create: () => legacy.createThermalCluster(studyId, areaId, { name: "New cluster" }),
-    update: () => legacy.updateThermalCluster(studyId, areaId, clusterId, { enabled: false }),
-    duplicate: () => legacy.duplicateThermalCluster(studyId, areaId, clusterId, "Copy"),
-    delete: () => legacy.deleteThermalClusters(studyId, areaId, [clusterId, "other"]),
-  },
-];
-
 beforeEach(() => {
   vi.resetAllMocks();
 });
@@ -101,103 +60,15 @@ afterEach(() => {
   queryClient.clear();
 });
 
-describe.each(callers)("$name", (caller) => {
-  test("retains every list property and normalizes IDs without mutating the response", async () => {
-    const response = { ...cluster, so2: null, costGeneration: null };
-    vi.mocked(client.get).mockResolvedValue({ data: [response] });
-
-    const result = await caller.list();
-
-    expect(client.get).toHaveBeenCalledTimes(1);
-    expect(client.get).toHaveBeenCalledWith(listUrl);
-    expect(result).toEqual([{ ...response, id: clusterId }]);
-    expect(response.id).toBe("Gas Cluster");
-  });
-
-  test("preserves the single-item response, including legacy ID casing", async () => {
-    vi.mocked(client.get).mockResolvedValue({ data: cluster });
-
-    expect(await caller.detail()).toEqual(cluster);
-    expect(client.get).toHaveBeenCalledTimes(1);
-    expect(client.get).toHaveBeenCalledWith(`${listUrl}/${clusterId}`);
-  });
-
-  test.each([
-    { version: "before 8.6", properties: {} },
-    {
-      version: "unsupported versioned fields returned as null",
-      properties: Object.fromEntries(Object.keys(versionedProperties).map((key) => [key, null])),
-    },
-    { version: "8.7 and later", properties: versionedProperties },
-  ])("preserves version-dependent properties: $version", async ({ properties }) => {
-    const response = { ...cluster, ...properties };
-    vi.mocked(client.get).mockResolvedValue({ data: response });
-
-    expect(await caller.detail()).toEqual(response);
-  });
-
-  test.each(["list", "detail", "create", "update", "duplicate"] as const)(
-    "%s rejects malformed responses at the API boundary",
-    async (operation) => {
-      const invalidCluster = { ...cluster, genTs: "unknown behavior" };
-      const response = { data: operation === "list" ? [invalidCluster] : invalidCluster };
-      vi.mocked(client.get).mockResolvedValue(response);
-      vi.mocked(client.post).mockResolvedValue(response);
-      vi.mocked(client.patch).mockResolvedValue(response);
-
-      await expect(caller[operation]()).rejects.toBeInstanceOf(ZodError);
-    },
-  );
-
-  test("creates a cluster from a name-only payload", async () => {
-    vi.mocked(client.post).mockResolvedValue({ data: cluster });
-
-    expect(await caller.create()).toEqual(cluster);
-    expect(client.post).toHaveBeenCalledTimes(1);
-    expect(client.post).toHaveBeenCalledWith(listUrl, { name: "New cluster" });
-  });
-
-  test("patches only supplied values", async () => {
-    const updated = { ...cluster, enabled: false };
-    vi.mocked(client.patch).mockResolvedValue({ data: updated });
-
-    expect(await caller.update()).toEqual(updated);
-    expect(client.patch).toHaveBeenCalledTimes(1);
-    expect(client.patch).toHaveBeenCalledWith(`${listUrl}/${clusterId}`, {
-      enabled: false,
-    });
-  });
-
-  test("duplicates through the dedicated endpoint and newName query parameter", async () => {
-    vi.mocked(client.post).mockResolvedValue({ data: cluster });
-
-    expect(await caller.duplicate()).toEqual(cluster);
-    expect(client.post).toHaveBeenCalledTimes(1);
-    expect(client.post).toHaveBeenCalledWith(
-      `/v1/studies/${studyId}/areas/${areaId}/thermals/${clusterId}`,
-      null,
-      { params: { newName: "Copy" } },
-    );
-  });
-
-  test("sends bulk deletion IDs in the request body", async () => {
-    vi.mocked(client.delete).mockResolvedValue({ data: null });
-
-    expect(await caller.delete()).toBeUndefined();
-    expect(client.delete).toHaveBeenCalledTimes(1);
-    expect(client.delete).toHaveBeenCalledWith(listUrl, { data: [clusterId, "other"] });
-  });
-
-  test("propagates request failures to existing error handling", async () => {
-    const error = new Error("Request failed");
-    vi.mocked(client.get).mockRejectedValue(error);
-
-    await expect(caller.list()).rejects.toBe(error);
-  });
-});
-
 test("caches complete cluster properties so consumers can select without a detail request", async () => {
-  const response = { ...cluster, ...versionedProperties, group: null };
+  const response = {
+    ...cluster,
+    group: null,
+    so2: null,
+    costGeneration: "useCostTimeseries",
+    efficiency: 50,
+    variableOMCost: 15,
+  };
   vi.mocked(client.get).mockResolvedValue({ data: [response] });
 
   const options = thermalQueries.list(studyId, areaId);
@@ -209,16 +80,52 @@ test("caches complete cluster properties so consumers can select without a detai
   expect(client.get).toHaveBeenCalledWith(listUrl);
 });
 
-test("adapts an absent group for legacy views without changing the API model", async () => {
-  const response = { ...cluster, group: null };
-  vi.mocked(client.get).mockResolvedValue({ data: response });
-
-  expect(await api.getThermalCluster({ studyId, areaId, clusterId })).toEqual(response);
-  expect(await legacy.getThermalCluster(studyId, areaId, clusterId)).toEqual({
-    ...response,
-    group: "",
+test("rejects malformed list responses", async () => {
+  vi.mocked(client.get).mockResolvedValue({
+    data: [{ ...cluster, genTs: "unknown behavior" }],
   });
-  expect(response.group).toBeNull();
+
+  await expect(api.getThermalClusters({ studyId, areaId })).rejects.toBeInstanceOf(ZodError);
+});
+
+test("creates a cluster from a name-only payload", async () => {
+  vi.mocked(client.post).mockResolvedValue({ data: cluster });
+
+  const created = await api.createThermalCluster({
+    studyId,
+    areaId,
+    values: { name: "New cluster" },
+  });
+
+  expect(created).toEqual(cluster);
+  expect(client.post).toHaveBeenCalledWith(listUrl, { name: "New cluster" });
+});
+
+test("patches only supplied values, including nullable fields", async () => {
+  const values = { enabled: false, so2: null, costGeneration: null };
+  const updated = { ...cluster, ...values };
+  vi.mocked(client.patch).mockResolvedValue({ data: updated });
+
+  expect(await api.updateThermalCluster({ studyId, areaId, clusterId, values })).toEqual(updated);
+  expect(client.patch).toHaveBeenCalledWith(`${listUrl}/${clusterId}`, values);
+});
+
+test("duplicates through the dedicated endpoint and newName query parameter", async () => {
+  vi.mocked(client.post).mockResolvedValue({ data: cluster });
+
+  await api.duplicateThermalCluster({ studyId, areaId, clusterId, newName: "Copy" });
+
+  expect(client.post).toHaveBeenCalledWith(
+    `/v1/studies/${studyId}/areas/${areaId}/thermals/${clusterId}`,
+    null,
+    { params: { newName: "Copy" } },
+  );
+});
+
+test("sends bulk deletion IDs in the request body", async () => {
+  await api.deleteThermalClusters({ studyId, areaId, clusterIds: [clusterId, "other"] });
+
+  expect(client.delete).toHaveBeenCalledWith(listUrl, { data: [clusterId, "other"] });
 });
 
 test("rejects invalid create and update values before sending a request", async () => {
@@ -235,22 +142,4 @@ test("rejects invalid create and update values before sending a request", async 
 
   expect(client.post).not.toHaveBeenCalled();
   expect(client.patch).not.toHaveBeenCalled();
-});
-
-test("strips read-only fields from legacy update values and preserves nullable fields", async () => {
-  vi.mocked(client.patch).mockResolvedValue({ data: cluster });
-
-  await legacy.updateThermalCluster(studyId, areaId, clusterId, {
-    id: clusterId,
-    name: "Ignored name",
-    so2: null,
-    costGeneration: null,
-    enabled: false,
-  });
-
-  expect(client.patch).toHaveBeenCalledWith(`${listUrl}/${clusterId}`, {
-    so2: null,
-    costGeneration: null,
-    enabled: false,
-  });
 });
