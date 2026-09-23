@@ -67,7 +67,7 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
 
         system = self.get_system()
         assert system is not None
-        updated_system = system.model_copy(update={"components": [*system.components, *components]})
+        updated_system = system.model_copy(update={"components": components})
 
         yaml_content = updated_system.model_dump(mode="json", exclude_unset=True, by_alias=True)
         YAMLWriter().write({"system": yaml_content}, system_file_path)

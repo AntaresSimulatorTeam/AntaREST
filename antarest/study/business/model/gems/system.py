@@ -9,15 +9,16 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List
+from typing import Any, List
 
 from pydantic import ConfigDict, model_validator
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.utils.string import to_kebab_case
 
 
 class _GemsParameters(AntaresBaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
     time_dependent: bool
@@ -32,14 +33,14 @@ class _GemsParameters(AntaresBaseModel):
 
 
 class _GemsProperties(AntaresBaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
     value: str
 
 
 class GemsComponent(AntaresBaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
     model: str
@@ -49,9 +50,10 @@ class GemsComponent(AntaresBaseModel):
 
 
 class GemsSystem(AntaresBaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
     description: str | None = None
+    model_libraries: list[str] | None = None
     components: List[GemsComponent]
-    connections: List[str] | None = None
+    connections: list[dict[str, Any]] | None = None
