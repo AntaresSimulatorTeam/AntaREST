@@ -13,13 +13,14 @@
  */
 
 import client from "@/services/api/client";
+import { z } from "zod";
 import {
   createReserveParamsSchema,
   reserveGlobalParametersSchema,
   reserveSchema,
-  reservesCertificationsSchema,
+  reservesCertificationsCodecs,
   reservesSchema,
-  reservesSymmetriesSchema,
+  reservesSymmetriesCodecs,
   updateReserveGlobalParametersSchema,
   updateReserveParamsSchema,
 } from "./schemas";
@@ -31,9 +32,8 @@ import type {
   ReserveGlobalParameters,
   ReservesAreaParams,
   ReservesCertifications,
-  ReservesCertificationsParams,
+  ReservesProductionTypeParams,
   ReservesSymmetries,
-  ReservesSymmetriesParams,
   UpdateReserveGlobalParametersParams,
   UpdateReserveParams,
   UpdateReservesCertificationsParams,
@@ -150,40 +150,40 @@ export async function updateReserveGlobalParameters(
  * reserve certifications of an area for a given production type.
  *
  * @param params - Study, area identifiers and the production type.
- * @returns The certifications, keyed by reserve ID then cluster ID.
+ * @returns The certifications in the normalized shape, keyed by reserve ID then asset ID.
  * @throws If the response doesn't match the expected schema.
  */
 export async function getReservesCertifications(
-  params: ReservesCertificationsParams,
+  params: ReservesProductionTypeParams,
 ): Promise<ReservesCertifications> {
   const { studyId, areaId, productionType } = params;
   const res = await client.get(
     `/v1/studies/${studyId}/areas/${areaId}/reserves/certifications/${productionType}`,
   );
-  return reservesCertificationsSchema.parse(res.data);
+  return reservesCertificationsCodecs[productionType].parse(res.data);
 }
 
 /**
  * PUT /v1/studies/{studyId}/areas/{areaId}/reserves/certifications/{productionType} - Replaces
  * the reserve certifications of an area for a given production type.
  *
- * The whole mapping is replaced: a cluster omitted from a reserve's record loses its
+ * The whole mapping is replaced: an asset omitted from a reserve's record loses its
  * certification for that reserve.
  *
- * @param params - Identifiers, the production type and the full certifications mapping.
- * @returns The updated certifications mapping.
+ * @param params - Identifiers, the production type and the full normalized mapping.
+ * @returns The updated certifications in the normalized shape.
  * @throws If the params or response doesn't match the expected schema.
  */
 export async function updateReservesCertifications(
   params: UpdateReservesCertificationsParams,
 ): Promise<ReservesCertifications> {
   const { studyId, areaId, productionType, data } = params;
-  const body = reservesCertificationsSchema.parse(data);
+  const codec = reservesCertificationsCodecs[productionType];
   const res = await client.put(
     `/v1/studies/${studyId}/areas/${areaId}/reserves/certifications/${productionType}`,
-    body,
+    z.encode(codec, data),
   );
-  return reservesCertificationsSchema.parse(res.data);
+  return codec.parse(res.data);
 }
 
 /**
@@ -191,37 +191,37 @@ export async function updateReservesCertifications(
  * reserve symmetries of an area for a given production type.
  *
  * @param params - Study, area identifiers and the production type.
- * @returns The symmetries, keyed by cluster ID.
+ * @returns The symmetries in the normalized shape, keyed by asset ID.
  * @throws If the response doesn't match the expected schema.
  */
 export async function getReservesSymmetries(
-  params: ReservesSymmetriesParams,
+  params: ReservesProductionTypeParams,
 ): Promise<ReservesSymmetries> {
   const { studyId, areaId, productionType } = params;
   const res = await client.get(
     `/v1/studies/${studyId}/areas/${areaId}/reserves/symmetries/${productionType}`,
   );
-  return reservesSymmetriesSchema.parse(res.data);
+  return reservesSymmetriesCodecs[productionType].parse(res.data);
 }
 
 /**
  * PUT /v1/studies/{studyId}/areas/{areaId}/reserves/symmetries/{productionType} - Replaces
  * the reserve symmetries of an area for a given production type.
  *
- * The whole mapping is replaced: a cluster omitted from the payload loses its symmetries.
+ * The whole mapping is replaced: an asset omitted from the payload loses its symmetries.
  *
- * @param params - Identifiers, the production type and the full symmetries mapping.
- * @returns The updated symmetries mapping.
+ * @param params - Identifiers, the production type and the full normalized mapping.
+ * @returns The updated symmetries in the normalized shape.
  * @throws If the params or response doesn't match the expected schema.
  */
 export async function updateReservesSymmetries(
   params: UpdateReservesSymmetriesParams,
 ): Promise<ReservesSymmetries> {
   const { studyId, areaId, productionType, data } = params;
-  const body = reservesSymmetriesSchema.parse(data);
+  const codec = reservesSymmetriesCodecs[productionType];
   const res = await client.put(
     `/v1/studies/${studyId}/areas/${areaId}/reserves/symmetries/${productionType}`,
-    body,
+    z.encode(codec, data),
   );
-  return reservesSymmetriesSchema.parse(res.data);
+  return codec.parse(res.data);
 }

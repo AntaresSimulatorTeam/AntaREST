@@ -78,6 +78,20 @@ def db_dao_930_shared() -> DatabaseStudyDao:
         return build_db_dao(session, InMemorySimpleMatrixService(), STUDY_VERSION_9_3)
 
 
+def build_db_dao_10_2(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    """Initialize a v10.2 study using the latest available reference template."""
+    dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+    study = db_session.get(Study, dao.get_study_id())
+    assert study is not None
+    study.version = str(STUDY_VERSION_10_2)
+    db_session.commit()
+    # Settings were saved at v9.3; replay v10 init so v10-specific defaults stick.
+    prefs = dao.get_optimization_preferences()
+    initialize_optimization_preferences_against_version(prefs, STUDY_VERSION_10_2)
+    dao.save_optimization_preferences(prefs)
+    return dao
+
+
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_10_2(
     request,
@@ -90,15 +104,7 @@ def dao_10_2(
     """A DAO parameterized over both backends (v10.2)."""
     # v10.2 has no study template on disk — create a v9.3 study and force its version to 10.2.
     if request.param == "db":
-        dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
-        study = db_session.get(Study, dao.get_study_id())
-        study.version = str(STUDY_VERSION_10_2)
-        db_session.commit()
-        # Settings were saved at v9.3; replay v10 init so v10-specific defaults stick.
-        prefs = dao.get_optimization_preferences()
-        initialize_optimization_preferences_against_version(prefs, STUDY_VERSION_10_2)
-        dao.save_optimization_preferences(prefs)
-        return dao
+        return build_db_dao_10_2(db_session, matrix_service)
     else:
         dao = build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
         dao.get_file_study().config.version = STUDY_VERSION_10_2

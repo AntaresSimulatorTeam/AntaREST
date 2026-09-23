@@ -14,8 +14,10 @@ from collections.abc import Callable
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
 
 from antarest.core.exceptions import InvalidFieldForVersionError
+from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
 from antarest.study.business.model.scenario_builder_model import (
     Ruleset,
     RulesetUpdate,
@@ -25,6 +27,28 @@ from antarest.study.business.model.scenario_builder_model import (
 )
 from antarest.study.business.model.study_index import StudyIndex
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
+
+
+@pytest.mark.parametrize(
+    "group,valid",
+    [
+        ("load_1", True),
+        ("", False),
+        ("Load", False),
+        ("load-group", False),
+        ("load group", False),
+        ("load\n", False),
+        ("éolien", False),
+        (123, False),
+    ],
+)
+def test_gems_scenario_builder_group_id(group: object, valid: bool) -> None:
+    data = {"scenarios": {group: []}}
+    if valid:
+        assert GemsScenarioBuilder.model_validate(data).model_dump() == data
+    else:
+        with pytest.raises(ValidationError):
+            GemsScenarioBuilder.model_validate(data)
 
 
 def test_ruleset__initialization_from_study() -> None:

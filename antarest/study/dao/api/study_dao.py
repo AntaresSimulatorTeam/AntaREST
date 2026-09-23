@@ -30,6 +30,7 @@ from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
@@ -75,6 +76,7 @@ from antarest.study.dao.api.compatibility_parameters_dao import (
 )
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
+from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao, ReadOnlyGemsScenarioBuilderDao
 from antarest.study.dao.api.gems_taxonomy_dao import GemsTaxonomyDao, ReadOnlyGemsTaxonomyDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
@@ -166,6 +168,7 @@ class ReadOnlyStudyDao(
     ReadOnlyReserveSymmetriesDao,
     ReadOnlyGemsLibraryDao,
     ReadOnlyGemsTaxonomyDao,
+    ReadOnlyGemsScenarioBuilderDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -221,6 +224,7 @@ class StudyDao(
     ReserveSymmetriesDao,
     GemsLibraryDao,
     GemsTaxonomyDao,
+    GemsScenarioBuilderDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -976,3 +980,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_taxonomy(self) -> GemsTaxonomy | None:
         return self._adaptee.get_taxonomy()
+
+    @override
+    def get_gems_scenario_builder(self) -> GemsScenarioBuilder | None:
+        return self._adaptee.get_gems_scenario_builder()
