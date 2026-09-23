@@ -26,7 +26,8 @@ export const thermalGroupSchema = z.enum(THERMAL_GROUPS);
 export const thermalClusterSchema = z.object({
   id: z.string(),
   name: z.string(),
-  // Since v9.3, groups can be custom strings. The API also permits no group.
+  // Before v9.3, non-null groups are mapped to the values in thermalGroupSchema.
+  // Since v9.3, groups can be custom strings. The API also permits null.
   group: z.string().nullable(),
   enabled: z.boolean(),
   unitCount: z.number(),
@@ -68,11 +69,11 @@ export const thermalClusterSchema = z.object({
 
 export const thermalClustersSchema = z.array(thermalClusterSchema);
 
-export const createThermalClusterParamsSchema = thermalClusterSchema
+export const thermalClusterCreationSchema = thermalClusterSchema
   .omit({ id: true })
   .partial()
   .required({ name: true });
 
-export const updateThermalClusterParamsSchema = thermalClusterSchema
+export const thermalClusterUpdateSchema = thermalClusterSchema
   .omit({ id: true, name: true })
   .partial();

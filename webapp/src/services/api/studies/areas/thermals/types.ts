@@ -16,16 +16,16 @@ import type { AreaWithId } from "@/types/types";
 import type { z } from "zod";
 import type { Study } from "../../types";
 import type {
-  createThermalClusterParamsSchema,
+  thermalClusterCreationSchema,
   thermalClusterSchema,
+  thermalClusterUpdateSchema,
   thermalGroupSchema,
-  updateThermalClusterParamsSchema,
 } from "./schemas";
 
 export type ThermalGroup = z.infer<typeof thermalGroupSchema>;
 export type ThermalCluster = z.infer<typeof thermalClusterSchema>;
-export type ThermalClusterCreation = z.infer<typeof createThermalClusterParamsSchema>;
-export type ThermalClusterUpdate = z.infer<typeof updateThermalClusterParamsSchema>;
+export type ThermalClusterCreation = z.infer<typeof thermalClusterCreationSchema>;
+export type ThermalClusterUpdate = z.infer<typeof thermalClusterUpdateSchema>;
 
 export interface ThermalsAreaParams {
   studyId: Study["id"];
