@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import Any, List
 
-from sqlalchemy import insert, select
+from sqlalchemy import Row, delete, insert, select
 from typing_extensions import override
 
 from antarest.core.exceptions import GemsSystemAlreadyExists, GemsSystemNotFound
@@ -33,13 +33,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
     @override
     def get_system(self) -> GemsSystem | None:
-        study_data_id = self._study_data_id
-        session = self._db_session
-
         # System metadata
-        stmt = select(GEMS_SYSTEM_METADATA_TABLE).where(GEMS_SYSTEM_METADATA_TABLE.c.study_data_id == study_data_id)
-
-        metadata_row = session.execute(stmt).fetchone()
+        metadata_row = self._get_system_row_if_exists()
         if not metadata_row:
             # No system found, as it is not mandatory to have one, we simply return None.
             return None
@@ -56,17 +51,31 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             }
         )
 
+    def _get_system_row_if_exists(self) -> Row[tuple[Any]] | None:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        stmt = select(GEMS_SYSTEM_METADATA_TABLE).where(GEMS_SYSTEM_METADATA_TABLE.c.study_data_id == study_data_id)
+
+        metadata_row = session.execute(stmt).fetchone()
+        return metadata_row
+
     @override
-    def get_components(self) -> List[GemsComponent]:
+    def get_components(self) -> List[GemsComponent] | None:
         study_data_id = self._study_data_id
         session = self._db_session
 
         component_parameters = self._get_components_parameters()
         component_properties = self._get_components_properties()
 
-        components = []
         components_stmt = select(GEMS_COMPONENT_TABLE).where(GEMS_COMPONENT_TABLE.c.study_data_id == study_data_id)
-        for component_row in session.execute(components_stmt).fetchall():
+        all_components_rows = session.execute(components_stmt).fetchall()
+
+        if not all_components_rows:
+            return None
+
+        components = []
+        for component_row in all_components_rows:
             current_component = GemsComponent.model_validate(
                 {
                     "id": component_row.component_id,
@@ -92,8 +101,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             component_parameters.setdefault(parameter_row.component_id, []).append(
                 {
                     "id": parameter_row.parameter_id,
-                    "time_dependent": parameter_row.time_dependent,
-                    "scenario_dependent": parameter_row.scenario_dependent,
+                    "time-dependent": parameter_row.time_dependent,
+                    "scenario-dependent": parameter_row.scenario_dependent,
                     "value": parameter_row.value,
                 }
             )
@@ -123,9 +132,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         study_data_id = self._study_data_id
         session = self._db_session
 
-        stmt = select(GEMS_SYSTEM_METADATA_TABLE).where(GEMS_SYSTEM_METADATA_TABLE.c.study_data_id == study_data_id)
-
-        row = session.execute(stmt).fetchone()
+        row = self._get_system_row_if_exists()
         if row:
             raise GemsSystemAlreadyExists(f"A system file already exists for study {self._study_id}")
 
@@ -144,8 +151,13 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         study_data_id = self._study_data_id
         session = self._db_session
 
-        if self.get_system() is None:
+        if not self._get_system_row_if_exists():
             raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
+
+        # Clean all existing data regarding components
+        session.execute(delete(GEMS_PARAMETER_TABLE).where(GEMS_PARAMETER_TABLE.c.study_data_id == study_data_id))
+        session.execute(delete(GEMS_PROPERTIES_TABLE).where(GEMS_PROPERTIES_TABLE.c.study_data_id == study_data_id))
+        session.execute(delete(GEMS_COMPONENT_TABLE).where(GEMS_COMPONENT_TABLE.c.study_data_id == study_data_id))
 
         component_values = []
         parameter_values = []

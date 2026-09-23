@@ -15,11 +15,11 @@ system:
   components:
     - id: comp1
       model: model1
-      scenario_group: sg1
+      scenario-group: sg1
       parameters:
         - id: param1
-          time_dependent: false
-          scenario_dependent: false
+          time-dependent: false
+          scenario-dependent: false
           value: 3.14
       properties:
         - id: prop1
@@ -28,12 +28,12 @@ system:
       model: model2
       parameters:
         - id: param2
-          time_dependent: false
-          scenario_dependent: false
+          time-dependent: false
+          scenario-dependent: false
           value: 42.0
         - id: param3
-          time_dependent: false
-          scenario_dependent: false
+          time-dependent: false
+          scenario-dependent: false
           value: -1.5
       properties:
         - id: prop2
