@@ -13,146 +13,27 @@
  */
 
 import type { ClusterWithCapacity } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
-import client from "@/services/api/client";
-import { nameToId } from "@/services/utils";
+import * as thermalApi from "@/services/api/studies/areas/thermals";
 import type { Area, Cluster, StudyMetadata } from "@/types/types";
 import type { PartialExceptFor } from "@/utils/tsUtils";
+import { adaptThermalClusterToView } from "./-adapters";
 
-////////////////////////////////////////////////////////////////
-// Constants
-////////////////////////////////////////////////////////////////
+// TODO(PR2): remove compatibility exports and wrappers once consumers use the Thermal data layer.
+export {
+  COST_GENERATION_OPTIONS,
+  THERMAL_GROUPS,
+  TS_GENERATION_OPTIONS,
+  TS_LAW_OPTIONS,
+} from "@/services/api/studies/areas/thermals/constants";
+export type { ThermalGroup } from "@/services/api/studies/areas/thermals/types";
+export { COMMON_MATRIX_COLS, THERMAL_POLLUTANTS, TS_GEN_MATRIX_COLS } from "./-constants";
 
-export const COMMON_MATRIX_COLS = [
-  "Marginal cost modulation",
-  "Market bid modulation",
-  "Capacity modulation",
-  "Min gen modulation",
-] as const;
-
-export const TS_GEN_MATRIX_COLS = [
-  "FO Duration",
-  "PO Duration",
-  "FO Rate",
-  "PO Rate",
-  "NPO Min",
-  "NPO Max",
-] as const;
-
-export const THERMAL_GROUPS = [
-  "gas",
-  "hard coal",
-  "lignite",
-  "mixed fuel",
-  "nuclear",
-  "oil",
-  "other 1",
-  "other 2",
-  "other 3",
-  "other 4",
-] as const;
-
-export const THERMAL_POLLUTANTS = [
-  "so2",
-  "nh3",
-  "nox",
-  "nmvoc",
-  "pm25",
-  "pm5",
-  "pm10",
-  "op1",
-  "op2",
-  "op3",
-  "op4",
-  "op5",
-] as const;
-
-export const TS_GENERATION_OPTIONS = [
-  "use global",
-  "force no generation",
-  "force generation",
-] as const;
-
-export const TS_LAW_OPTIONS = ["geometric", "uniform"] as const;
-
-export const COST_GENERATION_OPTIONS = ["SetManually", "useCostTimeseries"] as const;
-
-////////////////////////////////////////////////////////////////
-// Types
-////////////////////////////////////////////////////////////////
-
-export type ThermalGroup = (typeof THERMAL_GROUPS)[number];
-
-type LocalTSGenerationBehavior = (typeof TS_GENERATION_OPTIONS)[number];
-type TimeSeriesLawOption = (typeof TS_LAW_OPTIONS)[number];
-type CostGeneration = (typeof COST_GENERATION_OPTIONS)[number];
-
-export interface ThermalCluster<LegacyGroup extends boolean = false> {
-  id: string;
-  name: string;
-  group: LegacyGroup extends true ? ThermalGroup : string; // Before v9.3 => ThermalGroup, since v9.3 => string
-  enabled: boolean;
-  unitCount: number;
-  nominalCapacity: number;
-  mustRun: boolean;
-  minStablePower: number;
-  spinning: number;
-  minUpTime: number;
-  minDownTime: number;
-  marginalCost: number;
-  fixedCost: number;
-  startupCost: number;
-  marketBidCost: number;
-  spreadCost: number;
-  genTs: LocalTSGenerationBehavior;
-  volatilityForced: number;
-  volatilityPlanned: number;
-  lawForced: TimeSeriesLawOption;
-  lawPlanned: TimeSeriesLawOption;
-  co2: number;
-  // Since v8.6
-  so2?: number;
-  nh3?: number;
-  nox?: number;
-  nmvoc?: number;
-  pm25?: number;
-  pm5?: number;
-  pm10?: number;
-  op1?: number;
-  op2?: number;
-  op3?: number;
-  op4?: number;
-  op5?: number;
-  // Since v8.7
-  costGeneration?: CostGeneration;
-  efficiency?: number;
-  variableOMCost?: number;
-}
-
+export type ThermalCluster = ReturnType<typeof adaptThermalClusterToView>;
 export type ThermalClusterWithCapacity = ClusterWithCapacity<ThermalCluster>;
 
-////////////////////////////////////////////////////////////////
-// Functions
-////////////////////////////////////////////////////////////////
-
-const getClustersUrl = (studyId: StudyMetadata["id"], areaId: Area["name"]): string =>
-  `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`;
-
-const getClusterUrl = (
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-  clusterId: Cluster["id"],
-): string => `${getClustersUrl(studyId, areaId)}/${clusterId}`;
-
-////////////////////////////////////////////////////////////////
-// API
-////////////////////////////////////////////////////////////////
-
 export async function getThermalClusters(studyId: StudyMetadata["id"], areaId: Area["name"]) {
-  const res = await client.get<ThermalCluster[]>(getClustersUrl(studyId, areaId));
-  return res.data.map<ThermalCluster>((cluster) => ({
-    ...cluster,
-    id: nameToId(cluster.id),
-  }));
+  const clusters = await thermalApi.getThermalClusters({ studyId, areaId });
+  return clusters.map(adaptThermalClusterToView);
 }
 
 export async function getThermalCluster(
@@ -160,8 +41,8 @@ export async function getThermalCluster(
   areaId: Area["name"],
   clusterId: Cluster["id"],
 ) {
-  const res = await client.get<ThermalCluster>(getClusterUrl(studyId, areaId, clusterId));
-  return res.data;
+  const cluster = await thermalApi.getThermalCluster({ studyId, areaId, clusterId });
+  return adaptThermalClusterToView(cluster);
 }
 
 export async function updateThermalCluster(
@@ -170,8 +51,13 @@ export async function updateThermalCluster(
   clusterId: Cluster["id"],
   data: Partial<ThermalCluster>,
 ) {
-  const res = await client.patch<ThermalCluster>(getClusterUrl(studyId, areaId, clusterId), data);
-  return res.data;
+  const cluster = await thermalApi.updateThermalCluster({
+    studyId,
+    areaId,
+    clusterId,
+    values: data,
+  });
+  return adaptThermalClusterToView(cluster);
 }
 
 export async function createThermalCluster(
@@ -179,8 +65,8 @@ export async function createThermalCluster(
   areaId: Area["name"],
   data: PartialExceptFor<ThermalCluster, "name">,
 ) {
-  const res = await client.post<ThermalCluster>(getClustersUrl(studyId, areaId), data);
-  return res.data;
+  const cluster = await thermalApi.createThermalCluster({ studyId, areaId, values: data });
+  return adaptThermalClusterToView(cluster);
 }
 
 export async function duplicateThermalCluster(
@@ -189,18 +75,19 @@ export async function duplicateThermalCluster(
   sourceClusterId: ThermalCluster["id"],
   newName: ThermalCluster["name"],
 ) {
-  const res = await client.post<ThermalCluster>(
-    `/v1/studies/${studyId}/areas/${areaId}/thermals/${sourceClusterId}`,
-    null,
-    { params: { newName } },
-  );
-  return res.data;
+  const cluster = await thermalApi.duplicateThermalCluster({
+    studyId,
+    areaId,
+    clusterId: sourceClusterId,
+    newName,
+  });
+  return adaptThermalClusterToView(cluster);
 }
 
-export async function deleteThermalClusters(
+export function deleteThermalClusters(
   studyId: StudyMetadata["id"],
   areaId: Area["name"],
   clusterIds: Array<Cluster["id"]>,
 ) {
-  await client.delete(getClustersUrl(studyId, areaId), { data: clusterIds });
+  return thermalApi.deleteThermalClusters({ studyId, areaId, clusterIds });
 }
