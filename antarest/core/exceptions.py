@@ -879,6 +879,16 @@ class GemsLibraryAlreadyExists(HTTPException):
         super().__init__(HTTPStatus.CONFLICT, message)
 
 
+class GemsLibraryNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsModelNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
 class GemsSystemAlreadyExists(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
@@ -887,6 +897,19 @@ class GemsSystemAlreadyExists(HTTPException):
 class GemsSystemNotFound(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsUnavailableForFileSystemStudies(HTTPException):
+    def __init__(self, study_id: str) -> None:
+        super().__init__(
+            HTTPStatus.METHOD_NOT_ALLOWED,
+            f"Gems is unavailable for FileSystem studies, but study {study_id} tried to use it.",
+        )
+
+
+class GemsModelIncorrectlyFormatted(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
 class GemsTaxonomyAlreadyExists(HTTPException):
