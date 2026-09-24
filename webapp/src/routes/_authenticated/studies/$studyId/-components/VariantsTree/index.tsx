@@ -45,7 +45,7 @@ function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
   const { depth, totalDescendants } = layoutTree.drawOptions;
   const study = useStudy();
 
-  // Keep the labels within the visible panel and let the graph use the remaining width.
+  // Reserve one third of the visible panel for labels and the rest for the graph.
   useEffect(() => {
     const element = containerRef.current;
     if (!element) {
@@ -63,8 +63,7 @@ function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
   const baseRectWidth = Math.max(TILE_SIZE_X * (depth + DEPTH_OFFSET), MIN_WIDTH);
   const treeHeight = TILE_SIZE_Y * (totalDescendants + 1) + TILE_SIZE_Y_2;
   const defaultLabelWidth = RECT_TEXT_WIDTH / ZOOM_OUT;
-  const labelWidth =
-    containerWidth > 0 ? Math.min(defaultLabelWidth, containerWidth / 2) : defaultLabelWidth;
+  const labelWidth = containerWidth > 0 ? containerWidth / 3 : defaultLabelWidth;
   const graphWidth = Math.max(
     baseRectWidth,
     (containerWidth - labelWidth) * ZOOM_OUT - RECT_X_SPACING,
