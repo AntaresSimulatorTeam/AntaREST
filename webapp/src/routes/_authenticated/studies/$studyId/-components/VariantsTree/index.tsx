@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import CustomScrollbar from "@/components/CustomScrollbar";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import type { VariantTree } from "@/services/api/studies/variants/types";
 import { measureTextWidth } from "@/utils/domUtils";
@@ -102,61 +103,63 @@ function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
         width: 1,
         minWidth: 0,
         flexGrow: 1,
-        overflow: "auto",
+        overflow: "hidden",
       }}
     >
-      <Box
-        sx={{
-          width: "max-content",
-          minWidth: "100%",
-          display: "flex",
-          alignItems: "flex-start",
-          gap: `${RECT_X_SPACING / ZOOM_OUT}px`,
-        }}
-      >
+      <CustomScrollbar style={{ height: "100%" }}>
         <Box
           sx={{
-            position: "sticky",
-            left: 0,
-            zIndex: 1,
-            flexShrink: 0,
-            width: labelWidth,
-            height: treeHeight / ZOOM_OUT,
-            bgcolor: "background.default",
+            width: "max-content",
+            minWidth: "100%",
+            display: "flex",
+            alignItems: "flex-start",
+            gap: `${RECT_X_SPACING / ZOOM_OUT}px`,
           }}
         >
-          <TreeLabels
-            node={layoutTree}
-            depth={0}
-            row={0}
-            hoverId={hoverId}
-            currentStudyId={study.id}
-            isDarkMode={isDarkMode}
-            onClick={onClick}
-            onHover={handleHover}
-          />
+          <Box
+            sx={{
+              position: "sticky",
+              left: 0,
+              zIndex: 1,
+              flexShrink: 0,
+              width: labelWidth,
+              height: treeHeight / ZOOM_OUT,
+              bgcolor: "background.default",
+            }}
+          >
+            <TreeLabels
+              node={layoutTree}
+              depth={0}
+              row={0}
+              hoverId={hoverId}
+              currentStudyId={study.id}
+              isDarkMode={isDarkMode}
+              onClick={onClick}
+              onHover={handleHover}
+            />
+          </Box>
+          <svg
+            role="img"
+            aria-labelledby="variants-tree-title"
+            width={graphWidth / ZOOM_OUT}
+            height={treeHeight / ZOOM_OUT}
+            preserveAspectRatio="xMinYMin meet"
+            viewBox={`0 0 ${graphWidth} ${treeHeight}`}
+          >
+            <title id="variants-tree-title">Study variant tree</title>
+            <TreeNode
+              node={layoutTree}
+              depth={0}
+              row={0}
+              baseRectWidth={graphWidth}
+              hoverId={hoverId}
+              currentStudyId={study.id}
+              onClick={onClick}
+              onHover={handleHover}
+            />
+          </svg>
         </Box>
-        <svg
-          role="img"
-          aria-labelledby="variants-tree-title"
-          width={graphWidth / ZOOM_OUT}
-          height={treeHeight / ZOOM_OUT}
-          preserveAspectRatio="xMinYMin meet"
-          viewBox={`0 0 ${graphWidth} ${treeHeight}`}
-        >
-          <title id="variants-tree-title">Study variant tree</title>
-          <TreeNode
-            node={layoutTree}
-            depth={0}
-            row={0}
-            baseRectWidth={graphWidth}
-            hoverId={hoverId}
-            currentStudyId={study.id}
-            onClick={onClick}
-            onHover={handleHover}
-          />
-        </svg>
-      </Box>
+      </CustomScrollbar>
     </Box>
   );
 }
