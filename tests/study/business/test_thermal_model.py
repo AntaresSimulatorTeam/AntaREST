@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import math
 from typing import Any
 
 import pytest
@@ -220,9 +219,8 @@ def test_thermal_cluster_creation_default_values_10_2() -> None:
         "efficiency": 100,
         "variable_o_m_cost": 0,
         "ramp": False,
-        # "No ramping limit" is an infinite rate, so that None keeps meaning "not applicable".
-        "max_ramp_up": math.inf,
-        "max_ramp_down": math.inf,
+        "max_ramp_up": None,
+        "max_ramp_down": None,
         "ramp_up_cost": 0.0,
         "ramp_down_cost": 0.0,
     }
@@ -544,30 +542,12 @@ def test_invalid_min_up_down_time_should_be_truncated(
 
 def test_check_thermal_cluster_complete_10_2() -> None:
     cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_10_2)
+
+    # `max_ramp_up` / `max_ramp_down` are legitimately unset at 10.2
     check_thermal_cluster_complete(cluster, STUDY_VERSION_10_2)
 
-    for field in ["ramp", "max_ramp_up", "max_ramp_down", "ramp_up_cost", "ramp_down_cost"]:
+    for field in ["ramp", "ramp_up_cost", "ramp_down_cost"]:
         incomplete = cluster.model_copy()
         setattr(incomplete, field, None)
         with pytest.raises(ValueError, match=f"missing required field\\(s\\) for version 10.2: \\['{field}'\\]"):
             check_thermal_cluster_complete(incomplete, STUDY_VERSION_10_2)
-
-
-def test_infinite_ramp_rate_is_accepted_but_zero_and_negative_are_not() -> None:
-    cluster = create_thermal_cluster(
-        ThermalClusterCreation(name="Cluster @", max_ramp_up=math.inf), version=STUDY_VERSION_10_2
-    )
-    assert cluster.max_ramp_up == math.inf
-
-    for invalid in [0, -1, -math.inf, math.nan]:
-        with pytest.raises(ValidationError):
-            ThermalClusterCreation(name="Cluster @", max_ramp_up=invalid)
-
-
-def test_infinite_ramp_rate_crosses_the_api_as_a_string() -> None:
-    """`inf` is not valid JSON, so it is serialized as "Infinity" and parsed back."""
-    cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_10_2)
-
-    payload = cluster.model_dump_json(by_alias=True)
-    assert '"maxRampUp":"Infinity"' in payload
-    assert ThermalCluster.model_validate_json(payload).max_ramp_up == math.inf

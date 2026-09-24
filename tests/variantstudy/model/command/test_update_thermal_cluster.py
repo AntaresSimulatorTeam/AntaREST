@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import math
-
 import pytest
 from pydantic import ValidationError
 
@@ -163,34 +161,39 @@ def test_ramp_fields_round_trip_at_10_2() -> None:
     ini_data = {
         "name": "test",
         "group": ThermalClusterGroup.GAS,
-        "ramp": True,
-        "max-ramp-up": 10.5,
-        "ramp-up-cost": 1.0,
-        "ramp-down-cost": 2.0,
+        "ramping-enabled": True,
+        "max-upward-power-ramping-rate": 10.5,
+        "power-increase-cost": 1.0,
+        "power-decrease-cost": 2.0,
     }
 
     cluster = parse_thermal_cluster(study_version=STUDY_VERSION_10_2, data=ini_data)
     assert cluster.ramp is True
     assert cluster.max_ramp_up == 10.5
-    # Absent from the file: an infinite rate, meaning "no ramping limit".
-    assert cluster.max_ramp_down == math.inf
+    # Absent from the file: stays unset, meaning "no ramping limit".
+    assert cluster.max_ramp_down is None
     assert cluster.ramp_up_cost == 1.0
     assert cluster.ramp_down_cost == 2.0
 
     serialized = serialize_thermal_cluster(STUDY_VERSION_10_2, cluster)
-    assert serialized["ramp"] is True
-    assert serialized["max-ramp-up"] == 10.5
-    assert serialized["ramp-up-cost"] == 1.0
-    assert serialized["ramp-down-cost"] == 2.0
-    # An infinite rate goes back to being an absent key, never `inf` in the study file.
-    assert "max-ramp-down" not in serialized
+    assert serialized["ramping-enabled"] is True
+    assert serialized["max-upward-power-ramping-rate"] == 10.5
+    assert serialized["power-increase-cost"] == 1.0
+    assert serialized["power-decrease-cost"] == 2.0
+    assert "max-downward-power-ramping-rate" not in serialized
 
 
 @pytest.mark.parametrize(
     "ini_key",
-    ["ramp", "max-ramp-up", "max-ramp-down", "ramp-up-cost", "ramp-down-cost"],
+    [
+        "ramping-enabled",
+        "max-upward-power-ramping-rate",
+        "max-downward-power-ramping-rate",
+        "power-increase-cost",
+        "power-decrease-cost",
+    ],
 )
 def test_ramp_fields_are_rejected_below_10_2(ini_key: str) -> None:
-    value = True if ini_key == "ramp" else 1.0
+    value = True if ini_key == "ramping-enabled" else 1.0
     with pytest.raises(InvalidFieldForVersionError, match="is not a valid field for study version"):
         parse_thermal_cluster(study_version=STUDY_VERSION_9_3, data={"name": "test", ini_key: value})
