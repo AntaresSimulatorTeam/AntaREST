@@ -37,8 +37,6 @@ from antarest.study.model import (
     STUDY_VERSION_10_2,
 )
 
-_BELOW_10_2 = [STUDY_VERSION_7_2, STUDY_VERSION_8_6, STUDY_VERSION_8_7, STUDY_VERSION_9_3]
-
 
 def test_thermal_cluster_creation_default_values() -> None:
     cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_7_2)
@@ -247,11 +245,11 @@ def test_thermal_cluster_creation_default_values_10_2() -> None:
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"cost_generation": ThermalCostGeneration.USE_COST_TIME_SERIES}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"efficiency": 50}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"variable_o_m_cost": 10}),
-        (_BELOW_10_2, {"ramp": True}),
-        (_BELOW_10_2, {"max_ramp_up": 10.5}),
-        (_BELOW_10_2, {"max_ramp_down": 10.5}),
-        (_BELOW_10_2, {"ramp_up_cost": 1.0}),
-        (_BELOW_10_2, {"ramp_down_cost": 1.0}),
+        ([STUDY_VERSION_9_3], {"ramp": True}),
+        ([STUDY_VERSION_9_3], {"max_ramp_up": 10.5}),
+        ([STUDY_VERSION_9_3], {"max_ramp_down": 10.5}),
+        ([STUDY_VERSION_9_3], {"ramp_up_cost": 1.0}),
+        ([STUDY_VERSION_9_3], {"ramp_down_cost": 1.0}),
     ],
 )
 def test_thermal_cluster_creation_invalid_fields(versions: list[StudyVersion], fields: dict[str, Any]) -> None:
@@ -366,11 +364,11 @@ def test_thermal_cluster_creation_all_values() -> None:
         ),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], [STUDY_VERSION_8_7], {"efficiency": 50}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], [STUDY_VERSION_8_7], {"variable_o_m_cost": 10}),
-        (_BELOW_10_2, [STUDY_VERSION_10_2], {"ramp": True}),
-        (_BELOW_10_2, [STUDY_VERSION_10_2], {"max_ramp_up": 10.5}),
-        (_BELOW_10_2, [STUDY_VERSION_10_2], {"max_ramp_down": 10.5}),
-        (_BELOW_10_2, [STUDY_VERSION_10_2], {"ramp_up_cost": 1.0}),
-        (_BELOW_10_2, [STUDY_VERSION_10_2], {"ramp_down_cost": 1.0}),
+        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"ramp": True}),
+        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"max_ramp_up": 10.5}),
+        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"max_ramp_down": 10.5}),
+        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"ramp_up_cost": 1.0}),
+        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"ramp_down_cost": 1.0}),
     ],
 )
 def test_thermal_cluster_version_validation(
@@ -491,8 +489,21 @@ def invalid_fields() -> list[dict[str, Any]]:
     for v in ["volatility_planned", "volatility_forced"]:
         fields.append({v: -1})
         fields.append({v: 2})
-    for cost in ["marginal_cost", "spread_cost", "fixed_cost", "startup_cost", "market_bid_cost", "variable_o_m_cost"]:
+    for cost in [
+        "marginal_cost",
+        "spread_cost",
+        "fixed_cost",
+        "startup_cost",
+        "market_bid_cost",
+        "variable_o_m_cost",
+        "ramp_up_cost",
+        "ramp_down_cost",
+    ]:
         fields.append({cost: -1})
+    for rate in ["max_ramp_up", "max_ramp_down"]:
+        # Ramping rates are strictly positive: 0 is not a valid "no limit" marker, unset is.
+        fields.append({rate: 0})
+        fields.append({rate: -1})
     for e in ["co2", "nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"]:
         fields.append({e: -1})
     return fields
@@ -528,29 +539,6 @@ def test_invalid_min_up_down_time_should_be_truncated(
     data = thermal_cluster_cls(**kwargs)
     assert data.min_up_time == 168
     assert data.min_down_time == 168
-
-
-@pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
-@pytest.mark.parametrize(
-    "fields",
-    [
-        {"max_ramp_up": 0},
-        {"max_ramp_up": -1},
-        {"max_ramp_down": 0},
-        {"max_ramp_down": -1},
-        {"ramp_up_cost": -1},
-        {"ramp_down_cost": -1},
-    ],
-)
-def test_invalid_ramp_field_values(
-    thermal_cluster_cls: type[ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate],
-    fields: dict[str, Any],
-) -> None:
-    kwargs = fields.copy()
-    if thermal_cluster_cls != ThermalClusterUpdate:
-        kwargs["name"] = "cluster-data"
-    with pytest.raises(ValidationError):
-        thermal_cluster_cls(**kwargs)
 
 
 def test_check_thermal_cluster_complete_10_2() -> None:

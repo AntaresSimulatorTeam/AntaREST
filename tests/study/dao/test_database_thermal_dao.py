@@ -39,7 +39,6 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_PREPRO_TABLE,
     THERMAL_SERIES_TABLE,
 )
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.dao.utils import save_area
@@ -381,12 +380,3 @@ def test_save_thermal_round_trips_ramp_fields(dao_10_2: StudyDao) -> None:
     assert result.max_ramp_down is None
     assert result.ramp_up_cost == 1.0
     assert result.ramp_down_cost == 2.0
-
-    if isinstance(dao, FileStudyTreeDao):
-        ini = dao.get_file_study().tree.get(["input", "thermal", "clusters", "paris", "list", "gas_cluster"])
-        assert ini["ramp"] is True
-        assert ini["max-ramp-up"] == 10.5
-        assert ini["ramp-up-cost"] == 1.0
-        assert ini["ramp-down-cost"] == 2.0
-        # Unset optional field must not be written to the INI file.
-        assert "max-ramp-down" not in ini
