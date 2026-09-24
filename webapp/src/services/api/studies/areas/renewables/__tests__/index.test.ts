@@ -69,6 +69,15 @@ test("caches complete cluster properties separately for each study and area", as
   expect(client.get).toHaveBeenCalledWith(listUrl);
 });
 
+test("normalizes detail IDs to match list IDs while preserving display names", async () => {
+  vi.mocked(client.get).mockResolvedValue({ data: cluster });
+
+  const detail = await api.getRenewableCluster({ studyId, areaId, clusterId });
+
+  expect(detail).toEqual({ ...cluster, id: clusterId });
+  expect(client.get).toHaveBeenCalledWith(`${listUrl}/${clusterId}`);
+});
+
 test("rejects malformed list responses", async () => {
   vi.mocked(client.get).mockResolvedValue({
     data: [{ ...cluster, tsInterpretation: "unknown interpretation" }],

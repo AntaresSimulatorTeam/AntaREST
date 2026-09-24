@@ -59,7 +59,7 @@ export async function getRenewableClusters({
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
  * @param params.clusterId - Cluster identifier.
- * @returns The complete cluster, preserving the server's ID casing.
+ * @returns The complete cluster, with a normalized ID.
  * @throws If the response doesn't match the expected schema.
  */
 export async function getRenewableCluster({
@@ -70,7 +70,9 @@ export async function getRenewableCluster({
   const res = await client.get(
     `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable/${clusterId}`,
   );
-  return renewableClusterSchema.parse(res.data);
+  const cluster = renewableClusterSchema.parse(res.data);
+  // TODO: Return canonical lowercase IDs consistently from the API, then remove this normalization.
+  return { ...cluster, id: nameToId(cluster.id) };
 }
 
 /**
