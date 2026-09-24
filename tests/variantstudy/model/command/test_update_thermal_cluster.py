@@ -9,6 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import math
+
 import pytest
 from pydantic import ValidationError
 
@@ -170,8 +172,8 @@ def test_ramp_fields_round_trip_at_10_2() -> None:
     cluster = parse_thermal_cluster(study_version=STUDY_VERSION_10_2, data=ini_data)
     assert cluster.ramp is True
     assert cluster.max_ramp_up == 10.5
-    # Absent from the file: stays unset, meaning "no ramping limit".
-    assert cluster.max_ramp_down is None
+    # Absent from the file: an infinite rate, meaning "no ramping limit".
+    assert cluster.max_ramp_down == math.inf
     assert cluster.ramp_up_cost == 1.0
     assert cluster.ramp_down_cost == 2.0
 
@@ -180,6 +182,7 @@ def test_ramp_fields_round_trip_at_10_2() -> None:
     assert serialized["max-ramp-up"] == 10.5
     assert serialized["ramp-up-cost"] == 1.0
     assert serialized["ramp-down-cost"] == 2.0
+    # An infinite rate goes back to being an absent key, never `inf` in the study file.
     assert "max-ramp-down" not in serialized
 
 

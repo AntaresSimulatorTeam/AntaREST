@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import math
 from typing import Any
 
 from antares.study.version import StudyVersion
@@ -98,4 +99,11 @@ def parse_thermal_cluster(study_version: StudyVersion, data: Any) -> ThermalClus
 
 def serialize_thermal_cluster(study_version: StudyVersion, cluster: ThermalCluster) -> dict[str, Any]:
     validate_thermal_cluster_against_version(study_version, cluster)
-    return ThermalClusterFileData.from_model(cluster).model_dump(mode="json", by_alias=True, exclude_none=True)
+    data = ThermalClusterFileData.from_model(cluster).model_dump(mode="json", by_alias=True, exclude_none=True)
+    # An infinite ramping rate means "no limit", which the study file expresses by not carrying
+    # the key at all. `exclude_none` does not cover it, since infinity is a value, not an absence.
+    return {key: value for key, value in data.items() if not _is_infinite(value)}
+
+
+def _is_infinite(value: Any) -> bool:
+    return isinstance(value, float) and math.isinf(value)

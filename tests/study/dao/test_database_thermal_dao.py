@@ -14,6 +14,8 @@
 Thermal DAO tests, parameterized across both database and filesystem backends.
 """
 
+import math
+
 import polars as pl
 import pytest
 from sqlalchemy import select
@@ -367,16 +369,17 @@ def test_save_thermal_round_trips_ramp_fields(dao_10_2: StudyDao) -> None:
         name="gas_cluster",
         ramp=True,
         max_ramp_up=10.5,
-        max_ramp_down=None,
         ramp_up_cost=1.0,
         ramp_down_cost=2.0,
     )
+    # Left to its default by `initialize_thermal_cluster`: no downward ramping limit.
+    assert thermal.max_ramp_down == math.inf
 
     dao.save_thermals({"paris": [thermal]})
 
     result = dao.get_thermal("paris", "gas_cluster")
     assert result.ramp is True
     assert result.max_ramp_up == 10.5
-    assert result.max_ramp_down is None
+    assert result.max_ramp_down == math.inf
     assert result.ramp_up_cost == 1.0
     assert result.ramp_down_cost == 2.0

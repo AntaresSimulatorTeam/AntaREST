@@ -28,6 +28,7 @@ on those default values in other parts of the code: parsers, tests ...
 
 """
 
+import math
 from collections.abc import MutableMapping
 from typing import Annotated, Any, TypeAlias, cast
 
@@ -144,7 +145,9 @@ Spinning: TypeAlias = Annotated[float, Field(ge=0, le=100)]
 Emission: TypeAlias = Annotated[float, Field(ge=0)]
 Efficiency: TypeAlias = Annotated[float, Field(gt=0, le=100)]
 Cost: TypeAlias = Annotated[float, Field(ge=0)]
-RampRate: TypeAlias = Annotated[float, Field(gt=0)]
+# An infinite rate is how "no ramping limit" is represented: it keeps `None` meaning
+# "not applicable to this study version", as it does for every other version-gated field.
+RampRate: TypeAlias = Annotated[float, Field(gt=0, allow_inf_nan=True)]
 Volatility: TypeAlias = Annotated[float, Field(ge=0, le=1)]
 HoursInWeek: TypeAlias = Annotated[int, PlainValidator(_validate_week_hours)]
 Group: TypeAlias = LowerCaseStr | None
@@ -155,7 +158,9 @@ class ThermalCluster(AntaresBaseModel):
     Thermal cluster model.
     """
 
-    model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
+    model_config = ConfigDict(
+        alias_generator=to_camel, extra="forbid", populate_by_name=True, ser_json_inf_nan="strings"
+    )
 
     # TODO: for backwards compat, we do not set ID in lower case, but we should change this
     @model_validator(mode="before")
@@ -236,7 +241,11 @@ class ThermalClusterCreation(AntaresBaseModel):
     """
 
     model_config = ConfigDict(
-        alias_generator=to_camel, extra="forbid", populate_by_name=True, json_schema_extra=_creation_json_schema_extra
+        alias_generator=to_camel,
+        extra="forbid",
+        populate_by_name=True,
+        json_schema_extra=_creation_json_schema_extra,
+        ser_json_inf_nan="strings",
     )
 
     name: ItemName
@@ -310,7 +319,11 @@ class ThermalClusterUpdate(AntaresBaseModel):
     """
 
     model_config = ConfigDict(
-        alias_generator=to_camel, extra="forbid", populate_by_name=True, json_schema_extra=_update_json_schema_extra
+        alias_generator=to_camel,
+        extra="forbid",
+        populate_by_name=True,
+        json_schema_extra=_update_json_schema_extra,
+        ser_json_inf_nan="strings",
     )
 
     @model_validator(mode="before")
@@ -426,7 +439,9 @@ def initialize_thermal_cluster(cluster: ThermalCluster, version: StudyVersion) -
         _initialize_field_default(cluster, "ramp", False)
         _initialize_field_default(cluster, "ramp_up_cost", 0.0)
         _initialize_field_default(cluster, "ramp_down_cost", 0.0)
-        # `max_ramp_up` / `max_ramp_down` have no default: leaving them unset means "no ramping limit".
+        # No ramping limit, written as the absence of the key in the INI file.
+        _initialize_field_default(cluster, "max_ramp_up", math.inf)
+        _initialize_field_default(cluster, "max_ramp_down", math.inf)
 
 
 def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersion) -> None:
@@ -441,8 +456,7 @@ def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersio
     if version >= STUDY_VERSION_8_7:
         required.extend(["cost_generation", "efficiency", "variable_o_m_cost"])
     if version >= STUDY_VERSION_10_2:
-        # `max_ramp_up` / `max_ramp_down` are legitimately unset at 10.2, hence not required.
-        required.extend(["ramp", "ramp_up_cost", "ramp_down_cost"])
+        required.extend(["ramp", "max_ramp_up", "max_ramp_down", "ramp_up_cost", "ramp_down_cost"])
 
     missing = [f for f in required if getattr(cluster, f) is None]
     if missing:

@@ -15,8 +15,12 @@ from antarest.blobstore.service import IBlobService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.area_management import AreaManager
 from antarest.study.business.areas.hydro_management import HydroManager
+from antarest.study.business.areas.renewable_management import RenewableManager
 from antarest.study.business.areas.st_storage_management import STStorageManager
+from antarest.study.business.areas.thermal_management import ThermalManager
+from antarest.study.business.binding_constraint_management import BindingConstraintManager
 from antarest.study.business.link_management import LinkManager
+from antarest.study.business.table_mode_management import TableModeManager
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -48,6 +52,40 @@ def st_storage_manager(command_context: CommandContext) -> STStorageManager:
 @pytest.fixture
 def hydro_manager(command_context: CommandContext) -> HydroManager:
     return HydroManager(command_context)
+
+
+@pytest.fixture
+def thermal_manager(command_context: CommandContext) -> ThermalManager:
+    return ThermalManager(command_context)
+
+
+@pytest.fixture
+def renewable_manager(command_context: CommandContext) -> RenewableManager:
+    return RenewableManager(command_context)
+
+
+@pytest.fixture
+def binding_constraint_manager(command_context: CommandContext) -> BindingConstraintManager:
+    return BindingConstraintManager(command_context)
+
+
+@pytest.fixture
+def table_mode_manager(
+    area_manager: AreaManager,
+    link_manager: LinkManager,
+    thermal_manager: ThermalManager,
+    renewable_manager: RenewableManager,
+    st_storage_manager: STStorageManager,
+    binding_constraint_manager: BindingConstraintManager,
+) -> TableModeManager:
+    return TableModeManager(
+        area_manager,
+        link_manager,
+        thermal_manager,
+        renewable_manager,
+        st_storage_manager,
+        binding_constraint_manager,
+    )
 
 
 manager = STStorageManager(command_context)
