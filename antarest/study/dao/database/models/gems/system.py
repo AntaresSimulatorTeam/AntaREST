@@ -27,8 +27,8 @@ GEMS_SYSTEM_METADATA_TABLE = Table(
 )
 
 
-GEMS_COMPONENT_TABLE = Table(
-    "gems_system_component",
+GEMS_COMPONENTS_TABLE = Table(
+    "gems_components",
     metadata,
     study_data_id_col(),
     Column("component_id", String(255), primary_key=True),
@@ -39,10 +39,20 @@ GEMS_COMPONENT_TABLE = Table(
         ["gems_system_metadata.study_data_id"],
         ondelete="CASCADE",
     ),
+    ForeignKeyConstraint(
+        ["study_data_id", "model_id"],
+        ["gems_models.study_data_id", "gems_models.id"],
+        ondelete="CASCADE",
+    ),
+    ForeignKeyConstraint(
+        ["study_data_id", "scenario_group"],
+        ["gems_scenario_builder.study_data_id", "gems_scenario_builder.scenario_group"],
+        ondelete="CASCADE",
+    ),
 )
 
-GEMS_PARAMETER_TABLE = Table(
-    "gems_system_parameter",
+GEMS_COMPONENT_PARAMETERS_TABLE = Table(
+    "gems_component_parameters",
     metadata,
     study_data_id_col(),
     Column("component_id", String(255), primary_key=True),
@@ -52,13 +62,13 @@ GEMS_PARAMETER_TABLE = Table(
     Column("value", Float, nullable=False),
     ForeignKeyConstraint(
         ["study_data_id", "component_id"],
-        ["gems_system_component.study_data_id", "gems_system_component.component_id"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
     ),
 )
 
-GEMS_PROPERTIES_TABLE = Table(
-    "gems_system_property",
+GEMS_COMPONENT_PROPERTIES_TABLE = Table(
+    "gems_component_properties",
     metadata,
     study_data_id_col(),
     Column("component_id", String(255), primary_key=True),
@@ -66,7 +76,7 @@ GEMS_PROPERTIES_TABLE = Table(
     Column("value", String(255), nullable=False),
     ForeignKeyConstraint(
         ["study_data_id", "component_id"],
-        ["gems_system_component.study_data_id", "gems_system_component.component_id"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
     ),
 )

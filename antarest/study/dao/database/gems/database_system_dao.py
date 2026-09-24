@@ -14,14 +14,21 @@ from typing import Any, List
 from sqlalchemy import Row, delete, insert, select
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsSystemAlreadyExists, GemsSystemNotFound
+from antarest.core.exceptions import (
+    GemsLibraryNotFound,
+    GemsModelIncorrectlyFormatted,
+    GemsModelNotFound,
+    GemsSystemAlreadyExists,
+    GemsSystemNotFound,
+)
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
+from antarest.study.dao.database.models.gems.library import GEMS_LIBRARY_METADATA_TABLE, GEMS_MODELS_TABLE
 from antarest.study.dao.database.models.gems.system import (
-    GEMS_COMPONENT_TABLE,
-    GEMS_PARAMETER_TABLE,
-    GEMS_PROPERTIES_TABLE,
+    GEMS_COMPONENT_PARAMETERS_TABLE,
+    GEMS_COMPONENT_PROPERTIES_TABLE,
+    GEMS_COMPONENTS_TABLE,
     GEMS_SYSTEM_METADATA_TABLE,
 )
 
@@ -67,8 +74,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         component_parameters = self._get_components_parameters()
         component_properties = self._get_components_properties()
+        library_id = self._get_library_id()
 
-        components_stmt = select(GEMS_COMPONENT_TABLE).where(GEMS_COMPONENT_TABLE.c.study_data_id == study_data_id)
+        components_stmt = select(GEMS_COMPONENTS_TABLE).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id)
         all_components_rows = session.execute(components_stmt).fetchall()
 
         if not all_components_rows:
@@ -76,10 +84,11 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         components = []
         for component_row in all_components_rows:
+            model = f"{library_id}.{component_row.model_id}"
             current_component = GemsComponent.model_validate(
                 {
                     "id": component_row.component_id,
-                    "model": component_row.model_id,
+                    "model": model,
                     "scenario_group": component_row.scenario_group if component_row.scenario_group else None,
                     "parameters": component_parameters.get(component_row.component_id),
                     "properties": component_properties.get(component_row.component_id),
@@ -90,11 +99,27 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         return components
 
+    def _get_library_id(self) -> str:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        stmt = select(GEMS_LIBRARY_METADATA_TABLE.c.id).where(
+            GEMS_LIBRARY_METADATA_TABLE.c.study_data_id == study_data_id
+        )
+        library_id = session.execute(stmt).scalar_one_or_none()
+
+        if library_id is None:
+            raise GemsLibraryNotFound(f"No library found for study {study_data_id}")
+
+        return library_id
+
     def _get_components_parameters(self) -> dict[str, list[dict[str, Any]]]:
         study_data_id = self._study_data_id
         session = self._db_session
 
-        parameters_stmt = select(GEMS_PARAMETER_TABLE).where(GEMS_PARAMETER_TABLE.c.study_data_id == study_data_id)
+        parameters_stmt = select(GEMS_COMPONENT_PARAMETERS_TABLE).where(
+            GEMS_COMPONENT_PARAMETERS_TABLE.c.study_data_id == study_data_id
+        )
         parameters_rows = session.execute(parameters_stmt).fetchall()
         component_parameters: dict[str, list[dict[str, Any]]] = {}
         for parameter_row in parameters_rows:
@@ -112,7 +137,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         study_data_id = self._study_data_id
         session = self._db_session
 
-        properties_stmt = select(GEMS_PROPERTIES_TABLE).where(GEMS_PROPERTIES_TABLE.c.study_data_id == study_data_id)
+        properties_stmt = select(GEMS_COMPONENT_PROPERTIES_TABLE).where(
+            GEMS_COMPONENT_PROPERTIES_TABLE.c.study_data_id == study_data_id
+        )
         properties_rows = session.execute(properties_stmt).fetchall()
         component_properties: dict[str, list[dict[str, Any]]] = {}
         for property_row in properties_rows:
@@ -155,19 +182,20 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
         # Clean all existing data regarding components
-        session.execute(delete(GEMS_PARAMETER_TABLE).where(GEMS_PARAMETER_TABLE.c.study_data_id == study_data_id))
-        session.execute(delete(GEMS_PROPERTIES_TABLE).where(GEMS_PROPERTIES_TABLE.c.study_data_id == study_data_id))
-        session.execute(delete(GEMS_COMPONENT_TABLE).where(GEMS_COMPONENT_TABLE.c.study_data_id == study_data_id))
+        session.execute(delete(GEMS_COMPONENTS_TABLE).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id))
 
         component_values = []
         parameter_values = []
         property_values = []
         for component in components:
+            self._check_component_model(component)
+            _, model_id = component.model.split(".", 1)
+
             component_values.append(
                 {
                     "study_data_id": study_data_id,
                     "component_id": component.id,
-                    "model_id": component.model,
+                    "model_id": model_id,
                     "scenario_group": component.scenario_group,
                 }
             )
@@ -195,10 +223,33 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                 )
 
         if component_values:
-            session.execute(insert(GEMS_COMPONENT_TABLE), component_values)
+            session.execute(insert(GEMS_COMPONENTS_TABLE), component_values)
         if parameter_values:
-            session.execute(insert(GEMS_PARAMETER_TABLE), parameter_values)
+            session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
         if property_values:
-            session.execute(insert(GEMS_PROPERTIES_TABLE), property_values)
+            session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
 
         session.commit()
+
+    def _check_component_model(self, component: GemsComponent):
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        # Check that the model is correctly formatted
+        if "." not in component.model:
+            raise GemsModelIncorrectlyFormatted(
+                f"Invalid model reference '{component.model}' for component '{component.id}': "
+                "expected format 'library_id.model_id'"
+            )
+
+        # Check that the model exists in the library
+        lib_id, model_id = component.model.split(".", 1)
+        stmt = select(GEMS_MODELS_TABLE.c.id).where(
+            GEMS_MODELS_TABLE.c.study_data_id == study_data_id
+            and GEMS_MODELS_TABLE.c.library_id == lib_id
+            and GEMS_MODELS_TABLE.c.id == model_id
+        )
+
+        model_found = session.execute(stmt).fetchone()
+        if not model_found:
+            raise GemsModelNotFound(f"Could no find model {component.model} in library {lib_id}")

@@ -28,7 +28,7 @@ def upgrade():
     )
 
     op.create_table(
-        "gems_system_component",
+        "gems_components",
         study_data_id_col(),
         Column("component_id", String(255), primary_key=True),
         Column("model_id", String(255)),
@@ -38,10 +38,20 @@ def upgrade():
             ["gems_system_metadata.study_data_id"],
             ondelete="CASCADE",
         ),
+        ForeignKeyConstraint(
+            ["study_data_id", "model_id"],
+            ["gems_models.study_data_id", "gems_models.id"],
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["study_data_id", "scenario_group"],
+            ["gems_scenario_builder.study_data_id", "gems_scenario_builder.scenario_group"],
+            ondelete="CASCADE",
+        ),
     )
 
     op.create_table(
-        "gems_system_parameter",
+        "gems_component_parameters",
         study_data_id_col(),
         Column("component_id", String(255), primary_key=True),
         Column("parameter_id", String(255), primary_key=True),
@@ -50,27 +60,27 @@ def upgrade():
         Column("value", Float, nullable=False),
         ForeignKeyConstraint(
             ["study_data_id", "component_id"],
-            ["gems_system_component.study_data_id", "gems_system_component.component_id"],
+            ["gems_components.study_data_id", "gems_components.component_id"],
             ondelete="CASCADE",
         ),
     )
 
     op.create_table(
-        "gems_system_property",
+        "gems_component_properties",
         study_data_id_col(),
         Column("component_id", String(255), primary_key=True),
         Column("property_id", String(255), primary_key=True),
         Column("value", String(255), nullable=False),
         ForeignKeyConstraint(
             ["study_data_id", "component_id"],
-            ["gems_system_component.study_data_id", "gems_system_component.component_id"],
+            ["gems_components.study_data_id", "gems_components.component_id"],
             ondelete="CASCADE",
         ),
     )
 
 
 def downgrade():
-    op.drop_table("gems_system_property")
-    op.drop_table("gems_system_parameter")
-    op.drop_table("gems_system_component")
+    op.drop_table("gems_component_properties")
+    op.drop_table("gems_component_parameters")
+    op.drop_table("gems_components")
     op.drop_table("gems_system_metadata")
