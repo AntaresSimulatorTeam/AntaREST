@@ -75,10 +75,6 @@ class ThermalClusterFileData(AntaresBaseModel):
     variable_o_m_cost: float | None = Field(default=None, alias="variableomcost")
 
     # Added in 10.2.
-    # The keys are the ones the solver reads (see `ThermalClusterLoadFromSection` in
-    # Antares_Simulator's `cluster_list.cpp`): the solver only builds a cluster's ramping data when
-    # it finds `ramping-enabled`, and silently discards the other keys otherwise, so these aliases
-    # are what makes the parameters reach the simulation at all.
     ramp: bool | None = Field(default=None, alias="ramping-enabled")
     max_ramp_up: float | None = Field(default=None, alias="max-upward-power-ramping-rate")
     max_ramp_down: float | None = Field(default=None, alias="max-downward-power-ramping-rate")
