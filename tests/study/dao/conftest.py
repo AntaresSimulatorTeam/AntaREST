@@ -32,6 +32,7 @@ from antarest.study.business.model.config.optimization_config_model import (
     initialize_optimization_preferences_against_version,
 )
 from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.system import GemsSystem
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -406,6 +407,28 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert second_model.ports[0].type == "flow"
     assert second_model.ports[1].id == "power_port"
     assert second_model.ports[1].type == "flow"
+
+
+def check_gems_system_integrity(system: GemsSystem) -> None:
+    assert system is not None
+    assert system.id == "System 8_1"
+    assert system.description == "Electrolyser - V8.6"
+    assert len(system.components) == 1
+
+    first_component = system.components[0]
+    assert first_component.id == "electrolyser"
+    assert first_component.model == "andromede-v1-models-weo-hybrid.electrolyser"
+    assert first_component.scenario_group == "sg1"
+    assert first_component.parameters is not None
+    assert len(first_component.parameters) == 2
+    assert first_component.parameters[0].id == "efficiency"
+    assert first_component.parameters[0].time_dependent is False
+    assert first_component.parameters[0].scenario_dependent is False
+    assert first_component.parameters[0].value == 0.7
+    assert first_component.parameters[1].id == "p_max"
+    assert first_component.parameters[1].time_dependent is False
+    assert first_component.parameters[1].scenario_dependent is False
+    assert first_component.parameters[1].value == 300
 
 
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:

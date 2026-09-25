@@ -1,0 +1,37 @@
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+system:
+  id: System 8_1
+  description: Electrolyser - V8.6
+  components:
+    - id: electrolyser
+      model: andromede-v1-models-weo-hybrid.electrolyser
+      scenario-group: sg1
+      parameters:
+        - id: efficiency
+          scenario-dependent: false
+          time-dependent: false
+          value: 0.7
+        - id: p_max
+          scenario-dependent: false
+          time-dependent: false
+          value: 300
+
+
+  area-connections:
+    - component: electrolyser
+      port: hydrogen_port
+      area: west-H2
+
+    - component: electrolyser
+      port: power_port
+      area: west
