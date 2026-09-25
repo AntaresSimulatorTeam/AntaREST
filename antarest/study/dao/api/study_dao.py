@@ -982,7 +982,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_library()
 
     @override
-    def get_components(self) -> list[GemsComponent] | None:
+    def get_components(self) -> list[GemsComponent]:
         return self._adaptee.get_components()
 
     @override

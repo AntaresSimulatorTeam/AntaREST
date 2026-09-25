@@ -14,7 +14,7 @@ from pathlib import Path
 
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsSystemAlreadyExists, GemsSystemNotFound
+from antarest.core.exceptions import GemsSystemAlreadyExists, GemsUnavailableForFileSystemStudies
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -41,11 +41,8 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
         return GemsSystem.model_validate(yaml_content)
 
     @override
-    def get_components(self) -> list[GemsComponent] | None:
-        system = self.get_system()
-        if system is None:
-            return None
-        return system.components
+    def get_components(self) -> list[GemsComponent]:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
     def save_system(self, system: GemsSystem) -> None:
@@ -60,14 +57,4 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
 
     @override
     def save_components(self, components: list[GemsComponent]) -> None:
-        file_study = self.get_file_study()
-        system_file_path = _get_gems_system_file_path(file_study.config.study_path)
-        if not system_file_path.exists():
-            raise GemsSystemNotFound(f"No system file exists yet for study {file_study.config.study_id}")
-
-        system = self.get_system()
-        assert system is not None
-        updated_system = system.model_copy(update={"components": components})
-
-        yaml_content = updated_system.model_dump(mode="json", exclude_unset=True, by_alias=True)
-        YAMLWriter().write({"system": yaml_content}, system_file_path)
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

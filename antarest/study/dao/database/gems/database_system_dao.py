@@ -68,20 +68,20 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         return metadata_row
 
     @override
-    def get_components(self) -> List[GemsComponent] | None:
+    def get_components(self) -> List[GemsComponent]:
         study_data_id = self._study_data_id
         session = self._db_session
 
         component_parameters = self._get_components_parameters()
         component_properties = self._get_components_properties()
-        library_id = self._get_library_id()
 
         components_stmt = select(GEMS_COMPONENTS_TABLE).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id)
         all_components_rows = session.execute(components_stmt).fetchall()
 
         if not all_components_rows:
-            return None
+            return []
 
+        library_id = self._get_library_id()
         components = []
         for component_row in all_components_rows:
             model = f"{library_id}.{component_row.model_id}"
@@ -111,7 +111,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if library_id is None:
             raise GemsLibraryNotFound(f"No library found for study {study_data_id}")
 
-        return library_id
+        return str(library_id)
 
     def _get_components_parameters(self) -> dict[str, list[dict[str, Any]]]:
         study_data_id = self._study_data_id
@@ -231,7 +231,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         session.commit()
 
-    def _check_component_model(self, component: GemsComponent):
+    def _check_component_model(self, component: GemsComponent) -> None:
         study_data_id = self._study_data_id
         session = self._db_session
 
@@ -244,12 +244,12 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         # Check that the model exists in the library
         lib_id, model_id = component.model.split(".", 1)
+
         stmt = select(GEMS_MODELS_TABLE.c.id).where(
-            GEMS_MODELS_TABLE.c.study_data_id == study_data_id
-            and GEMS_MODELS_TABLE.c.library_id == lib_id
-            and GEMS_MODELS_TABLE.c.id == model_id
+            GEMS_MODELS_TABLE.c.study_data_id == study_data_id,
+            GEMS_MODELS_TABLE.c.id == model_id,
         )
 
         model_found = session.execute(stmt).fetchone()
         if not model_found:
-            raise GemsModelNotFound(f"Could no find model {component.model} in library {lib_id}")
+            raise GemsModelNotFound(f"Could not find model '{model_id}' in library '{lib_id}'")

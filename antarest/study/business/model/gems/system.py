@@ -57,3 +57,4 @@ class GemsSystem(AntaresBaseModel):
     model_libraries: list[str] | None = None
     components: List[GemsComponent]
     connections: list[dict[str, Any]] | None = None
+    area_connections: list[dict[str, Any]] | None = None
