@@ -29,6 +29,7 @@ from antarest.study.business.model.config.optimization_config_model import Optim
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
+from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
@@ -75,6 +76,7 @@ from antarest.study.dao.api.compatibility_parameters_dao import (
     ReadOnlyCompatibilityParametersDao,
 )
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
+from antarest.study.dao.api.gems_catalog_dao import GemsCatalogDao, ReadOnlyGemsCatalogDao
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao, ReadOnlyGemsScenarioBuilderDao
 from antarest.study.dao.api.gems_taxonomy_dao import GemsTaxonomyDao, ReadOnlyGemsTaxonomyDao
@@ -167,6 +169,7 @@ class ReadOnlyStudyDao(
     ReadOnlyReserveCertificationDao,
     ReadOnlyReserveSymmetriesDao,
     ReadOnlyGemsLibraryDao,
+    ReadOnlyGemsCatalogDao,
     ReadOnlyGemsTaxonomyDao,
     ReadOnlyGemsScenarioBuilderDao,
 ):
@@ -223,6 +226,7 @@ class StudyDao(
     ReserveCertificationDao,
     ReserveSymmetriesDao,
     GemsLibraryDao,
+    GemsCatalogDao,
     GemsTaxonomyDao,
     GemsScenarioBuilderDao,
 ):
@@ -984,3 +988,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_gems_scenario_builder(self) -> GemsScenarioBuilder | None:
         return self._adaptee.get_gems_scenario_builder()
+
+    @override
+    def get_catalogs(self) -> list[GemsCatalog]:
+        return self._adaptee.get_catalogs()
