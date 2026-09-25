@@ -163,7 +163,7 @@ def test_list_dir_in_empty_folder(config_scenario_a: Config) -> None:
 
 def test_list_dir_with_permission_error(config_scenario_a: Config) -> None:
     explorer = Explorer(config_scenario_a)
-    with patch("os.listdir", side_effect=PermissionError("Permission denied")):
+    with patch.object(Path, "iterdir", side_effect=PermissionError("Permission denied")):
         # asserts the endpoint doesn't fail but rather returns an empty list
         result = explorer.list_dir("diese", "folder")
         assert len(result) == 0
