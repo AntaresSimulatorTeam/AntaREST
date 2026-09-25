@@ -1,4 +1,4 @@
-# Copyright (c) 2026, RTE (https://www.rte-france.com)
+# Copyright (c) 2024, RTE (https://www.rte-france.com)
 #
 # See AUTHORS.txt
 #
@@ -10,33 +10,28 @@
 #
 # This file is part of the Antares project.
 system:
-  id: my_system
-  description: A test GEMS system
+  id: System 8_1
+  description: Electrolyser - V8.6
   components:
-    - id: comp1
-      model: model1
+    - id: electrolyser
+      model: andromede-v1-models-weo-hybrid.electrolyser
       scenario-group: sg1
       parameters:
-        - id: param1
-          time-dependent: false
+        - id: efficiency
           scenario-dependent: false
-          value: 3.14
-      properties:
-        - id: prop1
-          value: hello
-    - id: comp2
-      model: model2
-      parameters:
-        - id: param2
           time-dependent: false
+          value: 0.7
+        - id: p_max
           scenario-dependent: false
-          value: 42.0
-        - id: param3
           time-dependent: false
-          scenario-dependent: false
-          value: -1.5
-      properties:
-        - id: prop2
-          value: world
-        - id: prop3
-          value: another_value
+          value: 300
+
+
+  area-connections:
+    - component: electrolyser
+      port: hydrogen_port
+      area: west-H2
+
+    - component: electrolyser
+      port: power_port
+      area: west

@@ -21,7 +21,7 @@ class ReadOnlyGemsSystemDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_components(self) -> list[GemsComponent] | None:
+    def get_components(self) -> list[GemsComponent]:
         raise NotImplementedError()
 
 
