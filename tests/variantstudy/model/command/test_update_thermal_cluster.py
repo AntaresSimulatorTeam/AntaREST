@@ -170,8 +170,8 @@ def test_ramp_fields_round_trip_at_10_2() -> None:
     cluster = parse_thermal_cluster(study_version=STUDY_VERSION_10_2, data=ini_data)
     assert cluster.ramp is True
     assert cluster.max_ramp_up == 10.5
-    # Absent from the file: stays unset, meaning "no ramping limit".
-    assert cluster.max_ramp_down is None
+    # Absent from the file: initialized to the v10.2 default, as the solver does.
+    assert cluster.max_ramp_down == 0.0
     assert cluster.ramp_up_cost == 1.0
     assert cluster.ramp_down_cost == 2.0
 
@@ -180,7 +180,8 @@ def test_ramp_fields_round_trip_at_10_2() -> None:
     assert serialized["max-upward-power-ramping-rate"] == 10.5
     assert serialized["power-increase-cost"] == 1.0
     assert serialized["power-decrease-cost"] == 2.0
-    assert "max-downward-power-ramping-rate" not in serialized
+    # A defaulted rate is written out like every other defaulted property.
+    assert serialized["max-downward-power-ramping-rate"] == 0.0
 
 
 @pytest.mark.parametrize(

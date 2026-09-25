@@ -144,7 +144,9 @@ Spinning: TypeAlias = Annotated[float, Field(ge=0, le=100)]
 Emission: TypeAlias = Annotated[float, Field(ge=0)]
 Efficiency: TypeAlias = Annotated[float, Field(gt=0, le=100)]
 Cost: TypeAlias = Annotated[float, Field(ge=0)]
-RampRate: TypeAlias = Annotated[float, Field(gt=0)]
+# A rate of 0 is what the solver defaults to and means ramping is off for the cluster, so it is
+# a legal value rather than a rejected one (see `ThermalCluster::Ramping::reset` in the solver).
+RampRate: TypeAlias = Annotated[float, Field(ge=0)]
 Volatility: TypeAlias = Annotated[float, Field(ge=0, le=1)]
 HoursInWeek: TypeAlias = Annotated[int, PlainValidator(_validate_week_hours)]
 Group: TypeAlias = LowerCaseStr | None
@@ -426,7 +428,9 @@ def initialize_thermal_cluster(cluster: ThermalCluster, version: StudyVersion) -
         _initialize_field_default(cluster, "ramp", False)
         _initialize_field_default(cluster, "ramp_up_cost", 0.0)
         _initialize_field_default(cluster, "ramp_down_cost", 0.0)
-        # `max_ramp_up` / `max_ramp_down` have no default: leaving them unset means "no ramping limit".
+        # The solver initializes the rates to 0, which it reads as "no ramping for this cluster".
+        _initialize_field_default(cluster, "max_ramp_up", 0.0)
+        _initialize_field_default(cluster, "max_ramp_down", 0.0)
 
 
 def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersion) -> None:
@@ -441,8 +445,7 @@ def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersio
     if version >= STUDY_VERSION_8_7:
         required.extend(["cost_generation", "efficiency", "variable_o_m_cost"])
     if version >= STUDY_VERSION_10_2:
-        # `max_ramp_up` / `max_ramp_down` are legitimately unset at 10.2, hence not required.
-        required.extend(["ramp", "ramp_up_cost", "ramp_down_cost"])
+        required.extend(["ramp", "max_ramp_up", "max_ramp_down", "ramp_up_cost", "ramp_down_cost"])
 
     missing = [f for f in required if getattr(cluster, f) is None]
     if missing:

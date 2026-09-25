@@ -16,7 +16,6 @@ from typing import Any, TypeAlias, cast
 
 import numpy as np
 import pandas as pd
-from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -40,8 +39,6 @@ from antarest.study.business.model.sts_model import (
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterUpdate, ThermalClusterUpdates
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.model import STUDY_VERSION_10_2
-from antarest.tablemode.model import ThermalColumn
 
 _TableIndex = str  # row name
 _TableColumn = str  # column name
@@ -101,19 +98,6 @@ def _parse_area_properties_update(data: Mapping[_TableColumn, _CellValue]) -> Ar
     if "filterByYear" in values:
         values["filterByYear"] = parse_filters(values["filterByYear"])
     return AreaPropertiesUpdate.model_validate(values)
-
-
-_DEFAULTLESS_COLUMNS: Mapping[TableModeType, Mapping[str, StudyVersion]] = {
-    TableModeType.THERMAL: {
-        ThermalColumn.MAX_RAMP_UP.value: STUDY_VERSION_10_2,
-        ThermalColumn.MAX_RAMP_DOWN.value: STUDY_VERSION_10_2,
-    },
-}
-
-
-def _defaultless_columns(table_type: TableModeType, version: StudyVersion) -> set[str]:
-    """The columns of `table_type` that must be returned even when empty, for that study version."""
-    return {col for col, since in _DEFAULTLESS_COLUMNS.get(table_type, {}).items() if version >= since}
 
 
 class TableModeManager:
@@ -212,8 +196,7 @@ class TableModeManager:
             # Create a new dataframe with the listed columns.
             df = pd.DataFrame(df, columns=columns)  # type: ignore
 
-        keep = _defaultless_columns(table_type, study.version)
-        df = df.drop(columns=[col for col in df.columns if col not in keep and df[col].isna().all()])
+        df = df.dropna(axis=1, how="all")
 
         # Convert NaN to `None` because it is not JSON-serializable
         df.replace(np.nan, None, inplace=True)

@@ -219,8 +219,8 @@ def test_thermal_cluster_creation_default_values_10_2() -> None:
         "efficiency": 100,
         "variable_o_m_cost": 0,
         "ramp": False,
-        "max_ramp_up": None,
-        "max_ramp_down": None,
+        "max_ramp_up": 0.0,
+        "max_ramp_down": 0.0,
         "ramp_up_cost": 0.0,
         "ramp_down_cost": 0.0,
     }
@@ -497,12 +497,10 @@ def invalid_fields() -> list[dict[str, Any]]:
         "variable_o_m_cost",
         "ramp_up_cost",
         "ramp_down_cost",
+        "max_ramp_up",
+        "max_ramp_down",
     ]:
         fields.append({cost: -1})
-    for rate in ["max_ramp_up", "max_ramp_down"]:
-        # Ramping rates are strictly positive: 0 is not a valid "no limit" marker, unset is.
-        fields.append({rate: 0})
-        fields.append({rate: -1})
     for e in ["co2", "nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"]:
         fields.append({e: -1})
     return fields
@@ -542,12 +540,19 @@ def test_invalid_min_up_down_time_should_be_truncated(
 
 def test_check_thermal_cluster_complete_10_2() -> None:
     cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_10_2)
-
-    # `max_ramp_up` / `max_ramp_down` are legitimately unset at 10.2
     check_thermal_cluster_complete(cluster, STUDY_VERSION_10_2)
 
-    for field in ["ramp", "ramp_up_cost", "ramp_down_cost"]:
+    for field in ["ramp", "max_ramp_up", "max_ramp_down", "ramp_up_cost", "ramp_down_cost"]:
         incomplete = cluster.model_copy()
         setattr(incomplete, field, None)
         with pytest.raises(ValueError, match=f"missing required field\\(s\\) for version 10.2: \\['{field}'\\]"):
             check_thermal_cluster_complete(incomplete, STUDY_VERSION_10_2)
+
+
+def test_zero_ramp_rate_is_accepted() -> None:
+    """0 is the solver's own default and means "no ramping for this cluster", not an invalid value."""
+    cluster = create_thermal_cluster(
+        ThermalClusterCreation(name="Cluster @", max_ramp_up=0, max_ramp_down=0), version=STUDY_VERSION_10_2
+    )
+    assert cluster.max_ramp_up == 0.0
+    assert cluster.max_ramp_down == 0.0

@@ -377,6 +377,7 @@ def test_save_thermal_round_trips_ramp_fields(dao_10_2: StudyDao) -> None:
     result = dao.get_thermal("paris", "gas_cluster")
     assert result.ramp is True
     assert result.max_ramp_up == 10.5
-    assert result.max_ramp_down is None
+    # Left at the v10.2 default by `initialize_thermal_cluster`.
+    assert result.max_ramp_down == 0.0
     assert result.ramp_up_cost == 1.0
     assert result.ramp_down_cost == 2.0
