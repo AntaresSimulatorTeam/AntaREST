@@ -330,7 +330,6 @@ class TestThermal:
                     "costGeneration": "SetManually" if version >= 870 else None,
                     "efficiency": 100.0 if version >= 870 else None,
                     "variableOMCost": 0.0 if version >= 870 else None,
-                    # Ramping is v10.2+, which no version under test reaches.
                     "ramp": None,
                     "maxRampUp": None,
                     "maxRampDown": None,
@@ -434,7 +433,6 @@ class TestThermal:
                 "costGeneration": "SetManually" if version >= 870 else None,
                 "efficiency": 100.0 if version >= 870 else None,
                 "variableOMCost": 0.0 if version >= 870 else None,
-                # Ramping is v10.2+, which no version under test reaches.
                 "ramp": None,
                 "maxRampUp": None,
                 "maxRampDown": None,

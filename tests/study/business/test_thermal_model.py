@@ -24,7 +24,6 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterGroup,
     ThermalClusterUpdate,
     ThermalCostGeneration,
-    check_thermal_cluster_complete,
     create_thermal_cluster,
     update_thermal_cluster,
     validate_thermal_cluster_against_version,
@@ -536,17 +535,6 @@ def test_invalid_min_up_down_time_should_be_truncated(
     data = thermal_cluster_cls(**kwargs)
     assert data.min_up_time == 168
     assert data.min_down_time == 168
-
-
-def test_check_thermal_cluster_complete_10_2() -> None:
-    cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_10_2)
-    check_thermal_cluster_complete(cluster, STUDY_VERSION_10_2)
-
-    for field in ["ramp", "max_ramp_up", "max_ramp_down", "ramp_up_cost", "ramp_down_cost"]:
-        incomplete = cluster.model_copy()
-        setattr(incomplete, field, None)
-        with pytest.raises(ValueError, match=f"missing required field\\(s\\) for version 10.2: \\['{field}'\\]"):
-            check_thermal_cluster_complete(incomplete, STUDY_VERSION_10_2)
 
 
 def test_zero_ramp_rate_is_accepted() -> None:

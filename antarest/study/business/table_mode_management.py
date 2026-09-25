@@ -196,6 +196,8 @@ class TableModeManager:
             # Create a new dataframe with the listed columns.
             df = pd.DataFrame(df, columns=columns)  # type: ignore
 
+        # According to the study version, some properties may not be present,
+        # so we need to drop columns that are all NaN.
         df = df.dropna(axis=1, how="all")
 
         # Convert NaN to `None` because it is not JSON-serializable

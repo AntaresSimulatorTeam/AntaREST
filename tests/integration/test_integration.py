@@ -863,7 +863,6 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
     )
     assert res.status_code == 200, res.json()
-    # Ramping fields are not applicable to this study version, hence returned as null.
     ramping_fields = {"ramp": None, "maxRampUp": None, "maxRampDown": None, "rampUpCost": None, "rampDownCost": None}
     assert res.json() == {"id": "cluster 1", **obj, **ramping_fields}
 

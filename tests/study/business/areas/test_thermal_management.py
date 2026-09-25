@@ -154,7 +154,6 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
-            # These values are None as they are defined in v10.2+
             "ramp": None,
             "maxRampUp": None,
             "maxRampDown": None,
@@ -218,7 +217,6 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
-                # These values are None as they are defined in v10.2+
                 "ramp": None,
                 "maxRampUp": None,
                 "maxRampDown": None,
@@ -263,7 +261,6 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
-                # These values are None as they are defined in v10.2+
                 "ramp": None,
                 "maxRampUp": None,
                 "maxRampDown": None,
@@ -308,7 +305,6 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
-                # These values are None as they are defined in v10.2+
                 "ramp": None,
                 "maxRampUp": None,
                 "maxRampDown": None,
@@ -375,7 +371,6 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
-            # These values are None as they are defined in v10.2+
             "ramp": None,
             "maxRampUp": None,
             "maxRampDown": None,
