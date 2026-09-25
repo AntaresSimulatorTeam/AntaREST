@@ -61,7 +61,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "02_wind_on",
@@ -100,7 +105,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "03_wind_off",
@@ -139,7 +149,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "04_res",
@@ -178,7 +193,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "05_nuclear",
@@ -217,7 +237,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "06_coal",
@@ -256,7 +281,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "07_gas",
@@ -295,7 +325,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "08_non-res",
@@ -334,7 +369,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "09_hydro_pump",
@@ -373,7 +413,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         }
       ],
       "renewables": [],
@@ -438,7 +483,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "02_wind_on",
@@ -477,7 +527,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "03_wind_off",
@@ -516,7 +571,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "04_res",
@@ -555,7 +615,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "05_nuclear",
@@ -594,7 +659,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "06_coal",
@@ -633,7 +703,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "07_gas",
@@ -672,7 +747,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "08_non-res",
@@ -711,7 +791,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "09_hydro_pump",
@@ -750,7 +835,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         }
       ],
       "renewables": [],
@@ -815,7 +905,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "02_wind_on",
@@ -854,7 +949,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "03_wind_off",
@@ -893,7 +993,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "04_res",
@@ -932,7 +1037,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "05_nuclear",
@@ -971,7 +1081,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "06_coal",
@@ -1010,7 +1125,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "07_gas",
@@ -1049,7 +1169,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "08_non-res",
@@ -1088,7 +1213,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "09_hydro_pump",
@@ -1127,7 +1257,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         }
       ],
       "renewables": [],
@@ -1180,7 +1315,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "02_wind_on",
@@ -1219,7 +1359,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "03_wind_off",
@@ -1258,7 +1403,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "04_res",
@@ -1297,7 +1447,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "05_nuclear",
@@ -1336,7 +1491,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "06_coal",
@@ -1375,7 +1535,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "07_gas",
@@ -1414,7 +1579,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "08_non-res",
@@ -1453,7 +1623,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         },
         {
           "id": "09_hydro_pump",
@@ -1492,7 +1667,12 @@
           "op5": null,
           "costGeneration": null,
           "efficiency": null,
-          "variableOMCost": null
+          "variableOMCost": null,
+          "ramp": null,
+          "maxRampUp": null,
+          "maxRampDown": null,
+          "rampUpCost": null,
+          "rampDownCost": null
         }
       ],
       "renewables": [],

@@ -354,3 +354,30 @@ def test_save_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> No
             saver({"paris": {"gas": "missing-matrix-id"}})
         with pytest.raises(AreaNotFound):
             saver({"nonexistent": {"gas": "missing-matrix-id"}})
+
+
+def test_save_thermal_round_trips_ramp_fields(dao_10_2: StudyDao) -> None:
+    """Ramping parameters, added in v10.2, survive a save/get round trip on both backends."""
+    dao = dao_10_2
+    save_area(dao, "Paris")
+
+    thermal = _make_thermal(
+        dao,
+        id="gas_cluster",
+        name="gas_cluster",
+        ramp=True,
+        max_ramp_up=10.5,
+        max_ramp_down=None,
+        ramp_up_cost=1.0,
+        ramp_down_cost=2.0,
+    )
+
+    dao.save_thermals({"paris": [thermal]})
+
+    result = dao.get_thermal("paris", "gas_cluster")
+    assert result.ramp is True
+    assert result.max_ramp_up == 10.5
+    # Left at the v10.2 default by `initialize_thermal_cluster`.
+    assert result.max_ramp_down == 0.0
+    assert result.ramp_up_cost == 1.0
+    assert result.ramp_down_cost == 2.0

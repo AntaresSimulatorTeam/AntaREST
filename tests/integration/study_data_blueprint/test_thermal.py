@@ -330,6 +330,11 @@ class TestThermal:
                     "costGeneration": "SetManually" if version >= 870 else None,
                     "efficiency": 100.0 if version >= 870 else None,
                     "variableOMCost": 0.0 if version >= 870 else None,
+                    "ramp": None,
+                    "maxRampUp": None,
+                    "maxRampDown": None,
+                    "rampUpCost": None,
+                    "rampDownCost": None,
                 }
             )
 
@@ -428,6 +433,11 @@ class TestThermal:
                 "costGeneration": "SetManually" if version >= 870 else None,
                 "efficiency": 100.0 if version >= 870 else None,
                 "variableOMCost": 0.0 if version >= 870 else None,
+                "ramp": None,
+                "maxRampUp": None,
+                "maxRampDown": None,
+                "rampUpCost": None,
+                "rampDownCost": None,
             },
         }
         assert res.json() == expected
@@ -543,6 +553,13 @@ class TestThermal:
             assert res.status_code == 200, res.json()
         else:
             assert res.status_code == 422, res.json()
+
+        # Update with a ramping field. Rejected below v10.2, which is every version under test.
+        res = client.patch(
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
+            json={"maxRampUp": 10.0},
+        )
+        assert res.status_code == 422, res.json()
 
         # =============================
         #  THERMAL CLUSTER DUPLICATION

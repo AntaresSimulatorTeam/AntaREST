@@ -28,7 +28,13 @@ from antarest.study.business.model.thermal_cluster_model import (
     update_thermal_cluster,
     validate_thermal_cluster_against_version,
 )
-from antarest.study.model import STUDY_VERSION_7_2, STUDY_VERSION_8_6, STUDY_VERSION_8_7
+from antarest.study.model import (
+    STUDY_VERSION_7_2,
+    STUDY_VERSION_8_6,
+    STUDY_VERSION_8_7,
+    STUDY_VERSION_9_3,
+    STUDY_VERSION_10_2,
+)
 
 
 def test_thermal_cluster_creation_default_values() -> None:
@@ -71,6 +77,11 @@ def test_thermal_cluster_creation_default_values() -> None:
         "cost_generation": None,
         "efficiency": None,
         "variable_o_m_cost": None,
+        "ramp": None,
+        "max_ramp_up": None,
+        "max_ramp_down": None,
+        "ramp_up_cost": None,
+        "ramp_down_cost": None,
     }
 
     cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_8_6)
@@ -112,6 +123,11 @@ def test_thermal_cluster_creation_default_values() -> None:
         "cost_generation": None,
         "efficiency": None,
         "variable_o_m_cost": None,
+        "ramp": None,
+        "max_ramp_up": None,
+        "max_ramp_down": None,
+        "ramp_up_cost": None,
+        "ramp_down_cost": None,
     }
 
     cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_8_7)
@@ -153,6 +169,59 @@ def test_thermal_cluster_creation_default_values() -> None:
         "cost_generation": ThermalCostGeneration.SET_MANUALLY,
         "efficiency": 100,
         "variable_o_m_cost": 0,
+        "ramp": None,
+        "max_ramp_up": None,
+        "max_ramp_down": None,
+        "ramp_up_cost": None,
+        "ramp_down_cost": None,
+    }
+
+
+def test_thermal_cluster_creation_default_values_10_2() -> None:
+    cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_10_2)
+    assert cluster.model_dump() == {
+        "id": "Cluster",
+        "name": "Cluster @",
+        "unit_count": 1,
+        "nominal_capacity": 0.0,
+        "enabled": True,
+        "group": ThermalClusterGroup.OTHER1,
+        "gen_ts": LocalTSGenerationBehavior.USE_GLOBAL,
+        "min_stable_power": 0.0,
+        "min_up_time": 1,
+        "min_down_time": 1,
+        "must_run": False,
+        "spinning": 0.0,
+        "volatility_forced": 0.0,
+        "volatility_planned": 0.0,
+        "law_forced": LawOption.UNIFORM,
+        "law_planned": LawOption.UNIFORM,
+        "marginal_cost": 0.0,
+        "spread_cost": 0.0,
+        "fixed_cost": 0.0,
+        "startup_cost": 0.0,
+        "market_bid_cost": 0.0,
+        "co2": 0,
+        "nh3": 0,
+        "so2": 0,
+        "nox": 0,
+        "pm2_5": 0,
+        "pm5": 0,
+        "pm10": 0,
+        "nmvoc": 0,
+        "op1": 0,
+        "op2": 0,
+        "op3": 0,
+        "op4": 0,
+        "op5": 0,
+        "cost_generation": ThermalCostGeneration.SET_MANUALLY,
+        "efficiency": 100,
+        "variable_o_m_cost": 0,
+        "ramp": False,
+        "max_ramp_up": 0.0,
+        "max_ramp_down": 0.0,
+        "ramp_up_cost": 0.0,
+        "ramp_down_cost": 0.0,
     }
 
 
@@ -174,6 +243,11 @@ def test_thermal_cluster_creation_default_values() -> None:
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"cost_generation": ThermalCostGeneration.USE_COST_TIME_SERIES}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"efficiency": 50}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"variable_o_m_cost": 10}),
+        ([STUDY_VERSION_9_3], {"ramp": True}),
+        ([STUDY_VERSION_9_3], {"max_ramp_up": 10.5}),
+        ([STUDY_VERSION_9_3], {"max_ramp_down": 10.5}),
+        ([STUDY_VERSION_9_3], {"ramp_up_cost": 1.0}),
+        ([STUDY_VERSION_9_3], {"ramp_down_cost": 1.0}),
     ],
 )
 def test_thermal_cluster_creation_invalid_fields(versions: list[StudyVersion], fields: dict[str, Any]) -> None:
@@ -288,6 +362,11 @@ def test_thermal_cluster_creation_all_values() -> None:
         ),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], [STUDY_VERSION_8_7], {"efficiency": 50}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], [STUDY_VERSION_8_7], {"variable_o_m_cost": 10}),
+        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"ramp": True}),
+        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"max_ramp_up": 10.5}),
+        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"max_ramp_down": 10.5}),
+        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"ramp_up_cost": 1.0}),
+        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"ramp_down_cost": 1.0}),
     ],
 )
 def test_thermal_cluster_version_validation(
@@ -408,7 +487,18 @@ def invalid_fields() -> list[dict[str, Any]]:
     for v in ["volatility_planned", "volatility_forced"]:
         fields.append({v: -1})
         fields.append({v: 2})
-    for cost in ["marginal_cost", "spread_cost", "fixed_cost", "startup_cost", "market_bid_cost", "variable_o_m_cost"]:
+    for cost in [
+        "marginal_cost",
+        "spread_cost",
+        "fixed_cost",
+        "startup_cost",
+        "market_bid_cost",
+        "variable_o_m_cost",
+        "ramp_up_cost",
+        "ramp_down_cost",
+        "max_ramp_up",
+        "max_ramp_down",
+    ]:
         fields.append({cost: -1})
     for e in ["co2", "nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"]:
         fields.append({e: -1})
@@ -445,3 +535,12 @@ def test_invalid_min_up_down_time_should_be_truncated(
     data = thermal_cluster_cls(**kwargs)
     assert data.min_up_time == 168
     assert data.min_down_time == 168
+
+
+def test_zero_ramp_rate_is_accepted() -> None:
+    """0 is the solver's own default and means "no ramping for this cluster", not an invalid value."""
+    cluster = create_thermal_cluster(
+        ThermalClusterCreation(name="Cluster @", max_ramp_up=0, max_ramp_down=0), version=STUDY_VERSION_10_2
+    )
+    assert cluster.max_ramp_up == 0.0
+    assert cluster.max_ramp_down == 0.0

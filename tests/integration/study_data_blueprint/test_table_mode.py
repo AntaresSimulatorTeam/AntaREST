@@ -382,6 +382,12 @@ class TestTableMode:
             "costGeneration",
             "efficiency",
             "variableOMCost",
+            # since v10.2
+            "ramp",
+            "maxRampUp",
+            "maxRampDown",
+            "rampUpCost",
+            "rampDownCost",
         }
 
         _solar_values = {"group": "Other 2", "nominalCapacity": 500000, "unitCount": 17}

@@ -12,6 +12,7 @@
 import pytest
 from pydantic import ValidationError
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
@@ -19,7 +20,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterUpdate,
 )
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import STUDY_VERSION_8_1
+from antarest.study.model import STUDY_VERSION_8_1, STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
     parse_thermal_cluster,
@@ -153,3 +154,47 @@ class TestUpdateThermalCluster:
                 command_context=command_context,
                 study_version=STUDY_VERSION_8_1,
             )
+
+
+def test_ramp_fields_round_trip_at_10_2() -> None:
+    """Ramping parameters use the ticket INI key names and round trip through parse/serialize."""
+    ini_data = {
+        "name": "test",
+        "group": ThermalClusterGroup.GAS,
+        "ramping-enabled": True,
+        "max-upward-power-ramping-rate": 10.5,
+        "power-increase-cost": 1.0,
+        "power-decrease-cost": 2.0,
+    }
+
+    cluster = parse_thermal_cluster(study_version=STUDY_VERSION_10_2, data=ini_data)
+    assert cluster.ramp is True
+    assert cluster.max_ramp_up == 10.5
+    # Absent from the file: initialized to the v10.2 default, as the solver does.
+    assert cluster.max_ramp_down == 0.0
+    assert cluster.ramp_up_cost == 1.0
+    assert cluster.ramp_down_cost == 2.0
+
+    serialized = serialize_thermal_cluster(STUDY_VERSION_10_2, cluster)
+    assert serialized["ramping-enabled"] is True
+    assert serialized["max-upward-power-ramping-rate"] == 10.5
+    assert serialized["power-increase-cost"] == 1.0
+    assert serialized["power-decrease-cost"] == 2.0
+    # A defaulted rate is written out like every other defaulted property.
+    assert serialized["max-downward-power-ramping-rate"] == 0.0
+
+
+@pytest.mark.parametrize(
+    "ini_key",
+    [
+        "ramping-enabled",
+        "max-upward-power-ramping-rate",
+        "max-downward-power-ramping-rate",
+        "power-increase-cost",
+        "power-decrease-cost",
+    ],
+)
+def test_ramp_fields_are_rejected_below_10_2(ini_key: str) -> None:
+    value = True if ini_key == "ramping-enabled" else 1.0
+    with pytest.raises(InvalidFieldForVersionError, match="is not a valid field for study version"):
+        parse_thermal_cluster(study_version=STUDY_VERSION_9_3, data={"name": "test", ini_key: value})
