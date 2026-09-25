@@ -81,6 +81,15 @@ test("caches complete cluster properties so consumers can select without a detai
   expect(client.get).toHaveBeenCalledWith(listUrl);
 });
 
+test("normalizes detail IDs to match list IDs while preserving display names", async () => {
+  vi.mocked(client.get).mockResolvedValue({ data: cluster });
+
+  const detail = await api.getThermalCluster({ studyId, areaId, clusterId });
+
+  expect(detail).toEqual({ ...cluster, id: clusterId });
+  expect(client.get).toHaveBeenCalledWith(`${listUrl}/${clusterId}`);
+});
+
 test("rejects malformed list responses", async () => {
   vi.mocked(client.get).mockResolvedValue({
     data: [{ ...cluster, genTs: "unknown behavior" }],
