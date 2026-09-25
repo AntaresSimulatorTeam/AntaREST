@@ -25,6 +25,7 @@ from antarest.study.dao.file.file_study_area_properties_dao import FileStudyArea
 from antarest.study.dao.file.file_study_compatibility_parameters import FileStudyCompatibilityParametersDao
 from antarest.study.dao.file.file_study_constraint_dao import FileStudyConstraintDao
 from antarest.study.dao.file.file_study_district_dao import FileStudyDistrictDao
+from antarest.study.dao.file.file_study_gems_catalog_dao import FileStudyGemsCatalogDao
 from antarest.study.dao.file.file_study_gems_library_dao import FileStudyGemsLibraryDao
 from antarest.study.dao.file.file_study_gems_scenario_builder_dao import FileStudyGemsScenarioBuilderDao
 from antarest.study.dao.file.file_study_gems_taxonomy_dao import FileStudyGemsTaxonomyDao
@@ -82,6 +83,7 @@ class FileStudyTreeDao(
     FileStudyScenarioBuilderDao,
     FileStudyAreaDao,
     FileStudyGemsLibraryDao,
+    FileStudyGemsCatalogDao,
     FileStudyReservesGlobalParametersDao,
     FileStudyReserveDefinitionDao,
     FileStudyReserveCertificationDao,

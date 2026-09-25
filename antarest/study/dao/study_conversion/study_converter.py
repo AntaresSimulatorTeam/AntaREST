@@ -94,6 +94,9 @@ class StudyConverter:
                 self._new_dao.save_taxonomy(gems_taxonomy)
             self._new_dao.save_library(gems_library)
 
+            for catalog in self._source_dao.get_catalogs():
+                self._new_dao.save_catalog(catalog)
+
             scenario_builder = self._source_dao.get_gems_scenario_builder()
             if scenario_builder is not None:
                 self._new_dao.save_gems_scenario_builder(scenario_builder)
