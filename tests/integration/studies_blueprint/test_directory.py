@@ -9,12 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
 class TestDirectoryManagement:
     def test_create_and_list_directories(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create root directory
         res = client.post(
@@ -47,7 +48,7 @@ class TestDirectoryManagement:
         assert sub_dir["id"] in dir_ids
 
     def test_update_directory_name(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create directory
         res = client.post(
@@ -75,7 +76,7 @@ class TestDirectoryManagement:
         assert updated_dir["name"] == "Updated Name"
 
     def test_move_directory_to_new_parent(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create parent directories
         res = client.post("/v1/directories", json={"name": "Parent A"})
@@ -104,7 +105,7 @@ class TestDirectoryManagement:
         assert res.json()["parentId"] == parent_b_id
 
     def test_delete_empty_directory(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create directory
         res = client.post("/v1/directories", json={"name": "To Delete"})
@@ -123,7 +124,7 @@ class TestDirectoryManagement:
         assert directory_id not in dir_ids
 
     def test_prevent_directory_cycle(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create hierarchy: A -> B -> C
         res = client.post("/v1/directories", json={"name": "A"})
@@ -157,7 +158,7 @@ class TestDirectoryManagement:
         assert "cycle" in str(error_msg).lower()
 
     def test_duplicate_directory_name_in_same_parent(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create directory
         res = client.post("/v1/directories", json={"name": "Duplicate"})
@@ -170,7 +171,7 @@ class TestDirectoryManagement:
         assert "already exists" in str(error_msg).lower()
 
     def test_same_name_allowed_in_different_parents(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create two parent directories
         res = client.post("/v1/directories", json={"name": "Parent1"})
@@ -195,7 +196,7 @@ class TestDirectoryManagement:
         assert res.status_code == 201
 
     def test_invalid_directory_name(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Empty name
         res = client.post("/v1/directories", json={"name": ""})
@@ -209,7 +210,7 @@ class TestDirectoryManagement:
         assert res.status_code == 422
 
     def test_deep_directory_hierarchy(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore[assignment]
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         parent_id = None
         depth = 15  # Create 15 levels to verify no limit

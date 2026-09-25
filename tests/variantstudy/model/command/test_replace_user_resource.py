@@ -29,7 +29,7 @@ def _set_up(command_context: CommandContext) -> list[str]:
     return [blob_1, blob_2, blob_3]
 
 
-def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContext):
+def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContext) -> None:
     study = empty_study_930
     dao = build_dao_from_file_study(study, command_context)
     blob_ids = _set_up(command_context)
@@ -66,7 +66,7 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
     assert content == {"second_folder": {}}
 
 
-def test_error_case(fs_dao: FileStudyTreeDao, command_context: CommandContext):
+def test_error_case(fs_dao: FileStudyTreeDao, command_context: CommandContext) -> None:
     _set_up(command_context)
 
     # Unexisting blob_id

@@ -14,6 +14,7 @@ import io
 
 import numpy as np
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskDTO, TaskStatus
@@ -38,7 +39,7 @@ class TestGenerateThermalClusterTimeseries:
 
     def test_lifecycle_nominal(self, client: TestClient, user_access_token: str) -> None:
         # Study preparation
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         preparer = PreparerProxy(client, user_access_token)
         study_id = preparer.create_study("foo", version=860)
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
@@ -156,7 +157,7 @@ class TestGenerateThermalClusterTimeseries:
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_errors_and_limit_cases(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         # Study Preparation
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         preparer = PreparerProxy(client, user_access_token)
         study_id = preparer.create_study("foo", version=860)
         area1_id = preparer.create_area(study_id, name="Area 1")["id"]
@@ -211,7 +212,7 @@ class TestGenerateThermalClusterTimeseries:
 
     def test_advanced_results(self, client: TestClient, user_access_token: str) -> None:
         # Study Preparation
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         preparer = PreparerProxy(client, user_access_token)
         study_id = preparer.create_study("foo", version=860)
         area_id = preparer.create_area(study_id, name="test")["id"]

@@ -94,7 +94,7 @@ def build_db_dao_10_2(db_session: Session, matrix_service: ISimpleMatrixService)
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_10_2(
-    request,
+    request: pytest.FixtureRequest,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
     command_context: "CommandContext",

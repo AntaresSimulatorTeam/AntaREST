@@ -14,6 +14,7 @@ import copy
 import typing as t
 
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -36,7 +37,7 @@ class TestTableMode:
     def test_lifecycle__nominal(
         self, client: TestClient, user_access_token: str, internal_study_id: str, study_version: int
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # In order to test the table mode for renewable clusters and short-term storage,
         # it is required that the study is either in version 8.1 for renewable energies
@@ -1018,7 +1019,7 @@ def test_table_type_aliases(client: TestClient, user_access_token: str) -> None:
     """
     Ensure that we can use the old table type aliases to get the schema of the tables.
     """
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
     # do not use `pytest.mark.parametrize`, because it is too slow
     for table_type in ["area", "link", "cluster", "renewable", "binding constraint"]:
         res = client.get(f"/v1/table-schema/{table_type}")

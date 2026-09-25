@@ -19,6 +19,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.serde.matrix_export import TableExportFormat
@@ -438,7 +439,7 @@ class TestRawDataAggregationMCInd:
         Test the aggregation of areas data
         """
         mode, name_map = storage_type
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in AREAS_REQUESTS__IND:
             params = {**params}
@@ -473,7 +474,7 @@ class TestRawDataAggregationMCInd:
         Test the aggregation of links data
         """
         mode, name_map = storage_type
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in LINKS_REQUESTS__IND:
             params = {**params}
@@ -508,7 +509,7 @@ class TestRawDataAggregationMCInd:
         Tests that all formats work and produce the same result
         """
         mode, name_map = storage_type
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__IND:
             params = {**params}
@@ -543,7 +544,7 @@ class TestRawDataAggregationMCInd:
     def test_aggregation_errors(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Requesting a fake mc_year should crash
         output_id = "20201014-1425eco-goodbye"
@@ -636,7 +637,7 @@ class TestRawDataAggregationMCAll:
         Test the aggregation of areas data
         """
         mode, name_map = storage_type
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in AREAS_REQUESTS__ALL:
             params = {**params}
@@ -674,7 +675,7 @@ class TestRawDataAggregationMCAll:
         Test the aggregation of links data
         """
         mode, name_map = storage_type
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in LINKS_REQUESTS__ALL:
             params = {**params}
@@ -712,7 +713,7 @@ class TestRawDataAggregationMCAll:
         Tests that all formats work and produce the same result
         """
         mode, name_map = storage_type
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__ALL:
             params = {**params}
@@ -746,7 +747,7 @@ class TestRawDataAggregationMCAll:
         Imports the STA-mini study and create a variant from it. Then imports the parent output inside it
         Then asserts the aggregation endpoint works the same for parent and variant
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Imports STA-mini
         sta_mini_zip_path = INTEGRATION_ASSETS_DIR.joinpath("STA-mini.zip")
@@ -792,7 +793,7 @@ class TestRawDataAggregationMCAll:
     def test_aggregation_errors(
         self, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Requesting matrices that do not exist (daily outputs were not generated) should crash
         output_id = "20201014-1427eco"
@@ -880,7 +881,7 @@ class TestRawDataAggregationColumnsFormatting:
         """
         Check returned columns names are post-processed
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Prepare output
         output_id = "20201014-1422eco-hello"
@@ -925,7 +926,7 @@ class TestDataAggregationCreationOperations:
         """
         output_id = "20201014-1422eco-hello"
         params = {"query_file": "values", "frequency": "hourly"}
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # create a bad aggregated output task and get its id
         res = client.get(f"v1/studies/{internal_study_id}/outputs/fake_output_id/aggregate/areas/mc-ind", params=params)
@@ -975,7 +976,7 @@ class TestDataAggregationCreationOperations:
 
 
 def test_columns_mismatch(tmp_path: Path, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     output_id = "20201014-1422eco-hello"
     params = {"query_file": "values", "frequency": "annual", "format": "parquet"}

@@ -23,12 +23,12 @@ from antarest.maintenance.tasks.disk_usage_log import disk_usage_logging
 
 
 class TestDiskUsageLogIntegration:
-    def test_disk_usage_log(self):
+    def test_disk_usage_log(self) -> None:
         with db():
             result = disk_usage_logging(Config())
         assert result.status == BackGroundTaskStatus.SUCCESS
 
-    def test_returns_skipped_when_lock_held(self):
+    def test_returns_skipped_when_lock_held(self) -> None:
         config = Config.model_validate({"storage": {"tmp_dir": Path(tempfile.gettempdir())}})
         with db():
             with create_file_lock(lock_id=LockId.DISK_USAGE, lock_folder=Path(config.storage.tmp_dir)):

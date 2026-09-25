@@ -13,6 +13,7 @@ import os
 from http import HTTPStatus
 from unittest.mock import ANY
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.study.business.model.layer_model import Layer
@@ -21,7 +22,7 @@ from tests.integration.prepare_proxy import PreparerProxy
 
 
 def test_main(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # create some new users
     # TODO check for bad username or empty password
@@ -323,7 +324,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
 
 
 def test_area_management(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     created = client.post("/v1/studies", params={"name": "foo", "version": 870})
     study_id = created.json()
@@ -966,7 +967,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
 
 def test_maintenance(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # Create non admin user
     res = client.post(
@@ -1024,7 +1025,7 @@ def test_areas_deletion_with_binding_constraints(
     """
 
     # set client headers to user access token
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     area1_id = "france"
     area2_id = "germany"
@@ -1124,7 +1125,7 @@ def test_links_deletion_with_binding_constraints(
     """
 
     # set client headers to user access token
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     # Create an area "area_1" in the study
     res = client.post(
@@ -1189,7 +1190,7 @@ def test_links_deletion_with_binding_constraints(
 
 
 def test_update_with_editor(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # 1. Create a group and two users
     group_name = "test_copy_group"
@@ -1328,7 +1329,7 @@ def test_update_with_editor(client: TestClient, admin_access_token: str) -> None
 
 
 def test_update_variant_with_editor(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # 1. Create a group and two users
     group_name = "test_copy_group"

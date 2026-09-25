@@ -12,6 +12,7 @@
 
 """Fixtures for maintenance tests."""
 
+from typing import Generator
 from unittest import mock
 
 import pytest
@@ -43,7 +44,7 @@ from antarest.maintenance.app import celery_app  # noqa
 
 
 @pytest.fixture
-def with_no_maintenance_ctx():
+def with_no_maintenance_ctx() -> Generator[None, None, None]:
     """
     Set maintenance_ctx to None and restore after test.
 

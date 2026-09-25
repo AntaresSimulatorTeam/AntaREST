@@ -119,7 +119,7 @@ class SynchTaskService(ITaskService):
 
     @override
     def delete_task_by_creation_date(self, task_retention_duration: int) -> int:
-        pass
+        return 0
 
 
 @pytest.fixture(name="command_context")
