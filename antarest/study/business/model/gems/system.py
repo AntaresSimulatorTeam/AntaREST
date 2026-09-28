@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List
+from typing import List
 
-from pydantic import ConfigDict, model_validator
+from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
@@ -23,13 +23,7 @@ class _GemsParameters(AntaresBaseModel):
     id: str
     time_dependent: bool
     scenario_dependent: bool
-    value: float  # TODO: authorize string values when time_dependent and/or scenario_dempendant is True
-
-    @model_validator(mode="after")
-    def check_value(self) -> "_GemsParameters":
-        if self.time_dependent or self.scenario_dependent:
-            raise ValueError("time_dependent and scenario_dependent are not supported yet")
-        return self
+    value: float  # TODO: authorize string values when time_dependent and/or scenario_dependant is True
 
 
 class _GemsProperties(AntaresBaseModel):
@@ -50,11 +44,9 @@ class GemsComponent(AntaresBaseModel):
 
 
 class GemsSystem(AntaresBaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
+    model_config = ConfigDict(populate_by_name=True, extra="allow", alias_generator=to_kebab_case)
 
     id: str
     description: str | None = None
-    model_libraries: list[str] | None = None
     components: List[GemsComponent]
-    connections: list[dict[str, Any]] | None = None
-    area_connections: list[dict[str, Any]] | None = None
+    # TODO: add 'connections' and 'area_connections' and 'thermal-capacity-connections' fields

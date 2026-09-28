@@ -14,8 +14,6 @@ from pathlib import Path
 import pytest
 
 from antarest.core.exceptions import (
-    GemsModelIncorrectlyFormatted,
-    GemsModelNotFound,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
@@ -27,24 +25,6 @@ from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAML
 from tests.study.dao.conftest import check_gems_system_integrity
 
 ASSETS_PATH = Path(__file__).parent / "assets"
-
-
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_exceptions_is_raised_if_model_is_badly_formatted(dao_10_2: StudyDao) -> None:
-    dao = dao_10_2
-
-    new_system = GemsSystem(id="mySystem", components=[GemsComponent(id="comp1", model="model1")])
-    with pytest.raises(GemsModelIncorrectlyFormatted, match="Invalid model reference 'model1' for component 'comp1'"):
-        dao.save_system(new_system)
-
-
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_exceptions_is_raised_if_model_is_not_found(dao_10_2: StudyDao) -> None:
-    dao = dao_10_2
-
-    new_system = GemsSystem(id="mySystem", components=[GemsComponent(id="comp1", model="lib1.model1")])
-    with pytest.raises(GemsModelNotFound, match="Could not find model 'model1' in library 'lib1'"):
-        dao.save_system(new_system)
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)

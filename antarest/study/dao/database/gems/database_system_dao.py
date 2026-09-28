@@ -16,15 +16,13 @@ from typing_extensions import override
 
 from antarest.core.exceptions import (
     GemsLibraryNotFound,
-    GemsModelIncorrectlyFormatted,
-    GemsModelNotFound,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
-from antarest.study.dao.database.models.gems.library import GEMS_LIBRARY_METADATA_TABLE, GEMS_MODELS_TABLE
+from antarest.study.dao.database.models.gems.library import GEMS_LIBRARY_METADATA_TABLE
 from antarest.study.dao.database.models.gems.system import (
     GEMS_COMPONENT_PARAMETERS_TABLE,
     GEMS_COMPONENT_PROPERTIES_TABLE,
@@ -188,7 +186,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         parameter_values = []
         property_values = []
         for component in components:
-            self._check_component_model(component)
             _, model_id = component.model.split(".", 1)
 
             component_values.append(
@@ -230,26 +227,3 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
 
         session.commit()
-
-    def _check_component_model(self, component: GemsComponent) -> None:
-        study_data_id = self._study_data_id
-        session = self._db_session
-
-        # Check that the model is correctly formatted
-        if "." not in component.model:
-            raise GemsModelIncorrectlyFormatted(
-                f"Invalid model reference '{component.model}' for component '{component.id}': "
-                "expected format 'library_id.model_id'"
-            )
-
-        # Check that the model exists in the library
-        lib_id, model_id = component.model.split(".", 1)
-
-        stmt = select(GEMS_MODELS_TABLE.c.id).where(
-            GEMS_MODELS_TABLE.c.study_data_id == study_data_id,
-            GEMS_MODELS_TABLE.c.id == model_id,
-        )
-
-        model_found = session.execute(stmt).fetchone()
-        if not model_found:
-            raise GemsModelNotFound(f"Could not find model '{model_id}' in library '{lib_id}'")

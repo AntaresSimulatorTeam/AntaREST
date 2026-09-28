@@ -46,7 +46,7 @@ def upgrade():
         ForeignKeyConstraint(
             ["study_data_id", "scenario_group"],
             ["gems_scenario_builder.study_data_id", "gems_scenario_builder.scenario_group"],
-            ondelete="CASCADE",
+            ondelete="SET NULL",
         ),
     )
 

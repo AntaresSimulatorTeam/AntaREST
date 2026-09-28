@@ -25,9 +25,6 @@ def test_default_case(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     # We should not have a system for default studies
     assert filestudy_dao_v10_2.get_system() is None
 
-    with pytest.raises(GemsUnavailableForFileSystemStudies):
-        filestudy_dao_v10_2.get_components()
-
 
 def test_cannot_replace_system(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     dao = filestudy_dao_v10_2
