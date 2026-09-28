@@ -51,18 +51,26 @@ class FileStudyGemsCatalogDao(GemsCatalogDao, ABC):
         return [catalogs[catalog_id] for catalog_id in sorted(catalogs)]
 
     @override
-    def save_catalog(self, catalog: GemsCatalog) -> None:
-        study = self.get_file_study()
-        if any(existing.id == catalog.id for existing in self.get_catalogs()):
-            raise GemsCatalogAlreadyExists(f"Catalog '{catalog.id}' already exists for study {study.config.study_id}")
+    def save_catalogs(self, catalogs: list[GemsCatalog]) -> None:
+        if not catalogs:
+            return
 
+        study = self.get_file_study()
         folder = _get_gems_catalogs_folder_path(study.config.study_path)
-        path = folder / f"{catalog.id}.yaml"
-        if path.exists():
-            raise GemsCatalogAlreadyExists(
-                f"Catalog file '{path.name}' already exists for study {study.config.study_id}"
-            )
+        catalog_ids = {existing.id for existing in self.get_catalogs()}
+        for catalog in catalogs:
+            if catalog.id in catalog_ids:
+                raise GemsCatalogAlreadyExists(
+                    f"Catalog '{catalog.id}' already exists for study {study.config.study_id} or in the batch"
+                )
+            catalog_ids.add(catalog.id)
+            path = folder / f"{catalog.id}.yaml"
+            if path.exists():
+                raise GemsCatalogAlreadyExists(
+                    f"Catalog file '{path.name}' already exists for study {study.config.study_id}"
+                )
 
         folder.mkdir(parents=True, exist_ok=True)
-        content = catalog.model_dump(mode="json", exclude_unset=True, by_alias=True)
-        YAMLWriter().write({"catalog": content}, path)
+        for catalog in catalogs:
+            content = catalog.model_dump(mode="json", exclude_unset=True, by_alias=True)
+            YAMLWriter().write({"catalog": content}, folder / f"{catalog.id}.yaml")

@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from sqlalchemy import Column, ForeignKeyConstraint, String, Table
+from sqlalchemy import Column, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
@@ -22,7 +22,26 @@ GEMS_CATALOGS_TABLE = Table(
     Column("id", String(255), primary_key=True),
     Column("taxonomy", String(255), nullable=False),
     Column("location", String(255), nullable=False),
-    # Metric definitions are stored as JSON, like the cold sections of GEMS libraries and taxonomies.
-    Column("metrics_definition", String(), nullable=False),
     ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
+)
+
+
+GEMS_CATALOG_METRICS_TABLE = Table(
+    "gems_catalog_metrics",
+    Base.metadata,
+    study_data_id_col(),
+    Column("catalog_id", String(255), primary_key=True),
+    Column("id", String(255), primary_key=True),
+    Column("position", Integer(), nullable=False),
+    Column("terms_operator", String(255), nullable=False),
+    Column("time_operator", String(255), nullable=False),
+    # Nested definitions remain JSON. SQL NULL means omitted; JSON null means explicitly null.
+    Column("terms", String(), nullable=True),
+    Column("breakdown", String(), nullable=True),
+    Column("filter", String(), nullable=True),
+    ForeignKeyConstraint(
+        ["study_data_id", "catalog_id"],
+        ["gems_catalogs.study_data_id", "gems_catalogs.id"],
+        ondelete="CASCADE",
+    ),
 )

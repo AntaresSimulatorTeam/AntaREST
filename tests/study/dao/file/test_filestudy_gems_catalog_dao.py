@@ -41,9 +41,9 @@ def test_real_file_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, gems_catalog
 
     # Check IDs inside documents, even if their filenames are different.
     with pytest.raises(GemsCatalogAlreadyExists):
-        dao.save_catalog(gems_catalog)
+        dao.save_catalogs([gems_catalog])
     source.unlink()
-    dao.save_catalog(gems_catalog)
+    dao.save_catalogs([gems_catalog])
     assert YAMLReader().read(folder / f"{gems_catalog.id}.yaml") == YAMLReader().read(ASSET)
 
 
@@ -65,8 +65,14 @@ def test_filename_collision_does_not_overwrite(
     existing = folder / "another_catalog.yaml"
     existing.write_bytes(ASSET.read_bytes())
     with pytest.raises(GemsCatalogAlreadyExists):
-        dao.save_catalog(gems_catalog.model_copy(update={"id": "another_catalog"}))
+        dao.save_catalogs(
+            [
+                gems_catalog.model_copy(update={"id": "new_catalog"}),
+                gems_catalog.model_copy(update={"id": "another_catalog"}),
+            ]
+        )
     assert existing.read_bytes() == ASSET.read_bytes()
+    assert not (folder / "new_catalog.yaml").exists()
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
@@ -83,8 +89,7 @@ def test_conversion_roundtrip(
     expected = []
     if with_catalogs:
         expected = [gems_catalog, gems_catalog.model_copy(update={"id": "second_catalog"})]
-        for catalog in expected:
-            file_dao.save_catalog(catalog)
+        file_dao.save_catalogs(expected)
 
     # Exercise the full import, including the read-only adapter used by callers.
     StudyConverter(ReadOnlyAdapter(file_dao), dao_10_2, STUDY_VERSION_10_2, matrix_service).convert_study_inputs()

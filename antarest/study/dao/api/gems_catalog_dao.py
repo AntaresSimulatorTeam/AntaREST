@@ -23,9 +23,10 @@ class ReadOnlyGemsCatalogDao(ABC):
 
 class GemsCatalogDao(ReadOnlyGemsCatalogDao):
     @abstractmethod
-    def save_catalog(self, catalog: GemsCatalog) -> None:
+    def save_catalogs(self, catalogs: list[GemsCatalog]) -> None:
         """
-        Add a catalog to a study. Existing catalogs cannot be replaced.
-        A study may contain several catalogs with distinct identifiers.
+        Add catalogs to a study. Existing catalogs cannot be replaced.
+        Reject duplicate identifiers within the batch or the study before writing any catalog.
+        An empty batch does nothing.
         """
         raise NotImplementedError()

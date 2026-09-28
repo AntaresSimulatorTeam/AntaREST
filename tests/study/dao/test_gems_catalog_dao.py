@@ -28,18 +28,18 @@ def test_catalogs_roundtrip(dao_10_2: StudyDao, gems_catalog: GemsCatalog) -> No
     assert dao_10_2.get_catalogs() == []
     # The fixture comes from AntaresLegacyModels-to-GEMS-Converter.
     expected = YAMLReader().read(ASSET)["catalog"]
-    dao_10_2.save_catalog(gems_catalog)
+    dao_10_2.save_catalogs([gems_catalog])
     saved = dao_10_2.get_catalogs()
     assert len(saved) == 1
     assert saved[0].model_dump(mode="json", by_alias=True, exclude_unset=True) == expected
     assert ReadOnlyAdapter(dao_10_2).get_catalogs() == saved
 
     other = gems_catalog.model_copy(update={"id": "another_catalog"})
-    dao_10_2.save_catalog(other)
+    dao_10_2.save_catalogs([other])
     assert dao_10_2.get_catalogs() == [other, gems_catalog]
 
     with pytest.raises(GemsCatalogAlreadyExists):
-        dao_10_2.save_catalog(gems_catalog.model_copy(update={"taxonomy": "another_taxonomy"}))
+        dao_10_2.save_catalogs([gems_catalog.model_copy(update={"taxonomy": "another_taxonomy"})])
     assert dao_10_2.get_catalogs() == [other, gems_catalog]
 
 
@@ -73,3 +73,55 @@ def test_invalid_catalog_id(catalog_id: str) -> None:
     content["id"] = catalog_id
     with pytest.raises(ValidationError):
         GemsCatalog.model_validate(content)
+
+
+def test_catalog_batch_rejects_duplicates_before_writing(dao_10_2: StudyDao, gems_catalog: GemsCatalog) -> None:
+    other = gems_catalog.model_copy(update={"id": "another_catalog"})
+    with pytest.raises(GemsCatalogAlreadyExists):
+        dao_10_2.save_catalogs([other, gems_catalog, gems_catalog])
+    assert dao_10_2.get_catalogs() == []
+
+    dao_10_2.save_catalogs([gems_catalog])
+    with pytest.raises(GemsCatalogAlreadyExists):
+        dao_10_2.save_catalogs([other, gems_catalog])
+    assert dao_10_2.get_catalogs() == [gems_catalog]
+
+    dao_10_2.save_catalogs([])
+    assert dao_10_2.get_catalogs() == [gems_catalog]
+    dao_10_2.save_catalogs([other])
+    assert dao_10_2.get_catalogs() == [other, gems_catalog]
+
+
+def test_catalog_batch_preserves_metric_fields_and_order(dao_10_2: StudyDao) -> None:
+    content = {
+        "id": "catalog",
+        "taxonomy": "taxonomy",
+        "location": {"taxonomy-category": "balance"},
+        "metrics-definition": [
+            {"id": "z", "terms-operator": "sum", "time-operator": "avg"},
+            {
+                "id": "a",
+                "terms-operator": "avg",
+                "time-operator": "sum",
+                "terms": [],
+                "breakdown": None,
+                "filter": None,
+            },
+            {
+                "id": "m",
+                "terms-operator": "sum",
+                "time-operator": "sum",
+                "terms": [
+                    {"taxonomy-category": "balance", "output-id": "price"},
+                    {"taxonomy-category": "balance", "output-id": "cost", "location-port": None},
+                ],
+                "breakdown": [],
+            },
+        ],
+    }
+    catalog = GemsCatalog.model_validate(content)
+    empty_catalog = catalog.model_copy(update={"id": "empty_catalog", "metrics_definition": []})
+    dao_10_2.save_catalogs([empty_catalog, catalog])
+    saved = dao_10_2.get_catalogs()
+    assert saved == [catalog, empty_catalog]
+    assert saved[0].model_dump(mode="json", by_alias=True, exclude_unset=True) == content

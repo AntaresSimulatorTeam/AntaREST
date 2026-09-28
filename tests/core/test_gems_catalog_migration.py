@@ -35,14 +35,13 @@ def test_gems_catalog_migration_roundtrip(tmp_path: Path, monkeypatch: pytest.Mo
         previous_tables = set(inspect(engine).get_table_names())
         command.upgrade(config, "3302075bbdfd")
         inspector = inspect(engine)
-        assert set(inspector.get_table_names()) == previous_tables | {"gems_catalogs"}
+        assert set(inspector.get_table_names()) == previous_tables | {"gems_catalogs", "gems_catalog_metrics"}
         assert inspector.get_pk_constraint("gems_catalogs")["constrained_columns"] == ["study_data_id", "id"]
         assert {column["name"] for column in inspector.get_columns("gems_catalogs")} == {
             "study_data_id",
             "id",
             "taxonomy",
             "location",
-            "metrics_definition",
         }
         foreign_key = inspector.get_foreign_keys("gems_catalogs")[0]
         assert foreign_key["constrained_columns"] == ["study_data_id"]
@@ -50,9 +49,31 @@ def test_gems_catalog_migration_roundtrip(tmp_path: Path, monkeypatch: pytest.Mo
         assert foreign_key["referred_columns"] == ["study_data_id"]
         assert foreign_key["options"]["ondelete"] == "CASCADE"
 
+        assert inspector.get_pk_constraint("gems_catalog_metrics")["constrained_columns"] == [
+            "study_data_id",
+            "catalog_id",
+            "id",
+        ]
+        assert {column["name"] for column in inspector.get_columns("gems_catalog_metrics")} == {
+            "study_data_id",
+            "catalog_id",
+            "id",
+            "position",
+            "terms_operator",
+            "time_operator",
+            "terms",
+            "breakdown",
+            "filter",
+        }
+        metric_foreign_key = inspector.get_foreign_keys("gems_catalog_metrics")[0]
+        assert metric_foreign_key["constrained_columns"] == ["study_data_id", "catalog_id"]
+        assert metric_foreign_key["referred_table"] == "gems_catalogs"
+        assert metric_foreign_key["referred_columns"] == ["study_data_id", "id"]
+        assert metric_foreign_key["options"]["ondelete"] == "CASCADE"
+
         command.downgrade(config, "e12d85a77641")
         assert set(inspect(engine).get_table_names()) == previous_tables
         command.upgrade(config, "3302075bbdfd")
-        assert set(inspect(engine).get_table_names()) == previous_tables | {"gems_catalogs"}
+        assert set(inspect(engine).get_table_names()) == previous_tables | {"gems_catalogs", "gems_catalog_metrics"}
     finally:
         engine.dispose()
