@@ -241,6 +241,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   const table = useMaterialReactTable({
     data: tableData,
     columns: tableColumns,
+    localization: { noRecordsToDisplay: t("global.noData") },
     initialState: {
       density: "compact",
       ...(hasGroups && {
