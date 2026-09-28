@@ -166,6 +166,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                 {
                     "study_data_id": study_data_id,
                     "id": model.id,
+                    "library_id": library.id,
                     "description": model.description,
                     "taxonomy_category": model.taxonomy_category,
                     "properties": json.dumps(model_dump["properties"]),

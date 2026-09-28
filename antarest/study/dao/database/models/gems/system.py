@@ -33,6 +33,7 @@ GEMS_COMPONENTS_TABLE = Table(
     study_data_id_col(),
     Column("component_id", String(255), primary_key=True),
     Column("model_id", String(255)),
+    Column("library_id", String(255)),
     Column("scenario_group", String(255), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id"],

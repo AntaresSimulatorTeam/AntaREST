@@ -43,6 +43,7 @@ GEMS_MODELS_TABLE = Table(
     metadata,
     study_data_id_col(),
     Column("id", String(255), primary_key=True),
+    Column("library_id", String(255), primary_key=True),
     Column("description", String(), nullable=True),
     Column("taxonomy_category", String(), nullable=True),
     Column("properties", String(), nullable=True),
@@ -52,7 +53,11 @@ GEMS_MODELS_TABLE = Table(
     Column("objective_contributions", String(), nullable=False),
     Column("extra_outputs", String(), nullable=False),
     Column("port_field_definitions", String(), nullable=False),
-    ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(
+        ["study_data_id", "library_id"],
+        ["gems_library_metadata.study_data_id", "gems_library_metadata.id"],
+        ondelete="CASCADE",
+    ),
     ForeignKeyConstraint(
         ["study_data_id", "taxonomy_category"],
         ["gems_taxonomy_categories.study_data_id", "gems_taxonomy_categories.id"],
