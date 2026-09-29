@@ -19,9 +19,9 @@ depends_on = None
 
 
 """
-Currently, lots of PK and FK on GEMS tables do not have any name.
+Currently, lots of PKs and FKs on GEMS tables do not have any name.
 So modifying / removing them is really complicated.
-To solve this issue, this migration aims at giving names for all PK and FK on GEMS tables
+To solve this issue, this migration aims at giving names for all PKs and FKs on GEMS tables
 This way, when we will want to change them in future works it will be easy.
 """
 
@@ -43,7 +43,7 @@ def upgrade():
 
     op.drop_table("gems_scenario_builder")
 
-    # Then, recreate them and add names to the PK and FKs.
+    # Then, recreate them and add names to the PKs and FKs.
     op.create_table(
         "gems_scenario_builder",
         study_data_id_col(),
