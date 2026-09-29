@@ -14,7 +14,7 @@
 
 import Matrix from "@/components/Matrix";
 import { createFileRoute } from "@tanstack/react-router";
-import { COMMON_MATRIX_COLS } from "../../-utils";
+import { COMMON_MATRIX_COLS } from "../../-types";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId/time-series/common",

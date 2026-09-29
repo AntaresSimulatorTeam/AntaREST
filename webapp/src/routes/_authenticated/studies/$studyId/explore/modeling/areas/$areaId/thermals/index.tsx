@@ -23,6 +23,13 @@ import {
   getClustersWithCapacityTotals,
   toCapacityString,
 } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
+import {
+  createThermalCluster,
+  deleteThermalClusters,
+  duplicateThermalCluster,
+  getThermalClusters,
+} from "@/services/api/studies/areas/thermals";
+import { THERMAL_GROUPS } from "@/services/api/studies/areas/thermals/constants";
 import { Box } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";

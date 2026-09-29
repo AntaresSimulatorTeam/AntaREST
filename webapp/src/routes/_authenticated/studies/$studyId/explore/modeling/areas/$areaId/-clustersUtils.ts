@@ -14,7 +14,7 @@
 
 import type { MRT_AggregationFn } from "material-react-table";
 import type { RenewableClusterWithCapacity } from "./renewables/-utils";
-import type { ThermalClusterWithCapacity } from "./thermals/-utils";
+import type { ThermalClusterWithCapacity } from "./thermals/-types";
 
 export function toCapacityString(enabledCapacity: number, installedCapacity: number) {
   return `${Math.round(enabledCapacity)} / ${Math.round(installedCapacity)}`;
@@ -53,7 +53,7 @@ export const capacityAggregationFn = <
 
 interface BaseCluster {
   name: string;
-  group: string;
+  group: string | null;
   unitCount: number;
   nominalCapacity: number;
   enabled: boolean;

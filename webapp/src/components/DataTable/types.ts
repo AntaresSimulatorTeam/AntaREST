@@ -14,5 +14,5 @@
 
 export interface RowData {
   name: string;
-  group?: string;
+  group?: string | null;
 }
