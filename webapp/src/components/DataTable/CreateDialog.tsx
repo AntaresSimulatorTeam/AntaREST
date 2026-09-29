@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { PromiseAny } from "@/utils/tsUtils";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useTranslation } from "react-i18next";
@@ -25,7 +26,7 @@ import type { RowData } from "./types";
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  onSubmit: (values: RowData) => Promise<void>;
+  onSubmit: (values: RowData) => PromiseAny | void;
   groups?: string[];
   allowNewGroups?: boolean;
   existingNames: Array<RowData["name"]>;
@@ -54,6 +55,7 @@ function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existin
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={onClose}
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>
