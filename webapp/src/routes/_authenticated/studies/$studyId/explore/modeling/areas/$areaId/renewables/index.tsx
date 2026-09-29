@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import GroupedDataTable from "@/components/GroupedDataTable";
-import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
-import type { RowData } from "@/components/GroupedDataTable/types";
+import GroupedDataTable from "@/components/DataTable";
+import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
+import type { RowData } from "@/components/DataTable/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudySynthesis } from "@/redux/selectors";
