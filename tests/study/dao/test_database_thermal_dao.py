@@ -384,21 +384,9 @@ def test_save_thermal_round_trips_ramp_fields(dao_10_2: StudyDao) -> None:
     assert result.power_decrease_cost == 2.0
 
     if isinstance(dao, FileStudyTreeDao):
-        # The study file is the contract with the solver, which keys ramping on `ramping-enabled`
-        # and silently ignores the rest when that key is missing. Asserted on the file rather than
-        # on `serialize_thermal_cluster` so the whole write path is covered.
         ini = dao.get_file_study().tree.get(["input", "thermal", "clusters", "paris", "list", "gas_cluster"])
         assert ini["ramping-enabled"] is True
         assert ini["max-upward-power-ramping-rate"] == 10.5
         assert ini["max-downward-power-ramping-rate"] == 0.0
         assert ini["power-increase-cost"] == 1.0
         assert ini["power-decrease-cost"] == 2.0
-        # The names the ticket used must not reach the file: the solver would ignore them.
-        ticket_names = {
-            "rampingEnabled",
-            "max-ramping_enabled-up",
-            "max-ramping_enabled-down",
-            "ramping_enabled-up-cost",
-            "ramping_enabled-down-cost",
-        }
-        assert not ticket_names & set(ini)

@@ -74,8 +74,7 @@ class ThermalClusterFileData(AntaresBaseModel):
     efficiency: float | None = None
     variable_o_m_cost: float | None = Field(default=None, alias="variableomcost")
 
-    # Added in 10.2. The field names are the solver's own, so `to_kebab_case` yields the keys it
-    # reads and no explicit alias is needed.
+    # Added in 10.2
     ramping_enabled: bool | None = None
     max_upward_power_ramping_rate: float | None = None
     max_downward_power_ramping_rate: float | None = None
