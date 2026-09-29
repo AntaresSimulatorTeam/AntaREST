@@ -45,15 +45,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             return None
 
         components = self.get_components()
-        connections = self._get_connections()
 
         return GemsSystem.model_validate(
-            {
-                "id": metadata_row.system_id,
-                "description": metadata_row.description,
-                "components": components,
-                "connections": connections,
-            }
+            {"id": metadata_row.system_id, "description": metadata_row.description, "components": components}
         )
 
     def _get_system_row_if_exists(self) -> Row[tuple[Any]] | None:
@@ -148,9 +142,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                 }
             )
         return component_properties
-
-    def _get_connections(self) -> List[str]:
-        return []  # TODO: Implement connections
 
     @override
     def save_system(self, system: GemsSystem) -> None:
