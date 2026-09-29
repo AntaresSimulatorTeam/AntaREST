@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { PromiseAny } from "@/utils/tsUtils";
 import { validateString } from "@/utils/validation/string";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
@@ -23,7 +24,7 @@ import StringFE from "../fieldEditors/StringFE";
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  onSubmit: (name: string) => Promise<void>;
+  onSubmit: (name: string) => PromiseAny | void;
   existingNames: string[];
   defaultName: string;
 }
@@ -37,9 +38,8 @@ function DuplicateDialog(props: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async ({ values: { name } }: SubmitHandlerPlus<typeof defaultValues>) => {
-    await onSubmit(name);
-    onClose();
+  const handleSubmit = ({ values: { name } }: SubmitHandlerPlus<typeof defaultValues>) => {
+    return onSubmit(name);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -53,6 +53,7 @@ function DuplicateDialog(props: Props) {
       titleIcon={ContentCopyIcon}
       onCancel={onClose}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={onClose}
       config={{ defaultValues }}
       allowSubmitOnPristine
     >
