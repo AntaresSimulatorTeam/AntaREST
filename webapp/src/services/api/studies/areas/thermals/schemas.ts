@@ -52,22 +52,22 @@ export const thermalClusterSchema = z.object({
   lawPlanned: z.enum(TS_LAW_OPTIONS),
   co2: z.number(),
   // Since v8.6; older studies may omit these fields or return null.
-  so2: nullishToOptional(z.number()),
-  nh3: nullishToOptional(z.number()),
-  nox: nullishToOptional(z.number()),
-  nmvoc: nullishToOptional(z.number()),
-  pm25: nullishToOptional(z.number()),
-  pm5: nullishToOptional(z.number()),
-  pm10: nullishToOptional(z.number()),
-  op1: nullishToOptional(z.number()),
-  op2: nullishToOptional(z.number()),
-  op3: nullishToOptional(z.number()),
-  op4: nullishToOptional(z.number()),
-  op5: nullishToOptional(z.number()),
-  // Since v8.7.
-  costGeneration: nullishToOptional(z.enum(COST_GENERATION_OPTIONS)),
-  efficiency: nullishToOptional(z.number()),
-  variableOMCost: nullishToOptional(z.number()),
+  so2: nullishToOptional(z.number()).optional(),
+  nh3: nullishToOptional(z.number()).optional(),
+  nox: nullishToOptional(z.number()).optional(),
+  nmvoc: nullishToOptional(z.number()).optional(),
+  pm25: nullishToOptional(z.number()).optional(),
+  pm5: nullishToOptional(z.number()).optional(),
+  pm10: nullishToOptional(z.number()).optional(),
+  op1: nullishToOptional(z.number()).optional(),
+  op2: nullishToOptional(z.number()).optional(),
+  op3: nullishToOptional(z.number()).optional(),
+  op4: nullishToOptional(z.number()).optional(),
+  op5: nullishToOptional(z.number()).optional(),
+  // Since v8.7
+  costGeneration: nullishToOptional(z.enum(COST_GENERATION_OPTIONS)).optional(),
+  efficiency: nullishToOptional(z.number()).optional(),
+  variableOMCost: nullishToOptional(z.number()).optional(),
 });
 
 export const thermalClustersSchema = z.array(thermalClusterSchema);
