@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/GroupedDataTable/utils";
+import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/DataTable/utils";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import type {
   ProductionType,
