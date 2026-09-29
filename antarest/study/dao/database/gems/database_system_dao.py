@@ -18,10 +18,11 @@ from antarest.core.exceptions import (
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
+from antarest.study.business.model.gems.system import GemsComponent, GemsSystem, _GemsConnection
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.system import (
+    GEMS_COMPONENT_CONNECTIONS_TABLE,
     GEMS_COMPONENT_PARAMETERS_TABLE,
     GEMS_COMPONENT_PROPERTIES_TABLE,
     GEMS_COMPONENTS_TABLE,
@@ -43,9 +44,15 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             return None
 
         components = self.get_components()
+        connections = self._get_connections()
 
         return GemsSystem.model_validate(
-            {"id": metadata_row.system_id, "description": metadata_row.description, "components": components}
+            {
+                "id": metadata_row.system_id,
+                "description": metadata_row.description,
+                "components": components,
+                "connections": connections,
+            }
         )
 
     def _get_system_row_if_exists(self) -> Row[tuple[Any]] | None:
@@ -126,6 +133,26 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
         return component_properties
 
+    def _get_connections(self) -> List[dict[str, str]]:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        connections_stmt = select(GEMS_COMPONENT_CONNECTIONS_TABLE).where(
+            GEMS_COMPONENT_CONNECTIONS_TABLE.c.study_data_id == study_data_id
+        )
+        connections_rows = session.execute(connections_stmt).fetchall()
+        connections: List[dict[str, str]] = []
+        for connection_row in connections_rows:
+            connections.append(
+                {
+                    "component1": connection_row.component1,
+                    "component2": connection_row.component2,
+                    "port1": connection_row.port1,
+                    "port2": connection_row.port2,
+                }
+            )
+        return connections
+
     @override
     def save_system(self, system: GemsSystem) -> None:
         study_data_id = self._study_data_id
@@ -144,6 +171,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         session.execute(insert(GEMS_SYSTEM_METADATA_TABLE), metadata_values)
 
         self.save_components(system.components)
+        self._save_connections(system.connections)
 
     @override
     def save_components(self, components: List[GemsComponent]) -> None:
@@ -200,5 +228,35 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
+
+        session.commit()
+
+    def _save_connections(self, connections: List[_GemsConnection]) -> None:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        if not self._get_system_row_if_exists():
+            raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
+
+        # Clean all existing data regarding connections
+        session.execute(
+            delete(GEMS_COMPONENT_CONNECTIONS_TABLE).where(
+                GEMS_COMPONENT_CONNECTIONS_TABLE.c.study_data_id == study_data_id
+            )
+        )
+
+        if connections:
+            connections_dict = [
+                {
+                    "study_data_id": study_data_id,
+                    "component1": connection.component1,
+                    "component2": connection.component2,
+                    "port1": connection.port1,
+                    "port2": connection.port2,
+                }
+                for connection in connections
+            ]
+
+            session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), connections_dict)
 
         session.commit()
