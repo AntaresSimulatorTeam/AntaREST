@@ -44,10 +44,7 @@ import DuplicateDialog from "./DuplicateDialog";
 import type { RowData } from "./types";
 import { generateUniqueValue, getDarkModeFixStyles, getTableOptionsForAlign } from "./utils";
 
-export interface GroupedDataTableProps<
-  TGroups extends string[],
-  TData extends RowData<TGroups[number]>,
-> {
+export interface GroupedDataTableProps<TData extends RowData> {
   data: TData[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: Array<MRT_ColumnDef<TData, any>>;
@@ -55,9 +52,9 @@ export interface GroupedDataTableProps<
    * Omit to disable grouping. When omitted, the group column and grouping
    * behavior are removed and the create dialog skips the group field.
    */
-  groups?: TGroups;
+  groups?: string[];
   allowNewGroups?: boolean;
-  onCreate?: (values: RowData<TGroups[number]> & Partial<TData>) => Promise<TData>;
+  onCreate?: (values: RowData | (RowData & Partial<TData>)) => Promise<TData>;
   /**
    * Render a custom create dialog instead of the built-in one.
    * Useful when creation requires fields the built-in dialog doesn't handle.
@@ -65,7 +62,7 @@ export interface GroupedDataTableProps<
   renderCreateDialog?: (props: {
     open: boolean;
     onClose: VoidFunction;
-    onSubmit: (values: RowData<TGroups[number]> & Partial<TData>) => Promise<void>;
+    onSubmit: (values: RowData & Partial<TData>) => Promise<void>;
     existingNames: Array<RowData["name"]>;
   }) => React.ReactNode;
   onDuplicate?: (row: TData, newName: string) => Promise<TData>;
@@ -80,9 +77,7 @@ export interface GroupedDataTableProps<
    * Extra actions rendered next to the built-in Add/Duplicate/Delete buttons.
    */
   toolbarActions?: React.ReactNode;
-  fillPendingRow?: (
-    pendingRow: RowData<TGroups[number]>,
-  ) => RowData<TGroups[number]> & Partial<TData>;
+  fillPendingRow?: (pendingRow: RowData) => RowData & Partial<TData>;
 }
 
 // Use ids to identify default columns (instead of `accessorKey`),
@@ -91,7 +86,7 @@ export interface GroupedDataTableProps<
 const GROUP_COLUMN_ID = "_group";
 const NAME_COLUMN_ID = "_name";
 
-function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroups[number]>>({
+function GroupedDataTable<TData extends RowData>({
   data,
   columns,
   groups,
@@ -108,14 +103,14 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   deleteConfirmationMessage,
   fillPendingRow,
   toolbarActions,
-}: GroupedDataTableProps<TGroups, TData>) {
+}: GroupedDataTableProps<TData>) {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState<"add" | "duplicate" | "delete" | "">("");
   const [tableData, setTableData] = useState(data);
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const callbacksRef = useUpdatedRef({ onNameClick, nameLinkOptions, readOnly });
-  const pendingRows = useRef<Array<RowData<TGroups[number]>>>([]);
+  const pendingRows = useRef<RowData[]>([]);
   const { createOps, deleteOps, totalOps } = useOperationInProgressCount();
   const { isDarkMode } = useThemeColorScheme();
 
@@ -152,7 +147,6 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
       // Bail out with the same reference if nothing changed, to avoid unnecessary re-renders.
       return hasChanges ? next : prev;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data]);
 
   const existingNames = useMemo(() => tableData.map((row) => row.name.toLowerCase()), [tableData]);
@@ -364,7 +358,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   // Optimistic
   ////////////////////////////////////////////////////////////////
 
-  const addPendingRow = (row: RowData<TGroups[number]>) => {
+  const addPendingRow = (row: RowData) => {
     const pendingRow = fillPendingRow?.(row) || row;
 
     pendingRows.current.push(pendingRow);
@@ -376,14 +370,14 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
     return pendingRow;
   };
 
-  const removePendingRow = (row: RowData<TGroups[number]>) => {
+  const removePendingRow = (row: RowData) => {
     if (isPendingRow(row)) {
       pendingRows.current = pendingRows.current.filter((r) => r !== row);
       setTableData((prev) => prev.filter((r) => r !== row));
     }
   };
 
-  function isPendingRow(row: RowData<TGroups[number]>) {
+  function isPendingRow(row: RowData) {
     return pendingRows.current.includes(row);
   }
 
@@ -397,7 +391,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: RowData<TGroups[number]> & Partial<TData>) => {
+  const handleCreate = async (values: RowData | (RowData & Partial<TData>)) => {
     closeDialog();
 
     if (!onCreate) {
@@ -493,9 +487,7 @@ function GroupedDataTable<TGroups extends string[], TData extends RowData<TGroup
             groups={groups}
             allowNewGroups={allowNewGroups}
             existingNames={existingNames}
-            onSubmit={(values: RowData) =>
-              handleCreate(values as RowData<TGroups[number]> & Partial<TData>)
-            }
+            onSubmit={handleCreate}
           />
         ))}
       {openDialog === "duplicate" && selectedRow && (
