@@ -12,26 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import { getStorages } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/-utils";
-import { getStorageConstraints } from "@/services/api/studies/areas/storages";
+import { getStorages, getStorageConstraints } from "@/services/api/studies/areas/storages";
 import type { StorageParams } from "@/services/api/studies/areas/storages/types";
-import type { AreaWithId, StudyMetadata } from "@/types/types";
-import { queryOptions } from "@tanstack/react-query";
+import type { AreaWithId } from "@/types/types";
 import { EXTERNALLY_MUTATED, queryListOptions } from "../utils";
 import { storageKeys } from "./keys";
+import type { Study } from "@/services/api/studies/types";
 
 export const storageQueries = {
-  list: (studyId: StudyMetadata["id"], areaId: AreaWithId["id"]) => {
-    return queryOptions({
+  list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+    return queryListOptions({
       queryKey: storageKeys.list(studyId, areaId),
-      queryFn: () => getStorages(studyId, areaId),
-      // Storages are mutated by the legacy Storages pages and table mode, none of
-      // which invalidate this cache.
+      queryFn: () => getStorages({ studyId, areaId }),
+      // TODO: keep it stale until we update all writers to invalidate it.
       ...EXTERNALLY_MUTATED,
     });
   },
   constraintList: (
-    studyId: StudyMetadata["id"],
+    studyId: Study["id"],
     areaId: AreaWithId["id"],
     storageId: StorageParams["storageId"],
   ) => {

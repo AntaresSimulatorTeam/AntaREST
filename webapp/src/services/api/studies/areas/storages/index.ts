@@ -15,17 +15,148 @@
 import client from "@/services/api/client";
 import { format } from "@/utils/stringUtils";
 import * as R from "ramda";
+import {
+  storageCreationSchema,
+  storageSchema,
+  storagesSchema,
+  storageUpdateSchema,
+} from "./schemas";
 import type {
   CreateStorageConstraintParams,
   CreateStorageConstraintsParams,
+  CreateStorageParams,
   DeleteStorageConstraintParams,
   DeleteStorageConstraintsParams,
+  DeleteStoragesParams,
+  DuplicateStorageParams,
   GetStorageConstraintParams,
+  Storage,
   StorageConstraint,
   StorageParams,
+  StoragesAreaParams,
   UpdateStorageConstraintParams,
   UpdateStorageConstraintsParams,
+  UpdateStorageParams,
 } from "./types";
+
+/**
+ * GET /v1/studies/{studyId}/areas/{areaId}/storages - Lists complete short-term storages.
+ *
+ * @param params - Request identifiers and values.
+ * @param params.studyId - Study identifier.
+ * @param params.areaId - Area identifier.
+ * @returns All storage properties, preserving server IDs.
+ * @throws If the response doesn't match the expected schema.
+ */
+export async function getStorages({ studyId, areaId }: StoragesAreaParams): Promise<Storage[]> {
+  const { data } = await client.get(`/v1/studies/${studyId}/areas/${areaId}/storages`);
+  return storagesSchema.parse(data);
+}
+
+/**
+ * GET /v1/studies/{studyId}/areas/{areaId}/storages/{storageId} - Gets a short-term storage.
+ *
+ * @param params - Request identifiers and values.
+ * @param params.studyId - Study identifier.
+ * @param params.areaId - Area identifier.
+ * @param params.storageId - Storage identifier.
+ * @returns The complete storage, preserving its server ID.
+ * @throws If the response doesn't match the expected schema.
+ */
+export async function getStorage({ studyId, areaId, storageId }: StorageParams): Promise<Storage> {
+  const { data } = await client.get(`/v1/studies/${studyId}/areas/${areaId}/storages/${storageId}`);
+  return storageSchema.parse(data);
+}
+
+/**
+ * POST /v1/studies/{studyId}/areas/{areaId}/storages - Creates a short-term storage.
+ *
+ * @param params - Request identifiers and values.
+ * @param params.studyId - Study identifier.
+ * @param params.areaId - Area identifier.
+ * @param params.values - Storage values; only name is required.
+ * @returns The created storage.
+ * @throws If the values or response don't match the expected schema.
+ */
+export async function createStorage({
+  studyId,
+  areaId,
+  values,
+}: CreateStorageParams): Promise<Storage> {
+  const body = storageCreationSchema.parse(values);
+  const { data } = await client.post(`/v1/studies/${studyId}/areas/${areaId}/storages`, body);
+  return storageSchema.parse(data);
+}
+
+/**
+ * PATCH /v1/studies/{studyId}/areas/{areaId}/storages/{storageId} - Updates a short-term storage.
+ *
+ * @param params - Request identifiers and values.
+ * @param params.studyId - Study identifier.
+ * @param params.areaId - Area identifier.
+ * @param params.storageId - Storage identifier.
+ * @param params.values - Partial storage values to update.
+ * @returns The updated storage.
+ * @throws If the values or response don't match the expected schema.
+ */
+export async function updateStorage({
+  studyId,
+  areaId,
+  storageId,
+  values,
+}: UpdateStorageParams): Promise<Storage> {
+  const body = storageUpdateSchema.parse(values);
+  const { data } = await client.patch(
+    `/v1/studies/${studyId}/areas/${areaId}/storages/${storageId}`,
+    body,
+  );
+  return storageSchema.parse(data);
+}
+
+/**
+ * POST /v1/studies/{studyId}/areas/{areaId}/storages/{storageId} - Duplicates a short-term storage.
+ *
+ * @param params - Request identifiers and values.
+ * @param params.studyId - Study identifier.
+ * @param params.areaId - Area identifier.
+ * @param params.storageId - Source storage identifier.
+ * @param params.newName - New storage name, sent as a query parameter.
+ * @returns The duplicated storage.
+ * @throws If the response doesn't match the expected schema.
+ */
+export async function duplicateStorage({
+  studyId,
+  areaId,
+  storageId,
+  newName,
+}: DuplicateStorageParams): Promise<Storage> {
+  const { data } = await client.post(
+    `/v1/studies/${studyId}/areas/${areaId}/storages/${storageId}`,
+    null,
+    { params: { newName } },
+  );
+  return storageSchema.parse(data);
+}
+
+/**
+ * DELETE /v1/studies/{studyId}/areas/{areaId}/storages - Deletes short-term storages by ID.
+ *
+ * @param params - Request identifiers and values.
+ * @param params.studyId - Study identifier.
+ * @param params.areaId - Area identifier.
+ * @param params.storageIds - Storage identifiers to send in the request body.
+ */
+export async function deleteStorages({
+  studyId,
+  areaId,
+  storageIds,
+}: DeleteStoragesParams): Promise<void> {
+  await client.delete(`/v1/studies/${studyId}/areas/${areaId}/storages`, { data: storageIds });
+}
+
+////////////////////////////////////////////////////////////////
+// Additional Constraints
+////////////////////////////////////////////////////////////////
 
 const BASE_URL = "/v1/studies/{studyId}/areas/{areaId}/storages";
 const CONSTRAINTS_URL = `${BASE_URL}/{storageId}/additional-constraints`;
