@@ -32,6 +32,7 @@ GEMS_COMPONENTS_TABLE = Table(
     metadata,
     study_data_id_col(),
     Column("component_id", String(255), primary_key=True),
+    Column("library_id", String(255), nullable=False),
     Column("model_id", String(255)),
     Column("scenario_group", String(255), nullable=True),
     ForeignKeyConstraint(
@@ -40,8 +41,8 @@ GEMS_COMPONENTS_TABLE = Table(
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
-        ["study_data_id", "model_id"],
-        ["gems_models.study_data_id", "gems_models.id"],
+        ["study_data_id", "model_id", "library_id"],
+        ["gems_models.study_data_id", "gems_models.id", "gems_models.library_id"],
         ondelete="CASCADE",
     ),
     ForeignKeyConstraint(
