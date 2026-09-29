@@ -18,7 +18,7 @@ from antarest.core.exceptions import (
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.study.business.model.gems.system import GemsComponent, GemsSystem, _GemsConnection
+from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.system import (
@@ -231,7 +231,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         session.commit()
 
-    def _save_connections(self, connections: List[_GemsConnection]) -> None:
+    def _save_connections(self, connections: List[GemsComponentConnection]) -> None:
         study_data_id = self._study_data_id
         session = self._db_session
 
