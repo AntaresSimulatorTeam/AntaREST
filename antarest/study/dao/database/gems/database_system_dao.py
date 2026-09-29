@@ -160,11 +160,12 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         parameter_values = []
         property_values = []
         for component in components:
-            _, model_id = component.model.split(".", 1)
+            library_id, model_id = component.model.split(".", 1)
 
             component_values.append(
                 {
                     "study_data_id": study_data_id,
+                    "library_id": library_id,
                     "component_id": component.id,
                     "model_id": model_id,
                     "scenario_group": component.scenario_group,
