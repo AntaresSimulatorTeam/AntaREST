@@ -32,6 +32,7 @@ from antarest.study.business.model.district_model import District
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
+from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
@@ -79,6 +80,7 @@ from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.gems_catalog_dao import GemsCatalogDao, ReadOnlyGemsCatalogDao
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao, ReadOnlyGemsScenarioBuilderDao
+from antarest.study.dao.api.gems_system_dao import GemsSystemDao, ReadOnlyGemsSystemDao
 from antarest.study.dao.api.gems_taxonomy_dao import GemsTaxonomyDao, ReadOnlyGemsTaxonomyDao
 from antarest.study.dao.api.general_config_dao import GeneralConfigDao, ReadOnlyGeneralConfigDao
 from antarest.study.dao.api.hydro_dao import HydroDao, ReadOnlyHydroDao
@@ -169,6 +171,7 @@ class ReadOnlyStudyDao(
     ReadOnlyReserveCertificationDao,
     ReadOnlyReserveSymmetriesDao,
     ReadOnlyGemsLibraryDao,
+    ReadOnlyGemsSystemDao,
     ReadOnlyGemsCatalogDao,
     ReadOnlyGemsTaxonomyDao,
     ReadOnlyGemsScenarioBuilderDao,
@@ -226,6 +229,7 @@ class StudyDao(
     ReserveCertificationDao,
     ReserveSymmetriesDao,
     GemsLibraryDao,
+    GemsSystemDao,
     GemsCatalogDao,
     GemsTaxonomyDao,
     GemsScenarioBuilderDao,
@@ -980,6 +984,14 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_library(self) -> GemsLibrary | None:
         return self._adaptee.get_library()
+
+    @override
+    def get_components(self) -> list[GemsComponent]:
+        return self._adaptee.get_components()
+
+    @override
+    def get_system(self) -> GemsSystem | None:
+        return self._adaptee.get_system()
 
     @override
     def get_taxonomy(self) -> GemsTaxonomy | None:
