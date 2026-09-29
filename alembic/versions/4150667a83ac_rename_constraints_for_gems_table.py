@@ -6,7 +6,6 @@ Create Date: 2026-09-29 10:39:23.209421
 
 """
 from alembic import op
-import sqlalchemy as sa
 from sqlalchemy import Column, String, ForeignKeyConstraint, Boolean, PrimaryKeyConstraint, Float
 
 from antarest.study.dao.database.models import study_data_id_col
@@ -47,9 +46,10 @@ def upgrade():
     op.create_table(
         "gems_scenario_builder",
         study_data_id_col(),
-        sa.Column("scenario_group", sa.String(255), primary_key=True),
-        sa.Column("data", sa.String(), nullable=False),
-        sa.ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
+        Column("scenario_group", String(255), primary_key=True),
+        Column("data", String(), nullable=False),
+        ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], name="fk_gems_scenario_builder", ondelete="CASCADE"),
+        PrimaryKeyConstraint("study_data_id", "scenario_group", name="pk_gems_scenario_builder"),
     )
 
     op.create_table(
@@ -57,7 +57,8 @@ def upgrade():
         study_data_id_col(),
         Column("id", String(255), nullable=False),
         Column("description", String(), nullable=True),
-        ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], name="fk_gems_taxonomy_metadata", ondelete="CASCADE"),
+        PrimaryKeyConstraint("study_data_id", name="pk_gems_taxonomy_metadata"),
     )
 
     op.create_table(
@@ -74,9 +75,11 @@ def upgrade():
         ForeignKeyConstraint(
             ["study_data_id", "parent_category"],
             ["gems_taxonomy_categories.study_data_id", "gems_taxonomy_categories.id"],
+            name="fk_taxonomy_parent_category",
             ondelete="CASCADE",
         ),
-        ForeignKeyConstraint(["study_data_id"], ["gems_taxonomy_metadata.study_data_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["study_data_id"], ["gems_taxonomy_metadata.study_data_id"], name="fk_taxonomy_category_study_data", ondelete="CASCADE"),
+        PrimaryKeyConstraint("study_data_id", "id", name="pk_gems_taxonomy_categories"),
     )
 
     op.create_table(
@@ -97,7 +100,8 @@ def upgrade():
         Column("fields", String(), nullable=False),
         Column("area_connection", String(), nullable=True),
         Column("thermal_capacity_connection", String(), nullable=True),
-        ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], name="fk_gems_port_types", ondelete="CASCADE"),
+        PrimaryKeyConstraint("study_data_id", "id", name="pk_gems_port_types"),
     )
 
     op.create_table(
@@ -113,8 +117,18 @@ def upgrade():
         Column("objective_contributions", String(), nullable=False),
         Column("extra_outputs", String(), nullable=False),
         Column("port_field_definitions", String(), nullable=False),
-        ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], ondelete="CASCADE"),
-        ForeignKeyConstraint(["study_data_id", "taxonomy_category"], ["gems_taxonomy_categories.study_data_id", "gems_taxonomy_categories.id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(
+            ["study_data_id"],
+            ["gems_library_metadata.study_data_id"],
+            name="fk_gems_models_library",
+            ondelete="CASCADE"),
+        ForeignKeyConstraint(
+            ["study_data_id", "taxonomy_category"],
+            ["gems_taxonomy_categories.study_data_id", "gems_taxonomy_categories.id"],
+            name="fk_gems_models_taxonomy",
+            ondelete="CASCADE"),
+        PrimaryKeyConstraint("study_data_id", "id", name="pk_gems_models"),
+
     )
 
     op.create_table(
@@ -125,8 +139,10 @@ def upgrade():
         Column("type", String(), nullable=False),
         ForeignKeyConstraint(["study_data_id", "model_id"],
                              ["gems_models.study_data_id", "gems_models.id"],
-                             ondelete="CASCADE"
+                             ondelete="CASCADE",
+                             name="fk_gems_models_ports"
                              ),
+        PrimaryKeyConstraint("study_data_id", "model_id", "port_id", name="pk_gems_models_ports"),
     )
 
     op.create_table(
@@ -138,8 +154,10 @@ def upgrade():
         Column("scenario_dependent", Boolean(), nullable=False),
         ForeignKeyConstraint(["study_data_id", "model_id"],
                              ["gems_models.study_data_id", "gems_models.id"],
-                             ondelete="CASCADE"
+                             ondelete="CASCADE",
+                             name="fk_gems_models_parameters"
                              ),
+        PrimaryKeyConstraint("study_data_id", "model_id", "parameter_id", name="pk_gems_models_parameters"),
     )
 
     op.create_table(
@@ -147,7 +165,8 @@ def upgrade():
         study_data_id_col(),
         Column("system_id", String(255), nullable=False),
         Column("description", String(255)),
-        ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], name="fk_gems_system_metadata", ondelete="CASCADE"),
+        PrimaryKeyConstraint("study_data_id", name="pk_gems_system_metadata"),
     )
 
     op.create_table(
@@ -159,18 +178,22 @@ def upgrade():
         ForeignKeyConstraint(
             ["study_data_id"],
             ["gems_system_metadata.study_data_id"],
+            name="fk_gems_components_to_system_metadata",
             ondelete="CASCADE",
         ),
         ForeignKeyConstraint(
             ["study_data_id", "model_id"],
             ["gems_models.study_data_id", "gems_models.id"],
+            name="fk_gems_components_to_models",
             ondelete="CASCADE",
         ),
         ForeignKeyConstraint(
             ["study_data_id", "scenario_group"],
             ["gems_scenario_builder.study_data_id", "gems_scenario_builder.scenario_group"],
+            name="fk_gems_components_to_scenario_group",
             ondelete="SET NULL",
         ),
+        PrimaryKeyConstraint("study_data_id", "component_id", name="pk_gems_components"),
     )
 
     op.create_table(
@@ -184,8 +207,10 @@ def upgrade():
         ForeignKeyConstraint(
             ["study_data_id", "component_id"],
             ["gems_components.study_data_id", "gems_components.component_id"],
+            name="fk_gems_component_parameters",
             ondelete="CASCADE",
         ),
+        PrimaryKeyConstraint("study_data_id", "component_id", "parameter_id", name="pk_gems_component_parameters"),
     )
 
     op.create_table(
@@ -197,8 +222,11 @@ def upgrade():
         ForeignKeyConstraint(
             ["study_data_id", "component_id"],
             ["gems_components.study_data_id", "gems_components.component_id"],
+            name="fk_gems_component_properties",
             ondelete="CASCADE",
         ),
+        PrimaryKeyConstraint("study_data_id", "component_id", "property_id", name="pk_gems_component_properties"),
+
     )
 
 
