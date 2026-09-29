@@ -203,4 +203,5 @@ def upgrade():
 
 
 def downgrade():
+    # As we simply added names to PKs and FKs, there is nothing to do in the downgrade
     pass
