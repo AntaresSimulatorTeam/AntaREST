@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import GroupedDataTable from "@/components/DataTable";
+import DataTable from "@/components/DataTable";
 import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
 import type { RowData } from "@/components/DataTable/types";
 import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
@@ -145,7 +145,7 @@ function Renewables() {
   }
 
   return (
-    <GroupedDataTable
+    <DataTable
       key={status}
       isLoading={isLoading}
       data={clustersWithCapacity}
