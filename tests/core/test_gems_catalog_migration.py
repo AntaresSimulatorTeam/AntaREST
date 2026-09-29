@@ -29,7 +29,7 @@ def test_gems_catalog_migration_roundtrip(tmp_path: Path, monkeypatch: pytest.Mo
     config = Config(str(get_local_path() / "alembic.ini"))
     config.set_main_option("script_location", str(get_local_path() / "alembic"))
 
-    command.upgrade(config, "e12d85a77641")
+    command.upgrade(config, "4150667a83ac")
     engine = create_engine(db_url)
     try:
         previous_tables = set(inspect(engine).get_table_names())
@@ -71,7 +71,7 @@ def test_gems_catalog_migration_roundtrip(tmp_path: Path, monkeypatch: pytest.Mo
         assert metric_foreign_key["referred_columns"] == ["study_data_id", "id"]
         assert metric_foreign_key["options"]["ondelete"] == "CASCADE"
 
-        command.downgrade(config, "e12d85a77641")
+        command.downgrade(config, "4150667a83ac")
         assert set(inspect(engine).get_table_names()) == previous_tables
         command.upgrade(config, "3302075bbdfd")
         assert set(inspect(engine).get_table_names()) == previous_tables | {"gems_catalogs", "gems_catalog_metrics"}

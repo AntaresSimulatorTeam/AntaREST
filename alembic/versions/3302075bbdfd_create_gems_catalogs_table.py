@@ -1,7 +1,7 @@
 """create_gems_catalogs_table
 
 Revision ID: 3302075bbdfd
-Revises: e12d85a77641
+Revises: 4150667a83ac
 Create Date: 2026-09-25 09:37:53.433715
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "3302075bbdfd"
-down_revision = "e12d85a77641"
+down_revision = "4150667a83ac"
 branch_labels = None
 depends_on = None
 
