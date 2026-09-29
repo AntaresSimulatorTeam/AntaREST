@@ -81,3 +81,23 @@ GEMS_COMPONENT_PROPERTIES_TABLE = Table(
         ondelete="CASCADE",
     ),
 )
+
+GEMS_COMPONENT_CONNECTIONS_TABLE = Table(
+    "gems_component_connections",
+    metadata,
+    study_data_id_col(),
+    Column("component1", String(255), primary_key=True),
+    Column("component2", String(255), primary_key=True),
+    Column("port1", String(255), primary_key=True),
+    Column("port2", String(255), primary_key=True),
+    ForeignKeyConstraint(
+        ["study_data_id", "component1"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
+        ondelete="CASCADE",
+    ),
+    ForeignKeyConstraint(
+        ["study_data_id", "component2"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
+        ondelete="CASCADE",
+    ),
+)

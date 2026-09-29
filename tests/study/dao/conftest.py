@@ -462,22 +462,43 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert system is not None
     assert system.id == "System 8_1"
     assert system.description == "Electrolyser - V8.6"
-    assert len(system.components) == 1
+    assert len(system.components) == 2
 
     first_component = system.components[0]
-    assert first_component.id == "electrolyser"
-    assert first_component.model == "andromede-v1-models-weo-hybrid.electrolyser"
-    assert first_component.scenario_group == "sg1"
+    assert first_component.id == "dsr"
+    assert first_component.model == "andromede-v1-models-weo-hybrid.dsr"
     assert first_component.parameters is not None
     assert len(first_component.parameters) == 2
-    assert first_component.parameters[0].id == "efficiency"
+    assert first_component.parameters[0].id == "curtailment_price"
     assert first_component.parameters[0].time_dependent is False
     assert first_component.parameters[0].scenario_dependent is False
-    assert first_component.parameters[0].value == 0.7
-    assert first_component.parameters[1].id == "p_max"
+    assert first_component.parameters[0].value == 10
+    assert first_component.parameters[1].id == "max_load"
     assert first_component.parameters[1].time_dependent is False
     assert first_component.parameters[1].scenario_dependent is False
-    assert first_component.parameters[1].value == 300
+    assert first_component.parameters[1].value == 200
+
+    second_component = system.components[1]
+    assert second_component.id == "electrolyser"
+    assert second_component.model == "andromede-v1-models-weo-hybrid.electrolyser"
+    assert second_component.scenario_group == "sg1"
+    assert second_component.parameters is not None
+    assert len(second_component.parameters) == 2
+    assert second_component.parameters[0].id == "efficiency"
+    assert second_component.parameters[0].time_dependent is False
+    assert second_component.parameters[0].scenario_dependent is False
+    assert second_component.parameters[0].value == 0.7
+    assert second_component.parameters[1].id == "p_max"
+    assert second_component.parameters[1].time_dependent is False
+    assert second_component.parameters[1].scenario_dependent is False
+    assert second_component.parameters[1].value == 300
+
+    assert len(system.connections) == 1
+    connection = system.connections[0]
+    assert connection.component1 == "electrolyser"
+    assert connection.component2 == "dsr"
+    assert connection.port1 == "hydrogen_port"
+    assert connection.port2 == "balance_port"
 
 
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
