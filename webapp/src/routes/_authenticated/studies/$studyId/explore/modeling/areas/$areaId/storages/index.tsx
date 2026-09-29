@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import GroupedDataTable from "@/components/DataTable";
+import DataTable from "@/components/DataTable";
 import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
 import type { RowData } from "@/components/DataTable/types";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
@@ -178,7 +178,7 @@ function Storages() {
   });
 
   return (
-    <GroupedDataTable
+    <DataTable
       key={status}
       isLoading={isLoading}
       data={storages}

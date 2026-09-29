@@ -16,7 +16,7 @@ import { render, screen } from "@testing-library/react";
 import { createMRTColumnHelper } from "material-react-table";
 import { useState } from "react";
 import { vi } from "vitest";
-import GroupedDataTable from ".";
+import DataTable from ".";
 
 interface Row {
   name: string;
@@ -28,12 +28,12 @@ const columns = [columnHelper.accessor("value", { header: "Value" })];
 
 test("reflects updates coming from the `data` prop after mount (e.g. edited via an external drawer)", () => {
   const { rerender } = render(
-    <GroupedDataTable data={[{ name: "Reserve A", value: 1 }]} columns={columns} />,
+    <DataTable data={[{ name: "Reserve A", value: 1 }]} columns={columns} />,
   );
 
   expect(screen.getByText("1")).toBeInTheDocument();
 
-  rerender(<GroupedDataTable data={[{ name: "Reserve A", value: 2 }]} columns={columns} />);
+  rerender(<DataTable data={[{ name: "Reserve A", value: 2 }]} columns={columns} />);
 
   expect(screen.queryByText("1")).not.toBeInTheDocument();
   expect(screen.getByText("2")).toBeInTheDocument();
@@ -52,7 +52,7 @@ test("does not loop when `data` gets a new-but-equal reference on every render",
     return (
       <>
         <div data-testid="update-count">{updateCount}</div>
-        <GroupedDataTable
+        <DataTable
           data={[{ name: "Reserve A", value: 42 }]}
           columns={columns}
           onDataChange={(data) => {

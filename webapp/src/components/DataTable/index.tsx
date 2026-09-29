@@ -44,7 +44,7 @@ import DuplicateDialog from "./DuplicateDialog";
 import type { RowData } from "./types";
 import { generateUniqueValue, getDarkModeFixStyles, getTableOptionsForAlign } from "./utils";
 
-export interface GroupedDataTableProps<TData extends RowData> {
+export interface DataTableProps<TData extends RowData> {
   data: TData[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: Array<MRT_ColumnDef<TData, any>>;
@@ -86,7 +86,7 @@ export interface GroupedDataTableProps<TData extends RowData> {
 const GROUP_COLUMN_ID = "_group";
 const NAME_COLUMN_ID = "_name";
 
-function GroupedDataTable<TData extends RowData>({
+function DataTable<TData extends RowData>({
   data,
   columns,
   groups,
@@ -103,7 +103,7 @@ function GroupedDataTable<TData extends RowData>({
   deleteConfirmationMessage,
   fillPendingRow,
   toolbarActions,
-}: GroupedDataTableProps<TData>) {
+}: DataTableProps<TData>) {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState<"add" | "duplicate" | "delete" | "">("");
   const [tableData, setTableData] = useState(data);
@@ -517,4 +517,4 @@ function GroupedDataTable<TData extends RowData>({
   );
 }
 
-export default GroupedDataTable;
+export default DataTable;
