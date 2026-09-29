@@ -15,7 +15,7 @@
 import GroupedDataTable from "@/components/GroupedDataTable";
 import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
 import type { RowData } from "@/components/GroupedDataTable/types";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
   addClusterCapacity,
@@ -26,17 +26,15 @@ import {
 import { Box } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import {
-  createThermalCluster,
-  deleteThermalClusters,
-  duplicateThermalCluster,
-  getThermalClusters,
-  THERMAL_GROUPS,
-  type ThermalClusterWithCapacity,
-} from "./-utils";
+import { adaptThermalClusterToView } from "./-adapters";
+import useCreateThermalCluster from "./-hooks/useCreateThermalCluster";
+import useDeleteThermalClusters from "./-hooks/useDeleteThermalClusters";
+import useDuplicateThermalCluster from "./-hooks/useDuplicateThermalCluster";
+import useThermalClusters from "./-hooks/useThermalClusters";
+import { THERMAL_GROUPS, type ThermalClusterWithCapacity } from "./-utils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/",
@@ -51,21 +49,19 @@ function Thermals() {
   const { areaId } = Route.useParams();
   const { t } = useTranslation();
 
-  const {
-    data: clustersWithCapacity = [],
-    isLoading,
-    status,
-  } = usePromiseWithSnackbarError<ThermalClusterWithCapacity[]>(
-    async () => {
-      const clusters = await getThermalClusters(study.id, areaId);
-      return clusters?.map(addClusterCapacity);
-    },
-    {
-      resetDataOnReload: true,
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, areaId],
-    },
-  );
+  const scope = { studyId: study.id, areaId };
+  const { data: clusters, isPending, status, error } = useThermalClusters(scope);
+  const createCluster = useCreateThermalCluster(scope);
+  const duplicateCluster = useDuplicateThermalCluster(scope);
+  const deleteClusters = useDeleteThermalClusters(scope);
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const clustersWithCapacity = useMemo(() => clusters?.map(addClusterCapacity) ?? [], [clusters]);
+
+  useEffect(() => {
+    if (error) {
+      enqueueErrorSnackbar(t("studies.error.retrieveData"), error);
+    }
+  }, [enqueueErrorSnackbar, t, error]);
 
   const [totals, setTotals] = useState(() => getClustersWithCapacityTotals(clustersWithCapacity));
 
@@ -125,18 +121,18 @@ function Thermals() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreate = async (values: RowData) => {
-    const cluster = await createThermalCluster(study.id, areaId, values);
-    return addClusterCapacity(cluster);
+    const cluster = await createCluster.mutateAsync({ ...scope, values });
+    return addClusterCapacity(adaptThermalClusterToView(cluster));
   };
 
   const handleDuplicate = async (row: ThermalClusterWithCapacity, newName: string) => {
-    const cluster = await duplicateThermalCluster(study.id, areaId, row.id, newName);
-    return { ...row, ...cluster };
+    const cluster = await duplicateCluster.mutateAsync({ ...scope, clusterId: row.id, newName });
+    return addClusterCapacity(adaptThermalClusterToView(cluster));
   };
 
   const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
     const ids = rows.map((row) => row.id);
-    return deleteThermalClusters(study.id, areaId, ids);
+    return deleteClusters.mutateAsync({ ...scope, clusterIds: ids });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -145,8 +141,8 @@ function Thermals() {
 
   return (
     <GroupedDataTable
-      key={status}
-      isLoading={isLoading}
+      key={`${study.id}/${areaId}/${clusters ? "loaded" : status}`}
+      isLoading={isPending}
       data={clustersWithCapacity}
       columns={columns}
       groups={[...THERMAL_GROUPS] as string[]}

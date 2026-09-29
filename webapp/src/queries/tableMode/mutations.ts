@@ -12,11 +12,18 @@
  * This file is part of the Antares project.
  */
 
+import { setTableModeData } from "@/services/api/studies/tableMode";
 import { createTableMode, deleteTableMode, updateTableMode } from "@/services/api/tablemode";
 import { mutationOptions } from "@tanstack/react-query";
 import { tableModeKeys } from "./keys";
 
 export const tableModeMutations = {
+  updateData: () => {
+    return mutationOptions({
+      mutationKey: tableModeKeys.updateData(),
+      mutationFn: setTableModeData,
+    });
+  },
   create: () => {
     return mutationOptions({
       mutationKey: tableModeKeys.create(),

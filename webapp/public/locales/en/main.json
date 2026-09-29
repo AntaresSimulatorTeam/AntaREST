@@ -592,6 +592,7 @@
   "study.modeling.map.districts.delete.confirm": "Are you sure you want to delete '{{0}}' district?",
   "study.modeling.load": "Load",
   "study.modeling.thermals": "Thermals",
+  "study.modeling.thermals.notFound": "No thermal cluster found with ID: {{id}}",
   "study.modeling.thermals.select": "Thermal",
   "study.modeling.thermals.parameters": "Parameters",
   "study.modeling.hydro": "Hydro",

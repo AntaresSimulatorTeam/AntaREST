@@ -24,6 +24,9 @@ import { validateNumber } from "@/utils/validation/number";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
+import { adaptThermalClusterToView } from "../-adapters";
+import useThermalClusterDefaults from "../-hooks/useThermalClusterDefaults";
+import useUpdateThermalCluster from "../-hooks/useUpdateThermalCluster";
 import {
   COST_GENERATION_OPTIONS,
   THERMAL_GROUPS,
@@ -31,8 +34,6 @@ import {
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
   type ThermalCluster,
-  getThermalCluster,
-  updateThermalCluster,
 } from "../-utils";
 
 export const Route = createFileRoute(
@@ -45,13 +46,21 @@ function Parameters() {
   const study = useStudy();
   const { areaId, thermalId } = Route.useParams();
   const { t } = useTranslation();
+  const scope = { studyId: study.id, areaId };
+  const defaultValues = useThermalClusterDefaults({ ...scope, clusterId: thermalId });
+  const updateCluster = useUpdateThermalCluster(scope);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
-    return updateThermalCluster(study.id, areaId, thermalId, dirtyValues);
+  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
+    const cluster = await updateCluster.mutateAsync({
+      ...scope,
+      clusterId: thermalId,
+      values: dirtyValues,
+    });
+    return adaptThermalClusterToView(cluster);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -60,8 +69,8 @@ function Parameters() {
 
   return (
     <Form
-      key={thermalId}
-      config={{ defaultValues: () => getThermalCluster(study.id, areaId, thermalId) }}
+      key={`${study.id}/${areaId}/${thermalId}`}
+      config={{ defaultValues }}
       onSubmit={handleSubmit}
       enableUndoRedo
     >

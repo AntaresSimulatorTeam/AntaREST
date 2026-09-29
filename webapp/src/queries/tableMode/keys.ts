@@ -14,6 +14,7 @@
 
 export const tableModeKeys = {
   all: () => ["tableModes"] as const,
+  updateData: () => [...tableModeKeys.all(), "updateTableModeData"] as const,
   create: () => [...tableModeKeys.all(), "createTableMode"] as const,
   update: () => [...tableModeKeys.all(), "updateTableMode"] as const,
   delete: () => [...tableModeKeys.all(), "deleteTableMode"] as const,
