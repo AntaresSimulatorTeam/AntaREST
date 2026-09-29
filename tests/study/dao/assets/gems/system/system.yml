@@ -37,8 +37,6 @@ system:
           time-dependent: false
           value: 300
 
-
-
   connections:
     - component1: electrolyser
       component2: dsr
