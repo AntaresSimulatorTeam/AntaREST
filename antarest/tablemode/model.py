@@ -117,11 +117,11 @@ class ThermalColumn(StrEnum):
     EFFICIENCY = "efficiency"
     VARIABLE_OM_COST = "variableOMCost"
     # Since v10.2
-    RAMP = "ramp"
-    MAX_RAMP_UP = "maxRampUp"
-    MAX_RAMP_DOWN = "maxRampDown"
-    RAMP_UP_COST = "rampUpCost"
-    RAMP_DOWN_COST = "rampDownCost"
+    RAMPING_ENABLED = "rampingEnabled"
+    MAX_UPWARD_POWER_RAMPING_RATE = "maxUpwardPowerRampingRate"
+    MAX_DOWNWARD_POWER_RAMPING_RATE = "maxDownwardPowerRampingRate"
+    POWER_INCREASE_COST = "powerIncreaseCost"
+    POWER_DECREASE_COST = "powerDecreaseCost"
 
 
 class RenewableColumn(StrEnum):

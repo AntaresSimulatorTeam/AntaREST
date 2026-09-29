@@ -39,6 +39,7 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_PREPRO_TABLE,
     THERMAL_SERIES_TABLE,
 )
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.dao.utils import save_area
@@ -365,19 +366,39 @@ def test_save_thermal_round_trips_ramp_fields(dao_10_2: StudyDao) -> None:
         dao,
         id="gas_cluster",
         name="gas_cluster",
-        ramp=True,
-        max_ramp_up=10.5,
-        max_ramp_down=None,
-        ramp_up_cost=1.0,
-        ramp_down_cost=2.0,
+        ramping_enabled=True,
+        max_upward_power_ramping_rate=10.5,
+        max_downward_power_ramping_rate=None,
+        power_increase_cost=1.0,
+        power_decrease_cost=2.0,
     )
 
     dao.save_thermals({"paris": [thermal]})
 
     result = dao.get_thermal("paris", "gas_cluster")
-    assert result.ramp is True
-    assert result.max_ramp_up == 10.5
+    assert result.ramping_enabled is True
+    assert result.max_upward_power_ramping_rate == 10.5
     # Left at the v10.2 default by `initialize_thermal_cluster`.
-    assert result.max_ramp_down == 0.0
-    assert result.ramp_up_cost == 1.0
-    assert result.ramp_down_cost == 2.0
+    assert result.max_downward_power_ramping_rate == 0.0
+    assert result.power_increase_cost == 1.0
+    assert result.power_decrease_cost == 2.0
+
+    if isinstance(dao, FileStudyTreeDao):
+        # The study file is the contract with the solver, which keys ramping on `ramping-enabled`
+        # and silently ignores the rest when that key is missing. Asserted on the file rather than
+        # on `serialize_thermal_cluster` so the whole write path is covered.
+        ini = dao.get_file_study().tree.get(["input", "thermal", "clusters", "paris", "list", "gas_cluster"])
+        assert ini["ramping-enabled"] is True
+        assert ini["max-upward-power-ramping-rate"] == 10.5
+        assert ini["max-downward-power-ramping-rate"] == 0.0
+        assert ini["power-increase-cost"] == 1.0
+        assert ini["power-decrease-cost"] == 2.0
+        # The names the ticket used must not reach the file: the solver would ignore them.
+        ticket_names = {
+            "rampingEnabled",
+            "max-ramping_enabled-up",
+            "max-ramping_enabled-down",
+            "ramping_enabled-up-cost",
+            "ramping_enabled-down-cost",
+        }
+        assert not ticket_names & set(ini)

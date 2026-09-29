@@ -208,11 +208,11 @@ class ThermalCluster(AntaresBaseModel):
     variable_o_m_cost: Cost | None = None
 
     # Added in 10.2
-    ramp: bool | None = None
-    max_ramp_up: RampRate | None = None
-    max_ramp_down: RampRate | None = None
-    ramp_up_cost: Cost | None = None
-    ramp_down_cost: Cost | None = None
+    ramping_enabled: bool | None = None
+    max_upward_power_ramping_rate: RampRate | None = None
+    max_downward_power_ramping_rate: RampRate | None = None
+    power_increase_cost: Cost | None = None
+    power_decrease_cost: Cost | None = None
 
 
 def _creation_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -277,11 +277,11 @@ class ThermalClusterCreation(AntaresBaseModel):
     variable_o_m_cost: Cost | None = None
 
     # Added in 10.2
-    ramp: bool | None = None
-    max_ramp_up: RampRate | None = None
-    max_ramp_down: RampRate | None = None
-    ramp_up_cost: Cost | None = None
-    ramp_down_cost: Cost | None = None
+    ramping_enabled: bool | None = None
+    max_upward_power_ramping_rate: RampRate | None = None
+    max_downward_power_ramping_rate: RampRate | None = None
+    power_increase_cost: Cost | None = None
+    power_decrease_cost: Cost | None = None
 
     @classmethod
     def from_cluster(cls, cluster: ThermalCluster) -> "ThermalClusterCreation":
@@ -362,11 +362,11 @@ class ThermalClusterUpdate(AntaresBaseModel):
     variable_o_m_cost: Cost | None = None
 
     # Added in 10.2
-    ramp: bool | None = None
-    max_ramp_up: RampRate | None = None
-    max_ramp_down: RampRate | None = None
-    ramp_up_cost: Cost | None = None
-    ramp_down_cost: Cost | None = None
+    ramping_enabled: bool | None = None
+    max_upward_power_ramping_rate: RampRate | None = None
+    max_downward_power_ramping_rate: RampRate | None = None
+    power_increase_cost: Cost | None = None
+    power_decrease_cost: Cost | None = None
 
 
 ThermalClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, ThermalClusterUpdate]]
@@ -395,7 +395,13 @@ def validate_thermal_cluster_against_version(
             _check_min_version(cluster_data, field, version)
 
     if version < STUDY_VERSION_10_2:
-        for field in ["ramp", "max_ramp_up", "max_ramp_down", "ramp_up_cost", "ramp_down_cost"]:
+        for field in [
+            "ramping_enabled",
+            "max_upward_power_ramping_rate",
+            "max_downward_power_ramping_rate",
+            "power_increase_cost",
+            "power_decrease_cost",
+        ]:
             _check_min_version(cluster_data, field, version)
 
     if cluster_data.group is not None and version < STUDY_VERSION_9_3:
@@ -423,11 +429,11 @@ def initialize_thermal_cluster(cluster: ThermalCluster, version: StudyVersion) -
         _initialize_field_default(cluster, "variable_o_m_cost", 0.0)
 
     if version >= STUDY_VERSION_10_2:
-        _initialize_field_default(cluster, "ramp", False)
-        _initialize_field_default(cluster, "ramp_up_cost", 0.0)
-        _initialize_field_default(cluster, "ramp_down_cost", 0.0)
-        _initialize_field_default(cluster, "max_ramp_up", 0.0)
-        _initialize_field_default(cluster, "max_ramp_down", 0.0)
+        _initialize_field_default(cluster, "ramping_enabled", False)
+        _initialize_field_default(cluster, "power_increase_cost", 0.0)
+        _initialize_field_default(cluster, "power_decrease_cost", 0.0)
+        _initialize_field_default(cluster, "max_upward_power_ramping_rate", 0.0)
+        _initialize_field_default(cluster, "max_downward_power_ramping_rate", 0.0)
 
 
 def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersion) -> None:
@@ -442,7 +448,15 @@ def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersio
     if version >= STUDY_VERSION_8_7:
         required.extend(["cost_generation", "efficiency", "variable_o_m_cost"])
     if version >= STUDY_VERSION_10_2:
-        required.extend(["ramp", "max_ramp_up", "max_ramp_down", "ramp_up_cost", "ramp_down_cost"])
+        required.extend(
+            [
+                "ramping_enabled",
+                "max_upward_power_ramping_rate",
+                "max_downward_power_ramping_rate",
+                "power_increase_cost",
+                "power_decrease_cost",
+            ]
+        )
 
     missing = [f for f in required if getattr(cluster, f) is None]
     if missing:

@@ -19,17 +19,17 @@ depends_on = None
 
 def upgrade():
     with op.batch_alter_table("thermal_cluster") as batch_op:
-        batch_op.add_column(sa.Column("ramp", sa.Boolean(), nullable=True))
-        batch_op.add_column(sa.Column("max_ramp_up", sa.Float(), nullable=True))
-        batch_op.add_column(sa.Column("max_ramp_down", sa.Float(), nullable=True))
-        batch_op.add_column(sa.Column("ramp_up_cost", sa.Float(), nullable=True))
-        batch_op.add_column(sa.Column("ramp_down_cost", sa.Float(), nullable=True))
+        batch_op.add_column(sa.Column("ramping_enabled", sa.Boolean(), nullable=True))
+        batch_op.add_column(sa.Column("max_upward_power_ramping_rate", sa.Float(), nullable=True))
+        batch_op.add_column(sa.Column("max_downward_power_ramping_rate", sa.Float(), nullable=True))
+        batch_op.add_column(sa.Column("power_increase_cost", sa.Float(), nullable=True))
+        batch_op.add_column(sa.Column("power_decrease_cost", sa.Float(), nullable=True))
 
 
 def downgrade():
     with op.batch_alter_table("thermal_cluster") as batch_op:
-        batch_op.drop_column("ramp_down_cost")
-        batch_op.drop_column("ramp_up_cost")
-        batch_op.drop_column("max_ramp_down")
-        batch_op.drop_column("max_ramp_up")
-        batch_op.drop_column("ramp")
+        batch_op.drop_column("power_decrease_cost")
+        batch_op.drop_column("power_increase_cost")
+        batch_op.drop_column("max_downward_power_ramping_rate")
+        batch_op.drop_column("max_upward_power_ramping_rate")
+        batch_op.drop_column("ramping_enabled")

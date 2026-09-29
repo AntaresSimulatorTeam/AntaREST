@@ -157,7 +157,7 @@ class TestUpdateThermalCluster:
 
 
 def test_ramp_fields_round_trip_at_10_2() -> None:
-    """Ramping parameters use the ticket INI key names and round trip through parse/serialize."""
+    """Ramping parameters use the solver's INI key names and round trip through parse/serialize."""
     ini_data = {
         "name": "test",
         "group": ThermalClusterGroup.GAS,
@@ -168,12 +168,12 @@ def test_ramp_fields_round_trip_at_10_2() -> None:
     }
 
     cluster = parse_thermal_cluster(study_version=STUDY_VERSION_10_2, data=ini_data)
-    assert cluster.ramp is True
-    assert cluster.max_ramp_up == 10.5
+    assert cluster.ramping_enabled is True
+    assert cluster.max_upward_power_ramping_rate == 10.5
     # Absent from the file: initialized to the v10.2 default, as the solver does.
-    assert cluster.max_ramp_down == 0.0
-    assert cluster.ramp_up_cost == 1.0
-    assert cluster.ramp_down_cost == 2.0
+    assert cluster.max_downward_power_ramping_rate == 0.0
+    assert cluster.power_increase_cost == 1.0
+    assert cluster.power_decrease_cost == 2.0
 
     serialized = serialize_thermal_cluster(STUDY_VERSION_10_2, cluster)
     assert serialized["ramping-enabled"] is True
