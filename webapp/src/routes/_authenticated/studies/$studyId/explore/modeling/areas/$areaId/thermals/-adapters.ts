@@ -12,14 +12,15 @@
  * This file is part of the Antares project.
  */
 
+import { nameToId } from "@/services/utils";
 import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
 
 /**
- * Represents an absent API group as an empty group for the existing table and form.
+ * Uses canonical IDs for links and empty groups for the existing table and form.
  *
  * @param cluster - The complete API cluster.
- * @returns The cluster with a string group for UI consumers.
+ * @returns The cluster with a normalized ID and string group for UI consumers.
  */
 export function adaptThermalClusterToView(cluster: ThermalCluster) {
-  return { ...cluster, group: cluster.group ?? "" };
+  return { ...cluster, id: nameToId(cluster.id), group: cluster.group ?? "" };
 }

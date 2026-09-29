@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { voidFn } from "@/utils/fnUtils";
 import { thermalClusterSchema } from "@/services/api/studies/areas/thermals/schemas";
 
 export const cluster = thermalClusterSchema.parse({
@@ -54,13 +53,3 @@ export const cluster = thermalClusterSchema.parse({
   efficiency: 100,
   variableOMCost: 0,
 });
-
-export function deferred<T>() {
-  let resolve: (value: T) => void = voidFn;
-  let reject: (reason: Error) => void = voidFn;
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res;
-    reject = rej;
-  });
-  return { promise, resolve, reject };
-}

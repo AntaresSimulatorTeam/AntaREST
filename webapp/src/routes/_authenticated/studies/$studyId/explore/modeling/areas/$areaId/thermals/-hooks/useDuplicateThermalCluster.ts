@@ -12,23 +12,20 @@
  * This file is part of the Antares project.
  */
 
+import { invalidateQueriesAfterMutation } from "@/queries/invalidateQueriesAfterMutation";
 import { thermalKeys } from "@/queries/thermals/keys";
 import { thermalMutations } from "@/queries/thermals/mutations";
-import { setStudySynthesis } from "@/redux/ducks/studySyntheses";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function useDuplicateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
   const queryClient = useQueryClient();
-  const dispatch = useAppDispatch();
 
   return useMutation({
     ...thermalMutations.duplicate(studyId, areaId),
     onSuccess: async (_, { studyId, areaId }) => {
-      void dispatch(setStudySynthesis(studyId));
       // GroupedDataTable owns optimistic rows until its controlled mode is available.
-      await queryClient.invalidateQueries({ queryKey: thermalKeys.list(studyId, areaId) });
+      await invalidateQueriesAfterMutation(queryClient, thermalKeys.list(studyId, areaId));
     },
   });
 }

@@ -19,13 +19,15 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
+import { nameToId } from "@/services/utils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { validateNumber } from "@/utils/validation/number";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import { adaptThermalClusterToView } from "../-adapters";
-import useThermalClusterDefaults from "../-hooks/useThermalClusterDefaults";
+import useThermalClusters from "../-hooks/useThermalClusters";
 import useUpdateThermalCluster from "../-hooks/useUpdateThermalCluster";
 import {
   COST_GENERATION_OPTIONS,
@@ -47,7 +49,7 @@ function Parameters() {
   const { areaId, thermalId } = Route.useParams();
   const { t } = useTranslation();
   const scope = { studyId: study.id, areaId };
-  const defaultValues = useThermalClusterDefaults({ ...scope, clusterId: thermalId });
+  const { data: clusters, isPending, error } = useThermalClusters(scope);
   const updateCluster = useUpdateThermalCluster(scope);
 
   ////////////////////////////////////////////////////////////////
@@ -62,6 +64,20 @@ function Parameters() {
     });
     return adaptThermalClusterToView(cluster);
   };
+
+  if (isPending) {
+    return <SimpleLoader />;
+  }
+
+  if (!clusters) {
+    throw error;
+  }
+
+  const defaultValues = clusters.find(({ id }) => id === nameToId(thermalId));
+
+  if (!defaultValues) {
+    throw new Error(t("study.modeling.thermals.notFound", { id: thermalId }));
+  }
 
   ////////////////////////////////////////////////////////////////
   // JSX

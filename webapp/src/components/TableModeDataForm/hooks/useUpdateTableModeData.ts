@@ -12,12 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import { invalidateQueriesAfterMutation } from "@/queries/invalidateQueriesAfterMutation";
 import { renewableKeys } from "@/queries/renewables/keys";
 import { storageKeys } from "@/queries/storages/keys";
-import { tableModeMutations } from "@/queries/tableMode/mutations";
 import { thermalKeys } from "@/queries/thermals/keys";
-import { setStudySynthesis } from "@/redux/ducks/studySyntheses";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import { setTableModeData } from "@/services/api/studies/tableMode";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 const clusterKeys = {
@@ -28,10 +27,9 @@ const clusterKeys = {
 
 function useUpdateTableModeData() {
   const queryClient = useQueryClient();
-  const dispatch = useAppDispatch();
 
   return useMutation({
-    ...tableModeMutations.updateData(),
+    mutationFn: setTableModeData,
     onSuccess: async (_, { studyId, tableType, data }) => {
       if (tableType !== "thermals" && tableType !== "renewables" && tableType !== "st-storages") {
         return;
@@ -39,16 +37,10 @@ function useUpdateTableModeData() {
 
       // Backend row keys are "area / cluster". Refresh each affected area only once.
       const areaIds = new Set(Object.keys(data).map((key) => key.split(" / ")[0]));
-      if (areaIds.size === 0) {
-        return;
-      }
 
-      void dispatch(setStudySynthesis(studyId));
       await Promise.all(
         [...areaIds].map((areaId) =>
-          queryClient.invalidateQueries({
-            queryKey: clusterKeys[tableType].list(studyId, areaId),
-          }),
+          invalidateQueriesAfterMutation(queryClient, clusterKeys[tableType].list(studyId, areaId)),
         ),
       );
     },

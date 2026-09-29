@@ -29,8 +29,8 @@ function ThermalLayout() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { studyId, areaId, thermalId } = params;
-
   const { data: thermals, isSuccess } = useThermalClusters({ studyId, areaId });
+
   const thermalOptions = thermals?.map((thermal) => ({
     label: thermal.name,
     value: thermal.id,

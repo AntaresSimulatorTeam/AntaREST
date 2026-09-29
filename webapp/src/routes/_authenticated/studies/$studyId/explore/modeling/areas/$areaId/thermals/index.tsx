@@ -143,6 +143,7 @@ function Thermals() {
     <GroupedDataTable
       key={`${study.id}/${areaId}/${clusters ? "loaded" : status}`}
       isLoading={isPending}
+      readOnly={!clusters}
       data={clustersWithCapacity}
       columns={columns}
       groups={[...THERMAL_GROUPS] as string[]}

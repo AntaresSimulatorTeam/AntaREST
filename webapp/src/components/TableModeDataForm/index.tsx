@@ -14,7 +14,7 @@
 
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import usePromise from "@/hooks/usePromise";
-import useUpdateTableModeData from "@/hooks/useUpdateTableModeData";
+import useUpdateTableModeData from "./hooks/useUpdateTableModeData";
 import { getTableModeData } from "@/services/api/studies/tableMode";
 import type { TableModeData } from "@/services/api/studies/tableMode/types";
 import type { Study } from "@/services/api/studies/types";
@@ -25,10 +25,10 @@ import { Box, Typography } from "@mui/material";
 import startCase from "lodash/startCase";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import DataGridForm, { type DataGridFormProps } from "./DataGridForm";
-import type { SubmitHandlerPlus } from "./Form/types";
-import EmptyView from "./page/EmptyView";
-import UsePromiseCond from "./utils/UsePromiseCond";
+import DataGridForm, { type DataGridFormProps } from "../DataGridForm";
+import type { SubmitHandlerPlus } from "../Form/types";
+import EmptyView from "../page/EmptyView";
+import UsePromiseCond from "../utils/UsePromiseCond";
 
 export interface TableModeDataFormProps<T extends TableModeType = TableModeType> {
   studyId: Study["id"];

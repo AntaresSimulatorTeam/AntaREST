@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-export const tableModeKeys = {
-  all: () => ["tableModes"] as const,
-  create: () => [...tableModeKeys.all(), "createTableMode"] as const,
-  update: () => [...tableModeKeys.all(), "updateTableMode"] as const,
-  delete: () => [...tableModeKeys.all(), "deleteTableMode"] as const,
-};
+vi.mock("@/services/api/client", () => ({ default: {} }));
+vi.mock("@/i18n", () => ({ default: { t: (key: string) => key, language: "en" } }));
+vi.mock("@/services/api/studies/areas/thermals");
+
+const { t } = vi.hoisted(() => ({ t: (key: string) => key }));
+vi.mock("react-i18next", () => ({ useTranslation: () => Object.assign([t], { t }) }));
