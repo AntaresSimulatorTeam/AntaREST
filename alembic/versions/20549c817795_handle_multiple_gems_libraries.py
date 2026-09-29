@@ -103,23 +103,4 @@ def upgrade():
 
 def downgrade():
     # todo: adapt the code now ...
-
-    with op.batch_alter_table("gems_library_metadata") as batch_op:
-        batch_op.drop_constraint("pk_gems_library_metadata", type_="primary")
-        batch_op.create_primary_key("pk_gems_library_metadata", ["study_data_id"])
-
-    with op.batch_alter_table("gems_models") as batch_op:
-        batch_op.drop_constraint("pk_gems_models", type_="primary")
-        batch_op.create_primary_key("pk_gems_models", ["study_data_id", "id"])
-        batch_op.drop_column("library_id")
-
-    with op.batch_alter_table("gems_components") as batch_op:
-        batch_op.drop_constraint("fk_gems_components_to_models", type_="foreignkey")
-        batch_op.create_foreign_key(
-            "fk_gems_components_to_models",
-            "gems_models",
-            ["study_data_id", "model_id"],
-            ["study_data_id", "id"],
-            ondelete="CASCADE",
-        )
-        batch_op.drop_column("library_id")
+    pass
