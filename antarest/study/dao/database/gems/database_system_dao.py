@@ -15,14 +15,12 @@ from sqlalchemy import Row, delete, insert, select
 from typing_extensions import override
 
 from antarest.core.exceptions import (
-    GemsLibraryNotFound,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
-from antarest.study.dao.database.models.gems.library import GEMS_LIBRARY_METADATA_TABLE
 from antarest.study.dao.database.models.gems.system import (
     GEMS_COMPONENT_PARAMETERS_TABLE,
     GEMS_COMPONENT_PROPERTIES_TABLE,
@@ -45,15 +43,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             return None
 
         components = self.get_components()
-        connections = self._get_connections()
 
         return GemsSystem.model_validate(
-            {
-                "id": metadata_row.system_id,
-                "description": metadata_row.description,
-                "components": components,
-                "connections": connections,
-            }
+            {"id": metadata_row.system_id, "description": metadata_row.description, "components": components}
         )
 
     def _get_system_row_if_exists(self) -> Row[tuple[Any]] | None:
@@ -79,10 +71,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if not all_components_rows:
             return []
 
-        library_id = self._get_library_id()
         components = []
         for component_row in all_components_rows:
-            model = f"{library_id}.{component_row.model_id}"
+            model = f"{component_row.library_id}.{component_row.model_id}"
             current_component = GemsComponent.model_validate(
                 {
                     "id": component_row.component_id,
@@ -96,20 +87,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             components.append(current_component)
 
         return components
-
-    def _get_library_id(self) -> str:
-        study_data_id = self._study_data_id
-        session = self._db_session
-
-        stmt = select(GEMS_LIBRARY_METADATA_TABLE.c.id).where(
-            GEMS_LIBRARY_METADATA_TABLE.c.study_data_id == study_data_id
-        )
-        library_id = session.execute(stmt).scalar_one_or_none()
-
-        if library_id is None:
-            raise GemsLibraryNotFound(f"No library found for study {study_data_id}")
-
-        return str(library_id)
 
     def _get_components_parameters(self) -> dict[str, list[dict[str, Any]]]:
         study_data_id = self._study_data_id
@@ -149,9 +126,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
         return component_properties
 
-    def _get_connections(self) -> List[str]:
-        return []  # TODO: Implement connections
-
     @override
     def save_system(self, system: GemsSystem) -> None:
         study_data_id = self._study_data_id
@@ -186,11 +160,12 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         parameter_values = []
         property_values = []
         for component in components:
-            _, model_id = component.model.split(".", 1)
+            library_id, model_id = component.model.split(".", 1)
 
             component_values.append(
                 {
                     "study_data_id": study_data_id,
+                    "library_id": library_id,
                     "component_id": component.id,
                     "model_id": model_id,
                     "scenario_group": component.scenario_group,
