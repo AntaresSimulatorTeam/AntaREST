@@ -32,6 +32,11 @@ GEMS_CATALOGS_TABLE = Table(
         ["gems_taxonomy_categories.study_data_id", "gems_taxonomy_categories.id"],
         name="fk_gems_catalogs_location",
     ),
+    ForeignKeyConstraint(
+        ["study_data_id", "taxonomy"],
+        ["gems_taxonomy_metadata.study_data_id", "gems_taxonomy_metadata.id"],
+        name="fk_gems_catalogs_taxonomy",
+    ),
     PrimaryKeyConstraint("study_data_id", "id", name="pk_gems_catalogs"),
 )
 

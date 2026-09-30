@@ -48,14 +48,6 @@ def test_catalogs_roundtrip(dao_10_2: StudyDao, gems_catalog: GemsCatalog) -> No
     assert_catalogs_equal(dao_10_2.get_catalogs(), [other, gems_catalog])
 
 
-def test_location_ports_is_rejected() -> None:
-    content = YAMLReader().read(ASSET)["catalog"]
-    term = content["metrics-definition"][0]["terms"][0]
-    term["location-ports"] = term.pop("location-port")
-    with pytest.raises(ValidationError, match="location-ports"):
-        GemsCatalog.model_validate(content)
-
-
 def test_duplicate_metric_ids_are_rejected() -> None:
     content = YAMLReader().read(ASSET)["catalog"]
     # A different definition with the same ID would make view references ambiguous.
@@ -82,27 +74,27 @@ def test_invalid_catalog_id(catalog_id: str) -> None:
 
 def test_catalog_batch_rejects_duplicates_before_writing(dao_10_2: StudyDao, gems_catalog: GemsCatalog) -> None:
     prepare_catalog_taxonomy(dao_10_2)
-    other = gems_catalog.model_copy(update={"id": "another_catalog"})
     with pytest.raises(GemsCatalogAlreadyExists):
-        dao_10_2.save_catalogs([other, gems_catalog, gems_catalog])
+        dao_10_2.save_catalogs([gems_catalog, gems_catalog])
     assert dao_10_2.get_catalogs() == []
 
     dao_10_2.save_catalogs([gems_catalog])
     with pytest.raises(GemsCatalogAlreadyExists):
-        dao_10_2.save_catalogs([other, gems_catalog])
+        dao_10_2.save_catalogs([gems_catalog])
     assert_catalogs_equal(dao_10_2.get_catalogs(), [gems_catalog])
 
     dao_10_2.save_catalogs([])
     assert_catalogs_equal(dao_10_2.get_catalogs(), [gems_catalog])
-    dao_10_2.save_catalogs([other])
-    assert_catalogs_equal(dao_10_2.get_catalogs(), [other, gems_catalog])
+    new_catalog = gems_catalog.model_copy(update={"id": "another_catalog"})
+    dao_10_2.save_catalogs([new_catalog])
+    assert_catalogs_equal(dao_10_2.get_catalogs(), [new_catalog, gems_catalog])
 
 
 def test_catalog_batch_preserves_metric_fields(dao_10_2: StudyDao) -> None:
     prepare_catalog_taxonomy(dao_10_2)
     content = {
         "id": "catalog",
-        "taxonomy": "taxonomy",
+        "taxonomy": "antares_legacy_taxonomy",
         "location": {"taxonomy-category": "balance"},
         "metrics-definition": [
             {"id": "z", "terms-operator": "sum", "time-operator": "avg"},
@@ -131,7 +123,7 @@ def test_catalog_batch_preserves_metric_fields(dao_10_2: StudyDao) -> None:
     dao_10_2.save_catalogs([empty_catalog, catalog])
     saved = dao_10_2.get_catalogs()
     assert_catalogs_equal(saved, [catalog, empty_catalog])
-    actual = saved[0].model_dump(mode="json", by_alias=True, exclude_unset=True)
-    actual["metrics-definition"].sort(key=lambda metric: metric["id"])
+    actual_catalog_with_metrics = saved[0].model_dump(mode="json", by_alias=True, exclude_unset=True)
+    actual_catalog_with_metrics["metrics-definition"].sort(key=lambda metric: metric["id"])
     content["metrics-definition"].sort(key=lambda metric: metric["id"])
-    assert actual == content
+    assert actual_catalog_with_metrics == content

@@ -30,24 +30,24 @@ def test_catalogs_are_isolated_and_deleted_with_study(
     first = build_db_dao_10_2(db_session, matrix_service)
     prepare_catalog_taxonomy(first)
     second = build_db_dao_10_2(db_session, matrix_service)
-    prepare_catalog_taxonomy(second)
+    prepare_catalog_taxonomy(second, "another_taxonomy")
     other_catalog = gems_catalog.model_copy(update={"taxonomy": "another_taxonomy"})
     first.save_catalogs([gems_catalog])
     second.save_catalogs([other_catalog])
     assert_catalogs_equal(first.get_catalogs(), [gems_catalog])
     assert_catalogs_equal(second.get_catalogs(), [other_catalog])
 
-    study_data_id = db_session.scalar(
+    first_study_data_id = db_session.scalar(
         select(STUDY_DATA_TABLE.c.study_data_id).where(STUDY_DATA_TABLE.c.study_id == first.get_study_id())
     )
-    db_session.execute(delete(STUDY_DATA_TABLE).where(STUDY_DATA_TABLE.c.study_data_id == study_data_id))
+    db_session.execute(delete(STUDY_DATA_TABLE).where(STUDY_DATA_TABLE.c.study_data_id == first_study_data_id))
     db_session.commit()
     assert first.get_catalogs() == []
     assert_catalogs_equal(second.get_catalogs(), [other_catalog])
     assert db_session.execute(select(GEMS_CATALOGS_TABLE)).one().taxonomy == "another_taxonomy"
     remaining_metrics = db_session.execute(select(GEMS_CATALOG_METRICS_TABLE)).all()
     assert len(remaining_metrics) == len(other_catalog.metrics_definition)
-    assert all(row.study_data_id != study_data_id for row in remaining_metrics)
+    assert all(row.study_data_id != first_study_data_id for row in remaining_metrics)
 
 
 @pytest.mark.parametrize("catalog_count", [1, 5])
@@ -109,3 +109,19 @@ def test_catalog_location_must_exist_in_same_study(
     assert [metric.id for metric in saved[0].metrics_definition] == sorted(
         metric.id for metric in gems_catalog.metrics_definition
     )
+
+
+@pytest.mark.parametrize("taxonomy_id", ["missing_taxonomy", "other_study_taxonomy"])
+def test_catalog_taxonomy_must_match_its_study(
+    db_session: Session, matrix_service: ISimpleMatrixService, gems_catalog: GemsCatalog, taxonomy_id: str
+) -> None:
+    dao = build_db_dao_10_2(db_session, matrix_service)
+    prepare_catalog_taxonomy(dao)
+    other_dao = build_db_dao_10_2(db_session, matrix_service)
+    prepare_catalog_taxonomy(other_dao, "other_study_taxonomy")
+    invalid = gems_catalog.model_copy(update={"id": "invalid", "taxonomy": taxonomy_id})
+    with pytest.raises(IntegrityError):
+        dao.save_catalogs([gems_catalog, invalid])
+    assert dao.get_catalogs() == []
+    dao.save_catalogs([gems_catalog])
+    assert_catalogs_equal(dao.get_catalogs(), [gems_catalog])

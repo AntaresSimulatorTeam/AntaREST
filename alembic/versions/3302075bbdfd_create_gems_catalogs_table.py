@@ -19,6 +19,12 @@ depends_on = None
 
 
 def upgrade() -> None:
+    op.create_index(
+        "uq_gems_taxonomy_metadata_study_data_id_id",
+        "gems_taxonomy_metadata",
+        ["study_data_id", "id"],
+        unique=True,
+    )
     op.create_table(
         "gems_catalogs",
         study_data_id_col(primary_key=False),
@@ -32,6 +38,11 @@ def upgrade() -> None:
             ["study_data_id", "location"],
             ["gems_taxonomy_categories.study_data_id", "gems_taxonomy_categories.id"],
             name="fk_gems_catalogs_location",
+        ),
+        sa.ForeignKeyConstraint(
+            ["study_data_id", "taxonomy"],
+            ["gems_taxonomy_metadata.study_data_id", "gems_taxonomy_metadata.id"],
+            name="fk_gems_catalogs_taxonomy",
         ),
         sa.PrimaryKeyConstraint("study_data_id", "id", name="pk_gems_catalogs"),
     )
@@ -58,4 +69,5 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_table("gems_catalog_metrics")
     op.drop_table("gems_catalogs")
+    op.drop_index("uq_gems_taxonomy_metadata_study_data_id_id", table_name="gems_taxonomy_metadata")
     sa.Enum(name="gems_aggregation_operator").drop(op.get_bind(), checkfirst=True)

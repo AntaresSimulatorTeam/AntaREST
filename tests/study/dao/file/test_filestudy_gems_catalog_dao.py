@@ -84,6 +84,7 @@ def test_conversion_roundtrip(
     gems_catalog: GemsCatalog,
     with_catalogs: bool,
 ) -> None:
+    db_dao = dao_10_2
     file_dao = filestudy_dao_v10_2
     prepare_catalog_taxonomy(file_dao)
     file_dao.save_library(GemsLibrary(id="test_library"))
@@ -93,15 +94,16 @@ def test_conversion_roundtrip(
         file_dao.save_catalogs(expected)
 
     # Exercise the full import, including the read-only adapter used by callers.
-    StudyConverter(ReadOnlyAdapter(file_dao), dao_10_2, STUDY_VERSION_10_2, matrix_service).convert_study_inputs()
-    assert_catalogs_equal(dao_10_2.get_catalogs(), expected)
+    StudyConverter(ReadOnlyAdapter(file_dao), db_dao, STUDY_VERSION_10_2, matrix_service).convert_study_inputs()
+    assert_catalogs_equal(db_dao.get_catalogs(), expected)
     study_path = file_dao.get_file_study().config.study_path
     for path in (study_path / "input/catalogs").glob("*.yaml"):
         path.unlink()
     (study_path / "input/model-libraries/library.yaml").unlink()
     (study_path / "input/taxonomy.yml").unlink()
+    assert file_dao.get_catalogs() == []
     # The destination already contains the legacy inputs, only copy GEMS back.
-    StudyConverter(dao_10_2, file_dao, STUDY_VERSION_10_2, matrix_service)._convert_gems()
+    StudyConverter(db_dao, file_dao, STUDY_VERSION_10_2, matrix_service)._convert_gems()
     assert_catalogs_equal(file_dao.get_catalogs(), expected)
     if with_catalogs:
         exported = GemsCatalog.model_validate(

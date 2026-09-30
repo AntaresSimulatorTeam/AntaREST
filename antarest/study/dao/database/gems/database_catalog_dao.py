@@ -17,6 +17,7 @@ from sqlalchemy import insert, select
 from typing_extensions import override
 
 from antarest.core.exceptions import GemsCatalogAlreadyExists
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.dao.api.gems_catalog_dao import GemsCatalogDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -41,9 +42,10 @@ class DatabaseGemsCatalogDao(GemsCatalogDao, DatabaseDaoBase):
             .order_by(metrics_table.c.catalog_id, metrics_table.c.id)
         )
         for row in metric_rows:
+            row_values = get_row_representation_as_dict(row)
             metric = {"id": row.id, "terms_operator": row.terms_operator, "time_operator": row.time_operator}
             for field in ("terms", "breakdown", "filter"):
-                value = row._mapping[field]
+                value = row_values[field]
                 if value is not None:
                     metric[field] = json.loads(value)
             metrics.setdefault(row.catalog_id, []).append(metric)
@@ -53,8 +55,8 @@ class DatabaseGemsCatalogDao(GemsCatalogDao, DatabaseDaoBase):
                 {
                     "id": row.id,
                     "taxonomy": row.taxonomy,
-                    "location": {"taxonomy-category": row.location},
-                    "metrics-definition": metrics.get(row.id, []),
+                    "location": {"taxonomy_category": row.location},
+                    "metrics_definition": metrics.get(row.id, []),
                 }
             )
             for row in rows

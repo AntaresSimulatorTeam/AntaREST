@@ -485,8 +485,8 @@ def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
     assert dispatchable.properties == [{"id": "technology"}]
 
 
-def prepare_catalog_taxonomy(dao: StudyDao) -> None:
-    dao.save_taxonomy(GemsTaxonomy.model_validate({"id": "antares_legacy_taxonomy", "categories": [{"id": "balance"}]}))
+def prepare_catalog_taxonomy(dao: StudyDao, taxonomy_id: str = "antares_legacy_taxonomy") -> None:
+    dao.save_taxonomy(GemsTaxonomy.model_validate({"id": taxonomy_id, "categories": [{"id": "balance"}]}))
 
 
 def assert_catalogs_equal(actual: list[GemsCatalog], expected: list[GemsCatalog]) -> None:
