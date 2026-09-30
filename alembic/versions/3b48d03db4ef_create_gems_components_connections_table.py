@@ -1,19 +1,19 @@
 """create_gems_components_connections_table
 
 Revision ID: 3b48d03db4ef
-Revises: 20549c817795
+Revises: 24984ccc44c6
 Create Date: 2026-09-29 15:53:54.445046
 
 """
 
-from sqlalchemy import Column, ForeignKeyConstraint, PrimaryKeyConstraint, String
+from sqlalchemy import CheckConstraint, Column, ForeignKeyConstraint, PrimaryKeyConstraint, String
 
 from alembic import op
 from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = "3b48d03db4ef"
-down_revision = "20549c817795"
+down_revision = "24984ccc44c6"
 branch_labels = None
 depends_on = None
 
@@ -41,17 +41,12 @@ def upgrade():
             name="fk_gems_component_connections_component2",
             ondelete="CASCADE",
         ),
-    )
-
-    op.create_check_constraint(
-        table_name="gems_component_connections",
-        constraint_name="ck_gems_component_connections_component1_not_equals_component2",
-        condition="component1 != component2",
+        CheckConstraint(
+            "component1 != component2",
+            name="ck_gems_component_connections_component1_not_equals_component2",
+        ),
     )
 
 
 def downgrade():
-    op.drop_constraint(
-        "ck_gems_component_connections_component1_not_equals_component2", "gems_component_connections", type_="check"
-    )
     op.drop_table("gems_component_connections")
