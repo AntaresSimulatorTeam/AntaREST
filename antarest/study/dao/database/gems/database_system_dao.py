@@ -262,7 +262,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         components_library_and_model: dict[str, tuple[str, str]],
         connections: list[GemsComponentConnection],
         exc: IntegrityError,
-    ):
+    ) -> None:
         session = self._db_session
         study_data_id = self._study_data_id
 
@@ -289,7 +289,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         components_library_and_model: dict[str, tuple[str, str]],
         connections: list[GemsComponentConnection],
         exc: IntegrityError,
-    ):
+    ) -> None:
         referenced_component_ids = {
             c for connection in connections for c in (connection.component1, connection.component2)
         }
@@ -300,7 +300,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
     def _check_connection_does_not_link_component_to_itself(
         self, connections: list[GemsComponentConnection], exc: IntegrityError
-    ):
+    ) -> None:
         for connection in connections:
             if connection.component1 == connection.component2:
                 raise GemsInvalidConnection(
