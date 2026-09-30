@@ -55,11 +55,6 @@ def hydro_manager(command_context: CommandContext) -> HydroManager:
 
 
 @pytest.fixture
-def thermal_manager(command_context: CommandContext) -> ThermalManager:
-    return ThermalManager(command_context)
-
-
-@pytest.fixture
 def renewable_manager(command_context: CommandContext) -> RenewableManager:
     return RenewableManager(command_context)
 
