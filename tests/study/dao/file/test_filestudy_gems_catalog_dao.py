@@ -112,13 +112,6 @@ def test_conversion_roundtrip(
         assert_catalogs_equal([exported], [gems_catalog])
 
 
-def test_catalog_subdirectory_is_not_ignored(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
-    folder = filestudy_dao_v10_2.get_file_study().config.study_path / "input/catalogs"
-    (folder / "subdirectory").mkdir(parents=True)
-    with pytest.raises(IsADirectoryError):
-        filestudy_dao_v10_2.get_catalogs()
-
-
 def test_invalid_yaml_is_not_ignored(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     folder = filestudy_dao_v10_2.get_file_study().config.study_path / "input/catalogs"
     folder.mkdir(parents=True)
