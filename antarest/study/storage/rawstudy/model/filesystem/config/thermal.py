@@ -74,6 +74,13 @@ class ThermalClusterFileData(AntaresBaseModel):
     efficiency: float | None = None
     variable_o_m_cost: float | None = Field(default=None, alias="variableomcost")
 
+    # Added in 10.2
+    ramping_enabled: bool | None = None
+    max_upward_power_ramping_rate: float | None = None
+    max_downward_power_ramping_rate: float | None = None
+    power_increase_cost: float | None = None
+    power_decrease_cost: float | None = None
+
     def to_model(self) -> ThermalCluster:
         return ThermalCluster.model_validate(self.model_dump(exclude_none=True))
 

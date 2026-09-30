@@ -39,6 +39,7 @@ from antarest.study.dao.database.models.thermal import (
     THERMAL_PREPRO_TABLE,
     THERMAL_SERIES_TABLE,
 )
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.dao.utils import save_area
@@ -354,3 +355,38 @@ def test_save_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> No
             saver({"paris": {"gas": "missing-matrix-id"}})
         with pytest.raises(AreaNotFound):
             saver({"nonexistent": {"gas": "missing-matrix-id"}})
+
+
+def test_save_thermal_round_trips_ramp_fields(dao_10_2: StudyDao) -> None:
+    """Ramping parameters, added in v10.2, survive a save/get round trip on both backends."""
+    dao = dao_10_2
+    save_area(dao, "Paris")
+
+    thermal = _make_thermal(
+        dao,
+        id="gas_cluster",
+        name="gas_cluster",
+        ramping_enabled=True,
+        max_upward_power_ramping_rate=10.5,
+        max_downward_power_ramping_rate=None,
+        power_increase_cost=1.0,
+        power_decrease_cost=2.0,
+    )
+
+    dao.save_thermals({"paris": [thermal]})
+
+    result = dao.get_thermal("paris", "gas_cluster")
+    assert result.ramping_enabled is True
+    assert result.max_upward_power_ramping_rate == 10.5
+    # Left at the v10.2 default by `initialize_thermal_cluster`.
+    assert result.max_downward_power_ramping_rate == 0.0
+    assert result.power_increase_cost == 1.0
+    assert result.power_decrease_cost == 2.0
+
+    if isinstance(dao, FileStudyTreeDao):
+        ini = dao.get_file_study().tree.get(["input", "thermal", "clusters", "paris", "list", "gas_cluster"])
+        assert ini["ramping-enabled"] is True
+        assert ini["max-upward-power-ramping-rate"] == 10.5
+        assert ini["max-downward-power-ramping-rate"] == 0.0
+        assert ini["power-increase-cost"] == 1.0
+        assert ini["power-decrease-cost"] == 2.0
