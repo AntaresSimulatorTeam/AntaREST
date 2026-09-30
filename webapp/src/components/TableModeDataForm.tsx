@@ -103,7 +103,7 @@ function TableModeDataForm<T extends TableModeType>({
           ) : (
             <EmptyView
               icon={GridOffIcon}
-              title={t("study.outputs.noData")}
+              title={t("global.noData")}
               secondaryActions={
                 typeof extraActions === "function"
                   ? extraActions({ canSubmit: false })

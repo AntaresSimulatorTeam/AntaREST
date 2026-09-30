@@ -65,7 +65,7 @@ function ReservesNeeds() {
   ////////////////////////////////////////////////////////////////
 
   if (reserveIds.length === 0) {
-    return <EmptyView icon={GridOffIcon} title={t("study.modeling.reserves.needs.empty")} />;
+    return <EmptyView icon={GridOffIcon} title={t("global.noData")} />;
   }
 
   return (
