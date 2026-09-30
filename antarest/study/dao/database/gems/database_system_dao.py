@@ -23,6 +23,7 @@ from antarest.core.exceptions import (
 from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
+from antarest.study.dao.database.models.gems.library import GEMS_MODELS_PORTS_TABLE
 from antarest.study.dao.database.models.gems.system import (
     GEMS_COMPONENT_CONNECTIONS_TABLE,
     GEMS_COMPONENT_PARAMETERS_TABLE,
@@ -233,28 +234,78 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         session.commit()
 
+    def _get_components_library_and_model(self) -> dict[str, tuple[str, str]]:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        stmt = select(
+            GEMS_COMPONENTS_TABLE.c.component_id, GEMS_COMPONENTS_TABLE.c.library_id, GEMS_COMPONENTS_TABLE.c.model_id
+        ).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id)
+        return {row.component_id: (row.library_id, row.model_id) for row in session.execute(stmt).fetchall()}
+
     def _raise_the_right_connection_exception(
         self, connections: List[GemsComponentConnection], exc: IntegrityError
     ) -> None:
-        # Happens if a connection links a component to itself -> CHECK constraint fails
+
+        self._check_connection_does_not_link_component_to_itself(connections, exc)
+
+        components_library_and_model = self._get_components_library_and_model()
+        self._check_components_exist(components_library_and_model, connections, exc)
+        self._check_ports_exist_in_models(components_library_and_model, connections, exc)
+
+        # All components and ports exist and no self-connection was found.
+        # It means the DB table is not filled as it should.
+        raise ValueError("The connections table is not filled as it should") from exc
+
+    def _check_ports_exist_in_models(
+        self,
+        components_library_and_model: dict[str, tuple[str, str]],
+        connections: list[GemsComponentConnection],
+        exc: IntegrityError,
+    ):
+        session = self._db_session
+        study_data_id = self._study_data_id
+
+        valid_ports_stmt = select(
+            GEMS_MODELS_PORTS_TABLE.c.library_id, GEMS_MODELS_PORTS_TABLE.c.model_id, GEMS_MODELS_PORTS_TABLE.c.port_id
+        ).where(GEMS_MODELS_PORTS_TABLE.c.study_data_id == study_data_id)
+        valid_ports = {
+            (row.library_id, row.model_id, row.port_id) for row in session.execute(valid_ports_stmt).fetchall()
+        }
+
+        for connection in connections:
+            for component_id, port_id in (
+                (connection.component1, connection.port1),
+                (connection.component2, connection.port2),
+            ):
+                library_id, model_id = components_library_and_model[component_id]
+                if (library_id, model_id, port_id) not in valid_ports:
+                    raise GemsInvalidConnection(
+                        f"Component '{component_id}' does not have a port named '{port_id}'"
+                    ) from exc
+
+    def _check_components_exist(
+        self,
+        components_library_and_model: dict[str, tuple[str, str]],
+        connections: list[GemsComponentConnection],
+        exc: IntegrityError,
+    ):
+        referenced_component_ids = {
+            c for connection in connections for c in (connection.component1, connection.component2)
+        }
+        if invalid_component_ids := referenced_component_ids - components_library_and_model.keys():
+            raise GemsInvalidConnection(
+                f"Connection(s) reference non-existing component(s): {sorted(invalid_component_ids)}"
+            ) from exc
+
+    def _check_connection_does_not_link_component_to_itself(
+        self, connections: list[GemsComponentConnection], exc: IntegrityError
+    ):
         for connection in connections:
             if connection.component1 == connection.component2:
                 raise GemsInvalidConnection(
                     f"A connection cannot link component '{connection.component1}' to itself"
                 ) from exc
-
-        # Happens if a connection references a component that does not exist -> ForeignKey constraint fails
-        existing_component_ids = {component.id for component in self.get_components()}
-        referenced_component_ids = {
-            c for connection in connections for c in (connection.component1, connection.component2)
-        }
-        if invalid_component_ids := referenced_component_ids - existing_component_ids:
-            raise GemsInvalidConnection(
-                f"Connection(s) reference non-existing component(s): {sorted(invalid_component_ids)}"
-            ) from exc
-
-        # All components exist and no self-connection was found. It means the DB table is not filled as it should.
-        raise ValueError("The connections table is not filled as it should") from exc
 
     def _save_connections(self, connections: List[GemsComponentConnection] | None) -> None:
 
@@ -275,6 +326,11 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         )
 
         if connections:
+            # `library_idX`/`model_idX` are denormalized from `gems_components` so that the port foreign keys
+            # can check that `portX` truly belongs to the model of `componentX` (see the connections table
+            # definition). Unknown components fall back to an empty string, which cannot match any real
+            # component and therefore still triggers a foreign key violation, correctly reported below.
+            components_library_and_model = self._get_components_library_and_model()
             connections_dict = [
                 {
                     "study_data_id": study_data_id,
@@ -282,6 +338,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     "component2": connection.component2,
                     "port1": connection.port1,
                     "port2": connection.port2,
+                    "library_id1": components_library_and_model.get(connection.component1, ("", ""))[0],
+                    "model_id1": components_library_and_model.get(connection.component1, ("", ""))[1],
+                    "library_id2": components_library_and_model.get(connection.component2, ("", ""))[0],
+                    "model_id2": components_library_and_model.get(connection.component2, ("", ""))[1],
                 }
                 for connection in connections
             ]
