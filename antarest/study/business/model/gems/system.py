@@ -58,5 +58,5 @@ class GemsSystem(AntaresBaseModel):
     id: str
     description: str | None = None
     components: List[GemsComponent]
-    connections: List[GemsComponentConnection]
+    connections: List[GemsComponentConnection] | None = None
     # TODO: add 'area_connections' and 'thermal-capacity-connections' fields
