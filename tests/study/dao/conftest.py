@@ -31,6 +31,7 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.config.optimization_config_model import (
     initialize_optimization_preferences_against_version,
 )
+from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.system import GemsSystem
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
@@ -49,10 +50,17 @@ from antarest.study.model import (
     Study,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import build_db_dao, build_filesystem_dao
 from tests.study.dao.utils import save_area
+
+
+@pytest.fixture
+def gems_catalog() -> GemsCatalog:
+    path = Path(__file__).parent / "assets/gems/catalogs/antares_legacy_area_catalog.yml"
+    return GemsCatalog.model_validate(YAMLReader().read(path)["catalog"])
 
 
 @pytest.fixture
@@ -475,3 +483,14 @@ def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
     assert dispatchable.parent_category == "generation"
     assert dispatchable.variables == [{"id": "generation_power"}]
     assert dispatchable.properties == [{"id": "technology"}]
+
+
+def prepare_catalog_taxonomy(dao: StudyDao, taxonomy_id: str = "antares_legacy_taxonomy") -> None:
+    dao.save_taxonomy(GemsTaxonomy.model_validate({"id": taxonomy_id, "categories": [{"id": "balance"}]}))
+
+
+def assert_catalogs_equal(actual: list[GemsCatalog], expected: list[GemsCatalog]) -> None:
+    def normalize(catalog: GemsCatalog) -> GemsCatalog:
+        return catalog.model_copy(update={"metrics_definition": sorted(catalog.metrics_definition, key=lambda m: m.id)})
+
+    assert [normalize(catalog) for catalog in actual] == [normalize(catalog) for catalog in expected]

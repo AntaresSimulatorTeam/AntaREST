@@ -149,6 +149,14 @@ def test_whitespace(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     )
 
 
+def test_long_whitespace_prefix_without_comma(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    path = filestudy_dao_v10_2.get_file_study().config.study_path / "input/data-series/modeler-scenariobuilder.dat"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(" " * 100_000 + "load")
+    with pytest.raises(ValueError, match="Invalid GEMS scenario builder mapping at line 1"):
+        filestudy_dao_v10_2.get_gems_scenario_builder()
+
+
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 @pytest.mark.parametrize("empty", [False, True])
 @pytest.mark.parametrize("with_library", [False, True])

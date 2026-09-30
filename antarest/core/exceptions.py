@@ -915,3 +915,8 @@ class GemsModelIncorrectlyFormatted(HTTPException):
 class GemsTaxonomyAlreadyExists(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class GemsCatalogAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
