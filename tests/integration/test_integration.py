@@ -465,6 +465,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "lawPlanned": "uniform",
                     "marginalCost": 0.0,
                     "marketBidCost": 0.0,
+                    "maxDownwardPowerRampingRate": None,
+                    "maxUpwardPowerRampingRate": None,
                     "minDownTime": 1,
                     "minStablePower": 0.0,
                     "minUpTime": 1,
@@ -482,6 +484,9 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "pm10": 0.0,
                     "pm25": 0.0,
                     "pm5": 0.0,
+                    "rampingEnabled": None,
+                    "powerDecreaseCost": None,
+                    "powerIncreaseCost": None,
                     "so2": 0.0,
                     "spinning": 0.0,
                     "spreadCost": 0.0,
@@ -511,6 +516,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "lawPlanned": "uniform",
                     "marginalCost": 0.0,
                     "marketBidCost": 0.0,
+                    "maxDownwardPowerRampingRate": None,
+                    "maxUpwardPowerRampingRate": None,
                     "minDownTime": 1,
                     "minStablePower": 0.0,
                     "minUpTime": 1,
@@ -528,6 +535,9 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "pm10": 0.0,
                     "pm25": 0.0,
                     "pm5": 0.0,
+                    "rampingEnabled": None,
+                    "powerDecreaseCost": None,
+                    "powerIncreaseCost": None,
                     "so2": 0.0,
                     "spinning": 0.0,
                     "spreadCost": 0.0,
@@ -853,7 +863,14 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
     )
     assert res.status_code == 200, res.json()
-    assert res.json() == {"id": "cluster 1", **obj}
+    ramping_fields = {
+        "rampingEnabled": None,
+        "maxUpwardPowerRampingRate": None,
+        "maxDownwardPowerRampingRate": None,
+        "powerIncreaseCost": None,
+        "powerDecreaseCost": None,
+    }
+    assert res.json() == {"id": "cluster 1", **obj, **ramping_fields}
 
     # Links
 
@@ -933,6 +950,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "lawPlanned": "uniform",
                     "marginalCost": 0.0,
                     "marketBidCost": 0.0,
+                    "maxDownwardPowerRampingRate": None,
+                    "maxUpwardPowerRampingRate": None,
                     "minDownTime": 1,
                     "minStablePower": 0.0,
                     "minUpTime": 1,
@@ -950,6 +969,9 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "pm10": 0.0,
                     "pm25": 0.0,
                     "pm5": 0.0,
+                    "rampingEnabled": None,
+                    "powerDecreaseCost": None,
+                    "powerIncreaseCost": None,
                     "so2": 0.0,
                     "spinning": 0.0,
                     "spreadCost": 0.0,

@@ -245,6 +245,7 @@ function SymmetriesTable({
 
   const table = useMaterialReactTable({
     data: rows,
+    localization: { noRecordsToDisplay: t("global.noData") },
     columns,
     getRowId: (row) => row.id,
     getSubRows: (row) => (row.kind === "cluster" ? row.subRows : undefined),
