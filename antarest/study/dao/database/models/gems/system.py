@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, String, Table
+from sqlalchemy import Boolean, CheckConstraint, Column, Float, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
@@ -99,5 +99,9 @@ GEMS_COMPONENT_CONNECTIONS_TABLE = Table(
         ["study_data_id", "component2"],
         ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
+    ),
+    CheckConstraint(
+        "component1 != component2",
+        name="ck_gems_component_connections_component1_not_equals_component2",
     ),
 )

@@ -12,9 +12,11 @@
 from typing import Any, List
 
 from sqlalchemy import Row, delete, insert, select
+from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import (
+    GemsInvalidConnection,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
@@ -231,7 +233,34 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         session.commit()
 
-    def _save_connections(self, connections: List[GemsComponentConnection]) -> None:
+    def _raise_the_right_connection_exception(
+        self, connections: List[GemsComponentConnection], exc: IntegrityError
+    ) -> None:
+        # Happens if a connection links a component to itself -> CHECK constraint fails
+        for connection in connections:
+            if connection.component1 == connection.component2:
+                raise GemsInvalidConnection(
+                    f"A connection cannot link component '{connection.component1}' to itself"
+                ) from exc
+
+        # Happens if a connection references a component that does not exist -> ForeignKey constraint fails
+        existing_component_ids = {component.id for component in self.get_components()}
+        referenced_component_ids = {
+            c for connection in connections for c in (connection.component1, connection.component2)
+        }
+        if invalid_component_ids := referenced_component_ids - existing_component_ids:
+            raise GemsInvalidConnection(
+                f"Connection(s) reference non-existing component(s): {sorted(invalid_component_ids)}"
+            ) from exc
+
+        # All components exist and no self-connection was found. It means the DB table is not filled as it should.
+        raise ValueError("The connections table is not filled as it should") from exc
+
+    def _save_connections(self, connections: List[GemsComponentConnection] | None) -> None:
+
+        if not connections:
+            return
+
         study_data_id = self._study_data_id
         session = self._db_session
 
@@ -257,6 +286,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                 for connection in connections
             ]
 
-            session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), connections_dict)
+            try:
+                session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), connections_dict)
+            except IntegrityError as e:
+                session.rollback()
+                self._raise_the_right_connection_exception(connections, e)
 
         session.commit()

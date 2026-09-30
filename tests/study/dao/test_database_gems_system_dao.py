@@ -14,12 +14,13 @@ from pathlib import Path
 import pytest
 
 from antarest.core.exceptions import (
+    GemsInvalidConnection,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
-from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
+from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 from tests.study.dao.conftest import check_gems_system_integrity
@@ -125,11 +126,59 @@ def test_save_components_fully_replaces_existing_ones(dao_10_2: StudyDao) -> Non
     assert third_component.properties[0].value == "third_component"
 
 
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_connections_are_optional(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_library_file_to_study_dao(dao)
+
+    system = GemsSystem.model_validate({"id": "sys_id", "components": []})
+    dao.save_system(system)
+
+    loaded_system = dao.get_system()
+    assert loaded_system is not None
+    assert loaded_system.connections == []
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_connections_must_link_2_different_components(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_library_file_to_study_dao(dao)
+
+    component = GemsComponent.model_validate({"id": "dsr", "model": "andromede-v1-models-weo-hybrid.dsr"})
+
+    self_loop_connection = GemsComponentConnection(
+        component1="dsr", port1="hydrogen_port", component2="dsr", port2="hydrogen_port"
+    )
+    system = GemsSystem.model_validate(
+        {"id": "sys_id", "components": [component], "connections": [self_loop_connection]}
+    )
+
+    with pytest.raises(GemsInvalidConnection, match="A connection cannot link component 'dsr' to itself"):
+        dao.save_system(system)
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_library_file_to_study_dao(dao)
+
+    component = GemsComponent.model_validate({"id": "dsr", "model": "andromede-v1-models-weo-hybrid.dsr"})
+
+    self_loop_connection = GemsComponentConnection(
+        component1="dsr", port1="hydrogen_port", component2="non_existing_component", port2="hydrogen_port"
+    )
+    system = GemsSystem.model_validate(
+        {"id": "sys_id", "components": [component], "connections": [self_loop_connection]}
+    )
+
+    with pytest.raises(GemsInvalidConnection):
+        dao.save_system(system)
+
+
 def _add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
     # Add the library first, as the system file requires it
-    gems_library_asset_path = ASSETS_PATH / "gems" / "libraries" / "8_1_simulator_nr_tests.yml"
-    library_content = YAMLReader().read(gems_library_asset_path)["library"]
-    dao.save_library(GemsLibrary.model_validate(library_content))
+    _add_library_file_to_study_dao(dao)
+
     dao.save_gems_scenario_builder(
         GemsScenarioBuilder(scenarios={"sg1": [GemsScBuilderMapping(scenario=0, time_series_index=1)]})
     )
@@ -139,3 +188,10 @@ def _add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
     system = GemsSystem.model_validate(content)
     dao.save_system(system)
     return system
+
+
+def _add_library_file_to_study_dao(dao: StudyDao) -> None:
+    gems_library_asset_path = ASSETS_PATH / "gems" / "libraries" / "8_1_simulator_nr_tests.yml"
+    content = YAMLReader().read(gems_library_asset_path)["library"]
+    library = GemsLibrary.model_validate(content)
+    dao.save_library(library)
