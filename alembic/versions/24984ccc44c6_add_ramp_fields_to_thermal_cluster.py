@@ -1,7 +1,7 @@
 """add_ramp_fields_to_thermal_cluster
 
 Revision ID: 24984ccc44c6
-Revises: 421f6d91d1f6
+Revises: 20549c817795
 Create Date: 2026-09-22 09:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "24984ccc44c6"
-down_revision = "421f6d91d1f6"
+down_revision = "20549c817795"
 branch_labels = None
 depends_on = None
 
