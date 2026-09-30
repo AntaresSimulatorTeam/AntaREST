@@ -38,7 +38,7 @@ class DatabaseGemsCatalogDao(GemsCatalogDao, DatabaseDaoBase):
         metric_rows = self._db_session.execute(
             select(metrics_table)
             .where(metrics_table.c.study_data_id == self._study_data_id)
-            .order_by(metrics_table.c.catalog_id, metrics_table.c.position)
+            .order_by(metrics_table.c.catalog_id, metrics_table.c.id)
         )
         for row in metric_rows:
             metric = {"id": row.id, "terms_operator": row.terms_operator, "time_operator": row.time_operator}
@@ -90,14 +90,13 @@ class DatabaseGemsCatalogDao(GemsCatalogDao, DatabaseDaoBase):
                     "location": catalog.location.taxonomy_category,
                 }
             )
-            for position, metric in enumerate(catalog.metrics_definition):
+            for metric in catalog.metrics_definition:
                 content = metric.model_dump(mode="json", exclude_unset=True)
                 metric_values.append(
                     {
                         "study_data_id": self._study_data_id,
                         "catalog_id": catalog.id,
                         "id": metric.id,
-                        "position": position,
                         "terms_operator": metric.terms_operator,
                         "time_operator": metric.time_operator,
                         **{

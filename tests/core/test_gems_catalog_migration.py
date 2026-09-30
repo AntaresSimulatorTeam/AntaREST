@@ -29,7 +29,7 @@ def test_gems_catalog_migration_roundtrip(tmp_path: Path, monkeypatch: pytest.Mo
     config = Config(str(get_local_path() / "alembic.ini"))
     config.set_main_option("script_location", str(get_local_path() / "alembic"))
 
-    command.upgrade(config, "4150667a83ac")
+    command.upgrade(config, "20549c817795")
     engine = create_engine(db_url)
     try:
         previous_tables = set(inspect(engine).get_table_names())
@@ -43,7 +43,14 @@ def test_gems_catalog_migration_roundtrip(tmp_path: Path, monkeypatch: pytest.Mo
             "taxonomy",
             "location",
         }
-        foreign_key = inspector.get_foreign_keys("gems_catalogs")[0]
+        foreign_keys = {fk["name"]: fk for fk in inspector.get_foreign_keys("gems_catalogs")}
+        foreign_key = foreign_keys["fk_gems_catalogs_study_data"]
+        location_fk = foreign_keys["fk_gems_catalogs_location"]
+        assert location_fk["constrained_columns"] == ["study_data_id", "location"]
+        assert location_fk["referred_table"] == "gems_taxonomy_categories"
+        assert location_fk["referred_columns"] == ["study_data_id", "id"]
+        assert inspector.get_pk_constraint("gems_catalogs")["name"] == "pk_gems_catalogs"
+        assert inspector.get_pk_constraint("gems_catalog_metrics")["name"] == "pk_gems_catalog_metrics"
         assert foreign_key["constrained_columns"] == ["study_data_id"]
         assert foreign_key["referred_table"] == "study_data"
         assert foreign_key["referred_columns"] == ["study_data_id"]
@@ -58,7 +65,6 @@ def test_gems_catalog_migration_roundtrip(tmp_path: Path, monkeypatch: pytest.Mo
             "study_data_id",
             "catalog_id",
             "id",
-            "position",
             "terms_operator",
             "time_operator",
             "terms",
@@ -66,12 +72,13 @@ def test_gems_catalog_migration_roundtrip(tmp_path: Path, monkeypatch: pytest.Mo
             "filter",
         }
         metric_foreign_key = inspector.get_foreign_keys("gems_catalog_metrics")[0]
+        assert metric_foreign_key["name"] == "fk_gems_catalog_metrics_catalog"
         assert metric_foreign_key["constrained_columns"] == ["study_data_id", "catalog_id"]
         assert metric_foreign_key["referred_table"] == "gems_catalogs"
         assert metric_foreign_key["referred_columns"] == ["study_data_id", "id"]
         assert metric_foreign_key["options"]["ondelete"] == "CASCADE"
 
-        command.downgrade(config, "4150667a83ac")
+        command.downgrade(config, "20549c817795")
         assert set(inspect(engine).get_table_names()) == previous_tables
         command.upgrade(config, "3302075bbdfd")
         assert set(inspect(engine).get_table_names()) == previous_tables | {"gems_catalogs", "gems_catalog_metrics"}

@@ -40,8 +40,6 @@ class FileStudyGemsCatalogDao(GemsCatalogDao, ABC):
 
         catalogs: dict[str, GemsCatalog] = {}
         for path in sorted(folder.iterdir()):
-            if not path.is_file() or path.suffix.lower() not in {".yml", ".yaml"}:
-                continue
             catalog = GemsCatalog.model_validate(YAMLReader().read(path)["catalog"])
             if catalog.id in catalogs:
                 raise GemsCatalogAlreadyExists(

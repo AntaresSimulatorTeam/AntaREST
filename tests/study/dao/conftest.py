@@ -483,3 +483,14 @@ def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
     assert dispatchable.parent_category == "generation"
     assert dispatchable.variables == [{"id": "generation_power"}]
     assert dispatchable.properties == [{"id": "technology"}]
+
+
+def prepare_catalog_taxonomy(dao: StudyDao) -> None:
+    dao.save_taxonomy(GemsTaxonomy.model_validate({"id": "antares_legacy_taxonomy", "categories": [{"id": "balance"}]}))
+
+
+def assert_catalogs_equal(actual: list[GemsCatalog], expected: list[GemsCatalog]) -> None:
+    def normalize(catalog: GemsCatalog) -> GemsCatalog:
+        return catalog.model_copy(update={"metrics_definition": sorted(catalog.metrics_definition, key=lambda m: m.id)})
+
+    assert [normalize(catalog) for catalog in actual] == [normalize(catalog) for catalog in expected]

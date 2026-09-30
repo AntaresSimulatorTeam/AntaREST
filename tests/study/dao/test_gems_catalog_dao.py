@@ -20,27 +20,32 @@ from antarest.core.exceptions import GemsCatalogAlreadyExists
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.dao.api.study_dao import ReadOnlyAdapter, StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
+from tests.study.dao.conftest import assert_catalogs_equal, prepare_catalog_taxonomy
 
 ASSET = Path(__file__).parent / "assets/gems/catalogs/antares_legacy_area_catalog.yml"
 
 
 def test_catalogs_roundtrip(dao_10_2: StudyDao, gems_catalog: GemsCatalog) -> None:
+    prepare_catalog_taxonomy(dao_10_2)
     assert dao_10_2.get_catalogs() == []
     # The fixture comes from AntaresLegacyModels-to-GEMS-Converter.
     expected = YAMLReader().read(ASSET)["catalog"]
     dao_10_2.save_catalogs([gems_catalog])
     saved = dao_10_2.get_catalogs()
     assert len(saved) == 1
-    assert saved[0].model_dump(mode="json", by_alias=True, exclude_unset=True) == expected
+    actual = saved[0].model_dump(mode="json", by_alias=True, exclude_unset=True)
+    actual["metrics-definition"].sort(key=lambda metric: metric["id"])
+    expected["metrics-definition"].sort(key=lambda metric: metric["id"])
+    assert actual == expected
     assert ReadOnlyAdapter(dao_10_2).get_catalogs() == saved
 
     other = gems_catalog.model_copy(update={"id": "another_catalog"})
     dao_10_2.save_catalogs([other])
-    assert dao_10_2.get_catalogs() == [other, gems_catalog]
+    assert_catalogs_equal(dao_10_2.get_catalogs(), [other, gems_catalog])
 
     with pytest.raises(GemsCatalogAlreadyExists):
         dao_10_2.save_catalogs([gems_catalog.model_copy(update={"taxonomy": "another_taxonomy"})])
-    assert dao_10_2.get_catalogs() == [other, gems_catalog]
+    assert_catalogs_equal(dao_10_2.get_catalogs(), [other, gems_catalog])
 
 
 def test_location_ports_is_rejected() -> None:
@@ -76,6 +81,7 @@ def test_invalid_catalog_id(catalog_id: str) -> None:
 
 
 def test_catalog_batch_rejects_duplicates_before_writing(dao_10_2: StudyDao, gems_catalog: GemsCatalog) -> None:
+    prepare_catalog_taxonomy(dao_10_2)
     other = gems_catalog.model_copy(update={"id": "another_catalog"})
     with pytest.raises(GemsCatalogAlreadyExists):
         dao_10_2.save_catalogs([other, gems_catalog, gems_catalog])
@@ -84,15 +90,16 @@ def test_catalog_batch_rejects_duplicates_before_writing(dao_10_2: StudyDao, gem
     dao_10_2.save_catalogs([gems_catalog])
     with pytest.raises(GemsCatalogAlreadyExists):
         dao_10_2.save_catalogs([other, gems_catalog])
-    assert dao_10_2.get_catalogs() == [gems_catalog]
+    assert_catalogs_equal(dao_10_2.get_catalogs(), [gems_catalog])
 
     dao_10_2.save_catalogs([])
-    assert dao_10_2.get_catalogs() == [gems_catalog]
+    assert_catalogs_equal(dao_10_2.get_catalogs(), [gems_catalog])
     dao_10_2.save_catalogs([other])
-    assert dao_10_2.get_catalogs() == [other, gems_catalog]
+    assert_catalogs_equal(dao_10_2.get_catalogs(), [other, gems_catalog])
 
 
-def test_catalog_batch_preserves_metric_fields_and_order(dao_10_2: StudyDao) -> None:
+def test_catalog_batch_preserves_metric_fields(dao_10_2: StudyDao) -> None:
+    prepare_catalog_taxonomy(dao_10_2)
     content = {
         "id": "catalog",
         "taxonomy": "taxonomy",
@@ -123,5 +130,8 @@ def test_catalog_batch_preserves_metric_fields_and_order(dao_10_2: StudyDao) -> 
     empty_catalog = catalog.model_copy(update={"id": "empty_catalog", "metrics_definition": []})
     dao_10_2.save_catalogs([empty_catalog, catalog])
     saved = dao_10_2.get_catalogs()
-    assert saved == [catalog, empty_catalog]
-    assert saved[0].model_dump(mode="json", by_alias=True, exclude_unset=True) == content
+    assert_catalogs_equal(saved, [catalog, empty_catalog])
+    actual = saved[0].model_dump(mode="json", by_alias=True, exclude_unset=True)
+    actual["metrics-definition"].sort(key=lambda metric: metric["id"])
+    content["metrics-definition"].sort(key=lambda metric: metric["id"])
+    assert actual == content

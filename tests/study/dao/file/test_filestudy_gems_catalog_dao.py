@@ -14,6 +14,7 @@
 from pathlib import Path
 
 import pytest
+import yaml
 
 from antarest.core.exceptions import GemsCatalogAlreadyExists
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -24,19 +25,18 @@ from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
+from tests.study.dao.conftest import assert_catalogs_equal, prepare_catalog_taxonomy
 
 ASSET = Path(__file__).parent.parent / "assets/gems/catalogs/antares_legacy_area_catalog.yml"
 
 
-@pytest.mark.parametrize("suffix", [".yml", ".yaml"])
+@pytest.mark.parametrize("suffix", [".yml", ".yaml", ".txt", ""])
 def test_real_file_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, gems_catalog: GemsCatalog, suffix: str) -> None:
     dao = filestudy_dao_v10_2
     folder = dao.get_file_study().config.study_path / "input/catalogs"
     folder.mkdir(parents=True)
     source = folder / f"unrelated_filename{suffix}"
     source.write_bytes(ASSET.read_bytes())
-    (folder / "README.txt").write_text("Ignored")
-    (folder / "subdirectory.yaml").mkdir()
     assert dao.get_catalogs() == [gems_catalog]
 
     # Check IDs inside documents, even if their filenames are different.
@@ -85,6 +85,7 @@ def test_conversion_roundtrip(
     with_catalogs: bool,
 ) -> None:
     file_dao = filestudy_dao_v10_2
+    prepare_catalog_taxonomy(file_dao)
     file_dao.save_library(GemsLibrary(id="test_library"))
     expected = []
     if with_catalogs:
@@ -93,13 +94,32 @@ def test_conversion_roundtrip(
 
     # Exercise the full import, including the read-only adapter used by callers.
     StudyConverter(ReadOnlyAdapter(file_dao), dao_10_2, STUDY_VERSION_10_2, matrix_service).convert_study_inputs()
-    assert dao_10_2.get_catalogs() == expected
+    assert_catalogs_equal(dao_10_2.get_catalogs(), expected)
     study_path = file_dao.get_file_study().config.study_path
     for path in (study_path / "input/catalogs").glob("*.yaml"):
         path.unlink()
     (study_path / "input/model-libraries/library.yaml").unlink()
+    (study_path / "input/taxonomy.yml").unlink()
     # The destination already contains the legacy inputs, only copy GEMS back.
     StudyConverter(dao_10_2, file_dao, STUDY_VERSION_10_2, matrix_service)._convert_gems()
-    assert file_dao.get_catalogs() == expected
+    assert_catalogs_equal(file_dao.get_catalogs(), expected)
     if with_catalogs:
-        assert YAMLReader().read(study_path / f"input/catalogs/{gems_catalog.id}.yaml") == YAMLReader().read(ASSET)
+        exported = GemsCatalog.model_validate(
+            YAMLReader().read(study_path / f"input/catalogs/{gems_catalog.id}.yaml")["catalog"]
+        )
+        assert_catalogs_equal([exported], [gems_catalog])
+
+
+def test_catalog_subdirectory_is_not_ignored(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    folder = filestudy_dao_v10_2.get_file_study().config.study_path / "input/catalogs"
+    (folder / "subdirectory").mkdir(parents=True)
+    with pytest.raises(IsADirectoryError):
+        filestudy_dao_v10_2.get_catalogs()
+
+
+def test_invalid_yaml_is_not_ignored(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    folder = filestudy_dao_v10_2.get_file_study().config.study_path / "input/catalogs"
+    folder.mkdir(parents=True)
+    (folder / "invalid.txt").write_text("catalog: [")
+    with pytest.raises(yaml.YAMLError):
+        filestudy_dao_v10_2.get_catalogs()

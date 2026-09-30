@@ -21,19 +21,21 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.dao.database.models import STUDY_DATA_TABLE
 from antarest.study.dao.database.models.gems.catalog import GEMS_CATALOG_METRICS_TABLE, GEMS_CATALOGS_TABLE
-from tests.study.dao.conftest import build_db_dao_10_2
+from tests.study.dao.conftest import assert_catalogs_equal, build_db_dao_10_2, prepare_catalog_taxonomy
 
 
 def test_catalogs_are_isolated_and_deleted_with_study(
     db_session: Session, matrix_service: ISimpleMatrixService, gems_catalog: GemsCatalog
 ) -> None:
     first = build_db_dao_10_2(db_session, matrix_service)
+    prepare_catalog_taxonomy(first)
     second = build_db_dao_10_2(db_session, matrix_service)
+    prepare_catalog_taxonomy(second)
     other_catalog = gems_catalog.model_copy(update={"taxonomy": "another_taxonomy"})
     first.save_catalogs([gems_catalog])
     second.save_catalogs([other_catalog])
-    assert first.get_catalogs() == [gems_catalog]
-    assert second.get_catalogs() == [other_catalog]
+    assert_catalogs_equal(first.get_catalogs(), [gems_catalog])
+    assert_catalogs_equal(second.get_catalogs(), [other_catalog])
 
     study_data_id = db_session.scalar(
         select(STUDY_DATA_TABLE.c.study_data_id).where(STUDY_DATA_TABLE.c.study_id == first.get_study_id())
@@ -41,7 +43,7 @@ def test_catalogs_are_isolated_and_deleted_with_study(
     db_session.execute(delete(STUDY_DATA_TABLE).where(STUDY_DATA_TABLE.c.study_data_id == study_data_id))
     db_session.commit()
     assert first.get_catalogs() == []
-    assert second.get_catalogs() == [other_catalog]
+    assert_catalogs_equal(second.get_catalogs(), [other_catalog])
     assert db_session.execute(select(GEMS_CATALOGS_TABLE)).one().taxonomy == "another_taxonomy"
     remaining_metrics = db_session.execute(select(GEMS_CATALOG_METRICS_TABLE)).all()
     assert len(remaining_metrics) == len(other_catalog.metrics_definition)
@@ -57,6 +59,7 @@ def test_catalog_batch_uses_grouped_queries(
     catalog_count: int,
 ) -> None:
     dao = build_db_dao_10_2(db_session, matrix_service)
+    prepare_catalog_taxonomy(dao)
     execute = mocker.spy(db_session, "execute")
     commit = mocker.spy(db_session, "commit")
     catalogs = [gems_catalog.model_copy(update={"id": f"catalog_{i}"}) for i in range(catalog_count)]
@@ -65,7 +68,7 @@ def test_catalog_batch_uses_grouped_queries(
     assert execute.call_count == 3
     assert commit.call_count == 1
     execute.reset_mock()
-    assert dao.get_catalogs() == catalogs
+    assert_catalogs_equal(dao.get_catalogs(), catalogs)
     assert execute.call_count == 2
     execute.reset_mock()
     commit.reset_mock()
@@ -78,6 +81,7 @@ def test_catalog_batch_rolls_back_on_metric_insert_failure(
     db_session: Session, matrix_service: ISimpleMatrixService, gems_catalog: GemsCatalog
 ) -> None:
     dao = build_db_dao_10_2(db_session, matrix_service)
+    prepare_catalog_taxonomy(dao)
     # Bypass Pydantic validation to exercise the DB constraint and rollback after catalog insertion.
     metric = gems_catalog.metrics_definition[0]
     invalid = gems_catalog.model_copy(update={"id": "invalid", "metrics_definition": [metric, metric]})
@@ -86,4 +90,22 @@ def test_catalog_batch_rolls_back_on_metric_insert_failure(
     assert dao.get_catalogs() == []
     assert db_session.execute(select(GEMS_CATALOG_METRICS_TABLE)).all() == []
     dao.save_catalogs([gems_catalog])
-    assert dao.get_catalogs() == [gems_catalog]
+    assert_catalogs_equal(dao.get_catalogs(), [gems_catalog])
+
+
+def test_catalog_location_must_exist_in_same_study(
+    db_session: Session, matrix_service: ISimpleMatrixService, gems_catalog: GemsCatalog
+) -> None:
+    first = build_db_dao_10_2(db_session, matrix_service)
+    second = build_db_dao_10_2(db_session, matrix_service)
+    prepare_catalog_taxonomy(first)
+    with pytest.raises(IntegrityError):
+        second.save_catalogs([gems_catalog])
+    assert second.get_catalogs() == []
+    prepare_catalog_taxonomy(second)
+    second.save_catalogs([gems_catalog])
+    saved = second.get_catalogs()
+    assert_catalogs_equal(saved, [gems_catalog])
+    assert [metric.id for metric in saved[0].metrics_definition] == sorted(
+        metric.id for metric in gems_catalog.metrics_definition
+    )
