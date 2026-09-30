@@ -1,7 +1,7 @@
 """create_gems_catalogs_table
 
 Revision ID: 3302075bbdfd
-Revises: 20549c817795
+Revises: 24984ccc44c6
 Create Date: 2026-09-25 09:37:53.433715
 
 """
@@ -13,7 +13,7 @@ from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = "3302075bbdfd"
-down_revision = "20549c817795"
+down_revision = "24984ccc44c6"
 branch_labels = None
 depends_on = None
 
