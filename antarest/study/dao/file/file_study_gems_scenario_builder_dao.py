@@ -41,7 +41,7 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
         for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
             if not line.strip():
                 continue
-            match = re.fullmatch(r"\s*([^,=]+),\s*([0-9]+)\s*=\s*([0-9]+)\s*", line)
+            match = re.fullmatch(r"([^,=]+),\s*([0-9]+)\s*=\s*([0-9]+)", line.strip())
             if match is None:
                 raise ValueError(f"Invalid GEMS scenario builder mapping at line {line_number}: {line!r}")
             group, scenario, column = match.groups()
