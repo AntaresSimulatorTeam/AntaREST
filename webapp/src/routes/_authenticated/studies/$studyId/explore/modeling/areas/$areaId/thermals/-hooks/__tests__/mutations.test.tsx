@@ -45,9 +45,11 @@ beforeEach(() => {
 afterEach(() => client.clear());
 
 describe("Thermal mutations", () => {
-  test("deleting a cluster invalidates its list and dependent reserves", async () => {
+  test("deleting a cluster updates its list and invalidates dependent reserves", async () => {
+    const coal = { ...cluster, id: "coal", name: "Coal" };
+    client.setQueryData(key, [cluster, coal]);
+
     const affected = [
-      key,
       reserveKeys.certifications("study", "area", "thermals"),
       reserveKeys.symmetries("study", "area", "thermals"),
     ];
@@ -63,11 +65,20 @@ describe("Thermal mutations", () => {
       client.setQueryData(key, []);
     });
 
-    const { result } = renderHook(() => useDeleteThermalClusters(scope), { wrapper });
+    const { result } = renderHook(
+      () => {
+        useThermalClusters(scope);
+        return useDeleteThermalClusters(scope);
+      },
+      { wrapper },
+    );
 
     await act(async () => {
       await result.current.mutateAsync({ ...scope, clusterIds: [cluster.id] });
     });
+
+    expect(client.getQueryData(key)).toEqual([coal]);
+    expect(api.getThermalClusters).not.toHaveBeenCalled();
 
     affected.forEach((key) => {
       expect(client.getQueryState(key)?.isInvalidated).toBe(true);
