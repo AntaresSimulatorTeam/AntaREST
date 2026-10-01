@@ -2824,13 +2824,11 @@ class StudyService:
             # Thermals
             thermals_dict = thermal_clusters.get(area_id, {})
             for thermal_id, thermal in thermals_dict.items():
-                if study_version < STUDY_VERSION_10_2:
-                    data: Any = thermal
-                else:
+                data = {**thermal.model_dump()}
+                if study_version >= STUDY_VERSION_10_2:
                     lowered_id = thermal_id.lower()
-                    symmetries = all_thermal_reserve_symmetries.get(area_id, {}).get(lowered_id, [[]])
-                    certifications = reordered_thermal_certifications.get(lowered_id, {})
-                    data = {**thermal.model_dump(), "symmetries": symmetries, "certifications": certifications}
+                    data["symmetries"] = all_thermal_reserve_symmetries.get(area_id, {}).get(lowered_id, [[]])
+                    data["certifications"] = reordered_thermal_certifications.get(lowered_id, {})
                 area["thermals"].append(data)
 
             # Short-term storages
