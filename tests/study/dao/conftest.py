@@ -34,7 +34,7 @@ from antarest.study.business.model.config.optimization_config_model import (
 )
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
-from antarest.study.business.model.gems.system import GemsSystem
+from antarest.study.business.model.gems.system import GemsAreaConnection, GemsSystem, GemsThermalCapacityConnection
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -478,6 +478,21 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert first_component.parameters[1].time_dependent is False
     assert first_component.parameters[1].scenario_dependent is False
     assert first_component.parameters[1].value == 300
+
+    # Areas and clusters ids are lowercased
+    assert system.area_connections == [
+        GemsAreaConnection(component="electrolyser", port="hydrogen_port", area="west-h2"),
+        GemsAreaConnection(component="electrolyser", port="power_port", area="west"),
+    ]
+    assert system.thermal_capacity_connections == [
+        GemsThermalCapacityConnection.model_validate(
+            {
+                "component": "electrolyser",
+                "port": "power_port",
+                "thermal-component": {"area": "west", "cluster-id": "gas_cluster"},
+            }
+        )
+    ]
 
 
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:

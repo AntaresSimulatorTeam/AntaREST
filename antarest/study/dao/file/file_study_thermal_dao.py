@@ -31,6 +31,7 @@ from antarest.study.dao.file.common import (
     get_thermal_reserve_participations_as_yaml_content,
     get_thermal_reserve_path,
 )
+from antarest.study.dao.file.file_study_gems_system_dao import remove_thermal_cluster_from_gems_system
 from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
@@ -226,6 +227,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         self._remove_thermal_reserve_certifications(area_id, cluster_id)
+        remove_thermal_cluster_from_gems_system(study_data.config.study_path, area_id, cluster_id)
 
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)

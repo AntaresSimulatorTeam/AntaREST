@@ -26,6 +26,7 @@ from antarest.study.business.model.binding_constraint_model import ClusterTerm, 
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.common import AreaId, AreaName, AreaSeriesMapping, AreaUiMapping
 from antarest.study.dao.file.common import check_area_exists, get_all_area_matrices, save_area_matrices
+from antarest.study.dao.file.file_study_gems_system_dao import remove_area_from_gems_system
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
@@ -340,6 +341,7 @@ class FileStudyAreaDao(AreaDao):
         self._remove_area_from_hydro_allocation(area_id, study_data)
         self._remove_area_from_districts(area_id, study_data)
         self._remove_area_from_scenario_builder(area_id, study_data)
+        remove_area_from_gems_system(study_data.config.study_path, area_id)
 
         # Remove from config
         self._remove_from_config(area_id, study_data.config)
