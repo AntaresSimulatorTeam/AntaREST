@@ -155,6 +155,8 @@ describe("Thermal parameters", () => {
     );
     await waitFor(() => expect(screen.getByRole("button", { name: "global.save" })).toBeDisabled());
     expect(input).toHaveValue(250);
+    expect(client.getQueryData(key)).toEqual([{ ...cluster, nominalCapacity: 250, unitCount: 5 }]);
+    expect(api.getThermalClusters).toHaveBeenCalledTimes(1);
   });
 
   test("resets defaults when the area changes", async () => {

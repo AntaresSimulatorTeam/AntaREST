@@ -13,9 +13,10 @@
  */
 
 import { invalidateQueriesAfterMutation } from "@/queries/invalidateQueriesAfterMutation";
-import { thermalKeys } from "@/queries/thermals/keys";
 import { thermalMutations } from "@/queries/thermals/mutations";
+import { thermalQueries } from "@/queries/thermals/queries";
 import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
+import { nameToId } from "@/services/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function useUpdateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
@@ -23,9 +24,23 @@ function useUpdateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
 
   return useMutation({
     ...thermalMutations.update(studyId, areaId),
-    onSuccess: async (_, { studyId, areaId }) => {
-      // GroupedDataTable owns optimistic rows until its controlled mode is available.
-      await invalidateQueriesAfterMutation(queryClient, thermalKeys.list(studyId, areaId));
+    onSuccess: async (updatedCluster, { studyId, areaId }) => {
+      const { queryKey } = thermalQueries.list(studyId, areaId);
+
+      // A single cluster response cannot populate a list that has not loaded yet.
+      if (!queryClient.getQueryData(queryKey)) {
+        await invalidateQueriesAfterMutation(queryClient, queryKey);
+        return;
+      }
+
+      // An older read must not overwrite the saved cluster.
+      await queryClient.cancelQueries({ queryKey });
+
+      const savedCluster = { ...updatedCluster, id: nameToId(updatedCluster.id) };
+
+      queryClient.setQueryData(queryKey, (clusters) =>
+        clusters?.map((cluster) => (cluster.id === savedCluster.id ? savedCluster : cluster)),
+      );
     },
   });
 }
