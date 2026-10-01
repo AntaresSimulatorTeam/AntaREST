@@ -493,12 +493,13 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert second_component.parameters[1].scenario_dependent is False
     assert second_component.parameters[1].value == 300
 
+    assert system.connections is not None
     assert len(system.connections) == 1
     connection = system.connections[0]
-    assert connection.component1 == "electrolyser"
-    assert connection.component2 == "dsr"
-    assert connection.port1 == "hydrogen_port"
-    assert connection.port2 == "balance_port"
+    assert connection.component1 == "dsr"
+    assert connection.component2 == "electrolyser"
+    assert connection.port1 == "balance_port"
+    assert connection.port2 == "hydrogen_port"
 
 
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:

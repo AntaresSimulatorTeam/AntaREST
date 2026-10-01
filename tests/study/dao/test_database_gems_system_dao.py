@@ -190,6 +190,39 @@ def test_connections_can_link_2_ports_of_the_same_component(dao_10_2: StudyDao) 
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_duplicated_connections_are_silently_deduplicated(dao_10_2: StudyDao) -> None:
+
+    dao = dao_10_2
+    _add_library_file_to_study_dao(dao)
+
+    component1 = GemsComponent.model_validate({"id": "dsr", "model": "andromede-v1-models-weo-hybrid.dsr"})
+    component2 = GemsComponent.model_validate(
+        {"id": "electrolyser", "model": "andromede-v1-models-weo-hybrid.electrolyser"}
+    )
+
+    connection = GemsComponentConnection(
+        component1="dsr", port1="balance_port", component2="electrolyser", port2="hydrogen_port"
+    )
+    duplicated_connection = connection.model_copy()
+    symmetric_connection = GemsComponentConnection(
+        component1="electrolyser", port1="hydrogen_port", component2="dsr", port2="balance_port"
+    )
+    system = GemsSystem.model_validate(
+        {
+            "id": "sys_id",
+            "components": [component1, component2],
+            "connections": [connection, duplicated_connection, symmetric_connection],
+        }
+    )
+
+    dao.save_system(system)
+
+    loaded_system = dao.get_system()
+    assert loaded_system is not None
+    assert loaded_system.connections == [connection]
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_connections_cannot_link_a_port_of_a_component_to_itself(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     _add_library_file_to_study_dao(dao)

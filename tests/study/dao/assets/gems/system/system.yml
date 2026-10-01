@@ -38,10 +38,10 @@ system:
           value: 300
 
   connections:
-    - component1: electrolyser
-      component2: dsr
-      port1: hydrogen_port
-      port2: balance_port
+    - component1: dsr
+      component2: electrolyser
+      port1: balance_port
+      port2: hydrogen_port
 
   area-connections:
     - component: electrolyser
