@@ -162,7 +162,35 @@ def test_connections_are_optional(dao_10_2: StudyDao) -> None:
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_connections_must_link_2_different_components(dao_10_2: StudyDao) -> None:
+def test_connections_can_link_2_ports_of_the_same_component(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+
+    library = GemsLibrary.model_validate(
+        {
+            "id": "test_lib_id",
+            "models": [
+                {
+                    "id": "dsr",
+                    "properties": [],
+                    "parameters": [],
+                    "ports": [{"id": "port1", "type": "flow"}, {"id": "port2", "type": "flow"}],
+                }
+            ],
+        }
+    )
+    dao.save_library(library)
+
+    component = GemsComponent.model_validate({"id": "dsr", "model": "test_lib_id.dsr"})
+
+    self_connection = GemsComponentConnection(component1="dsr", port1="port1", component2="dsr", port2="port2")
+    system = GemsSystem.model_validate({"id": "sys_id", "components": [component], "connections": [self_connection]})
+
+    dao.save_system(system)
+    assert dao.get_system() is not None
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_connections_cannot_link_a_port_of_a_component_to_itself(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     _add_library_file_to_study_dao(dao)
 
@@ -175,7 +203,9 @@ def test_connections_must_link_2_different_components(dao_10_2: StudyDao) -> Non
         {"id": "sys_id", "components": [component], "connections": [self_loop_connection]}
     )
 
-    with pytest.raises(GemsInvalidConnection, match="A connection cannot link component 'dsr' to itself"):
+    with pytest.raises(
+        GemsInvalidConnection, match="A connection cannot link the port 'balance_port' of component 'dsr' to itself"
+    ):
         dao.save_system(system)
 
 
