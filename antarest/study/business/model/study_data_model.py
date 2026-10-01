@@ -27,6 +27,13 @@ from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
+from antarest.study.business.model.reserve_certification_model import (
+    StorageReserveCertification,
+    ThermalReserveCertification,
+)
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
+from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.business.model.sts_model import STStorage, STStorageAdditionalConstraint
 from antarest.study.business.model.thematic_trimming_model import ThematicTrimming
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
@@ -65,10 +72,19 @@ class StudyXpansionDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_n
 
 class StudyShortTermStorageDTO(STStorage, alias_generator=to_camel, populate_by_name=True):
     constraints: list[STStorageAdditionalConstraint]
+    symmetries: ReserveSymmetries
+    certifications: dict[ReserveDefinitionId, StorageReserveCertification]
+
+
+class StudyThermalClusterDTO(ThermalCluster, alias_generator=to_camel, populate_by_name=True):
+    symmetries: ReserveSymmetries
+    certifications: dict[ReserveDefinitionId, ThermalReserveCertification]
 
 
 class StudyHydroDTO(HydroProperties, alias_generator=to_camel, populate_by_name=True):
     allocation: HydroAllocation
+    symmetries: ReserveSymmetries
+    certifications: dict[ReserveDefinitionId, StorageReserveCertification]
 
 
 class StudyAreasDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
@@ -76,10 +92,12 @@ class StudyAreasDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name
     name: str
     properties: AreaProperties
     ui: AreaUI
-    thermals: list[ThermalCluster]
+    thermals: list[StudyThermalClusterDTO]
     renewables: list[RenewableCluster]
     st_storages: list[StudyShortTermStorageDTO]
     hydro: StudyHydroDTO
+    reserve_definitions: list[ReserveDefinition]
+    reserve_global_parameters: ReservesGlobalParameters
 
 
 class StudyMetaDataDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
