@@ -1838,5 +1838,10 @@
                 "cutCoefficientTolerance": 0.005,
                 "masterSolutionTolerance": 0.0001
             }
-        }
+        },
+        "districts": [{"areas": ["de", "es", "fr", "it"],
+                "comments": "Spatial aggregates on all areas",
+                "id": "all areas",
+                "name": "All areas",
+                "output": false}]
     }
