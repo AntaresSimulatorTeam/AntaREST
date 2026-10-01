@@ -22,6 +22,7 @@ import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import useCreateThermalCluster from "../useCreateThermalCluster";
 import useDeleteThermalClusters from "../useDeleteThermalClusters";
+import useDuplicateThermalCluster from "../useDuplicateThermalCluster";
 import useThermalClusters from "../useThermalClusters";
 import { cluster } from "./fixtures";
 
@@ -38,6 +39,7 @@ beforeEach(() => {
   vi.mocked(api.getThermalClusters).mockReset().mockResolvedValue([cluster]);
   vi.mocked(api.createThermalCluster).mockReset().mockResolvedValue(cluster);
   vi.mocked(api.deleteThermalClusters).mockReset().mockResolvedValue(undefined);
+  vi.mocked(api.duplicateThermalCluster).mockReset().mockResolvedValue(cluster);
 });
 
 afterEach(() => client.clear());
@@ -75,12 +77,18 @@ describe("Thermal mutations", () => {
     });
   });
 
-  test("creating a cluster updates its list without refetching", async () => {
+  test("creating and duplicating clusters updates the list without refetching", async () => {
     const created = { ...cluster, id: "Coal", name: "Coal" };
+    const duplicated = { ...cluster, id: "Gas Copy", name: "Gas Copy" };
     vi.mocked(api.createThermalCluster).mockResolvedValue(created);
+    vi.mocked(api.duplicateThermalCluster).mockResolvedValue(duplicated);
 
     const { result } = renderHook(
-      () => ({ list: useThermalClusters(scope), create: useCreateThermalCluster(scope) }),
+      () => ({
+        list: useThermalClusters(scope),
+        create: useCreateThermalCluster(scope),
+        duplicate: useDuplicateThermalCluster(scope),
+      }),
       { wrapper },
     );
 
@@ -92,6 +100,21 @@ describe("Thermal mutations", () => {
 
     await waitFor(() => expect(result.current.list.data).toHaveLength(2));
     expect(client.getQueryData(key)).toEqual([cluster, { ...created, id: "coal" }]);
+
+    await act(async () => {
+      await result.current.duplicate.mutateAsync({
+        ...scope,
+        clusterId: cluster.id,
+        newName: duplicated.name,
+      });
+    });
+
+    await waitFor(() => expect(result.current.list.data).toHaveLength(3));
+    expect(client.getQueryData(key)).toEqual([
+      cluster,
+      { ...created, id: "coal" },
+      { ...duplicated, id: "gas copy" },
+    ]);
     expect(api.getThermalClusters).not.toHaveBeenCalled();
   });
 });
