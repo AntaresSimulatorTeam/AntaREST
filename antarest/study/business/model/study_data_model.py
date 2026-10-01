@@ -22,6 +22,7 @@ from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
+from antarest.study.business.model.district_model import DistrictDTO
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_model import HydroProperties
 from antarest.study.business.model.link_model import Link
@@ -98,3 +99,4 @@ class StudyDataDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=
     binding_constraints: list[BindingConstraint]
     settings: StudySettingsDTO
     xpansion: StudyXpansionDTO | None
+    districts: list[DistrictDTO]
