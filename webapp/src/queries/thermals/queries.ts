@@ -15,7 +15,7 @@
 import { getThermalClusters } from "@/services/api/studies/areas/thermals";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
-import { EXTERNALLY_MUTATED, queryListOptions } from "../utils";
+import { queryListOptions } from "../utils";
 import { thermalKeys } from "./keys";
 
 export const thermalQueries = {
@@ -23,8 +23,6 @@ export const thermalQueries = {
     return queryListOptions({
       queryKey: thermalKeys.list(studyId, areaId),
       queryFn: () => getThermalClusters({ studyId, areaId }),
-      // TODO: keep it stale until we update all writers to invalidate it.
-      ...EXTERNALLY_MUTATED,
     });
   },
 };

@@ -592,6 +592,7 @@
   "study.modeling.map.districts.delete.confirm": "Êtes-vous sûr de vouloir supprimer le district '{{0}}' ?",
   "study.modeling.load": "Conso",
   "study.modeling.thermals": "Thermiques",
+  "study.modeling.thermals.notFound": "Aucun cluster thermique trouvé avec l’identifiant : {{id}}",
   "study.modeling.thermals.select": "Thermique",
   "study.modeling.thermals.parameters": "Paramètres",
   "study.modeling.hydro": "Hydro",

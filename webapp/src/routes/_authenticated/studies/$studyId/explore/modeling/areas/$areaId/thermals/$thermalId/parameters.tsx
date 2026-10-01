@@ -19,11 +19,16 @@ import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
+import { nameToId } from "@/services/utils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { validateNumber } from "@/utils/validation/number";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
+import { adaptThermalClusterToView } from "../-adapters";
+import useThermalClusters from "../-hooks/useThermalClusters";
+import useUpdateThermalCluster from "../-hooks/useUpdateThermalCluster";
 import {
   COST_GENERATION_OPTIONS,
   THERMAL_GROUPS,
@@ -31,8 +36,6 @@ import {
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
   type ThermalCluster,
-  getThermalCluster,
-  updateThermalCluster,
 } from "../-utils";
 
 export const Route = createFileRoute(
@@ -45,14 +48,36 @@ function Parameters() {
   const study = useStudy();
   const { areaId, thermalId } = Route.useParams();
   const { t } = useTranslation();
+  const scope = { studyId: study.id, areaId };
+  const { data: clusters, isPending, error } = useThermalClusters(scope);
+  const updateCluster = useUpdateThermalCluster(scope);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
-    return updateThermalCluster(study.id, areaId, thermalId, dirtyValues);
+  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
+    const cluster = await updateCluster.mutateAsync({
+      ...scope,
+      clusterId: thermalId,
+      values: dirtyValues,
+    });
+    return adaptThermalClusterToView(cluster);
   };
+
+  if (isPending) {
+    return <SimpleLoader />;
+  }
+
+  if (!clusters) {
+    throw error;
+  }
+
+  const defaultValues = clusters.find(({ id }) => id === nameToId(thermalId));
+
+  if (!defaultValues) {
+    throw new Error(t("study.modeling.thermals.notFound", { id: thermalId }));
+  }
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -60,8 +85,8 @@ function Parameters() {
 
   return (
     <Form
-      key={thermalId}
-      config={{ defaultValues: () => getThermalCluster(study.id, areaId, thermalId) }}
+      key={`${study.id}/${areaId}/${thermalId}`}
+      config={{ defaultValues }}
       onSubmit={handleSubmit}
       enableUndoRedo
     >

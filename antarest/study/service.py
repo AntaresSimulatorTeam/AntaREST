@@ -2802,11 +2802,12 @@ class StudyService:
         obj["areas"] = areas
 
         ##########################
-        # Links and BCs
+        # Links , BCs and districts
         ##########################
 
         obj["links"] = dao.get_links()
         obj["binding_constraints"] = self.binding_constraint_manager.get_binding_constraints(study_interface)
+        obj["districts"] = self.district_manager.get_districts(study_interface)
 
         ##########################
         # Settings
