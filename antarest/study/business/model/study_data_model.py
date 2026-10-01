@@ -72,19 +72,19 @@ class StudyXpansionDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_n
 
 class StudyShortTermStorageDTO(STStorage, alias_generator=to_camel, populate_by_name=True):
     constraints: list[STStorageAdditionalConstraint]
-    symmetries: ReserveSymmetries
-    certifications: dict[ReserveDefinitionId, StorageReserveCertification]
+    symmetries: ReserveSymmetries = [[]]
+    certifications: dict[ReserveDefinitionId, StorageReserveCertification] = {}
 
 
 class StudyThermalClusterDTO(ThermalCluster, alias_generator=to_camel, populate_by_name=True):
-    symmetries: ReserveSymmetries
-    certifications: dict[ReserveDefinitionId, ThermalReserveCertification]
+    symmetries: ReserveSymmetries = [[]]
+    certifications: dict[ReserveDefinitionId, ThermalReserveCertification] = {}
 
 
 class StudyHydroDTO(HydroProperties, alias_generator=to_camel, populate_by_name=True):
     allocation: HydroAllocation
-    symmetries: ReserveSymmetries
-    certifications: dict[ReserveDefinitionId, StorageReserveCertification]
+    symmetries: ReserveSymmetries = [[]]
+    certifications: dict[ReserveDefinitionId, StorageReserveCertification] = {}
 
 
 class StudyAreasDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
@@ -96,8 +96,8 @@ class StudyAreasDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name
     renewables: list[RenewableCluster]
     st_storages: list[StudyShortTermStorageDTO]
     hydro: StudyHydroDTO
-    reserve_definitions: list[ReserveDefinition]
-    reserve_global_parameters: ReservesGlobalParameters
+    reserve_definitions: list[ReserveDefinition] = []
+    reserve_global_parameters: ReservesGlobalParameters | None = None
 
 
 class StudyMetaDataDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
