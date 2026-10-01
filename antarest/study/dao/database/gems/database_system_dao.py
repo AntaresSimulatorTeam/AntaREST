@@ -136,7 +136,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
         return component_properties
 
-    def _get_connections(self) -> List[dict[str, str]]:
+    def _get_connections(self) -> List[GemsComponentConnection]:
         study_data_id = self._study_data_id
         session = self._db_session
 
@@ -144,15 +144,15 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             GEMS_COMPONENT_CONNECTIONS_TABLE.c.study_data_id == study_data_id
         )
         connections_rows = session.execute(connections_stmt).fetchall()
-        connections: List[dict[str, str]] = []
+        connections: List[GemsComponentConnection] = []
         for connection_row in connections_rows:
             connections.append(
-                {
-                    "component1": connection_row.component1,
-                    "component2": connection_row.component2,
-                    "port1": connection_row.port1,
-                    "port2": connection_row.port2,
-                }
+                GemsComponentConnection(
+                    component1=connection_row.component1,
+                    component2=connection_row.component2,
+                    port1=connection_row.port1,
+                    port2=connection_row.port2,
+                )
             )
         return connections
 
@@ -173,8 +173,13 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         session.execute(insert(GEMS_SYSTEM_METADATA_TABLE), metadata_values)
 
-        self.save_components(system.components)
-        self._save_connections(system.connections)
+        try:
+            self.save_components(system.components)
+            self._save_connections(system.connections)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
 
     @override
     def save_components(self, components: List[GemsComponent]) -> None:
@@ -231,8 +236,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
-
-        session.commit()
 
     def _get_components_library_and_model(self) -> dict[str, tuple[str, str]]:
         study_data_id = self._study_data_id
@@ -351,5 +354,3 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             except IntegrityError as e:
                 session.rollback()
                 self._raise_the_right_connection_exception(connections, e)
-
-        session.commit()

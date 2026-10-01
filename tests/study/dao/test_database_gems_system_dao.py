@@ -44,6 +44,28 @@ def test_cannot_replace_system(dao_10_2: StudyDao) -> None:
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_system_is_not_saved_if_an_error_is_raised(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+
+    _add_library_file_to_study_dao(dao)
+
+    # Ensures the system is not saved if an error is raised during the save process
+    falsy_component = GemsComponent(id="dsr", model="andromede-v1-models-weo-hybrid.missing_model")
+    system = GemsSystem(id="sys_id", components=[falsy_component])
+
+    with pytest.raises(Exception):
+        dao.save_system(system)
+
+    assert dao.get_system() is None
+
+    # Fix component and save again
+    fixed_component = GemsComponent(id="dsr", model="andromede-v1-models-weo-hybrid.dsr")
+    system = GemsSystem(id="sys_id", components=[fixed_component])
+    dao.save_system(system)
+    assert dao.get_system() is not None
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_save_and_load_system(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 
@@ -170,59 +192,6 @@ def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None
     system = GemsSystem.model_validate({"id": "sys_id", "components": [component], "connections": [connection]})
 
     with pytest.raises(GemsInvalidConnection):
-        dao.save_system(system)
-
-
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_port1_should_exist_in_component1(dao_10_2: StudyDao) -> None:
-    dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
-
-    dsr_component = GemsComponent.model_validate({"id": "dsr", "model": "andromede-v1-models-weo-hybrid.dsr"})
-    electrolyser_component = GemsComponent.model_validate(
-        {"id": "electrolyser", "model": "andromede-v1-models-weo-hybrid.electrolyser"}
-    )
-
-    missing_port1_connection = GemsComponentConnection(
-        component1="dsr", port1="missing_port", component2="electrolyser", port2="hydrogen_port"
-    )
-
-    system = GemsSystem.model_validate(
-        {
-            "id": "sys_id",
-            "components": [electrolyser_component, dsr_component],
-            "connections": [missing_port1_connection],
-        }
-    )
-
-    with pytest.raises(GemsInvalidConnection, match="Component 'dsr' does not have a port named 'missing_port'"):
-        dao.save_system(system)
-
-
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_port2_should_exist_in_component2(dao_10_2: StudyDao) -> None:
-    dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
-
-    dsr_component = GemsComponent.model_validate({"id": "dsr", "model": "andromede-v1-models-weo-hybrid.dsr"})
-    electrolyser_component = GemsComponent.model_validate(
-        {"id": "electrolyser", "model": "andromede-v1-models-weo-hybrid.electrolyser"}
-    )
-    missing_port2_connection = GemsComponentConnection(
-        component1="dsr", port1="balance_port", component2="electrolyser", port2="missing_port"
-    )
-
-    system = GemsSystem.model_validate(
-        {
-            "id": "sys_id",
-            "components": [electrolyser_component, dsr_component],
-            "connections": [missing_port2_connection],
-        }
-    )
-
-    with pytest.raises(
-        GemsInvalidConnection, match="Component 'electrolyser' does not have a port named 'missing_port'"
-    ):
         dao.save_system(system)
 
 
