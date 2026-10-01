@@ -250,7 +250,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         self, connections: List[GemsComponentConnection], exc: IntegrityError
     ) -> None:
 
-        self._check_connection_does_not_link_component_to_itself(connections, exc)
+        self._check_connection_does_not_link_port_component_to_itself(connections, exc)
 
         components_library_and_model = self._get_components_library_and_model()
         self._check_components_exist(components_library_and_model, connections, exc)
@@ -301,13 +301,13 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                 f"Connection(s) reference non-existing component(s): {sorted(invalid_component_ids)}"
             ) from exc
 
-    def _check_connection_does_not_link_component_to_itself(
+    def _check_connection_does_not_link_port_component_to_itself(
         self, connections: list[GemsComponentConnection], exc: IntegrityError
     ) -> None:
         for connection in connections:
-            if connection.component1 == connection.component2:
+            if connection.component1 == connection.component2 and connection.port1 == connection.port2:
                 raise GemsInvalidConnection(
-                    f"A connection cannot link component '{connection.component1}' to itself"
+                    f"A connection cannot link the port '{connection.port1}' of component '{connection.component1}' to itself"
                 ) from exc
 
     def _save_connections(self, connections: List[GemsComponentConnection] | None) -> None:
