@@ -75,24 +75,23 @@ describe("Thermal mutations", () => {
     });
   });
 
-  test("a refresh failure does not fail a successful write", async () => {
-    const readError = new Error("refresh failed");
-    vi.mocked(api.getThermalClusters).mockRejectedValue(readError);
+  test("creating a cluster updates its list without refetching", async () => {
+    const created = { ...cluster, id: "Coal", name: "Coal" };
+    vi.mocked(api.createThermalCluster).mockResolvedValue(created);
 
     const { result } = renderHook(
       () => ({ list: useThermalClusters(scope), create: useCreateThermalCluster(scope) }),
       { wrapper },
     );
 
-    // The server already committed the write: a read failure must not trigger rollback.
     await act(async () => {
       await expect(
-        result.current.create.mutateAsync({ ...scope, values: { name: "Gas" } }),
-      ).resolves.toEqual(cluster);
+        result.current.create.mutateAsync({ ...scope, values: { name: created.name } }),
+      ).resolves.toEqual(created);
     });
 
-    await waitFor(() => expect(result.current.list.error).toBe(readError));
-    expect(result.current.create.isSuccess).toBe(true);
-    expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+    await waitFor(() => expect(result.current.list.data).toHaveLength(2));
+    expect(client.getQueryData(key)).toEqual([cluster, { ...created, id: "coal" }]);
+    expect(api.getThermalClusters).not.toHaveBeenCalled();
   });
 });
