@@ -35,6 +35,24 @@ from antarest.study.dao.database.models.gems.system import (
 METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
 
 
+def _silently_deduplicate_duplicated_connections(
+    connections: list[GemsComponentConnection],
+) -> list[GemsComponentConnection]:
+    connections_set = set()
+    for connection in connections:
+        component_a = connection.component1 if connection.component1 < connection.component2 else connection.component2
+        component_b = connection.component2 if connection.component1 < connection.component2 else connection.component1
+        port_a = connection.port1 if connection.component1 < connection.component2 else connection.port2
+        port_b = connection.port2 if connection.component1 < connection.component2 else connection.port1
+
+        connections_set.add((component_a, component_b, port_a, port_b))
+
+    connections = [
+        GemsComponentConnection(component1=c[0], component2=c[1], port1=c[2], port2=c[3]) for c in connections_set
+    ]
+    return connections
+
+
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     """Database implementation of GemsSystemDao"""
 
@@ -314,6 +332,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         if not connections:
             return
+
+        # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
+        # so we silently remove them to keep the primary in the gems_component_connections table.
+        connections = _silently_deduplicate_duplicated_connections(connections)
 
         study_data_id = self._study_data_id
         session = self._db_session
