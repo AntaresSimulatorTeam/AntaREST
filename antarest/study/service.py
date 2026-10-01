@@ -2779,6 +2779,8 @@ class StudyService:
         all_thermal_reserve_certifications = {}
         all_st_storage_reserve_symmetries = {}
         all_st_storage_reserve_certifications = {}
+        all_hydro_reserve_symmetries = {}
+        all_hydro_reserve_certifications = {}
         if study_version >= STUDY_VERSION_10_2:
             all_reserve_global_parameters = dao.get_all_reserves_global_parameters()
             all_reserve_definitions = dao.get_all_reserve_definitions()
@@ -2786,6 +2788,8 @@ class StudyService:
             all_thermal_reserve_certifications = dao.get_all_thermal_reserve_certifications()
             all_st_storage_reserve_symmetries = dao.get_all_st_storage_reserve_symmetries()
             all_st_storage_reserve_certifications = dao.get_all_st_storage_reserve_certifications()
+            all_hydro_reserve_symmetries = dao.get_all_hydro_reserve_symmetries()
+            all_hydro_reserve_certifications = dao.get_all_hydro_reserve_certifications()
 
         try:
             renewable_clusters = dao.get_all_renewables()
@@ -2802,14 +2806,6 @@ class StudyService:
                 "renewables": renewable_clusters.get(area_id, {}).values(),
                 "st_storages": [],
                 "ui": dao.get_area_ui(area_id),
-            }
-
-            # Hydro
-            hydro_allocation = dao.get_hydro_allocation(area_id)
-            area["hydro"] = {
-                "allocation": hydro_allocation,
-                "management_options": hydro_properties[area_id].management_options,
-                "inflow_structure": hydro_properties[area_id].inflow_structure,
             }
 
             # Reserve certifications
@@ -2837,8 +2833,6 @@ class StudyService:
                     data = {**thermal.model_dump(), "symmetries": symmetries, "certifications": certifications}
                 area["thermals"].append(data)
 
-            # todo: we're missing symmetries and certifications for hydro
-
             # Short-term storages
             storage_dict = st_storages.get(area_id, {})
             for storage_id, storage in storage_dict.items():
@@ -2849,11 +2843,22 @@ class StudyService:
                     data["certifications"] = reordered_st_storage_certifications.get(storage_id, {})
                 area["st_storages"].append(data)
 
+            # Hydro
+            hydro_allocation = dao.get_hydro_allocation(area_id)
+            hydro_dict: dict[str, Any] = {
+                "allocation": hydro_allocation,
+                "management_options": hydro_properties[area_id].management_options,
+                "inflow_structure": hydro_properties[area_id].inflow_structure,
+            }
             if study_version >= STUDY_VERSION_10_2:
-                # Reserve global parameters
-                area["reserve_global_parameters"] = all_reserve_global_parameters.get(area_id, {})
+                hydro_dict["symmetries"] = all_hydro_reserve_symmetries.get(area_id, [[]])
+                hydro_dict["certifications"] = all_hydro_reserve_certifications.get(area_id, {})
 
-                # Reserve definitions
+            area["hydro"] = hydro_dict
+
+            # Reserve global parameters and definitions
+            if study_version >= STUDY_VERSION_10_2:
+                area["reserve_global_parameters"] = all_reserve_global_parameters.get(area_id, {})
                 area["reserve_definitions"] = all_reserve_definitions.get(area_id, {})
 
             areas.append(area)
