@@ -14,9 +14,10 @@
 
 import { reserveKeys } from "@/queries/reserves/keys";
 import { invalidateQueriesAfterMutation } from "@/queries/invalidateQueriesAfterMutation";
-import { thermalKeys } from "@/queries/thermals/keys";
 import { thermalMutations } from "@/queries/thermals/mutations";
+import { thermalQueries } from "@/queries/thermals/queries";
 import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
+import { nameToId } from "@/services/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function useDeleteThermalClusters({ studyId, areaId }: ThermalsAreaParams) {
@@ -24,10 +25,22 @@ function useDeleteThermalClusters({ studyId, areaId }: ThermalsAreaParams) {
 
   return useMutation({
     ...thermalMutations.delete(studyId, areaId),
-    onSuccess: async (_, { studyId, areaId }) => {
-      // GroupedDataTable owns optimistic rows until its controlled mode is available.
+    onSuccess: async (_, { studyId, areaId, clusterIds }) => {
+      const { queryKey } = thermalQueries.list(studyId, areaId);
+
+      if (!queryClient.getQueryData(queryKey)) {
+        await invalidateQueriesAfterMutation(queryClient, queryKey);
+      } else {
+        await queryClient.cancelQueries({ queryKey });
+
+        const deletedIds = new Set(clusterIds.map(nameToId));
+
+        queryClient.setQueryData(queryKey, (clusters) =>
+          clusters?.filter(({ id }) => !deletedIds.has(id)),
+        );
+      }
+
       await Promise.all([
-        invalidateQueriesAfterMutation(queryClient, thermalKeys.list(studyId, areaId)),
         invalidateQueriesAfterMutation(
           queryClient,
           reserveKeys.certifications(studyId, areaId, "thermals"),
