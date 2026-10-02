@@ -60,7 +60,7 @@ def test_study_data(client: TestClient, user_access_token: str, internal_study_i
     res = client.post(f"/v1/studies/{internal_study_id}/areas/es/storages/my_battery/additional-constraints", json=body)
     res.raise_for_status()
 
-    # todo: try to modify the version in DB to be able to test the reserves
+    # todo: Once v10.2 is handled, add reserves in the test
 
     expected_result_path = ASSETS_DIR / "study_data.json"
     expected_json = from_json(expected_result_path.read_text())
