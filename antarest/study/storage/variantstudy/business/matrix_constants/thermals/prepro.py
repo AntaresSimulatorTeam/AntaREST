@@ -10,7 +10,14 @@
 #
 # This file is part of the Antares project.
 
+import polars as pl
+
 from antarest.core.utils.polars import create_polars_dataframe
 
-data = create_polars_dataframe([[1.0, 1.0, 0.0, 0.0, 0.0, 0.0]] * 365)
-modulation = create_polars_dataframe([[1.0, 1.0, 1.0, 0.0]] * 8760)
+
+def data() -> pl.DataFrame:
+    return create_polars_dataframe([[1.0, 1.0, 0.0, 0.0, 0.0, 0.0]] * 365)
+
+
+def modulation() -> pl.DataFrame:
+    return create_polars_dataframe([[1.0, 1.0, 1.0, 0.0]] * 8760)

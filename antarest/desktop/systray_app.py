@@ -21,8 +21,8 @@ from threading import Thread
 
 import httpx
 import uvicorn
-from PyQt5.QtGui import QCursor, QIcon
-from PyQt5.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+from PyQt6.QtGui import QCursor, QIcon
+from PyQt6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from antarest.core.utils.utils import get_local_path
 
@@ -36,7 +36,7 @@ def run_server(config_file: Path) -> None:
         config_file,
         mount_front=True,
         auto_upgrade_db=True,
-    )[0]
+    )
     # noinspection PyTypeChecker
     uvicorn.run(app, host="127.0.0.1", port=8080)
 
@@ -196,7 +196,7 @@ def run_systray_app(config_file: Path, no_systray_app: bool) -> None:
     notification_popup("Antares Web Server started, you can manage the application within the system tray.")
     open_app()
     try:
-        systray_app.app.exec_()
+        systray_app.app.exec()
     finally:
         # Kill server also on exception, in particular on keyboard interrupt
         server.kill()

@@ -12,20 +12,29 @@
  * This file is part of the Antares project.
  */
 
+import { DEFAULT_STUDY_SORT_CONFIG } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
+import { getStudyVersions } from "@/services/api/studies";
+import * as api from "@/services/api/study";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyEventPayload } from "@/services/webSocket/types";
+import type {
+  GroupDTO,
+  StorageMode,
+  StudyMetadata,
+  StudyPublicMode,
+  StudySortConfig,
+  UserDTO,
+} from "@/types/types";
 import {
   createAction,
   createAsyncThunk,
   createEntityAdapter,
   createReducer,
 } from "@reduxjs/toolkit";
+import { isAxiosError } from "axios";
+import * as R from "ramda";
 import type { O } from "ts-toolbelt";
-import { getStudyVersions as getStudyVersionsApi } from "../../services/api/studies";
-import * as api from "../../services/api/study";
-import type { GroupDTO, StudyMetadata, StudyPublicMode, UserDTO } from "../../types/types";
-import { getFavoriteStudyIds } from "../selectors";
-import type { AppAsyncThunkConfig, AppThunk } from "../store";
+import type { AppAsyncThunkConfig } from "../store";
 import { FetchStatus, createThunk, makeActionName, type AsyncEntityState } from "../utils";
 import { setDefaultAreaLinkSelection } from "./studySyntheses";
 
@@ -33,8 +42,19 @@ const studiesAdapter = createEntityAdapter<StudyMetadata>();
 
 export interface StudyFilters {
   search: string;
-  folder: string;
-  strictFolder: boolean;
+  activeTree: "managed" | "external";
+  managed: {
+    directoryId: string | null;
+    // All directory IDs in scope (selected dir + descendants). null = root (all managed studies).
+    directoryIds: string[] | null;
+    showDescendants: boolean;
+    collapsed: boolean;
+  };
+  external: {
+    path: string;
+    showDescendants: boolean;
+    collapsed: boolean;
+  };
   type: "all" | "references" | "variants";
   management: "all" | "managed" | "unmanaged";
   archive: "all" | "archived" | "unarchived";
@@ -44,19 +64,13 @@ export interface StudyFilters {
   tags: string[];
 }
 
-export interface StudiesSortConf {
-  property: keyof StudyMetadata;
-  order: "ascend" | "descend";
-}
-
 export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   current: string;
   prevStudyId: string;
   scrollPosition: number;
   versionList: string[];
-  favorites: Array<StudyMetadata["id"]>;
   filters: StudyFilters;
-  sort: StudiesSortConf;
+  sort: StudySortConfig;
 }
 
 interface StudyCreator {
@@ -65,14 +79,46 @@ interface StudyCreator {
   groups?: string[];
   publicMode?: StudyPublicMode;
   tags?: string[];
+  storageMode?: StorageMode;
 }
 
 interface StudyUpload {
   file: File;
   onUploadProgress?: (progress: number) => void;
+  directory?: string;
+  storageMode?: StorageMode;
+}
+
+interface StudyUpdate {
+  id: StudyMetadata["id"];
+  changes: Partial<Omit<StudyMetadata, "id">>;
 }
 
 type CreateStudyArg = StudyCreator | StudyUpload | StudyMetadata;
+
+function buildInitialFilters(): StudyFilters {
+  const saved = storage.getItem(StorageKey.StudiesFilters) || {};
+  return {
+    search: "",
+    activeTree: "managed",
+    type: "references",
+    management: "all",
+    archive: "all",
+    versions: [],
+    users: [],
+    groups: [],
+    tags: [],
+    ...saved,
+    managed: {
+      directoryId: null,
+      directoryIds: null,
+      showDescendants: false,
+      collapsed: false,
+      ...saved.managed,
+    },
+    external: { path: "", showDescendants: false, collapsed: false, ...saved.external },
+  };
+}
 
 const initialState = studiesAdapter.getInitialState({
   status: FetchStatus.Idle,
@@ -81,24 +127,8 @@ const initialState = studiesAdapter.getInitialState({
   prevStudyId: "",
   scrollPosition: 0,
   versionList: [] as string[],
-  favorites: [],
-  filters: {
-    search: "",
-    folder: "",
-    strictFolder: false,
-    type: "references",
-    management: "all",
-    archive: "all",
-    versions: [],
-    users: [],
-    groups: [],
-    tags: [],
-    ...(storage.getItem(StorageKey.StudiesFilters) || {}),
-  } satisfies StudyFilters,
-  sort: {
-    property: "name",
-    order: "ascend",
-  },
+  filters: buildInitialFilters(),
+  sort: DEFAULT_STUDY_SORT_CONFIG,
 }) as StudiesState;
 
 const n = makeActionName("study");
@@ -119,27 +149,21 @@ export const setStudyScrollPosition = createAction<StudiesState["scrollPosition"
   n("SET_SCROLL_POSITION"),
 );
 
-export const setFavoriteStudies = createAction<StudiesState["favorites"]>(n("SET_FAVORITES"));
-
-export const updateStudyFilters = createAction<Partial<StudiesState["filters"]>>(
+export const updateStudyFilters = createAction<O.Partial<StudyFilters, "deep">>(
   n("UPDATE_FILTERS"),
 );
 
-export const updateStudiesSortConf = createAction<Partial<StudiesState["sort"]>>(
-  n("UPDATE_SORT_CONF"),
+export const updateStudySortConfig = createAction<Partial<StudySortConfig>>(
+  n("UPDATE_SORT_CONFIG"),
 );
 
 export const updateStudiesFromLocalStorage = createAction<
   O.Nullable<{
-    favorites: StudiesState["favorites"];
-    sort: Partial<StudiesSortConf>;
+    sort: Partial<StudySortConfig>;
   }>
 >(n("UPDATE_FROM_LOCAL_STORAGE"));
 
-export const updateStudy = createAction<{
-  id: StudyMetadata["id"];
-  changes: Partial<Omit<StudyMetadata, "id">>;
-}>(n("UPDATE_STUDY"));
+export const updateStudy = createAction<StudyUpdate>(n("UPDATE_STUDY"));
 
 ////////////////////////////////////////////////////////////////
 // Thunks
@@ -156,16 +180,16 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
     try {
       // StudyUpload
       if ("file" in arg) {
-        const { file, onUploadProgress } = arg;
-        const studyId = await api.importStudy(file, onUploadProgress);
+        const { file, onUploadProgress, directory, storageMode } = arg;
+        const studyId = await api.importStudy(file, onUploadProgress, directory, storageMode);
         return api.getStudyMetadata(studyId);
       }
 
       // StudyCreator
-      const { name, version, groups, publicMode, tags } = arg;
+      const { name, version, groups, publicMode, tags, storageMode } = arg;
 
       // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
-      const studyId = await api.createStudy(name, version, groups);
+      const studyId = await api.createStudy(name, version, groups, storageMode);
 
       if (publicMode) {
         await api.changePublicMode(studyId, publicMode);
@@ -182,10 +206,11 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
   },
 );
 
-export const setStudy = createAsyncThunk<StudyMetadata, StudyEventPayload, AppAsyncThunkConfig>(
-  n("SET_STUDY"),
-  ({ id }) => api.getStudyMetadata(id),
-);
+export const setStudy = createAsyncThunk<
+  StudyMetadata,
+  StudyEventPayload | StudyMetadata["id"],
+  AppAsyncThunkConfig
+>(n("SET_STUDY"), (arg) => api.getStudyMetadata(typeof arg === "string" ? arg : arg.id));
 
 interface StudyDeleteInfo {
   id: StudyMetadata["id"];
@@ -211,18 +236,13 @@ export const deleteStudy = createAsyncThunk<
     }
   }
 
-  const state = getState();
-  const currentFavorites = getFavoriteStudyIds(state);
-  const newFavorites = currentFavorites.filter((fav) => fav !== studyId);
-  dispatch(setFavoriteStudies(newFavorites));
-
   return studyId;
 });
 
 export const fetchStudyVersions = createAsyncThunk(
   n("FETCH_VERSIONS"),
   (_, { rejectWithValue }) => {
-    return getStudyVersionsApi().catch(rejectWithValue);
+    return getStudyVersions().catch(rejectWithValue);
   },
 );
 
@@ -240,20 +260,6 @@ export const fetchStudies = createAsyncThunk<StudyMetadata[], undefined, AppAsyn
   },
 );
 
-export const toggleFavorite =
-  (studyId: StudyMetadata["id"]): AppThunk =>
-  (dispatch, getState) => {
-    const state = getState();
-    const currentFavorites = getFavoriteStudyIds(state);
-    const isFav = !!currentFavorites.find((fav) => fav === studyId);
-
-    dispatch(
-      setFavoriteStudies(
-        isFav ? currentFavorites.filter((fav) => fav !== studyId) : [...currentFavorites, studyId],
-      ),
-    );
-  };
-
 ////////////////////////////////////////////////////////////////
 // Reducer
 ////////////////////////////////////////////////////////////////
@@ -261,9 +267,9 @@ export const toggleFavorite =
 export default createReducer(initialState, (builder) => {
   builder
     .addCase(updateStudiesFromLocalStorage, (draftState, action) => {
-      const { favorites, sort } = action.payload;
-      draftState.favorites = favorites || [];
-      Object.assign(draftState.sort, sort);
+      if (action.payload.sort) {
+        Object.assign(draftState.sort, action.payload.sort);
+      }
     })
     .addCase(createStudy.fulfilled, studiesAdapter.addOne)
     .addCase(setStudy.fulfilled, studiesAdapter.setOne)
@@ -279,16 +285,18 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(fetchStudies.rejected, (draftState, action) => {
       draftState.status = FetchStatus.Failed;
-      draftState.error = action.error.message;
-    })
-    .addCase(setFavoriteStudies, (draftState, action) => {
-      draftState.favorites = action.payload;
+      draftState.error = isAxiosError(action.payload)
+        ? action.payload.message
+        : action.error.message;
     })
     .addCase(updateStudyFilters, (draftState, action) => {
-      Object.assign(draftState.filters, action.payload);
+      draftState.filters = R.mergeDeepRight(
+        draftState.filters,
+        action.payload,
+      ) as typeof draftState.filters;
       draftState.scrollPosition = 0;
     })
-    .addCase(updateStudiesSortConf, (draftState, action) => {
+    .addCase(updateStudySortConfig, (draftState, action) => {
       Object.assign(draftState.sort, action.payload);
       draftState.scrollPosition = 0;
     })

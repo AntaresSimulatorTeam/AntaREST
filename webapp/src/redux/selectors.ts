@@ -12,37 +12,32 @@
  * This file is part of the Antares project.
  */
 
+import { sortStudies } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
 import { createLinkId } from "@/services/api/studies/links/utils";
+import { getHighestVersion } from "@/utils/versionUtils";
 import { createEntityAdapter, createSelector } from "@reduxjs/toolkit";
-import { F } from "ts-toolbelt";
-import { buildStudyTree } from "../components/App/Studies/StudyTree/utils";
-import { isGroupAdmin, isUserAdmin } from "../services/utils";
+import type { F } from "ts-toolbelt";
+import { isGroupAdmin, isUserAdmin, nameToId, sortByName, sortByProp } from "../services/utils";
 import type {
   AllClustersAndLinks,
-  Area,
+  AreaWithId,
   Cluster,
   GroupDetailsDTO,
   LinkElement,
   StudyMetadata,
+  StudySortConfig,
+  StudySynthesis,
   UserDetailsDTO,
 } from "../types/types";
-import { filterStudies, sortStudies } from "../utils/studiesUtils";
+import { filterStudies } from "../utils/studiesUtils";
 import type { AppState } from "./ducks";
 import type { AuthState } from "./ducks/auth";
 import type { GroupsState } from "./ducks/groups";
-import type { StudiesSortConf, StudiesState, StudyFilters } from "./ducks/studies";
-import {
-  type StudyMapLink,
-  type StudyMapNode,
-  studyMapsAdapter,
-  type StudyMapsState,
-} from "./ducks/studyMaps";
-import { studySynthesesAdapter, type StudySynthesesState } from "./ducks/studySyntheses";
+import type { StudiesState, StudyFilters } from "./ducks/studies";
+import type { StudyMap, StudyMapLink, StudyMapNode, StudyMapsState } from "./ducks/studyMaps";
+import type { StudySynthesesState } from "./ducks/studySyntheses";
 import type { UIState } from "./ducks/ui";
 import type { UsersState } from "./ducks/users";
-import { getHighestVersion } from "@/utils/versionUtils";
-
-// TODO resultEqualityCheck
 
 ////////////////////////////////////////////////////////////////
 // Auth
@@ -66,6 +61,10 @@ export const getStudiesStatus = (state: AppState): StudiesState["status"] => {
   return getStudiesState(state).status;
 };
 
+export const getStudiesError = (state: AppState): StudiesState["error"] => {
+  return getStudiesState(state).error;
+};
+
 export const getStudiesScrollPosition = (state: AppState): StudiesState["scrollPosition"] => {
   return getStudiesState(state).scrollPosition;
 };
@@ -80,38 +79,20 @@ export const getStudyIds = studiesSelectors.selectIds;
 
 export const getStudy = studiesSelectors.selectById;
 
-export const getFavoriteStudyIds = (state: AppState): StudiesState["favorites"] => {
-  return getStudiesState(state).favorites;
-};
-
-export const getFavoriteStudies = createSelector(
-  getStudiesById,
-  getFavoriteStudyIds,
-  (studiesById, favoriteIds) => {
-    return favoriteIds
-      .map((favId) => studiesById[favId])
-      .filter((item): item is StudyMetadata => !!item);
-  },
-);
-
-export const isStudyFavorite = (state: AppState, id: StudyMetadata["id"]): boolean => {
-  return getFavoriteStudyIds(state).includes(id);
-};
-
 export const getStudyFilters = (state: AppState): StudyFilters => {
   return getStudiesState(state).filters;
 };
 
-export const getStudiesSortConf = (state: AppState): StudiesSortConf => {
+export const getStudySortConfig = (state: AppState): StudySortConfig => {
   return getStudiesState(state).sort;
 };
 
 export const getStudiesFilteredAndSorted = createSelector(
   getStudies,
   getStudyFilters,
-  getStudiesSortConf,
-  (studies, filters, sortConf) => {
-    const sorted = sortStudies(sortConf, studies);
+  getStudySortConfig,
+  (studies, filters, sortConfig) => {
+    const sorted = sortStudies(sortConfig, studies);
     return filterStudies(filters, sorted);
   },
 );
@@ -119,8 +100,6 @@ export const getStudiesFilteredAndSorted = createSelector(
 export const getStudyIdsFilteredAndSorted = createSelector(getStudiesFilteredAndSorted, (studies) =>
   studies.map((study) => study.id),
 );
-
-export const getStudiesTree = createSelector(getStudies, (studies) => buildStudyTree(studies));
 
 export const getStudyVersions = (state: AppState): StudiesState["versionList"] => {
   return getStudiesState(state).versionList;
@@ -218,7 +197,9 @@ export const getGroup = groupsSelectors.selectById;
 export const getStudySynthesesState = (state: AppState): StudySynthesesState =>
   state.studySyntheses;
 
-const studySynthesesSelectors = studySynthesesAdapter.getSelectors(getStudySynthesesState);
+const studySynthesesSelectors = createEntityAdapter({
+  selectId: (studyData: StudySynthesis) => studyData.study_id,
+}).getSelectors(getStudySynthesesState);
 
 export const getStudySynthesisById = studySynthesesSelectors.selectEntities;
 
@@ -236,10 +217,21 @@ export const getCurrentStudySynthesis = createSelector(
 
 export const getAreas = createSelector(getStudySynthesis, (synthesis) => {
   if (synthesis) {
-    return Object.keys(synthesis.areas).map((id) => ({
+    const areas: AreaWithId[] = Object.keys(synthesis.areas).map((id) => ({
       ...synthesis.areas[id],
       id,
-    })) as Array<Area & { id: string }>;
+    }));
+
+    return sortByName(areas);
+  }
+
+  return [];
+});
+
+export const getDistricts = createSelector(getStudySynthesis, (synthesis) => {
+  if (synthesis) {
+    const districts = Object.values(synthesis.districts);
+    return sortByName(districts);
   }
   return [];
 });
@@ -251,7 +243,7 @@ export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
         acc[id] = { ...synthesis.areas[id], id };
         return acc;
       },
-      {} as Record<string, Area & { id: string }>,
+      {} as Record<string, AreaWithId>,
     );
   }
   return {};
@@ -260,7 +252,8 @@ export const getAreasById = createSelector(getStudySynthesis, (synthesis) => {
 export const getArea = createSelector(
   getStudySynthesis,
   (state: AppState, studyId: StudyMetadata["id"], areaId: string) => areaId,
-  (synthesis, areaId) => synthesis?.areas[areaId],
+  (synthesis, areaId) =>
+    synthesis?.areas[areaId] && ({ ...synthesis.areas[areaId], id: areaId } as AreaWithId),
 );
 
 export const getCurrentAreaId = (state: AppState): StudySynthesesState["currentArea"] => {
@@ -272,9 +265,7 @@ export const getCurrentArea = createSelector(
   getCurrentAreaId,
   (synthesis, areaId) => {
     if (synthesis?.areas[areaId]) {
-      return { id: areaId, ...synthesis?.areas[areaId] } as Area & {
-        id: string;
-      };
+      return { id: areaId, ...synthesis?.areas[areaId] } as AreaWithId;
     }
   },
 );
@@ -297,7 +288,7 @@ export const getLinks = createSelector(getStudySynthesis, (synthesis) => {
       });
     });
   }
-  return links;
+  return sortByProp("label", links);
 });
 
 export const getCurrentLinkId = (state: AppState): StudySynthesesState["currentLink"] => {
@@ -358,7 +349,7 @@ export const getLinksAndClusters = createSelector(getStudySynthesis, (synthesis)
       acc.clusters.push({
         element: area,
         item_list: synthesis.areas[areaId].thermals.map((thermal) => ({
-          id: thermal.id,
+          id: nameToId(thermal.name),
           name: thermal.name,
         })),
       });
@@ -369,23 +360,15 @@ export const getLinksAndClusters = createSelector(getStudySynthesis, (synthesis)
   return linksAndClusters;
 });
 
-export const getStudyOutput = createSelector(
-  getStudySynthesis,
-  (state: AppState, studyId: StudyMetadata["id"], outputId: string) => outputId,
-  (synthesis, outputId) => {
-    if (synthesis?.outputs[outputId]) {
-      return { id: outputId, ...synthesis?.outputs[outputId] };
-    }
-  },
-);
-
 ////////////////////////////////////////////////////////////////
 // Study Maps
 ////////////////////////////////////////////////////////////////
 
 export const getStudyMapsState = (state: AppState): StudyMapsState => state.studyMaps;
 
-const studyMapsSelectors = studyMapsAdapter.getSelectors(getStudyMapsState);
+const studyMapsSelectors = createEntityAdapter({
+  selectId: (studyMap: StudyMap) => studyMap.studyId,
+}).getSelectors(getStudyMapsState);
 
 export const getStudyMapsById = studyMapsSelectors.selectEntities;
 
@@ -511,16 +494,4 @@ export const getMessageInfo = (state: AppState): UIState["messageInfo"] => {
 
 export const isMenuOpen = (state: AppState): UIState["menuOpen"] => {
   return getUIState(state).menuOpen;
-};
-
-export const getFormState = (state: AppState): UIState["form"] => {
-  return getUIState(state).form;
-};
-
-export const getFormStatus = (state: AppState): UIState["form"]["status"] => {
-  return getUIState(state).form.status;
-};
-
-export const getFormCloseDialogStatus = (state: AppState): UIState["form"]["closeDialogStatus"] => {
-  return getUIState(state).form.closeDialogStatus;
 };

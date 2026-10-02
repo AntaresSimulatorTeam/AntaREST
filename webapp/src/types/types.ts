@@ -12,6 +12,10 @@
  * This file is part of the Antares project.
  */
 
+import type { TimeFrequencyType } from "@/components/Matrix/shared/types";
+import type { StudySortConfigSchema } from "@/routes/_authenticated/studies/-components/StudiesList/Header/studySortUtils";
+import type { Job } from "@/services/api/launcher/jobs/types";
+import type z from "zod";
 import type { TaskTypeValue } from "../services/api/tasks/types";
 
 export type IdType = number | string;
@@ -42,6 +46,14 @@ export enum StudyType {
   RAW = "rawstudy",
 }
 
+export enum StorageMode {
+  FILESYSTEM = "filesystem",
+  DATABASE = "database",
+}
+
+/**
+ * @deprecated Use StudyDTO type instead
+ */
 export interface StudyMetadataDTO extends IdentityDTO {
   owner: StudyMetadataOwner;
   editor: string;
@@ -53,14 +65,19 @@ export interface StudyMetadataDTO extends IdentityDTO {
   workspace: string;
   managed: boolean;
   archived: boolean;
+  storage_mode: StorageMode;
   groups: IdentityDTO[];
   public_mode: StudyPublicMode;
   folder?: string;
   horizon?: string;
   tags?: string[];
   parent_id?: string;
+  directory_id?: string | null;
 }
 
+/**
+ * @deprecated Use Study type instead
+ */
 export interface StudyMetadata {
   id: string;
   name: string;
@@ -74,12 +91,14 @@ export interface StudyMetadata {
   workspace: string;
   managed: boolean;
   archived: boolean;
+  storageMode: StorageMode;
   groups: Array<{ id: string; name: string }>;
   publicMode: StudyPublicMode;
   folder?: string;
   horizon?: string;
   tags?: string[];
   parentId?: string;
+  directoryId?: string | null;
 }
 
 export interface StudyMetadataPatchDTO {
@@ -89,52 +108,23 @@ export interface StudyMetadataPatchDTO {
   tags?: string[];
 }
 
-export interface StudyOutput {
+export interface OutputSynthesis {
   name: string;
-  type: string;
-  settings: {
-    general: {
-      mode: string;
-      horizon: number;
-      nbyears: number;
-      simulation: {
-        start: number;
-        end: number;
-      };
-    };
-    input: {
-      import: string;
-    };
-    output: {
-      synthesis: boolean;
-      storenewset: boolean;
-      archives: string;
-    };
-    optimization: object;
-    otherPreferences: object;
-    advancedParameters: object;
-    seedsMersenneTwister: object;
-    playlist: unknown[];
-  };
-  completionDate: string;
-  status: string;
+  mode: "Economy" | "Adequacy" | "Expansion";
+  synthesis: boolean;
+  byYear: boolean;
+  nbYears: number;
   archived: boolean;
+  storageType: "IN_STUDY_FILE_TREE" | "OUT_OF_STUDY_FILE_TREE" | "V2";
 }
+
 export interface StudyLayer {
   areas: string[];
   id: string;
   name: string;
 }
 
-export interface VariantTreeDTO {
-  node: StudyMetadataDTO;
-  children: VariantTreeDTO[];
-}
-
-export interface VariantTree {
-  node: StudyMetadata;
-  children: VariantTree[];
-}
+export type StudySortConfig = z.infer<typeof StudySortConfigSchema>;
 
 export interface LaunchJobProgressDTO {
   id: string;
@@ -142,7 +132,7 @@ export interface LaunchJobProgressDTO {
   message: string;
 }
 
-export type LaunchJobsProgress = Record<string, number>;
+export type JobsProgressById = Record<Job["id"], number>;
 
 export enum RoleType {
   ADMIN = 40,
@@ -308,39 +298,33 @@ export interface Area {
   filters_year: string[];
 }
 
+export interface AreaWithId extends Area {
+  id: string;
+}
+
+export type DistrictApplyFilter = "add-all" | "remove-all";
+
+// Used only in study synthesis. The /districts endpoint returns a different object.
+// Will be removed after migrating from Redux to dedicated endpoints with TanStack Query.
 export interface District {
   id: string;
-  name?: string;
-  addAreas?: string[];
-  subtractAreas?: string[];
-  applyFilter?: string;
-  comments?: string;
-  output: boolean;
-}
-
-export interface Simulation {
   name: string;
-  date: string;
-  mode: string;
-  nbyears: number;
-  synthesis: boolean;
-  by_year: boolean;
-  error: boolean;
+  output: boolean;
+  comments: string;
+  addAreas: string[];
+  subtractAreas: string[];
+  applyFilter: DistrictApplyFilter;
 }
 
-export interface FileStudyTreeConfigDTO {
-  study_path: string;
-  path: string;
+export interface StudySynthesis {
   study_id: string;
   version: number;
-  output_path?: string;
   areas: Record<string, Area>;
   districts: Record<string, District>;
-  outputs: Record<string, Simulation>;
-  bindings: string[];
+  outputs: Record<string, OutputSynthesis>;
   store_new_set: boolean;
   archive_input_series: string[];
-  enr_modelling: string;
+  enr_modelling: "aggregated" | "clusters";
 }
 
 export interface LinkElement {
@@ -379,18 +363,10 @@ export enum StudyOutputDownloadType {
   AREAS = "AREA",
 }
 
-export enum StudyOutputDownloadLevelDTO {
-  ANNUAL = "annual",
-  MONTHLY = "monthly",
-  WEEKLY = "weekly",
-  DAILY = "daily",
-  HOURLY = "hourly",
-}
-
 export interface StudyOutputDownloadDTO {
   type: StudyOutputDownloadType;
   years?: number[];
-  level: StudyOutputDownloadLevelDTO;
+  level: TimeFrequencyType;
   filterIn?: string;
   filterOut?: string;
   filter?: string[];
@@ -403,7 +379,7 @@ export interface MatrixIndex {
   start_date: string;
   steps: number;
   first_week_size: number;
-  level: StudyOutputDownloadLevelDTO;
+  level: TimeFrequencyType;
 }
 
 export enum MatrixStats {

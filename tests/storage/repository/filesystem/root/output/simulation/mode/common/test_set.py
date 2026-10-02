@@ -46,7 +46,7 @@ class TestOutputSimulationSet:
             areas={},
         )
 
-        node = set.OutputSimulationSet(matrix_mapper=Mock(), config=config, set="foo")
+        node = set.OutputSimulationSet(matrix_storage_context=Mock(), config=config, set="foo")
         actual = node.build()
 
         # check the result

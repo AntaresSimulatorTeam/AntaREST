@@ -11,20 +11,23 @@
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
 from pathlib import PurePosixPath
-from typing import Iterator
 
 from antarest.study.business.model.user_model import UserResourceDataCreation
 
 
 class ReadOnlyUserResourcesDao(ABC):
     @abstractmethod
-    def get_all_user_resources(self) -> Iterator[UserResourceDataCreation]:
+    def get_all_user_resources(self) -> list[UserResourceDataCreation]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_user_resource(self, resource_path: PurePosixPath) -> bytes:
         raise NotImplementedError()
 
 
 class UserResourcesDao(ReadOnlyUserResourcesDao):
     @abstractmethod
-    def save_user_resource(self, resource_data: UserResourceDataCreation) -> None:
+    def save_user_resources(self, resource_data: list[UserResourceDataCreation]) -> None:
         raise NotImplementedError()
 
     @abstractmethod

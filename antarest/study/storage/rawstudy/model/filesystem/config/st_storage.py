@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import re
-from typing import Annotated, Any, Optional, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer
@@ -25,6 +25,7 @@ from antarest.study.business.model.sts_model import (
     initialize_st_storage,
     validate_st_storage_against_version,
 )
+from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 
 
 class STStorageFileData(AntaresBaseModel):
@@ -35,24 +36,24 @@ class STStorageFileData(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     name: str
-    group: Optional[str] = None
-    injection_nominal_capacity: Optional[float] = Field(default=None, alias="injectionnominalcapacity")
-    withdrawal_nominal_capacity: Optional[float] = Field(default=None, alias="withdrawalnominalcapacity")
-    reservoir_capacity: Optional[float] = Field(default=None, alias="reservoircapacity")
-    efficiency: Optional[float] = None
-    initial_level: Optional[float] = Field(default=None, alias="initiallevel")
-    initial_level_optim: Optional[bool] = Field(default=None, alias="initialleveloptim")
+    group: str | None = None
+    injection_nominal_capacity: float | None = Field(default=None, alias="injectionnominalcapacity")
+    withdrawal_nominal_capacity: float | None = Field(default=None, alias="withdrawalnominalcapacity")
+    reservoir_capacity: float | None = Field(default=None, alias="reservoircapacity")
+    efficiency: float | None = None
+    initial_level: float | None = Field(default=None, alias="initiallevel")
+    initial_level_optim: bool | None = Field(default=None, alias="initialleveloptim")
 
     # Added in 8.8
-    enabled: Optional[bool] = None
+    enabled: bool | None = None
 
     # Added in 9.2
-    efficiency_withdrawal: Optional[float] = Field(default=None, alias="efficiencywithdrawal")
-    penalize_variation_injection: Optional[bool] = Field(default=None, alias="penalize-variation-injection")
-    penalize_variation_withdrawal: Optional[bool] = Field(default=None, alias="penalize-variation-withdrawal")
+    efficiency_withdrawal: float | None = Field(default=None, alias="efficiencywithdrawal")
+    penalize_variation_injection: bool | None = Field(default=None, alias="penalize-variation-injection")
+    penalize_variation_withdrawal: bool | None = Field(default=None, alias="penalize-variation-withdrawal")
 
     # Added in 9.3
-    allow_overflow: Optional[bool] = Field(default=None, alias="allow-overflow")
+    allow_overflow: bool | None = Field(default=None, alias="allow-overflow")
 
     def to_model(self) -> STStorage:
         return STStorage.model_validate(self.model_dump(exclude_none=True))
@@ -62,8 +63,12 @@ class STStorageFileData(AntaresBaseModel):
         return cls.model_validate(storage.model_dump(exclude={"id"}))
 
 
-def parse_st_storage(study_version: StudyVersion, data: Any) -> STStorage:
-    storage = STStorageFileData.model_validate(data).to_model()
+def parse_st_storage(study_version: StudyVersion, data: Any, storage_id: str | None = None) -> STStorage:
+    file_data = STStorageFileData.model_validate(data)
+    model_data = file_data.model_dump(exclude_none=True)
+    if storage_id is not None:
+        model_data["id"] = transform_name_to_id(storage_id)
+    storage = STStorage.model_validate(model_data)
     validate_st_storage_against_version(study_version, storage)
     initialize_st_storage(storage, study_version)
     check_attributes_coherence(storage, study_version)

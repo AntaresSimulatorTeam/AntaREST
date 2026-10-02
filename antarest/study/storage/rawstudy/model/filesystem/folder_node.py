@@ -12,16 +12,15 @@
 
 import shutil
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
 
 from typing_extensions import override
 
 from antarest.core.exceptions import ChildNotFoundError, PathIsAFolderError
 from antarest.core.model import JSON, SUB_JSON
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode, OriginalFile
-from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 
 
 class FilterError(Exception):
@@ -44,12 +43,12 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
+        matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
-        children_glob_exceptions: Optional[List[str]] = None,
+        children_glob_exceptions: list[str] | None = None,
     ) -> None:
         super().__init__(config)
-        self.matrix_mapper = matrix_mapper
+        self.matrix_storage_context = matrix_storage_context
         self.children_glob_exceptions = children_glob_exceptions or []
 
     @abstractmethod
@@ -58,7 +57,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
 
     def _forward_get(
         self,
-        url: List[str],
+        url: list[str],
         depth: int,
         formatted: bool,
     ) -> JSON:
@@ -93,7 +92,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     @override
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -106,7 +105,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     @override
     def get_node_and_remainder(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> tuple[INode[JSON, SUB_JSON, JSON], list[str]]:
         if not url:
             return self, []
@@ -121,7 +120,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
     def save(
         self,
         data: SUB_JSON,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> None:
         self._assert_not_in_zipped_file()
         children = self.build()
@@ -137,7 +136,7 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
                 children[key].save(data[key])
 
     @override
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         if url and url != [""]:
             children = self.build()
             names, sub_url = self._extract_child(children, url)
@@ -147,22 +146,22 @@ class FolderNode(INode[JSON, SUB_JSON, JSON], ABC):
             shutil.rmtree(self.config.path)
 
     @override
-    def get_matrix_nodes_to_normalize(self) -> list[MatrixNode]:
-        nodes: list[MatrixNode] = []
+    def get_matrix_nodes_to_normalize(self) -> list[InputSeriesMatrix]:
+        nodes: list[InputSeriesMatrix] = []
         for child in self.build().values():
             node = child.get_matrix_nodes_to_normalize()
             nodes.extend(node)
         return nodes
 
     @override
-    def get_matrix_nodes_to_denormalize(self) -> list[MatrixNode]:
-        nodes: list[MatrixNode] = []
+    def get_matrix_nodes_to_denormalize(self) -> list[InputSeriesMatrix]:
+        nodes: list[InputSeriesMatrix] = []
         for child in self.build().values():
             node = child.get_matrix_nodes_to_denormalize()
             nodes.extend(node)
         return nodes
 
-    def _extract_child(self, children: TREE, url: List[str]) -> Tuple[List[str], List[str]]:
+    def _extract_child(self, children: TREE, url: list[str]) -> tuple[list[str], list[str]]:
         names, sub_url = url[0].split(","), url[1:]
         names = (
             list(

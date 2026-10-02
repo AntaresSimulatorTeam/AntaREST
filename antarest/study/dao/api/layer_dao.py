@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Sequence
+from collections.abc import Sequence
 
 from antarest.study.business.model.layer_model import Layer
 
@@ -31,5 +31,5 @@ class LayerDao(ReadOnlyLayerDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete_layer(self, layer: Layer) -> None:
+    def delete_layer(self, layer_id: str) -> None:
         raise NotImplementedError()

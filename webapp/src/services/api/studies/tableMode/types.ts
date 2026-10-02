@@ -13,25 +13,19 @@
  */
 
 import type { DeepPartial } from "react-hook-form";
-import type { StudyMetadata } from "../../../../types/types";
-import type { TABLE_MODE_COLUMNS_BY_TYPE, TABLE_MODE_TYPES } from "./constants";
+import type { TableModeColumnsForType, TableModeType } from "../../tablemode/types";
+import type { Study } from "../types";
 
-export type TableModeType = (typeof TABLE_MODE_TYPES)[number];
-
-export type TableModeColumnsForType<T extends TableModeType> = Array<
-  (typeof TABLE_MODE_COLUMNS_BY_TYPE)[T][number]
->;
-
-export type TableData = Record<string, Record<string, string | boolean | number>>;
+export type TableModeData = Record<string, Record<string, string | boolean | number>>;
 
 export interface GetTableModeParams<T extends TableModeType> {
-  studyId: StudyMetadata["id"];
+  studyId: Study["id"];
   tableType: T;
   columns: TableModeColumnsForType<T>;
 }
 
 export interface SetTableModeParams {
-  studyId: StudyMetadata["id"];
+  studyId: Study["id"];
   tableType: TableModeType;
-  data: DeepPartial<TableData>;
+  data: DeepPartial<TableModeData>;
 }

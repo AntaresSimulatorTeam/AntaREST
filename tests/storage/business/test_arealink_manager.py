@@ -107,7 +107,7 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
         },
         districts={"s1": District(id="s1", name="s1", add_areas=["a1"])},
     )
-    file_tree_mock = Mock(spec=FileStudyTree, matrix_mapper=Mock(), config=config)
+    file_tree_mock = Mock(spec=FileStudyTree, matrix_storage_context=Mock(), config=config)
 
     study_interface = file_study_interface(FileStudy(config, file_tree_mock))
     file_tree_mock.get.side_effect = [
@@ -140,6 +140,8 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                     "law_planned": "uniform",
                     "marginal_cost": 0.0,
                     "market_bid_cost": 0.0,
+                    "max_downward_power_ramping_rate": None,
+                    "max_upward_power_ramping_rate": None,
                     "min_down_time": 1,
                     "min_stable_power": 200.0,
                     "min_up_time": 1,
@@ -157,6 +159,9 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                     "pm10": None,
                     "pm2_5": None,
                     "pm5": None,
+                    "ramping_enabled": None,
+                    "power_decrease_cost": None,
+                    "power_increase_cost": None,
                     "so2": None,
                     "spinning": 0.0,
                     "spread_cost": 0.0,

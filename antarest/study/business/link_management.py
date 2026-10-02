@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Mapping, Tuple
+from collections.abc import Mapping
 
 from antarest.core.model import JSON
 from antarest.study.business.model.link_model import Link, LinkCreation, LinkUpdate
@@ -25,7 +25,7 @@ class LinkManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_all_links(self, study: StudyInterface) -> List[Link]:
+    def get_all_links(self, study: StudyInterface) -> list[Link]:
         return list(study.get_study_dao().get_links())
 
     def get_link(self, study: StudyInterface, area_from: str, area_to: str) -> Link:
@@ -67,8 +67,8 @@ class LinkManager:
     def update_links(
         self,
         study: StudyInterface,
-        update_links_by_ids: Mapping[Tuple[str, str], LinkUpdate],
-    ) -> Mapping[Tuple[str, str], Link]:
+        update_links_by_ids: Mapping[tuple[str, str], LinkUpdate],
+    ) -> Mapping[tuple[str, str], Link]:
         # Build all commands
         commands = []
         for (area1, area2), update_link_dto in update_links_by_ids.items():

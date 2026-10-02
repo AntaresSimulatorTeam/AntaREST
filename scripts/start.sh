@@ -18,6 +18,19 @@
 #    configure some load balancing upstream, in that case.
 #    Number of workers is defined by ANTARES_NB_WORKERS env variable,
 #    or equal to 2*cpu + 1.
+#
+# Environment variables:
+#
+#   ANTARES_NB_WORKERS        Number of workers in usage 3, see above.
+#   ANTAREST_CONF             Path of the configuration file.
+#   CELERY_CONCURRENCY        Concurrency of the celery worker, default 1.
+#   CELERY_POOL               Pool of the celery worker, default "solo".
+#   CELERYBEAT_SCHEDULE       Path of the file where celery beat keeps its
+#                             schedule. Unset by default, which leaves celery
+#                             its own, relative to the working directory.
+#   GUNICORN_WORKERS          Number of workers in usage 1, see above.
+#   PROMETHEUS_MULTIPROC_DIR  Directory where the prometheus multiprocess
+#                             metrics are collected, emptied at startup.
 
 set -e
 
@@ -47,16 +60,15 @@ if [[ -v PROMETHEUS_MULTIPROC_DIR ]]; then
 fi
 
 if [ -z "$1" ] ; then
-  sh $CUR_DIR/pre-start.sh
   gunicorn --config $BASE_DIR/conf/gunicorn.py --worker-class=uvicorn.workers.UvicornWorker antarest.wsgi:app
 elif [ "$use_uvicorn" = true ]; then
-  sh $CUR_DIR/pre-start.sh
   pids=() # Initialize empty array to store background process IDs
   for ((i=0; i<workers; i++))
   do
     # we still use gunicorn in that case to restart workers in case they are killed,
     # although each gunicorn instance has only one worker
-    gunicorn --worker-class=uvicorn.workers.UvicornWorker \
+    #
+    ANTAREST_WORKER_ID=$((1 + $i)) gunicorn --worker-class=uvicorn.workers.UvicornWorker \
              --bind=0.0.0.0:$((5000 + $i)) \
              --workers=1 \
              --log-level info \
@@ -76,8 +88,16 @@ else
   case "$1" in
     celery-beat)
       echo "Starting Celery Beat scheduler..."
+      # Celery writes its schedule to `celerybeat-schedule`, relative to the
+      # working directory: set CELERYBEAT_SCHEDULE when that directory is not
+      # writable.
+      EXTRA_OPTS=()
+      if [ -n "${CELERYBEAT_SCHEDULE:-}" ]; then
+        EXTRA_OPTS+=(--schedule="$CELERYBEAT_SCHEDULE")
+      fi
       exec celery -A antarest.maintenance.app:celery_app beat \
         --loglevel=info \
+        "${EXTRA_OPTS[@]}" \
         --pidfile=/tmp/celerybeat.pid
       ;;
     celery-worker)
@@ -93,7 +113,7 @@ else
       ;;
     *)
       # Default: run antarest module (watcher, auto_archiver, etc.)
-      python3 $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
+      python $BASE_DIR/antarest/main.py -c $ANTAREST_CONF --module "$1"
       ;;
   esac
 fi

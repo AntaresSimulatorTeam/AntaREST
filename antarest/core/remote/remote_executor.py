@@ -14,7 +14,7 @@ import logging
 import time
 import uuid
 from abc import ABC, abstractmethod
-from typing import Awaitable, Callable, List
+from collections.abc import Awaitable, Callable
 
 from typing_extensions import override
 
@@ -69,10 +69,10 @@ class RemoteWorkerExecutor(IRemoteExecutor):
 
         remote_task_id = str(uuid.uuid4())
 
-        task_result_wrapper: List[TaskResult] = []
+        task_result_wrapper: list[TaskResult] = []
 
         def _create_awaiter(
-            res_wrapper: List[TaskResult],
+            res_wrapper: list[TaskResult],
         ) -> Callable[[Event], Awaitable[None]]:
             async def _await_task_end(event: Event) -> None:
                 task_event = WorkerTaskResult.model_validate(event.payload)

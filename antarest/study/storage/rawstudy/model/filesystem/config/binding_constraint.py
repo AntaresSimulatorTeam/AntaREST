@@ -15,7 +15,7 @@ Object model used to read and update binding constraint configuration.
 """
 
 import copy
-from typing import Any, Optional
+from typing import Any
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field, model_validator
@@ -49,18 +49,18 @@ class BindingConstraintFileData(AntaresBaseModel):
 
     id: str
     name: str
-    enabled: Optional[bool] = None
-    time_step: Optional[BindingConstraintFrequency] = Field(None, alias="type")
-    operator: Optional[BindingConstraintOperator] = None
-    comments: Optional[str] = None
-    terms: Optional[list[ConstraintTerm]] = None
+    enabled: bool | None = None
+    time_step: BindingConstraintFrequency | None = Field(None, alias="type")
+    operator: BindingConstraintOperator | None = None
+    comments: str | None = None
+    terms: list[ConstraintTerm] | None = None
 
     # Added in 8.3
-    filter_year_by_year: Optional[str] = None
-    filter_synthesis: Optional[str] = None
+    filter_year_by_year: str | None = None
+    filter_synthesis: str | None = None
 
     # Added in 8.7
-    group: Optional[str] = None
+    group: str | None = None
 
     def to_model(self) -> BindingConstraint:
         return BindingConstraint.model_validate(self.model_dump(exclude_none=True, exclude={"id"}))

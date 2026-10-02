@@ -11,15 +11,16 @@
 # This file is part of the Antares project.
 
 import datetime
+import tempfile
+from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.exceptions import TaskAlreadyRunning
-from antarest.core.interfaces.cache import ICache
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
+from antarest.output.service import OutputService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
-from antarest.study.output.output_service import OutputService
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from tests.helpers import create_raw_study, create_variant_study, with_db_context
@@ -32,7 +33,7 @@ def test_auto_archival() -> None:
 
     now = current_time()
 
-    repository = StudyMetadataRepository(cache_service=Mock(spec=ICache))
+    repository = StudyMetadataRepository()
 
     # Add some studies in the database
     db_session = repository.session
@@ -87,6 +88,7 @@ def test_auto_archival() -> None:
         threshold_days=60,
         snapshot_retention_days=7,
         dry_run=False,
+        lock_folder=Path(tempfile.gettempdir()),
     )
 
     assert result.status == BackGroundTaskStatus.SUCCESS

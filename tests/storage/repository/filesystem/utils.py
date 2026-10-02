@@ -11,15 +11,14 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import List, Optional
 from zipfile import ZipFile
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 
 
 class CheckSubNode(INode[int, int, int]):
@@ -33,14 +32,14 @@ class CheckSubNode(INode[int, int, int]):
     @override
     def get_node_and_remainder(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> tuple[INode[int, int, int], list[str]]:
         return self, []
 
     @override
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = True,
         formatted: bool = True,
@@ -48,25 +47,25 @@ class CheckSubNode(INode[int, int, int]):
         return self.value
 
     @override
-    def save(self, data: int, url: Optional[List[str]] = None) -> None:
+    def save(self, data: int, url: list[str] | None = None) -> None:
         self.value = data
 
     @override
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         pass
 
-    def check_errors(self, data: int, url: Optional[List[str]] = None, raising: bool = False) -> List[str]:
+    def check_errors(self, data: int, url: list[str] | None = None, raising: bool = False) -> list[str]:
         return []
 
 
 class MiddleNode(FolderNode):
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
+        matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
         children: TREE,
     ):
-        super().__init__(matrix_mapper, config)
+        super().__init__(matrix_storage_context, config)
         self.children = children
 
     @override

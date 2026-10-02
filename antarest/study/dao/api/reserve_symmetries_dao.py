@@ -1,0 +1,109 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+from abc import ABC, abstractmethod
+
+from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
+from antarest.study.dao.common import (
+    AreaId,
+    HydroReserveSymmetriesMapping,
+    StStorageId,
+    STStorageReserveSymmetriesMapping,
+    ThermalId,
+    ThermalReserveSymmetriesMapping,
+)
+
+
+class ReadOnlyReserveSymmetriesDao(ABC):
+    @abstractmethod
+    def get_all_thermal_reserve_symmetries(self) -> ThermalReserveSymmetriesMapping:
+        """
+        Returns the thermal reserve symmetries of the whole study.
+
+        Design notes:
+        - If an area has no symmetries, it won't be present in the returned data.
+        - If a thermal cluster has no symmetries, it also won't be present in the returned data.
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_thermal_reserve_symmetries(self, area_id: AreaId) -> dict[ThermalId, ReserveSymmetries]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_st_storage_reserve_symmetries(self) -> STStorageReserveSymmetriesMapping:
+        """
+        Returns the short-term storage reserve symmetries of the whole study.
+
+        Design notes:
+        - If an area has no symmetries, it won't be present in the returned data.
+        - If a short-term storage has no symmetries, it also won't be present in the returned data.
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_st_storage_reserve_symmetries(self, area_id: AreaId) -> dict[StStorageId, ReserveSymmetries]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_reserve_symmetries(self) -> HydroReserveSymmetriesMapping:
+        """
+        Returns the hydro reserve symmetries of the whole study.
+
+        Design notes:
+        - If an area has no symmetries, it won't be present in the returned data.
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_reserve_symmetries(self, area_id: AreaId) -> ReserveSymmetries:
+        raise NotImplementedError()
+
+
+class ReserveSymmetriesDao(ReadOnlyReserveSymmetriesDao):
+    @abstractmethod
+    def save_thermal_reserve_symmetries(self, data: ThermalReserveSymmetriesMapping) -> None:
+        """
+        Replace the thermal reserve symmetries with the given one.
+
+        Design notes:
+        - If an area is absent from the given data, its symmetries are not modified.
+        - If a thermal cluster is absent from in the given data, its symmetries will be removed.
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_st_storage_reserve_symmetries(self, data: STStorageReserveSymmetriesMapping) -> None:
+        """
+        Replace the short-term storage reserve symmetries with the given one.
+
+        Design notes:
+        - If an area is absent from the given data, its symmetries are not modified.
+        - If a short-term storage is absent from in the given data, its symmetries will be removed.
+
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_reserve_symmetries(self, data: HydroReserveSymmetriesMapping) -> None:
+        """
+        Replace the hydro reserve symmetries with the given one.
+
+        Design notes:
+        - If an area is absent from the given data, its symmetries are not modified.
+        - Giving an area an empty list removes all its symmetries.
+
+        """
+        raise NotImplementedError()

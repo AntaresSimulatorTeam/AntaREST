@@ -19,6 +19,7 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraintCreation,
     STStorageAdditionalConstraintUpdate,
 )
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -29,21 +30,22 @@ from antarest.study.storage.variantstudy.model.command.update_st_storage_additio
     UpdateSTStorageAdditionalConstraints,
 )
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
+from tests.helpers import build_dao_from_file_study, file_study_interface
 
 
 class TestUpdateSTStorageAdditionalConstraint:
     def test_nominal_case(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
         ####### Set Up ########
         study = empty_study_920
+        dao = build_dao_from_file_study(study, command_context)
         version = study.config.version
         for area in ["fr", "de"]:
             cmd = CreateArea(area_name=area, command_context=command_context, study_version=study.config.version)
-            cmd.apply(study)
+            cmd.apply(dao)
             cmd = CreateSTStorage(
                 area_id=area, parameters={"name": f"sts_{area}"}, command_context=command_context, study_version=version
             )
-            cmd.apply(study_data=study)
+            cmd.apply(dao)
 
         # Create several constraints
         cmd = CreateSTStorageAdditionalConstraints(
@@ -58,7 +60,7 @@ class TestUpdateSTStorageAdditionalConstraint:
             ],
             study_version=version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status
 
         cmd = CreateSTStorageAdditionalConstraints(
@@ -75,7 +77,7 @@ class TestUpdateSTStorageAdditionalConstraint:
             ],
             study_version=version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status
 
         # Update several constraints
@@ -100,7 +102,7 @@ class TestUpdateSTStorageAdditionalConstraint:
             },
             study_version=version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert output.status
 
         # Checks the ini content
@@ -173,9 +175,9 @@ class TestUpdateSTStorageAdditionalConstraint:
             },
         }
 
-    def test_error_cases(self, command_context: CommandContext, empty_study_920: FileStudy) -> None:
-        study = empty_study_920
-        version = study.config.version
+    def test_error_cases(self, command_context: CommandContext, dao_92: StudyDao) -> None:
+        dao = dao_92
+        version = dao.get_version()
 
         # Update a constraint in a fake area
         cmd = UpdateSTStorageAdditionalConstraints(
@@ -183,13 +185,13 @@ class TestUpdateSTStorageAdditionalConstraint:
             additional_constraint_properties={"fr": {"sts_1": {"constraint": STStorageAdditionalConstraintUpdate()}}},
             study_version=version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert not output.status
         assert output.message == "Constraint constraint not found for short-term storage sts_1 in area 'fr'."
 
         # Create the area `fr`
-        cmd = CreateArea(area_name="fr", command_context=command_context, study_version=study.config.version)
-        cmd.apply(study)
+        cmd = CreateArea(area_name="fr", command_context=command_context, study_version=version)
+        cmd.apply(dao)
 
         # Update a constraint with a fake storage
         cmd = UpdateSTStorageAdditionalConstraints(
@@ -197,13 +199,13 @@ class TestUpdateSTStorageAdditionalConstraint:
             additional_constraint_properties={"fr": {"sts_1": {"constraint": STStorageAdditionalConstraintUpdate()}}},
             study_version=version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert not output.status
 
         # Create the storage `sts_1`
         CreateSTStorage(
             area_id="fr", parameters={"name": "sts_1"}, command_context=command_context, study_version=version
-        ).apply(study_data=study)
+        ).apply(dao)
 
         # Create a constraint
         CreateSTStorageAdditionalConstraints(
@@ -212,7 +214,7 @@ class TestUpdateSTStorageAdditionalConstraint:
             storage_id="sts_1",
             constraints=[STStorageAdditionalConstraintCreation(name="constraint")],
             study_version=version,
-        ).apply(study)
+        ).apply(dao)
 
         # Update a fake constraint
         cmd = UpdateSTStorageAdditionalConstraints(
@@ -220,6 +222,6 @@ class TestUpdateSTStorageAdditionalConstraint:
             additional_constraint_properties={"fr": {"sts_1": {"fake": STStorageAdditionalConstraintUpdate()}}},
             study_version=version,
         )
-        output = cmd.apply(study)
+        output = cmd.apply(dao)
         assert not output.status
         assert output.message == "Constraint fake not found for short-term storage sts_1 in area 'fr'."

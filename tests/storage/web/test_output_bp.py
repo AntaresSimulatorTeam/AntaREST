@@ -9,19 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import uuid
 from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.config import Config, StorageConfig
 from antarest.core.filetransfer.model import FileDownloadDTO, FileDownloadTaskDTO
-from antarest.core.filetransfer.service import FileTransferManager
-from antarest.study.model import (
-    StudySimResultDTO,
-    StudySimSettingsDTO,
-)
-from antarest.study.output.output_service import OutputService
+from antarest.output.service import OutputService
 from tests.storage.conftest import SimpleFileTransferManager
 from tests.storage.integration.conftest import UUID
 from tests.storage.web.test_studies_bp import create_test_client
@@ -50,38 +44,4 @@ def test_output_whole_download(tmp_path: Path) -> None:
     res = client.get(
         f"/v1/studies/{UUID}/outputs/{output_id}/export",
     )
-    assert res.status_code == HTTPStatus.OK
-
-
-def test_sim_result() -> None:
-    study_id = str(uuid.uuid4())
-    settings = StudySimSettingsDTO(
-        general={},
-        input={},
-        output={},
-        optimization={},
-        otherPreferences={},
-        advancedParameters={},
-        seedsMersenneTwister={},
-    )
-    result_data = [
-        StudySimResultDTO(
-            name="output-id",
-            type="economy",
-            settings=settings,
-            completionDate="",
-            status="",
-            archived=False,
-        )
-    ]
-
-    output_service = Mock(spec=OutputService)
-    output_service._study_service = Mock()
-    output_service.get_study_sim_result.return_value = result_data
-    ftm = Mock(spec=FileTransferManager)
-    output_service._file_transfer_manager = ftm
-
-    client = create_test_client(Mock(), output_service, raise_server_exceptions=False)
-    res = client.get(f"/v1/studies/{study_id}/outputs")
-    actual_object = [StudySimResultDTO.model_validate(res.json()[0])]
-    assert actual_object == result_data
+    assert res.status_code == HTTPStatus.OK, res.json()

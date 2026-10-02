@@ -13,11 +13,10 @@
 import logging
 import uuid
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Any
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import StudyVersionStr
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -43,12 +42,12 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         command_context: The context of the command.
     """
 
-    command_id: Optional[uuid.UUID] = None
+    command_id: uuid.UUID | None = None
     command_name: CommandName
     command_context: CommandContext
     study_version: StudyVersionStr
 
-    def _apply_dao(self, study_dao: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_dao: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[Any]:
         """
         Applies configuration changes to the study data.
 
@@ -57,7 +56,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         return self._apply(study_dao.get_file_study(), listener)
 
-    def _apply(self, study_data: FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply(self, study_data: FileStudy, listener: ICommandListener | None = None) -> CommandOutput[Any]:
         """
         Applies the study data to update storage configurations and saves the changes.
 
@@ -69,22 +68,19 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         raise NotImplementedError()
 
-    def apply(self, study_data: StudyDao | FileStudy, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def apply(self, study_dao: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[Any]:
         """
         Applies the study data to update storage configurations and saves the changes.
 
         Args:
-            study_data: The study data to be applied.
+            study_dao: The study dao to be applied.
             listener: Can be used by the command to notify anyone giving one.
 
         Returns:
             The output of the command execution.
         """
-        if isinstance(study_data, FileStudy):
-            context = self.command_context
-            study_data = FileStudyTreeDao(study_data, context.generator_matrix_constants, context.blob_service)
         try:
-            return self._apply_dao(study_data, listener)
+            return self._apply_dao(study_dao, listener)
         except Exception as e:
             logger.warning(
                 f"Failed to execute variant command {self.command_name}",
@@ -113,7 +109,7 @@ class ICommand(ABC, AntaresBaseModel, extra="forbid", arbitrary_types_allowed=Tr
         """
         return InnerMatrices()
 
-    def get_inner_blobs(self) -> List[str]:
+    def get_inner_blobs(self) -> list[str]:
         """
         Retrieves the list of blob IDs.
         """

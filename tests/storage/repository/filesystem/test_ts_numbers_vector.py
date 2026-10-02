@@ -24,7 +24,7 @@ def test_get(tmp_path: Path) -> None:
     file.write_text("size:1x5\n4\n5\n100\n8\n1")
 
     node = TsNumbersVector(
-        matrix_mapper=Mock(),
+        matrix_storage_context=Mock(),
         config=FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="id"),
     )
     assert node.get() == [4, 5, 100, 8, 1]
@@ -35,7 +35,7 @@ def test_save(tmp_path: Path) -> None:
     file.touch()
 
     node = TsNumbersVector(
-        matrix_mapper=Mock(),
+        matrix_storage_context=Mock(),
         config=FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="id"),
     )
     node.save([4, 5, 100, 8, 2, 10])

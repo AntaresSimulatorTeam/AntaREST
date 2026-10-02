@@ -13,6 +13,8 @@
  */
 
 import eslint from "@eslint/js";
+import queryPlugin from "@tanstack/eslint-plugin-query";
+import routerPlugin from "@tanstack/eslint-plugin-router";
 import vitestPlugin from "@vitest/eslint-plugin";
 import jsdocPlugin from "eslint-plugin-jsdoc";
 import licenseHeaderPlugin from "eslint-plugin-license-header";
@@ -27,7 +29,7 @@ export default [
   // Must be defined here to be applied to all configurations.
   // cf. https://github.com/eslint/eslint/discussions/18304
   {
-    ignores: ["dist/*", "license-header.js"],
+    ignores: ["dist/*", "license-header.js", "**/routeTree.gen.ts"],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
@@ -42,6 +44,8 @@ export default [
   },
   reactPlugin.configs.flat["jsx-runtime"],
   jsdocPlugin.configs["flat/recommended-typescript"],
+  ...queryPlugin.configs["flat/recommended"],
+  ...routerPlugin.configs["flat/recommended"],
   vitestPlugin.configs.recommended,
   prettierPluginRecommended, // Must be the last one
   {
@@ -81,12 +85,18 @@ export default [
           patterns: [
             {
               group: ["@mui/material/*"],
-              message: 'Import from "@mui/material" ',
+              message: 'Import from "@mui/material"',
+            },
+            {
+              group: ["@mui/x-tree-view/*"],
+              message: 'Import from "@mui/x-tree-view"',
             },
             {
               group: ["react"],
+              // Targets TYPE imports (PascalCase). Hooks (`use*`) are excluded so named
+              // imports like `useEffectEvent` are allowed.
               importNamePattern:
-                "^(React|Function|Ref|Mutable|CSS|Component|Props|Form|Element)|(Event|Handler|Attributes)$",
+                "^(?!use)(React|Function|Ref|Mutable|CSS|Component|Props|Form|Element)|^(?!use).*(Event|Handler|Attributes)$",
               message:
                 'Use `React.[TYPE]` (e.g. `React.ReactNode`) instead of importing it directly from "react".',
             },
@@ -128,6 +138,28 @@ export default [
           ],
         },
       ],
+      "no-restricted-syntax": [
+        "error",
+        // https://github.com/mui/material-ui/issues/31096#issuecomment-2950173248
+        {
+          selector:
+            ":not(MemberExpression[property.name=mode]) > MemberExpression[property.name=palette] > Identifier[name=theme]",
+          message: "Don't use the palette directly. Use the CSS variable from `theme.vars.palette`",
+        },
+        {
+          selector:
+            "MemberExpression[property.name=mode] > MemberExpression[property.name=palette] > Identifier[name=theme]",
+          message: "Don't use the palette mode directly. Use the hook `useThemeColorScheme`",
+        },
+        {
+          selector: "Literal[value=/var\\(--mui-/]",
+          message: "Don't use css vars directly. Import from `theme.vars`",
+        },
+        {
+          selector: "TemplateElement[value.cooked=/var\\(--mui-/]",
+          message: "Don't use css vars directly. Import from `theme.vars`",
+        },
+      ],
       "no-use-before-define": [
         "error",
         {
@@ -144,7 +176,7 @@ export default [
         {
           // Includes hooks from 'react-use'
           additionalHooks:
-            "(useSafeMemo|useUpdateEffect|useUpdateEffectOnce|useDeepCompareEffect|useShallowCompareEffect|useCustomCompareEffect)",
+            "(useSafeMemo|useUpdateEffect|useUpdateEffectOnce|useDeepCompareEffect|useShallowCompareEffect|useCustomCompareEffect|useAsync)",
         },
       ],
       "require-await": "warn", // TODO: switch to "error" when the quantity of warning will be low

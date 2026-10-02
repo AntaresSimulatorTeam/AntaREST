@@ -23,7 +23,7 @@ from antarest.login.model import User
 
 def create_admin_user() -> JWTUser:
     with db(commit_on_exit=True):
-        user = User(id=DEFAULT_ADMIN_USER.id)
+        user = User(id=DEFAULT_ADMIN_USER.id, name="admin")
         db.session.add(user)
     return DEFAULT_ADMIN_USER
 

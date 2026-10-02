@@ -16,18 +16,20 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestRemoveLayer:
     def test_remove_layer_success(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         empty_study = empty_study_880
+        dao = build_dao_from_file_study(empty_study, command_context)
 
         create_command1 = CreateLayer(
             parameters=LayerCreation(name="Test Layer1"),
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_command1.apply(study_data=empty_study)
+        output = create_command1.apply(study_dao=dao)
         assert output.status
 
         create_command2 = CreateLayer(
@@ -35,7 +37,7 @@ class TestRemoveLayer:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = create_command2.apply(study_data=empty_study)
+        output = create_command2.apply(study_dao=dao)
         assert output.status
 
         link = IniReader()
@@ -47,7 +49,7 @@ class TestRemoveLayer:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = remove_command.apply(study_data=empty_study)
+        output = remove_command.apply(study_dao=dao)
         assert output.status
         assert "Layer 1 deleted successfully." in output.message
 
@@ -59,7 +61,7 @@ class TestRemoveLayer:
             command_context=command_context,
             study_version=empty_study.config.version,
         )
-        output = remove_command2.apply(study_data=empty_study)
+        output = remove_command2.apply(study_dao=dao)
         assert output.status
         assert "Layer 2 deleted successfully." in output.message
 

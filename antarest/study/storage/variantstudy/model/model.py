@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 import datetime
 import uuid
-from typing import List, MutableSequence, Optional, Tuple, TypeAlias
+from collections.abc import MutableSequence
+from typing import TypeAlias
 
 import typing_extensions as te
 
@@ -19,7 +20,7 @@ from antarest.core.model import JSON
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.model import StudyMetadataDTO, StudyVersionStr
 
-LegacyDetailsDTO: TypeAlias = Tuple[str, bool, str]
+LegacyDetailsDTO: TypeAlias = tuple[str, bool, str]
 """
 Legacy details DTO: triplet of name, output status and output message.
 """
@@ -70,12 +71,12 @@ class CommandDTOAPI(AntaresBaseModel):
         version: The version of the command.
     """
 
-    id: Optional[str] = None
+    id: str | None = None
     action: str
     args: MutableSequence[JSON] | JSON
     version: int = 1
-    user_name: Optional[str] = None
-    updated_at: Optional[datetime.datetime] = None
+    user_name: str | None = None
+    updated_at: datetime.datetime | None = None
 
 
 class CommandDTO(AntaresBaseModel):
@@ -92,15 +93,15 @@ class CommandDTO(AntaresBaseModel):
         updated_at: The time the command was last updated.
     """
 
-    id: Optional[str] = None
+    id: str | None = None
     action: str
-    args: List[JSON] | JSON
+    args: list[JSON] | JSON
     version: int = 1
     study_version: StudyVersionStr
-    user_id: Optional[int] = None
-    updated_at: Optional[datetime.datetime] = None
+    user_id: int | None = None
+    updated_at: datetime.datetime | None = None
 
-    def to_api(self, user_name: Optional[str] = None) -> CommandDTOAPI:
+    def to_api(self, user_name: str | None = None) -> CommandDTOAPI:
         data = self.model_dump(mode="json", exclude={"study_version", "user_id"})
         data["user_name"] = user_name
         return CommandDTOAPI.model_validate(data)

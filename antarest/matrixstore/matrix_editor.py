@@ -12,7 +12,7 @@
 
 import functools
 import operator
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 from typing_extensions import override
@@ -50,7 +50,7 @@ class MatrixSlice(AntaresBaseModel):
     )
 
     @model_validator(mode="before")
-    def check_values(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def check_values(cls, values: dict[str, Any]) -> dict[str, Any]:
         """
         Converts and validates the slice coordinates.
 
@@ -124,12 +124,11 @@ class Operation(AntaresBaseModel):
         """
         Computes the operation on the given value or matrix.
         """
-        if use_coords:
+        if use_coords or self.operation != "=":
             return OPERATIONS[self.operation](x, self.value)  # type: ignore
-        if self.operation == "=":
-            x.loc[~x.isnull()] = self.value
-            return x
-        return OPERATIONS[self.operation](x, self.value)  # type: ignore
+
+        x.loc[~x.isnull()] = self.value
+        return x
 
     @override
     def __str__(self) -> str:
@@ -158,8 +157,8 @@ class MatrixEditInstruction(AntaresBaseModel):
       to perform on the matrix.
     """
 
-    slices: Optional[List[MatrixSlice]] = None
-    coordinates: Optional[List[Tuple[int, int]]] = None
+    slices: list[MatrixSlice] | None = None
+    coordinates: list[tuple[int, int]] | None = None
     operation: Operation
 
     model_config = ConfigDict(
@@ -175,7 +174,7 @@ class MatrixEditInstruction(AntaresBaseModel):
     )
 
     @model_validator(mode="before")
-    def check_slice_coordinates(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def check_slice_coordinates(cls, values: dict[str, Any]) -> dict[str, Any]:
         """
         Validates the 'slices' and 'coordinates' fields.
 
@@ -200,7 +199,7 @@ class MatrixEditInstruction(AntaresBaseModel):
         return values
 
     @field_validator("coordinates")
-    def validate_coordinates(cls, coordinates: Optional[List[Tuple[int, int]]]) -> Optional[List[Tuple[int, int]]]:
+    def validate_coordinates(cls, coordinates: list[tuple[int, int]] | None) -> list[tuple[int, int]] | None:
         """
         Validates the `coordinates` field.
 

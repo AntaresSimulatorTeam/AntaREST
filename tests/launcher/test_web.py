@@ -11,19 +11,31 @@
 # This file is part of the Antares project.
 
 import http
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, call
 from uuid import uuid4
 
 import pytest
+from antares.study.version import SolverVersion
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.core.application import create_app_ctxt
 from antarest.core.config import Config, SecurityConfig
 from antarest.core.jwt import JWTGroup, JWTUser
 from antarest.core.roles import RoleType
-from antarest.launcher.main import build_launcher
-from antarest.launcher.model import JobResult, JobResultDTO, JobStatus, LauncherParametersDTO, LogType
+from antarest.dependencies import AppState
+from antarest.launcher.model import (
+    JobResult,
+    JobResultDTO,
+    JobStatus,
+    LauncherParametersDTO,
+    LauncherRuntimeConfig,
+    LogType,
+    SlurmRuntimeConfig,
+)
+from antarest.launcher.service import LauncherServiceNotAvailableException
+from antarest.launcher.web import create_launcher_api
+from antarest.main import add_exception_handlers
 
 ADMIN = JWTUser(
     id=1,
@@ -34,24 +46,19 @@ ADMIN = JWTUser(
 
 
 def create_app(service: Mock) -> FastAPI:
-    build_ctxt = create_app_ctxt(FastAPI(title=__name__))
-    build_launcher(
-        build_ctxt,
-        study_service=Mock(),
-        output_service=Mock(),
-        login_service=Mock(),
-        file_transfer_manager=Mock(),
-        task_service=Mock(),
-        service_launcher=service,
-        config=Config(security=SecurityConfig(disabled=True)),
-        cache=Mock(),
-    )
-    return build_ctxt.build()
+    config = Config(security=SecurityConfig(disabled=True))
+    services = Mock()
+    services.launcher = service
+    app = FastAPI(title=__name__)
+    add_exception_handlers(app)
+    app.state.app_state = AppState(config=config, services=services, ws_manager=Mock())
+    app.include_router(create_launcher_api())
+    return app
 
 
 def test_run() -> None:
     job = uuid4()
-    study = "my-study"
+    study = str(uuid4())
 
     service = Mock()
     service.run_study.return_value = str(job)
@@ -62,7 +69,36 @@ def test_run() -> None:
 
     assert res.status_code == 200
     assert res.json() == {"job_id": str(job)}
-    service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), None, None)
+    service.run_study.assert_called_once_with(study, "local", LauncherParametersDTO(), None, None, None)
+
+
+def test_run__with_scheduled_start() -> None:
+    job = uuid4()
+    study = str(uuid4())
+
+    service = Mock()
+    service.run_study.return_value = str(job)
+
+    app = create_app(service)
+    client = TestClient(app)
+    res = client.post(f"/v1/launcher/run/{study}?run_at=2026-07-08T12:00:00")
+
+    assert res.status_code == 200
+    assert res.json() == {"job_id": str(job)}
+    service.run_study.assert_called_once_with(
+        study, "local", LauncherParametersDTO(), None, None, datetime(2026, 7, 8, 12, 0, 0)
+    )
+
+    # A timezone-aware time (Paris summer time, UTC+02:00) is forwarded as-is; the web layer
+    # does not normalize it (that is `LauncherService`'s job).
+    service.run_study.reset_mock()
+    paris_tz = timezone(timedelta(hours=2))
+    res = client.post(f"/v1/launcher/run/{study}?run_at=2026-07-08T14:00:00%2B02:00")
+
+    assert res.status_code == 200
+    service.run_study.assert_called_once_with(
+        study, "local", LauncherParametersDTO(), None, None, datetime(2026, 7, 8, 14, 0, 0, tzinfo=paris_tz)
+    )
 
 
 def test_result() -> None:
@@ -126,8 +162,9 @@ def test_jobs() -> None:
 
 def test_get_solver_versions() -> None:
     service = Mock()
-    output = ["1", "2", "3"]
-    service.get_solver_versions.return_value = output
+    output = ["880", "920", "930"]
+    solver_versions = [SolverVersion.parse(v) for v in output]
+    service.get_solver_versions.return_value = solver_versions
 
     app = create_app(service)
     client = TestClient(app)
@@ -155,14 +192,16 @@ def test_get_solver_versions__with_query_string(
     launcher: str,
     param_name: str,
 ) -> None:
+    output = ["880", "920", "930"]
+    solver_versions = [SolverVersion.parse(v) for v in output]
     service = Mock()
-    service.get_solver_versions.return_value = ["1", "2", "3"]
+    service.get_solver_versions.return_value = solver_versions
 
     app = create_app(service)
     client = TestClient(app)
     res = client.get(f"/v1/launcher/versions?{param_name}={launcher}")
     assert res.status_code == http.HTTPStatus.OK  # OK or UNPROCESSABLE_ENTITY
-    assert res.json() == ["1", "2", "3"]
+    assert res.json() == output
 
 
 def test_get_job_log() -> None:
@@ -200,3 +239,44 @@ def test_kill_job() -> None:
     res = client.post(f"/v1/launcher/jobs/{job_id}/kill")
     assert res.status_code == 200
     service.kill_job.assert_called_once_with(job_id=job_id)
+
+
+def test_get_runtime_config() -> None:
+
+    service = Mock()
+    service.get_runtime_config.side_effect = [
+        LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=10)),
+        LauncherServiceNotAvailableException("wrong-launcher"),
+    ]
+
+    app = create_app(service)
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.get("/v1/launcher/launchers/my-launcher/config")
+    service.get_runtime_config.assert_called_once_with("my-launcher")
+    assert res.status_code == 200
+    assert res.json() == {"slurm": {"oversubscribeCoreThreshold": 10}}
+
+    res = client.get("/v1/launcher/launchers/my-launcher/config")
+    assert res.status_code == 400
+
+
+def test_post_runtime_config() -> None:
+
+    service = Mock()
+    service.update_runtime_config.side_effect = [
+        LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=10)),
+        LauncherServiceNotAvailableException("wrong-launcher"),
+    ]
+
+    app = create_app(service)
+    client = TestClient(app, raise_server_exceptions=False)
+    res = client.put("/v1/launcher/launchers/my-launcher/config", json={"slurm": {"oversubscribeCoreThreshold": 10}})
+    service.update_runtime_config.assert_called_once_with(
+        "my-launcher",
+        LauncherRuntimeConfig(slurm=SlurmRuntimeConfig(oversubscribe_core_threshold=10)),
+    )
+    assert res.status_code == 200
+    assert res.json() == {"slurm": {"oversubscribeCoreThreshold": 10}}
+
+    res = client.put("/v1/launcher/launchers/my-launcher/config", json={"slurm": {"oversubscribeCoreThreshold": 10}})
+    assert res.status_code == 400

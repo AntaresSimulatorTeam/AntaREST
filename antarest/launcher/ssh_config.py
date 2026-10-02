@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import pathlib
-from typing import Any, Dict, Optional
+from typing import Any
 
 import paramiko
 from pydantic import model_validator
@@ -24,12 +24,12 @@ class SSHConfigDTO(AntaresBaseModel):
     username: str
     hostname: str
     port: int = 22
-    private_key_file: Optional[pathlib.Path] = None
-    key_password: Optional[str] = ""
-    password: Optional[str] = ""
+    private_key_file: pathlib.Path | None = None
+    key_password: str | None = ""
+    password: str | None = ""
 
     @model_validator(mode="before")
-    def validate_connection_information(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_connection_information(cls, values: dict[str, Any]) -> dict[str, Any]:
         if "private_key_file" not in values and "password" not in values:
             raise paramiko.AuthenticationException("SSH config needs at least a private key or a password")
         return values

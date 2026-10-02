@@ -11,10 +11,13 @@
 # This file is part of the Antares project.
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from typing_extensions import override
 
+from antarest.core.exceptions import LayerNotAllowedToBeDeleted, LayerNotFound
+from antarest.study.business.model.area_model import DEFAULT_LAYER_ID, DEFAULT_LAYER_NAME
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.dao.api.layer_dao import LayerDao
 from antarest.study.storage.rawstudy.model.filesystem.config.area import AreaUIFileData
@@ -33,7 +36,7 @@ class FileStudyLayerDao(LayerDao, ABC):
         ui_info_map = self._get_ui_info_map(file_study, area_ids)
         layers = file_study.tree.get(["layers", "layers", "layers"])
         if not layers:
-            layers["0"] = "All"
+            layers[DEFAULT_LAYER_ID] = DEFAULT_LAYER_NAME
         return [
             Layer(
                 id=str(layer),
@@ -56,12 +59,16 @@ class FileStudyLayerDao(LayerDao, ABC):
         file_study.tree.save(layer.name, ["layers", "layers", "layers", layer.id])
 
     @override
-    def delete_layer(self, layer: Layer) -> None:
-        layer_id = layer.id
+    def delete_layer(self, layer_id: str) -> None:
+        if layer_id == DEFAULT_LAYER_ID:
+            raise LayerNotAllowedToBeDeleted()
 
         file_study = self.get_file_study()
 
         layers = file_study.tree.get(["layers", "layers", "layers"])
+
+        if layer_id not in layers:
+            raise LayerNotFound(layer_id)
 
         del layers[layer_id]
 

@@ -153,5 +153,7 @@ resources/commit_id
 
 watcher
 *.lock
+!uv.lock
 
 **/bucket
+/blobstore/

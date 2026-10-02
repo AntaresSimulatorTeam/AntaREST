@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 
-from checksumdir import dirhash
+import configparser
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.business.model.binding_constraint_model import (
@@ -27,7 +27,8 @@ from antarest.study.business.model.renewable_cluster_model import (
     TimeSeriesInterpretation,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
-from antarest.study.model import STUDY_VERSION_8_8
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import parse_ruleset_update
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -46,11 +47,14 @@ from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_c
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_scenario_builder import UpdateScenarioBuilder
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study, dirhash
 from tests.variantstudy.model.command.helpers import reset_line_separator
 
 
 class TestRemoveArea:
-    def _set_up(self, empty_study: FileStudy, command_context: CommandContext) -> tuple[FileStudy, str]:
+    def _set_up(
+        self, empty_study: FileStudy, command_context: CommandContext
+    ) -> tuple[FileStudy, FileStudyTreeDao, str]:
         empty_study.tree.save(
             {
                 "input": {
@@ -80,14 +84,15 @@ class TestRemoveArea:
         create_area_command: ICommand = CreateArea(
             area_name=area_name, command_context=command_context, study_version=empty_study.config.version
         )
-        output = create_area_command.apply(study_data=empty_study)
+        dao = build_dao_from_file_study(empty_study, command_context, True)
+        output = create_area_command.apply(study_dao=dao)
         assert output.status, output.message
-        return empty_study, area_id
+        return empty_study, dao, area_id
 
     def test_remove_with_aggregated(self, empty_study_810: FileStudy, command_context: CommandContext) -> None:
-        (empty_study, area_id) = self._set_up(empty_study_810, command_context)
+        (empty_study, dao, area_id) = self._set_up(empty_study_810, command_context)
         remove_area_command = RemoveArea(id=area_id, command_context=command_context, study_version=STUDY_VERSION_8_8)
-        output = remove_area_command.apply(study_data=empty_study)
+        output = remove_area_command.apply(study_dao=dao)
         assert output.status, output.message
 
     def test_apply(
@@ -95,7 +100,7 @@ class TestRemoveArea:
     ) -> None:
         for empty_study in [empty_study_810, empty_study_840]:
             # noinspection SpellCheckingInspection
-            (empty_study, area_id) = self._set_up(empty_study, command_context)
+            (empty_study, dao, area_id) = self._set_up(empty_study, command_context)
             study_version = empty_study.config.version
 
             create_district_command = CreateDistrict(
@@ -103,7 +108,7 @@ class TestRemoveArea:
                 command_context=command_context,
                 study_version=study_version,
             )
-            output = create_district_command.apply(study_data=empty_study)
+            output = create_district_command.apply(study_dao=dao)
             assert output.status, output.message
 
             # Change the MC years to 5 to test the scenario builder data
@@ -117,7 +122,7 @@ class TestRemoveArea:
                     command_context=command_context,
                     study_version=study_version,
                 )
-                output = update_config.apply(study_data=empty_study)
+                output = update_config.apply(study_dao=dao)
                 assert output.status, output.message
 
             ########################################################################################
@@ -139,7 +144,7 @@ class TestRemoveArea:
             create_area_command: ICommand = CreateArea(
                 area_name=area_name2, command_context=command_context, study_version=study_version
             )
-            output = create_area_command.apply(study_data=empty_study)
+            output = create_area_command.apply(study_dao=dao)
             assert output.status, output.message
 
             create_link_command: ICommand = CreateLink(
@@ -150,7 +155,7 @@ class TestRemoveArea:
                 series=[[0]],
                 study_version=study_version,
             )
-            output = create_link_command.apply(study_data=empty_study)
+            output = create_link_command.apply(study_dao=dao)
             assert output.status, output.message
 
             thermal_name = "cluster"
@@ -169,7 +174,7 @@ class TestRemoveArea:
                 modulation=[[0]],
                 command_context=command_context,
                 study_version=study_version,
-            ).apply(study_data=empty_study)
+            ).apply(study_dao=dao)
             assert output.status, output.message
 
             renewable_id = None
@@ -188,7 +193,7 @@ class TestRemoveArea:
                     ),
                     command_context=command_context,
                     study_version=study_version,
-                ).apply(study_data=empty_study)
+                ).apply(study_dao=dao)
                 assert output.status, output.message
 
             bind1_cmd = CreateBindingConstraint(
@@ -208,13 +213,13 @@ class TestRemoveArea:
                     "study_version": study_version,
                 }
             )
-            output = bind1_cmd.apply(study_data=empty_study)
+            output = bind1_cmd.apply(study_dao=dao)
             assert output.status, output.message
 
             remove_district_command = RemoveDistrict(
                 id="foo", command_context=command_context, study_version=study_version
             )
-            output = remove_district_command.apply(study_data=empty_study)
+            output = remove_district_command.apply(study_dao=dao)
             assert output.status, output.message
 
             create_district_command = CreateDistrict(
@@ -226,7 +231,7 @@ class TestRemoveArea:
                 command_context=command_context,
                 study_version=study_version,
             )
-            output = create_district_command.apply(study_data=empty_study)
+            output = create_district_command.apply(study_dao=dao)
             assert output.status, output.message
 
             # Add scenario builder data
@@ -250,17 +255,17 @@ class TestRemoveArea:
                 default_ruleset[f"hgp,{area_id2},0"] = 1
 
             output = UpdateScenarioBuilder(
-                data={"Default Ruleset": parse_ruleset_update(default_ruleset)},
+                data=parse_ruleset_update(default_ruleset),
                 command_context=command_context,
                 study_version=study_version,
-            ).apply(study_data=empty_study)
+            ).apply(study_dao=dao)
             assert output.status, output.message
 
             remove_area_command: ICommand = RemoveArea(
                 id=area_id2, command_context=command_context, study_version=study_version
             )
             # Ensures the command fails cause the area is referenced in a constraint term
-            output = remove_area_command.apply(study_data=empty_study)
+            output = remove_area_command.apply(study_dao=dao)
             assert not output.status
             assert (
                 "Area 'area2' is not allowed to be deleted, because it is referenced in the following binding constraints"
@@ -271,11 +276,11 @@ class TestRemoveArea:
             # First remove the constraint
             output = RemoveMultipleBindingConstraints(
                 id="bd 2", command_context=command_context, study_version=study_version
-            ).apply(study_data=empty_study)
+            ).apply(study_dao=dao)
             assert output.status, output.message
 
             # Then remove the area
-            output = remove_area_command.apply(study_data=empty_study)
+            output = remove_area_command.apply(study_dao=dao)
             assert output.status, output.message
             assert dirhash(empty_study.config.study_path, "md5") == hash_before_removal
 
@@ -287,3 +292,37 @@ class TestRemoveArea:
 
             actual_cfg = empty_study.tree.get(depth=999)
             assert actual_cfg == empty_study_cfg
+
+    def test_remove_area_cleans_hydro_pmax_matrices(
+        self, empty_study_920: FileStudy, command_context: CommandContext
+    ) -> None:
+        generaldata_path = empty_study_920.config.study_path / "settings" / "generaldata.ini"
+        config = configparser.ConfigParser()
+        config.read(generaldata_path)
+        config.setdefault("compatibility", {})
+        config["compatibility"]["hydro-pmax"] = "hourly"
+        with open(generaldata_path, "w") as f:
+            config.write(f)
+
+        empty_study, dao, area_id = self._set_up(empty_study_920, command_context)
+        study_path = empty_study.config.study_path
+
+        daily_gen = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyGenEnergy_{area_id}.txt.link"
+        daily_pump = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyPumpEnergy_{area_id}.txt.link"
+        hourly_gen = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower.txt.link"
+        hourly_pump = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower.txt.link"
+
+        assert daily_gen.exists()
+        assert daily_pump.exists()
+        assert hourly_gen.exists()
+        assert hourly_pump.exists()
+
+        output = RemoveArea(id=area_id, command_context=command_context, study_version=STUDY_VERSION_9_2).apply(
+            study_dao=dao
+        )
+        assert output.status, output.message
+
+        assert not daily_gen.exists()
+        assert not daily_pump.exists()
+        assert not hourly_gen.exists()
+        assert not hourly_pump.exists()

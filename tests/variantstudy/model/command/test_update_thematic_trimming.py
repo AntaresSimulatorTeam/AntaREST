@@ -24,12 +24,13 @@ from antarest.study.model import (
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_thematic_trimming import UpdateThematicTrimming
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-from tests.helpers import file_study_interface
+from tests.helpers import build_dao_from_file_study, file_study_interface
 
 
 class TestUpdateThematicTrimming:
     def test_nominal_case(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
+        dao = build_dao_from_file_study(study, command_context)
         general_data_content = study.tree.get(["settings", "generaldata"])
         assert "variables selection" not in general_data_content
 
@@ -39,7 +40,7 @@ class TestUpdateThematicTrimming:
         command = UpdateThematicTrimming(
             parameters=parameters, command_context=command_context, study_version=study.config.version
         )
-        output = command.apply(study_data=study)
+        output = command.apply(study_dao=dao)
         assert output.status
 
         actual_content = study.tree.get(["settings", "generaldata"])
@@ -54,7 +55,7 @@ class TestUpdateThematicTrimming:
         command = UpdateThematicTrimming(
             parameters=parameters, command_context=command_context, study_version=study.config.version
         )
-        output = command.apply(study_data=study)
+        output = command.apply(study_dao=dao)
         assert output.status
 
         actual_content = study.tree.get(["settings", "generaldata"])
@@ -70,7 +71,7 @@ class TestUpdateThematicTrimming:
         command = UpdateThematicTrimming(
             parameters=parameters, command_context=command_context, study_version=study.config.version
         )
-        output = command.apply(study_data=study)
+        output = command.apply(study_dao=dao)
         assert output.status
 
         actual_content = study.tree.get(["settings", "generaldata"])

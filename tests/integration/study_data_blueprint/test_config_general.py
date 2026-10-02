@@ -77,7 +77,6 @@ class TestConfigGeneralForm:
             "firstJanuary": "Monday",
             "firstMonth": "january",
             "firstWeekDay": "Monday",
-            "geographicTrimming": None,
             "horizon": "2020",
             "lastDay": 7,
             "leapYear": False,
@@ -86,6 +85,5 @@ class TestConfigGeneralForm:
             "nbYears": 1,
             "selectionMode": True,
             "simulationSynthesis": True,
-            "thematicTrimming": None,
             "yearByYear": False,
         }

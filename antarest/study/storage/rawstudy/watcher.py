@@ -22,7 +22,6 @@ import tempfile
 from html import escape
 from pathlib import Path
 from time import sleep, time
-from typing import List, Optional
 
 from filelock import FileLock
 from typing_extensions import override
@@ -46,16 +45,6 @@ from antarest.study.storage.utils import (
 logger = logging.getLogger(__name__)
 
 
-class _LogScanDuration:
-    """Functional object use to log the scanning duration of a workspace."""
-
-    def __init__(self, workspace_name: str) -> None:
-        self.workspace_name = workspace_name
-
-    def __call__(self, duration: float) -> None:
-        logger.info(f"Workspace {self.workspace_name} scanned in {duration}s")
-
-
 class Watcher(IService):
     """
     Background service that periodically scans workspaces for studies.
@@ -73,7 +62,7 @@ class Watcher(IService):
         study_service: StudyService,
         task_service: ITaskService,
     ):
-        super(Watcher, self).__init__()
+        super().__init__()
         self.study_service = study_service
         self.task_service = task_service
         self.config = config
@@ -85,7 +74,7 @@ class Watcher(IService):
     def start(self, threaded: bool = True) -> None:
         self.should_stop = False
         if self.allowed_to_start:
-            super(Watcher, self).start(threaded=threaded)
+            super().start(threaded=threaded)
 
     def stop(self) -> None:
         self.should_stop = True
@@ -136,8 +125,8 @@ class Watcher(IService):
     def oneshot_scan(
         self,
         recursive: bool,
-        workspace: Optional[str] = None,
-        path: Optional[str] = None,
+        workspace: str | None = None,
+        path: str | None = None,
     ) -> str:
         """
         Scan a folder and add studies found to database.
@@ -167,8 +156,8 @@ class Watcher(IService):
     def scan(
         self,
         recursive: bool = True,
-        workspace_name: Optional[str] = None,
-        workspace_directory_path: Optional[str] = None,
+        workspace_name: str | None = None,
+        workspace_directory_path: str | None = None,
     ) -> None:
         """
         Scan recursively list of studies present on disk. Send updated list to study service.
@@ -182,8 +171,8 @@ class Watcher(IService):
             raise ScanDisabled("Recursive scan disables when desktop mode is on")
 
         stopwatch = StopWatch()
-        studies: List[StudyFolder] = list()
-        directory_path: Optional[Path] = None
+        studies: list[StudyFolder] = list()
+        directory_path: Path | None = None
 
         # max depth when we call rec_scan_for_studies
         max_depth = None if recursive else 1
@@ -204,7 +193,7 @@ class Watcher(IService):
                     studies = studies + rec_scan_for_studies(
                         path, name, groups, workspace.filter_in, workspace.filter_out, max_depth=max_depth
                     )
-                    stopwatch.log_elapsed(_LogScanDuration(name))
+                    logger.info(f"Workspace {name} scanned in {stopwatch.lap()}s")
         else:
             raise ValueError("Both workspace_name and directory_path must be specified")
         with db():
@@ -212,10 +201,7 @@ class Watcher(IService):
             with FileLock(Watcher.SCAN_LOCK):
                 logger.info(f"FileLock acquired to synchronize for {directory_path or 'all studies'}")
                 self.study_service.sync_studies_on_disk(studies, directory_path, recursive)
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"{directory_path or 'All studies'} synchronized in {x}s"),
-                    since_start=True,
-                )
+                logger.info(f"{directory_path or 'All studies'} synchronized in {stopwatch.since_start}s")
 
     def clean_desktop_studies(
         self,
@@ -243,7 +229,4 @@ class Watcher(IService):
             with FileLock(Watcher.SCAN_LOCK):
                 logger.info("FileLock acquired to delete missing studies")
                 self.study_service.delete_missing_studies()
-                stopwatch.log_elapsed(
-                    lambda x: logger.info(f"deleted missing studies in {x}s"),
-                    since_start=True,
-                )
+                logger.info(f"deleted missing studies in {stopwatch.since_start}s")

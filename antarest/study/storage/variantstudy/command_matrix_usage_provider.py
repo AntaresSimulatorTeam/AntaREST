@@ -10,15 +10,15 @@
 #
 # This file is part of the Antares project.
 import logging
-from pathlib import Path
-from typing import Iterable, List
+from collections.abc import Iterable
 
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import extract_matrix_id
 from antarest.matrixstore.matrix_usage_provider import IMatrixUsageProvider
 from antarest.matrixstore.model import MatrixReference
+from antarest.study.model import StorageMode
 from antarest.study.repository import AccessPermissions, StudyFilter
+from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock
@@ -33,19 +33,21 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
         self,
         variant_study_repo: VariantStudyRepository,
         command_factory: CommandFactory,
+        storage_mapping: dict[StorageMode, IStudyStorage],
     ):
         self.variant_study_repo = variant_study_repo
         self.command_factory = command_factory
         self.matrix_service = command_factory.command_context.matrix_service
         self.matrix_service.register_usage_provider(self)
+        self.storage_mapping = storage_mapping
 
     @override
     def get_matrix_usage(self) -> Iterable[MatrixReference]:
         logger.info("Getting all matrices used in variant studies")
         # First gets all matrices used in commands
-        command_blocks: List[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
+        command_blocks: list[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
 
-        def transform_to_command(command_dto: CommandDTO, study_ref: str) -> List[ICommand]:
+        def transform_to_command(command_dto: CommandDTO, study_ref: str) -> list[ICommand]:
             try:
                 return self.command_factory.to_command(command_dto)
             except Exception as e:
@@ -75,12 +77,4 @@ class CommandMatrixUsageProvider(IMatrixUsageProvider):
             study_ids=list(snapshots_to_check), access_permissions=AccessPermissions(is_admin=True)
         )
         for study in self.variant_study_repo.get_all(study_filter):
-            study_id = study.id
-            snapshot_path = Path(study.path) / "snapshot"
-            if snapshot_path.exists():
-                for f in snapshot_path.rglob("*.link"):
-                    matrix_id = extract_matrix_id(f.read_text())
-                    matrix_reference = MatrixReference(
-                        matrix_id=f"{matrix_id}", use_description=f"Used by variant study {study_id} snapshot"
-                    )
-                    yield matrix_reference
+            yield from self.storage_mapping[study.storage_mode].yield_matrix_references(study)

@@ -14,15 +14,12 @@ from unittest.mock import Mock
 
 import pandas as pd
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapperFactory, NormalizedMatrixUriMapper
-
 MOCK_MATRIX = pd.DataFrame(data=[[1, 2], [3, 4]], index=["1", "2"], columns=["a", "b"])
 
 
 def test_resolve_matrix() -> None:
     matrix_service = Mock()
     matrix_service.get.return_value = pd.DataFrame(index=["1", "2"], columns=["a", "b"], data=[[1, 2], [3, 4]])
-    factory = MatrixUriMapperFactory(matrix_service=matrix_service)
-    resolver = factory.create(NormalizedMatrixUriMapper.NORMALIZED)
-    assert resolver.get_matrix("matrix://my-id").equals(MOCK_MATRIX)
+    result = matrix_service.get("my-id")
+    assert result.equals(MOCK_MATRIX)
     matrix_service.get.assert_called_once_with("my-id")

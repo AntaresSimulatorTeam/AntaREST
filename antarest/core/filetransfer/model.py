@@ -14,7 +14,6 @@ import uuid
 from datetime import datetime
 from http import HTTPStatus
 from http.client import HTTPException
-from typing import Optional
 
 from sqlalchemy import Boolean, DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
@@ -44,7 +43,7 @@ class FileDownloadDTO(AntaresBaseModel):
     id: str
     name: str
     filename: str
-    expiration_date: Optional[str] = None
+    expiration_date: str | None = None
     ready: bool
     failed: bool = False
     error_message: str = ""
@@ -71,7 +70,7 @@ class FileDownload(Base):
     ready: Mapped[bool] = mapped_column(Boolean, default=False)
     expiration_date: Mapped[datetime] = mapped_column(DateTime)
     failed: Mapped[bool] = mapped_column(Boolean, default=False)
-    error_message: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(String, nullable=True)
 
     def to_dto(self) -> FileDownloadDTO:
         return FileDownloadDTO(

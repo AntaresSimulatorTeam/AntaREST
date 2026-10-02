@@ -1,0 +1,135 @@
+/**
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import TreeItemEnhanced from "@/components/TreeItemEnhanced";
+import FavoriteExternalDirectoryToggle from "@/routes/-shared/components/studies/FavoriteToggle/FavoriteExternalDirectoryToggle";
+import { sortByName } from "@/services/utils";
+import RadarIcon from "@mui/icons-material/Radar";
+import { Stack, Tooltip, Typography } from "@mui/material";
+import * as R from "ramda";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { actionButtonStyles, nodeActionsContainerStyles } from "../styles";
+import { treeItemStyles, treeNodeIcons, workspaceItemStyles } from "./styles";
+import type { ExternalTreeNodeMetadata, ExternalTreeNodeProps } from "./types";
+
+const filterScannedStudies = R.reject<ExternalTreeNodeMetadata>(
+  (node) => node.isScannedStudy === true,
+);
+
+const isWorkspacePath = (path: string): boolean =>
+  path.startsWith("/") && !path.slice(1).includes("/");
+
+const getWorkspaceAndRelativePath = (path: string) => {
+  const [workspace, ...rest] = path.split("/").filter(Boolean);
+  const relativePath = rest.join("/");
+  return [workspace, relativePath] as const;
+};
+
+function ExternalTreeNode({ node, itemsLoading, exploredFolders }: ExternalTreeNodeProps) {
+  const { hasChildren, children, path, name, isStudyFolder, alias } = node;
+  const { t } = useTranslation();
+
+  const isLoading = itemsLoading.includes(path);
+  const hasUnloadedChildren =
+    hasChildren && children.length === 0 && !exploredFolders.includes(path);
+  const isWorkspace = isWorkspacePath(path);
+  const [workspace, relativePath] = getWorkspaceAndRelativePath(path);
+
+  const sortedChildren = useMemo(() => {
+    return sortByName(filterScannedStudies(children));
+  }, [children]);
+
+  const label = alias ? `${alias} (${name})` : name;
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  // Special handling for unscanned study folders with radar icon
+  if (isStudyFolder) {
+    return (
+      <TreeItemEnhanced
+        itemId={path}
+        label={label}
+        disabled
+        slots={{
+          collapseIcon: () => (
+            <Tooltip title={t("studies.tree.unscannedStudyFolder")}>
+              <RadarIcon color="warning" />
+            </Tooltip>
+          ),
+        }}
+        sx={{
+          ...treeItemStyles,
+          ".Mui-disabled": {
+            opacity: 1,
+            cursor: "default",
+          },
+        }}
+      />
+    );
+  }
+
+  return (
+    <TreeItemEnhanced
+      itemId={path}
+      label={
+        <Stack justifyContent="space-between" spacing={1}>
+          <Typography variant="body2" noWrap>
+            {label}
+          </Typography>
+          <Stack spacing={0.25} sx={nodeActionsContainerStyles}>
+            {!isWorkspace && (
+              <FavoriteExternalDirectoryToggle
+                workspace={workspace}
+                path={relativePath}
+                slotProps={{ icon: { fontSize: "extra-small" } }}
+                sx={actionButtonStyles}
+              />
+            )}
+          </Stack>
+        </Stack>
+      }
+      loading={isLoading}
+      slots={{
+        collapseIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folderOpen,
+        expandIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folder,
+        endIcon: isWorkspace ? treeNodeIcons.workspace : treeNodeIcons.folder,
+      }}
+      disableTooltip
+      sx={isWorkspace ? workspaceItemStyles : treeItemStyles}
+    >
+      {/* Loading placeholder to show expand arrow for folders with unloaded children */}
+      {hasUnloadedChildren && (
+        <TreeItemEnhanced
+          itemId={`${path}//loading`}
+          label={`${t("global.loading")}...`}
+          disableTooltip
+          sx={{ fontStyle: "italic" }}
+        />
+      )}
+      {sortedChildren.map((child) => (
+        <ExternalTreeNode
+          key={child.path}
+          node={child}
+          itemsLoading={itemsLoading}
+          exploredFolders={exploredFolders}
+        />
+      ))}
+    </TreeItemEnhanced>
+  );
+}
+
+export default ExternalTreeNode;

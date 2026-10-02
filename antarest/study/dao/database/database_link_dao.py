@@ -1,0 +1,207 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+from collections.abc import Sequence
+from typing import Any
+
+import polars as pl
+from sqlalchemy import Row, Table, delete, select
+from sqlalchemy.engine.cursor import CursorResult
+from sqlalchemy.exc import IntegrityError
+from typing_extensions import override
+
+from antarest.core.exceptions import AreaNotFound, LinkNotFound, LinksNotFound
+from antarest.core.utils.sql_utils import upsert_multiple
+from antarest.dbmodel import get_row_representation_as_dict
+from antarest.study.business.model.link_model import Link
+from antarest.study.dao.api.link_dao import LinkDao
+from antarest.study.dao.common import LinkSeriesMapping, SeriesId
+from antarest.study.dao.database.dao_context import DatabaseDaoBase
+from antarest.study.dao.database.models.link import (
+    LINK_DIRECT_CAPACITY_TABLE,
+    LINK_INDIRECT_CAPACITY_TABLE,
+    LINK_SERIES_TABLE,
+    LINK_TABLE,
+)
+from antarest.study.model import STUDY_VERSION_8_2
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_6_fixed_hourly,
+    default_8_fixed_hourly,
+    default_scenario_hourly,
+)
+
+
+def _convert_db_rows_to_model(db_row: Any) -> Link:
+    data = get_row_representation_as_dict(db_row)
+    del data["study_data_id"]
+    return Link(**data)
+
+
+class DatabaseLinkDao(LinkDao, DatabaseDaoBase):
+    """Database implementation of LinkDao"""
+
+    def _raise_the_right_link_exception(self, links: Sequence[Link], exc: IntegrityError | None = None) -> None:
+        # Happens if some link's areas did not exist -> ForeignKey constraint fails
+
+        # First check the areas
+        new_areas = []
+        for link in links:
+            new_areas.append(link.area1)
+            new_areas.append(link.area2)
+
+        if invalid_areas := self.get_impl().get_invalid_area_ids(new_areas):
+            raise AreaNotFound(*invalid_areas)
+
+        # Then check the links
+        existing_links_ids = {f"{link.area1}%{link.area2}" for link in self.get_links()}
+        new_links_ids = {f"{link.area1}%{link.area2}" for link in links}
+
+        invalid_ids = new_links_ids - existing_links_ids
+        if invalid_ids:
+            if len(invalid_ids) == 1:
+                raise LinkNotFound(f"Link not found: {next(iter(invalid_ids))}")
+            raise LinksNotFound(*invalid_ids)
+
+        # All links exist. It means that the DB table does not contain the information.
+        raise ValueError("One of the link table is not filled as it should") from exc
+
+    @override
+    def save_links(self, links: Sequence[Link]) -> None:
+        session = self._db_session
+        values = []
+        for link in links:
+            values.append({"study_data_id": self._study_data_id, **link.model_dump()})
+
+        try:
+            upsert_multiple(session, LINK_TABLE, values)
+        except IntegrityError as e:
+            session.rollback()
+            self._raise_the_right_link_exception(links, e)
+
+        session.commit()
+
+    @override
+    def delete_link(self, link: Link) -> None:
+        study_data_id = self._study_data_id
+        session = self._db_session
+        stmt = delete(LINK_TABLE).where(
+            (LINK_TABLE.c.study_data_id == study_data_id)
+            & (LINK_TABLE.c.area1 == link.area1)
+            & (LINK_TABLE.c.area2 == link.area2)
+        )
+        result = session.execute(stmt)
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            # Means the DELETE had no effect so the link did not exist
+            raise LinkNotFound(f"The link {link.area1} -> {link.area2} is not present in the study")
+        session.commit()
+
+    @override
+    def get_links(self) -> Sequence[Link]:
+        study_data_id = self._study_data_id
+        session = self._db_session
+        stmt = select(LINK_TABLE).where(LINK_TABLE.c.study_data_id == study_data_id)
+        rows = session.execute(stmt).fetchall()
+        return [_convert_db_rows_to_model(row) for row in rows]
+
+    @override
+    def get_link(self, area1_id: str, area2_id: str) -> Link:
+        row = self._get_row(area1_id, area2_id, LINK_TABLE)
+        if not row:
+            raise LinkNotFound(f"The link {area1_id} -> {area2_id} is not present in the study")
+        return _convert_db_rows_to_model(row)
+
+    @override
+    def link_exists(self, area1_id: str, area2_id: str) -> bool:
+        row = self._get_row(area1_id, area2_id, LINK_TABLE)
+        return row is not None
+
+    def _get_row(self, area1_id: str, area2_id: str, table: Table) -> Row[Any] | None:
+        area1, area2 = sorted((area1_id, area2_id))
+        study_data_id = self._study_data_id
+        session = self._db_session
+        stmt = select(table).where(
+            (table.c.study_data_id == study_data_id) & (table.c.area1 == area1) & (table.c.area2 == area2)
+        )
+        return session.execute(stmt).fetchone()
+
+    def _get_link_matrix(self, area_from_id: str, area_to_id: str, table: Table) -> SeriesId:
+        row = self._get_row(area_from_id, area_to_id, table)
+        if not row:
+            raise LinkNotFound(f"The link {area_from_id} -> {area_to_id} is not present in the study")
+        return str(row.matrix_id)
+
+    def _save_link_matrices(self, series: LinkSeriesMapping, table: Table) -> None:
+        session = self._db_session
+        study_data_id = self._study_data_id
+
+        values = []
+        for key, series_id in series.items():
+            area1, area2 = sorted(key)
+            values.append({"study_data_id": study_data_id, "area1": area1, "area2": area2, "matrix_id": series_id})
+        try:
+            upsert_multiple(session, table, values)
+        except IntegrityError as e:
+            session.rollback()
+            links = [Link(area1=area1, area2=area2) for area1, area2 in series.keys()]
+            self._raise_the_right_link_exception(links, e)
+        session.commit()
+
+    @override
+    def save_link_indirect_capacities(self, series: LinkSeriesMapping) -> None:
+        self._save_link_matrices(series, LINK_INDIRECT_CAPACITY_TABLE)
+
+    @override
+    def save_link_direct_capacities(self, series: LinkSeriesMapping) -> None:
+        self._save_link_matrices(series, LINK_DIRECT_CAPACITY_TABLE)
+
+    @override
+    def save_link_series(self, series: LinkSeriesMapping) -> None:
+        self._save_link_matrices(series, LINK_SERIES_TABLE)
+
+    @override
+    def get_link_direct_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
+        matrix_id = self._get_link_matrix(area_from, area_to, LINK_DIRECT_CAPACITY_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
+
+    @override
+    def get_link_indirect_capacities(self, area_from: str, area_to: str) -> pl.DataFrame:
+        matrix_id = self._get_link_matrix(area_from, area_to, LINK_INDIRECT_CAPACITY_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_hourly)
+
+    @override
+    def get_link_series(self, area_from: str, area_to: str) -> pl.DataFrame:
+        matrix_id = self._get_link_matrix(area_from, area_to, LINK_SERIES_TABLE)
+        version = self.get_impl().get_version()
+        default_empty = default_8_fixed_hourly if version < STUDY_VERSION_8_2 else default_6_fixed_hourly
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_empty)
+
+    def _get_link_matrices(self, table: Table) -> LinkSeriesMapping:
+        study_data_id = self._study_data_id
+        session = self._db_session
+        stmt = select(table).where(table.c.study_data_id == study_data_id)
+        rows = session.execute(stmt).fetchall()
+        result: LinkSeriesMapping = {}
+        for row in rows:
+            result[row.area1, row.area2] = row.matrix_id
+        return result
+
+    @override
+    def get_all_links_series(self) -> LinkSeriesMapping:
+        return self._get_link_matrices(LINK_SERIES_TABLE)
+
+    @override
+    def get_all_links_indirect_capacities(self) -> LinkSeriesMapping:
+        return self._get_link_matrices(LINK_INDIRECT_CAPACITY_TABLE)
+
+    @override
+    def get_all_links_direct_capacities(self) -> LinkSeriesMapping:
+        return self._get_link_matrices(LINK_DIRECT_CAPACITY_TABLE)

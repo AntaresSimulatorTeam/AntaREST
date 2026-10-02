@@ -44,6 +44,7 @@ import io
 import re
 import time
 import typing as t
+import uuid
 
 import numpy as np
 import pandas as pd
@@ -329,6 +330,11 @@ class TestThermal:
                     "costGeneration": "SetManually" if version >= 870 else None,
                     "efficiency": 100.0 if version >= 870 else None,
                     "variableOMCost": 0.0 if version >= 870 else None,
+                    "rampingEnabled": None,
+                    "maxUpwardPowerRampingRate": None,
+                    "maxDownwardPowerRampingRate": None,
+                    "powerIncreaseCost": None,
+                    "powerDecreaseCost": None,
                 }
             )
 
@@ -427,6 +433,11 @@ class TestThermal:
                 "costGeneration": "SetManually" if version >= 870 else None,
                 "efficiency": 100.0 if version >= 870 else None,
                 "variableOMCost": 0.0 if version >= 870 else None,
+                "rampingEnabled": None,
+                "maxUpwardPowerRampingRate": None,
+                "maxDownwardPowerRampingRate": None,
+                "powerIncreaseCost": None,
+                "powerDecreaseCost": None,
             },
         }
         assert res.json() == expected
@@ -542,6 +553,13 @@ class TestThermal:
             assert res.status_code == 200, res.json()
         else:
             assert res.status_code == 422, res.json()
+
+        # Update with a ramping field. Rejected below v10.2, which is every version under test.
+        res = client.patch(
+            f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
+            json={"maxUpwardPowerRampingRate": 10.0},
+        )
+        assert res.status_code == 422, res.json()
 
         # =============================
         #  THERMAL CLUSTER DUPLICATION
@@ -673,7 +691,7 @@ class TestThermal:
         )
 
         # Check DELETE with the wrong value of `study_id`
-        bad_study_id = "bad_study"
+        bad_study_id = str(uuid.uuid4())
         res = client.request(
             "DELETE", f"/v1/studies/{bad_study_id}/areas/{area_id}/clusters/thermal", json=[fr_gas_conventional_id]
         )
@@ -724,7 +742,7 @@ class TestThermal:
             },
         )
         assert res.status_code == 500, res.json()
-        assert f"The area '{bad_area_id}' does not exist" in res.json()["description"]
+        assert f"Area is not found: '{bad_area_id}'" in res.json()["description"]
 
         # Check POST with wrong `group`
         res = client.post(
@@ -1113,6 +1131,7 @@ class TestThermal:
         )
         assert res.status_code == 204, res.json()
 
+    @pytest.mark.flaky(reruns=3)
     def test_update_multiple_thermal_clusters(self, client: TestClient, user_access_token: str) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 

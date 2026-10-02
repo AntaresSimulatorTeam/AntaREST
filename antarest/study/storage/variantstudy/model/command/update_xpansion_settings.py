@@ -20,13 +20,20 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Optional
 
 from typing_extensions import override
 
-from antarest.study.business.model.xpansion_model import XpansionSettingsUpdate, update_xpansion_settings
+from antarest.study.business.model.xpansion_model import (
+    XpansionSettings,
+    XpansionSettingsUpdate,
+    update_xpansion_settings,
+)
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.variantstudy.model.command.common import CommandName, CommandOutput, command_succeeded
+from antarest.study.storage.variantstudy.model.command.common import (
+    CommandName,
+    CommandOutput,
+    command_succeeded,
+)
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -48,14 +55,16 @@ class UpdateXpansionSettings(ICommand):
     settings: XpansionSettingsUpdate
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[XpansionSettings]:
         # Checks settings are correct
         study_data.checks_xpansion_settings_are_correct(self.settings)
 
         current_settings = study_data.get_xpansion_settings()
         new_settings = update_xpansion_settings(current_settings, self.settings)
         study_data.save_xpansion_settings(new_settings)
-        return command_succeeded(message="Xpansion settings updated successfully")
+        return command_succeeded(message="Xpansion settings updated successfully", result=new_settings)
 
     @override
     def to_dto(self) -> CommandDTO:

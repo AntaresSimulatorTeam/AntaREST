@@ -13,8 +13,8 @@ from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_8_fixed_hourly
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_8_fixed_hourly
 
 
 class InputMiscGen(FolderNode):
@@ -22,7 +22,7 @@ class InputMiscGen(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             f"miscgen-{a}": InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file(f"miscgen-{a}.txt"),
                 default_empty=default_8_fixed_hourly,
             )

@@ -37,13 +37,14 @@ from antarest.core.config import Config
 from antarest.core.exceptions import ConfigurationError
 from antarest.core.tasks.model import TaskStatus, TaskType
 from antarest.core.tasks.service import TaskServiceListener
+from antarest.globals import ANTAREST_WORKER_ID
 
 logger = logging.getLogger(__name__)
 
 
 _PROMETHEUS_MULTIPROCESS_ENV_VAR = "PROMETHEUS_MULTIPROC_DIR"
 
-WORKER_ID = str(os.getpid())
+WORKER_ID = str(ANTAREST_WORKER_ID)
 
 
 def add_db_metrics(config: Config) -> None:

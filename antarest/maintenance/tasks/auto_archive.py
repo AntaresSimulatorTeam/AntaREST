@@ -15,17 +15,18 @@
 import datetime
 import logging
 import time
-from typing import List, NamedTuple, Optional
+from pathlib import Path
+from typing import NamedTuple
 
 from pydantic import BaseModel
 
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.lock import LockNotAcquired, create_lock
+from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
+from antarest.output.service import OutputService
 from antarest.study.model import RawStudy, Study
-from antarest.study.output.output_service import OutputService
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -35,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 class ArchiveStudyResult(NamedTuple):
     archived_studies: int
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class AutoArchiveTaskResult(BaseModel):
@@ -43,8 +44,8 @@ class AutoArchiveTaskResult(BaseModel):
     archived_studies: int
     duration_seconds: float
     dry_run: bool
-    errors: List[str] = []
-    reason: Optional[str] = None
+    errors: list[str] = []
+    reason: str | None = None
 
 
 class StudyToArchive(NamedTuple):
@@ -114,6 +115,7 @@ def archive_old_studies(
     threshold_days: int,
     snapshot_retention_days: int,
     dry_run: bool,
+    lock_folder: Path,
 ) -> AutoArchiveTaskResult:
     """
     Archive studies inactive for more than threshold_days and clean old snapshots.
@@ -126,7 +128,7 @@ def archive_old_studies(
 
     try:
         with db():
-            with create_lock(db.session, lock_id=LockId.AUTO_ARCHIVE):
+            with create_file_lock(lock_id=LockId.AUTO_ARCHIVE, lock_folder=lock_folder):
                 to_archive = _get_studies_to_archive(study_service, threshold_days)
                 logger.info(f"Found {len(to_archive)} studies to archive")
 

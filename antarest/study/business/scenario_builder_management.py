@@ -12,8 +12,7 @@
 
 from antarest.study.business.model.scenario_builder_model import (
     AnyScenarios,
-    Rulesets,
-    RulesetsUpdate,
+    Ruleset,
     RulesetUpdate,
     ScenarioType,
     update_ruleset,
@@ -27,12 +26,12 @@ class ScenarioBuilderManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_rulesets(self, study: StudyInterface) -> Rulesets:
-        return study.get_study_dao().get_rulesets()
+    def get_ruleset(self, study: StudyInterface) -> Ruleset:
+        return study.get_study_dao().get_ruleset()
 
-    def update_scenario(self, study: StudyInterface, rulesets: RulesetsUpdate) -> None:
+    def update_scenario(self, study: StudyInterface, ruleset: RulesetUpdate) -> None:
         command = UpdateScenarioBuilder(
-            data=rulesets, command_context=self._command_context, study_version=study.version
+            data=ruleset, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([command])
 
@@ -46,15 +45,12 @@ class ScenarioBuilderManager:
         ruleset_update.set(scenario_type, scenarios)
 
         # Create the UpdateScenarioBuilder command
-        ruleset_name = study.get_study_dao().get_active_ruleset_name()
-        data = {ruleset_name: ruleset_update}
-
         update_scenario = UpdateScenarioBuilder(
-            data=data, command_context=self._command_context, study_version=study.version
+            data=ruleset_update, command_context=self._command_context, study_version=study.version
         )
         study.add_commands([update_scenario])
 
         # Extract the updated table form for the given scenario type
-        ruleset = self.get_rulesets(study)[ruleset_name]
+        ruleset = self.get_ruleset(study)
         update_ruleset(ruleset, ruleset_update, study.version)
         return ruleset.get(scenario_type)

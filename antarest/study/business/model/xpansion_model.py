@@ -9,9 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Optional, TypeAlias
+from collections import Counter
+from typing import Annotated, TypeAlias
 
-from pydantic import BeforeValidator, Field, PlainSerializer
+from pydantic import BeforeValidator, Field, PlainSerializer, field_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import (
@@ -63,6 +64,14 @@ class XpansionSensitivitySettings(AntaresBaseModel):
     projection: list[str] = Field(default_factory=list)
     capex: bool = Field(default=False)
 
+    @field_validator("projection")
+    @classmethod
+    def no_duplicate_candidates(cls, v: list[str]) -> list[str]:
+        duplicates = [name for name, count in Counter(v).items() if count > 1]
+        if duplicates:
+            raise ValueError(f"Duplicate candidates in projection: {', '.join(duplicates)}")
+        return v
+
 
 class XpansionSensitivitySettingsUpdate(AntaresBaseModel):
     """
@@ -111,6 +120,8 @@ class XpansionSettings(AntaresBaseModel, extra="ignore", validate_assignment=Tru
     yearly_weights: str = Field(default="", alias="yearly-weights")
     additional_constraints: str = Field(default="", alias="additional-constraints")
     timelimit: int = Field(default=172800, ge=0)  # 48 hours in seconds
+    master_solution_tolerance: float = Field(default=1e-4, ge=0, alias="masterSolutionTolerance")
+    cut_coefficient_tolerance: float = Field(default=5e-3, ge=0, alias="cutCoefficientTolerance")
     sensitivity_config: XpansionSensitivitySettings = XpansionSensitivitySettings()
 
 
@@ -137,6 +148,8 @@ class XpansionSettingsUpdate(AntaresBaseModel, extra="ignore", validate_assignme
     yearly_weights: str | None = Field(None, alias="yearly-weights")
     additional_constraints: str | None = Field(None, alias="additional-constraints")
     timelimit: int | None = Field(default=None, ge=0)
+    master_solution_tolerance: float | None = Field(default=None, alias="masterSolutionTolerance")
+    cut_coefficient_tolerance: float | None = Field(default=None, alias="cutCoefficientTolerance")
     sensitivity_config: XpansionSensitivitySettingsUpdate | None = None
 
 
@@ -183,8 +196,13 @@ XpansionLinkStr: TypeAlias = Annotated[
 ]
 
 
-def _validate_candidate_name(name: str) -> str:
-    # The name is written directly inside the ini file so a specific check is performed here
+def _validate_candidate_name(name: str | int | float) -> str:
+    """The name is written directly inside the ini file so a specific check is performed here"""
+
+    if not isinstance(name, str):
+        # Can happen if someone creates a candidate named `111` or `14.6`
+        name = str(name)
+
     if name.strip() == "":
         raise CandidateNameIsEmpty()
 
@@ -203,36 +221,36 @@ class XpansionCandidate(AntaresBaseModel, populate_by_name=True, alias_generator
     name: CandidateName
     link: XpansionLinkStr
     annual_cost_per_mw: float = Field(ge=0)
-    unit_size: Optional[float] = Field(default=None, ge=0)
-    max_units: Optional[int] = Field(default=None, ge=0)
-    max_investment: Optional[float] = Field(default=None, ge=0)
-    already_installed_capacity: Optional[int] = Field(default=None, ge=0)
+    unit_size: float | None = Field(default=None, ge=0)
+    max_units: int | None = Field(default=None, ge=0)
+    max_investment: float | None = Field(default=None, ge=0)
+    already_installed_capacity: int | None = Field(default=None, ge=0)
     # this is obsolete (replaced by direct/indirect)
-    link_profile: Optional[str] = None
+    link_profile: str | None = None
     # this is obsolete (replaced by direct/indirect)
-    already_installed_link_profile: Optional[str] = None
-    direct_link_profile: Optional[str] = None
-    indirect_link_profile: Optional[str] = None
-    already_installed_direct_link_profile: Optional[str] = None
-    already_installed_indirect_link_profile: Optional[str] = None
+    already_installed_link_profile: str | None = None
+    direct_link_profile: str | None = None
+    indirect_link_profile: str | None = None
+    already_installed_direct_link_profile: str | None = None
+    already_installed_indirect_link_profile: str | None = None
 
 
 class XpansionCandidateCreation(AntaresBaseModel, populate_by_name=True, alias_generator=to_kebab_case):
     name: CandidateName
     link: XpansionLinkStr
     annual_cost_per_mw: float = Field(ge=0)
-    unit_size: Optional[float] = Field(default=None, ge=0)
-    max_units: Optional[int] = Field(default=None, ge=0)
-    max_investment: Optional[float] = Field(default=None, ge=0)
-    already_installed_capacity: Optional[int] = Field(default=None, ge=0)
+    unit_size: float | None = Field(default=None, ge=0)
+    max_units: int | None = Field(default=None, ge=0)
+    max_investment: float | None = Field(default=None, ge=0)
+    already_installed_capacity: int | None = Field(default=None, ge=0)
     # this is obsolete (replaced by direct/indirect)
-    link_profile: Optional[str] = None
+    link_profile: str | None = None
     # this is obsolete (replaced by direct/indirect)
-    already_installed_link_profile: Optional[str] = None
-    direct_link_profile: Optional[str] = None
-    indirect_link_profile: Optional[str] = None
-    already_installed_direct_link_profile: Optional[str] = None
-    already_installed_indirect_link_profile: Optional[str] = None
+    already_installed_link_profile: str | None = None
+    direct_link_profile: str | None = None
+    indirect_link_profile: str | None = None
+    already_installed_direct_link_profile: str | None = None
+    already_installed_indirect_link_profile: str | None = None
 
 
 def validate_xpansion_candidate(candidate: XpansionCandidate) -> None:
@@ -273,3 +291,11 @@ class XpansionAdequacyCriterion(AntaresBaseModel, populate_by_name=True, alias_g
     stopping_threshold: float = Field(default=1e6, ge=0)
     criterion_count_threshold: float = Field(default=1, ge=0)
     patterns: list[XpansionAdequacyPattern] = Field(default_factory=list)
+
+    @field_validator("patterns")
+    @classmethod
+    def no_duplicate_areas(cls, v: list[XpansionAdequacyPattern]) -> list[XpansionAdequacyPattern]:
+        duplicates = [area for area, count in Counter(p.area for p in v).items() if count > 1]
+        if duplicates:
+            raise ValueError(f"Duplicate areas in patterns: {', '.join(duplicates)}")
+        return v

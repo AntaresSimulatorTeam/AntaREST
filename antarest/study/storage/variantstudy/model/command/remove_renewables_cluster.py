@@ -10,7 +10,6 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from typing_extensions import override
 
@@ -43,14 +42,16 @@ class RemoveRenewablesCluster(ICommand):
     cluster_id: str
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         if not study_data.renewable_exists(self.area_id, self.cluster_id):
             return command_failed(f"Renewable cluster '{self.cluster_id}' in area '{self.area_id}' does not exist")
 
         renewable = study_data.get_renewable(self.area_id, self.cluster_id)
         study_data.delete_renewable(self.area_id, renewable)
 
-        return command_succeeded(f"Renewable cluster '{self.cluster_id}' inside area '{self.area_id}' deleted")
+        return command_succeeded(
+            f"Renewable cluster '{self.cluster_id}' inside area '{self.area_id}' deleted", result=None
+        )
 
     @override
     def to_dto(self) -> CommandDTO:

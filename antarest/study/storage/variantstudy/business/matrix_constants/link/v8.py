@@ -10,8 +10,18 @@
 #
 # This file is part of the Antares project.
 
+import polars as pl
+
 from antarest.core.utils.polars import create_polars_dataframe
 
-link = create_polars_dataframe([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
-direct = create_polars_dataframe([[0.0]] * 8760)
-indirect = create_polars_dataframe([[0.0]] * 8760)
+
+def link() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
+
+
+def direct() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0]] * 8760)
+
+
+def indirect() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0]] * 8760)

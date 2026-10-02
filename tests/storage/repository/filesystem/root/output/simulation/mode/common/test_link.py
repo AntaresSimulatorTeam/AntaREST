@@ -46,7 +46,7 @@ class TestOutputSimulationLinkItem:
             areas={},
         )
 
-        node = link.OutputSimulationLinkItem(matrix_mapper=Mock(), config=config, area="fr", link="fr -> de")
+        node = link.OutputSimulationLinkItem(matrix_storage_context=Mock(), config=config, area="fr", link="fr -> de")
         actual = node.build()
 
         # check the result

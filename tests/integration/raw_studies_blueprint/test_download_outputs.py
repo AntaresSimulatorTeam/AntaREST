@@ -10,8 +10,8 @@
 #
 # This file is part of the Antares project.
 import json
+import zipfile
 
-from py7zr import py7zr
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
@@ -42,8 +42,8 @@ def test_get_output_variables_list(client: TestClient, user_access_token: str, i
     res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/download", json=body)
     actual_result = res.json()
     actual_result = json.loads(json.dumps(actual_result), parse_constant=_convert_nan_to_none)
-    with py7zr.SevenZipFile(ASSETS_DIR / "res1.7z", mode="r") as szf:
-        expected_content = from_json(szf.read(["."])["."].read())
+    with zipfile.ZipFile(ASSETS_DIR / "res1.zip", mode="r") as zipped_file:
+        expected_content = from_json(zipped_file.read("res1"))
     assert expected_content == actual_result
 
     # Annual

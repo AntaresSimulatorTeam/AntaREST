@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 import polars as pl
 
@@ -22,6 +21,7 @@ from antarest.study.business.model.xpansion_model import (
     XpansionSettings,
     XpansionSettingsUpdate,
 )
+from antarest.study.dao.common import XpansionCapacitiesMapping, XpansionConstraintsMapping, XpansionWeightsMapping
 
 
 class ReadOnlyXpansionDao(ABC):
@@ -65,10 +65,36 @@ class ReadOnlyXpansionDao(ABC):
     def get_xpansion_adequacy_criterion(self) -> XpansionAdequacyCriterion:
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_all_xpansion_weights(self) -> XpansionWeightsMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_xpansion_capacities(self) -> XpansionCapacitiesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_xpansion_constraints(self) -> XpansionConstraintsMapping:
+        raise NotImplementedError()
+
 
 class XpansionDao(ReadOnlyXpansionDao):
     @abstractmethod
-    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: Optional[str] = None) -> None:
+    def save_xpansion_candidate(self, candidate: XpansionCandidate, old_id: str | None = None) -> None:
+        """
+        Upsert a candidate.
+
+        Args:
+            candidate: The candidate to create or update.
+            old_id: Current candidate name, only provided when renaming a candidate.
+
+        Raises:
+            CandidateNotFoundError: If ``old_id`` is provided but does not exist.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -92,15 +118,15 @@ class XpansionDao(ReadOnlyXpansionDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_xpansion_constraint(self, filename: str, content: bytes) -> None:
+    def save_xpansion_constraint(self, data: XpansionConstraintsMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_xpansion_capacity(self, filename: str, series: str) -> None:
+    def save_xpansion_capacity(self, data: XpansionCapacitiesMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def save_xpansion_weight(self, filename: str, series: str) -> None:
+    def save_xpansion_weight(self, data: XpansionWeightsMapping) -> None:
         raise NotImplementedError()
 
     @abstractmethod

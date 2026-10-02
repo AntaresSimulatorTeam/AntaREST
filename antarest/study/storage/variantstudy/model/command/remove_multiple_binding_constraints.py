@@ -10,11 +10,12 @@
 #
 # This file is part of the Antares project.
 
-from typing import Any, List, Optional
+from typing import Any
 
 from pydantic import model_validator
 from typing_extensions import override
 
+from antarest.study.business.model.binding_constraint_model import ConstraintId
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
@@ -35,7 +36,7 @@ class RemoveMultipleBindingConstraints(ICommand):
     command_name: CommandName = CommandName.REMOVE_MULTIPLE_BINDING_CONSTRAINTS
 
     # Properties of the `REMOVE_MULTIPLE_BINDING_CONSTRAINTS` command:
-    ids: List[str]
+    ids: list[ConstraintId]
 
     @model_validator(mode="before")
     @classmethod
@@ -46,7 +47,7 @@ class RemoveMultipleBindingConstraints(ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         all_bcs = study_data.get_all_constraints()
         constraints = []
         for bc_id in self.ids:
@@ -55,7 +56,7 @@ class RemoveMultipleBindingConstraints(ICommand):
             constraints.append(all_bcs[bc_id])
         study_data.delete_constraints(constraints)
 
-        return command_succeeded("Binding constraints successfully removed.")
+        return command_succeeded("Binding constraints successfully removed.", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

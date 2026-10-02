@@ -197,7 +197,7 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
         f"/v1/studies/{study_id}/raw",
         params={"path": f"output/{first_output_name}/economy/mc-all/areas/{area_id}/details-monthly", "depth": 3},
     )
-    assert res.json() == {"index": ANY, "columns": ANY, "data": ANY}
+    assert res.json() == {"columns": ANY, "data": ANY}
 
     # remove output
     client.delete(f"/v1/studies/{study_id}/outputs/{first_output_name}")

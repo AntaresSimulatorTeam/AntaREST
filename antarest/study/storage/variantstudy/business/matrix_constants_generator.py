@@ -10,31 +10,36 @@
 #
 # This file is part of the Antares project.
 
-from typing import Dict
 
 import polars as pl
 from antares.study.version import StudyVersion
 
-from antarest.matrixstore.service import MATRIX_PROTOCOL_PREFIX, ISimpleMatrixService
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_2
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
-    FIXED_4_COLUMNS,
-    FIXED_8_COLUMNS,
-    NULL_MATRIX,
-    NULL_SCENARIO_MATRIX,
+    fixed_4_columns,
+    fixed_8_columns,
+    null_matrix,
+    null_scenario_matrix,
+    ones_scenario_matrix,
 )
 from antarest.study.storage.variantstudy.business.matrix_constants.matrix_constants_usage_provider import (
     ConstantsMatrixUsageProvider,
 )
 
-# TODO: put index into variable
+"""
+This file references all the default matrices used by the application when creating objects.
+These matrices may differ from the Simulator default ones as we want to be able to create objects with specific matrices by default.
+"""
 
 HYDRO_COMMON_CAPACITY_MAX_POWER_V7 = "hydro/common/capacity/max_power/v7"
 HYDRO_COMMON_CAPACITY_RESERVOIR_V7 = "hydro/common/capacity/reservoir/v7"
 HYDRO_COMMON_CAPACITY_RESERVOIR_V6 = "hydro/common/capacity/reservoir/v6"
 HYDRO_COMMON_CAPACITY_INFLOW_PATTERN = "hydro/common/capacity/inflow_pattern"
 HYDRO_COMMON_CAPACITY_CREDIT_MODULATION = "hydro/common/capacity/credit_modulations"
+
+
 RESERVES_TS = "reserves"
 MISCGEN_TS = "miscgen"
 PREPRO_CONVERSION = "prepro/conversion"
@@ -48,6 +53,11 @@ LINK_INDIRECT = "link_indirect"
 NULL_MATRIX_NAME = "null_matrix"
 EMPTY_SCENARIO_MATRIX = "empty_scenario_matrix"
 ONES_SCENARIO_MATRIX = "ones_scenario_matrix"
+
+HYDRO_COMMON_CAPACITY_MAX_DAILY_GEN_ENERGY = NULL_MATRIX_NAME
+HYDRO_COMMON_CAPACITY_MAX_DAILY_PUMP_ENERGY = NULL_MATRIX_NAME
+HYDRO_SERIES_MAX_HOURLY_GEN_POWER = NULL_MATRIX_NAME
+HYDRO_SERIES_MAX_HOURLY_PUMP_POWER = NULL_MATRIX_NAME
 
 # Binding constraint aliases
 BINDING_CONSTRAINT_HOURLY_v86 = "empty_2nd_member_hourly_v86"
@@ -63,11 +73,13 @@ ST_STORAGE_LOWER_RULE_CURVE = EMPTY_SCENARIO_MATRIX
 ST_STORAGE_UPPER_RULE_CURVE = ONES_SCENARIO_MATRIX
 ST_STORAGE_INFLOWS = EMPTY_SCENARIO_MATRIX
 
+RESERVE_NEED = EMPTY_SCENARIO_MATRIX
+
 
 # noinspection SpellCheckingInspection
 class GeneratorMatrixConstants:
     def __init__(self, matrix_service: ISimpleMatrixService) -> None:
-        self.hashes: Dict[str, str] = {}
+        self.hashes: dict[str, str] = {}
         self.matrix_service: ISimpleMatrixService = matrix_service
         ConstantsMatrixUsageProvider(self, self.matrix_service)
 
@@ -75,149 +87,156 @@ class GeneratorMatrixConstants:
         self,
     ) -> None:
         self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7] = self.matrix_service.add_predefined_matrix(
-            lambda: matrix_constants.hydro.v7.max_power
+            matrix_constants.hydro.v7.max_power
         )
         self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7] = self.matrix_service.add_predefined_matrix(
-            lambda: matrix_constants.hydro.v7.reservoir
+            matrix_constants.hydro.v7.reservoir
         )
         self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6] = self.matrix_service.add_predefined_matrix(
-            lambda: matrix_constants.hydro.v6.reservoir
+            matrix_constants.hydro.v6.reservoir
         )
         self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN] = self.matrix_service.add_predefined_matrix(
-            lambda: matrix_constants.hydro.v7.inflow_pattern
+            matrix_constants.hydro.v7.inflow_pattern
         )
         self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION] = self.matrix_service.add_predefined_matrix(
-            lambda: matrix_constants.hydro.v7.credit_modulations
+            matrix_constants.hydro.v7.credit_modulations
         )
-        self.hashes[PREPRO_CONVERSION] = self.matrix_service.add_predefined_matrix(
-            lambda: matrix_constants.prepro.conversion
-        )
-        self.hashes[PREPRO_DATA] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.prepro.data)
+        self.hashes[PREPRO_CONVERSION] = self.matrix_service.add_predefined_matrix(matrix_constants.prepro.conversion)
+        self.hashes[PREPRO_DATA] = self.matrix_service.add_predefined_matrix(matrix_constants.prepro.data)
         self.hashes[THERMAL_PREPRO_DATA] = self.matrix_service.add_predefined_matrix(
-            lambda: matrix_constants.thermals.prepro.data
+            matrix_constants.thermals.prepro.data
         )
 
         self.hashes[THERMAL_PREPRO_MODULATION] = self.matrix_service.add_predefined_matrix(
-            lambda: matrix_constants.thermals.prepro.modulation
+            matrix_constants.thermals.prepro.modulation
         )
-        self.hashes[LINK_V7] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.link.v7.link)
-        self.hashes[LINK_V8] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.link.v8.link)
-        self.hashes[LINK_DIRECT] = self.matrix_service.add_predefined_matrix(lambda: matrix_constants.link.v8.direct)
-        self.hashes[LINK_INDIRECT] = self.matrix_service.add_predefined_matrix(
-            lambda: matrix_constants.link.v8.indirect
-        )
+        self.hashes[LINK_V7] = self.matrix_service.add_predefined_matrix(matrix_constants.link.v7.link)
+        self.hashes[LINK_V8] = self.matrix_service.add_predefined_matrix(matrix_constants.link.v8.link)
+        self.hashes[LINK_DIRECT] = self.matrix_service.add_predefined_matrix(matrix_constants.link.v8.direct)
+        self.hashes[LINK_INDIRECT] = self.matrix_service.add_predefined_matrix(matrix_constants.link.v8.indirect)
 
-        self.hashes[NULL_MATRIX_NAME] = self.matrix_service.add_predefined_matrix(lambda: NULL_MATRIX)
-        self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(lambda: NULL_SCENARIO_MATRIX)
-        self.hashes[RESERVES_TS] = self.matrix_service.add_predefined_matrix(lambda: FIXED_4_COLUMNS)
-        self.hashes[MISCGEN_TS] = self.matrix_service.add_predefined_matrix(lambda: FIXED_8_COLUMNS)
+        self.hashes[NULL_MATRIX_NAME] = self.matrix_service.add_predefined_matrix(null_matrix)
+        self.hashes[EMPTY_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(null_scenario_matrix)
+        self.hashes[RESERVES_TS] = self.matrix_service.add_predefined_matrix(fixed_4_columns)
+        self.hashes[MISCGEN_TS] = self.matrix_service.add_predefined_matrix(fixed_8_columns)
 
         # Binding constraint matrices
         series_before_87 = matrix_constants.binding_constraint.series_before_v87
         self.hashes[BINDING_CONSTRAINT_HOURLY_v86] = self.matrix_service.add_predefined_matrix(
-            lambda: pl.DataFrame(series_before_87.default_bc_hourly)
+            lambda: pl.DataFrame(series_before_87.default_bc_hourly())
         )
         self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v86] = self.matrix_service.add_predefined_matrix(
-            lambda: pl.DataFrame(series_before_87.default_bc_weekly_daily)
+            lambda: pl.DataFrame(series_before_87.default_bc_weekly_daily())
         )
 
         series_after_87 = matrix_constants.binding_constraint.series_after_v87
         self.hashes[BINDING_CONSTRAINT_HOURLY_v87] = self.matrix_service.add_predefined_matrix(
-            lambda: pl.DataFrame(series_after_87.default_bc_hourly)
+            lambda: pl.DataFrame(series_after_87.default_bc_hourly())
         )
         self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v87] = self.matrix_service.add_predefined_matrix(
-            lambda: pl.DataFrame(series_after_87.default_bc_weekly_daily)
+            lambda: pl.DataFrame(series_after_87.default_bc_weekly_daily())
         )
 
         # Some short-term storage matrices use np.ones((8760, 1))
-        self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(
-            lambda: pl.DataFrame(matrix_constants.st_storage.series.pmax_injection)
-        )
+        self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(ones_scenario_matrix)
 
     def get_hydro_max_power(self, version: StudyVersion) -> str:
         if version > STUDY_VERSION_6_5:
-            return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
+            return self.hashes[HYDRO_COMMON_CAPACITY_MAX_POWER_V7]
         else:
-            return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
+            return self.hashes[NULL_MATRIX_NAME]
 
     def get_hydro_reservoir(self, version: StudyVersion) -> str:
         if version > STUDY_VERSION_6_5:
-            return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7]
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
+            return self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V7]
+        return self.hashes[HYDRO_COMMON_CAPACITY_RESERVOIR_V6]
 
     def get_hydro_credit_modulations(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION]
+        return self.hashes[HYDRO_COMMON_CAPACITY_CREDIT_MODULATION]
 
     def get_hydro_inflow_pattern(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN]
+        return self.hashes[HYDRO_COMMON_CAPACITY_INFLOW_PATTERN]
 
     def get_prepro_conversion(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[PREPRO_CONVERSION]
+        return self.hashes[PREPRO_CONVERSION]
 
     def get_prepro_data(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[PREPRO_DATA]
+        return self.hashes[PREPRO_DATA]
 
     def get_thermal_prepro_data(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[THERMAL_PREPRO_DATA]
+        return self.hashes[THERMAL_PREPRO_DATA]
 
     def get_thermal_prepro_modulation(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[THERMAL_PREPRO_MODULATION]
+        return self.hashes[THERMAL_PREPRO_MODULATION]
 
     def get_link(self, version: StudyVersion) -> str:
         if version < STUDY_VERSION_8_2:
-            return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_V7]
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_V8]
+            return self.hashes[LINK_V7]
+        return self.hashes[LINK_V8]
 
     def get_link_direct(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_DIRECT]
+        return self.hashes[LINK_DIRECT]
 
     def get_link_indirect(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[LINK_INDIRECT]
+        return self.hashes[LINK_INDIRECT]
 
     def get_null_matrix(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[NULL_MATRIX_NAME]
-
-    def get_null_scenario_matrix(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[EMPTY_SCENARIO_MATRIX]
+        return self.hashes[NULL_MATRIX_NAME]
 
     def get_default_reserves(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[RESERVES_TS]
+        return self.hashes[RESERVES_TS]
 
     def get_default_miscgen(self) -> str:
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[MISCGEN_TS]
+        return self.hashes[MISCGEN_TS]
 
     def get_binding_constraint_hourly_86(self) -> str:
         """2D-matrix of shape (8784, 3), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_HOURLY_v86]
+        return self.hashes[BINDING_CONSTRAINT_HOURLY_v86]
 
     def get_binding_constraint_daily_weekly_86(self) -> str:
         """2D-matrix of shape (366, 3), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v86]
+        return self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v86]
 
     def get_binding_constraint_hourly_87(self) -> str:
         """2D-matrix of shape (8784, 1), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_HOURLY_v87]
+        return self.hashes[BINDING_CONSTRAINT_HOURLY_v87]
 
     def get_binding_constraint_daily_weekly_87(self) -> str:
         """2D-matrix of shape (8784, 1), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v87]
+        return self.hashes[BINDING_CONSTRAINT_DAILY_WEEKLY_v87]
 
     def get_st_storage_pmax_injection(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with ones."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_PMAX_INJECTION]
+        return self.hashes[ST_STORAGE_PMAX_INJECTION]
 
     def get_st_storage_pmax_withdrawal(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with ones."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_PMAX_WITHDRAWAL]
+        return self.hashes[ST_STORAGE_PMAX_WITHDRAWAL]
 
     def get_st_storage_lower_rule_curve(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_LOWER_RULE_CURVE]
+        return self.hashes[ST_STORAGE_LOWER_RULE_CURVE]
 
     def get_st_storage_upper_rule_curve(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with ones."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_UPPER_RULE_CURVE]
+        return self.hashes[ST_STORAGE_UPPER_RULE_CURVE]
 
     def get_st_storage_inflows(self) -> str:
         """2D-matrix of shape (8760, 1), filled-in with zeros."""
-        return MATRIX_PROTOCOL_PREFIX + self.hashes[ST_STORAGE_INFLOWS]
+        return self.hashes[ST_STORAGE_INFLOWS]
+
+    def get_reserve_need(self) -> str:
+        """2D-matrix of shape (8760, 1), filled-in with zeros."""
+        return self.hashes[RESERVE_NEED]
+
+    def get_hydro_max_hourly_gen_power(self) -> str:
+        return self.hashes[HYDRO_SERIES_MAX_HOURLY_GEN_POWER]
+
+    def get_hydro_max_hourly_pump_power(self) -> str:
+        return self.hashes[HYDRO_SERIES_MAX_HOURLY_PUMP_POWER]
+
+    def get_hydro_max_daily_gen_energy(self) -> str:
+        return self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_GEN_ENERGY]
+
+    def get_hydro_max_daily_pump_energy(self) -> str:
+        return self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_PUMP_ENERGY]

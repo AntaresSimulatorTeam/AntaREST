@@ -1,0 +1,65 @@
+library:
+  id: andromede-v1-models-weo-hybrid
+  description: Andromede V1 model library - without expectation operators - allows hybrid connections (i.e. connections between Andromede models and Antares legacy area)
+
+  port-types:
+    - id: flow
+      description: A port which transfers power flow
+      fields:
+        - id: flow
+      area-connection:
+        injection-to-balance: flow
+        spillage-bound:
+        unsupplied-energy-bound:
+
+  models:
+    - id: dsr
+      parameters:
+        - id: curtailment_price
+          time-dependent: false
+          scenario-dependent: false
+        - id: max_load
+          time-dependent: true
+          scenario-dependent: true
+      variables:
+        - id: curtailment
+          lower-bound: 0
+          upper-bound: max_load
+          variable-type: continuous
+      objective-contributions:
+        - id: objective
+          expression: sum(curtailment * curtailment_price)
+      ports:
+        - id: balance_port
+          type: flow
+      port-field-definitions:
+        - port: balance_port
+          field: flow
+          definition: -max_load + curtailment
+
+
+    - id: electrolyser
+      parameters:
+      - id: efficiency
+        scenario-dependent: false
+        time-dependent: false
+      - id: p_max
+        scenario-dependent: true
+        time-dependent: true
+      variables:
+      - id: power
+        lower-bound: 0
+        upper-bound: p_max
+        variable-type: continuous
+      ports:
+        - id: hydrogen_port
+          type: flow
+        - id: power_port
+          type: flow
+      port-field-definitions:
+        - port: hydrogen_port
+          field: flow
+          definition: efficiency * power
+        - port: power_port
+          field: flow
+          definition: -power

@@ -24,9 +24,9 @@ import {
   type StudyMetadata,
   type StudyMetadataDTO,
   type UserInfo,
-  type VariantTree,
-  type VariantTreeDTO,
 } from "../../types/types";
+import type { Study } from "../api/studies/types";
+import type { VariantTree } from "../api/studies/variants/types";
 
 export const convertStudyDtoToMetadata = (
   sid: string,
@@ -40,6 +40,7 @@ export const convertStudyDtoToMetadata = (
     owner: metadata.owner,
     author: metadata.author,
     editor: metadata.editor,
+    storageMode: metadata.storage_mode,
     groups: metadata.groups,
     type: metadata.type,
     publicMode: metadata.public_mode,
@@ -51,15 +52,9 @@ export const convertStudyDtoToMetadata = (
     horizon: metadata.horizon,
     tags: metadata.tags,
     parentId: metadata.parent_id,
+    directoryId: metadata.directory_id,
   };
 };
-
-export const convertVariantTreeDTO = (variantTree: VariantTreeDTO): VariantTree => ({
-  node: convertStudyDtoToMetadata(variantTree.node.id, variantTree.node),
-  children: (variantTree.children || []).map((child: VariantTreeDTO) =>
-    convertVariantTreeDTO(child),
-  ),
-});
 
 export const isUserAdmin = (user?: UserInfo): boolean => {
   if (user) {
@@ -161,24 +156,6 @@ export const buildModificationDate = (
   return duration.locale(language.substring(0, 2) === "fr" ? "fr" : "en").humanize();
 };
 
-export const countDescendants = (tree: VariantTree): number =>
-  tree.children.length
-    ? tree.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0)
-    : 0;
-
-export const findNodeInTree = (studyId: string, tree: VariantTree): VariantTree | undefined => {
-  if (studyId === tree.node.id) {
-    return tree;
-  }
-  for (const child of tree.children) {
-    const elm = findNodeInTree(studyId, child);
-    if (elm !== undefined) {
-      return elm;
-    }
-  }
-  return undefined;
-};
-
 export const createListFromTree = ({ node, children }: VariantTree): GenericInfo[] => {
   const { id, name } = node;
 
@@ -188,8 +165,12 @@ export const createListFromTree = ({ node, children }: VariantTree): GenericInfo
   );
 };
 
-export const sortByName = <T extends { name: string }>(list: T[]) =>
-  R.sortBy(R.compose(R.toLower, R.prop("name")), list);
+export const sortByProp = <K extends string, T extends Record<K, string>>(key: K, list: T[]) =>
+  R.sortBy(R.compose(R.toLower, R.prop(key)), list);
+
+export const sortByName = <T extends { name: string }>(list: T[]) => sortByProp("name", list);
+
+export const getNames = <T extends { name: string }>(list: T[]) => list.map((c) => c.name);
 
 /**
  * Converts a name string to a valid ID string.
@@ -223,4 +204,44 @@ export const removeEmptyFields = (
   return cleanData;
 };
 
-export default {};
+export function getParentNode(tree: VariantTree, studyId: string): Study | undefined {
+  for (const child of tree.children) {
+    if (studyId === child.node.id) {
+      return tree.node;
+    }
+
+    const parent = getParentNode(child, studyId);
+
+    if (parent !== undefined) {
+      return parent;
+    }
+  }
+
+  return undefined;
+}
+
+function getSubTree(tree: VariantTree, studyId: string): VariantTree | undefined {
+  if (studyId === tree.node.id) {
+    return tree;
+  }
+
+  for (const child of tree.children) {
+    const subTree = getSubTree(child, studyId);
+
+    if (subTree !== undefined) {
+      return subTree;
+    }
+  }
+
+  return undefined;
+}
+
+export function countDescendants(tree: VariantTree, studyId?: string): number {
+  const rootTree = studyId ? getSubTree(tree, studyId) : tree;
+
+  if (!rootTree) {
+    return 0;
+  }
+
+  return rootTree.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0);
+}

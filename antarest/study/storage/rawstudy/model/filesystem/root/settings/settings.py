@@ -24,8 +24,8 @@ class Settings(FolderNode):
     @override
     def build(self) -> TREE:
         children: TREE = {
-            "resources": Resources(self.matrix_mapper, self.config.next_file("resources")),
-            "simulations": SettingsSimulations(self.matrix_mapper, self.config.next_file("simulations")),
+            "resources": Resources(self.matrix_storage_context, self.config.next_file("resources")),
+            "simulations": SettingsSimulations(self.matrix_storage_context, self.config.next_file("simulations")),
             "comments": RawFileNode(self.config.next_file("comments.txt")),
             "generaldata": GeneralData(self.config.next_file("generaldata.ini")),
             "scenariobuilder": ScenarioBuilder(self.config.next_file("scenariobuilder.dat")),

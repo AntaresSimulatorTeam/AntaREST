@@ -5,7 +5,6 @@ Revises: 63ed81e5ce6f
 Create Date: 2021-11-17 16:10:35.914371
 
 """
-from typing import Optional, Union
 
 from alembic import op
 from dateutil import tz
@@ -20,7 +19,7 @@ branch_labels = None
 depends_on = None
 
 
-def convert_to_utc(data: Union[str, datetime]) -> Optional[str]:
+def convert_to_utc(data: str | datetime) -> str | None:
     if data is not None:
         dt = data
         if isinstance(data, str):
@@ -33,7 +32,7 @@ def convert_to_utc(data: Union[str, datetime]) -> Optional[str]:
     return None
 
 
-def convert_to_local(data: str) -> Optional[str]:
+def convert_to_local(data: str) -> str | None:
     if data is not None:
         dt = data
         if isinstance(data, str):

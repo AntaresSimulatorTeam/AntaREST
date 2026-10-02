@@ -29,7 +29,13 @@ from antarest.core.utils.polars import create_polars_dataframe
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Password, User
 from antarest.login.repository import GroupRepository, UserRepository
-from antarest.matrixstore.model import Matrix, MatrixDataSet, MatrixDataSetRelation
+from antarest.matrixstore.model import (
+    LEGACY_MATRIX_VERSION,
+    NEW_MATRIX_VERSION,
+    Matrix,
+    MatrixDataSet,
+    MatrixDataSetRelation,
+)
 from antarest.matrixstore.parsing import load_matrix, save_matrix
 from antarest.matrixstore.repository import (
     MatrixContentRepository,
@@ -37,7 +43,6 @@ from antarest.matrixstore.repository import (
     MatrixRepository,
     compute_hash,
 )
-from antarest.matrixstore.service import LEGACY_MATRIX_VERSION, NEW_MATRIX_VERSION
 
 ArrayData = list[list[float]] | npt.NDArray[np.float64]
 
@@ -252,13 +257,16 @@ class TestMatrixContentRepository:
         for more chances to generate problems.
         """
         trial_count = 10
-        matrix = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
+        # note: important to have different instances, which will be the case in real usage.
+        #       When using the same instance, polars may deadlock.
+        matrix1 = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
+        matrix2 = pl.DataFrame(data=np.zeros(shape=(8760, 1)))
 
         matrix_content_repo: MatrixContentRepository
         with matrix_repository(tmp_path, matrix_format=InternalMatrixFormat.TSV) as matrix_content_repo:
             with multiprocessing.pool.ThreadPool(2) as tp:
                 for i in range(0, trial_count):
-                    results = tp.map(matrix_content_repo.save, [matrix, matrix])
+                    results = tp.map(matrix_content_repo.save, [matrix1, matrix2])
 
                     assert results[0].new or results[1].new
                     assert not (results[0].new and results[1].new)
@@ -381,3 +389,20 @@ class TestMatrixContentRepository:
             assert matrix_id == matrix_hash
             matrix = matrix_content_repo.get(matrix_hash, matrix_version=2)
             assert matrix.is_empty()
+
+    def test_get_all_matrices_on_the_filesystem(self, tmp_path: Path) -> None:
+        repo = MatrixContentRepository(tmp_path, InternalMatrixFormat.TSV)
+        bucket_dir = repo.bucket_dir
+
+        (bucket_dir / "abc123.tsv").touch()
+        (bucket_dir / "def456.hdf").touch()
+        invalid_file = bucket_dir / "no_suffix_matrix"
+        invalid_file.touch()
+        invalid_file_with_unknown_suffix = bucket_dir / "other.tmp"
+        invalid_file_with_unknown_suffix.touch()
+        (bucket_dir / "abc123.tsv.lock").touch()
+
+        matrices, invalid_files = repo.get_all_matrices_on_the_filesystem()
+
+        assert matrices == {"abc123", "def456"}
+        assert invalid_files == {invalid_file, invalid_file_with_unknown_suffix}

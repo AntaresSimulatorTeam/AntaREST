@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from abc import ABC, abstractmethod
-from typing import Iterable, List
+from collections.abc import Iterable
 
 from typing_extensions import override
 
@@ -44,7 +44,7 @@ class BlobService(IBlobService):
         blob_content_repository: BlobContentRepository,
     ):
         self.blob_content_repository = blob_content_repository
-        self.usage_providers: List[IBlobUsageProvider] = []
+        self.usage_providers: list[IBlobUsageProvider] = []
 
     @override
     def save(self, data: bytes) -> str:

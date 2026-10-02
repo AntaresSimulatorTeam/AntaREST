@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
-from typing import Iterable, List
+from collections.abc import Iterable
 
 from typing_extensions import override
 
@@ -38,9 +38,9 @@ class CommandBlobUsageProvider(IBlobUsageProvider):
     @override
     def get_blob_usage(self) -> Iterable[BlobReference]:
         logger.info("Getting all blobs used in variant studies")
-        command_blocks: List[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
+        command_blocks: list[CommandBlock] = self.variant_study_repo.get_all_command_blocks()
 
-        def transform_to_command(command_dto: CommandDTO, study_ref: str) -> List[ICommand]:
+        def transform_to_command(command_dto: CommandDTO, study_ref: str) -> list[ICommand]:
             try:
                 return self.command_factory.to_command(command_dto)
             except Exception as e:

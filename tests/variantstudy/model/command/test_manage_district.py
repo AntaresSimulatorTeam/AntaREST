@@ -12,7 +12,6 @@
 
 from antarest.core.serde.ini_reader import IniReader
 from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictCreation, DistrictUpdate
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -22,11 +21,12 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 def test_manage_district(empty_study_810: FileStudy, command_context: CommandContext) -> None:
     empty_study = empty_study_810
-    study_dao = FileStudyTreeDao(empty_study, command_context.generator_matrix_constants, command_context.blob_service)
+    study_dao = build_dao_from_file_study(empty_study, command_context)
     area1 = "Area1"
     area1_id = transform_name_to_id(area1)
 
@@ -61,7 +61,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
         study_version=study_version,
     )
     output_d1 = create_district1_command.apply(
-        study_data=study_dao,
+        study_dao=study_dao,
     )
     assert output_d1.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
@@ -81,7 +81,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
         study_version=study_version,
     )
     output_d2 = create_district2_command.apply(
-        study_data=study_dao,
+        study_dao=study_dao,
     )
     assert output_d2.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
@@ -96,7 +96,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
         command_context=command_context,
         study_version=study_version,
     )
-    output_ud2 = update_district2_command.apply(study_data=study_dao)
+    output_ud2 = update_district2_command.apply(study_dao=study_dao)
     assert output_ud2.status
 
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
@@ -111,7 +111,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
         study_version=study_version,
     )
     output_d3 = create_district3_command.apply(
-        study_data=study_dao,
+        study_dao=study_dao,
     )
     assert output_d3.status
     assert output_d2.status
@@ -121,7 +121,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
 
     # case where district already exists
     output_d3 = create_district3_command.apply(
-        study_data=study_dao,
+        study_dao=study_dao,
     )
     assert not output_d3.status
 
@@ -132,7 +132,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
         study_version=study_version,
     )
     output_d4 = create_district4_command.apply(
-        study_data=study_dao,
+        study_dao=study_dao,
     )
     assert not output_d4.status
     assert output_d4.message == "District 'district with invalid area' has invalid areas: ['unknown_area']"
@@ -145,7 +145,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
         study_version=study_version,
     )
     output_d5 = update_district5_command.apply(
-        study_data=study_dao,
+        study_dao=study_dao,
     )
     assert not output_d5.status
     assert output_d5.message == "District 'one subtracted zone' has invalid areas: ['unknown_area']"
@@ -160,7 +160,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     assert len(sets_config.keys()) == 4
     remove_output_d3 = remove_district3_command.apply(
-        study_data=study_dao,
+        study_dao=study_dao,
     )
     assert remove_output_d3.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
@@ -174,7 +174,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
         study_version=study_version,
     )
     output_d6 = update_district6_command.apply(
-        study_data=study_dao,
+        study_dao=study_dao,
     )
     assert output_d6.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
@@ -192,7 +192,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
         study_version=study_version,
     )
     output_d7 = update_district7_command.apply(
-        study_data=study_dao,
+        study_dao=study_dao,
     )
     assert output_d7.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
@@ -212,7 +212,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
         study_version=study_version,
     )
     output_d8 = update_district8_command.apply(
-        study_data=study_dao,
+        study_dao=study_dao,
     )
     assert output_d8.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")

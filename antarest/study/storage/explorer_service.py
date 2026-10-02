@@ -15,7 +15,6 @@ import logging
 import re
 import sys
 from pathlib import PurePosixPath
-from typing import List, Optional
 
 from antarest.core.config import Config
 from antarest.study.model import (
@@ -43,7 +42,7 @@ class Explorer:
         workspace_name: str,
         workspace_directory_path: str,
         show_hidden_file: bool = False,
-    ) -> List[FolderDTO]:
+    ) -> list[FolderDTO]:
         """
         return a list of all directories under workspace_directory_path.
         """
@@ -81,7 +80,7 @@ class Explorer:
 
         return folders
 
-    def list_workspaces(self) -> List[WorkspaceDTO]:
+    def list_workspaces(self) -> list[WorkspaceDTO]:
         """
         Return the list of all configured workspace names, except the default one.
         On Windows, includes the disk name (volume label) in WorkspaceDTO
@@ -104,7 +103,7 @@ class Explorer:
         return result
 
 
-def get_volume_label(drive_letter: str) -> Optional[str]:
+def get_volume_label(drive_letter: str) -> str | None:
     """
     Returns the volume label like 'OS' for a given drive letter like 'C:\\'.
     """

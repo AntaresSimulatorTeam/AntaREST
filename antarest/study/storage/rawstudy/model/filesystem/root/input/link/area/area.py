@@ -9,44 +9,37 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import numpy as np
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.model import STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
-from antarest.study.storage.rawstudy.model.filesystem.matrix.constants import default_6_fixed_hourly
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_6_fixed_hourly,
+    default_8_fixed_hourly,
+)
 from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.capacities.capacities import (
     InputLinkAreaCapacities,
 )
 from antarest.study.storage.rawstudy.model.filesystem.root.input.link.area.properties import InputLinkAreaProperties
 
-default_link_legacy_matrix = np.zeros((8760, 8), dtype=np.float64)
-default_link_legacy_matrix[:, :2] = 1
-default_link_legacy_matrix.flags.writeable = False
-
 
 class InputLinkArea(FolderNode):
-    def __init__(
-        self,
-        matrix_mapper: MatrixUriMapper,
-        config: FileStudyTreeConfig,
-        area: str,
-    ):
-        super().__init__(matrix_mapper, config)
+    def __init__(self, matrix_storage_context: MatrixStorageContext, config: FileStudyTreeConfig, area: str):
+        super().__init__(matrix_storage_context, config)
         self.area = area
 
     @override
     def build(self) -> TREE:
         children: TREE
-        ctx = self.matrix_mapper
+        ctx = self.matrix_storage_context
         cfg = self.config
         if cfg.version < STUDY_VERSION_8_2:
             children = {
-                link: InputSeriesMatrix(ctx, cfg.next_file(f"{link}.txt"), default_empty=default_link_legacy_matrix)
+                link: InputSeriesMatrix(ctx, cfg.next_file(f"{link}.txt"), default_empty=default_8_fixed_hourly)
                 for link in cfg.get_links(self.area)
             }
         else:

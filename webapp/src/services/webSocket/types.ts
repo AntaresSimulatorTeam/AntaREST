@@ -21,7 +21,7 @@ import type {
 import type { O } from "ts-toolbelt";
 import type { FileDownloadDTO } from "../api/downloads";
 import type { JobDTO } from "../api/launcher/jobs/types";
-import type { TaskDTO, TaskTypeValue } from "../api/tasks/types";
+import type { Task, TaskTypeValue } from "../api/tasks/types";
 import type { WsEventType } from "./constants";
 
 /**
@@ -65,7 +65,7 @@ export interface TaskEventPayload {
 }
 
 export interface TaskProgressEventPayload {
-  task_id: TaskDTO["id"];
+  task_id: Task["id"];
   progress: number;
 }
 
@@ -73,11 +73,12 @@ export interface TaskProgressEventPayload {
 // Events
 ////////////////////////////////////////////////////////////////
 
-interface StudyJobEvent {
+export interface StudyJobEvent {
   type:
     | typeof WsEventType.StudyJobStarted
     | typeof WsEventType.StudyJobCompleted
-    | typeof WsEventType.StudyJobStatusUpdate;
+    | typeof WsEventType.StudyJobStatusUpdate
+    | typeof WsEventType.StudyJobCancelled;
   payload: JobDTO;
 }
 
@@ -89,8 +90,8 @@ interface StudyEvent {
   payload: StudyEventPayload;
 }
 
-interface StudyDataEvent {
-  type: typeof WsEventType.StudyDataEdited;
+interface StudyMapEvent {
+  type: typeof WsEventType.StudyMapEdited;
   payload: GenericInfo<string>;
 }
 
@@ -144,7 +145,7 @@ interface TaskProgressEvent {
 export type WsEvent =
   | StudyJobEvent
   | StudyEvent
-  | StudyDataEvent
+  | StudyMapEvent
   | MaintenanceModeEvent
   | MessageInfoEvent
   | StudyVariantGenerationCommandResultEvent

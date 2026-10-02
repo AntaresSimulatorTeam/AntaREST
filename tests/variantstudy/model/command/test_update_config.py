@@ -18,10 +18,12 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 def test_update_config(empty_study_880: FileStudy, command_context: CommandContext) -> None:
     empty_study = empty_study_880
+    dao = build_dao_from_file_study(empty_study, command_context)
     study_path = empty_study.config.study_path
     study_version = empty_study.config.version
     area1 = "Area1"
@@ -29,7 +31,7 @@ def test_update_config(empty_study_880: FileStudy, command_context: CommandConte
 
     CreateArea.model_validate(
         {"area_name": area1, "command_context": command_context, "study_version": study_version}
-    ).apply(empty_study)
+    ).apply(dao)
 
     update_settings_command = UpdateConfig(
         target="settings/generaldata/optimization/simplex-range",
@@ -37,7 +39,7 @@ def test_update_config(empty_study_880: FileStudy, command_context: CommandConte
         command_context=command_context,
         study_version=study_version,
     )
-    output = update_settings_command.apply(empty_study)
+    output = update_settings_command.apply(dao)
     assert output.status
     generaldata = read_ini(study_path / "settings/generaldata.ini")
     assert generaldata["optimization"]["simplex-range"] == "day"
@@ -49,7 +51,7 @@ def test_update_config(empty_study_880: FileStudy, command_context: CommandConte
         command_context=command_context,
         study_version=study_version,
     )
-    output = update_settings_command.apply(empty_study)
+    output = update_settings_command.apply(dao)
     assert output.status
     area_config = read_ini(study_path / f"input/areas/{area1_id}/optimization.ini")
     assert not area_config["nodal optimization"]["other-dispatchable-power"]
@@ -59,13 +61,13 @@ def test_update_config(empty_study_880: FileStudy, command_context: CommandConte
     command = UpdateConfig(
         target="layers/layers", data=data, command_context=command_context, study_version=study_version
     )
-    command.apply(empty_study)
+    command.apply(dao)
     layers = read_ini(study_path / "layers/layers.ini")
     assert layers == {"first_layer": {"0": "Nothing"}}
     new_data = json.dumps({"1": False}).encode("utf-8")
     command = UpdateConfig(
         target="layers/layers/first_layer", data=new_data, command_context=command_context, study_version=study_version
     )
-    command.apply(empty_study)
+    command.apply(dao)
     layers = read_ini(study_path / "layers/layers.ini")
     assert layers == {"first_layer": {"1": False}}

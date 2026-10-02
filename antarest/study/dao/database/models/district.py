@@ -1,0 +1,38 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+"""
+SQLAlchemy Core table definitions for district storage.
+"""
+
+from sqlalchemy import Boolean, Column, ForeignKeyConstraint, String, Table
+
+from antarest.core.utils.sql_utils import enum_col
+from antarest.dbmodel import Base
+from antarest.study.business.model.district_model import DistrictApplyFilter
+from antarest.study.dao.database.models import study_data_id_col
+
+metadata = Base.metadata
+
+DISTRICT_TABLE = Table(
+    "district",
+    metadata,
+    study_data_id_col(),
+    Column("district_id", String(255), nullable=False, primary_key=True),
+    Column("name", String(255), nullable=False),
+    Column("output", Boolean, nullable=False),
+    Column("comments", String(500), nullable=False),
+    Column("apply_filter", enum_col(DistrictApplyFilter), nullable=False),
+    Column("add_areas", String, nullable=False),
+    Column("subtract_areas", String, nullable=False),
+    ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
+)

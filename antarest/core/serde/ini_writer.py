@@ -12,8 +12,9 @@
 
 import ast
 import configparser
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, TypeAlias
+from typing import TypeAlias
 
 from typing_extensions import override
 
@@ -32,10 +33,10 @@ LOWER_CASE_SERIALIZER: ValueSerializer = _lower_case
 
 
 class ValueSerializers:
-    def __init__(self, serializers: Dict[OptionMatcher, ValueSerializer]):
+    def __init__(self, serializers: dict[OptionMatcher, ValueSerializer]):
         self._serializers = serializers
 
-    def find_serializer(self, section: str, key: str) -> Optional[ValueSerializer]:
+    def find_serializer(self, section: str, key: str) -> ValueSerializer | None:
         if self._serializers:
             possible_keys = [
                 OptionMatcher(section=section, key=key),
@@ -50,8 +51,8 @@ class ValueSerializers:
 class IniConfigParser(configparser.RawConfigParser):
     def __init__(
         self,
-        special_keys: Optional[List[str]] = None,
-        value_serializers: Optional[ValueSerializers] = None,
+        special_keys: list[str] | None = None,
+        value_serializers: ValueSerializers | None = None,
     ) -> None:
         super().__init__()
         self.special_keys = special_keys
@@ -107,8 +108,8 @@ class IniWriter:
 
     def __init__(
         self,
-        special_keys: Optional[List[str]] = None,
-        value_serializers: Optional[Dict[OptionMatcher, ValueSerializer]] = None,
+        special_keys: list[str] | None = None,
+        value_serializers: dict[OptionMatcher, ValueSerializer] | None = None,
     ):
         self.special_keys = special_keys
         self._value_serializers = ValueSerializers(value_serializers or {})

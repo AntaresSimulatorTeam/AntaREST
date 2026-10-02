@@ -1,7 +1,6 @@
 import os
 import re
 from pathlib import Path
-from typing import List
 
 import click
 
@@ -30,7 +29,7 @@ def is_license_file(filename: str) -> bool:
     return LICENSE_FILE_PATTERN.match(filename) is not None
 
 
-def check_file(file_path: Path, action: str, license_as_list: List[str], license_to_save: List[str]) -> bool:
+def check_file(file_path: Path, action: str, license_as_list: list[str], license_to_save: list[str]) -> bool:
     file_content = file_path.read_text().splitlines()
     n = len(license_as_list)
     if len(file_content) >= n and file_content[:n] == license_as_list:
@@ -38,7 +37,7 @@ def check_file(file_path: Path, action: str, license_as_list: List[str], license
     click.echo(f"{file_path} has no valid header.")
     new_lines = []
     if action == "fix":
-        with open(file_path, "r") as f:  # doesn't seem really optimal as I read the file twice.
+        with open(file_path) as f:  # doesn't seem really optimal as I read the file twice.
             already_licensed = False
             lines = f.readlines()
             first_line = lines[0].lower() if len(lines) > 0 else []
@@ -57,12 +56,15 @@ def check_dir(
     cwd: Path,
     dir_path: Path,
     action: str,
-    invalid_files: List[Path],
-    suffixes: List[str],
-    license_as_list: List[str],
-    license_to_save: List[str],
+    invalid_files: list[Path],
+    last_suffixes: list[str],
+    ignored_suffixes: list[str],
+    ignored_dirnames: list[str],
+    license_as_list: list[str],
+    license_to_save: list[str],
 ) -> None:
     _, dirnames, filenames = next(os.walk(dir_path))
+
     for f in filenames:
         if dir_path != cwd and is_license_file(f):
             click.echo(f"Found third party license file, skipping folder: {dir_path / f}")
@@ -71,14 +73,20 @@ def check_dir(
     for f in filenames:
         file_path = dir_path / f
 
-        if file_path.suffix not in suffixes:
+        if file_path.suffix not in last_suffixes:
+            continue
+
+        if any(suffix in ignored_suffixes for suffix in file_path.suffixes):
             continue
 
         if not check_file(file_path, action, license_as_list, license_to_save):
             invalid_files.append(file_path)
 
     for d in dirnames:
-        check_dir(cwd, dir_path / d, action, invalid_files, suffixes, license_as_list, license_to_save)
+        if d in ignored_dirnames:
+            continue
+
+        check_dir(cwd, dir_path / d, action, invalid_files, last_suffixes, ignored_suffixes, ignored_dirnames, license_as_list, license_to_save)
 
 
 @click.command("license_checker_and_adder")
@@ -104,15 +112,18 @@ def cli(path: Path, action: str) -> None:
     invalid_files = []
     cwd = Path.cwd()
     # --------- infer which files to check and which license to add
-    suffixes = [".ts", ".tsx"]
+    last_suffixes = [".ts", ".tsx"]
+    ignored_suffixes = [".gen"]
+    ignored_dirnames = ["node_modules", "dist"]
     license_header = FRONTEND_LICENSE_HEADER
     if path.name in ["antarest", "tests"]:
-        suffixes = [".py"]
+        last_suffixes = [".py"]
+        ignored_dirnames = []
         license_header = BACKEND_LICENSE_HEADER
     license_as_list = license_header.splitlines()
     license_to_save = [header + "\n" for header in license_as_list] + ["\n"]
     # --------
-    check_dir(cwd, path, action, invalid_files, suffixes, license_as_list, license_to_save)
+    check_dir(cwd, path, action, invalid_files, last_suffixes, ignored_suffixes, ignored_dirnames, license_as_list, license_to_save)
     file_count = len(invalid_files)
     if file_count > 0:
         if action == "fix":

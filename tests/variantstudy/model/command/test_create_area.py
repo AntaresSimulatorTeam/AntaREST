@@ -23,6 +23,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestCreateArea:
@@ -37,6 +38,7 @@ class TestCreateArea:
         enr_modelling: EnrModelling,
     ) -> None:
         empty_study = empty_study_720
+        dao = build_dao_from_file_study(empty_study, command_context, True)
         empty_study.config.enr_modelling = enr_modelling.value
         study_version = StudyVersion.parse(version)
         empty_study.config.version = study_version
@@ -49,12 +51,12 @@ class TestCreateArea:
         # are dynamically created when the new area is added to the study.
         output = UpdateConfig(
             target="input/thermal/areas", data={}, command_context=command_context, study_version=study_version
-        ).apply(study_data=empty_study)
+        ).apply(study_dao=dao)
         assert output.status, output.message
 
         # When the CreateArea command is applied
         output = CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(
-            study_data=empty_study
+            study_dao=dao
         )
         assert output.status, output.message
 
@@ -166,5 +168,47 @@ class TestCreateArea:
         create_area_command: ICommand = CreateArea(
             area_name=area_name, command_context=command_context, study_version=study_version
         )
-        output = create_area_command.apply(study_data=empty_study)
+        output = create_area_command.apply(study_dao=dao)
         assert not output.status
+
+    @pytest.mark.parametrize(("hydro_pmax"), ["daily", "hourly"])
+    def test_apply_hydro_pmax_920(
+        self,
+        empty_study_920: FileStudy,
+        command_context: CommandContext,
+        hydro_pmax: str,
+    ) -> None:
+        study = empty_study_920
+        dao = build_dao_from_file_study(study, command_context, True)
+        study_version = study.config.version
+        study_path = study.config.study_path
+
+        generaldata_path = study_path / "settings" / "generaldata.ini"
+        config = configparser.ConfigParser()
+        config.read(generaldata_path)
+        config.setdefault("compatibility", {})
+        config["compatibility"]["hydro-pmax"] = hydro_pmax
+        with open(generaldata_path, "w") as f:
+            config.write(f)
+
+        area_name = "Area"
+        area_id = transform_name_to_id(area_name)
+        output = CreateArea(area_name=area_name, command_context=command_context, study_version=study_version).apply(
+            study_dao=dao
+        )
+        assert output.status, output.message
+
+        should_exist = hydro_pmax == "hourly"
+
+        # Check hydro_pmax related files
+        max_power = study_path / "input" / "hydro" / "common" / "capacity" / f"maxpower_{area_id}.txt.link"
+        daily_gen = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyGenEnergy_{area_id}.txt.link"
+        daily_pump = study_path / "input" / "hydro" / "common" / "capacity" / f"maxDailyPumpEnergy_{area_id}.txt.link"
+        hourly_gen = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyGenPower.txt.link"
+        hourly_pump = study_path / "input" / "hydro" / "series" / area_id / "maxHourlyPumpPower.txt.link"
+
+        assert max_power.exists()
+        assert daily_gen.exists() == should_exist
+        assert daily_pump.exists() == should_exist
+        assert hourly_gen.exists() == should_exist
+        assert hourly_pump.exists() == should_exist

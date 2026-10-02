@@ -12,6 +12,7 @@
 
 
 class APITag:
+    favorite = "Manage favorites"
     users = "Users"
     launcher = "Launch Studies"
     study_permissions = "Manage Study Permissions"
@@ -28,6 +29,7 @@ class APITag:
     misc = "Miscellaneous"
     filesystem = "Filesystem Management"
     explorer = "Explore external disks"
+    table_mode = "Table mode"
 
 
 tags_metadata = [
@@ -67,6 +69,7 @@ tags_metadata = [
     {
         "name": APITag.users,
     },
+    {"name": APITag.favorite},
     {
         "name": APITag.misc,
     },

@@ -14,8 +14,9 @@ import enum
 import json
 import re
 import typing
+from collections.abc import MutableMapping
 from datetime import datetime
-from typing import Annotated, Any, Dict, List, MutableMapping, Optional, TypeAlias
+from typing import Annotated, Any, TypeAlias
 from uuid import uuid4
 
 from antares.study.version import SolverVersion
@@ -28,10 +29,11 @@ from pydantic import (
     model_validator,
 )
 from pydantic.alias_generators import to_camel
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Sequence, String
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, Sequence, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing_extensions import override
 
+from antarest.core.api_types import FileNameStr
 from antarest.core.persistence import Base
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.serde.json import from_json
@@ -39,7 +41,7 @@ from antarest.login.model import Identity, UserInfo
 from antarest.study.model import STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
 
-SolverParams = Dict[str, str]
+SolverParams = dict[str, str]
 
 
 def _format_solver_version(v: SolverVersion) -> str:
@@ -57,7 +59,7 @@ MIN_SOLVER_PRESETS_FOR_OPTIM_PARAMS = STUDY_VERSION_9_2
 
 
 class XpansionParametersDTO(AntaresBaseModel, extra="forbid"):
-    output_id: Optional[str] = None
+    output_id: str | None = None
     sensitivity_mode: bool = False
     enabled: bool = True
     adequacy_criterion: bool = False
@@ -73,21 +75,19 @@ class LauncherParametersDTO(AntaresBaseModel, extra="forbid"):
     # Warning ! This class must be retro-compatible (that's the reason for the weird bool/XpansionParametersDTO union)
     # The reason is that it's stored in json format in database and deserialized using the latest class version
     # If compatibility is to be broken, an (alembic) data migration script should be added
-    adequacy_patch: Optional[Dict[str, Any]] = None
-    nb_cpu: Optional[int] = None
-    post_processing: bool = False
+    adequacy_patch: dict[str, Any] | None = Field(deprecated=True, default=None)
+    nb_cpu: int | None = None
+    post_processing: bool = Field(deprecated=True, default=False)
     time_limit: int = 240 * 3600  # Default value set to 240 hours (in seconds)
     xpansion: XpansionParametersDTO | bool | None = None
     xpansion_r_version: bool = False
-    archive_output: bool = True
+    archive_output: bool = Field(deprecated=True, default=True)
     auto_unzip: bool = True
-    output_suffix: Optional[str] = None
-    other_options: Optional[str] = None
-
-    # add extensions field here
+    output_suffix: FileNameStr | None = None
+    other_options: str | None = None
 
     @classmethod
-    def from_launcher_params(cls, params: Optional[str]) -> "LauncherParametersDTO":
+    def from_launcher_params(cls, params: str | None) -> "LauncherParametersDTO":
         """
         Convert the launcher parameters from a string to a `LauncherParametersDTO` object.
         """
@@ -101,7 +101,7 @@ class LogType(enum.StrEnum):
     STDERR = "STDERR"
 
     @staticmethod
-    def from_filename(filename: str) -> Optional["LogType"]:
+    def from_filename(filename: str) -> "LogType | None":
         if filename == "antares-err.log":
             return LogType.STDERR
         elif filename == "antares-out.log":
@@ -140,6 +140,7 @@ class JobResultDTO(AntaresBaseModel):
     - launcher_params: Parameters related to the launcher.
     - status: The status of the task. It can be one of the following: "pending", "failed", "success", or "running".
     - creation_date: The date of creation of the task.
+    - scheduled_at: The requested start time.
     - completion_date: The date of completion of the task, if available.
     - msg: A message associated with the task, either for the user or for error description.
     - output_id: The identifier of the simulation results.
@@ -151,16 +152,17 @@ class JobResultDTO(AntaresBaseModel):
 
     id: str
     study_id: str
-    launcher: Optional[str]
-    launcher_params: Optional[str]
+    launcher: str | None
+    launcher_params: str | None
     status: JobStatus
     creation_date: str
-    completion_date: Optional[str]
-    msg: Optional[str]
-    output_id: Optional[str]
-    exit_code: Optional[int]
-    solver_stats: Optional[str]
-    owner: Optional[UserInfo]
+    scheduled_at: str | None = None
+    completion_date: str | None
+    msg: str | None
+    output_id: str | None
+    exit_code: int | None
+    solver_stats: str | None
+    owner: UserInfo | None
 
     @staticmethod
     def model_config_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -211,23 +213,23 @@ class JobResult(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
     study_id: Mapped[str] = mapped_column(String(36))
-    launcher: Mapped[Optional[str]] = mapped_column(String)
-    launcher_params: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    job_status: Mapped[Optional[JobStatus]] = mapped_column(Enum(JobStatus), nullable=True)
+    launcher: Mapped[str | None] = mapped_column(String)
+    launcher_params: Mapped[str | None] = mapped_column(String, nullable=True)
+    job_status: Mapped[JobStatus | None] = mapped_column(Enum(JobStatus), nullable=True)
     creation_date: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    completion_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    msg: Mapped[Optional[str]] = mapped_column(String())
-    output_id: Mapped[Optional[str]] = mapped_column(String())
-    exit_code: Mapped[Optional[int]] = mapped_column(Integer)
-    solver_stats: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
-    owner_id: Mapped[Optional[int]] = mapped_column(
-        Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True
-    )
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completion_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    msg: Mapped[str | None] = mapped_column(String())
+    output_id: Mapped[str | None] = mapped_column(String())
+    exit_code: Mapped[int | None] = mapped_column(Integer)
+
+    solver_stats: Mapped[str | None] = mapped_column(String(), nullable=True)
+    owner_id: Mapped[int | None] = mapped_column(Integer(), ForeignKey(Identity.id, ondelete="SET NULL"), nullable=True)
 
     # Define a many-to-one relationship between `JobResult` and `Identity`.
     # This relationship is required to display the owner of a job result in the UI.
     # If the owner is deleted, the job result is detached from the owner (but not deleted).
-    owner: Mapped[Optional[Identity]] = relationship(Identity, back_populates="job_results", uselist=False)
+    owner: Mapped[Identity | None] = relationship(Identity, back_populates="job_results", uselist=False)
 
     logs = relationship(JobLog, uselist=True, cascade="all, delete, delete-orphan")
 
@@ -239,6 +241,7 @@ class JobResult(Base):
             launcher_params=self.launcher_params,
             status=self.job_status,
             creation_date=str(self.creation_date),
+            scheduled_at=str(self.scheduled_at) if self.scheduled_at else None,
             completion_date=str(self.completion_date) if self.completion_date else None,
             msg=self.msg,
             output_id=self.output_id,
@@ -318,11 +321,11 @@ class LauncherListDTO(AntaresBaseModel):
         populate_by_name=True,
     )
 
-    launchers: List[LauncherInfoDTO]
+    launchers: list[LauncherInfoDTO]
     default_launcher: str
 
 
-class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel):
+class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
     """
     DTO representing the load of the SLURM cluster or local machine.
 
@@ -356,6 +359,50 @@ class LauncherLoadDTO(AntaresBaseModel, extra="forbid", alias_generator=to_camel
     )
 
 
+class LauncherLoad(Base):
+    """
+    SQLAlchemy model storing cached load information for a launcher.
+
+    Attributes:
+        launcher_name: ID/name of the launcher.
+        allocated_cpu_rate: The rate of allocated CPU, in range (0, 100).
+        cluster_load_rate: The rate of cluster load, in range (0, 100).
+        nb_queued_jobs: The number of queued jobs.
+        launcher_status: The status of the launcher.
+        date: Timestamp when the load was recorded.
+    """
+
+    __tablename__ = "launchers_loads"
+
+    launcher_name: Mapped[str] = mapped_column(String(20), primary_key=True)
+    allocated_cpu_rate: Mapped[float] = mapped_column(Float)
+    cluster_load_rate: Mapped[float] = mapped_column(Float())
+    nb_queued_jobs: Mapped[int] = mapped_column(Integer())
+    launcher_status: Mapped[str] = mapped_column(String(100))
+    date: Mapped[datetime] = mapped_column(DateTime())
+
+    @classmethod
+    def from_dto(cls, dto: LauncherLoadDTO, name: str) -> "LauncherLoad":
+        from antarest.core.utils.utils import current_time
+
+        return cls(
+            launcher_name=name,
+            allocated_cpu_rate=dto.allocated_cpu_rate,
+            cluster_load_rate=dto.cluster_load_rate,
+            nb_queued_jobs=dto.nb_queued_jobs,
+            launcher_status=dto.launcher_status,
+            date=current_time(),
+        )
+
+    def to_dto(self) -> LauncherLoadDTO:
+        return LauncherLoadDTO(
+            allocated_cpu_rate=self.allocated_cpu_rate,
+            cluster_load_rate=self.cluster_load_rate,
+            nb_queued_jobs=self.nb_queued_jobs,
+            launcher_status=self.launcher_status,
+        )
+
+
 class SolverPresets(AntaresBaseModel):
     @staticmethod
     def model_config_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -382,11 +429,11 @@ class SolverPresets(AntaresBaseModel):
     id: str
     name: ItemName
     linear_solver: str
-    min_antares_version: Optional[SolverVersionStr] = None
-    max_antares_version: Optional[SolverVersionStr] = None
-    linear_solver_param_optim_1: Optional[SolverParams] = None
-    linear_solver_param_optim_2: Optional[SolverParams] = None
-    linear_solver_param: Optional[SolverParams] = None
+    min_antares_version: SolverVersionStr | None = None
+    max_antares_version: SolverVersionStr | None = None
+    linear_solver_param_optim_1: SolverParams | None = None
+    linear_solver_param_optim_2: SolverParams | None = None
+    linear_solver_param: SolverParams | None = None
     use_optim_1_basis_next_week: bool = True
     use_optim_1_basis_optim_2: bool = True
 
@@ -395,7 +442,7 @@ class SolverPresets(AntaresBaseModel):
         "linear_solver_param_optim_1",
         "linear_solver_param_optim_2",
     )
-    def validate_solver_params(cls, sp: Optional[SolverParams]) -> Optional[SolverParams]:
+    def validate_solver_params(cls, sp: SolverParams | None) -> SolverParams | None:
         if not sp:
             return sp
         for k, v in sp.items():
@@ -452,7 +499,7 @@ class SolverPresets(AntaresBaseModel):
             options.append("nobasis2")
 
         # Build per-optim strings
-        def build_param_str(param_list: Dict[str, str]) -> str:
+        def build_param_str(param_list: dict[str, str]) -> str:
             return " ".join(f"{k} {v}" for k, v in param_list.items())
 
         # param-optim1
@@ -495,13 +542,13 @@ class SolverPresetsCreation(AntaresBaseModel):
 
     name: ItemName
     linear_solver: str
-    min_antares_version: Optional[SolverVersionStr] = None
-    max_antares_version: Optional[SolverVersionStr] = None
-    linear_solver_param_optim_1: Optional[SolverParams] = None
-    linear_solver_param_optim_2: Optional[SolverParams] = None
-    linear_solver_param: Optional[SolverParams] = None
-    use_optim_1_basis_next_week: Optional[bool] = None
-    use_optim_1_basis_optim_2: Optional[bool] = None
+    min_antares_version: SolverVersionStr | None = None
+    max_antares_version: SolverVersionStr | None = None
+    linear_solver_param_optim_1: SolverParams | None = None
+    linear_solver_param_optim_2: SolverParams | None = None
+    linear_solver_param: SolverParams | None = None
+    use_optim_1_basis_next_week: bool | None = None
+    use_optim_1_basis_optim_2: bool | None = None
 
 
 class SolverPresetsUpdate(AntaresBaseModel):
@@ -525,14 +572,14 @@ class SolverPresetsUpdate(AntaresBaseModel):
         json_schema_extra=model_config_json_schema_extra,
     )
 
-    linear_solver: Optional[str] = None
-    min_antares_version: Optional[SolverVersionStr] = None
-    max_antares_version: Optional[SolverVersionStr] = None
-    linear_solver_param_optim_1: Optional[SolverParams] = None
-    linear_solver_param_optim_2: Optional[SolverParams] = None
-    linear_solver_param: Optional[SolverParams] = None
-    use_optim_1_basis_next_week: Optional[bool] = None
-    use_optim_1_basis_optim_2: Optional[bool] = None
+    linear_solver: str | None = None
+    min_antares_version: SolverVersionStr | None = None
+    max_antares_version: SolverVersionStr | None = None
+    linear_solver_param_optim_1: SolverParams | None = None
+    linear_solver_param_optim_2: SolverParams | None = None
+    linear_solver_param: SolverParams | None = None
+    use_optim_1_basis_next_week: bool | None = None
+    use_optim_1_basis_optim_2: bool | None = None
 
 
 class SolverPresetsDB(Base):
@@ -648,6 +695,50 @@ def apply_update_solver_presets(
 
     # turn back to model
     return SolverPresetsDB.from_model(updated_dto)
+
+
+class SlurmRuntimeConfig(AntaresBaseModel):
+    """
+    Runtime config for slurm launchers.
+
+    Determines in particular if we should use the "oversubscribe" flag when starting a computation.
+    That flag tells slurm that other simulations may be run on the same node.
+
+    Attributes:
+        oversubscribe_core_threshold:  enable oversubscribe if requested cores for a simulation is below this threshold.
+    """
+
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
+
+    oversubscribe_core_threshold: int | None = Field(default=None, ge=1)
+
+
+class LauncherRuntimeConfig(AntaresBaseModel):
+    """
+    Specific launcher configuration that may be changed at runtime.
+
+    Attributes:
+        slurm:  specific configuration for slurm launchers. Only valid for slurm launchers.
+    """
+
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
+
+    slurm: SlurmRuntimeConfig | None = None
+
+
+class SlurmRuntimeConfigDB(Base):
+    __tablename__ = "slurm_runtime_config"
+
+    launcher_id = mapped_column(String(36), primary_key=True)
+    oversubscribe_core_threshold = mapped_column(Integer, nullable=True)
+
+    def to_model(self) -> SlurmRuntimeConfig:
+        return SlurmRuntimeConfig(oversubscribe_core_threshold=self.oversubscribe_core_threshold)
+
+    @classmethod
+    def from_model(cls, launcher_id: str, slurm: SlurmRuntimeConfig | None) -> "SlurmRuntimeConfigDB":
+        threshold = slurm.oversubscribe_core_threshold if slurm else None
+        return cls(launcher_id=launcher_id, oversubscribe_core_threshold=threshold)
 
 
 def is_version_covered_by_config(

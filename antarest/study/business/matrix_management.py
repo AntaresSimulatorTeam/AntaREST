@@ -13,17 +13,16 @@
 import itertools
 import logging
 import operator
-from typing import List, Tuple, cast
+from pathlib import PurePosixPath
 
 import numpy as np
 import pandas as pd
 import polars as pl
 
-from antarest.core.utils.polars import convert_polars_dataframe_to_pandas
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.study.business.study_interface import StudyInterface
-from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol
+from antarest.study.storage.rawstudy.raw_path_to_matrix_mapper import RawPathToMatrixMapper
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -51,7 +50,7 @@ class MatrixIndexError(MatrixUpdateError):
     def __init__(
         self,
         operation: Operation,
-        coordinates: Tuple[int, int],
+        coordinates: tuple[int, int],
         exc: Exception,
     ) -> None:
         reason = f"invalid coordinates {coordinates}: {exc}"
@@ -59,11 +58,13 @@ class MatrixIndexError(MatrixUpdateError):
 
 
 def update_matrix_content_with_slices(
-    matrix_data: pd.DataFrame,
-    slices: List[MatrixSlice],
+    matrix_data: pl.DataFrame,
+    slices: list[MatrixSlice],
     operation: Operation,
-) -> pd.DataFrame:
-    mask = pd.DataFrame(np.zeros(matrix_data.shape), dtype=bool)
+) -> pl.DataFrame:
+    pandas_df = matrix_data.to_pandas()
+    pandas_df.columns = range(len(pandas_df.columns))  # type: ignore
+    mask = pd.DataFrame(np.zeros(pandas_df.shape), dtype=bool)
 
     for matrix_slice in slices:
         # note: the `.loc` attribute doesn't raise `IndexError`
@@ -73,28 +74,33 @@ def update_matrix_content_with_slices(
         ] = True
 
     # noinspection PyTypeChecker
-    new_matrix_data = matrix_data.where(mask).apply(operation.compute)
-    new_matrix_data[new_matrix_data.isnull()] = matrix_data
+    new_matrix_data = pandas_df.where(mask).apply(operation.compute)
+    new_matrix_data[new_matrix_data.isnull()] = pandas_df
 
     # noinspection PyTypeChecker
-    return cast(pd.DataFrame, new_matrix_data.astype(matrix_data.dtypes))
+    return create_polars_dataframe(new_matrix_data.to_numpy())
 
 
 def update_matrix_content_with_coordinates(
-    df: pd.DataFrame,
-    coordinates: List[Tuple[int, int]],
+    df: pl.DataFrame,
+    coordinates: list[tuple[int, int]],
     operation: Operation,
-) -> pd.DataFrame:
+) -> pl.DataFrame:
+    columns = df.columns
     for row, column in coordinates:
         try:
-            df.iat[row, column] = operation.compute(df.iat[row, column], use_coords=True)
+            value = operation.compute(df[row, column], use_coords=True)
+            if isinstance(value, float) and df.schema[columns[column]].is_integer():
+                # Polars will round the float value without saying a thing.
+                # To avoid this we first have to change the column dtype, and then we can assign the value
+                df = df.with_columns(pl.col(columns[column]).cast(pl.Float64))
+            df[row, column] = value
         except IndexError as exc:
             raise MatrixIndexError(operation, (row, column), exc) from None
-    # noinspection PyTypeChecker
-    return df.astype(dict(df.dtypes))
+    return df
 
 
-def group_by_slices(cells: List[Tuple[int, int]]) -> List[Tuple[Tuple[int, int], Tuple[int, int]]]:
+def group_by_slices(cells: list[tuple[int, int]]) -> list[tuple[tuple[int, int], tuple[int, int]]]:
     """
     Groups the given cells into rectangular slices based on their coordinates.
 
@@ -153,8 +159,8 @@ def group_by_slices(cells: List[Tuple[int, int]]) -> List[Tuple[Tuple[int, int],
 
 
 def merge_edit_instructions(
-    edit_instructions: List[MatrixEditInstruction],
-) -> List[MatrixEditInstruction]:
+    edit_instructions: list[MatrixEditInstruction],
+) -> list[MatrixEditInstruction]:
     """
     Merges edit instructions for the same operation and value into
     slice-based edit instructions to reduce computation time when a large
@@ -238,23 +244,13 @@ class MatrixManager:
         self,
         study: StudyInterface,
         path: str,
-        edit_instructions: List[MatrixEditInstruction],
+        edit_instructions: list[MatrixEditInstruction],
     ) -> None:
         logger.info(f"Starting matrix update for {study.id}...")
-        file_study = study.get_files()
         matrix_service = self._command_context.matrix_service
 
-        matrix_node = file_study.tree.get_node(url=path.split("/"))
-
-        if not isinstance(matrix_node, InputSeriesMatrix):  # pragma: no cover
-            raise TypeError(repr(type(matrix_node)))
-
-        try:
-            logger.info(f"Loading matrix data from node '{path}'...")
-            matrix_df = convert_polars_dataframe_to_pandas(matrix_node.parse_as_dataframe())
-            matrix_df.columns = [int(i) for i in matrix_df.columns]  # type: ignore
-        except ValueError as exc:
-            raise MatrixManagerError(f"Cannot parse matrix: {exc}") from exc
+        mapper = RawPathToMatrixMapper(study.get_study_dao())  # type: ignore
+        matrix_df = mapper.get_matrix_from_path(PurePosixPath(path))
 
         logger.info(f"Merging {len(edit_instructions)} instructions...")
         edit_instructions = merge_edit_instructions(edit_instructions)
@@ -283,13 +279,13 @@ class MatrixManager:
                 raise MatrixEditError(instr, reason=str(exc)) from None
 
         logger.info(f"Writing matrix data of shape {matrix_df.shape}...")
-        new_matrix_id = matrix_service.create(pl.from_pandas(matrix_df))
+        new_matrix_id = matrix_service.create(matrix_df)
 
         logger.info(f"Preparing 'ReplaceMatrix' command for path '{path}'...")
         command = [
             ReplaceMatrix(
                 target=path,
-                matrix=strip_matrix_protocol(new_matrix_id),
+                matrix=new_matrix_id,
                 command_context=self._command_context,
                 study_version=study.version,
             )

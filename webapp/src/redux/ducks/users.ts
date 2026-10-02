@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
+import * as api from "@/services/api/user";
+import type { UserDetailsDTO } from "@/types/types";
 import { createAsyncThunk, createEntityAdapter, createReducer } from "@reduxjs/toolkit";
-import type { UserDetailsDTO } from "../../types/types";
-import { FetchStatus, makeActionName, type AsyncEntityState } from "../utils";
-import * as api from "../../services/api/user";
 import type { AppAsyncThunkConfig } from "../store";
+import { FetchStatus, makeActionName, type AsyncEntityState } from "../utils";
 
 const usersAdapter = createEntityAdapter<UserDetailsDTO>();
 

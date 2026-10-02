@@ -11,12 +11,14 @@
 # This file is part of the Antares project.
 
 import typing as t
+from typing import Final
 
 from pydantic import model_validator
 from pydantic_core.core_schema import ValidationInfo
-from typing_extensions import Final, override
+from typing_extensions import override
 
 from antarest.study.business.model.binding_constraint_model import (
+    BindingConstraint,
     BindingConstraintUpdates,
     update_binding_constraint,
     validate_binding_constraint_against_version,
@@ -80,7 +82,9 @@ class UpdateBindingConstraints(ICommand):
         return values
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: t.Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[list[BindingConstraint]]:
         all_constraints = study_data.get_all_constraints()
 
         new_constraints = []
@@ -93,7 +97,7 @@ class UpdateBindingConstraints(ICommand):
             new_constraints.append(new_constraint)
 
         study_data.save_constraints(new_constraints)
-        return command_succeeded("All binding constraints updated")
+        return command_succeeded("All binding constraints updated", result=new_constraints)
 
     @override
     def to_dto(self) -> CommandDTO:

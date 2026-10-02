@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 
-from typing import Any, List, Optional
+from typing import Any
 
 from pydantic import ConfigDict, Field
 
@@ -24,18 +24,18 @@ class DistrictFileData(AntaresBaseModel):
     Object linked to /inputs/sets.ini information
     """
 
-    caption: Optional[str] = None
-    apply_filter: Optional[str] = Field(None, alias="apply-filter")
-    add_areas: Optional[List[str]] = Field(None, alias="+")
-    subtract_areas: Optional[List[str]] = Field(None, alias="-")
+    caption: str | None = None
+    apply_filter: str | None = Field(None, alias="apply-filter")
+    add_areas: list[str] | None = Field(None, alias="+")
+    subtract_areas: list[str] | None = Field(None, alias="-")
     output: bool = True
-    comments: Optional[str] = None
+    comments: str | None = None
 
     model_config = ConfigDict(
         populate_by_name=True,
     )
 
-    def get_areas(self, all_areas: List[str]) -> List[str]:
+    def get_areas(self, all_areas: list[str]) -> list[str]:
         add_areas_set = set(self.add_areas or [])
         subtract_areas_set = set(self.subtract_areas or [])
         apply_filter = self.apply_filter or "remove-all"

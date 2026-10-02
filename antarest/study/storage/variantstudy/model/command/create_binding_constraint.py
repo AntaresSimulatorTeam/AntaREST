@@ -12,7 +12,7 @@
 
 from abc import ABCMeta
 from enum import Enum
-from typing import Any, Dict, Final, List, Optional, Self, TypeAlias
+from typing import Any, Final, Self, TypeAlias
 
 import numpy as np
 from antares.study.version import StudyVersion
@@ -24,6 +24,7 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.model.binding_constraint_model import (
     DEFAULT_TIMESTEP,
+    BindingConstraint,
     BindingConstraintCreation,
     BindingConstraintFrequency,
     BindingConstraintMatrices,
@@ -39,7 +40,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.binding_constraint import parse_binding_constraint
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
-from antarest.study.storage.variantstudy.business.utils import strip_matrix_protocol, validate_matrix
+from antarest.study.storage.variantstudy.business.utils import validate_matrix
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -50,7 +51,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 
-MatrixType: TypeAlias = List[List[MatrixData]]
+MatrixType: TypeAlias = list[list[MatrixData]]
 
 EXPECTED_MATRIX_SHAPES = {
     BindingConstraintFrequency.HOURLY: (8784, 3),
@@ -131,12 +132,12 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
         check_matrix_values(time_step, value, self.study_version)
         return validate_matrix(value, {"command_context": self.command_context})
 
-    def validate_matrix(self, v: Optional[MatrixType | str], time_step: BindingConstraintFrequency) -> Optional[str]:
+    def validate_matrix(self, v: MatrixType | str | None, time_step: BindingConstraintFrequency) -> str | None:
         if v is None:
             return None
         if isinstance(v, str):
             # Check the matrix link
-            return validate_matrix(strip_matrix_protocol(v), {"command_context": self.command_context})
+            return validate_matrix(v, {"command_context": self.command_context})
         if isinstance(v, list):
             check_matrix_values(time_step, v, self.study_version)
             return validate_matrix(v, {"command_context": self.command_context})
@@ -177,20 +178,19 @@ class AbstractBindingConstraintCommand(ICommand, metaclass=ABCMeta):
                 raise NotImplementedError(f"Invalid link or thermal ID: {link_or_cluster}")
         return terms
 
-    def command_get_inner_matrices(self, matrices: BindingConstraintMatrices) -> InnerMatrices:
-        matrix_service = self.command_context.matrix_service
-        return InnerMatrices(
-            matrices=[
-                matrix_service.get_matrix_id(matrix)
-                for matrix in [
-                    matrices.values,
-                    matrices.less_term_matrix,
-                    matrices.greater_term_matrix,
-                    matrices.equal_term_matrix,
-                ]
-                if matrix is not None
+    def _command_get_inner_matrices(self, matrices: BindingConstraintMatrices) -> InnerMatrices:
+        # Safely assumes that matrices are IDs, since it has passed pydantic validators.
+        matrix_ids = [
+            matrix
+            for matrix in [
+                matrices.values,
+                matrices.less_term_matrix,
+                matrices.greater_term_matrix,
+                matrices.equal_term_matrix,
             ]
-        )
+            if isinstance(matrix, str)
+        ]
+        return InnerMatrices(matrices=matrix_ids)
 
     def command_to_dto(
         self, parameters: BindingConstraintCreation | BindingConstraintUpdate, matrices: BindingConstraintMatrices
@@ -239,7 +239,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     @model_validator(mode="before")
     @classmethod
-    def _validate_model_before(cls, values: Dict[str, Any], info: ValidationInfo) -> Dict[str, Any]:
+    def _validate_model_before(cls, values: dict[str, Any], info: ValidationInfo) -> dict[str, Any]:
         if info.context:
             version = info.context.version
             if version == 1:
@@ -297,7 +297,9 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[BindingConstraint]:
         constraint = create_binding_constraint(self.parameters, self.study_version)
         study_data.save_constraints([constraint])
 
@@ -307,26 +309,26 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
         if self.study_version < STUDY_VERSION_8_7:
             matrix = default_matrix if not self.matrices.values else self.matrices.values
             assert isinstance(matrix, str)
-            study_data.save_constraint_values_matrix(constraint.id, matrix)
+            study_data.save_constraint_values_matrix({constraint.id: matrix})
 
         else:
             operator = constraint.operator
             if operator == BindingConstraintOperator.EQUAL:
                 matrix = default_matrix if not self.matrices.equal_term_matrix else self.matrices.equal_term_matrix
                 assert isinstance(matrix, str)
-                study_data.save_constraint_equal_term_matrix(constraint.id, matrix)
+                study_data.save_constraint_equal_term_matrix({constraint.id: matrix})
 
             if operator in {BindingConstraintOperator.GREATER, BindingConstraintOperator.BOTH}:
                 matrix = default_matrix if not self.matrices.greater_term_matrix else self.matrices.greater_term_matrix
                 assert isinstance(matrix, str)
-                study_data.save_constraint_greater_term_matrix(constraint.id, matrix)
+                study_data.save_constraint_greater_term_matrix({constraint.id: matrix})
 
             if operator in {BindingConstraintOperator.LESS, BindingConstraintOperator.BOTH}:
                 matrix = default_matrix if not self.matrices.less_term_matrix else self.matrices.less_term_matrix
                 assert isinstance(matrix, str)
-                study_data.save_constraint_less_term_matrix(constraint.id, matrix)
+                study_data.save_constraint_less_term_matrix({constraint.id: matrix})
 
-        return command_succeeded(f"Binding constraint '{constraint.id}' created successfully.")
+        return command_succeeded(f"Binding constraint '{constraint.id}' created successfully.", result=constraint)
 
     @override
     def to_dto(self) -> CommandDTO:
@@ -334,7 +336,7 @@ class CreateBindingConstraint(AbstractBindingConstraintCommand):
 
     @override
     def get_inner_matrices(self) -> InnerMatrices:
-        return super().command_get_inner_matrices(self.matrices)
+        return super()._command_get_inner_matrices(self.matrices)
 
     def _create_default_matrix(self, time_step: BindingConstraintFrequency) -> str:
         constants = self.command_context.generator_matrix_constants

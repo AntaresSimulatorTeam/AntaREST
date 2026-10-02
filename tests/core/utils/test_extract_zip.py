@@ -13,12 +13,12 @@
 import io
 import zipfile
 from pathlib import Path
+from subprocess import run
 
-import py7zr
 import pytest
 
 from antarest.core.exceptions import BadArchiveContent
-from antarest.core.utils.archives import extract_archive
+from antarest.core.utils.archives import extract_archive_from_stream
 
 
 class TestExtractArchive:
@@ -34,20 +34,21 @@ class TestExtractArchive:
 
         # Then, call the function
         with open(zip_path, mode="rb") as stream:
-            extract_archive(stream, tmp_path)
+            extract_archive_from_stream(stream, tmp_path)
 
         # Finally, check the result
         assert (tmp_path / "test.txt").read_text() == "Hello world!"
 
-    def test_extract_zip__with_7z(self, tmp_path: Path) -> None:
+    def test_extract_archive__with_7z(self, tmp_path: Path) -> None:
         # First, create a small ZIP file
         zip_path = tmp_path / "test.7z"
-        with py7zr.SevenZipFile(zip_path, mode="w") as zipf:
-            zipf.writestr(data="Hello world!", arcname="test.txt")
+        txt_file = tmp_path / "test.txt"
+        txt_file.write_text("Hello world!")
+        run(["7z", "a", str(zip_path), str(txt_file)], check=True)
 
         # Then, call the function
         with open(zip_path, mode="rb") as stream:
-            extract_archive(stream, tmp_path)
+            extract_archive_from_stream(stream, tmp_path)
 
         # Finally, check the result
         assert (tmp_path / "test.txt").read_text() == "Hello world!"
@@ -56,22 +57,22 @@ class TestExtractArchive:
         stream = io.BytesIO(b"")
 
         with pytest.raises(BadArchiveContent):
-            extract_archive(stream, Path("dummy/path"))
+            extract_archive_from_stream(stream, Path("dummy/path"))
 
     def test_extract_zip__corrupted_zip(self) -> None:
         stream = io.BytesIO(b"PK\x03\x04 BLURP")
 
         with pytest.raises(BadArchiveContent):
-            extract_archive(stream, Path("dummy/path"))
+            extract_archive_from_stream(stream, Path("dummy/path"))
 
     def test_extract_zip__corrupted_7z(self) -> None:
         stream = io.BytesIO(b"7z BLURP")
 
         with pytest.raises(BadArchiveContent):
-            extract_archive(stream, Path("dummy/path"))
+            extract_archive_from_stream(stream, Path("dummy/path"))
 
     def test_extract_zip__unknown_format(self) -> None:
         stream = io.BytesIO(b"ZORRO")
 
         with pytest.raises(BadArchiveContent):
-            extract_archive(stream, Path("dummy/path"))
+            extract_archive_from_stream(stream, Path("dummy/path"))

@@ -10,12 +10,10 @@
 #
 # This file is part of the Antares project.
 
-from typing import Optional
 
 from typing_extensions import override
 
 from antarest.study.dao.api.study_dao import StudyDao
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
@@ -42,16 +40,12 @@ class RemoveDistrict(ICommand):
 
     id: str
 
-    def remove_from_config(self, study_data: FileStudyTreeConfig) -> CommandOutput:
-        del study_data.districts[self.id]
-        return command_succeeded(message=self.id)
-
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: Optional[ICommandListener] = None) -> CommandOutput:
+    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         if not study_data.district_exists(self.id):
             return command_failed(message=f"District '{self.id}' does not exist and should be created")
         study_data.remove_district(self.id)
-        return command_succeeded(message=self.id)
+        return command_succeeded(message=self.id, result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

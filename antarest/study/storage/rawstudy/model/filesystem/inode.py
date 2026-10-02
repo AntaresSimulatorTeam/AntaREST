@@ -13,14 +13,13 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeAlias, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeAlias, TypeVar
 
 from antarest.core.exceptions import WritingInsideZippedFileException
-from antarest.core.utils.archives import read_original_file_in_archive
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 
 if TYPE_CHECKING:
-    from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix import MatrixNode
+    from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
 G = TypeVar("G")
 S = TypeVar("S")
@@ -45,7 +44,7 @@ class INode(ABC, Generic[G, S, V]):
     @abstractmethod
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
@@ -66,7 +65,7 @@ class INode(ABC, Generic[G, S, V]):
 
     def get_node(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> "INode[G,S,V]":
         """
         Returns the node object corresponding to the provided URL.
@@ -77,7 +76,7 @@ class INode(ABC, Generic[G, S, V]):
     @abstractmethod
     def get_node_and_remainder(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
     ) -> tuple["INode[G,S,V]", list[str]]:
         """
         Returns the node object corresponding to the provided URL,
@@ -88,7 +87,7 @@ class INode(ABC, Generic[G, S, V]):
         raise NotImplementedError()
 
     @abstractmethod
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         """
         Delete a node located at some url
 
@@ -97,7 +96,7 @@ class INode(ABC, Generic[G, S, V]):
         """
 
     @abstractmethod
-    def save(self, data: S, url: Optional[List[str]] = None) -> None:
+    def save(self, data: S, url: list[str] | None = None) -> None:
         """
         Save data inside tree.
 
@@ -110,13 +109,13 @@ class INode(ABC, Generic[G, S, V]):
         """
         raise NotImplementedError()
 
-    def get_matrix_nodes_to_normalize(self) -> list["MatrixNode"]:
+    def get_matrix_nodes_to_normalize(self) -> list["InputSeriesMatrix"]:
         """
         Scan tree to return matrix nodes to store in matrix store and replace by its links
         """
         return []
 
-    def get_matrix_nodes_to_denormalize(self) -> list["MatrixNode"]:
+    def get_matrix_nodes_to_denormalize(self) -> list["InputSeriesMatrix"]:
         """
         Scan tree to return matrix nodes to replace its links by its data from the matrix store.
         """
@@ -125,19 +124,12 @@ class INode(ABC, Generic[G, S, V]):
     def get_file_content(self) -> OriginalFile:
         suffix = self.config.path.suffix
         filename = self.config.path.name
-        if self.config.archive_path:
-            content = read_original_file_in_archive(
-                self.config.archive_path,
-                self.get_relative_path_inside_archive(self.config.archive_path),
-            )
-            return OriginalFile(suffix=suffix, filename=filename, content=content)
-        else:
-            return OriginalFile(content=self.config.path.read_bytes(), suffix=suffix, filename=filename)
+        return OriginalFile(content=self.config.path.read_bytes(), suffix=suffix, filename=filename)
 
     def get_relative_path_inside_archive(self, archive_path: Path) -> str:
         return self.config.path.relative_to(archive_path.parent / self.config.study_id).as_posix()
 
-    def _assert_url_end(self, url: Optional[List[str]] = None) -> None:
+    def _assert_url_end(self, url: list[str] | None = None) -> None:
         """
         Raise error if elements remain in url
         Args:
@@ -156,4 +148,4 @@ class INode(ABC, Generic[G, S, V]):
             raise WritingInsideZippedFileException("Trying to save inside a zipped file")
 
 
-TREE: TypeAlias = Dict[str, INode[Any, Any, Any]]
+TREE: TypeAlias = dict[str, INode[Any, Any, Any]]

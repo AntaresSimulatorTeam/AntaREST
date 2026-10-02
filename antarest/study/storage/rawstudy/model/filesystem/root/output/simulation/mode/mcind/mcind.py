@@ -11,10 +11,10 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.common.utils import (
     OutputSimulationModeCommon,
 )
@@ -23,17 +23,17 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mod
 class OutputSimulationModeMcInd(FolderNode):
     def __init__(
         self,
-        matrix_mapper: MatrixUriMapper,
+        matrix_storage_context: MatrixStorageContext,
         config: FileStudyTreeConfig,
         simulation: Simulation,
     ):
-        super().__init__(matrix_mapper, config)
+        super().__init__(matrix_storage_context, config)
         self.simulation = simulation
 
     @override
     def build(self) -> TREE:
         children: TREE = {
-            f"{scn:05d}": OutputSimulationModeCommon(self.matrix_mapper, self.config.next_file(f"{scn:05d}"))
+            f"{scn:05d}": OutputSimulationModeCommon(self.matrix_storage_context, self.config.next_file(f"{scn:05d}"))
             for scn in self.simulation.playlist or range(1, self.simulation.nbyears + 1)
         }
         return children

@@ -12,24 +12,25 @@
  * This file is part of the Antares project.
  */
 
-import client from "../../client";
 import { format } from "../../../../utils/stringUtils";
-import type { GetTableModeParams, SetTableModeParams, TableData, TableModeType } from "./types";
+import client from "../../client";
+import type { TableModeType } from "../../tablemode/types";
+import type { GetTableModeParams, SetTableModeParams, TableModeData } from "./types";
 
 const TABLE_MODE_API_URL = `/v1/studies/{studyId}/table-mode/{tableType}`;
 
-export async function getTableMode<T extends TableModeType>(params: GetTableModeParams<T>) {
+export async function getTableModeData<T extends TableModeType>(params: GetTableModeParams<T>) {
   const { studyId, tableType, columns } = params;
   const url = format(TABLE_MODE_API_URL, { studyId, tableType });
 
-  const { data } = await client.get<TableData>(url, {
+  const { data } = await client.get<TableModeData>(url, {
     params: columns.length > 0 ? { columns: columns.join(",") } : {},
   });
 
   return data;
 }
 
-export async function setTableMode(params: SetTableModeParams) {
+export async function setTableModeData(params: SetTableModeParams) {
   const { studyId, tableType, data } = params;
   const url = format(TABLE_MODE_API_URL, { studyId, tableType });
   await client.put<null>(url, data);

@@ -13,3 +13,8 @@
  */
 
 declare const __BUILD_TIMESTAMP__: string;
+
+interface ImportMetaEnv {
+  readonly VITE_ROUTER_DEVTOOLS?: "true" | "false";
+  readonly VITE_QUERY_DEVTOOLS?: "true" | "false";
+}

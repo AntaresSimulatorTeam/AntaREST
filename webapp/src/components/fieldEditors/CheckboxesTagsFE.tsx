@@ -1,0 +1,135 @@
+/**
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import reactHookFormSupport, { type ReactHookFormSupportProps } from "@/hoc/reactHookFormSupport";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import CheckBoxOutlineBlankIcon from "@mui/icons-material/CheckBoxOutlineBlank";
+import {
+  Autocomplete,
+  Checkbox,
+  TextField,
+  type AutocompleteProps,
+  type AutocompleteValue,
+} from "@mui/material";
+import type React from "react";
+import type { FieldPath, FieldValues } from "react-hook-form";
+
+export interface CheckboxesTagsFEProps<
+  T = string,
+  DisableClearable extends boolean | undefined = undefined,
+  FreeSolo extends boolean | undefined = undefined,
+> extends Omit<
+    AutocompleteProps<T, true, DisableClearable, FreeSolo>,
+    "multiple" | "disableCloseOnSelect" | "renderOption" | "renderInput" | "renderTags" | "onChange"
+  > {
+  label?: string;
+  error?: boolean;
+  helperText?: string;
+  inputRef?: React.Ref<unknown>;
+  name?: string;
+  placeholder?: string;
+  onChange?: (
+    event: React.SyntheticEvent & {
+      target: {
+        value: AutocompleteValue<T, true, DisableClearable, FreeSolo>;
+        name: string | "";
+      };
+    },
+  ) => void;
+}
+
+// TODO Add `onChange`'s value in `inputRef` and `onBlur`'s event
+
+function CheckboxesTagsFE<
+  T,
+  DisableClearable extends boolean | undefined = undefined,
+  FreeSolo extends boolean | undefined = undefined,
+>({
+  label,
+  // Default value on MUI
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getOptionLabel = (option: any) => option?.label ?? option,
+  error,
+  helperText,
+  inputRef,
+  onChange,
+  name = "",
+  placeholder,
+  slotProps,
+  ...rest
+}: CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>) {
+  return (
+    <Autocomplete
+      {...rest}
+      slotProps={{ chip: { size: "small" }, ...slotProps }}
+      getOptionLabel={getOptionLabel}
+      multiple
+      disableCloseOnSelect
+      onChange={(event, value) => {
+        onChange?.({
+          ...event,
+          target: {
+            ...event.target,
+            value,
+            name,
+          },
+        });
+      }}
+      renderOption={({ key, ...props }, option, { selected }) => (
+        <li key={key} {...props}>
+          <Checkbox
+            size="extra-small"
+            icon={<CheckBoxOutlineBlankIcon />}
+            checkedIcon={<CheckBoxIcon />}
+            style={{ marginRight: 8 }}
+            checked={selected}
+          />
+          {getOptionLabel(option)}
+        </li>
+      )}
+      renderInput={(params) => {
+        return (
+          <TextField
+            name={name}
+            label={label}
+            placeholder={placeholder}
+            error={error}
+            helperText={helperText}
+            inputRef={inputRef}
+            {...params}
+            // Size overrides are not passed to the input (`renderInput` prop)
+            size={params.size || rest.size}
+          />
+        );
+      }}
+    />
+  );
+}
+
+const CheckboxesTagsFEWithRHF = reactHookFormSupport()(CheckboxesTagsFE);
+
+// The HOC doesn't automatically forward component generics
+
+export default CheckboxesTagsFEWithRHF as <
+  T,
+  DisableClearable extends boolean | undefined = undefined,
+  FreeSolo extends boolean | undefined = undefined,
+  TFieldValues extends FieldValues = FieldValues,
+  TFieldName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  TContext = any,
+>(
+  props: ReactHookFormSupportProps<TFieldValues, TFieldName, TContext> &
+    CheckboxesTagsFEProps<T, DisableClearable, FreeSolo>,
+) => React.ReactElement;

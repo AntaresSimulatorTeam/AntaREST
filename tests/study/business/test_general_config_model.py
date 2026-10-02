@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List
+from typing import Any
 
 import pytest
 from antares.study.version import StudyVersion
@@ -17,7 +17,7 @@ from antares.study.version import StudyVersion
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.config.general_model import (
     GeneralConfig,
-    initialize_default_values,
+    initialize_general_config_against_version,
     validate_general_config_version,
 )
 from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_7_1, STUDY_VERSION_7_2
@@ -25,13 +25,13 @@ from antarest.study.model import STUDY_VERSION_7_0, STUDY_VERSION_7_1, STUDY_VER
 
 def test_general_config_default_values() -> None:
     config = GeneralConfig()
-    initialize_default_values(config, version=STUDY_VERSION_7_0)
+    initialize_general_config_against_version(config, version=STUDY_VERSION_7_0)
     assert config.filtering is False
     assert config.geographic_trimming is None
     assert config.thematic_trimming is None
 
     config = GeneralConfig()
-    initialize_default_values(config, version=STUDY_VERSION_7_2)
+    initialize_general_config_against_version(config, version=STUDY_VERSION_7_2)
     assert config.filtering is None
     assert config.geographic_trimming is False
     assert config.thematic_trimming is False
@@ -46,7 +46,7 @@ def test_general_config_default_values() -> None:
     ],
 )
 def test_config_version_validation(
-    invalid_versions: List[StudyVersion], valid_versions: List[StudyVersion], fields: dict[str, Any]
+    invalid_versions: list[StudyVersion], valid_versions: list[StudyVersion], fields: dict[str, Any]
 ) -> None:
     """
     Check that the presence of the fields raise an error for "invalid_versions", but not for "valid_versions"

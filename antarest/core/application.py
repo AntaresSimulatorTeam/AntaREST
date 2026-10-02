@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 from dataclasses import dataclass
-from typing import Optional
 
 from fastapi import APIRouter, FastAPI
 
@@ -42,7 +41,7 @@ class AppBuildContext:
         return self.app
 
 
-def create_app_ctxt(app: FastAPI, api_root: Optional[APIRouter] = None) -> AppBuildContext:
+def create_app_ctxt(app: FastAPI, api_root: APIRouter | None = None) -> AppBuildContext:
     if not api_root:
         api_root = APIRouter()
     return AppBuildContext(app, api_root)

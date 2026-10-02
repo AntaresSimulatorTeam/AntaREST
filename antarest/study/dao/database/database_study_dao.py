@@ -1,0 +1,253 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+"""
+Database implementation of StudyDao using SQLAlchemy.
+
+This DAO provides database-backed storage for studies when storage_mode=DATABASE.
+Uses multiple inheritance to combine specialized DAOs (like FileStudyTreeDao).
+"""
+
+from typing import Self
+
+import polars as pl
+from antares.study.version import StudyVersion
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+from typing_extensions import override
+
+from antarest.blobstore.service import IBlobService
+from antarest.core.utils.polars import create_polars_dataframe
+from antarest.core.utils.sql_utils import upsert_one
+from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.area_properties_model import AreaProperties, sort_filter_options
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.database.dao_context import DatabaseDaoBase, StudyDaoContext
+from antarest.study.dao.database.database_area_dao import DatabaseAreaDao
+from antarest.study.dao.database.database_area_properties_dao import DatabaseAreaPropertiesDao
+from antarest.study.dao.database.database_binding_constraint_dao import DatabaseBindingConstraintDao
+from antarest.study.dao.database.database_district_dao import DatabaseDistrictDao
+from antarest.study.dao.database.database_hydro_dao import DatabaseHydroDao
+from antarest.study.dao.database.database_layer_dao import DatabaseLayerDao
+from antarest.study.dao.database.database_link_dao import DatabaseLinkDao
+from antarest.study.dao.database.database_renewable_dao import DatabaseRenewableDao
+from antarest.study.dao.database.database_reserve_certification_dao import (
+    DatabaseReserveCertificationDao,
+)
+from antarest.study.dao.database.database_reserve_definition_dao import DatabaseReserveDefinitionDao
+from antarest.study.dao.database.database_reserve_symmetries_dao import DatabaseReserveSymmetriesDao
+from antarest.study.dao.database.database_reserves_global_parameters_dao import DatabaseReservesGlobalParametersDao
+from antarest.study.dao.database.database_scenario_builder_dao import DatabaseScenarioBuilderDao
+from antarest.study.dao.database.database_st_storage_dao import DatabaseStStorageDao
+from antarest.study.dao.database.database_study_settings_dao import DatabaseStudySettingsDao
+from antarest.study.dao.database.database_thematic_trimming_dao import DatabaseThematicTrimmingDao
+from antarest.study.dao.database.database_thermal_dao import DatabaseThermalDao
+from antarest.study.dao.database.database_user_resources import DatabaseUserResourcesDao
+from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDao
+from antarest.study.dao.database.gems.database_catalog_dao import DatabaseGemsCatalogDao
+from antarest.study.dao.database.gems.database_library_dao import DatabaseGemsLibraryDao
+from antarest.study.dao.database.gems.database_scenario_builder_dao import DatabaseGemsScenarioBuilderDao
+from antarest.study.dao.database.gems.database_system_dao import DatabaseGemsSystemDao
+from antarest.study.dao.database.gems.database_taxonomy_dao import DatabaseGemsTaxonomyDao
+from antarest.study.dao.database.models.comments import COMMENTS_TABLE
+from antarest.study.dtos import StudyDataSynthesis
+from antarest.study.model import Study, StudyMetadataUpdate
+from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, EnrModelling, LinkConfig
+from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import MatrixSupplier
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+
+
+class DatabaseStudyDao(
+    StudyDao,
+    DatabaseAreaDao,
+    DatabaseAreaPropertiesDao,
+    DatabaseDistrictDao,
+    DatabaseLinkDao,
+    DatabaseLayerDao,
+    DatabaseHydroDao,
+    DatabaseThermalDao,
+    DatabaseStudySettingsDao,
+    DatabaseRenewableDao,
+    DatabaseUserResourcesDao,
+    DatabaseStStorageDao,
+    DatabaseThematicTrimmingDao,
+    DatabaseScenarioBuilderDao,
+    DatabaseXpansionDao,
+    DatabaseBindingConstraintDao,
+    DatabaseReservesGlobalParametersDao,
+    DatabaseReserveDefinitionDao,
+    DatabaseReserveCertificationDao,
+    DatabaseReserveSymmetriesDao,
+    DatabaseGemsLibraryDao,
+    DatabaseGemsSystemDao,
+    DatabaseGemsCatalogDao,
+    DatabaseGemsTaxonomyDao,
+    DatabaseGemsScenarioBuilderDao,
+):
+    """
+    Database implementation of StudyDao.
+    """
+
+    def __init__(
+        self,
+        study_id: str,
+        study_data_id: int,
+        db_session: Session,
+        matrix_service: ISimpleMatrixService,
+        blob_service: IBlobService,
+        generator_matrix_constants: GeneratorMatrixConstants,
+    ) -> None:
+        """
+        Initialize DatabaseStudyDao.
+
+        Args:
+            study_id: The study ID for database queries
+            db_session: SQLAlchemy session for database operations
+            matrix_service: Matrix storage service
+            blob_service: Blobs storage service
+            generator_matrix_constants: Predefined matrix constants generator
+        """
+        DatabaseDaoBase.__init__(self, StudyDaoContext(study_id, study_data_id, db_session))
+        self._matrix_service = matrix_service
+        self._blob_service = blob_service
+        self._generator_matrix_constants = generator_matrix_constants
+
+    @override
+    @property
+    def matrix_service(self) -> ISimpleMatrixService:
+        return self._matrix_service
+
+    @property
+    @override
+    def blob_service(self) -> IBlobService:
+        return self._blob_service
+
+    @override
+    @property
+    def generator_matrix_constants(self) -> GeneratorMatrixConstants:
+        return self._generator_matrix_constants
+
+    # Implementation of abstract methods required by StudyDao
+    @override
+    def get_study_id(self) -> str:
+        return self._study_id
+
+    @override
+    def get_synthesis(self) -> StudyDataSynthesis:
+        study_id = self._study_id
+        version = self.get_version()
+
+        areas_info = self.get_all_areas_info()
+        area_names = {a.id: a.name for a in areas_info}
+        area_ids = list(area_names.keys())
+
+        # Links organized by source area → target area
+        links_by_area: dict[str, dict[str, LinkConfig]] = {aid: {} for aid in area_ids}
+        for link in self.get_links():
+            link_config = LinkConfig(
+                filters_synthesis=list(link.filter_synthesis),
+                filters_year=list(link.filter_year_by_year),
+            )
+            links_by_area[link.area1][link.area2] = link_config
+
+        thermals = self.get_all_thermals()
+        renewables = self.get_all_renewables()
+        st_storages = self.get_all_st_storages()
+        additional_constraints = self.get_all_st_storage_additional_constraints()
+        area_properties = self.get_all_area_properties()
+
+        areas: dict[str, AreaConfig] = {}
+        for area_id in area_ids:
+            props = area_properties.get(area_id, AreaProperties())
+            areas[area_id] = AreaConfig(
+                name=area_names[area_id],
+                links=links_by_area.get(area_id, {}),
+                thermals=list(thermals.get(area_id, {}).values()),
+                renewables=list(renewables.get(area_id, {}).values()),
+                filters_synthesis=sort_filter_options(props.filter_synthesis),
+                filters_year=sort_filter_options(props.filter_by_year),
+                st_storages=list(st_storages.get(area_id, {}).values()),
+                st_storages_additional_constraints=additional_constraints.get(area_id, {}),
+            )
+
+        districts = {d.id: d for d in self.get_districts()}
+
+        advanced = self.get_advanced_parameters()
+        enr_modelling = EnrModelling(advanced.renewable_generation_modelling.value)
+
+        return StudyDataSynthesis.model_construct(
+            study_id=study_id,
+            version=version,
+            areas=areas,
+            districts=districts,
+            bindings=[],
+            enr_modelling=enr_modelling,
+        )
+
+    @override
+    def get_version(self) -> StudyVersion:
+        """
+        Get the study version from the database.
+
+        Returns:
+            The study version.
+        """
+        stmt = select(Study.version).where(Study.id == self._study_id)
+        version_str = self._db_session.execute(stmt).scalar_one()
+        return StudyVersion.parse(version_str)
+
+    @override
+    def get_impl(self) -> Self:
+        return self
+
+    @override
+    def get_comments(self) -> str:
+        stmt = select(COMMENTS_TABLE.c.comments).where(COMMENTS_TABLE.c.study_data_id == self._study_data_id)
+        comments = self._db_session.execute(stmt).scalar_one_or_none()
+        return comments if comments is not None else ""
+
+    @override
+    def save_comments(self, comments: str) -> None:
+        upsert_one(self._db_session, COMMENTS_TABLE, {"study_data_id": self._study_data_id, "comments": comments})
+        self._db_session.commit()
+
+    @override
+    def update_antares_file(self, metadata: StudyMetadataUpdate) -> None:
+        pass
+
+    @override
+    def update_cache(self) -> None:
+        pass
+
+    @override
+    def get_file_study(self) -> FileStudy:
+        """
+        Get the FileStudy instance.
+
+        Note: FileStudy is not available in database mode.
+
+        Raises:
+            NotImplementedError: Always raised as FileStudy is not supported in database mode.
+        """
+        raise NotImplementedError(
+            "get_file_study() is not supported in database storage mode. Use database-specific methods instead."
+        )
+
+    def get_matrix(self, matrix_id: str, default_empty_supplier: MatrixSupplier | None) -> pl.DataFrame:
+        matrix = self._matrix_service.get(matrix_id)
+
+        if matrix.is_empty() and default_empty_supplier is not None:
+            # We have to return the given default matrix
+            return create_polars_dataframe(default_empty_supplier())
+
+        return matrix

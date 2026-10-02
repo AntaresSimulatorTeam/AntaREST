@@ -48,7 +48,7 @@ class TestOutputSimulationAreaItem:
             areas={},
         )
 
-        node = area.OutputSimulationAreaItem(matrix_mapper=Mock(), config=config, area="fr")
+        node = area.OutputSimulationAreaItem(matrix_storage_context=Mock(), config=config, area="fr")
         actual = node.build()
 
         # check the result
@@ -66,7 +66,7 @@ class TestOutputSimulationAreaItem:
             areas={},
         )
 
-        new_node = area.OutputSimulationAreaItem(matrix_mapper=Mock(), config=new_config, area="fr")
+        new_node = area.OutputSimulationAreaItem(matrix_storage_context=Mock(), config=new_config, area="fr")
         new_actual = new_node.build()
         # check the result
         actual_obj: dict[str, dict[str, MatrixFrequency]] = {}

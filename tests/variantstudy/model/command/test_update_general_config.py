@@ -13,11 +13,13 @@ from antarest.study.business.model.config.general_model import GeneralConfigUpda
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 class TestUpdateGeneralConfig:
     def test_update_general_config(self, empty_study_880: FileStudy, command_context: CommandContext) -> None:
         study = empty_study_880
+        dao = build_dao_from_file_study(study, command_context)
 
         default_values = study.tree.get(["settings", "generaldata", "general"])
 
@@ -30,7 +32,7 @@ class TestUpdateGeneralConfig:
         command = UpdateGeneralConfig(
             parameters=properties, command_context=command_context, study_version=study.config.version
         )
-        output = command.apply(study_data=study)
+        output = command.apply(dao)
         assert output.status
         default_values.update({"horizon": 2030})
 

@@ -12,16 +12,17 @@
 import numpy as np
 from typing_extensions import override
 
-from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 
-default_data_matrix = np.zeros((365, 6), dtype=np.float64)
-default_data_matrix.flags.writeable = False
 
-default_modulation_matrix = np.zeros((8760, 4), dtype=np.float64)
-default_modulation_matrix.flags.writeable = False
+def default_data_matrix() -> np.ndarray:
+    return np.zeros((365, 6), dtype=np.float64)
+
+
+def default_modulation_matrix() -> np.ndarray:
+    return np.zeros((8760, 4), dtype=np.float64)
 
 
 class InputThermalPreproAreaThermal(FolderNode):
@@ -38,13 +39,14 @@ class InputThermalPreproAreaThermal(FolderNode):
     def build(self) -> TREE:
         children: TREE = {
             "data": InputSeriesMatrix(
-                self.matrix_mapper,
+                self.matrix_storage_context,
                 self.config.next_file("data.txt"),
-                freq=MatrixFrequency.DAILY,
                 default_empty=default_data_matrix,
             ),
             "modulation": InputSeriesMatrix(
-                self.matrix_mapper, self.config.next_file("modulation.txt"), default_empty=default_modulation_matrix
+                self.matrix_storage_context,
+                self.config.next_file("modulation.txt"),
+                default_empty=default_modulation_matrix,
             ),
         }
         return children

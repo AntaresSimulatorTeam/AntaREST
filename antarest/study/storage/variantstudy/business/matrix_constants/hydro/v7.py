@@ -10,9 +10,22 @@
 #
 # This file is part of the Antares project.
 
+import polars as pl
+
 from antarest.core.utils.polars import create_polars_dataframe
 
-credit_modulations = create_polars_dataframe([[1.0] * 101] * 2)
-inflow_pattern = create_polars_dataframe([[1.0]] * 365)
-max_power = create_polars_dataframe([[0.0, 24.0, 0.0, 24.0]] * 365)
-reservoir = create_polars_dataframe([[0.0, 0.5, 1.0]] * 365)
+
+def credit_modulations() -> pl.DataFrame:
+    return create_polars_dataframe([[1.0] * 101] * 2)
+
+
+def inflow_pattern() -> pl.DataFrame:
+    return create_polars_dataframe([[1.0]] * 365)
+
+
+def max_power() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0, 24.0, 0.0, 24.0]] * 365)
+
+
+def reservoir() -> pl.DataFrame:
+    return create_polars_dataframe([[0.0, 0.5, 1.0]] * 365)

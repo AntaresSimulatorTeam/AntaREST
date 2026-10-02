@@ -12,8 +12,25 @@
  * This file is part of the Antares project.
  */
 
+import {
+  getNodeWidth,
+  NODE_COLOR,
+  NODE_HEIGHT,
+} from "@/routes/_authenticated/studies/$studyId/explore/modeling/map/-utils";
+import * as linksApi from "@/services/api/studies/links";
 import type { LinkStyleValue } from "@/services/api/studies/links/types";
 import { createLinkId, parseLinkId } from "@/services/api/studies/links/utils";
+import * as studyApi from "@/services/api/study";
+import * as studyDataApi from "@/services/api/studydata";
+import type {
+  AreaLayerColor,
+  AreaLayerPosition,
+  DistrictApplyFilter,
+  LinkElement,
+  StudyLayer,
+  StudyMetadata,
+  UpdateAreaUi,
+} from "@/types/types";
 import {
   createAction,
   createAsyncThunk,
@@ -24,22 +41,6 @@ import {
 import * as R from "ramda";
 import tinycolor from "tinycolor2";
 import type { AppState } from ".";
-import {
-  getNodeWidth,
-  NODE_COLOR,
-  NODE_HEIGHT,
-} from "../../components/App/Singlestudy/explore/Modelization/Map/utils";
-import * as linksApi from "../../services/api/studies/links";
-import * as studyApi from "../../services/api/study";
-import * as studyDataApi from "../../services/api/studydata";
-import type {
-  AreaLayerColor,
-  AreaLayerPosition,
-  LinkElement,
-  StudyLayer,
-  StudyMetadata,
-  UpdateAreaUi,
-} from "../../types/types";
 import {
   getArea,
   getCurrentLayer,
@@ -92,11 +93,11 @@ export interface StudyMap {
   currentLayer?: StudyLayer["id"];
 }
 
-export const studyMapsAdapter = createEntityAdapter<StudyMap>({
-  selectId: (studyMap) => studyMap.studyId,
+const studyMapsAdapter = createEntityAdapter({
+  selectId: (studyMap: StudyMap) => studyMap.studyId,
 });
 
-export interface StudyMapsState extends EntityState<StudyMap> {
+export interface StudyMapsState extends EntityState<StudyMap, StudyMap["studyId"]> {
   currentLayer: StudyLayer["id"];
   layers: Record<StudyLayer["id"], StudyLayer>;
   districts: Record<StudyMapDistrict["id"], StudyMapDistrict>;
@@ -510,7 +511,7 @@ export const deleteStudyMapLayer = createAsyncThunk<
 });
 
 export const createStudyMapDistrict = createAsyncThunk<
-  StudyMapDistrict,
+  { studyId: StudyMetadata["id"]; district: StudyMapDistrict },
   {
     studyId: StudyMetadata["id"];
     name: StudyMapDistrict["name"];
@@ -527,7 +528,7 @@ export const createStudyMapDistrict = createAsyncThunk<
       output,
       data.comments,
     );
-    return { id, name, output, comments, areas };
+    return { studyId, district: { id, name, output, comments, areas } };
   } catch (error) {
     return rejectWithValue(error);
   }
@@ -535,11 +536,11 @@ export const createStudyMapDistrict = createAsyncThunk<
 
 export const updateStudyMapDistrict = createAsyncThunk<
   {
+    studyId: StudyMetadata["id"];
     districtId: StudyMapDistrict["id"];
     output: StudyMapDistrict["output"];
     comments: StudyMapDistrict["comments"];
     areas?: StudyMapDistrict["areas"];
-    applyFilter?: string;
   },
   {
     studyId: StudyMetadata["id"];
@@ -547,29 +548,27 @@ export const updateStudyMapDistrict = createAsyncThunk<
     output: StudyMapDistrict["output"];
     comments: StudyMapDistrict["comments"];
     areas?: StudyMapDistrict["areas"];
-    applyFilter?: string;
+    applyFilter?: DistrictApplyFilter;
   }
 >(n("UPDATE_STUDY_MAP_DISTRICT"), async (data, { rejectWithValue }) => {
   try {
     const { studyId, districtId, output, comments, areas, applyFilter } = data;
     await studyApi.updateStudyDistrict(studyId, districtId, output, comments, areas, applyFilter);
-    return { districtId, output, comments, areas };
+    return { studyId, districtId, output, comments, areas };
   } catch (error) {
     return rejectWithValue(error);
   }
 });
 
 export const deleteStudyMapDistrict = createAsyncThunk<
-  {
-    districtId: StudyMapDistrict["id"];
-  },
+  { studyId: StudyMetadata["id"]; districtId: StudyMapDistrict["id"] },
   { studyId: StudyMetadata["id"]; districtId: StudyMapDistrict["id"] },
   AppAsyncThunkConfig
 >(n("DELETE_STUDY_MAP_DISTRICT"), async (data, { rejectWithValue }) => {
   try {
     const { studyId, districtId } = data;
     await studyApi.deleteStudyDistrict(studyId, districtId);
-    return { districtId };
+    return { studyId, districtId };
   } catch (error) {
     return rejectWithValue(error);
   }
@@ -693,14 +692,8 @@ export default createReducer(initialState, (builder) => {
       draftState.districts = action.payload;
     })
     .addCase(createStudyMapDistrict.fulfilled, (draftState, action) => {
-      const { id, name, output, comments, areas } = action.payload;
-      draftState.districts[id] = {
-        id,
-        name,
-        output,
-        comments,
-        areas,
-      };
+      const { district } = action.payload;
+      draftState.districts[district.id] = district;
     })
     .addCase(deleteStudyMapDistrict.fulfilled, (draftState, action) => {
       const { districtId } = action.payload;

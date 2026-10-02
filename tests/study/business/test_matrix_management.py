@@ -10,11 +10,13 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Tuple
 
-import pandas as pd
+import numpy as np
+import polars as pl
 import pytest
+from polars.testing import assert_frame_equal
 
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction, MatrixSlice, Operation
 from antarest.matrixstore.model import MatrixData
 from antarest.study.business.matrix_management import (
@@ -152,26 +154,26 @@ class TestMatrixIndexError:
     ],
 )
 def test_update_matrix_content_with_slices(
-    slices: List[MatrixSlice],
+    slices: list[MatrixSlice],
     operation: Operation,
-    expected_result: List[List[MatrixData]],
+    expected_result: list[list[MatrixData]],
 ) -> None:
-    matrix_data = pd.DataFrame([[-1] * 5] * 5, dtype=float)
+    matrix_data = pl.DataFrame(np.full((5, 5), -1))
 
     output_matrix = update_matrix_content_with_slices(matrix_data=matrix_data, slices=slices, operation=operation)
 
-    assert output_matrix.equals(pd.DataFrame(expected_result).astype(matrix_data.dtypes))
+    assert_frame_equal(output_matrix, create_polars_dataframe(np.array(expected_result)), check_dtypes=False)
 
 
 def test_update_matrix_content_with_slices__out_of_bounds() -> None:
-    matrix_data = pd.DataFrame([[]], dtype=float)
+    matrix_data = pl.DataFrame([[]], schema=["0"])
     slices = [MatrixSlice(row_from=8, column_from=2, row_to=8, column_to=9)]
     result = update_matrix_content_with_slices(
         matrix_data=matrix_data,
         slices=slices,
         operation=Operation(operation="=", value=999),
     )
-    assert result.equals(matrix_data)
+    assert_frame_equal(result, matrix_data, check_dtypes=False)
 
 
 @pytest.mark.parametrize(
@@ -264,19 +266,19 @@ def test_update_matrix_content_with_slices__out_of_bounds() -> None:
     ],
 )
 def test_update_matrix_content_with_coordinates(
-    coords: List[Tuple[int, int]],
+    coords: list[tuple[int, int]],
     operation: Operation,
-    expected_result: List[List[MatrixData]],
+    expected_result: list[list[MatrixData]],
 ) -> None:
-    matrix_data = pd.DataFrame([[-1] * 5] * 5, dtype=float)
+    matrix_data = pl.DataFrame(np.full((5, 5), -1))
 
     output_matrix = update_matrix_content_with_coordinates(df=matrix_data, coordinates=coords, operation=operation)
 
-    assert output_matrix.equals(pd.DataFrame(expected_result).astype(matrix_data.dtypes))
+    assert_frame_equal(output_matrix, pl.DataFrame(np.array(expected_result)), check_dtypes=False)
 
 
 def test_update_matrix_content_with_coordinates__out_of_bounds() -> None:
-    matrix_data = pd.DataFrame([[]], dtype=float)
+    matrix_data = pl.DataFrame([[]])
     with pytest.raises(MatrixIndexError):
         update_matrix_content_with_coordinates(
             df=matrix_data,
@@ -340,8 +342,8 @@ class TestGroupBySlices:
     )
     def test_group_by_slices(
         self,
-        cells: List[Tuple[int, int]],
-        expected: List[Tuple[Tuple[int, int], Tuple[int, int]]],
+        cells: list[tuple[int, int]],
+        expected: list[tuple[tuple[int, int], tuple[int, int]]],
     ) -> None:
         actual = group_by_slices(cells)
         assert actual == expected

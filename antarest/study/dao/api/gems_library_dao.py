@@ -1,0 +1,33 @@
+# Copyright (c) 2026, RTE (https://www.rte-france.com)
+#
+# See AUTHORS.txt
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# SPDX-License-Identifier: MPL-2.0
+#
+# This file is part of the Antares project.
+
+from abc import ABC, abstractmethod
+
+from antarest.study.business.model.gems.library import GemsLibrary
+
+
+class ReadOnlyGemsLibraryDao(ABC):
+    @abstractmethod
+    def get_library(self) -> GemsLibrary | None:
+        """
+        For the moment, we consider that we only have one library per study even if the DB schema allows several ones.
+        """
+        raise NotImplementedError()
+
+
+class GemsLibraryDao(ReadOnlyGemsLibraryDao):
+    @abstractmethod
+    def save_library(self, library: GemsLibrary) -> None:
+        """
+        This method can only be used to add a library to a study, not to replace it.
+        """
+        raise NotImplementedError()

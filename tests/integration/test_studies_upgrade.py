@@ -16,6 +16,7 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
 from tests.integration.utils import wait_task_completion
 
 RUN_ON_WINDOWS = sys.platform == "win32"
@@ -106,3 +107,51 @@ class TestStudyUpgrade:
             "description": "Upgrade not supported for variant study",
             "exception": "StudyVariantUpgradeError",
         }
+
+
+@pytest.mark.parametrize("storage_mode", ["database", "filesystem"])
+def test_study_upgrade_for_both_storage_modes(client: TestClient, user_access_token: str, storage_mode: str) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+    # Create a Raw study with several areas, links, constraints, thermals ...
+    res = client.post(f"/v1/studies?name=MyStudy&storage_mode={storage_mode}&version=7.0")
+    assert res.status_code == 201
+    study_id = res.json()
+
+    create_minimal_study(client, study_id)
+
+    # Sets the area `fr` load to a certain value just to check its value afterwards
+    res = client.post(f"/v1/studies/{study_id}/raw?path=input/load/series/load_fr", data=b"[[100]]")
+    assert res.status_code == 200, res.json()
+
+    # Ensures the study was created in v7.0
+    res = client.get(f"/v1/studies/{study_id}")
+    assert res.status_code == 200, res.json()
+    assert res.json()["version"] == "7.0"
+
+    # Upgrade the study to the newer version
+    target_version = "9.3"
+    res = client.put(f"/v1/studies/{study_id}/upgrade?target_version={target_version}")
+    assert res.status_code == 200, res.json()
+
+    task_id = res.json()
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+
+    # Check the new version
+    res = client.get(f"/v1/studies/{study_id}")
+    assert res.status_code == 200, res.json()
+    assert res.json()["version"] == target_version
+
+    # Check the load matrix, it should still be the same
+    res = client.get(f"/v1/studies/{study_id}/raw?path=input/load/series/load_fr")
+    assert res.status_code == 200, res.json()
+    assert res.json()["data"] == [[100]]
+
+    # Ensures the rest of the study is preserved
+    check_minimal_study_integrity(client, study_id)
+
+    # Checks a specific field that should appear now that we're in the last version
+    res = client.get(f"/v1/studies/{study_id}/config/advancedparameters/form")
+    assert res.status_code == 200, res.json()
+    assert res.json()["accurateShavePeaksIncludeShortTermStorage"] is False

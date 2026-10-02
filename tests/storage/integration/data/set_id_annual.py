@@ -335,5 +335,4 @@ set_id_annual = {
             1.0,
         ]
     ],
-    "index": ["Annual"],
 }

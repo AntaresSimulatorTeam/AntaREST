@@ -12,8 +12,7 @@
 
 import datetime
 import uuid
-from pathlib import Path
-from typing import Optional
+from typing import Any
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -23,6 +22,8 @@ from antarest.core.persistence import Base
 from antarest.core.serde.json import from_json
 from antarest.study.model import Study
 from antarest.study.storage.variantstudy.model.model import CommandDTO
+
+metadata = Base.metadata
 
 
 class VariantStudySnapshot(Base):
@@ -45,16 +46,14 @@ class VariantStudySnapshot(Base):
         ForeignKey("variantstudy.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(DateTime)
-    last_executed_command: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
+    version: Mapped[int] = mapped_column(Integer)
+    last_executed_command: Mapped[str | None] = mapped_column(String(), nullable=True)
 
-    __mapper_args__ = {
-        "polymorphic_identity": "variant_study_snapshot",
-    }
+    __mapper_args__ = {"polymorphic_identity": "variant_study_snapshot"}
 
     @override
     def __str__(self) -> str:
-        return f"[Snapshot] id={self.id}, created_at={self.created_at}"
+        return f"[Snapshot] id={self.id}, version={self.version}"
 
 
 class CommandBlock(Base):
@@ -91,10 +90,10 @@ class CommandBlock(Base):
     version: Mapped[int] = mapped_column(Integer)
     args: Mapped[str] = mapped_column(String())
     study_version: Mapped[str] = mapped_column(String(36))
-    user_id: Mapped[Optional[int]] = mapped_column(
+    user_id: Mapped[int | None] = mapped_column(
         Integer, ForeignKey("identities.id", ondelete="SET NULL"), nullable=True
     )
-    updated_at: Mapped[Optional[datetime.datetime]] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime.datetime | None] = mapped_column(DateTime, nullable=True)
 
     def to_dto(self) -> CommandDTO:
         # Database may lack a version number, defaulting to 1 if so.
@@ -109,6 +108,19 @@ class CommandBlock(Base):
             updated_at=self.updated_at,
         )
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id or str(uuid.uuid4()),
+            "study_id": self.study_id,
+            "index": self.index,
+            "command": self.command,
+            "version": self.version,
+            "args": self.args,
+            "study_version": self.study_version,
+            "user_id": self.user_id,
+            "updated_at": self.updated_at,
+        }
+
     @override
     def __str__(self) -> str:
         return (
@@ -122,6 +134,15 @@ class CommandBlock(Base):
             f" user_id={self.user_id!r}"
             f" updated_at={self.updated_at!r}"
         )
+
+
+class CommandsListVersion(Base):
+    __tablename__ = "commands_list_version"
+
+    variant_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("variantstudy.id", ondelete="CASCADE"), primary_key=True
+    )
+    version: Mapped[int] = mapped_column(Integer)
 
 
 class VariantStudy(Study):
@@ -148,7 +169,7 @@ class VariantStudy(Study):
         ForeignKey("study.id", ondelete="CASCADE"),
         primary_key=True,
     )
-    generation_task: Mapped[Optional[str]] = mapped_column(String(), nullable=True)
+    generation_task: Mapped[str | None] = mapped_column(String(), nullable=True)
 
     __mapper_args__ = {
         "polymorphic_identity": "variantstudy",
@@ -164,26 +185,8 @@ class VariantStudy(Study):
         order_by="CommandBlock.index",
         cascade="all, delete, delete-orphan",
     )
+    commands_version = relationship(CommandsListVersion, uselist=False)
 
     @override
     def __str__(self) -> str:
         return super().__str__() + f", snapshot={self.snapshot}"
-
-    @property
-    def snapshot_dir(self) -> Path:
-        """Get the path of the snapshot directory."""
-        if self.path is None:
-            raise ValueError("Study path is not set")
-        return Path(self.path) / "snapshot"
-
-    def is_snapshot_up_to_date(self) -> bool:
-        """Check if the snapshot exists and is up-to-date."""
-        return (
-            (self.snapshot is not None)
-            and (self.snapshot.created_at >= self.updated_at)
-            and (self.snapshot_dir / "study.antares").is_file()
-        )
-
-    def has_snapshot(self) -> bool:
-        """Check if the snapshot exists."""
-        return (self.snapshot is not None) and (self.snapshot_dir / "study.antares").is_file()

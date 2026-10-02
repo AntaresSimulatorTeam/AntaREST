@@ -12,41 +12,65 @@
  * This file is part of the Antares project.
  */
 
-import moment from "moment";
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import type { StudiesSortConf, StudyFilters } from "../redux/ducks/studies";
-import { StudyType, type StudyMetadata } from "../types/types";
+import type { StudyFilters } from "../redux/ducks/studies";
+import { type StudyMetadata, StudyType } from "../types/types";
 import { isSearchMatching } from "./stringUtils";
 import { validateString } from "./validation/string";
-
-////////////////////////////////////////////////////////////////
-// Sort
-////////////////////////////////////////////////////////////////
-
-export function sortStudies(sortConf: StudiesSortConf, studies: StudyMetadata[]): StudyMetadata[] {
-  return R.sort((studyA, studyB) => {
-    const first = sortConf.order === "ascend" ? studyA : studyB;
-    const second = sortConf.order === "ascend" ? studyB : studyA;
-    if (sortConf.property === "name") {
-      return first.name.localeCompare(second.name);
-    }
-    return moment(first.modificationDate).isAfter(moment(second.modificationDate)) ? 1 : -1;
-  }, studies);
-}
 
 ////////////////////////////////////////////////////////////////
 // Predicates
 ////////////////////////////////////////////////////////////////
 
-const folderPredicate = R.curry((folder: string, strict: boolean, study: StudyMetadata) => {
-  const workspacePath = `/${study.workspace}`;
+const folderPredicate = R.curry((filters: StudyFilters, study: StudyMetadata) => {
+  const { activeTree, managed, external } = filters;
 
-  const studyPath = study.folder
-    ? `${workspacePath}/${R.dropLast(1, study.folder.split("/")).join("/")}`
-    : workspacePath;
+  if (activeTree === "managed") {
+    // Only show managed studies
+    if (!study.managed) {
+      return false;
+    }
 
-  return strict ? studyPath === folder : `${studyPath}/`.startsWith(`${folder}/`);
+    // Root (null directoryId):
+    // showDescendants=false: show only studies with no directory (directoryId === null).
+    // showDescendants=true: show all managed studies (global scope).
+    if (managed.directoryId === null) {
+      return managed.showDescendants ? true : study.directoryId === null;
+    }
+
+    // A specific directory is selected.
+    // showDescendants=false: show only studies directly in the selected directory.
+    // showDescendants=true: show studies in the selected dir + all descendants.
+    if (!managed.showDescendants) {
+      return study.directoryId === managed.directoryId;
+    }
+
+    // directoryIds is the pre-computed set: selected dir + all descendants.
+    // It is always non-null here because directoryId and directoryIds are set
+    // together by every navigation handler.
+    return (
+      !!managed.directoryIds &&
+      !!study.directoryId &&
+      managed.directoryIds.includes(study.directoryId)
+    );
+  }
+
+  // activeTree === "external"
+  // Only show external studies
+  if (study.managed) {
+    return false;
+  }
+
+  const workspace = `/${study.workspace}`;
+  const directory = study.folder ? study.folder.split("/").filter(Boolean).slice(0, -1) : [];
+  const studyPath = directory.length > 0 ? `${workspace}/${directory.join("/")}` : workspace;
+
+  return external.path === ""
+    ? true // home: show all external studies
+    : external.showDescendants
+      ? `${studyPath}/`.startsWith(`${external.path}/`)
+      : studyPath === external.path;
 });
 
 const searchPredicate = R.curry((search: StudyFilters["search"], study: StudyMetadata) => {
@@ -118,7 +142,7 @@ const typePredicate = R.curry((scope: StudyFilters["type"], study: StudyMetadata
 
 export function filterStudies(filters: StudyFilters, studies: StudyMetadata[]): StudyMetadata[] {
   const predicates = [
-    folderPredicate(filters.folder, filters.strictFolder),
+    folderPredicate(filters),
     searchPredicate(filters.search),
     tagsPredicate(filters.tags),
     versionsPredicate(filters.versions),

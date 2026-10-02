@@ -1,0 +1,324 @@
+/**
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import NumberFE from "@/components/fieldEditors/NumberFE";
+import SelectFE from "@/components/fieldEditors/SelectFE";
+import StringFE from "@/components/fieldEditors/StringFE";
+import SwitchFE from "@/components/fieldEditors/SwitchFE";
+import Fieldset from "@/components/Fieldset";
+import Form from "@/components/Form";
+import type { SubmitHandlerPlus } from "@/components/Form/types";
+import SimpleLoader from "@/components/loaders/SimpleLoader";
+import { nameToId } from "@/services/utils";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { validateNumber } from "@/utils/validation/number";
+import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import semver from "semver";
+import { adaptThermalClusterToView } from "../-adapters";
+import useThermalClusters from "../-hooks/useThermalClusters";
+import useUpdateThermalCluster from "../-hooks/useUpdateThermalCluster";
+import {
+  COST_GENERATION_OPTIONS,
+  THERMAL_GROUPS,
+  THERMAL_POLLUTANTS,
+  TS_GENERATION_OPTIONS,
+  TS_LAW_OPTIONS,
+  type ThermalCluster,
+} from "../-utils";
+
+export const Route = createFileRoute(
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId/parameters",
+)({
+  component: Parameters,
+});
+
+function Parameters() {
+  const study = useStudy();
+  const { areaId, thermalId } = Route.useParams();
+  const { t } = useTranslation();
+  const scope = { studyId: study.id, areaId };
+  const { data: clusters, isPending, error } = useThermalClusters(scope);
+  const updateCluster = useUpdateThermalCluster(scope);
+
+  ////////////////////////////////////////////////////////////////
+  // Event handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
+    const cluster = await updateCluster.mutateAsync({
+      ...scope,
+      clusterId: thermalId,
+      values: dirtyValues,
+    });
+    return adaptThermalClusterToView(cluster);
+  };
+
+  if (isPending) {
+    return <SimpleLoader />;
+  }
+
+  if (!clusters) {
+    throw error;
+  }
+
+  const defaultValues = clusters.find(({ id }) => id === nameToId(thermalId));
+
+  if (!defaultValues) {
+    throw new Error(t("study.modeling.thermals.notFound", { id: thermalId }));
+  }
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  return (
+    <Form
+      key={`${study.id}/${areaId}/${thermalId}`}
+      config={{ defaultValues }}
+      onSubmit={handleSubmit}
+      enableUndoRedo
+    >
+      {({ control, watch }) => {
+        const isCostGenerationEnabled = watch("costGeneration") === "useCostTimeseries";
+
+        return (
+          <>
+            <Fieldset legend={t("study.modeling.clusters.operatingParameters")}>
+              <SwitchFE
+                label={t("study.modeling.clusters.enabled")}
+                name="enabled"
+                control={control}
+              />
+              {semver.lt(study.version, "9.3.0") ? (
+                <SelectFE
+                  label={t("global.group")}
+                  name="group"
+                  control={control}
+                  options={THERMAL_GROUPS}
+                  startCaseLabel={false}
+                  sx={{
+                    alignSelf: "center",
+                  }}
+                />
+              ) : (
+                <StringFE
+                  label={t("global.group")}
+                  name="group"
+                  datalist={THERMAL_GROUPS}
+                  control={control}
+                />
+              )}
+
+              <SwitchFE
+                label={t("study.modeling.clusters.thermal.mustRun")}
+                name="mustRun"
+                control={control}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.unitcount")}
+                name="unitCount"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 1 }),
+                  setValueAs: Math.floor,
+                }}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.nominalCapacity")}
+                name="nominalCapacity"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 0 }),
+                }}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.thermal.minStablePower")}
+                name="minStablePower"
+                control={control}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.thermal.co2")}
+                name="co2"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 0 }),
+                }}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.thermal.spinning")}
+                name="spinning"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 0, max: 100 }),
+                }}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.thermal.minUpTime")}
+                name="minUpTime"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 1, max: 168 }),
+                  setValueAs: Math.floor,
+                }}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.thermal.minDownTime")}
+                name="minDownTime"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 1, max: 168 }),
+                  setValueAs: Math.floor,
+                }}
+              />
+            </Fieldset>
+            <Fieldset legend={t("study.modeling.clusters.operatingCosts")}>
+              {semver.gte(study.version, "8.7.0") && (
+                <>
+                  <SelectFE
+                    label={t("study.modeling.clusters.costGeneration")}
+                    name="costGeneration"
+                    options={COST_GENERATION_OPTIONS}
+                    control={control}
+                  />
+                  <NumberFE
+                    label={t("study.modeling.clusters.efficiency")}
+                    name="efficiency"
+                    control={control}
+                    rules={{
+                      validate: (v) => typeof v === "number" && validateNumber(v, { min: 0 }),
+                    }}
+                    disabled={!isCostGenerationEnabled}
+                  />
+                  <NumberFE
+                    label={t("study.modeling.clusters.variableOMCost")}
+                    name="variableOMCost"
+                    control={control}
+                    rules={{
+                      validate: (v) => typeof v === "number" && validateNumber(v, { min: 0 }),
+                    }}
+                    disabled={!isCostGenerationEnabled}
+                  />
+                </>
+              )}
+              <NumberFE
+                label={t("study.modeling.clusters.marginalCost")}
+                name="marginalCost"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 0 }),
+                }}
+                disabled={isCostGenerationEnabled}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.startupCost")}
+                name="startupCost"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 0 }),
+                }}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.marketBidCost")}
+                name="marketBidCost"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 0 }),
+                }}
+                disabled={isCostGenerationEnabled}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.fixedCost")}
+                name="fixedCost"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 0 }),
+                }}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.spreadCost")}
+                name="spreadCost"
+                control={control}
+              />
+            </Fieldset>
+            {semver.gte(study.version, "8.6.0") && (
+              <Fieldset
+                legend={t("study.modeling.clusters.thermal.otherEmissionRates")}
+                collapsible
+              >
+                {THERMAL_POLLUTANTS.map((name) => (
+                  <NumberFE
+                    key={name}
+                    label={t(`study.modeling.clusters.thermal.${name}`)}
+                    name={name}
+                    control={control}
+                    rules={{
+                      validate: (v) => typeof v === "number" && validateNumber(v, { min: 0 }),
+                    }}
+                  />
+                ))}
+              </Fieldset>
+            )}
+            <Fieldset legend={t("study.modeling.clusters.timeSeriesGen")}>
+              <SelectFE
+                label={t("study.modeling.clusters.genTs")}
+                name="genTs"
+                control={control}
+                options={TS_GENERATION_OPTIONS}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.volatilityForced")}
+                name="volatilityForced"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 0, max: 1 }),
+                }}
+                slotProps={{
+                  htmlInput: {
+                    step: 0.1,
+                  },
+                }}
+              />
+              <NumberFE
+                label={t("study.modeling.clusters.volatilityPlanned")}
+                name="volatilityPlanned"
+                control={control}
+                rules={{
+                  validate: validateNumber({ min: 0, max: 1 }),
+                }}
+                slotProps={{
+                  htmlInput: {
+                    step: 0.1,
+                  },
+                }}
+              />
+              <SelectFE
+                label={t("study.modeling.clusters.lawForced")}
+                name="lawForced"
+                control={control}
+                options={TS_LAW_OPTIONS}
+              />
+              <SelectFE
+                label={t("study.modeling.clusters.lawPlanned")}
+                name="lawPlanned"
+                control={control}
+                options={TS_LAW_OPTIONS}
+              />
+            </Fieldset>
+          </>
+        );
+      }}
+    </Form>
+  );
+}

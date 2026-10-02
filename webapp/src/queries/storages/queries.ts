@@ -1,0 +1,41 @@
+/**
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import { getStorages, getStorageConstraints } from "@/services/api/studies/areas/storages";
+import type { StorageParams } from "@/services/api/studies/areas/storages/types";
+import type { AreaWithId } from "@/types/types";
+import { EXTERNALLY_MUTATED, queryListOptions } from "../utils";
+import { storageKeys } from "./keys";
+import type { Study } from "@/services/api/studies/types";
+
+export const storageQueries = {
+  list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+    return queryListOptions({
+      queryKey: storageKeys.list(studyId, areaId),
+      queryFn: () => getStorages({ studyId, areaId }),
+      // TODO: keep it stale until we update all writers to invalidate it.
+      ...EXTERNALLY_MUTATED,
+    });
+  },
+  constraintList: (
+    studyId: Study["id"],
+    areaId: AreaWithId["id"],
+    storageId: StorageParams["storageId"],
+  ) => {
+    return queryListOptions({
+      queryKey: storageKeys.constraintList(studyId, areaId, storageId),
+      queryFn: () => getStorageConstraints({ studyId, areaId, storageId }),
+    });
+  },
+};

@@ -12,7 +12,7 @@
 
 import json
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from typing_extensions import override
 
@@ -35,7 +35,7 @@ class JsonReader(IReader):
 
         if isinstance(path, (Path, str)):
             try:
-                with open(path, mode="r", encoding="utf-8") as f:
+                with Path(path).open(encoding="utf-8") as f:
                     content = f.read()
             except FileNotFoundError:
                 # If the file is missing, an empty dictionary is returned,
@@ -50,7 +50,7 @@ class JsonReader(IReader):
             raise TypeError(repr(type(path)))
 
         try:
-            return cast(JSON, from_json(content))
+            return from_json(content)
         except json.JSONDecodeError as exc:
             err_msg = f"Failed to parse JSON file '{path}'"
             raise ValueError(err_msg) from exc
@@ -63,7 +63,7 @@ class JsonWriter(IniWriter):
 
     @override
     def write(self, data: JSON, path: Path) -> None:
-        with open(path, "wb") as fh:
+        with path.open("wb") as fh:
             fh.write(to_json(data))
 
 

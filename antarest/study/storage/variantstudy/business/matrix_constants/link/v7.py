@@ -10,6 +10,10 @@
 #
 # This file is part of the Antares project.
 
+import polars as pl
+
 from antarest.core.utils.polars import create_polars_dataframe
 
-link = create_polars_dataframe([[1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)
+
+def link() -> pl.DataFrame:
+    return create_polars_dataframe([[1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]] * 8760)

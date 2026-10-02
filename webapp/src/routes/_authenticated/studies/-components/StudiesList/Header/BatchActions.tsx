@@ -1,0 +1,181 @@
+/**
+ * Copyright (c) 2026, RTE (https://www.rte-france.com)
+ *
+ * See AUTHORS.txt
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * SPDX-License-Identifier: MPL-2.0
+ *
+ * This file is part of the Antares project.
+ */
+
+import useDialog from "@/hooks/useDialog";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudiesById } from "@/redux/selectors";
+import LaunchStudiesDialog from "@/routes/-shared/components/studies/dialogs/LaunchStudiesDialog";
+import MoveStudyDialog from "@/routes/-shared/components/studies/dialogs/MoveStudyDialog";
+import type { Study } from "@/services/api/studies/types";
+import type { StudyMetadata } from "@/types/types";
+import BoltIcon from "@mui/icons-material/Bolt";
+import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import DeleteIcon from "@mui/icons-material/Delete";
+import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
+import { Button, IconButton, Stack, Tooltip, Typography, type ButtonProps } from "@mui/material";
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import DeleteStudiesDialog from "./DeleteStudiesDialog";
+
+interface Props {
+  selectedStudyIds: Array<Study["id"]>;
+  setSelectedStudyIds: (ids: Array<Study["id"]>) => void;
+}
+
+function BatchActions({ selectedStudyIds, setSelectedStudyIds }: Props) {
+  const { t } = useTranslation();
+  const { openDialog } = useDialog();
+  const studiesById = useAppSelector(getStudiesById);
+
+  const selection = useMemo(() => {
+    const studies = selectedStudyIds.map((id) => studiesById[id]).filter(Boolean);
+    const managed = studies.filter((study) => study.managed);
+
+    return {
+      all: studies,
+      managed,
+      managedReferences: managed.filter((study) => study.type === "rawstudy"),
+      unarchived: studies.filter((study) => !study.archived),
+    };
+  }, [selectedStudyIds, studiesById]);
+
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleDeselectAll = () => {
+    setSelectedStudyIds([]);
+  };
+
+  const handleLaunchStudies = (studies: StudyMetadata[]) => {
+    openDialog(({ onClose }) => (
+      <LaunchStudiesDialog
+        open
+        studyIds={studies.map((s) => s.id)}
+        onClose={onClose}
+        onRun={handleDeselectAll}
+      />
+    ));
+  };
+
+  const handleMoveStudies = (studies: StudyMetadata[]) => {
+    openDialog(({ onClose }) => (
+      <MoveStudyDialog open studies={studies} onClose={onClose} onRun={handleDeselectAll} />
+    ));
+  };
+
+  const handleDeleteStudies = (studies: StudyMetadata[]) => {
+    openDialog(({ onClose }) => (
+      <DeleteStudiesDialog
+        open
+        studyIds={studies.map((s) => s.id)}
+        onClose={onClose}
+        onRun={handleDeselectAll}
+      />
+    ));
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // Utils
+  ////////////////////////////////////////////////////////////////
+
+  const renderActionButton = (params: {
+    defaultTooltip: string;
+    partialSelectionTooltip: (options: { count: number; total: number }) => string;
+    onClick: (studies: StudyMetadata[]) => void;
+    color: ButtonProps["color"];
+    icon: React.ReactNode;
+    label: string;
+    selection: StudyMetadata[];
+  }) => {
+    if (params.selection.length === 0) {
+      return null;
+    }
+
+    const isPartialSelection = params.selection.length < selection.all.length;
+    const tooltip = isPartialSelection
+      ? params.partialSelectionTooltip({
+          count: params.selection.length,
+          total: selection.all.length,
+        })
+      : params.defaultTooltip;
+
+    return (
+      <Tooltip title={tooltip}>
+        <Button
+          onClick={() => params.onClick(params.selection)}
+          color={params.color}
+          startIcon={params.icon}
+        >
+          {params.label}
+          {isPartialSelection && (
+            <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.7 }}>
+              ({params.selection.length}/{selection.all.length})
+            </Typography>
+          )}
+        </Button>
+      </Tooltip>
+    );
+  };
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
+
+  if (selection.all.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      {renderActionButton({
+        defaultTooltip: t("global.launch"),
+        partialSelectionTooltip: (options) => t("studies.batch.launchPartial", options),
+        onClick: handleLaunchStudies,
+        color: "primary",
+        icon: <BoltIcon />,
+        label: t("global.launch"),
+        selection: selection.unarchived,
+      })}
+      {renderActionButton({
+        defaultTooltip: t("global.move"),
+        partialSelectionTooltip: (options) => t("studies.batch.movePartial", options),
+        onClick: handleMoveStudies,
+        color: "inherit",
+        icon: <DriveFileMoveIcon />,
+        label: t("global.move"),
+        selection: selection.managedReferences,
+      })}
+      {renderActionButton({
+        defaultTooltip: t("global.delete"),
+        partialSelectionTooltip: (options) => t("studies.batch.deletePartial", options),
+        onClick: handleDeleteStudies,
+        color: "error",
+        icon: <DeleteIcon />,
+        label: t("global.delete"),
+        selection: selection.managed,
+      })}
+      <Tooltip title={t("studies.batch.deselectAll")}>
+        <Stack>
+          <IconButton color="primary" onClick={handleDeselectAll}>
+            <CheckBoxIcon />
+          </IconButton>
+          <Typography variant="body2">({selection.all.length})</Typography>
+        </Stack>
+      </Tooltip>
+    </>
+  );
+}
+
+export default BatchActions;

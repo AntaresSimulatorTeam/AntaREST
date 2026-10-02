@@ -10,53 +10,48 @@
 #
 # This file is part of the Antares project.
 
-from typing import List, Optional
 
 from typing_extensions import override
 
-from antarest.core.utils.archives import extract_lines_from_archive
-from antarest.matrixstore.matrix_uri_mapper import MatrixUriMapper
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import INode
+from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 
 AREAS_LIST_RELATIVE_PATH = "input/areas/list.txt"
 
 
-class InputAreasList(INode[List[str], List[str], List[str]]):
-    def __init__(self, matrix_mapper: MatrixUriMapper, config: FileStudyTreeConfig):
+class InputAreasList(INode[list[str], list[str], list[str]]):
+    def __init__(self, matrix_storage_context: MatrixStorageContext, config: FileStudyTreeConfig):
         super().__init__(config)
-        self.matrix_mapper = matrix_mapper
+        self.matrix_storage_context = matrix_storage_context
 
     @override
     def get_node_and_remainder(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> tuple[INode[List[str], List[str], List[str]], list[str]]:
+    ) -> tuple[INode[list[str], list[str], list[str]], list[str]]:
         return self, []
 
     @override
     def get(
         self,
-        url: Optional[List[str]] = None,
+        url: list[str] | None = None,
         depth: int = -1,
         expanded: bool = False,
         formatted: bool = True,
-    ) -> List[str]:
-        if self.config.archive_path:
-            lines = extract_lines_from_archive(self.config.archive_path, AREAS_LIST_RELATIVE_PATH)
-        else:
-            lines = self.config.path.read_text().split("\n")
+    ) -> list[str]:
+        lines = self.config.path.read_text().split("\n")
         return [line.strip() for line in lines if line.strip()]
 
     @override
-    def save(self, data: List[str], url: Optional[List[str]] = None) -> None:
+    def save(self, data: list[str], url: list[str] | None = None) -> None:
         self._assert_not_in_zipped_file()
         self.config.path.write_text("\n".join(data))
 
     @override
-    def delete(self, url: Optional[List[str]] = None) -> None:
+    def delete(self, url: list[str] | None = None) -> None:
         if self.config.path.exists():
             self.config.path.unlink()

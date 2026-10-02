@@ -13,8 +13,11 @@
  */
 
 import client from "@/services/api/client";
-import { adaptVariableViewParamsToDto, sanitizeNaNResponse } from "./adapters";
+import type { MatrixIndex } from "@/types/types";
+import { sanitizeJsonResponse } from "@/utils/apiUtils";
+import { adaptVariableViewParamsToDto } from "./adapters";
 import type {
+  ExportVariableViewParams,
   GetTimeIndexParams,
   GetVariablesListParams,
   GetVariableViewDataParams,
@@ -22,7 +25,6 @@ import type {
   VariablesListDTO,
   VariableViewMatrixDTO,
 } from "./types";
-import type { DateTimeMetadataDTO } from "@/components/common/Matrix/shared/types";
 
 ////////////////////////////////////////////////////////////////
 // Variables List
@@ -39,8 +41,8 @@ export async function getVariablesList({ studyId, outputId }: GetVariablesListPa
 // Variable View Data
 ////////////////////////////////////////////////////////////////
 
-export async function getTimeIndex({ studyId, outputId, frequency }: GetTimeIndexParams) {
-  const { data } = await client.get<DateTimeMetadataDTO>(
+export async function getOutputMatrixIndex({ studyId, outputId, frequency }: GetTimeIndexParams) {
+  const { data } = await client.get<MatrixIndex>(
     `/v1/studies/${studyId}/output/${outputId}/time-index`,
     { params: { frequency } },
   );
@@ -59,7 +61,7 @@ export async function getVariableViewData({
       params: queryParams,
       // Custom transformer to handle NaN values from backend
       // The backend sends invalid JSON with literal NaN tokens that must be sanitized
-      transformResponse: [(data) => sanitizeNaNResponse(data)],
+      transformResponse: [sanitizeJsonResponse],
     },
   );
   return data;
@@ -81,5 +83,28 @@ export async function materializeVariableView({
     { params: queryParams },
   );
 
+  return data;
+}
+
+////////////////////////////////////////////////////////////////
+// Export
+////////////////////////////////////////////////////////////////
+
+export async function exportVariableViewData({
+  studyId,
+  outputId,
+  params,
+  format,
+  header,
+  index,
+}: ExportVariableViewParams) {
+  const queryParams = adaptVariableViewParamsToDto(params);
+  const { data } = await client.get<Blob>(
+    `/v1/studies/${studyId}/output/${outputId}/variables-views/export`,
+    {
+      params: { ...queryParams, export_format: format, header, index },
+      responseType: "blob",
+    },
+  );
   return data;
 }

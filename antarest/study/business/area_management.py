@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
-from typing import Dict, List, Mapping
+from collections.abc import Mapping
 
 from antarest.core.exceptions import DuplicateAreaName
 from antarest.core.model import JSON
@@ -31,7 +31,6 @@ from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
-from antarest.study.storage.variantstudy.model.command.replace_layer_areas import ReplaceLayerAreas
 from antarest.study.storage.variantstudy.model.command.update_area_ui import UpdateAreaUI
 from antarest.study.storage.variantstudy.model.command.update_areas_properties import UpdateAreasProperties
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -53,7 +52,7 @@ class AreaManager:
         """
         self._command_context = command_context
 
-    def get_all_areas_info(self, study: StudyInterface) -> List[AreaInfo]:
+    def get_all_areas_info(self, study: StudyInterface) -> list[AreaInfo]:
         """Retrieve all physical areas of a raw study."""
         return study.get_study_dao().get_all_areas_info()
 
@@ -61,7 +60,7 @@ class AreaManager:
         """Returns the UI of the layer 0 for a given area"""
         return study.get_study_dao().get_area_ui(area_id)
 
-    def get_all_areas_ui_info(self, study: StudyInterface) -> Dict[str, AreaUIData]:
+    def get_all_areas_ui_info(self, study: StudyInterface) -> dict[str, AreaUIData]:
         """
         Retrieve information about all areas' user interface (UI) from the study.
 
@@ -75,16 +74,6 @@ class AreaManager:
             ChildNotFoundError: if one of the Area IDs is not found in the configuration.
         """
         return study.get_study_dao().get_all_areas_ui_info()
-
-    def update_layer_areas(self, study: StudyInterface, layer_id: str, areas: List[str]) -> None:
-        logger.info(f"Replacing layer {layer_id} areas with {areas}")
-        command = ReplaceLayerAreas(
-            layer_id=layer_id,
-            area_ids=areas,
-            command_context=self._command_context,
-            study_version=study.version,
-        )
-        study.add_commands([command])
 
     def create_area(self, study: StudyInterface, area_creation_info: AreaCreation) -> AreaInfo:
         # check if area already exists
@@ -150,7 +139,7 @@ class AreaManager:
         old_areas_by_ids = self.get_all_area_properties(study)
         new_areas_by_ids = dict(old_areas_by_ids)
 
-        areas_properties: Dict[str, AreaPropertiesUpdate] = {}
+        areas_properties: dict[str, AreaPropertiesUpdate] = {}
 
         for area_id, update_area in properties.items():
             old_area = old_areas_by_ids[area_id]

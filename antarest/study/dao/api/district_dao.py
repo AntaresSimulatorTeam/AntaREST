@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from abc import ABC, abstractmethod
-from typing import Sequence
+from collections.abc import Sequence
 
 from antarest.study.business.model.district_model import (
     District,
@@ -40,21 +40,6 @@ class ReadOnlyDistrictDao(ABC):
 
     @abstractmethod
     def district_exists(self, district_id: str) -> bool:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def tmp_get_all_areas(self) -> list[str]:
-        """
-        This method will be moved in area dao
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get_invalid_areas_in_district(self, areas: list[str]) -> list[str]:
-        """
-        Check all areas exists in the study
-        """
-        # TODO this method should be moved to the area DAO when we'll implement it
         raise NotImplementedError()
 
 

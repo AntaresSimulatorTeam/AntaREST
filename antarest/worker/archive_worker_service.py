@@ -12,8 +12,9 @@
 
 import argparse
 import logging
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Sequence, TypeAlias
+from typing import TypeAlias
 
 from antarest import __version__
 from antarest.core.config import Config
@@ -24,7 +25,7 @@ from antarest.service_creator import create_archive_worker
 # use the real module name instead of `__name__` (because `__name__ == "__main__"`)
 logger = logging.getLogger("antarest.worker.archive_worker_service")
 
-ArgsType: TypeAlias = Optional[Sequence[str]]
+ArgsType: TypeAlias = Sequence[str] | None
 
 
 def parse_arguments(args: ArgsType = None) -> argparse.Namespace:

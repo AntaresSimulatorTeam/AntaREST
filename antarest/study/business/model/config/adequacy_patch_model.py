@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, Optional, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
@@ -31,7 +31,7 @@ class PriceTakingOrder(EnumIgnoreCase):
     LOAD = "Load"
 
 
-ThresholdType: TypeAlias = Annotated[Optional[float], Field(default=None, ge=0)]
+ThresholdType: TypeAlias = Annotated[float | None, Field(default=None, ge=0)]
 
 
 class AdequacyPatchParameters(AntaresBaseModel):
@@ -41,31 +41,31 @@ class AdequacyPatchParameters(AntaresBaseModel):
     enable_adequacy_patch: bool = False
     ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch: bool = True
     # Since v8.5
-    price_taking_order: Optional[PriceTakingOrder] = None
-    include_hurdle_cost_csr: Optional[bool] = None
-    check_csr_cost_function: Optional[bool] = None
+    price_taking_order: PriceTakingOrder | None = None
+    include_hurdle_cost_csr: bool | None = None
+    check_csr_cost_function: bool | None = None
     threshold_initiate_curtailment_sharing_rule: ThresholdType
     threshold_display_local_matching_rule_violations: ThresholdType
-    threshold_csr_variable_bounds_relaxation: Optional[int] = Field(default=None, ge=0)
+    threshold_csr_variable_bounds_relaxation: int | None = Field(default=None, ge=0)
     # Appeared in v8.3 and removed in v9.2
-    ntc_between_physical_areas_out_adequacy_patch: Optional[bool] = None
+    ntc_between_physical_areas_out_adequacy_patch: bool | None = None
     # Since v9.3
-    redispatch: Optional[bool] = None
+    redispatch: bool | None = None
 
 
 class AdequacyPatchParametersUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
-    enable_adequacy_patch: Optional[bool] = None
-    ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch: Optional[bool] = None
-    price_taking_order: Optional[PriceTakingOrder] = None
-    include_hurdle_cost_csr: Optional[bool] = None
-    check_csr_cost_function: Optional[bool] = None
+    enable_adequacy_patch: bool | None = None
+    ntc_from_physical_areas_out_to_physical_areas_in_adequacy_patch: bool | None = None
+    price_taking_order: PriceTakingOrder | None = None
+    include_hurdle_cost_csr: bool | None = None
+    check_csr_cost_function: bool | None = None
     threshold_initiate_curtailment_sharing_rule: ThresholdType
     threshold_display_local_matching_rule_violations: ThresholdType
-    threshold_csr_variable_bounds_relaxation: Optional[int] = Field(default=None, ge=0)
-    ntc_between_physical_areas_out_adequacy_patch: Optional[bool] = None
-    redispatch: Optional[bool] = None
+    threshold_csr_variable_bounds_relaxation: int | None = Field(default=None, ge=0)
+    ntc_between_physical_areas_out_adequacy_patch: bool | None = None
+    redispatch: bool | None = None
 
 
 def update_adequacy_patch_parameters(
