@@ -13,6 +13,7 @@
 from http import HTTPStatus
 from pathlib import Path
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
@@ -28,7 +29,7 @@ class TestHydroCorrelation:
         self, client: TestClient, user_access_token: str, internal_study_id: str
     ) -> None:
         """Check `get_correlation_form_values` end point"""
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         area_id = "fr"
         res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form")
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -47,7 +48,7 @@ class TestHydroCorrelation:
         self, client: TestClient, user_access_token: str, internal_study_id: str
     ) -> None:
         """Check `set_correlation_form_values` end point"""
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         area_id = "fr"
         obj = {
             "correlation": [
@@ -100,7 +101,7 @@ class TestHydroCorrelation:
 
     def test_get_correlation_matrix(self, client: TestClient, user_access_token: str, internal_study_id: str) -> None:
         """Check `get_correlation_matrix` end point"""
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
@@ -123,7 +124,7 @@ class TestHydroCorrelation:
         - the coefficient == 0 for the other areas.
         Other columns must not be changed.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         area_info = {"name": "NORTH"}
         res = client.post(f"/v1/studies/{internal_study_id}/areas", json=area_info)
         assert res.status_code == HTTPStatus.OK, res.json()
@@ -151,7 +152,7 @@ class TestHydroCorrelation:
         Other columns must be updated to reflect the area deletion.
         """
         # First change the coefficients to avoid zero values (which are defaults).
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         correlation_cfg = {
             "annual": {
                 "de%es": 0.12,
@@ -191,7 +192,7 @@ class TestHydroCorrelation:
     def test_get_correlation_values__empty_annual(
         self, client: TestClient, internal_study_id: str, user_access_token: str, tmp_path: Path
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         area_id = "it"
 
         correlation_file_path = tmp_path.joinpath("ext_workspace/STA-mini/input/hydro/prepro/correlation.ini")

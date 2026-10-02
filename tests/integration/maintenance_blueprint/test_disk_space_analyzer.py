@@ -38,7 +38,7 @@ def study_disk_repo() -> StudyDiskSpaceRepository:
 
 
 class TestDiskSpaceAnalyzerIntegration:
-    def test_disk_space_analysis(self, study_disk_repo: StudyDiskSpaceRepository, study_service: StudyService):
+    def test_disk_space_analysis(self, study_disk_repo: StudyDiskSpaceRepository, study_service: StudyService) -> None:
         with current_user_context(DEFAULT_ADMIN_USER):
             with db():
                 study_1 = study_service.create_study("my_study_1", version=StudyVersion(8, 8, 0), group_ids=[])
@@ -107,7 +107,7 @@ class TestDiskSpaceAnalyzerIntegration:
 
     def test_returns_skipped_when_lock_held(
         self, study_service: StudyService, study_disk_repo: StudyDiskSpaceRepository
-    ):
+    ) -> None:
         lock_folder = Path(tempfile.gettempdir())
         with db():
             with create_file_lock(lock_id=LockId.STUDY_DISK_SPACE, lock_folder=lock_folder):

@@ -31,7 +31,7 @@ from antarest.tablemode.repository import TablemodeRepository
 from antarest.tablemode.service import TableModeService
 
 
-def test_get_table_mode():
+def test_get_table_mode() -> None:
     # ensuring that the tablemode service returns an empty list when the tablemode repository returns an empty list
     mock_tablemode_repo = Mock(spec=TablemodeRepository)
     mock_tablemode_repo.get_all.return_value = []
@@ -63,7 +63,7 @@ def test_get_table_mode():
     assert tablemode_list[0] == expected_dto
 
 
-def test_add_tablemode_success():
+def test_add_tablemode_success() -> None:
     mock_tablemode_repo = Mock(spec=TablemodeRepository)
     my_uuid = uuid.uuid4()
     table_name = "test_name"
@@ -97,7 +97,7 @@ def test_add_tablemode_success():
     assert current_tablemodes == [tablemode_dto]
 
 
-def test_delete_tablemode_success():
+def test_delete_tablemode_success() -> None:
     mock_tablemode_repo = Mock(spec=TablemodeRepository)
     my_uuid = uuid.uuid4()
 
@@ -119,7 +119,7 @@ def test_delete_tablemode_success():
     assert tablemode_service.get_tables() == []
 
 
-def test_update_tablemode_success():
+def test_update_tablemode_success() -> None:
     mock_tablemode_repo = Mock(spec=TablemodeRepository)
     my_uuid = uuid.uuid4()
     table_name = "test_name"
@@ -149,7 +149,7 @@ def test_update_tablemode_success():
     assert updated_dto == expected_dto
 
 
-def test_add_tablemode_failure_invalid_table_data():
+def test_add_tablemode_failure_invalid_table_data() -> None:
     mock_tablemode_repo = Mock(spec=TablemodeRepository)
     tablemode_service = TableModeService(mock_tablemode_repo)
     my_uuid = uuid.uuid4()
@@ -176,7 +176,7 @@ def test_add_tablemode_failure_invalid_table_data():
         tablemode_service.add_table(my_table_name, my_table_type, invalid_table_columns)
 
 
-def test_update_tablemode_failure_updating_non_existing_tablemode():
+def test_update_tablemode_failure_updating_non_existing_tablemode() -> None:
     # trying to update a tablemode that does not exist
     mock_tablemode_repo = Mock(spec=TablemodeRepository)
     my_uuid = uuid.uuid4()
@@ -192,7 +192,7 @@ def test_update_tablemode_failure_updating_non_existing_tablemode():
         tablemode_service.update_table(my_uuid, my_table_type, my_table_columns)
 
 
-def test_update_tablemode_failure_updating_tablemode_with_invalid_table_data():
+def test_update_tablemode_failure_updating_tablemode_with_invalid_table_data() -> None:
     mock_tablemode_repo = Mock(spec=TablemodeRepository)
     my_uuid = uuid.uuid4()
     my_table_name = "test_name"
@@ -217,7 +217,7 @@ def test_update_tablemode_failure_updating_tablemode_with_invalid_table_data():
         tablemode_service.update_table(my_uuid, my_table_type, incorrect_table_columns)
 
 
-def test_delete_tablemode_failure_deleting_non_existing_tablemode():
+def test_delete_tablemode_failure_deleting_non_existing_tablemode() -> None:
     mock_tablemode_repo = Mock(spec=TablemodeRepository)
 
     my_uuid = uuid.uuid4()

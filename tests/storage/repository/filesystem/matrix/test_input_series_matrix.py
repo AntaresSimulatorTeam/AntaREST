@@ -69,7 +69,7 @@ class TestInputSeriesMatrix:
     def test_parse_empty_file(self, my_study_config: FileStudyTreeConfig, link: bool) -> None:
         file_path = my_study_config.path
 
-        def default_matrix():
+        def default_matrix() -> np.ndarray:
             return np.array([[1, 2], [3, 4]])
 
         if not link:
@@ -139,7 +139,7 @@ class TestInputSeriesMatrix:
     def test_reset_to_default(self, my_study_config: FileStudyTreeConfig) -> None:
         """Test reseting the matrix to default values."""
 
-        def default_matrix():
+        def default_matrix() -> np.ndarray:
             return np.array([[1.0, 2.0], [3.0, 4.0]])
 
         node = InputSeriesMatrix(
@@ -176,7 +176,7 @@ class TestInputSeriesMatrix:
     def test_default_empty(self, my_study_config: FileStudyTreeConfig) -> None:
         file_path = my_study_config.path
 
-        def default_matrix():
+        def default_matrix() -> np.ndarray:
             return np.array([[1, 2], [3, 4]])
 
         file_path.touch()

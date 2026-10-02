@@ -14,10 +14,10 @@ import pytest
 from antarest.core.utils.wait import wait_for
 
 
-def test_wait_1st_call():
+def test_wait_1st_call() -> None:
     call_count = 0
 
-    def return_1():
+    def return_1() -> int:
         nonlocal call_count
         call_count += 1
         return 1
@@ -27,10 +27,10 @@ def test_wait_1st_call():
     assert call_count == 1
 
 
-def test_wait_returns_none_after_timeout():
+def test_wait_returns_none_after_timeout() -> None:
     call_count = 0
 
-    def return_none():
+    def return_none() -> None:
         nonlocal call_count
         call_count += 1
         return None
@@ -40,10 +40,10 @@ def test_wait_returns_none_after_timeout():
     assert call_count > 0
 
 
-def test_wait_returns_when_fn_returns_not_none():
+def test_wait_returns_when_fn_returns_not_none() -> None:
     call_count = 0
 
-    def return_1_after_10_times():
+    def return_1_after_10_times() -> int | None:
         nonlocal call_count
         call_count += 1
         if call_count < 10:
@@ -56,9 +56,9 @@ def test_wait_returns_when_fn_returns_not_none():
     assert call_count == 10
 
 
-def test_wait_raises():
+def test_wait_raises() -> None:
 
-    def raising_function():
+    def raising_function() -> None:
         raise ValueError("Failed")
 
     with pytest.raises(ValueError):

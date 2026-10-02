@@ -27,12 +27,12 @@ def init_db(db_engine: Engine) -> None:
 
 
 @pytest.fixture
-def study_repo(init_db) -> StudyMetadataRepository:
+def study_repo(init_db: None) -> StudyMetadataRepository:
     return StudyMetadataRepository()
 
 
 @pytest.fixture
-def output_repo(init_db) -> OutputV2Repository:
+def output_repo(init_db: None) -> OutputV2Repository:
     return OutputV2Repository()
 
 

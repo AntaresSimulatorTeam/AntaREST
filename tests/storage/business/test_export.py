@@ -14,6 +14,8 @@ from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
+from typing_extensions import override
+
 from antarest.blobstore.service import BlobService
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.interfaces.cache import ICache
@@ -162,6 +164,7 @@ def test_export_output(tmp_path: Path) -> None:
     study_factory.create_from_fs.return_value = study_tree
 
     class OutputsProvider(IFileOutputsProvider):
+        @override
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             return FileStudyOutputs(outputs_path=root / "output", study_workspace=DEFAULT_WORKSPACE_NAME)
 

@@ -22,7 +22,7 @@ from antarest.maintenance.tasks.watcher_scan_task import watcher_scan_task
 
 
 class TestCollectStudies:
-    def test_returns_empty_list_when_no_studies(self, tmp_path):
+    def test_returns_empty_list_when_no_studies(self, tmp_path: str) -> None:
         workspace_path = tmp_path / "workspace1"
         workspace_path.mkdir()
         config = Mock()
@@ -42,7 +42,7 @@ class TestCollectStudies:
 
         assert result == []
 
-    def test_finds_studies_in_workspaces(self, tmp_path):
+    def test_finds_studies_in_workspaces(self, tmp_path: str) -> None:
         workspace_path = tmp_path / "workspace1"
         workspace_path.mkdir()
         # Create a study in the workspace
@@ -68,7 +68,7 @@ class TestCollectStudies:
         assert len(result) == 1
         assert result[0].path == study_path
 
-    def test_skips_default_workspace(self, tmp_path):
+    def test_skips_default_workspace(self, tmp_path: str) -> None:
         # Create a study in the default workspace - it should be ignored
         default_path = tmp_path / "default"
         default_path.mkdir()
@@ -87,7 +87,7 @@ class TestCollectStudies:
 
         assert result == []
 
-    def test_finds_studies_in_multiple_workspaces(self, tmp_path):
+    def test_finds_studies_in_multiple_workspaces(self, tmp_path: str) -> None:
         workspace1_path = tmp_path / "workspace1"
         workspace1_path.mkdir()
         workspace2_path = tmp_path / "workspace2"
@@ -127,6 +127,6 @@ class TestCollectStudies:
 
 
 class TestWatcherScanTask:
-    def test_raises_without_context(self, with_no_maintenance_ctx):
+    def test_raises_without_context(self, with_no_maintenance_ctx: None) -> None:
         with pytest.raises(RuntimeError, match="MaintenanceContext not in app.conf"):
             watcher_scan_task.run()

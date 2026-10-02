@@ -19,6 +19,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 from antares.study.version import StudyVersion
+from typing_extensions import override
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -317,6 +318,7 @@ timestamp = 1599488150
         )
 
     class OutputsProvider(IFileOutputsProvider):
+        @override
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             return FileStudyOutputs(outputs_path=study_path / "output", study_workspace=DEFAULT_WORKSPACE_NAME)
 

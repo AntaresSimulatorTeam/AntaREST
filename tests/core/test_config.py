@@ -164,7 +164,7 @@ class TestConfig:
             yaml.dump(data, fd)
         return config_path
 
-    def check_server_config(self, server_config: ServerConfig):
+    def check_server_config(self, server_config: ServerConfig) -> None:
         assert server_config.worker_threadpool_size == 12
         assert server_config.services == ["watcher"]
 
@@ -218,7 +218,7 @@ class TestConfig:
         assert local_launcher.xpress_dir == "/tmp/xpress_dir"
         assert local_launcher.local_workspace == Path("/tmp/local_workspace")
 
-    def check_slurm_launcher(self, slurm_launcher):
+    def check_slurm_launcher(self, slurm_launcher: SlurmConfig) -> None:
         assert slurm_launcher.id == "slurm_id"
         assert slurm_launcher.name == "slurm_name"
         assert slurm_launcher.type == "slurm"

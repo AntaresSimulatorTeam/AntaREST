@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import re
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -25,7 +26,7 @@ from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAML
 from tests.study.dao.utils import save_area
 
 
-def _hydro_reserve_file(dao: FileStudyTreeDao, area_id: str):
+def _hydro_reserve_file(dao: FileStudyTreeDao, area_id: str) -> Path:
     return (
         dao.get_file_study().config.study_path / "input" / "hydro" / "reserves" / area_id / "reserve-participations.yml"
     )

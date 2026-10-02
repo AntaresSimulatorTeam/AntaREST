@@ -26,6 +26,7 @@ from fastapi import FastAPI
 from sqlalchemy import Engine
 from starlette.testclient import TestClient
 
+from antarest.core.config import Config
 from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware, db
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.core.utils.polars import create_polars_dataframe
@@ -34,13 +35,13 @@ from antarest.main import add_exception_handlers
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.output.model import OutputVariablesInformation
 from antarest.output.routes import create_output_routes
+from antarest.output.service import OutputService
 from antarest.output.storage.file.repository import DbOutputVariables
 from antarest.study.service import StudyService
-from antarest.study.storage.rawstudy.model.filesystem.common.prepro import default_k
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import default_energy, default_k
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
-from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.prepro.area.area import default_energy
 from antarest.study.storage.variantstudy.business.matrix_constants.common import fixed_4_columns
 from antarest.study.web.raw_studies_blueprint import create_raw_study_routes
 from antarest.study.web.studies_blueprint import create_study_routes
@@ -54,7 +55,7 @@ from tests.storage.integration.data.set_values_monthly import set_values_monthly
 
 
 @pytest.fixture
-def client(services, db_engine: Engine) -> TestClient:
+def client(services: tuple[StudyService, OutputService, Config], db_engine: Engine) -> TestClient:
     study_service, output_service, config = services
     services = Mock()
     services.study = study_service
@@ -460,7 +461,7 @@ def test_sta_mini_copy(
 
 @with_admin_user
 def test_sta_mini_list_studies(client: TestClient) -> None:
-    expected_output = {
+    expected_output: dict[str, dict[str, object]] = {
         UUID: {
             "id": UUID,
             "name": "STA-mini",
@@ -532,7 +533,7 @@ def _clean_db() -> None:
 
 @with_admin_user
 @with_db_context
-def test_sta_mini_output_variables(services) -> None:
+def test_sta_mini_output_variables(services: tuple[StudyService, OutputService, Config]) -> None:
     study_service, output_service, _ = services
     # Adds the study UUID inside the DB to avoid ForeignKey issues
     with db():

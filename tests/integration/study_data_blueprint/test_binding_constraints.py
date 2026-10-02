@@ -17,6 +17,7 @@ from unittest.mock import ANY
 import numpy as np
 import pandas as pd
 import pytest
+from httpx import Headers
 from httpx._exceptions import HTTPError
 from starlette.testclient import TestClient
 
@@ -92,7 +93,7 @@ class TestBindingConstraints:
 
     @pytest.mark.flaky(reruns=3)
     def test_update_multiple_binding_constraints(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         preparer = PreparerProxy(client, user_access_token)
         study_id = preparer.create_study("foo", version=880)
         body = {}
@@ -167,7 +168,7 @@ class TestBindingConstraints:
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_lifecycle__nominal(self, client: TestClient, user_access_token: str, study_type: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # =============================
         #  STUDY PREPARATION
@@ -661,7 +662,7 @@ class TestBindingConstraints:
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_for_version_870(self, client: TestClient, user_access_token: str, study_type: str, tmp_path: Path) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # =============================
         #  STUDY PREPARATION
@@ -1357,7 +1358,7 @@ class TestBindingConstraints:
         In the case of an update and depending on the values of the `operator` and `time_step` parameters,
         we must also control the preservation or zeroing of the matrix values.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # =======================
         #  RAW STUDY PREPARATION

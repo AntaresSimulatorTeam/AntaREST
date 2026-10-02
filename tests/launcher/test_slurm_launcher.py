@@ -392,8 +392,8 @@ def test_run_study(
         cache=Mock(),
     )
 
-    slurm_launcher.start = Mock()
-    slurm_launcher._delete_workspace_file = Mock()
+    object.__setattr__(slurm_launcher, "start", Mock())
+    object.__setattr__(slurm_launcher, "_delete_workspace_file", Mock())
 
     job_id = str(uuid.uuid4())
     studies_in = slurm_launcher.local_workspace / "STUDIES_IN"
@@ -414,7 +414,7 @@ def test_run_study(
         if launcher_called:
             slurm_launcher.data_repo_tinydb.save_study(StudyDTO(job_id))
 
-    slurm_launcher._call_launcher = call_launcher_mock  # type: ignore[method-assign]
+    object.__setattr__(slurm_launcher, "_call_launcher", call_launcher_mock)
 
     # When the launcher is called
     study_uuid = str(uuid.uuid4())
@@ -440,10 +440,10 @@ def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
         event_bus=Mock(),
         cache=Mock(),
     )
-    slurm_launcher._import_study_output = Mock()
-    slurm_launcher._delete_workspace_file = Mock()
-    slurm_launcher._remove_study_from_workspace_db = Mock()
-    slurm_launcher.stop = Mock()
+    object.__setattr__(slurm_launcher, "_import_study_output", Mock())
+    object.__setattr__(slurm_launcher, "_delete_workspace_file", Mock())
+    object.__setattr__(slurm_launcher, "_remove_study_from_workspace_db", Mock())
+    object.__setattr__(slurm_launcher, "stop", Mock())
 
     study1 = Mock()
     study1.done = True

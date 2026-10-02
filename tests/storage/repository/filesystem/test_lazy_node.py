@@ -40,7 +40,7 @@ class MockLazyNode(LazyNode[str, str, str]):
         self.config.path.write_text(data)
 
     def check_errors(self, data: str, url: list[str] | None = None, raising: bool = False) -> list[str]:
-        pass  # not used
+        return []  # not used
 
 
 def test_get_no_expanded_txt(tmp_path: Path) -> None:
