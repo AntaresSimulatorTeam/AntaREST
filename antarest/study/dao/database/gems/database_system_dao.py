@@ -12,16 +12,20 @@
 from typing import Any, List
 
 from sqlalchemy import Row, delete, insert, select
+from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import (
+    GemsInvalidConnection,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
+from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
+from antarest.study.dao.database.models.gems.library import GEMS_MODELS_PORTS_TABLE
 from antarest.study.dao.database.models.gems.system import (
+    GEMS_COMPONENT_CONNECTIONS_TABLE,
     GEMS_COMPONENT_PARAMETERS_TABLE,
     GEMS_COMPONENT_PROPERTIES_TABLE,
     GEMS_COMPONENTS_TABLE,
@@ -29,6 +33,24 @@ from antarest.study.dao.database.models.gems.system import (
 )
 
 METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
+
+
+def _silently_deduplicate_duplicated_connections(
+    connections: list[GemsComponentConnection],
+) -> list[GemsComponentConnection]:
+    connections_set = set()
+    for connection in connections:
+        component_a = connection.component1 if connection.component1 < connection.component2 else connection.component2
+        component_b = connection.component2 if connection.component1 < connection.component2 else connection.component1
+        port_a = connection.port1 if connection.component1 < connection.component2 else connection.port2
+        port_b = connection.port2 if connection.component1 < connection.component2 else connection.port1
+
+        connections_set.add((component_a, component_b, port_a, port_b))
+
+    connections = [
+        GemsComponentConnection(component1=c[0], component2=c[1], port1=c[2], port2=c[3]) for c in connections_set
+    ]
+    return connections
 
 
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
@@ -43,9 +65,15 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             return None
 
         components = self.get_components()
+        connections = self._get_connections()
 
         return GemsSystem.model_validate(
-            {"id": metadata_row.system_id, "description": metadata_row.description, "components": components}
+            {
+                "id": metadata_row.system_id,
+                "description": metadata_row.description,
+                "components": components,
+                "connections": connections,
+            }
         )
 
     def _get_system_row_if_exists(self) -> Row[tuple[Any]] | None:
@@ -126,6 +154,26 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
         return component_properties
 
+    def _get_connections(self) -> List[GemsComponentConnection]:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        connections_stmt = select(GEMS_COMPONENT_CONNECTIONS_TABLE).where(
+            GEMS_COMPONENT_CONNECTIONS_TABLE.c.study_data_id == study_data_id
+        )
+        connections_rows = session.execute(connections_stmt).fetchall()
+        connections: List[GemsComponentConnection] = []
+        for connection_row in connections_rows:
+            connections.append(
+                GemsComponentConnection(
+                    component1=connection_row.component1,
+                    component2=connection_row.component2,
+                    port1=connection_row.port1,
+                    port2=connection_row.port2,
+                )
+            )
+        return connections
+
     @override
     def save_system(self, system: GemsSystem) -> None:
         study_data_id = self._study_data_id
@@ -143,7 +191,13 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         session.execute(insert(GEMS_SYSTEM_METADATA_TABLE), metadata_values)
 
-        self.save_components(system.components)
+        try:
+            self.save_components(system.components)
+            self._save_connections(system.connections)
+            session.commit()
+        except Exception as e:
+            session.rollback()
+            raise e
 
     @override
     def save_components(self, components: List[GemsComponent]) -> None:
@@ -201,4 +255,138 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
 
-        session.commit()
+    def _get_components_library_and_model(self) -> dict[str, tuple[str, str]]:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        stmt = select(
+            GEMS_COMPONENTS_TABLE.c.component_id, GEMS_COMPONENTS_TABLE.c.library_id, GEMS_COMPONENTS_TABLE.c.model_id
+        ).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id)
+        return {row.component_id: (row.library_id, row.model_id) for row in session.execute(stmt).fetchall()}
+
+    def _raise_the_right_connection_exception(
+        self, connections: List[GemsComponentConnection], exc: IntegrityError
+    ) -> None:
+
+        self._check_connection_does_not_link_port_component_to_itself(connections, exc)
+
+        components_library_and_model = self._get_components_library_and_model()
+        self._check_components_exist(components_library_and_model, connections, exc)
+        self._check_ports_exist_in_models(components_library_and_model, connections, exc)
+
+        # All components and ports exist and no self-connection was found.
+        # It means the DB table is not filled as it should.
+        raise ValueError("The connections table is not filled as it should") from exc
+
+    def _check_ports_exist_in_models(
+        self,
+        components_library_and_model: dict[str, tuple[str, str]],
+        connections: list[GemsComponentConnection],
+        exc: IntegrityError,
+    ) -> None:
+        session = self._db_session
+        study_data_id = self._study_data_id
+
+        valid_ports_stmt = select(
+            GEMS_MODELS_PORTS_TABLE.c.library_id, GEMS_MODELS_PORTS_TABLE.c.model_id, GEMS_MODELS_PORTS_TABLE.c.port_id
+        ).where(GEMS_MODELS_PORTS_TABLE.c.study_data_id == study_data_id)
+        valid_ports = {
+            (row.library_id, row.model_id, row.port_id) for row in session.execute(valid_ports_stmt).fetchall()
+        }
+
+        for connection in connections:
+            for component_id, port_id in (
+                (connection.component1, connection.port1),
+                (connection.component2, connection.port2),
+            ):
+                library_id, model_id = components_library_and_model[component_id]
+                if (library_id, model_id, port_id) not in valid_ports:
+                    raise GemsInvalidConnection(
+                        f"Component '{component_id}' does not have a port named '{port_id}'"
+                    ) from exc
+
+    def _check_components_exist(
+        self,
+        components_library_and_model: dict[str, tuple[str, str]],
+        connections: list[GemsComponentConnection],
+        exc: IntegrityError,
+    ) -> None:
+        referenced_component_ids = {
+            c for connection in connections for c in (connection.component1, connection.component2)
+        }
+        if invalid_component_ids := referenced_component_ids - components_library_and_model.keys():
+            raise GemsInvalidConnection(
+                f"Connection(s) reference non-existing component(s): {sorted(invalid_component_ids)}"
+            ) from exc
+
+    def _check_connection_does_not_link_port_component_to_itself(
+        self, connections: list[GemsComponentConnection], exc: IntegrityError
+    ) -> None:
+        for connection in connections:
+            if connection.component1 == connection.component2 and connection.port1 == connection.port2:
+                raise GemsInvalidConnection(
+                    f"A connection cannot link the port '{connection.port1}' of component '{connection.component1}' to itself"
+                ) from exc
+
+    def _save_connections(self, connections: List[GemsComponentConnection] | None) -> None:
+
+        if not connections:
+            return
+
+        # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
+        # so we silently remove them to keep the primary in the gems_component_connections table.
+        connections = _silently_deduplicate_duplicated_connections(connections)
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        if not self._get_system_row_if_exists():
+            raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
+
+        # Clean all existing data regarding connections
+        session.execute(
+            delete(GEMS_COMPONENT_CONNECTIONS_TABLE).where(
+                GEMS_COMPONENT_CONNECTIONS_TABLE.c.study_data_id == study_data_id
+            )
+        )
+
+        if connections:
+            # `library_idX`/`model_idX` are denormalized from `gems_components` so that the port foreign keys
+            # can check that `portX` truly belongs to the model of `componentX` (see the connections table
+            # definition). Unknown components fall back to an empty string, which cannot match any real
+            # component and therefore still triggers a foreign key violation, correctly reported below.
+            components_library_and_model = self._get_components_library_and_model()
+
+            if missing := sorted(
+                {
+                    connected_component
+                    for conn in connections
+                    for connected_component in (conn.component1, conn.component2)
+                }
+                - components_library_and_model.keys()
+            ):
+                raise GemsInvalidConnection(f"Connection(s) reference non-existing component(s): {missing}")
+
+            rows = []
+            for connection in connections:
+                library_id1, model_id1 = components_library_and_model[connection.component1]
+                library_id2, model_id2 = components_library_and_model[connection.component2]
+                rows.append(
+                    {
+                        "study_data_id": study_data_id,
+                        "component1": connection.component1,
+                        "component2": connection.component2,
+                        "port1": connection.port1,
+                        "port2": connection.port2,
+                        "library_id1": library_id1,
+                        "model_id1": model_id1,
+                        "library_id2": library_id2,
+                        "model_id2": model_id2,
+                    }
+                )
+
+            try:
+                session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
+            except IntegrityError as e:
+                self._raise_the_right_connection_exception(connections, e)
+                session.rollback()
