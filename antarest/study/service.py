@@ -97,6 +97,10 @@ from antarest.study.business.model.area_model import AreaCreation, AreaInfo, Are
 from antarest.study.business.model.binding_constraint_model import LinkTerm
 from antarest.study.business.model.config.general_model import GeneralConfigUpdate
 from antarest.study.business.model.link_model import Link, LinkUpdate
+from antarest.study.business.model.reserve_certification_model import (
+    StorageReserveCertification,
+    ThermalReserveCertification,
+)
 from antarest.study.business.model.study_data_model import StudyDataDTO
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation, UserResourceDataRemoval
 from antarest.study.business.model.xpansion_model import (
@@ -126,6 +130,7 @@ from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
+    STUDY_VERSION_10_2,
     MatrixFrequency,
     RawStudy,
     StorageMode,
@@ -2765,6 +2770,26 @@ class StudyService:
         st_storages = dao.get_all_st_storages()
         st_storages_constraints = dao.get_all_st_storage_additional_constraints()
         hydro_properties = dao.get_all_hydro_properties()
+        study_version = dao.get_version()
+
+        # Fields relative to a specific version
+        all_reserve_global_parameters = {}
+        all_reserve_definitions = {}
+        all_thermal_reserve_symmetries = {}
+        all_thermal_reserve_certifications = {}
+        all_st_storage_reserve_symmetries = {}
+        all_st_storage_reserve_certifications = {}
+        all_hydro_reserve_symmetries = {}
+        all_hydro_reserve_certifications = {}
+        if study_version >= STUDY_VERSION_10_2:
+            all_reserve_global_parameters = dao.get_all_reserves_global_parameters()
+            all_reserve_definitions = dao.get_all_reserve_definitions()
+            all_thermal_reserve_symmetries = dao.get_all_thermal_reserve_symmetries()
+            all_thermal_reserve_certifications = dao.get_all_thermal_reserve_certifications()
+            all_st_storage_reserve_symmetries = dao.get_all_st_storage_reserve_symmetries()
+            all_st_storage_reserve_certifications = dao.get_all_st_storage_reserve_certifications()
+            all_hydro_reserve_symmetries = dao.get_all_hydro_reserve_symmetries()
+            all_hydro_reserve_certifications = dao.get_all_hydro_reserve_certifications()
 
         try:
             renewable_clusters = dao.get_all_renewables()
@@ -2777,25 +2802,62 @@ class StudyService:
                 "id": area_id,
                 "name": area_names[area_id],
                 "properties": properties,
-                "thermals": thermal_clusters.get(area_id, {}).values(),
+                "thermals": [],
                 "renewables": renewable_clusters.get(area_id, {}).values(),
                 "st_storages": [],
                 "ui": dao.get_area_ui(area_id),
             }
 
-            # Hydro
-            hydro_allocation = dao.get_hydro_allocation(area_id)
-            area["hydro"] = {
-                "allocation": hydro_allocation,
-                "management_options": hydro_properties[area_id].management_options,
-                "inflow_structure": hydro_properties[area_id].inflow_structure,
-            }
+            # Reserve certifications
+            reordered_thermal_certifications: dict[str, dict[str, ThermalReserveCertification]] = {}
+            all_thermal_certifications_for_area = all_thermal_reserve_certifications.get(area_id, {})
+            for reserve_id, value in all_thermal_certifications_for_area.items():
+                for thermal_id, thermal_certification in value.items():
+                    reordered_thermal_certifications.setdefault(thermal_id, {})[reserve_id] = thermal_certification
+
+            reordered_st_storage_certifications: dict[str, dict[str, StorageReserveCertification]] = {}
+            all_st_storage_certifications_for_area = all_st_storage_reserve_certifications.get(area_id, {})
+            for reserve_id, values in all_st_storage_certifications_for_area.items():
+                for sts_id, sts_certification in values.items():
+                    reordered_st_storage_certifications.setdefault(sts_id, {})[reserve_id] = sts_certification
+
+            # Thermals
+            thermals_dict = thermal_clusters.get(area_id, {})
+            for thermal_id, thermal in thermals_dict.items():
+                data = {**thermal.model_dump()}
+                if study_version >= STUDY_VERSION_10_2:
+                    lowered_id = thermal_id.lower()
+                    data["symmetries"] = all_thermal_reserve_symmetries.get(area_id, {}).get(lowered_id, [[]])
+                    data["certifications"] = reordered_thermal_certifications.get(lowered_id, {})
+                area["thermals"].append(data)
 
             # Short-term storages
             storage_dict = st_storages.get(area_id, {})
             for storage_id, storage in storage_dict.items():
                 sts_constraints = st_storages_constraints.get(area_id, {}).get(storage_id, [])
-                area["st_storages"].append({**storage.model_dump(), "constraints": sts_constraints})
+                data = {**storage.model_dump(), "constraints": sts_constraints}
+                if study_version >= STUDY_VERSION_10_2:
+                    data["symmetries"] = all_st_storage_reserve_symmetries.get(area_id, {}).get(storage_id, [[]])
+                    data["certifications"] = reordered_st_storage_certifications.get(storage_id, {})
+                area["st_storages"].append(data)
+
+            # Hydro
+            hydro_allocation = dao.get_hydro_allocation(area_id)
+            hydro_dict: dict[str, Any] = {
+                "allocation": hydro_allocation,
+                "management_options": hydro_properties[area_id].management_options,
+                "inflow_structure": hydro_properties[area_id].inflow_structure,
+            }
+            if study_version >= STUDY_VERSION_10_2:
+                hydro_dict["symmetries"] = all_hydro_reserve_symmetries.get(area_id, [[]])
+                hydro_dict["certifications"] = all_hydro_reserve_certifications.get(area_id, {})
+
+            area["hydro"] = hydro_dict
+
+            # Reserve global parameters and definitions
+            if study_version >= STUDY_VERSION_10_2:
+                area["reserve_global_parameters"] = all_reserve_global_parameters.get(area_id, {})
+                area["reserve_definitions"] = all_reserve_definitions.get(area_id, {})
 
             areas.append(area)
 
