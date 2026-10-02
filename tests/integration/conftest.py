@@ -148,9 +148,9 @@ def app_and_services(base_app: FastAPI, tmp_path: Path, db_path: Path) -> Iterab
             return len(studies) == 1
 
     wait_for(is_study_scanned, timeout=10, sleep_time=0.01)
+    services.watcher.stop()
 
     yield app, services
-    services.watcher.stop()
 
 
 @pytest.fixture(name="app")
