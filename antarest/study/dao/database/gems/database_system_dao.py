@@ -356,23 +356,37 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             # definition). Unknown components fall back to an empty string, which cannot match any real
             # component and therefore still triggers a foreign key violation, correctly reported below.
             components_library_and_model = self._get_components_library_and_model()
-            connections_dict = [
+
+            if missing := sorted(
                 {
-                    "study_data_id": study_data_id,
-                    "component1": connection.component1,
-                    "component2": connection.component2,
-                    "port1": connection.port1,
-                    "port2": connection.port2,
-                    "library_id1": components_library_and_model.get(connection.component1, ("", ""))[0],
-                    "model_id1": components_library_and_model.get(connection.component1, ("", ""))[1],
-                    "library_id2": components_library_and_model.get(connection.component2, ("", ""))[0],
-                    "model_id2": components_library_and_model.get(connection.component2, ("", ""))[1],
+                    connected_component
+                    for conn in connections
+                    for connected_component in (conn.component1, conn.component2)
                 }
-                for connection in connections
-            ]
+                - components_library_and_model.keys()
+            ):
+                raise GemsInvalidConnection(f"Connection(s) reference non-existing component(s): {missing}")
+
+            rows = []
+            for connection in connections:
+                library_id1, model_id1 = components_library_and_model[connection.component1]
+                library_id2, model_id2 = components_library_and_model[connection.component2]
+                rows.append(
+                    {
+                        "study_data_id": study_data_id,
+                        "component1": connection.component1,
+                        "component2": connection.component2,
+                        "port1": connection.port1,
+                        "port2": connection.port2,
+                        "library_id1": library_id1,
+                        "model_id1": model_id1,
+                        "library_id2": library_id2,
+                        "model_id2": model_id2,
+                    }
+                )
 
             try:
-                session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), connections_dict)
+                session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
             except IntegrityError as e:
-                session.rollback()
                 self._raise_the_right_connection_exception(connections, e)
+                session.rollback()
