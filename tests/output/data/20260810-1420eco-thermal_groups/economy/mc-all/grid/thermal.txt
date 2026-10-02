@@ -1,0 +1,3 @@
+area id	id	name	group	unit count	nominal capacity	min stable power	min up/down time	spinning	co2	marginal cost	fixed cost	startup cost	market bid cost	spread cost
+es	es_nuc	es_nuc	ES_NUCLEAR	1	1000.000000	0.000000	1	1	0.000000	0.000000	50.000000	0.000000	0.000000	0.000000	0.000000
+fr	fr_nuclear	fr_nuclear	FR_NUCLEAR	1	1000.000000	0.000000	1	1	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000	0.000000
