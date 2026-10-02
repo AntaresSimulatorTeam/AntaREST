@@ -72,19 +72,19 @@ class StudyXpansionDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_n
 
 class StudyShortTermStorageDTO(STStorage, alias_generator=to_camel, populate_by_name=True):
     constraints: list[STStorageAdditionalConstraint]
-    symmetries: ReserveSymmetries = [[]]
-    certifications: dict[ReserveDefinitionId, StorageReserveCertification] = {}
+    reserve_symmetries: ReserveSymmetries = [[]]
+    reserve_certifications: dict[ReserveDefinitionId, StorageReserveCertification] = {}
 
 
 class StudyThermalClusterDTO(ThermalCluster, alias_generator=to_camel, populate_by_name=True):
-    symmetries: ReserveSymmetries = [[]]
-    certifications: dict[ReserveDefinitionId, ThermalReserveCertification] = {}
+    reserve_symmetries: ReserveSymmetries = [[]]
+    reserve_certifications: dict[ReserveDefinitionId, ThermalReserveCertification] = {}
 
 
 class StudyHydroDTO(HydroProperties, alias_generator=to_camel, populate_by_name=True):
     allocation: HydroAllocation
-    symmetries: ReserveSymmetries = [[]]
-    certifications: dict[ReserveDefinitionId, StorageReserveCertification] = {}
+    reserve_symmetries: ReserveSymmetries = [[]]
+    reserve_certifications: dict[ReserveDefinitionId, StorageReserveCertification] = {}
 
 
 class StudyAreasDTO(AntaresBaseModel, alias_generator=to_camel, populate_by_name=True):
