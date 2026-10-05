@@ -26,7 +26,11 @@ from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.core.utils.sql_utils import upsert_one
-from antarest.study.business.model.district_model import District, validate_district_against_version
+from antarest.study.business.model.district_model import (
+    District,
+    check_district_complete,
+    validate_district_against_version,
+)
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
@@ -68,16 +72,16 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
+        check_district_complete(district, self.get_impl().get_version())
+
         values = {
             "study_data_id": study_data_id,
             "district_id": district.id,
-            "name": district.name,
-            "output": district.output,
-            "comments": district.comments,
-            "apply_filter": district.apply_filter,
             "add_areas": json.dumps(district.add_areas),
             "subtract_areas": json.dumps(district.subtract_areas),
+            **district.model_dump(mode="json", exclude={"add_areas", "subtract_areas", "id"}),
         }
+
         upsert_one(session, DISTRICT_TABLE, values)
         session.commit()
 

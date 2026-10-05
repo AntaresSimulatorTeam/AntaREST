@@ -265,3 +265,14 @@ def update_district(district: District, district_update: DistrictUpdate) -> Dist
         )
 
     return updated_district
+
+
+def check_district_complete(district: District, version: StudyVersion) -> None:
+    """
+    Raise ValueError if any version-required field on `district` is None.
+    """
+    if version >= STUDY_VERSION_10_2:
+        required = ["filter_synthesis", "filter_year_by_year"]
+        missing = [f for f in required if getattr(district, f) is None]
+        if missing:
+            raise ValueError(f"District '{district.id}' is missing required field(s) for version {version}: {missing}")
