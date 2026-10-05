@@ -70,7 +70,8 @@ class DistrictFileData(AntaresBaseModel):
 
     @classmethod
     def from_data(cls, data: dict[str, Any], district_id: str) -> "DistrictFileData":
-        data["caption"] = district_id
+        if "caption" not in data:
+            data["caption"] = district_id
         return DistrictFileData.model_validate(data)
 
     def to_model(self, district_id: str) -> District:
