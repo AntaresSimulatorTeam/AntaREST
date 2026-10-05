@@ -35,6 +35,9 @@ class TestDistrictDao:
         assert result.name == "District 1"
         assert result.output is True
         assert result.comments == "test"
+        # As the DAO used for this test is pre v10.2 we should see nullable values for filters
+        assert result.filter_synthesis is None
+        assert result.filter_year_by_year is None
 
     def test_save_district_with_areas(self, dao: StudyDao) -> None:
         save_area(dao, "Paris")
