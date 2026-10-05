@@ -210,9 +210,7 @@ def initialize_district(district: District, version: StudyVersion) -> None:
             initialize_field_with_default_value(district, field, FILTER_VALUES)
 
 
-def validate_district_against_version(
-    version: StudyVersion, district: District | DistrictCreation | DistrictUpdate
-) -> None:
+def validate_district_against_version(version: StudyVersion, district: District) -> None:
     """
     Validates input district data against the provided study versions
 
