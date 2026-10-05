@@ -19,7 +19,7 @@ from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.common import FILTER_VALUES, CommaSeparatedFilterOptions
-from antarest.study.business.model.utils import check_min_version
+from antarest.study.business.model.utils import check_min_version, initialize_field_with_default_value
 from antarest.study.model import STUDY_VERSION_10_2
 
 
@@ -201,18 +201,13 @@ class District(AntaresBaseModel):
         )
 
 
-def _initialize_field_default(district: District, field: str, default_value: Any) -> None:
-    if getattr(district, field) is None:
-        setattr(district, field, default_value)
-
-
 def initialize_district(district: District, version: StudyVersion) -> None:
     """
     Set undefined version-specific fields to default values.
     """
     if version >= STUDY_VERSION_10_2:
         for field in ["filter_synthesis", "filter_year_by_year"]:
-            _initialize_field_default(district, field, FILTER_VALUES)
+            initialize_field_with_default_value(district, field, FILTER_VALUES)
 
 
 def validate_district_against_version(

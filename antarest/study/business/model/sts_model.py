@@ -19,7 +19,7 @@ from antarest.core.exceptions import InvalidFieldForVersionError, ShortTermStora
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.utils import check_min_version
+from antarest.study.business.model.utils import check_min_version, initialize_field_with_default_value
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId, ItemName
@@ -192,32 +192,27 @@ def validate_st_storage_against_version(
         check_min_version(storage_data, "allow_overflow", version)
 
 
-def _initialize_field_default(storage: STStorage, field: str, default_value: Any) -> None:
-    if getattr(storage, field) is None:
-        setattr(storage, field, default_value)
-
-
 def initialize_st_storage(storage: STStorage, version: StudyVersion) -> None:
     """
     Set undefined version-specific fields to default values.
     """
     if version >= STUDY_VERSION_8_6:
         for field in ["injection_nominal_capacity", "withdrawal_nominal_capacity", "reservoir_capacity"]:
-            _initialize_field_default(storage, field, 0)
-        _initialize_field_default(storage, "efficiency", 1)
-        _initialize_field_default(storage, "initial_level", 0.5)
-        _initialize_field_default(storage, "initial_level_optim", False)
+            initialize_field_with_default_value(storage, field, 0)
+        initialize_field_with_default_value(storage, "efficiency", 1)
+        initialize_field_with_default_value(storage, "initial_level", 0.5)
+        initialize_field_with_default_value(storage, "initial_level_optim", False)
 
     if version >= STUDY_VERSION_8_8:
-        _initialize_field_default(storage, "enabled", True)
+        initialize_field_with_default_value(storage, "enabled", True)
 
     if version >= STUDY_VERSION_9_2:
-        _initialize_field_default(storage, "efficiency_withdrawal", 1)
-        _initialize_field_default(storage, "penalize_variation_injection", False)
-        _initialize_field_default(storage, "penalize_variation_withdrawal", False)
+        initialize_field_with_default_value(storage, "efficiency_withdrawal", 1)
+        initialize_field_with_default_value(storage, "penalize_variation_injection", False)
+        initialize_field_with_default_value(storage, "penalize_variation_withdrawal", False)
 
     if version >= STUDY_VERSION_9_3:
-        _initialize_field_default(storage, "allow_overflow", False)
+        initialize_field_with_default_value(storage, "allow_overflow", False)
 
 
 def check_st_storage_complete(storage: STStorage, version: StudyVersion) -> None:

@@ -26,7 +26,7 @@ from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.common import CommaSeparatedFilterOptions
-from antarest.study.business.model.utils import check_min_version
+from antarest.study.business.model.utils import check_min_version, initialize_field_with_default_value
 from antarest.study.model import STUDY_VERSION_8_3, STUDY_VERSION_8_7
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
@@ -391,21 +391,16 @@ def validate_binding_constraint_against_version(
         check_min_version(constraint_data, "group", version)
 
 
-def _initialize_field_default(constraint: BindingConstraint, field: str, default_value: Any) -> None:
-    if getattr(constraint, field) is None:
-        setattr(constraint, field, default_value)
-
-
 def initialize_binding_constraint(constraint: BindingConstraint, version: StudyVersion) -> None:
     """
     Set undefined version-specific fields to default values.
     """
     if version >= STUDY_VERSION_8_3:
         for field in ["filter_year_by_year", "filter_synthesis"]:
-            _initialize_field_default(constraint, field, [])
+            initialize_field_with_default_value(constraint, field, [])
 
     if version >= STUDY_VERSION_8_7:
-        _initialize_field_default(constraint, "group", DEFAULT_GROUP)
+        initialize_field_with_default_value(constraint, "group", DEFAULT_GROUP)
 
 
 def create_binding_constraint(constraint_data: BindingConstraintCreation, version: StudyVersion) -> BindingConstraint:

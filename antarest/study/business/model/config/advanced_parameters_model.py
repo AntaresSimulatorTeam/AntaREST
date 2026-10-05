@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import BeforeValidator, ConfigDict
@@ -18,7 +18,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.utils import check_min_version
+from antarest.study.business.model.utils import check_min_version, initialize_field_with_default_value
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 
 
@@ -182,17 +182,12 @@ def validate_advanced_parameters_against_version(
         check_min_version(parameters_data, "initial_reservoir_levels", version)
 
 
-def _initialize_field_default(parameters: AdvancedParameters, field: str, default_value: Any) -> None:
-    if getattr(parameters, field) is None:
-        setattr(parameters, field, default_value)
-
-
 def initialize_advanced_parameters_against_version(parameters: AdvancedParameters, version: StudyVersion) -> None:
     """
     Set undefined version-specific fields to default values.
     """
     if version < STUDY_VERSION_9_2:
-        _initialize_field_default(parameters, "initial_reservoir_levels", InitialReservoirLevel.COLD_START)
+        initialize_field_with_default_value(parameters, "initial_reservoir_levels", InitialReservoirLevel.COLD_START)
 
     if version >= STUDY_VERSION_9_3:
-        _initialize_field_default(parameters, "accurate_shave_peaks_include_short_term_storage", False)
+        initialize_field_with_default_value(parameters, "accurate_shave_peaks_include_short_term_storage", False)

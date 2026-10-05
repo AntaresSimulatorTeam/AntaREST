@@ -40,7 +40,7 @@ from antarest.core.calendar import HOURS_IN_WEEK
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.business.model.utils import check_min_version
+from antarest.study.business.model.utils import check_min_version, initialize_field_with_default_value
 from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
@@ -405,30 +405,25 @@ def validate_thermal_cluster_against_version(
         cluster_data.group = ThermalClusterGroup(cluster_data.group).value
 
 
-def _initialize_field_default(cluster: ThermalCluster, field: str, default_value: Any) -> None:
-    if getattr(cluster, field) is None:
-        setattr(cluster, field, default_value)
-
-
 def initialize_thermal_cluster(cluster: ThermalCluster, version: StudyVersion) -> None:
     """
     Set undefined version-specific fields to default values.
     """
     if version >= STUDY_VERSION_8_6:
         for field in ["nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"]:
-            _initialize_field_default(cluster, field, 0)
+            initialize_field_with_default_value(cluster, field, 0)
 
     if version >= STUDY_VERSION_8_7:
-        _initialize_field_default(cluster, "cost_generation", ThermalCostGeneration.SET_MANUALLY)
-        _initialize_field_default(cluster, "efficiency", 100.0)
-        _initialize_field_default(cluster, "variable_o_m_cost", 0.0)
+        initialize_field_with_default_value(cluster, "cost_generation", ThermalCostGeneration.SET_MANUALLY)
+        initialize_field_with_default_value(cluster, "efficiency", 100.0)
+        initialize_field_with_default_value(cluster, "variable_o_m_cost", 0.0)
 
     if version >= STUDY_VERSION_10_2:
-        _initialize_field_default(cluster, "ramping_enabled", False)
-        _initialize_field_default(cluster, "power_increase_cost", 0.0)
-        _initialize_field_default(cluster, "power_decrease_cost", 0.0)
-        _initialize_field_default(cluster, "max_upward_power_ramping_rate", 0.0)
-        _initialize_field_default(cluster, "max_downward_power_ramping_rate", 0.0)
+        initialize_field_with_default_value(cluster, "ramping_enabled", False)
+        initialize_field_with_default_value(cluster, "power_increase_cost", 0.0)
+        initialize_field_with_default_value(cluster, "power_decrease_cost", 0.0)
+        initialize_field_with_default_value(cluster, "max_upward_power_ramping_rate", 0.0)
+        initialize_field_with_default_value(cluster, "max_downward_power_ramping_rate", 0.0)
 
 
 def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersion) -> None:

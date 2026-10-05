@@ -19,3 +19,8 @@ from antarest.core.exceptions import InvalidFieldForVersionError
 def check_min_version(data: Any, field: str, version: StudyVersion) -> None:
     if getattr(data, field) is not None:
         raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
+
+
+def initialize_field_with_default_value(obj: Any, field: str, default_value: Any) -> None:
+    if getattr(obj, field) is None:
+        setattr(obj, field, default_value)
