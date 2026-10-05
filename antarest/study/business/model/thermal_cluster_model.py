@@ -37,10 +37,10 @@ from pydantic.alias_generators import to_camel
 from typing_extensions import override
 
 from antarest.core.calendar import HOURS_IN_WEEK
-from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.utils import check_min_version
 from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
@@ -372,11 +372,6 @@ class ThermalClusterUpdate(AntaresBaseModel):
 ThermalClusterUpdates = dict[LowerCaseId, dict[LowerCaseId, ThermalClusterUpdate]]
 
 
-def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
-    if getattr(data, field) is not None:
-        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
-
-
 def validate_thermal_cluster_against_version(
     version: StudyVersion,
     cluster_data: ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate,
@@ -388,11 +383,11 @@ def validate_thermal_cluster_against_version(
     """
     if version < STUDY_VERSION_8_6:
         for field in ["nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"]:
-            _check_min_version(cluster_data, field, version)
+            check_min_version(cluster_data, field, version)
 
     if version < STUDY_VERSION_8_7:
         for field in ["cost_generation", "efficiency", "variable_o_m_cost"]:
-            _check_min_version(cluster_data, field, version)
+            check_min_version(cluster_data, field, version)
 
     if version < STUDY_VERSION_10_2:
         for field in [
@@ -402,7 +397,7 @@ def validate_thermal_cluster_against_version(
             "power_increase_cost",
             "power_decrease_cost",
         ]:
-            _check_min_version(cluster_data, field, version)
+            check_min_version(cluster_data, field, version)
 
     if cluster_data.group is not None and version < STUDY_VERSION_9_3:
         # Performs this transformation to fit with old behavior

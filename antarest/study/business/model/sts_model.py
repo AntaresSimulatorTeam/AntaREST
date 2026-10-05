@@ -19,6 +19,7 @@ from antarest.core.exceptions import InvalidFieldForVersionError, ShortTermStora
 from antarest.core.model import LowerCaseId, LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.utils import check_min_version
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import AreaId, ItemName
@@ -163,11 +164,6 @@ class STStorageUpdate(AntaresBaseModel):
 STStorageUpdates = dict[LowerCaseId, dict[LowerCaseId, STStorageUpdate]]
 
 
-def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
-    if getattr(data, field) is not None:
-        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
-
-
 def validate_st_storage_against_version(
     version: StudyVersion,
     storage_data: STStorage | STStorageCreation | STStorageUpdate,
@@ -186,14 +182,14 @@ def validate_st_storage_against_version(
             raise InvalidFieldForVersionError(f"Free groups are available since v9.2 and your study is in {version}")
 
     if version < STUDY_VERSION_8_8:
-        _check_min_version(storage_data, "enabled", version)
+        check_min_version(storage_data, "enabled", version)
 
     if version < STUDY_VERSION_9_2:
         for field in ["efficiency_withdrawal", "penalize_variation_injection", "penalize_variation_withdrawal"]:
-            _check_min_version(storage_data, field, version)
+            check_min_version(storage_data, field, version)
 
     if version < STUDY_VERSION_9_3:
-        _check_min_version(storage_data, "allow_overflow", version)
+        check_min_version(storage_data, "allow_overflow", version)
 
 
 def _initialize_field_default(storage: STStorage, field: str, default_value: Any) -> None:

@@ -84,7 +84,7 @@ class CreateDistrict(ICommand):
         if invalid_areas:
             return command_failed(message=f"District '{self.parameters.name}' has invalid areas: {invalid_areas}")
 
-        new_district_definition = create_district(self.parameters, district_id)
+        new_district_definition = create_district(self.parameters, district_id, self.study_version)
 
         study_data.save_district(new_district_definition)
 

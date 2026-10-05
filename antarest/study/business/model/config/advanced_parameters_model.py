@@ -18,6 +18,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.utils import check_min_version
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 
 
@@ -159,11 +160,6 @@ def update_advanced_parameters(
     return AdvancedParameters.model_validate(current_properties)
 
 
-def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
-    if getattr(data, field) is not None:
-        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
-
-
 def validate_advanced_parameters_against_version(
     version: StudyVersion,
     parameters_data: AdvancedParameters | AdvancedParametersUpdate,
@@ -180,10 +176,10 @@ def validate_advanced_parameters_against_version(
         raise InvalidFieldForVersionError("Shedding policy `accurate shave peaks` only exists in v9.2+ studies")
 
     if version < STUDY_VERSION_9_3:
-        _check_min_version(parameters_data, "accurate_shave_peaks_include_short_term_storage", version)
+        check_min_version(parameters_data, "accurate_shave_peaks_include_short_term_storage", version)
 
     if version >= STUDY_VERSION_9_2:
-        _check_min_version(parameters_data, "initial_reservoir_levels", version)
+        check_min_version(parameters_data, "initial_reservoir_levels", version)
 
 
 def _initialize_field_default(parameters: AdvancedParameters, field: str, default_value: Any) -> None:

@@ -18,6 +18,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.utils import check_min_version
 from antarest.study.model import (
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_5,
@@ -80,11 +81,6 @@ def update_adequacy_patch_parameters(
     return AdequacyPatchParameters.model_validate(current_properties)
 
 
-def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
-    if getattr(data, field) is not None:
-        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
-
-
 def validate_adequacy_patch_parameters_against_version(
     version: StudyVersion,
     parameters_data: AdequacyPatchParameters | AdequacyPatchParametersUpdate,
@@ -105,13 +101,13 @@ def validate_adequacy_patch_parameters_against_version(
             "threshold_display_local_matching_rule_violations",
             "threshold_csr_variable_bounds_relaxation",
         ]:
-            _check_min_version(parameters_data, field, version)
+            check_min_version(parameters_data, field, version)
 
     if version < STUDY_VERSION_9_3:
-        _check_min_version(parameters_data, "redispatch", version)
+        check_min_version(parameters_data, "redispatch", version)
 
     if version >= STUDY_VERSION_9_2:
-        _check_min_version(parameters_data, "ntc_between_physical_areas_out_adequacy_patch", version)
+        check_min_version(parameters_data, "ntc_between_physical_areas_out_adequacy_patch", version)
 
 
 def _initialize_field_default(parameters: AdequacyPatchParameters, field: str, default_value: Any) -> None:
