@@ -262,6 +262,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
 
+        session.commit()
+
     def _get_components_library_and_model(self) -> dict[str, tuple[str, str]]:
         study_data_id = self._study_data_id
         session = self._db_session
@@ -271,24 +273,22 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         ).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id)
         return {row.component_id: (row.library_id, row.model_id) for row in session.execute(stmt).fetchall()}
 
-    def _validate_connections(
+    def _raise_the_right_connection_error(
         self,
         components_library_and_model: dict[str, tuple[str, str]],
         connections: list[GemsComponentConnection],
+        exc: IntegrityError,
     ) -> None:
 
-        self._check_connection_does_not_link_port_component_to_itself(connections)
-        self._check_components_exist(components_library_and_model, connections)
-        self._check_ports_exist_in_models(components_library_and_model, connections)
-
-        # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
-        # so we have to check that the connections are not duplicated.
-        _check_no_duplicated_connections(connections)
+        self._check_connection_does_not_link_port_component_to_itself(connections, exc)
+        self._check_components_exist(components_library_and_model, connections, exc)
+        self._check_ports_exist_in_models(components_library_and_model, connections, exc)
 
     def _check_ports_exist_in_models(
         self,
         components_library_and_model: dict[str, tuple[str, str]],
         connections: list[GemsComponentConnection],
+        exc: IntegrityError,
     ) -> None:
         session = self._db_session
         study_data_id = self._study_data_id
@@ -307,10 +307,15 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             ):
                 library_id, model_id = components_library_and_model[component_id]
                 if (library_id, model_id, port_id) not in valid_ports:
-                    raise GemsInvalidConnection(f"Component '{component_id}' does not have a port named '{port_id}'")
+                    raise GemsInvalidConnection(
+                        f"Component '{component_id}' does not have a port named '{port_id}'"
+                    ) from exc
 
     def _check_components_exist(
-        self, components_library_and_model: dict[str, tuple[str, str]], connections: list[GemsComponentConnection]
+        self,
+        components_library_and_model: dict[str, tuple[str, str]],
+        connections: list[GemsComponentConnection],
+        exc: IntegrityError,
     ) -> None:
         referenced_component_ids = {
             c for connection in connections for c in (connection.component1, connection.component2)
@@ -318,16 +323,16 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if invalid_component_ids := referenced_component_ids - components_library_and_model.keys():
             raise GemsInvalidConnection(
                 f"Connection(s) reference non-existing component(s): {sorted(invalid_component_ids)}"
-            )
+            ) from exc
 
     def _check_connection_does_not_link_port_component_to_itself(
-        self, connections: list[GemsComponentConnection]
+        self, connections: list[GemsComponentConnection], exc: IntegrityError
     ) -> None:
         for connection in connections:
             if connection.component1 == connection.component2 and connection.port1 == connection.port2:
                 raise GemsInvalidConnection(
                     f"A connection cannot link the port '{connection.port1}' of component '{connection.component1}' to itself"
-                )
+                ) from exc
 
     def _save_connections(self, connections: List[GemsComponentConnection] | None) -> None:
 
@@ -339,6 +344,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         if not self._get_system_row_if_exists():
             raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
+
+        # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
+        # so we have to check that the connections are not duplicated.
+        _check_no_duplicated_connections(connections)
 
         # Clean all existing data regarding connections
         session.execute(
@@ -353,9 +362,25 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             # definition).
             components_library_and_model = self._get_components_library_and_model()
 
-            self._validate_connections(components_library_and_model, connections)
+            rows = self._build_rows(components_library_and_model, connections)
 
-            rows = []
+            try:
+                # Run the INSERT in a SAVEPOINT: if it still violates a foreign key despite the
+                # validation above (e.g. a concurrent modification), rolling back to the savepoint
+                # keeps the outer transaction usable, instead of leaving it aborted on PostgreSQL.
+                with session.begin_nested():
+                    session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
+                    session.commit()
+            except IntegrityError as e:
+                self._raise_the_right_connection_error(components_library_and_model, connections, e)
+
+    def _build_rows(
+        self, components_library_and_model: dict[str, tuple[str, str]], connections: list[GemsComponentConnection]
+    ) -> list[Any]:
+        study_data_id = self._study_data_id
+
+        rows = []
+        try:
             for connection in connections:
                 library_id1, model_id1 = components_library_and_model[connection.component1]
                 library_id2, model_id2 = components_library_and_model[connection.component2]
@@ -372,12 +397,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                         "model_id2": model_id2,
                     }
                 )
+        except KeyError as e:
+            raise GemsInvalidConnection(
+                f"Component '{e.args[0]}' does not exist but a connection tries to use it"
+            ) from e
 
-            try:
-                # Run the INSERT in a SAVEPOINT: if it still violates a foreign key despite the
-                # validation above (e.g. a concurrent modification), rolling back to the savepoint
-                # keeps the outer transaction usable, instead of leaving it aborted on PostgreSQL.
-                with session.begin_nested():
-                    session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
-            except IntegrityError as e:
-                raise ValueError("The connections table is not filled as it should") from e
+        return rows
