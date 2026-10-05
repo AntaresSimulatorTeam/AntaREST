@@ -45,7 +45,7 @@ class GemsComponent(AntaresBaseModel):
 
 
 class GemsComponentConnection(AntaresBaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case, frozen=True)
 
     component1: str
     component2: str
