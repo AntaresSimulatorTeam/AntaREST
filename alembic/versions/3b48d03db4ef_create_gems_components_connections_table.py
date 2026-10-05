@@ -75,7 +75,7 @@ def upgrade():
             name="fk_gems_component_connections_component2_model",
             ondelete="CASCADE",
         ),
-        # Ensures `port2` is actually a port of component1's model.
+        # Ensures `port2` is actually a port of component2's model.
         ForeignKeyConstraint(
             ["study_data_id", "library_id2", "model_id2", "port2"],
             [
