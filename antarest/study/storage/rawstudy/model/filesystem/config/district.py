@@ -18,7 +18,11 @@ from pydantic import ConfigDict, Field
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.model.common import CommaSeparatedFilterOptions
-from antarest.study.business.model.district_model import District
+from antarest.study.business.model.district_model import (
+    District,
+    initialize_district,
+    validate_district_against_version,
+)
 
 
 class DistrictFileData(AntaresBaseModel):
@@ -85,10 +89,14 @@ class DistrictFileData(AntaresBaseModel):
 
 
 def parse_district(item: dict[str, Any], district_id: str, study_version: StudyVersion) -> District:
-    return DistrictFileData.from_data(item, district_id).to_model(district_id)
+    district = DistrictFileData.from_data(item, district_id).to_model(district_id)
+    validate_district_against_version(study_version, district)
+    initialize_district(district, study_version)
+    return district
 
 
 def serialize_district(district: District, study_version: StudyVersion) -> dict[str, Any]:
+    validate_district_against_version(study_version, district)
     district_file_data = DistrictFileData.from_model(district)
     district_dict = district_file_data.model_dump(exclude_none=True, mode="json", by_alias=True)
 
