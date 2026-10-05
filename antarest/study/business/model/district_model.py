@@ -197,6 +197,8 @@ class District(AntaresBaseModel):
                 "areas": sorted(areas),
                 "output": self.output,
                 "comments": self.comments or "",
+                "filter_synthesis": self.filter_synthesis,
+                "filter_year_by_year": self.filter_year_by_year,
             }
         )
 
@@ -228,9 +230,10 @@ def create_district(district_creation: DistrictCreation, district_id: str, versi
     apply_filter = district_creation.apply_filter or DistrictApplyFilter.remove_all
     add_areas = district_creation.areas if apply_filter == DistrictApplyFilter.remove_all else []
     subtract_areas = district_creation.areas if apply_filter == DistrictApplyFilter.add_all else []
+    fields_to_include = {"name", "output", "comments", "filter_synthesis", "filter_year_by_year"}
     district = District.model_validate(
         {
-            **district_creation.model_dump(exclude_none=True, include={"name", "output", "comments"}),
+            **district_creation.model_dump(exclude_none=True, include=fields_to_include),
             "add_areas": add_areas or [],
             "subtract_areas": subtract_areas or [],
             "apply_filter": apply_filter,
@@ -246,12 +249,11 @@ def update_district(district: District, district_update: DistrictUpdate) -> Dist
     # Merge existing district data with the update parameters
     updated_district = District.model_validate(
         {
-            **district.model_dump(
-                exclude_none=True,
-                include={"output", "comments", "name", "add_areas", "subtract_areas", "apply_filter", "id"},
-            ),
+            **district.model_dump(exclude_none=True),
             **district_update.model_dump(
-                mode="json", exclude_none=True, include={"output", "comments", "apply_filter"}
+                mode="json",
+                exclude_none=True,
+                include={"output", "comments", "apply_filter", "filter_synthesis", "filter_year_by_year"},
             ),
         }
     )
