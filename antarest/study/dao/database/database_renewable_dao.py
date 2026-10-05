@@ -18,6 +18,7 @@ from collections.abc import Sequence
 from typing import Any, NoReturn
 
 import polars as pl
+from antares.study.version import StudyVersion
 from sqlalchemy import CursorResult, Select, delete, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
@@ -43,13 +44,12 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
 class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
     """Database implementation of RenewableDao"""
 
-    def _convert_db_row_to_renewable(self, row: Any) -> RenewableCluster:
+    def _convert_db_row_to_renewable(self, row: Any, version: StudyVersion) -> RenewableCluster:
         data = get_row_representation_as_dict(row)
         del data["study_data_id"]
         del data["area_id"]
         data["id"] = data.pop("renewable_id")
         cluster = RenewableCluster(**data)
-        version = self.get_impl().get_version()
         validate_renewable_cluster_against_version(version, cluster)
         return cluster
 
@@ -167,10 +167,13 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
 
         stmt = select(RENEWABLE_CLUSTER_TABLE).where(RENEWABLE_CLUSTER_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
+        if not rows:
+            return {}
+        version = self.get_impl().get_version()
 
         renewables_by_areas: dict[str, dict[str, RenewableCluster]] = {}
         for row in rows:
-            renewable = self._convert_db_row_to_renewable(row)
+            renewable = self._convert_db_row_to_renewable(row, version)
             renewables_by_areas.setdefault(row.area_id, {})[renewable.id.lower()] = renewable
         return renewables_by_areas
 
@@ -184,7 +187,11 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
             (RENEWABLE_CLUSTER_TABLE.c.study_data_id == study_data_id) & (RENEWABLE_CLUSTER_TABLE.c.area_id == area_id)
         )
         rows = session.execute(stmt).fetchall()
-        return [self._convert_db_row_to_renewable(row) for row in rows]
+        if not rows:
+            return []
+        version = self.get_impl().get_version()
+
+        return [self._convert_db_row_to_renewable(row, version) for row in rows]
 
     def _select_renewable_cluster(self, area_id: str, renewable_id: str) -> Select[Any]:
         study_data_id = self._study_data_id
@@ -202,7 +209,7 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
         if not row:
             self._raise_the_right_renewable_exception({area_id: [renewable_id]})
 
-        return self._convert_db_row_to_renewable(row)
+        return self._convert_db_row_to_renewable(row, self.get_impl().get_version())
 
     @override
     def renewable_exists(self, area_id: str, renewable_id: str) -> bool:
