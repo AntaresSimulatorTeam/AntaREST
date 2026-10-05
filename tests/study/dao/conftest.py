@@ -16,6 +16,7 @@ from unittest.mock import Mock
 
 import polars as pl
 import pytest
+from antares.study.version import StudyVersion
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -43,10 +44,12 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster, 
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import (
+    NEW_DEFAULT_STUDY_VERSION,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
     STUDY_VERSION_10_2,
+    STUDY_VERSION_10_3,
     Study,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
@@ -87,18 +90,43 @@ def db_dao_930_shared() -> DatabaseStudyDao:
         return build_db_dao(session, InMemorySimpleMatrixService(), STUDY_VERSION_9_3)
 
 
-def build_db_dao_10_2(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    """Initialize a v10.2 study using the latest available reference template."""
-    dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+def _build_db_dao_unreleased_version(
+    db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion
+) -> DatabaseStudyDao:
+    """Initialize a study at a version with no reference template, built from the default version template."""
+    dao = build_db_dao(db_session, matrix_service, NEW_DEFAULT_STUDY_VERSION)
     study = db_session.get(Study, dao.get_study_id())
     assert study is not None
-    study.version = str(STUDY_VERSION_10_2)
+    study.version = str(version)
     db_session.commit()
-    # Settings were saved at v9.3; replay v10 init so v10-specific defaults stick.
+    # Settings were saved at the default version; replay init so version-specific defaults stick.
     prefs = dao.get_optimization_preferences()
-    initialize_optimization_preferences_against_version(prefs, STUDY_VERSION_10_2)
+    initialize_optimization_preferences_against_version(prefs, version)
     dao.save_optimization_preferences(prefs)
     return dao
+
+
+def build_db_dao_10_2(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    """Initialize a v10.2 study using the latest available reference template."""
+    return _build_db_dao_unreleased_version(db_session, matrix_service, STUDY_VERSION_10_2)
+
+
+def _build_dao_unreleased_version(
+    backend: str,
+    version: StudyVersion,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    study_factory: StudyFactory,
+) -> StudyDao:
+    # Unreleased versions have no study template on disk — create a default version study and force its version.
+    if backend == "db":
+        return _build_db_dao_unreleased_version(db_session, matrix_service, version)
+    else:
+        dao = build_filesystem_dao(db_session, NEW_DEFAULT_STUDY_VERSION, command_context, study_factory, tmp_path)
+        dao.get_file_study().config.version = version
+        return dao
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
@@ -111,13 +139,24 @@ def dao_10_2(
     study_factory: StudyFactory,
 ) -> StudyDao:
     """A DAO parameterized over both backends (v10.2)."""
-    # v10.2 has no study template on disk — create a v9.3 study and force its version to 10.2.
-    if request.param == "db":
-        return build_db_dao_10_2(db_session, matrix_service)
-    else:
-        dao = build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
-        dao.get_file_study().config.version = STUDY_VERSION_10_2
-        return dao
+    return _build_dao_unreleased_version(
+        request.param, STUDY_VERSION_10_2, db_session, matrix_service, command_context, tmp_path, study_factory
+    )
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def dao_10_3(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    study_factory: StudyFactory,
+) -> StudyDao:
+    """A DAO parameterized over both backends (v10.3)."""
+    return _build_dao_unreleased_version(
+        request.param, STUDY_VERSION_10_3, db_session, matrix_service, command_context, tmp_path, study_factory
+    )
 
 
 def build_reserve_definition(reserve_name: str) -> ReserveDefinition:

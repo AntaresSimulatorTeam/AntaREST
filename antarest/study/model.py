@@ -74,6 +74,7 @@ STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
 STUDY_VERSION_9_3 = NEW_DEFAULT_STUDY_VERSION
 STUDY_VERSION_10_2 = StudyVersion.parse("10.2")
+STUDY_VERSION_10_3 = StudyVersion.parse("10.3")
 
 
 def _serialize_version(version: StudyVersion) -> str:

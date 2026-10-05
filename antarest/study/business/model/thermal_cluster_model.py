@@ -45,7 +45,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
     STUDY_VERSION_9_3,
-    STUDY_VERSION_10_2,
+    STUDY_VERSION_10_3,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.validation import ItemName
@@ -207,7 +207,7 @@ class ThermalCluster(AntaresBaseModel):
     efficiency: Efficiency | None = None
     variable_o_m_cost: Cost | None = None
 
-    # Added in 10.2
+    # Added in 10.3
     ramping_enabled: bool | None = None
     max_upward_power_ramping_rate: RampRate | None = None
     max_downward_power_ramping_rate: RampRate | None = None
@@ -276,7 +276,7 @@ class ThermalClusterCreation(AntaresBaseModel):
     efficiency: Efficiency | None = None
     variable_o_m_cost: Cost | None = None
 
-    # Added in 10.2
+    # Added in 10.3
     ramping_enabled: bool | None = None
     max_upward_power_ramping_rate: RampRate | None = None
     max_downward_power_ramping_rate: RampRate | None = None
@@ -361,7 +361,7 @@ class ThermalClusterUpdate(AntaresBaseModel):
     efficiency: Efficiency | None = None
     variable_o_m_cost: Cost | None = None
 
-    # Added in 10.2
+    # Added in 10.3
     ramping_enabled: bool | None = None
     max_upward_power_ramping_rate: RampRate | None = None
     max_downward_power_ramping_rate: RampRate | None = None
@@ -394,7 +394,7 @@ def validate_thermal_cluster_against_version(
         for field in ["cost_generation", "efficiency", "variable_o_m_cost"]:
             _check_min_version(cluster_data, field, version)
 
-    if version < STUDY_VERSION_10_2:
+    if version < STUDY_VERSION_10_3:
         for field in [
             "ramping_enabled",
             "max_upward_power_ramping_rate",
@@ -428,7 +428,7 @@ def initialize_thermal_cluster(cluster: ThermalCluster, version: StudyVersion) -
         _initialize_field_default(cluster, "efficiency", 100.0)
         _initialize_field_default(cluster, "variable_o_m_cost", 0.0)
 
-    if version >= STUDY_VERSION_10_2:
+    if version >= STUDY_VERSION_10_3:
         _initialize_field_default(cluster, "ramping_enabled", False)
         _initialize_field_default(cluster, "power_increase_cost", 0.0)
         _initialize_field_default(cluster, "power_decrease_cost", 0.0)
@@ -447,7 +447,7 @@ def check_thermal_cluster_complete(cluster: ThermalCluster, version: StudyVersio
         required.extend(["nh3", "so2", "nox", "pm2_5", "pm5", "pm10", "nmvoc", "op1", "op2", "op3", "op4", "op5"])
     if version >= STUDY_VERSION_8_7:
         required.extend(["cost_generation", "efficiency", "variable_o_m_cost"])
-    if version >= STUDY_VERSION_10_2:
+    if version >= STUDY_VERSION_10_3:
         required.extend(
             [
                 "ramping_enabled",

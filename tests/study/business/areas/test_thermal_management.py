@@ -439,7 +439,7 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
-            # These values are None as they are defined in v10.2+
+            # These values are None as they are defined in v10.3+
             "rampingEnabled": None,
             "maxUpwardPowerRampingRate": None,
             "maxDownwardPowerRampingRate": None,
