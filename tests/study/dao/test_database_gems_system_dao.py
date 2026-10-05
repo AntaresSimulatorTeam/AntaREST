@@ -190,7 +190,7 @@ def test_connections_can_link_2_ports_of_the_same_component(dao_10_2: StudyDao) 
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_duplicated_connections_are_silently_deduplicated(dao_10_2: StudyDao) -> None:
+def test_cannot_have_duplicated_connections(dao_10_2: StudyDao) -> None:
 
     dao = dao_10_2
     _add_library_file_to_study_dao(dao)
@@ -204,6 +204,21 @@ def test_duplicated_connections_are_silently_deduplicated(dao_10_2: StudyDao) ->
         component1="dsr", port1="balance_port", component2="electrolyser", port2="hydrogen_port"
     )
     duplicated_connection = connection.model_copy()
+
+    system = GemsSystem.model_validate(
+        {
+            "id": "sys_id",
+            "components": [component1, component2],
+            "connections": [connection, duplicated_connection],
+        }
+    )
+
+    with pytest.raises(
+        GemsInvalidConnection,
+        match="Connection between 'dsr.balance_port' and 'electrolyser.hydrogen_port' is declared more than once",
+    ):
+        dao.save_system(system)
+
     symmetric_connection = GemsComponentConnection(
         component1="electrolyser", port1="hydrogen_port", component2="dsr", port2="balance_port"
     )
@@ -211,15 +226,15 @@ def test_duplicated_connections_are_silently_deduplicated(dao_10_2: StudyDao) ->
         {
             "id": "sys_id",
             "components": [component1, component2],
-            "connections": [connection, duplicated_connection, symmetric_connection],
+            "connections": [connection, symmetric_connection],
         }
     )
 
-    dao.save_system(system)
-
-    loaded_system = dao.get_system()
-    assert loaded_system is not None
-    assert loaded_system.connections == [connection]
+    with pytest.raises(
+        GemsInvalidConnection,
+        match="Connection between 'dsr.balance_port' and 'electrolyser.hydrogen_port' is declared more than once",
+    ):
+        dao.save_system(system)
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)

@@ -12,6 +12,7 @@
 from typing import List
 
 from pydantic import ConfigDict
+from typing_extensions import override
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
@@ -50,6 +51,10 @@ class GemsComponentConnection(AntaresBaseModel):
     component2: str
     port1: str
     port2: str
+
+    @override
+    def __hash__(self) -> int:
+        return hash((self.component1, self.component2, self.port1, self.port2))
 
 
 class GemsSystem(AntaresBaseModel):

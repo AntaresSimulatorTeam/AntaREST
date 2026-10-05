@@ -35,22 +35,30 @@ from antarest.study.dao.database.models.gems.system import (
 METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
 
 
-def _silently_deduplicate_duplicated_connections(
-    connections: list[GemsComponentConnection],
-) -> list[GemsComponentConnection]:
-    connections_set = set()
+def _reorder_connection(connection: GemsComponentConnection) -> GemsComponentConnection:
+    component_a = connection.component1 if connection.component1 < connection.component2 else connection.component2
+    component_b = connection.component2 if connection.component1 < connection.component2 else connection.component1
+    port_a = connection.port1 if connection.component1 < connection.component2 else connection.port2
+    port_b = connection.port2 if connection.component1 < connection.component2 else connection.port1
+
+    return GemsComponentConnection(
+        component1=component_a,
+        port1=port_a,
+        component2=component_b,
+        port2=port_b,
+    )
+
+
+def _check_no_duplicated_connections(connections: list[GemsComponentConnection]) -> None:
+    seen: set[GemsComponentConnection] = set()
     for connection in connections:
-        component_a = connection.component1 if connection.component1 < connection.component2 else connection.component2
-        component_b = connection.component2 if connection.component1 < connection.component2 else connection.component1
-        port_a = connection.port1 if connection.component1 < connection.component2 else connection.port2
-        port_b = connection.port2 if connection.component1 < connection.component2 else connection.port1
-
-        connections_set.add((component_a, component_b, port_a, port_b))
-
-    connections = [
-        GemsComponentConnection(component1=c[0], component2=c[1], port1=c[2], port2=c[3]) for c in connections_set
-    ]
-    return connections
+        ordered_connection = _reorder_connection(connection)
+        if ordered_connection in seen:
+            raise GemsInvalidConnection(
+                f"Connection between '{ordered_connection.component1}.{ordered_connection.port1}' and "
+                f"'{ordered_connection.component2}.{ordered_connection.port2}' is declared more than once"
+            )
+        seen.add(ordered_connection)
 
 
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
@@ -335,7 +343,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
         # so we silently remove them to keep the primary in the gems_component_connections table.
-        connections = _silently_deduplicate_duplicated_connections(connections)
+        _check_no_duplicated_connections(connections)
 
         study_data_id = self._study_data_id
         session = self._db_session
