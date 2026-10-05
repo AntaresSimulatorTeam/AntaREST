@@ -52,9 +52,22 @@ class GemsComponentConnection(AntaresBaseModel):
     port1: str
     port2: str
 
+    # The __eq__ and __hash__ methods are required for the set() data structure
+    # to check connections are not duplicated.
+
     @override
     def __hash__(self) -> int:
         return hash((self.component1, self.component2, self.port1, self.port2))
+
+    @override
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, GemsComponentConnection)
+            and self.component1 == other.component1
+            and self.component2 == other.component2
+            and self.port1 == other.port1
+            and self.port2 == other.port2
+        )
 
 
 class GemsSystem(AntaresBaseModel):

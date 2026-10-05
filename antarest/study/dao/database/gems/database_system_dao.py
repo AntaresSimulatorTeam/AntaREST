@@ -36,10 +36,9 @@ METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
 
 
 def _reorder_connection(connection: GemsComponentConnection) -> GemsComponentConnection:
-    component_a = connection.component1 if connection.component1 < connection.component2 else connection.component2
-    component_b = connection.component2 if connection.component1 < connection.component2 else connection.component1
-    port_a = connection.port1 if connection.component1 < connection.component2 else connection.port2
-    port_b = connection.port2 if connection.component1 < connection.component2 else connection.port1
+    endpoint1 = (connection.component1, connection.port1)
+    endpoint2 = (connection.component2, connection.port2)
+    (component_a, port_a), (component_b, port_b) = sorted((endpoint1, endpoint2))
 
     return GemsComponentConnection(
         component1=component_a,
@@ -342,7 +341,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             return
 
         # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
-        # so we silently remove them to keep the primary in the gems_component_connections table.
+        # so we have to check that the connections are not duplicated.
         _check_no_duplicated_connections(connections)
 
         study_data_id = self._study_data_id
