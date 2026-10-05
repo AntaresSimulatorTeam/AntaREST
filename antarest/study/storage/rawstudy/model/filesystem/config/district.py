@@ -69,17 +69,9 @@ class DistrictFileData(AntaresBaseModel):
         return DistrictFileData.model_validate({**district.model_dump(include=includes), "caption": district.name})
 
     @classmethod
-    def from_data(cls, data: Any, district_id: str) -> "DistrictFileData":
-        return DistrictFileData.model_validate(
-            {
-                "caption": data.get("caption", district_id),
-                "output": data.get("output", True),
-                "comments": data.get("comments", None),
-                "apply_filter": data.get("apply-filter", None),
-                "add_areas": data.get("+", None),
-                "subtract_areas": data.get("-", None),
-            }
-        )
+    def from_data(cls, data: dict[str, Any], district_id: str) -> "DistrictFileData":
+        data["caption"] = district_id
+        return DistrictFileData.model_validate(data)
 
     def to_model(self, district_id: str) -> District:
         includes = DistrictFileData._fields_to_include()

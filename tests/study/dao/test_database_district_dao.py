@@ -17,6 +17,7 @@ District DAO tests, parameterized across both database and filesystem backends.
 import pytest
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
+from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.district_model import District, DistrictApplyFilter
 from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
@@ -136,3 +137,21 @@ class TestDistrictDao:
 
         d1 = dao.get_district("d1")
         assert "paris" not in d1.subtract_areas
+
+
+def test_v10_2(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    save_area(dao, "Paris")
+
+    dao.save_district(
+        District(
+            id="d1",
+            name="District 1",
+            filter_year_by_year=[FilterOption.HOURLY],
+            filter_synthesis=[FilterOption.ANNUAL, FilterOption.DAILY],
+        )
+    )
+
+    district = dao.get_district("d1")
+    assert district.filter_year_by_year == [FilterOption.HOURLY]
+    assert sorted(district.filter_synthesis) == [FilterOption.ANNUAL, FilterOption.DAILY]
