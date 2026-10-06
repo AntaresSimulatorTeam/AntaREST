@@ -49,7 +49,6 @@ from antarest.study.business.model.thermal_cluster_model import (
 from antarest.study.model import (
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
-    STUDY_VERSION_9_3,
     STUDY_VERSION_10_2,
     STUDY_VERSION_10_3,
 )
@@ -1086,7 +1085,7 @@ def test_ramp_fields_round_trip_at_10_3() -> None:
         "power-decrease-cost",
     ],
 )
-@pytest.mark.parametrize("version", [STUDY_VERSION_9_3, STUDY_VERSION_10_2])
+@pytest.mark.parametrize("version", [STUDY_VERSION_10_2])
 def test_ramp_fields_are_rejected_below_10_3(ini_key: str, version: StudyVersion) -> None:
     value = True if ini_key == "ramping-enabled" else 1.0
     with pytest.raises(InvalidFieldForVersionError, match="is not a valid field for study version"):

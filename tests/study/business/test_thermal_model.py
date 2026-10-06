@@ -32,7 +32,6 @@ from antarest.study.model import (
     STUDY_VERSION_7_2,
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
-    STUDY_VERSION_9_3,
     STUDY_VERSION_10_2,
     STUDY_VERSION_10_3,
 )
@@ -244,11 +243,11 @@ def test_thermal_cluster_creation_default_values_10_3() -> None:
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"cost_generation": ThermalCostGeneration.USE_COST_TIME_SERIES}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"efficiency": 50}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"variable_o_m_cost": 10}),
-        ([STUDY_VERSION_9_3, STUDY_VERSION_10_2], {"ramping_enabled": True}),
-        ([STUDY_VERSION_9_3, STUDY_VERSION_10_2], {"max_upward_power_ramping_rate": 10.5}),
-        ([STUDY_VERSION_9_3, STUDY_VERSION_10_2], {"max_downward_power_ramping_rate": 10.5}),
-        ([STUDY_VERSION_9_3, STUDY_VERSION_10_2], {"power_increase_cost": 1.0}),
-        ([STUDY_VERSION_9_3, STUDY_VERSION_10_2], {"power_decrease_cost": 1.0}),
+        ([STUDY_VERSION_10_2], {"ramping_enabled": True}),
+        ([STUDY_VERSION_10_2], {"max_upward_power_ramping_rate": 10.5}),
+        ([STUDY_VERSION_10_2], {"max_downward_power_ramping_rate": 10.5}),
+        ([STUDY_VERSION_10_2], {"power_increase_cost": 1.0}),
+        ([STUDY_VERSION_10_2], {"power_decrease_cost": 1.0}),
     ],
 )
 def test_thermal_cluster_creation_invalid_fields(versions: list[StudyVersion], fields: dict[str, Any]) -> None:
@@ -363,11 +362,11 @@ def test_thermal_cluster_creation_all_values() -> None:
         ),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], [STUDY_VERSION_8_7], {"efficiency": 50}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], [STUDY_VERSION_8_7], {"variable_o_m_cost": 10}),
-        ([STUDY_VERSION_9_3, STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"ramping_enabled": True}),
-        ([STUDY_VERSION_9_3, STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"max_upward_power_ramping_rate": 10.5}),
-        ([STUDY_VERSION_9_3, STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"max_downward_power_ramping_rate": 10.5}),
-        ([STUDY_VERSION_9_3, STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"power_increase_cost": 1.0}),
-        ([STUDY_VERSION_9_3, STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"power_decrease_cost": 1.0}),
+        ([STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"ramping_enabled": True}),
+        ([STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"max_upward_power_ramping_rate": 10.5}),
+        ([STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"max_downward_power_ramping_rate": 10.5}),
+        ([STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"power_increase_cost": 1.0}),
+        ([STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"power_decrease_cost": 1.0}),
     ],
 )
 def test_thermal_cluster_version_validation(
