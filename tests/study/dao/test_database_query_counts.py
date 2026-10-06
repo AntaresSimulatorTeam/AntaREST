@@ -68,10 +68,14 @@ def test_collection_read_query_budget(
 
     actual_count = len(result) if for_area else sum(len(items) for items in result.values())
     assert actual_count == count
-    # One collection SELECT and, for nonempty results, one version SELECT.
-    # Empty area reads validate the area; renewable area reads always do so.
-    budget = 2 if count or for_area else 1
-    if count and for_area and cluster_type == "renewable":
+    budget = 1  # Read the collection, even when it is empty.
+    if count > 0:
+        # Only nonempty collections need the study version to convert the rows.
+        budget += 1
+    if for_area and (count == 0 or cluster_type == "renewable"):
+        # The renewable DAO always validates the area before reading its clusters.
+        # The thermal and storage DAOs only validate it when no rows are found.
+        # This reflects the existing DAO behavior, independently of version reads.
         budget += 1
     assert len(recorder.sql_statements) <= budget, str(recorder)
 
