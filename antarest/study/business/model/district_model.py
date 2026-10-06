@@ -13,10 +13,14 @@ from collections.abc import MutableMapping
 from enum import Enum
 from typing import Any
 
-from pydantic import ConfigDict, field_validator
+from antares.study.version import StudyVersion
+from pydantic import ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.study.business.model.common import FILTER_VALUES, CommaSeparatedFilterOptions
+from antarest.study.business.model.utils import check_min_version, initialize_field_with_default_value
+from antarest.study.model import STUDY_VERSION_10_2
 
 
 class DistrictApplyFilter(Enum):
@@ -60,6 +64,9 @@ class DistrictUpdate(AntaresBaseModel):
     areas: list[str] | None = None
     #: Base filter for the district.
     apply_filter: DistrictApplyFilter | None = None
+    # Since v10.2
+    filter_synthesis: CommaSeparatedFilterOptions | None = Field(default=None)
+    filter_year_by_year: CommaSeparatedFilterOptions | None = Field(default=None)
 
 
 def _district_creation_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -100,6 +107,9 @@ class DistrictCreation(AntaresBaseModel):
     areas: list[str] | None = None
     #: Base filter for the district.
     apply_filter: DistrictApplyFilter | None = None
+    # Since v10.2
+    filter_synthesis: CommaSeparatedFilterOptions | None = Field(default=None)
+    filter_year_by_year: CommaSeparatedFilterOptions | None = Field(default=None)
 
 
 def _district_dto_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -131,6 +141,9 @@ class DistrictDTO(AntaresBaseModel):
     areas: list[str]
     #: Name of the district (this name is also used as a unique identifier).
     name: str
+    # Since v10.2
+    filter_synthesis: CommaSeparatedFilterOptions | None = Field(default=None)
+    filter_year_by_year: CommaSeparatedFilterOptions | None = Field(default=None)
 
 
 def _district_json_schema_extra(schema: MutableMapping[str, Any]) -> None:
@@ -168,6 +181,9 @@ class District(AntaresBaseModel):
     name: str
     #: Base filter for the district.
     apply_filter: DistrictApplyFilter = DistrictApplyFilter.remove_all
+    # Since v10.2
+    filter_synthesis: CommaSeparatedFilterOptions | None = Field(default=None)
+    filter_year_by_year: CommaSeparatedFilterOptions | None = Field(default=None)
 
     def to_dto(self, all_areas: list[str]) -> DistrictDTO:
         if self.apply_filter == DistrictApplyFilter.add_all:
@@ -181,38 +197,65 @@ class District(AntaresBaseModel):
                 "areas": sorted(areas),
                 "output": self.output,
                 "comments": self.comments or "",
+                "filter_synthesis": self.filter_synthesis,
+                "filter_year_by_year": self.filter_year_by_year,
             }
         )
 
 
-def create_district(district_creation: DistrictCreation, district_id: str) -> District:
+def initialize_district(district: District, version: StudyVersion) -> None:
+    """
+    Set undefined version-specific fields to default values.
+    """
+    if version >= STUDY_VERSION_10_2:
+        for field in ["filter_synthesis", "filter_year_by_year"]:
+            initialize_field_with_default_value(district, field, FILTER_VALUES)
+
+
+def validate_district_against_version(
+    version: StudyVersion, district: District | DistrictCreation | DistrictUpdate
+) -> None:
+    """
+    Validates input district data against the provided study versions
+
+    Will raise an InvalidFieldForVersionError if a field is not valid for the given study version.
+    """
+    if version < STUDY_VERSION_10_2:
+        for field in ["filter_synthesis", "filter_year_by_year"]:
+            check_min_version(district, field, version)
+
+
+def create_district(district_creation: DistrictCreation, district_id: str, version: StudyVersion) -> District:
     """
     Creates a district  from a creation request.
     """
     apply_filter = district_creation.apply_filter or DistrictApplyFilter.remove_all
     add_areas = district_creation.areas if apply_filter == DistrictApplyFilter.remove_all else []
     subtract_areas = district_creation.areas if apply_filter == DistrictApplyFilter.add_all else []
-    return District.model_validate(
+    fields_to_include = {"name", "output", "comments", "filter_synthesis", "filter_year_by_year"}
+    district = District.model_validate(
         {
-            **district_creation.model_dump(exclude_none=True, include={"name", "output", "comments"}),
+            **district_creation.model_dump(exclude_none=True, include=fields_to_include),
             "add_areas": add_areas or [],
             "subtract_areas": subtract_areas or [],
             "apply_filter": apply_filter,
             "id": district_id,
         }
     )
+    validate_district_against_version(version, district)
+    initialize_district(district, version)
+    return district
 
 
 def update_district(district: District, district_update: DistrictUpdate) -> District:
     # Merge existing district data with the update parameters
     updated_district = District.model_validate(
         {
-            **district.model_dump(
-                exclude_none=True,
-                include={"output", "comments", "name", "add_areas", "subtract_areas", "apply_filter", "id"},
-            ),
+            **district.model_dump(exclude_none=True),
             **district_update.model_dump(
-                mode="json", exclude_none=True, include={"output", "comments", "apply_filter"}
+                mode="json",
+                exclude_none=True,
+                include={"output", "comments", "apply_filter", "filter_synthesis", "filter_year_by_year"},
             ),
         }
     )
@@ -226,3 +269,14 @@ def update_district(district: District, district_update: DistrictUpdate) -> Dist
         )
 
     return updated_district
+
+
+def check_district_complete(district: District, version: StudyVersion) -> None:
+    """
+    Raise ValueError if any version-required field on `district` is None.
+    """
+    if version >= STUDY_VERSION_10_2:
+        required = ["filter_synthesis", "filter_year_by_year"]
+        missing = [f for f in required if getattr(district, f) is None]
+        if missing:
+            raise ValueError(f"District '{district.id}' is missing required field(s) for version {version}: {missing}")
