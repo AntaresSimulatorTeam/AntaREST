@@ -181,13 +181,13 @@ class DatabaseRenewableDao(RenewableDao, DatabaseDaoBase):
     def get_all_renewables_for_area(self, area_id: str) -> Sequence[RenewableCluster]:
         study_data_id = self._study_data_id
         session = self._db_session
-        validate_area_exists(session, study_data_id, area_id)
 
         stmt = select(RENEWABLE_CLUSTER_TABLE).where(
             (RENEWABLE_CLUSTER_TABLE.c.study_data_id == study_data_id) & (RENEWABLE_CLUSTER_TABLE.c.area_id == area_id)
         )
         rows = session.execute(stmt).fetchall()
         if not rows:
+            validate_area_exists(session, study_data_id, area_id)
             return []
         version = self.get_impl().get_version()
 
