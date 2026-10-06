@@ -151,8 +151,7 @@ def notification_popup(message: str, threaded: bool = True) -> None:
     Pos a notification message above system tray.
     """
     if platform.system() == "Windows":
-        # noinspection PyPackageRequirements
-        from win10toast import ToastNotifier  # type: ignore
+        from antarest.desktop.win10toast import ToastNotifier
 
         toaster = ToastNotifier()
         toaster.show_toast(
