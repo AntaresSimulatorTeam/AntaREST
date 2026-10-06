@@ -90,7 +90,7 @@ test = [
 [project.optional-dependencies]
 desktop = ["PyQt6~=6.11.0"]
 windows = [
-    "pywin32; platform_system == 'Windows'",
+    "pypiwin32; platform_system == 'Windows'",
 ]
 doc = [
     "mkdocs",
