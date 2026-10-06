@@ -16,7 +16,6 @@ import { invalidateQueriesAfterMutation } from "@/queries/invalidateQueriesAfter
 import { thermalMutations } from "@/queries/thermals/mutations";
 import { thermalQueries } from "@/queries/thermals/queries";
 import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
-import { nameToId } from "@/services/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function useDuplicateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
@@ -36,14 +35,12 @@ function useDuplicateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
       // An older read must not overwrite the saved cluster.
       await queryClient.cancelQueries({ queryKey });
 
-      const savedCluster = { ...duplicatedCluster, id: nameToId(duplicatedCluster.id) };
-
       queryClient.setQueryData(queryKey, (clusters) => {
-        if (!clusters || clusters.some(({ id }) => id === savedCluster.id)) {
+        if (!clusters || clusters.some(({ id }) => id === duplicatedCluster.id)) {
           return clusters;
         }
 
-        return [...clusters, savedCluster];
+        return [...clusters, duplicatedCluster];
       });
     },
   });

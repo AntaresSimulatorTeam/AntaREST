@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { nameToId } from "@/services/utils";
 import { nullishToOptional } from "@/utils/zodUtils";
 import { z } from "zod";
 import {
@@ -24,7 +25,9 @@ import {
 export const thermalGroupSchema = z.enum(THERMAL_GROUPS);
 
 export const thermalClusterSchema = z.object({
-  id: z.string(),
+  // Backend models preserve name casing, while database storage lowercases IDs.
+  // TODO: Remove normalization once the backend returns consistent IDs.
+  id: z.string().transform(nameToId),
   name: z.string(),
   // Before v9.3, non-null groups are mapped to the values in thermalGroupSchema.
   // Since v9.3, groups can be custom strings. The API also permits null.

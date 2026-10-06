@@ -89,8 +89,8 @@ describe("Thermal mutations", () => {
   });
 
   test("creating and duplicating clusters updates the list without refetching", async () => {
-    const created = { ...cluster, id: "Coal", name: "Coal" };
-    const duplicated = { ...cluster, id: "Gas Copy", name: "Gas Copy" };
+    const created = { ...cluster, id: "coal", name: "Coal" };
+    const duplicated = { ...cluster, id: "gas copy", name: "Gas Copy" };
     vi.mocked(api.createThermalCluster).mockResolvedValue(created);
     vi.mocked(api.duplicateThermalCluster).mockResolvedValue(duplicated);
 
@@ -110,7 +110,7 @@ describe("Thermal mutations", () => {
     });
 
     await waitFor(() => expect(result.current.list.data).toHaveLength(2));
-    expect(client.getQueryData(key)).toEqual([cluster, { ...created, id: "coal" }]);
+    expect(client.getQueryData(key)).toEqual([cluster, created]);
 
     await act(async () => {
       await result.current.duplicate.mutateAsync({
@@ -121,11 +121,7 @@ describe("Thermal mutations", () => {
     });
 
     await waitFor(() => expect(result.current.list.data).toHaveLength(3));
-    expect(client.getQueryData(key)).toEqual([
-      cluster,
-      { ...created, id: "coal" },
-      { ...duplicated, id: "gas copy" },
-    ]);
+    expect(client.getQueryData(key)).toEqual([cluster, created, duplicated]);
     expect(api.getThermalClusters).not.toHaveBeenCalled();
   });
 });
