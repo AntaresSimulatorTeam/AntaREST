@@ -201,7 +201,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         try:
             self.save_components(system.components)
             self._save_connections(system.connections)
-            session.commit()
         except Exception as e:
             session.rollback()
             raise e
@@ -284,6 +283,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         self._check_components_exist(components_library_and_model, connections, exc)
         self._check_ports_exist_in_models(components_library_and_model, connections, exc)
 
+        # All components and ports exist and no self-connection was found.
+        # It means the DB table is not filled as it should.
+        raise ValueError("The connections table is not filled as it should") from exc
+
     def _check_ports_exist_in_models(
         self,
         components_library_and_model: dict[str, tuple[str, str]],
@@ -365,12 +368,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             rows = self._build_rows(components_library_and_model, connections)
 
             try:
-                # Run the INSERT in a SAVEPOINT: if it still violates a foreign key despite the
-                # validation above (e.g. a concurrent modification), rolling back to the savepoint
-                # keeps the outer transaction usable, instead of leaving it aborted on PostgreSQL.
-                with session.begin_nested():
-                    session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
-                    session.commit()
+                session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
+                session.commit()
             except IntegrityError as e:
                 self._raise_the_right_connection_error(components_library_and_model, connections, e)
 
