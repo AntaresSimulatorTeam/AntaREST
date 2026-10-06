@@ -22,6 +22,7 @@ import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import useCreateThermalCluster from "../useCreateThermalCluster";
 import useDeleteThermalClusters from "../useDeleteThermalClusters";
+import useDuplicateThermalCluster from "../useDuplicateThermalCluster";
 import useThermalClusters from "../useThermalClusters";
 import { cluster } from "./fixtures";
 
@@ -38,14 +39,17 @@ beforeEach(() => {
   vi.mocked(api.getThermalClusters).mockReset().mockResolvedValue([cluster]);
   vi.mocked(api.createThermalCluster).mockReset().mockResolvedValue(cluster);
   vi.mocked(api.deleteThermalClusters).mockReset().mockResolvedValue(undefined);
+  vi.mocked(api.duplicateThermalCluster).mockReset().mockResolvedValue(cluster);
 });
 
 afterEach(() => client.clear());
 
 describe("Thermal mutations", () => {
-  test("deleting a cluster invalidates its list and dependent reserves", async () => {
+  test("deleting a cluster updates its list and invalidates dependent reserves", async () => {
+    const coal = { ...cluster, id: "coal", name: "Coal" };
+    client.setQueryData(key, [cluster, coal]);
+
     const affected = [
-      key,
       reserveKeys.certifications("study", "area", "thermals"),
       reserveKeys.symmetries("study", "area", "thermals"),
     ];
@@ -61,11 +65,20 @@ describe("Thermal mutations", () => {
       client.setQueryData(key, []);
     });
 
-    const { result } = renderHook(() => useDeleteThermalClusters(scope), { wrapper });
+    const { result } = renderHook(
+      () => {
+        useThermalClusters(scope);
+        return useDeleteThermalClusters(scope);
+      },
+      { wrapper },
+    );
 
     await act(async () => {
       await result.current.mutateAsync({ ...scope, clusterIds: [cluster.id] });
     });
+
+    expect(client.getQueryData(key)).toEqual([coal]);
+    expect(api.getThermalClusters).not.toHaveBeenCalled();
 
     affected.forEach((key) => {
       expect(client.getQueryState(key)?.isInvalidated).toBe(true);
@@ -75,24 +88,40 @@ describe("Thermal mutations", () => {
     });
   });
 
-  test("a refresh failure does not fail a successful write", async () => {
-    const readError = new Error("refresh failed");
-    vi.mocked(api.getThermalClusters).mockRejectedValue(readError);
+  test("creating and duplicating clusters updates the list without refetching", async () => {
+    const created = { ...cluster, id: "coal", name: "Coal" };
+    const duplicated = { ...cluster, id: "gas copy", name: "Gas Copy" };
+    vi.mocked(api.createThermalCluster).mockResolvedValue(created);
+    vi.mocked(api.duplicateThermalCluster).mockResolvedValue(duplicated);
 
     const { result } = renderHook(
-      () => ({ list: useThermalClusters(scope), create: useCreateThermalCluster(scope) }),
+      () => ({
+        list: useThermalClusters(scope),
+        create: useCreateThermalCluster(scope),
+        duplicate: useDuplicateThermalCluster(scope),
+      }),
       { wrapper },
     );
 
-    // The server already committed the write: a read failure must not trigger rollback.
     await act(async () => {
       await expect(
-        result.current.create.mutateAsync({ ...scope, values: { name: "Gas" } }),
-      ).resolves.toEqual(cluster);
+        result.current.create.mutateAsync({ ...scope, values: { name: created.name } }),
+      ).resolves.toEqual(created);
     });
 
-    await waitFor(() => expect(result.current.list.error).toBe(readError));
-    expect(result.current.create.isSuccess).toBe(true);
-    expect(client.getQueryState(key)?.isInvalidated).toBe(true);
+    await waitFor(() => expect(result.current.list.data).toHaveLength(2));
+    expect(client.getQueryData(key)).toEqual([cluster, created]);
+
+    await act(async () => {
+      await result.current.duplicate.mutateAsync({
+        ...scope,
+        clusterId: cluster.id,
+        newName: duplicated.name,
+      });
+    });
+
+    await waitFor(() => expect(result.current.list.data).toHaveLength(3));
+    expect(client.getQueryData(key)).toEqual([cluster, created, duplicated]);
+    expect(api.getThermalClusters).not.toHaveBeenCalled();
   });
 });

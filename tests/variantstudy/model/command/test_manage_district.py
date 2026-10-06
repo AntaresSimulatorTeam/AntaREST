@@ -9,9 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
 
 from antarest.core.serde.ini_reader import IniReader
+from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictCreation, DistrictUpdate
+from antarest.study.model import STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -222,3 +225,20 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert set_config["apply-filter"] == "add-all"
     assert not set_config["output"]
     assert set_config["comments"] == "next gen comment"
+
+
+def test_version_errors(command_context: CommandContext) -> None:
+    with pytest.raises(ValueError, match="Field filter_synthesis is not a valid field for study version 9.3"):
+        CreateDistrict(
+            parameters=DistrictCreation(name="d1", filter_synthesis=[FilterOption.DAILY]),
+            command_context=command_context,
+            study_version=STUDY_VERSION_9_3,
+        )
+
+    with pytest.raises(ValueError, match="Field filter_year_by_year is not a valid field for study version 9.3"):
+        UpdateDistrict(
+            id="d1",
+            parameters=DistrictUpdate(filter_year_by_year=[FilterOption.ANNUAL]),
+            command_context=command_context,
+            study_version=STUDY_VERSION_9_3,
+        )
