@@ -90,7 +90,7 @@ test = [
 [project.optional-dependencies]
 desktop = ["PyQt6~=6.11.0"]
 windows = [
-    "win10toast; platform_system == 'Windows'",
+    "pypiwin32; platform_system == 'Windows'",
 ]
 doc = [
     "mkdocs",
@@ -106,7 +106,7 @@ Repository="https://github.com/AntaresSimulatorTeam/api-iso-antares"
 packages = ["antarest"]
 
 [tool.mypy]
-exclude = "antarest/fastapi_jwt_auth/*"
+exclude = ["antarest/fastapi_jwt_auth/*", "antarest/desktop/win10toast/*"]
 strict = true
 files = "antarest"
 plugins = "pydantic.mypy"
@@ -151,6 +151,7 @@ exclude = [
     "resources/*",
     "scripts/*",
     "webapp/*",
+    "antarest/desktop/win10toast/*",
 ]
 
 # Same as Black.
