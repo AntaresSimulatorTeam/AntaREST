@@ -444,7 +444,7 @@ class OutputService:
         logger.info(f"Exporting {output_uuid} from study {study_uuid}")
         export_name = f"Study output {metadata.name}/{output_uuid} export"
         export_file_download = self._file_transfer_manager.request_download(
-            f"{metadata.name}-{study_uuid}-{output_uuid}{ArchiveFormat.ZIP}", export_name
+            f"{study_uuid}_{output_uuid}{ArchiveFormat.ZIP}", export_name
         )
         export_path = Path(export_file_download.path)
         export_id = export_file_download.id

@@ -659,6 +659,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "output": True,
         "comments": "My District",
         "areas": [],
+        "filterSynthesis": None,
+        "filterYearByYear": None,
     }
 
     res = client.put(
@@ -683,6 +685,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "output": False,
             "comments": "Spatial aggregates on all areas",
             "areas": ["area 1", "area 2"],
+            "filterSynthesis": None,
+            "filterYearByYear": None,
         },
         {
             "id": "district 1",
@@ -690,6 +694,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "output": True,
             "comments": "Your District",
             "areas": [],
+            "filterSynthesis": None,
+            "filterYearByYear": None,
         },
     ]
 

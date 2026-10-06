@@ -13,7 +13,6 @@
  */
 
 import client from "@/services/api/client";
-import { nameToId } from "@/services/utils";
 import {
   thermalClusterCreationSchema,
   thermalClusterSchema,
@@ -44,12 +43,7 @@ export async function getThermalClusters({
   areaId,
 }: ThermalsAreaParams): Promise<ThermalCluster[]> {
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`);
-  const clusters = thermalClustersSchema.parse(res.data);
-  // The backend model preserves name casing for backward compatibility,
-  // while database storage lowercases IDs. Creation and file-backed reads can therefore
-  // return different ID casing from database-backed reads.
-  // TODO: Return canonical lowercase IDs consistently from the API, then remove this normalization.
-  return clusters.map((cluster) => ({ ...cluster, id: nameToId(cluster.id) }));
+  return thermalClustersSchema.parse(res.data);
 }
 
 /**
@@ -70,9 +64,7 @@ export async function getThermalCluster({
   const res = await client.get(
     `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${clusterId}`,
   );
-  const cluster = thermalClusterSchema.parse(res.data);
-  // TODO: Return canonical lowercase IDs consistently from the API, then remove this normalization.
-  return { ...cluster, id: nameToId(cluster.id) };
+  return thermalClusterSchema.parse(res.data);
 }
 
 /**
@@ -82,7 +74,7 @@ export async function getThermalCluster({
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
  * @param params.values - Cluster values; only name is required.
- * @returns The created cluster, preserving the server's ID casing.
+ * @returns The created cluster, with a normalized ID.
  * @throws If the values or response don't match the expected schema.
  */
 export async function createThermalCluster({
@@ -103,7 +95,7 @@ export async function createThermalCluster({
  * @param params.areaId - Area identifier.
  * @param params.clusterId - Cluster identifier.
  * @param params.values - Partial cluster values to update.
- * @returns The updated cluster, preserving the server's ID casing.
+ * @returns The updated cluster, with a normalized ID.
  * @throws If the values or response don't match the expected schema.
  */
 export async function updateThermalCluster({
@@ -128,7 +120,7 @@ export async function updateThermalCluster({
  * @param params.areaId - Area identifier.
  * @param params.clusterId - Source cluster identifier.
  * @param params.newName - New cluster name.
- * @returns The duplicated cluster, preserving the server's ID casing.
+ * @returns The duplicated cluster, with a normalized ID.
  * @throws If the response doesn't match the expected schema.
  */
 export async function duplicateThermalCluster({

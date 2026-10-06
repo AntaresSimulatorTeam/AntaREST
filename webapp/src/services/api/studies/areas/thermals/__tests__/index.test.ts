@@ -107,7 +107,7 @@ test("creates a cluster from a name-only payload", async () => {
     values: { name: "New cluster" },
   });
 
-  expect(created).toEqual(cluster);
+  expect(created).toEqual({ ...cluster, id: clusterId });
   expect(client.post).toHaveBeenCalledWith(listUrl, { name: "New cluster" });
 });
 
@@ -118,6 +118,7 @@ test("patches only supplied values and normalizes absent response fields", async
 
   expect(await api.updateThermalCluster({ studyId, areaId, clusterId, values })).toEqual({
     ...updated,
+    id: clusterId,
     so2: undefined,
     costGeneration: undefined,
   });
@@ -127,8 +128,14 @@ test("patches only supplied values and normalizes absent response fields", async
 test("duplicates through the dedicated endpoint and newName query parameter", async () => {
   vi.mocked(client.post).mockResolvedValue({ data: cluster });
 
-  await api.duplicateThermalCluster({ studyId, areaId, clusterId, newName: "Copy" });
+  const duplicated = await api.duplicateThermalCluster({
+    studyId,
+    areaId,
+    clusterId,
+    newName: "Copy",
+  });
 
+  expect(duplicated).toEqual({ ...cluster, id: clusterId });
   expect(client.post).toHaveBeenCalledWith(
     `/v1/studies/${studyId}/areas/${areaId}/thermals/${clusterId}`,
     null,
