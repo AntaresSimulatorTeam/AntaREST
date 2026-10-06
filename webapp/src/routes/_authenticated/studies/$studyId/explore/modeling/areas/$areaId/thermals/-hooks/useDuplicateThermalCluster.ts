@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import { invalidateQueriesAfterMutation } from "@/queries/invalidateQueriesAfterMutation";
 import { thermalMutations } from "@/queries/thermals/mutations";
 import { thermalQueries } from "@/queries/thermals/queries";
 import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
@@ -25,12 +24,6 @@ function useDuplicateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
     ...thermalMutations.duplicate(studyId, areaId),
     onSuccess: async (duplicatedCluster, { studyId, areaId }) => {
       const { queryKey } = thermalQueries.list(studyId, areaId);
-
-      // A single cluster response cannot populate a list that has not loaded yet.
-      if (!queryClient.getQueryData(queryKey)) {
-        await invalidateQueriesAfterMutation(queryClient, queryKey);
-        return;
-      }
 
       // An older read must not overwrite the saved cluster.
       await queryClient.cancelQueries({ queryKey });

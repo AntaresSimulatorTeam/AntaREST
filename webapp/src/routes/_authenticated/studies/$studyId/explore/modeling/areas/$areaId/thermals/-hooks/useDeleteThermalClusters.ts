@@ -17,7 +17,6 @@ import { invalidateQueriesAfterMutation } from "@/queries/invalidateQueriesAfter
 import { thermalMutations } from "@/queries/thermals/mutations";
 import { thermalQueries } from "@/queries/thermals/queries";
 import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
-import { nameToId } from "@/services/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function useDeleteThermalClusters({ studyId, areaId }: ThermalsAreaParams) {
@@ -28,17 +27,13 @@ function useDeleteThermalClusters({ studyId, areaId }: ThermalsAreaParams) {
     onSuccess: async (_, { studyId, areaId, clusterIds }) => {
       const { queryKey } = thermalQueries.list(studyId, areaId);
 
-      if (!queryClient.getQueryData(queryKey)) {
-        await invalidateQueriesAfterMutation(queryClient, queryKey);
-      } else {
-        await queryClient.cancelQueries({ queryKey });
+      await queryClient.cancelQueries({ queryKey });
 
-        const deletedIds = new Set(clusterIds.map(nameToId));
+      const deletedIds = new Set(clusterIds);
 
-        queryClient.setQueryData(queryKey, (clusters) =>
-          clusters?.filter(({ id }) => !deletedIds.has(id)),
-        );
-      }
+      queryClient.setQueryData(queryKey, (clusters) =>
+        clusters?.filter(({ id }) => !deletedIds.has(id)),
+      );
 
       await Promise.all([
         invalidateQueriesAfterMutation(

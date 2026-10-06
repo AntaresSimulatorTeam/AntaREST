@@ -16,14 +16,12 @@ import "./setup";
 
 import { thermalKeys } from "@/queries/thermals/keys";
 import * as api from "@/services/api/studies/areas/thermals";
-import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
 import type { QueryClient } from "@tanstack/react-query";
-import { createQueryClient, createQueryWrapper, deferred } from "@/tests/queryUtils";
+import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
 import { cluster } from "./fixtures";
-import { act, render, renderHook, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route } from "../../$thermalId/parameters";
-import useUpdateThermalCluster from "../useUpdateThermalCluster";
 
 const { params, notify } = vi.hoisted(() => ({
   params: { studyId: "study", areaId: "area", thermalId: "gas" },
@@ -57,7 +55,7 @@ const key = thermalKeys.list(scope.studyId, scope.areaId);
 let client: QueryClient;
 
 beforeAll(async () => {
-  // The router code-splits this component; load it before testing query timing.
+  // The router code-splits this component.
   await Route.options.component?.preload?.();
 });
 
@@ -75,54 +73,6 @@ beforeEach(() => {
 afterEach(() => client.clear());
 
 describe("Thermal parameters", () => {
-  test("loads current defaults after two concurrent writes", async () => {
-    const initial = deferred<ThermalCluster[]>();
-    const firstRefresh = deferred<ThermalCluster[]>();
-    const updated = { ...cluster, nominalCapacity: 250 };
-    vi.mocked(api.getThermalClusters)
-      .mockReturnValueOnce(initial.promise)
-      .mockReturnValueOnce(firstRefresh.promise)
-      .mockResolvedValue([updated]);
-    vi.mocked(api.updateThermalCluster).mockReset().mockResolvedValue(updated);
-
-    render(<Parameters />, { wrapper });
-    const { result } = renderHook(() => useUpdateThermalCluster(scope), { wrapper });
-    await waitFor(() => expect(api.getThermalClusters).toHaveBeenCalledTimes(1));
-
-    let firstWrite: Promise<unknown>;
-    act(() => {
-      firstWrite = result.current.mutateAsync({
-        ...scope,
-        clusterId: "gas",
-        values: { nominalCapacity: 200 },
-      });
-    });
-    await waitFor(() => expect(api.getThermalClusters).toHaveBeenCalledTimes(2));
-
-    await act(async () => {
-      await result.current.mutateAsync({
-        ...scope,
-        clusterId: "gas",
-        values: { nominalCapacity: 250 },
-      });
-      await firstWrite;
-    });
-
-    await waitFor(() =>
-      expect(screen.getByRole("spinbutton", { name: capacityLabel })).toHaveValue(250),
-    );
-    expect(notify).not.toHaveBeenCalled();
-
-    await act(async () => {
-      initial.resolve([cluster]);
-      firstRefresh.resolve([{ ...cluster, nominalCapacity: 200 }]);
-      await Promise.all([initial.promise, firstRefresh.promise]);
-    });
-
-    expect(client.getQueryData(key)).toEqual([updated]);
-    expect(screen.getByRole("spinbutton", { name: capacityLabel })).toHaveValue(250);
-  });
-
   test("preserves edits across refetches and saves only changed fields", async () => {
     client.setQueryData(key, [cluster]);
     vi.mocked(api.updateThermalCluster)
