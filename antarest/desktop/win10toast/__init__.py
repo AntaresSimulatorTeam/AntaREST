@@ -55,7 +55,7 @@ class ToastNotifier(object):
     from: https://github.com/jithurjacob/Windows-10-Toast-Notifications
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize."""
         self._thread = None
 
@@ -114,7 +114,7 @@ class ToastNotifier(object):
         UnregisterClass(self.wc.lpszClassName, None)
         return None
 
-    def show_toast(self, title="Notification", msg="Here comes the message",
+    def show_toast(self, title: str="Notification", msg="Here comes the message",
                     icon_path=None, duration=5, threaded=False):
         """Notification settings.
 

@@ -25,6 +25,7 @@ from PyQt6.QtGui import QCursor, QIcon
 from PyQt6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 from antarest.core.utils.utils import get_local_path
+from antarest.desktop.win10toast import ToastNotifier
 
 RESOURCE_PATH = get_local_path() / "resources"
 
@@ -151,9 +152,6 @@ def notification_popup(message: str, threaded: bool = True) -> None:
     Pos a notification message above system tray.
     """
     if platform.system() == "Windows":
-        # noinspection PyPackageRequirements
-        from win10toast import ToastNotifier  # type: ignore
-
         toaster = ToastNotifier()
         toaster.show_toast(
             "AntaresWebServer",
