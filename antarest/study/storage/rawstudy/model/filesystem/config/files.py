@@ -239,8 +239,11 @@ def _parse_sets(root: Path) -> dict[str, District]:
         file_type=FileType.MULTI_INI,
         multi_ini_keys=["+", "-"],
     )
-
-    return {transform_name_to_id(name): parse_district(item, transform_name_to_id(name)) for name, item in obj.items()}
+    version = _parse_version(root)
+    return {
+        transform_name_to_id(name): parse_district(item, transform_name_to_id(name), version)
+        for name, item in obj.items()
+    }
 
 
 def _parse_areas(root: Path) -> dict[str, AreaConfig]:
