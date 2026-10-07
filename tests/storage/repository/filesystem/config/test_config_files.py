@@ -19,6 +19,7 @@ from typing import Any
 from zipfile import ZipFile
 
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde.ini_writer import write_ini_file
@@ -45,7 +46,12 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterGroup,
     ThermalCostGeneration,
 )
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3, STUDY_VERSION_10_2
+from antarest.study.model import (
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_10_2,
+    STUDY_VERSION_10_3,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_bindings,
     _parse_links_filtering,
@@ -1043,7 +1049,7 @@ def test_config_to_study_index_9_2_additional_constraints() -> None:
     assert list(index.sts_constraint_ids["be"]["battery"]) == ["stsconstraint"]
 
 
-def test_ramp_fields_round_trip_at_10_2() -> None:
+def test_ramp_fields_round_trip_at_10_3() -> None:
     """Ramping parameters use the solver's INI key names and round trip through parse/serialize."""
     ini_data = {
         "name": "test",
@@ -1054,14 +1060,14 @@ def test_ramp_fields_round_trip_at_10_2() -> None:
         "power-decrease-cost": 2.0,
     }
 
-    cluster = parse_thermal_cluster(study_version=STUDY_VERSION_10_2, data=ini_data)
+    cluster = parse_thermal_cluster(study_version=STUDY_VERSION_10_3, data=ini_data)
     assert cluster.ramping_enabled is True
     assert cluster.max_upward_power_ramping_rate == 10.5
     assert cluster.max_downward_power_ramping_rate == 0.0
     assert cluster.power_increase_cost == 1.0
     assert cluster.power_decrease_cost == 2.0
 
-    serialized = serialize_thermal_cluster(STUDY_VERSION_10_2, cluster)
+    serialized = serialize_thermal_cluster(STUDY_VERSION_10_3, cluster)
     assert serialized["ramping-enabled"] is True
     assert serialized["max-upward-power-ramping-rate"] == 10.5
     assert serialized["power-increase-cost"] == 1.0
@@ -1079,7 +1085,8 @@ def test_ramp_fields_round_trip_at_10_2() -> None:
         "power-decrease-cost",
     ],
 )
-def test_ramp_fields_are_rejected_below_10_2(ini_key: str) -> None:
+@pytest.mark.parametrize("version", [STUDY_VERSION_10_2])
+def test_ramp_fields_are_rejected_below_10_3(ini_key: str, version: StudyVersion) -> None:
     value = True if ini_key == "ramping-enabled" else 1.0
     with pytest.raises(InvalidFieldForVersionError, match="is not a valid field for study version"):
-        parse_thermal_cluster(study_version=STUDY_VERSION_9_3, data={"name": "test", ini_key: value})
+        parse_thermal_cluster(study_version=version, data={"name": "test", ini_key: value})

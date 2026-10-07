@@ -116,7 +116,7 @@ class ThermalColumn(StrEnum):
     COST_GENERATION = "costGeneration"
     EFFICIENCY = "efficiency"
     VARIABLE_OM_COST = "variableOMCost"
-    # Since v10.2
+    # Since v10.3
     RAMPING_ENABLED = "rampingEnabled"
     MAX_UPWARD_POWER_RAMPING_RATE = "maxUpwardPowerRampingRate"
     MAX_DOWNWARD_POWER_RAMPING_RATE = "maxDownwardPowerRampingRate"

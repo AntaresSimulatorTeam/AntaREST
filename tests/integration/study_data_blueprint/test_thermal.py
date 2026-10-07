@@ -554,7 +554,7 @@ class TestThermal:
         else:
             assert res.status_code == 422, res.json()
 
-        # Update with a ramping field. Rejected below v10.2, which is every version under test.
+        # Update with a ramping field. Rejected below v10.3, which is every version under test.
         res = client.patch(
             f"/v1/studies/{internal_study_id}/areas/{area_id}/clusters/thermal/{fr_gas_conventional_id}",
             json={"maxUpwardPowerRampingRate": 10.0},
