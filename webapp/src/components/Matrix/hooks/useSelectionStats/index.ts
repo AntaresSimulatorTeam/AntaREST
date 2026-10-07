@@ -13,10 +13,11 @@
  */
 
 import type { GridSelection, Item } from "@glideapps/glide-data-grid";
-import { useState } from "react";
-import { useUpdateEffect } from "react-use";
+import { useMemo } from "react";
+import { Column } from "../../shared/constants";
+import type { EnhancedGridColumn } from "../../shared/types";
 
-interface SelectionStats {
+export interface SelectionStats {
   sum: number;
   average: number;
   min: number;
@@ -25,75 +26,89 @@ interface SelectionStats {
 }
 
 interface UseSelectionStatsProps {
-  data: number[][];
   selection: GridSelection;
-  gridToData: (coordinates: Item) => Item | null;
+  columns: readonly EnhancedGridColumn[];
+  rows: number;
+  getCellValue: (coordinates: Item) => number | undefined;
 }
 
-export function useSelectionStats({ data, selection, gridToData }: UseSelectionStatsProps) {
-  const [stats, setStats] = useState<SelectionStats | null>(null);
-
-  useUpdateEffect(() => {
+export function useSelectionStats({
+  selection,
+  columns,
+  rows,
+  getCellValue,
+}: UseSelectionStatsProps): SelectionStats | null {
+  return useMemo(() => {
     let sum = 0;
     let min = Number.POSITIVE_INFINITY;
     let max = Number.NEGATIVE_INFINITY;
     let count = 0;
-    const numRows = data.length;
-    const numCols = data[0]?.length ?? 0;
 
-    const processValue = (value: number) => {
-      sum += value;
-      min = Math.min(min, value);
-      max = Math.max(max, value);
-      count++;
+    const processCell = (col: number, row: number) => {
+      const value = getCellValue([col, row]);
+
+      if (value !== undefined) {
+        sum += value;
+        min = Math.min(min, value);
+        max = Math.max(max, value);
+        count++;
+      }
     };
 
-    if (selection.current?.range) {
-      const { x, y, width, height } = selection.current.range;
+    const ranges = selection.current
+      ? [...selection.current.rangeStack, selection.current.range]
+      : [];
 
-      for (let col = x; col < x + width; ++col) {
-        for (let row = y; row < y + height; ++row) {
-          const coordinates = gridToData([col, row]);
+    for (const [index, range] of ranges.entries()) {
+      for (
+        let col = Math.max(0, range.x);
+        col < Math.min(columns.length, range.x + range.width);
+        col++
+      ) {
+        for (let row = Math.max(0, range.y); row < Math.min(rows, range.y + range.height); row++) {
+          // Stacked ranges can come from multi-rect selection or keyboard navigation that
+          // retains a previous range, even in rect mode. Count overlapping cells only once.
+          const alreadySelected =
+            index > 0 &&
+            ranges.some(
+              ({ x, y, width, height }, previousIndex) =>
+                previousIndex < index &&
+                col >= x &&
+                col < x + width &&
+                row >= y &&
+                row < y + height,
+            );
 
-          if (coordinates) {
-            const [dataCol, dataRow] = coordinates;
-            const value = data[dataRow]?.[dataCol];
-
-            if (value !== undefined) {
-              processValue(value);
-            }
+          if (!alreadySelected) {
+            processCell(col, row);
           }
         }
       }
     }
 
     for (const row of selection.rows) {
-      for (let col = 0; col < numCols; ++col) {
-        const value = data[row]?.[col];
+      if (row < 0 || row >= rows) {
+        continue;
+      }
 
-        if (value !== undefined) {
-          processValue(value);
+      for (const [col, column] of columns.entries()) {
+        // Row selection summarizes matrix inputs, not their derived aggregates.
+        if (column.type === Column.Number) {
+          processCell(col, row);
         }
       }
     }
 
     for (const col of selection.columns) {
-      for (let row = 0; row < numRows; ++row) {
-        const coordinates = gridToData([col, row]);
+      if (col < 0 || col >= columns.length) {
+        continue;
+      }
 
-        if (coordinates) {
-          const [dataCol, dataRow] = coordinates;
-          const value = data[dataRow]?.[dataCol];
-
-          if (value !== undefined) {
-            processValue(value);
-          }
-        }
+      for (let row = 0; row < rows; row++) {
+        processCell(col, row);
       }
     }
 
-    setStats(count ? { sum, min, max, count, average: sum / count } : null);
-  }, [data, selection]);
-
-  return stats;
+    return count ? { sum, min, max, count, average: sum / count } : null;
+  }, [selection, columns, rows, getCellValue]);
 }
