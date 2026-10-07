@@ -207,8 +207,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         session.execute(insert(GEMS_SYSTEM_METADATA_TABLE), metadata_values)
         self._insert_components(system.components)
-        self._insert_area_connections(system.area_connections or [], component_models)
-        self._insert_thermal_capacity_connections(system.thermal_capacity_connections or [], component_models)
+        self._insert_area_connections(system.area_connections or [])
+        self._insert_thermal_capacity_connections(system.thermal_capacity_connections or [])
 
         session.commit()
 
@@ -236,10 +236,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             component_model = component_models.get(connection.component)
             return component_model is not None and (*component_model, connection.port) in valid_ports
 
-        self._insert_area_connections([c for c in area_connections if is_still_valid(c)], component_models)
-        self._insert_thermal_capacity_connections(
-            [c for c in thermal_capacity_connections if is_still_valid(c)], component_models
-        )
+        self._insert_area_connections([c for c in area_connections if is_still_valid(c)])
+        self._insert_thermal_capacity_connections([c for c in thermal_capacity_connections if is_still_valid(c)])
 
         session.commit()
 
@@ -251,7 +249,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         table = GEMS_AREA_CONNECTIONS_TABLE
         self._db_session.execute(delete(table).where(table.c.study_data_id == self._study_data_id))
-        self._insert_area_connections(connections, component_models)
+        self._insert_area_connections(connections)
         self._db_session.commit()
 
     @override
@@ -262,7 +260,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         table = GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE
         self._db_session.execute(delete(table).where(table.c.study_data_id == self._study_data_id))
-        self._insert_thermal_capacity_connections(connections, component_models)
+        self._insert_thermal_capacity_connections(connections)
         self._db_session.commit()
 
     def _get_saved_component_models(self) -> ComponentModels:
@@ -324,43 +322,33 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
 
-    def _insert_area_connections(
-        self, connections: List[GemsAreaConnection], component_models: ComponentModels
-    ) -> None:
+    def _insert_area_connections(self, connections: List[GemsAreaConnection]) -> None:
         if not connections:
             return
 
         values = []
         for connection in connections:
-            library_id, model_id = component_models[connection.component]
             values.append(
                 {
                     "study_data_id": self._study_data_id,
                     "component_id": connection.component,
                     "port_id": connection.port,
-                    "library_id": library_id,
-                    "model_id": model_id,
                     "area_id": connection.area,
                 }
             )
         self._db_session.execute(insert(GEMS_AREA_CONNECTIONS_TABLE), values)
 
-    def _insert_thermal_capacity_connections(
-        self, connections: List[GemsThermalCapacityConnection], component_models: ComponentModels
-    ) -> None:
+    def _insert_thermal_capacity_connections(self, connections: List[GemsThermalCapacityConnection]) -> None:
         if not connections:
             return
 
         values = []
         for connection in connections:
-            library_id, model_id = component_models[connection.component]
             values.append(
                 {
                     "study_data_id": self._study_data_id,
                     "component_id": connection.component,
                     "port_id": connection.port,
-                    "library_id": library_id,
-                    "model_id": model_id,
                     "area_id": connection.thermal_component.area,
                     "cluster_id": connection.thermal_component.cluster_id,
                 }

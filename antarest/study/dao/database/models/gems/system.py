@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, String, Table, UniqueConstraint
+from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
@@ -50,14 +50,6 @@ GEMS_COMPONENTS_TABLE = Table(
         ["gems_scenario_builder.study_data_id", "gems_scenario_builder.scenario_group"],
         ondelete="SET NULL",
     ),
-    # Allows connections tables to reference `(study_data_id, component_id, library_id, model_id)`
-    UniqueConstraint(
-        "study_data_id",
-        "component_id",
-        "library_id",
-        "model_id",
-        name="uq_gems_components_component_library_model",
-    ),
 )
 
 GEMS_COMPONENT_PARAMETERS_TABLE = Table(
@@ -91,38 +83,17 @@ GEMS_COMPONENT_PROPERTIES_TABLE = Table(
 )
 
 
-def _component_model_foreign_key(table_name: str) -> ForeignKeyConstraint:
-    """Ensures `library_id`/`model_id` really are the library/model of `component_id`."""
+def _component_foreign_key(table_name: str) -> ForeignKeyConstraint:
     return ForeignKeyConstraint(
-        ["study_data_id", "component_id", "library_id", "model_id"],
-        [
-            "gems_components.study_data_id",
-            "gems_components.component_id",
-            "gems_components.library_id",
-            "gems_components.model_id",
-        ],
+        ["study_data_id", "component_id"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
         name=f"fk_{table_name}_component",
         ondelete="CASCADE",
     )
 
 
-def _port_foreign_key(table_name: str) -> ForeignKeyConstraint:
-    """Ensures `port_id` is actually a port of the component's model."""
-    return ForeignKeyConstraint(
-        ["study_data_id", "library_id", "model_id", "port_id"],
-        [
-            "gems_models_ports.study_data_id",
-            "gems_models_ports.library_id",
-            "gems_models_ports.model_id",
-            "gems_models_ports.port_id",
-        ],
-        name=f"fk_{table_name}_port",
-        ondelete="CASCADE",
-    )
-
-
-# `library_id`/`model_id` are denormalized from `gems_components` so that the port foreign key
-# can check that `port_id` truly belongs to the model of `component_id`.
+# There is no foreign key to the port of the component: models and ports are never deleted,
+# so it could only check the port on insertion, which is already done application side.
 # Antares Simulator allows a single area connection per port, hence the primary key.
 GEMS_AREA_CONNECTIONS_TABLE = Table(
     "gems_area_connections",
@@ -130,11 +101,8 @@ GEMS_AREA_CONNECTIONS_TABLE = Table(
     study_data_id_col(),
     Column("component_id", String(255), primary_key=True),
     Column("port_id", String(255), primary_key=True),
-    Column("library_id", String(255), nullable=False),
-    Column("model_id", String(255), nullable=False),
     Column("area_id", String(255), nullable=False),
-    _component_model_foreign_key("gems_area_connections"),
-    _port_foreign_key("gems_area_connections"),
+    _component_foreign_key("gems_area_connections"),
     ForeignKeyConstraint(
         ["study_data_id", "area_id"],
         ["area.study_data_id", "area.area_id"],
@@ -150,12 +118,9 @@ GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE = Table(
     study_data_id_col(),
     Column("component_id", String(255), primary_key=True),
     Column("port_id", String(255), primary_key=True),
-    Column("library_id", String(255), nullable=False),
-    Column("model_id", String(255), nullable=False),
     Column("area_id", String(255), nullable=False),
     Column("cluster_id", String(255), nullable=False),
-    _component_model_foreign_key("gems_thermal_capacity_connections"),
-    _port_foreign_key("gems_thermal_capacity_connections"),
+    _component_foreign_key("gems_thermal_capacity_connections"),
     ForeignKeyConstraint(
         ["study_data_id", "area_id", "cluster_id"],
         ["thermal_cluster.study_data_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
