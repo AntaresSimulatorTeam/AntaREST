@@ -60,6 +60,16 @@ def _check_no_duplicated_connections(connections: list[GemsComponentConnection])
         seen.add(ordered_connection)
 
 
+def _check_components_exist(
+    components_library_and_model: dict[str, tuple[str, str]], connections: list[GemsComponentConnection]
+) -> None:
+    referenced_component_ids = {c for connection in connections for c in (connection.component1, connection.component2)}
+    if invalid_component_ids := referenced_component_ids - components_library_and_model.keys():
+        raise GemsInvalidConnection(
+            f"Connection(s) reference non-existing component(s): {sorted(invalid_component_ids)}"
+        )
+
+
 def _check_connection_does_not_link_port_component_to_itself(connections: list[GemsComponentConnection]) -> None:
     for connection in connections:
         if connection.component1 == connection.component2 and connection.port1 == connection.port2:
@@ -329,12 +339,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
         )
 
-        # `library_idX`/`model_idX` are denormalized from `gems_components` so that the port foreign keys
-        # can check that `portX` truly belongs to the model of `componentX` (see the connections table
-        # definition).
+        # This is used to check that `portX` truly belongs to the model of `componentX`
         components_library_and_model = self._get_components_library_and_model()
 
-        rows = self._build_rows(components_library_and_model, connections)
+        rows = self._build_rows(connections)
 
         try:
             session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
@@ -351,38 +359,26 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     ) -> NoReturn:
 
         _check_connection_does_not_link_port_component_to_itself(connections)
+        _check_components_exist(components_library_and_model, connections)
         self._check_ports_exist_in_models(components_library_and_model, connections, e)
 
         # All components and ports exist and no self-connection was found.
         # It means the DB table is not filled as it should.
         raise ValueError("The connections table is not filled as it should") from e
 
-    def _build_rows(
-        self, components_library_and_model: dict[str, tuple[str, str]], connections: list[GemsComponentConnection]
-    ) -> list[Any]:
+    def _build_rows(self, connections: list[GemsComponentConnection]) -> list[Any]:
         study_data_id = self._study_data_id
 
         rows = []
-        try:
-            for connection in connections:
-                library_id1, model_id1 = components_library_and_model[connection.component1]
-                library_id2, model_id2 = components_library_and_model[connection.component2]
-                rows.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "component1": connection.component1,
-                        "component2": connection.component2,
-                        "port1": connection.port1,
-                        "port2": connection.port2,
-                        "library_id1": library_id1,
-                        "model_id1": model_id1,
-                        "library_id2": library_id2,
-                        "model_id2": model_id2,
-                    }
-                )
-        except KeyError as e:
-            raise GemsInvalidConnection(
-                f"Component '{e.args[0]}' does not exist but a connection tries to use it"
-            ) from e
+        for connection in connections:
+            rows.append(
+                {
+                    "study_data_id": study_data_id,
+                    "component1": connection.component1,
+                    "component2": connection.component2,
+                    "port1": connection.port1,
+                    "port2": connection.port2,
+                }
+            )
 
         return rows

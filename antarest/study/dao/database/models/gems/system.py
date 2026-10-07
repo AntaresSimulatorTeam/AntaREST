@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, CheckConstraint, Column, Float, ForeignKeyConstraint, String, Table, UniqueConstraint
+from sqlalchemy import Boolean, CheckConstraint, Column, Float, ForeignKeyConstraint, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
@@ -49,9 +49,6 @@ GEMS_COMPONENTS_TABLE = Table(
         ["study_data_id", "scenario_group"],
         ["gems_scenario_builder.study_data_id", "gems_scenario_builder.scenario_group"],
         ondelete="SET NULL",
-    ),
-    UniqueConstraint(
-        "study_data_id", "component_id", "library_id", "model_id", name="uq_gems_components_component_library_model"
     ),
 )
 

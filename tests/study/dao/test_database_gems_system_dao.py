@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
 from pathlib import Path
 
 import pytest
@@ -286,7 +287,7 @@ def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None
 
     with pytest.raises(
         GemsInvalidConnection,
-        match="Component 'non_existing_component' does not exist but a connection tries to use it",
+        match=re.escape("Connection(s) reference non-existing component(s): ['non_existing_component']"),
     ):
         dao.save_system(system)
 
