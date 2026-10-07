@@ -21,7 +21,12 @@ from antarest.core.exceptions import (
 )
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
-from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
+from antarest.study.business.model.gems.system import (
+    GemsAreaConnection,
+    GemsComponent,
+    GemsSystem,
+    GemsThermalCapacityConnection,
+)
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
@@ -257,6 +262,78 @@ def test_deleting_an_area_removes_the_connections_to_its_thermal_clusters(dao_10
     assert [(c.component, c.port, c.area) for c in system.area_connections] == [
         ("electrolyser", "hydrogen_port", "west-h2")
     ]
+
+
+def test_save_legacy_connections_replaces_existing_ones(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_system_file_to_study_dao(dao)
+
+    area_connection = GemsAreaConnection(component="electrolyser", port="power_port", area="West-H2")
+    dao.save_area_connections([area_connection])
+    thermal_connection = GemsThermalCapacityConnection.model_validate(
+        {
+            "component": "electrolyser",
+            "port": "hydrogen_port",
+            "thermal-component": {"area": "west", "cluster-id": "gas_cluster"},
+        }
+    )
+    dao.save_thermal_capacity_connections([thermal_connection])
+
+    system = dao.get_system()
+    assert system is not None
+    assert system.area_connections == [area_connection]
+    assert system.thermal_capacity_connections == [thermal_connection]
+    # The rest of the system is untouched
+    assert [component.id for component in system.components] == ["electrolyser"]
+
+    # An empty list removes all the connections
+    dao.save_area_connections([])
+    dao.save_thermal_capacity_connections([])
+    system = dao.get_system()
+    assert system is not None
+    assert system.area_connections is None
+    assert system.thermal_capacity_connections is None
+
+
+def test_cannot_save_legacy_connections_without_system(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+
+    with pytest.raises(GemsSystemNotFound, match="No system configuration found for study"):
+        dao.save_area_connections([])
+    with pytest.raises(GemsSystemNotFound, match="No system configuration found for study"):
+        dao.save_thermal_capacity_connections([])
+
+
+def test_cannot_save_legacy_connections_of_unknown_component(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    system = _add_system_file_to_study_dao(dao)
+
+    with pytest.raises(GemsInvalidConnection, match="area-connections: component 'unknown' does not exist"):
+        dao.save_area_connections([GemsAreaConnection(component="unknown", port="power_port", area="west")])
+
+    # Nothing has been saved
+    saved_system = dao.get_system()
+    assert saved_system is not None
+    assert saved_system.area_connections == system.area_connections
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_cannot_save_legacy_connections_to_unknown_legacy_objects(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_system_file_to_study_dao(dao)
+
+    with pytest.raises(GemsInvalidConnection, match="connected to a non-existing area 'unknown'"):
+        dao.save_area_connections([GemsAreaConnection(component="electrolyser", port="power_port", area="unknown")])
+
+    thermal_connection = GemsThermalCapacityConnection.model_validate(
+        {
+            "component": "electrolyser",
+            "port": "power_port",
+            "thermal-component": {"area": "west", "cluster-id": "unknown"},
+        }
+    )
+    with pytest.raises(GemsInvalidConnection, match="non-existing thermal cluster 'unknown' in area 'west'"):
+        dao.save_thermal_capacity_connections([thermal_connection])
 
 
 def _add_library_file_to_study_dao(dao: StudyDao) -> None:

@@ -31,7 +31,6 @@ from antarest.study.dao.file.common import (
     get_thermal_reserve_participations_as_yaml_content,
     get_thermal_reserve_path,
 )
-from antarest.study.dao.file.file_study_gems_system_dao import remove_thermal_cluster_from_gems_system
 from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
@@ -227,10 +226,26 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         self._remove_cluster_from_scenario_builder(study_data, area_id, cluster_id)
         self._remove_thermal_reserve_certifications(area_id, cluster_id)
-        remove_thermal_cluster_from_gems_system(study_data.config.study_path, area_id, cluster_id)
+        self._remove_thermal_from_gems_system(area_id, cluster_id)
 
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
+
+    def _remove_thermal_from_gems_system(self, area_id: str, cluster_id: str) -> None:
+        """Removes the connections of the GEMS components to the thermal cluster."""
+        study_dao = self.get_impl()
+        system = study_dao.get_system()
+        if system is None or not system.thermal_capacity_connections:
+            return
+
+        connections = system.thermal_capacity_connections
+        kept_connections = [
+            c
+            for c in connections
+            if (c.thermal_component.area, c.thermal_component.cluster_id) != (area_id, cluster_id)
+        ]
+        if len(kept_connections) != len(connections):
+            study_dao.save_thermal_capacity_connections(kept_connections)
 
     def _get_thermal_matrices(self, url_getter: Callable[[AreaId, ThermalId], list[str]]) -> ThermalSeriesMapping:
         study_data = self.get_file_study()

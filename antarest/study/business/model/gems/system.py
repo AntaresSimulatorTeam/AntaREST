@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List, Self
+from typing import List, Self, Sequence
 
 from pydantic import ConfigDict, field_validator, model_validator
 
@@ -100,21 +100,27 @@ class GemsSystem(AntaresBaseModel):
     @model_validator(mode="after")
     def _check_legacy_connections(self) -> Self:
         component_ids = {component.id for component in self.components}
-        legacy_connections: list[tuple[str, list[GemsAreaConnection] | list[GemsThermalCapacityConnection]]] = [
-            ("area-connections", self.area_connections or []),
-            ("thermal-capacity-connections", self.thermal_capacity_connections or []),
-        ]
-        for section, connections in legacy_connections:
-            connected_ports: set[tuple[str, str]] = set()
-            for connection in connections:
-                if connection.component not in component_ids:
-                    raise GemsInvalidConnection(f"{section}: component '{connection.component}' does not exist")
-                # Antares Simulator only allows a single connection of each kind per port
-                port = (connection.component, connection.port)
-                if port in connected_ports:
-                    raise GemsInvalidConnection(
-                        f"{section}: port '{connection.port}' of component '{connection.component}'"
-                        f" is connected more than once"
-                    )
-                connected_ports.add(port)
+        check_legacy_connections("area-connections", self.area_connections or [], component_ids)
+        check_legacy_connections("thermal-capacity-connections", self.thermal_capacity_connections or [], component_ids)
         return self
+
+
+def check_legacy_connections(
+    section: str,
+    connections: Sequence[GemsAreaConnection | GemsThermalCapacityConnection],
+    component_ids: set[str],
+) -> None:
+    """
+    Checks that the connections of a section reference existing components, and that each port is connected once.
+    """
+    connected_ports: set[tuple[str, str]] = set()
+    for connection in connections:
+        if connection.component not in component_ids:
+            raise GemsInvalidConnection(f"{section}: component '{connection.component}' does not exist")
+        # Antares Simulator only allows a single connection of each kind per port
+        port = (connection.component, connection.port)
+        if port in connected_ports:
+            raise GemsInvalidConnection(
+                f"{section}: port '{connection.port}' of component '{connection.component}' is connected more than once"
+            )
+        connected_ports.add(port)

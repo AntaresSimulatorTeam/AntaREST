@@ -26,7 +26,6 @@ from antarest.study.business.model.binding_constraint_model import ClusterTerm, 
 from antarest.study.dao.api.area_dao import AreaDao
 from antarest.study.dao.common import AreaId, AreaName, AreaSeriesMapping, AreaUiMapping
 from antarest.study.dao.file.common import check_area_exists, get_all_area_matrices, save_area_matrices
-from antarest.study.dao.file.file_study_gems_system_dao import remove_area_from_gems_system
 from antarest.study.model import (
     STUDY_VERSION_6_5,
     STUDY_VERSION_8_1,
@@ -341,7 +340,7 @@ class FileStudyAreaDao(AreaDao):
         self._remove_area_from_hydro_allocation(area_id, study_data)
         self._remove_area_from_districts(area_id, study_data)
         self._remove_area_from_scenario_builder(area_id, study_data)
-        remove_area_from_gems_system(study_data.config.study_path, area_id)
+        self._remove_area_from_gems_system(area_id)
 
         # Remove from config
         self._remove_from_config(area_id, study_data.config)
@@ -349,6 +348,23 @@ class FileStudyAreaDao(AreaDao):
         # Update area list
         new_area_data: JSON = {"input": {"areas": {"list": [area.name for area in study_data.config.areas.values()]}}}
         study_data.tree.save(new_area_data)
+
+    def _remove_area_from_gems_system(self, area_id: str) -> None:
+        """Removes the connections of the GEMS components to the area and to its thermal clusters."""
+        study_dao = self.get_impl()
+        system = study_dao.get_system()
+        if system is None:
+            return
+
+        area_connections = system.area_connections or []
+        kept_area_connections = [c for c in area_connections if c.area != area_id]
+        if len(kept_area_connections) != len(area_connections):
+            study_dao.save_area_connections(kept_area_connections)
+
+        thermal_connections = system.thermal_capacity_connections or []
+        kept_thermal_connections = [c for c in thermal_connections if c.thermal_component.area != area_id]
+        if len(kept_thermal_connections) != len(thermal_connections):
+            study_dao.save_thermal_capacity_connections(kept_thermal_connections)
 
     def _delete_area_files(self, area_id: str, study_data: Any) -> None:
         """Delete all files associated with an area from the tree."""

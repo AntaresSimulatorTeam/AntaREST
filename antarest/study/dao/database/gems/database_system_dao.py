@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List
+from typing import Any, List, Sequence
 
 from sqlalchemy import Row, delete, insert, select
 from typing_extensions import override
@@ -24,6 +24,7 @@ from antarest.study.business.model.gems.system import (
     GemsComponent,
     GemsSystem,
     GemsThermalCapacityConnection,
+    check_legacy_connections,
 )
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -195,7 +196,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         component_models = _get_component_models(system.components)
         # Checked before writing anything, so that an invalid system leaves the study untouched
-        self._check_legacy_connections(system, component_models)
+        self._check_area_connections(system.area_connections or [], component_models)
+        self._check_thermal_capacity_connections(system.thermal_capacity_connections or [], component_models)
 
         metadata_values = {
             "study_data_id": study_data_id,
@@ -240,6 +242,38 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         )
 
         session.commit()
+
+    @override
+    def save_area_connections(self, connections: List[GemsAreaConnection]) -> None:
+        component_models = self._get_saved_component_models()
+        check_legacy_connections("area-connections", connections, set(component_models))
+        self._check_area_connections(connections, component_models)
+
+        table = GEMS_AREA_CONNECTIONS_TABLE
+        self._db_session.execute(delete(table).where(table.c.study_data_id == self._study_data_id))
+        self._insert_area_connections(connections, component_models)
+        self._db_session.commit()
+
+    @override
+    def save_thermal_capacity_connections(self, connections: List[GemsThermalCapacityConnection]) -> None:
+        component_models = self._get_saved_component_models()
+        check_legacy_connections("thermal-capacity-connections", connections, set(component_models))
+        self._check_thermal_capacity_connections(connections, component_models)
+
+        table = GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE
+        self._db_session.execute(delete(table).where(table.c.study_data_id == self._study_data_id))
+        self._insert_thermal_capacity_connections(connections, component_models)
+        self._db_session.commit()
+
+    def _get_saved_component_models(self) -> ComponentModels:
+        if not self._get_system_row_if_exists():
+            raise GemsSystemNotFound(f"No system configuration found for study {self._study_data_id}")
+
+        table = GEMS_COMPONENTS_TABLE
+        stmt = select(table.c.component_id, table.c.library_id, table.c.model_id).where(
+            table.c.study_data_id == self._study_data_id
+        )
+        return {row.component_id: (row.library_id, row.model_id) for row in self._db_session.execute(stmt)}
 
     def _insert_components(self, components: List[GemsComponent]) -> None:
         study_data_id = self._study_data_id
@@ -340,44 +374,54 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         )
         return {(row.library_id, row.model_id, row.port_id) for row in self._db_session.execute(stmt)}
 
-    def _check_legacy_connections(self, system: GemsSystem, component_models: ComponentModels) -> None:
-        """
-        Checks the references of the connections to the library and to the legacy part of the study.
-        The references to the components are already checked by `GemsSystem`.
-        """
-        area_connections = system.area_connections or []
-        thermal_capacity_connections = system.thermal_capacity_connections or []
-        if not area_connections and not thermal_capacity_connections:
-            return
-
+    def _check_ports(
+        self,
+        connections: Sequence[GemsAreaConnection | GemsThermalCapacityConnection],
+        component_models: ComponentModels,
+    ) -> None:
         valid_ports = self._get_valid_ports()
-        connections: List[GemsAreaConnection | GemsThermalCapacityConnection] = [
-            *area_connections,
-            *thermal_capacity_connections,
-        ]
         for connection in connections:
             if (*component_models[connection.component], connection.port) not in valid_ports:
                 raise GemsInvalidConnection(
                     f"Component '{connection.component}' does not have a port named '{connection.port}'"
                 )
 
-        if area_connections:
-            area_ids = set(self.get_impl().get_all_area_ids())
-            for area_connection in area_connections:
-                if area_connection.area not in area_ids:
-                    raise GemsInvalidConnection(
-                        f"Component '{area_connection.component}' is connected to a non-existing area"
-                        f" '{area_connection.area}'"
-                    )
+    def _check_area_connections(self, connections: List[GemsAreaConnection], component_models: ComponentModels) -> None:
+        """
+        Checks the references of the connections to the library and to the legacy areas.
+        The references to the components must already be checked.
+        """
+        if not connections:
+            return
 
-        if thermal_capacity_connections:
-            table = THERMAL_CLUSTER_TABLE
-            stmt = select(table.c.area_id, table.c.thermal_id).where(table.c.study_data_id == self._study_data_id)
-            cluster_ids = {(row.area_id, row.thermal_id) for row in self._db_session.execute(stmt)}
-            for thermal_connection in thermal_capacity_connections:
-                thermal = thermal_connection.thermal_component
-                if (thermal.area, thermal.cluster_id) not in cluster_ids:
-                    raise GemsInvalidConnection(
-                        f"Component '{thermal_connection.component}' is connected to a non-existing thermal cluster"
-                        f" '{thermal.cluster_id}' in area '{thermal.area}'"
-                    )
+        self._check_ports(connections, component_models)
+
+        area_ids = set(self.get_impl().get_all_area_ids())
+        for connection in connections:
+            if connection.area not in area_ids:
+                raise GemsInvalidConnection(
+                    f"Component '{connection.component}' is connected to a non-existing area '{connection.area}'"
+                )
+
+    def _check_thermal_capacity_connections(
+        self, connections: List[GemsThermalCapacityConnection], component_models: ComponentModels
+    ) -> None:
+        """
+        Checks the references of the connections to the library and to the legacy thermal clusters.
+        The references to the components must already be checked.
+        """
+        if not connections:
+            return
+
+        self._check_ports(connections, component_models)
+
+        table = THERMAL_CLUSTER_TABLE
+        stmt = select(table.c.area_id, table.c.thermal_id).where(table.c.study_data_id == self._study_data_id)
+        cluster_ids = {(row.area_id, row.thermal_id) for row in self._db_session.execute(stmt)}
+        for connection in connections:
+            thermal = connection.thermal_component
+            if (thermal.area, thermal.cluster_id) not in cluster_ids:
+                raise GemsInvalidConnection(
+                    f"Component '{connection.component}' is connected to a non-existing thermal cluster"
+                    f" '{thermal.cluster_id}' in area '{thermal.area}'"
+                )
