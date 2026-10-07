@@ -18,7 +18,12 @@ from typing import TYPE_CHECKING, Any, Callable
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
+from antarest.core.exceptions import (
+    ChildNotFoundError,
+    GemsConnectedObjectDeletionNotAllowed,
+    LayerNotFound,
+    ReferencedObjectDeletionNotAllowed,
+)
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
@@ -331,6 +336,8 @@ class FileStudyAreaDao(AreaDao):
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
 
+        self._check_area_not_connected_to_gems(area_id)
+
         # Delete all area files from the tree
         self._delete_area_files(area_id, study_data)
 
@@ -340,7 +347,6 @@ class FileStudyAreaDao(AreaDao):
         self._remove_area_from_hydro_allocation(area_id, study_data)
         self._remove_area_from_districts(area_id, study_data)
         self._remove_area_from_scenario_builder(area_id, study_data)
-        self._remove_area_from_gems_system(area_id)
 
         # Remove from config
         self._remove_from_config(area_id, study_data.config)
@@ -349,22 +355,16 @@ class FileStudyAreaDao(AreaDao):
         new_area_data: JSON = {"input": {"areas": {"list": [area.name for area in study_data.config.areas.values()]}}}
         study_data.tree.save(new_area_data)
 
-    def _remove_area_from_gems_system(self, area_id: str) -> None:
-        """Removes the connections of the GEMS components to the area and to its thermal clusters."""
-        study_dao = self.get_impl()
-        system = study_dao.get_system()
+    def _check_area_not_connected_to_gems(self, area_id: str) -> None:
+        """Checks that no GEMS component is connected to the area or to its thermal clusters."""
+        system = self.get_impl().get_system()
         if system is None:
             return
-
-        area_connections = system.area_connections or []
-        kept_area_connections = [c for c in area_connections if c.area != area_id]
-        if len(kept_area_connections) != len(area_connections):
-            study_dao.save_area_connections(kept_area_connections)
-
-        thermal_connections = system.thermal_capacity_connections or []
-        kept_thermal_connections = [c for c in thermal_connections if c.thermal_component.area != area_id]
-        if len(kept_thermal_connections) != len(thermal_connections):
-            study_dao.save_thermal_capacity_connections(kept_thermal_connections)
+        if not system.area_connections:
+            return
+        connected_component_ids = {c.component for c in system.area_connections if c.area == area_id}
+        if connected_component_ids:
+            raise GemsConnectedObjectDeletionNotAllowed(area_id, connected_component_ids, object_type="Area")
 
     def _delete_area_files(self, area_id: str, study_data: Any) -> None:
         """Delete all files associated with an area from the tree."""
