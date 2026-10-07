@@ -1,7 +1,7 @@
 """create_gems_area_and_thermal_capacity_connections_tables
 
 Revision ID: 4b74045877f5
-Revises: bb26e0cd63ea
+Revises: ae201048f056
 Create Date: 2026-10-01 10:45:00.000000
 
 """
@@ -13,7 +13,7 @@ from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = "4b74045877f5"
-down_revision = "bb26e0cd63ea"
+down_revision = "ae201048f056"
 branch_labels = None
 depends_on = None
 
