@@ -382,7 +382,7 @@ class TestTableMode:
             "costGeneration",
             "efficiency",
             "variableOMCost",
-            # since v10.2
+            # since v10.3
             "rampingEnabled",
             "maxUpwardPowerRampingRate",
             "maxDownwardPowerRampingRate",
