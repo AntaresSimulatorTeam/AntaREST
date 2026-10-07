@@ -147,6 +147,6 @@ GEMS_COMPONENT_CONNECTIONS_TABLE = Table(
     ),
     CheckConstraint(
         "component1 != component2 or port1 != port2",
-        name="ck_gems_component_connections_component1_not_equals_component2",
+        name="ck_gems_component_connections_have_distinct_endpoints",
     ),
 )

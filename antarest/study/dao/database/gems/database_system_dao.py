@@ -60,6 +60,14 @@ def _check_no_duplicated_connections(connections: list[GemsComponentConnection])
         seen.add(ordered_connection)
 
 
+def _check_connection_does_not_link_port_component_to_itself(connections: list[GemsComponentConnection]) -> None:
+    for connection in connections:
+        if connection.component1 == connection.component2 and connection.port1 == connection.port2:
+            raise GemsInvalidConnection(
+                f"A connection cannot link the port '{connection.port1}' of component '{connection.component1}' to itself"
+            )
+
+
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     """Database implementation of GemsSystemDao"""
 
@@ -272,21 +280,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         ).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id)
         return {row.component_id: (row.library_id, row.model_id) for row in session.execute(stmt).fetchall()}
 
-    def _raise_the_right_connection_error(
-        self,
-        components_library_and_model: dict[str, tuple[str, str]],
-        connections: list[GemsComponentConnection],
-        exc: IntegrityError,
-    ) -> None:
-
-        self._check_connection_does_not_link_port_component_to_itself(connections, exc)
-        self._check_components_exist(components_library_and_model, connections, exc)
-        self._check_ports_exist_in_models(components_library_and_model, connections, exc)
-
-        # All components and ports exist and no self-connection was found.
-        # It means the DB table is not filled as it should.
-        raise ValueError("The connections table is not filled as it should") from exc
-
     def _check_ports_exist_in_models(
         self,
         components_library_and_model: dict[str, tuple[str, str]],
@@ -314,29 +307,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                         f"Component '{component_id}' does not have a port named '{port_id}'"
                     ) from exc
 
-    def _check_components_exist(
-        self,
-        components_library_and_model: dict[str, tuple[str, str]],
-        connections: list[GemsComponentConnection],
-        exc: IntegrityError,
-    ) -> None:
-        referenced_component_ids = {
-            c for connection in connections for c in (connection.component1, connection.component2)
-        }
-        if invalid_component_ids := referenced_component_ids - components_library_and_model.keys():
-            raise GemsInvalidConnection(
-                f"Connection(s) reference non-existing component(s): {sorted(invalid_component_ids)}"
-            ) from exc
-
-    def _check_connection_does_not_link_port_component_to_itself(
-        self, connections: list[GemsComponentConnection], exc: IntegrityError
-    ) -> None:
-        for connection in connections:
-            if connection.component1 == connection.component2 and connection.port1 == connection.port2:
-                raise GemsInvalidConnection(
-                    f"A connection cannot link the port '{connection.port1}' of component '{connection.component1}' to itself"
-                ) from exc
-
     def _save_connections(self, connections: List[GemsComponentConnection] | None) -> None:
 
         if not connections:
@@ -351,6 +321,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
         # so we have to check that the connections are not duplicated.
         _check_no_duplicated_connections(connections)
+        _check_connection_does_not_link_port_component_to_itself(connections)
 
         # Clean all existing data regarding connections
         session.execute(
@@ -359,19 +330,23 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
         )
 
-        if connections:
-            # `library_idX`/`model_idX` are denormalized from `gems_components` so that the port foreign keys
-            # can check that `portX` truly belongs to the model of `componentX` (see the connections table
-            # definition).
-            components_library_and_model = self._get_components_library_and_model()
+        # `library_idX`/`model_idX` are denormalized from `gems_components` so that the port foreign keys
+        # can check that `portX` truly belongs to the model of `componentX` (see the connections table
+        # definition).
+        components_library_and_model = self._get_components_library_and_model()
 
-            rows = self._build_rows(components_library_and_model, connections)
+        rows = self._build_rows(components_library_and_model, connections)
 
-            try:
-                session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
-                session.commit()
-            except IntegrityError as e:
-                self._raise_the_right_connection_error(components_library_and_model, connections, e)
+        try:
+            session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            self._check_ports_exist_in_models(components_library_and_model, connections, e)
+
+            # All components and ports exist and no self-connection was found.
+            # It means the DB table is not filled as it should.
+            raise ValueError("The connections table is not filled as it should") from e
 
     def _build_rows(
         self, components_library_and_model: dict[str, tuple[str, str]], connections: list[GemsComponentConnection]

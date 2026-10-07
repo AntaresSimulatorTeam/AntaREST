@@ -12,7 +12,6 @@
 from typing import List
 
 from pydantic import ConfigDict
-from typing_extensions import override
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
@@ -51,23 +50,6 @@ class GemsComponentConnection(AntaresBaseModel):
     component2: str
     port1: str
     port2: str
-
-    # The __eq__ and __hash__ methods are required for the set() data structure
-    # to check connections are not duplicated.
-
-    @override
-    def __hash__(self) -> int:
-        return hash((self.component1, self.component2, self.port1, self.port2))
-
-    @override
-    def __eq__(self, other: object) -> bool:
-        return (
-            isinstance(other, GemsComponentConnection)
-            and self.component1 == other.component1
-            and self.component2 == other.component2
-            and self.port1 == other.port1
-            and self.port2 == other.port2
-        )
 
 
 class GemsSystem(AntaresBaseModel):
