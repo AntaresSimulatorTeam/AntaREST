@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List
+from typing import Any, List, NoReturn
 
 from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.exc import IntegrityError
@@ -321,7 +321,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
         # so we have to check that the connections are not duplicated.
         _check_no_duplicated_connections(connections)
-        _check_connection_does_not_link_port_component_to_itself(connections)
 
         # Clean all existing data regarding connections
         session.execute(
@@ -342,11 +341,21 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             session.commit()
         except IntegrityError as e:
             session.rollback()
-            self._check_ports_exist_in_models(components_library_and_model, connections, e)
+            self._raise_the_right_connection_exception(components_library_and_model, connections, e)
 
-            # All components and ports exist and no self-connection was found.
-            # It means the DB table is not filled as it should.
-            raise ValueError("The connections table is not filled as it should") from e
+    def _raise_the_right_connection_exception(
+        self,
+        components_library_and_model: dict[str, tuple[str, str]],
+        connections: list[GemsComponentConnection],
+        e: IntegrityError,
+    ) -> NoReturn:
+
+        _check_connection_does_not_link_port_component_to_itself(connections)
+        self._check_ports_exist_in_models(components_library_and_model, connections, e)
+
+        # All components and ports exist and no self-connection was found.
+        # It means the DB table is not filled as it should.
+        raise ValueError("The connections table is not filled as it should") from e
 
     def _build_rows(
         self, components_library_and_model: dict[str, tuple[str, str]], connections: list[GemsComponentConnection]

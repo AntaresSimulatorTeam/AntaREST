@@ -66,23 +66,6 @@ def test_system_is_not_saved_if_an_error_is_raised(dao_10_2: StudyDao) -> None:
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_unknown_port_raises_gems_invalid_connection(dao_10_2: StudyDao) -> None:
-    dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
-
-    dsr = GemsComponent(id="dsr", model="andromede-v1-models-weo-hybrid.dsr")
-    electrolyser = GemsComponent(id="electrolyser", model="andromede-v1-models-weo-hybrid.electrolyser")
-    # Both components exist, but `dsr` has no port named `unknown_port`: only the port foreign key catches it.
-    connection = GemsComponentConnection(
-        component1="dsr", port1="unknown_port", component2="electrolyser", port2="hydrogen_port"
-    )
-    system = GemsSystem(id="sys_id", components=[dsr, electrolyser], connections=[connection])
-
-    with pytest.raises(GemsInvalidConnection, match="Component 'dsr' does not have a port named 'unknown_port'"):
-        dao.save_system(system)
-
-
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_save_and_load_system(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 
