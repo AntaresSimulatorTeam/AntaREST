@@ -20,7 +20,7 @@ from antarest.study.business.model.area_model import AreaCreation, AreaUIUpdate
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.link_model import AssetType, Link, TransmissionCapacity
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
@@ -34,7 +34,10 @@ from tests.helpers import file_study_interface
 
 
 def test_area_crud(
-    study: StudyInterface, matrix_service: ISimpleMatrixService, area_manager: AreaManager, link_manager: LinkManager
+    study: FileStudyInterface,
+    matrix_service: ISimpleMatrixService,
+    area_manager: AreaManager,
+    link_manager: LinkManager,
 ) -> None:
     file_study = study.get_files()
     assert len(file_study.config.areas.keys()) == 0

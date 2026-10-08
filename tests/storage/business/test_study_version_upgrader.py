@@ -16,10 +16,11 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Any, AnyStr
+from typing import Any
 
 import pandas
 import pytest
+from antares.study.version import StudyVersion
 from pandas.errors import EmptyDataError
 
 from antarest.core.exceptions import UnsupportedStudyVersion
@@ -47,20 +48,20 @@ class TestFindNextVersion:
         [("700", "710"), ("870", "880")],
     )
     def test_find_next_version_nominal(self, from_version: str, expected: str) -> None:
-        actual = find_next_version(from_version)
-        assert actual == expected
+        actual = find_next_version(StudyVersion.parse(from_version))
+        assert actual == StudyVersion.parse(expected)
 
     @pytest.mark.parametrize(
         "from_version, message",
         [
             ("3.14", "Version '3.14' isn't among supported versions"),
-            ("930", "Your study is already in the latest supported version: '930'"),
-            ("900", "Version '900' isn't among supported versions"),
+            ("930", "Your study is already in the latest supported version: '9.3'"),
+            ("900", "Version '9' isn't among supported versions"),
         ],
     )
     def test_find_next_version_fails(self, from_version: str, message: str) -> None:
         with pytest.raises(UnsupportedStudyVersion, match=message):
-            find_next_version(from_version)
+            find_next_version(StudyVersion.parse(from_version))
 
 
 class TestCheckVersionCoherence:
@@ -69,29 +70,29 @@ class TestCheckVersionCoherence:
         [("700", "710"), ("870", "880"), ("820", "840")],
     )
     def test_check_version_coherence_nominal(self, from_version: str, target_version: str) -> None:
-        check_versions_coherence(from_version, target_version)
+        check_versions_coherence(StudyVersion.parse(from_version), StudyVersion.parse(target_version))
 
     @pytest.mark.parametrize(
         "from_version, target_version, message",
         [
-            ("1020", "710", "Version '1020' isn't among supported versions"),
+            ("1020", "710", "Version '10.2' isn't among supported versions"),
             ("820", "32", "Version '32' isn't among supported versions"),
         ],
     )
     def test_invalid_versions_fails(self, from_version: str, target_version: str, message: str) -> None:
         with pytest.raises(UnsupportedStudyVersion, match=message):
-            check_versions_coherence(from_version, target_version)
+            check_versions_coherence(StudyVersion.parse(from_version), StudyVersion.parse(target_version))
 
     @pytest.mark.parametrize(
         "from_version, target_version, message",
         [
-            ("860", "860", "Your study is already in the version you asked: 860"),
-            ("870", "840", "Cannot downgrade your study version : from 870 to 840"),
+            ("860", "860", "Your study is already in the version you asked: 8.6"),
+            ("870", "840", "Cannot downgrade your study version : from 8.7 to 8.4"),
         ],
     )
     def test_check_version_coherence_fails(self, from_version: str, target_version: str, message: str) -> None:
         with pytest.raises(InvalidUpgrade, match=message):
-            check_versions_coherence(from_version, target_version)
+            check_versions_coherence(StudyVersion.parse(from_version), StudyVersion.parse(target_version))
 
 
 def test_end_to_end_upgrades(tmp_path: Path) -> None:
@@ -108,7 +109,7 @@ def test_end_to_end_upgrades(tmp_path: Path) -> None:
     old_binding_constraint_values = get_old_binding_constraint_values(study_dir)
     # Only checks if the study_upgrader can go from the first supported version to the last one
     target_version = "9.3"
-    study_upgrader = StudyUpgrader(study_dir, target_version)
+    study_upgrader = StudyUpgrader(study_dir, StudyVersion.parse(target_version))
     study_upgrader.upgrade()
     assert_study_antares_file_is_updated(study_dir, target_version)
     assert_settings_are_updated(study_dir, old_values)
@@ -124,19 +125,19 @@ def test_fails_because_of_versions_asked(tmp_path: Path) -> None:
         zip_output.extractall(path=study_dir)
     # Try to upgrade with an unknown version
     with pytest.raises(InvalidUpgrade, match="Cannot downgrade from version '7.2' to '6'"):
-        StudyUpgrader(study_dir, "600").upgrade()
+        StudyUpgrader(study_dir, StudyVersion.parse("600")).upgrade()
     # Try to upgrade with the current version
     with pytest.raises(InvalidUpgrade, match="Your study is already in version '7.2'"):
-        StudyUpgrader(study_dir, "720").upgrade()
+        StudyUpgrader(study_dir, StudyVersion.parse("720")).upgrade()
     # Try to upgrade with an old version
     with pytest.raises(
         InvalidUpgrade,
         match="Cannot downgrade from version '7.2' to '7.1'",
     ):
-        StudyUpgrader(study_dir, "710").upgrade()
+        StudyUpgrader(study_dir, StudyVersion.parse("710")).upgrade()
     # Try to upgrade with a version that does not exist
     with pytest.raises(ValueError, match="Invalid version number '820.rc'"):
-        StudyUpgrader(study_dir, "820.rc").upgrade()
+        StudyUpgrader(study_dir, StudyVersion.parse("820.rc")).upgrade()
 
 
 def test_fallback_if_study_input_broken(tmp_path: Path) -> None:
@@ -152,7 +153,7 @@ def test_fallback_if_study_input_broken(tmp_path: Path) -> None:
         expected_exception=EmptyDataError,
         match="No columns to parse from file",
     ):
-        StudyUpgrader(study_dir, "850").upgrade()
+        StudyUpgrader(study_dir, StudyVersion.parse("850")).upgrade()
     assert are_same_dir(study_dir, before_upgrade_dir)
 
 
@@ -249,7 +250,7 @@ def assert_inputs_are_updated(
             path_txt = Path(txt)
             old_txt = str(Path(path_txt.parent.name).joinpath(path_txt.stem)).replace("_parameters", "")
             df = pandas.read_csv(txt, sep="\t", header=None)
-            assert df.to_numpy().all() == old_area_values[old_txt].iloc[:, 2:8].values.all()
+            assert df.to_numpy().all() == old_area_values[old_txt].iloc[:, 2:8].to_numpy().all()
         capacities = glob.glob(str(folder_path / "capacities" / "*"))
         for direction_txt in capacities:
             df_capacities = pandas.read_csv(direction_txt, sep="\t", header=None)
@@ -257,10 +258,10 @@ def assert_inputs_are_updated(
             old_txt = str(Path(direction_path.parent.parent.name).joinpath(direction_path.name))
             if "indirect" in old_txt:
                 new_txt = old_txt.replace("_indirect.txt", "")
-                assert df_capacities[0].values.all() == old_area_values[new_txt].iloc[:, 0].values.all()
+                assert df_capacities[0].to_numpy().all() == old_area_values[new_txt].iloc[:, 0].to_numpy().all()
             else:
                 new_txt = old_txt.replace("_direct.txt", "")
-                assert df_capacities[0].values.all() == old_area_values[new_txt].iloc[:, 1].values.all()
+                assert df_capacities[0].to_numpy().all() == old_area_values[new_txt].iloc[:, 1].to_numpy().all()
 
     # tests 8.3 upgrade
     areas = glob.glob(str(tmp_path / "input" / "areas" / "*"))
@@ -292,7 +293,7 @@ def assert_inputs_are_updated(
         for k, term in enumerate(["lt", "gt", "eq"]):
             term_path = input_path / "bindingconstraints" / f"{bd_id}_{term}.txt"
             df = pandas.read_csv(term_path, sep="\t", header=None)
-            assert df.to_numpy().all() == old_binding_constraint_values[bd_id].iloc[:, k].values.all()
+            assert df.to_numpy().all() == old_binding_constraint_values[bd_id].iloc[:, k].to_numpy().all()
 
     # thermal cluster part
     for area in list_areas:
@@ -316,8 +317,8 @@ def assert_folder_is_created(path: Path) -> None:
     assert (path / "series").is_dir()
 
 
-def are_same_dir(dir1: AnyStr, dir2: AnyStr, ignore: list[str] | None = None) -> bool:
-    dirs_cmp = filecmp.dircmp(dir1, dir2, ignore=ignore)
+def are_same_dir(dir1: str | Path, dir2: str | Path, ignore: list[str] | None = None) -> bool:
+    dirs_cmp = filecmp.dircmp(str(dir1), str(dir2), ignore=ignore)
     if len(dirs_cmp.left_only) > 0 or len(dirs_cmp.right_only) > 0 or len(dirs_cmp.funny_files) > 0:
         return False
     path_dir1 = Path(dir1)

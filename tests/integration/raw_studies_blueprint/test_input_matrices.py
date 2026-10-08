@@ -16,7 +16,7 @@ from starlette.testclient import TestClient
 
 
 @pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
-def test_input_matrices(client: TestClient, user_access_token: str, storage_mode: str):
+def test_input_matrices(client: TestClient, user_access_token: str, storage_mode: str) -> None:
     """
     Test matrices import and reading for both storage modes
     """

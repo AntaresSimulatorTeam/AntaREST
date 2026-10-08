@@ -109,7 +109,7 @@ def test_favorite_aggregate_success_no_favorite_added(
     mock_favorite_external_directory_service: tuple[FavoriteExternalDirectoryService, Mock, Config, str, Path],
     mock_favorite_directory_service: tuple[FavoriteDirectoryService, Mock],
     mock_favorite_study_service: tuple[FavoriteStudyService, Mock],
-):
+) -> None:
     # checking we have no favorite with the aggregate method due to no favorite being added
     favorite_study_service, mock_fav_study_repo = mock_favorite_study_service
     favorite_directory_service, mock_fav_dir_repo = mock_favorite_directory_service
@@ -135,7 +135,7 @@ def test_favorite_aggregate_success_added_each_type_of_favorite(
     mock_favorite_external_directory_service: tuple[FavoriteExternalDirectoryService, Mock, Config, str, Path],
     mock_favorite_directory_service: tuple[FavoriteDirectoryService, Mock],
     mock_favorite_study_service: tuple[FavoriteStudyService, Mock],
-):
+) -> None:
     # checking we have no favorite with the aggregate method due to no favorite being added
     favorite_study_service, mock_fav_study_repo = mock_favorite_study_service
     favorite_directory_service, mock_fav_dir_repo = mock_favorite_directory_service

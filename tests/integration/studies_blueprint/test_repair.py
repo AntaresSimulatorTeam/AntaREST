@@ -80,6 +80,7 @@ class TestRepairStudy:
         dry_run_task = wait_task_completion(admin_client, admin_access_token, res.json())
         assert dry_run_task.status == TaskStatus.COMPLETED, dry_run_task
         assert dry_run_task.result is not None
+        assert dry_run_task.result.return_value is not None
         assert json.loads(dry_run_task.result.return_value) == {
             "study_id": study_id,
             "dry_run": True,
@@ -114,6 +115,7 @@ class TestRepairStudy:
         repair_task = wait_task_completion(admin_client, admin_access_token, res.json())
         assert repair_task.status == TaskStatus.COMPLETED, repair_task
         assert repair_task.result is not None and repair_task.result.success
+        assert repair_task.result.return_value is not None
         assert json.loads(repair_task.result.return_value) == {
             "study_id": study_id,
             "dry_run": False,

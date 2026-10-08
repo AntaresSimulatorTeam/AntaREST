@@ -19,6 +19,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 
 import pytest
 from antares.study.version import StudyVersion
+from typing_extensions import override
 
 from antarest.blobstore.service import BlobService
 from antarest.core.config import Config, StorageConfig, WorkspaceConfig
@@ -317,6 +318,7 @@ timestamp = 1599488150
         )
 
     class OutputsProvider(IFileOutputsProvider):
+        @override
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
             return FileStudyOutputs(outputs_path=study_path / "output", study_workspace=DEFAULT_WORKSPACE_NAME)
 
@@ -397,6 +399,7 @@ def test_delete_raw_study(tmp_path: Path) -> None:
     study_service.delete_study(raw_study.id, children=False)
 
     # Ensures the cache was called
+    assert isinstance(study_service.storage_service.raw_study_service.cache.invalidate_all, Mock)
     study_service.storage_service.raw_study_service.cache.invalidate_all.assert_called_once_with(
         [
             f"{CacheConstants.RAW_STUDY}/{name}",

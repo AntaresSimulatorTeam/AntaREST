@@ -122,7 +122,8 @@ def study_to_dto(study: Study) -> StudyMetadataDTO:
         ),
         groups=[GroupDTO(id=group.id, name=group.name) for group in study.groups],
         public_mode=study.public_mode or PublicMode.NONE,
-        horizon=study.additional_data.horizon,
+        horizon=study.horizon,
+        storage_mode=study.storage_mode,
         scenario=None,
         status=None,
         doc=None,
@@ -228,7 +229,7 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
 
     raw_study_service.get_study_information.side_effect = get_info
     repository = StudyMetadataRepository(session=db_session)
-    repository.delete = Mock()
+    object.__setattr__(repository, "delete", Mock())
     config = build_config(study_tree)
     service = build_study_service(raw_study_service, directory_service, repository, config)
     watcher = Watcher(config, service, task_service=SimpleSyncTaskService())
@@ -248,6 +249,7 @@ def test_scan_recursive_false(study_tree: Path, db_session: Session) -> None:
     os.remove(g / "study.antares")
     watcher.scan(recursive=False, workspace_name="diese", workspace_directory_path="folder")
     assert count_studies() == 2
+    assert isinstance(repository.delete, Mock)
     assert repository.delete.call_count == 0
 
     # Now we scan the folder containing studyG, it should be marked for deletion but not deleted yet
@@ -300,11 +302,11 @@ def test_partial_scan(tmp_path: Path, caplog: t.Any) -> None:
     watcher = Watcher(build_config(tmp_path), service, task_service=SimpleSyncTaskService())
 
     with pytest.raises(CannotAccessInternalWorkspace):
-        watcher.scan(workspace_name="default", workspace_directory_path=default)
+        watcher.scan(workspace_name="default", workspace_directory_path=str(default))
 
     with caplog.at_level(level=logging.INFO, logger="antarest.study.storage.utils"):
         # scan the `default` directory
-        watcher.scan(workspace_name="test", workspace_directory_path=default)
+        watcher.scan(workspace_name="test", workspace_directory_path=str(default))
 
         # verify that only one study has been scanned
         assert service.sync_studies_on_disk.call_count == 1

@@ -23,6 +23,7 @@ from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_certifications import (
     ReplaceThermalReserveCertifications,
 )
@@ -40,7 +41,7 @@ def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
     assert output.status
     # Create 2 thermals inside area `fr`
     for thermal_name in ["th1", "th2"]:
-        cmd = CreateCluster(
+        cmd: ICommand = CreateCluster(
             area_id="fr",
             parameters=ThermalClusterCreation(name=thermal_name),
             command_context=command_context,
@@ -76,8 +77,8 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     _set_up(dao_10_2, command_context)
 
     # Get reserves at first to check the current state
-    result = dao_10_2.get_all_thermal_reserve_symmetries()
-    assert result == {}
+    all_result = dao_10_2.get_all_thermal_reserve_symmetries()
+    assert all_result == {}
 
     cmd = ReplaceThermalReserveSymmetries(
         area_id="fr",
@@ -89,8 +90,8 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     assert output.status
 
     # Check the symmetries
-    result = dao_10_2.get_all_thermal_reserve_symmetries()
-    assert result == {"fr": {"th1": [["r1", "r2"]]}}
+    all_result = dao_10_2.get_all_thermal_reserve_symmetries()
+    assert all_result == {"fr": {"th1": [["r1", "r2"]]}}
 
     cmd = ReplaceThermalReserveSymmetries(
         area_id="fr",
@@ -102,8 +103,8 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     assert output.status
 
     # Check the symmetries
-    result = dao_10_2.get_all_thermal_reserve_symmetries()
-    assert result == {"fr": {"th1": [["r2", "r3"], ["r1", "r4"]], "th2": [["r1", "r2"]]}}
+    all_result = dao_10_2.get_all_thermal_reserve_symmetries()
+    assert all_result == {"fr": {"th1": [["r2", "r3"], ["r1", "r4"]], "th2": [["r1", "r2"]]}}
 
     # Ensures replacing existing data with new one erases the old values
     new_symmetries = {"th2": [["r1", "r3", "r4"]]}
@@ -147,7 +148,7 @@ def test_error_cases(dao_10_2: StudyDao, command_context: CommandContext) -> Non
         )
 
     # Wrong area
-    cmd = ReplaceThermalReserveSymmetries(
+    cmd: ICommand = ReplaceThermalReserveSymmetries(
         area_id="fake_area",
         symmetries={"th1": [["r1", "r2"]]},
         command_context=command_context,

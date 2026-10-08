@@ -63,7 +63,7 @@ def test_collection_read_query_budget(
         method_name += "_for_area"
     read = getattr(db_dao, method_name)
 
-    with DBStatementRecorder(db_session.get_bind()) as recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as recorder:
         result = read("area") if for_area else read()
 
     actual_count = len(result) if for_area else sum(len(items) for items in result.values())
@@ -82,7 +82,7 @@ def test_storage_scenario_query_count_does_not_grow_with_areas_or_storages(
 ) -> None:
     save_area(db_dao_930, "area_0")
     _save_clusters(db_dao_930, "area_0", "st_storage", 1)
-    with DBStatementRecorder(db_session.get_bind()) as small:
+    with DBStatementRecorder(db_session.get_bind().engine) as small:
         small_result = db_dao_930.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
     assert set(small_result["area_0"]) == {"storage_0"}
 
@@ -92,7 +92,7 @@ def test_storage_scenario_query_count_does_not_grow_with_areas_or_storages(
             save_area(db_dao_930, area_id)
         _save_clusters(db_dao_930, area_id, "st_storage", 10)
 
-    with DBStatementRecorder(db_session.get_bind()) as large:
+    with DBStatementRecorder(db_session.get_bind().engine) as large:
         large_result = db_dao_930.get_scenario_by_type(ScenarioType.SHORT_TERM_STORAGE_INFLOWS)
     assert set(large_result) == {f"area_{i}" for i in range(5)}
     assert all(set(storages) == {f"storage_{i}" for i in range(10)} for storages in large_result.values())

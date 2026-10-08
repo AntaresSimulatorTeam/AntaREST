@@ -83,6 +83,7 @@ def test_groups(db_session: Session) -> None:
         assert a.id
         assert a == repo.get(a.id)
 
+        assert a.name is not None
         b = repo.get_by_name(a.name)
         assert b == a
 

@@ -16,6 +16,7 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -23,7 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_cont
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity import capacity
 
 # noinspection SpellCheckingInspection
-BEFORE_650 = {
+BEFORE_650: dict[str, dict[str, list[list[float]] | int | None]] = {
     "maxpower_en": {"default_empty": [[]], "nb_columns": None},
     "maxpower_fr": {"default_empty": [[]], "nb_columns": None},
     "reservoir_en": {"default_empty": [[]], "nb_columns": None},
@@ -31,7 +32,7 @@ BEFORE_650 = {
 }
 
 # noinspection SpellCheckingInspection
-AFTER_650 = {
+AFTER_650: dict[str, dict[str, list[list[float]] | int | None]] = {
     "creditmodulations_en": {"default_empty": [[]], "nb_columns": None},
     "creditmodulations_fr": {"default_empty": [[]], "nb_columns": None},
     "inflowPattern_en": {"default_empty": [[]], "nb_columns": None},
@@ -65,7 +66,7 @@ class TestInputHydroCommonCapacity:
             study_path=Path("path/to/study"),
             path=Path("path/to/study"),
             study_id=study_id,
-            version=int(version),  # will become a `str` in the future
+            version=StudyVersion.parse(version),
             areas={
                 name: AreaConfig(
                     name=name.upper(),
@@ -87,8 +88,9 @@ class TestInputHydroCommonCapacity:
         actual = node.build()
 
         # check the result
-        actual_obj = {}
+        actual_obj: dict[str, dict[str, list[list[float]] | int | None]] = {}
         for key, value in actual.items():
             assert isinstance(value, InputSeriesMatrix)
+            assert value.default_empty is not None
             actual_obj[key] = {"default_empty": [[]], "nb_columns": value.nb_columns}
         assert actual_obj == expected

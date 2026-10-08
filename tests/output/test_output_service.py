@@ -16,6 +16,7 @@ from pathlib import Path
 from unittest.mock import ANY, Mock
 
 import pytest
+from typing_extensions import override
 
 from antarest.core.exceptions import OutputAlreadyExists, TaskAlreadyRunning
 from antarest.core.model import PublicMode, StudyPermissionType
@@ -56,9 +57,12 @@ def test_is_output_archived(tmp_path: Path) -> None:
 
 def _studies_repository(study: Study) -> IStudyMetadataProvider:
     class Impl(IStudyMetadataProvider):
+        @override
         def get_study_metadata(self, study_id: str) -> StudyMetadata:
+            assert study.name is not None
             return StudyMetadata(study.id, study.name, study.storage_mode)
 
+        @override
         def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
             pass
 
@@ -66,11 +70,13 @@ def _studies_repository(study: Study) -> IStudyMetadataProvider:
 
 
 def _file_outputs_provider(study: RawStudy) -> IFileOutputsProvider:
-    def not_implemented():
+    def not_implemented() -> None:
         raise NotImplementedError()
 
     class Impl(IFileOutputsProvider):
+        @override
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
+            assert study.path is not None
             return FileStudyOutputs(outputs_path=Path(study.path) / "output", study_workspace=study.workspace)
 
     return Impl()
@@ -123,6 +129,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     )
 
     output_id = "some-output"
+    assert isinstance(remote_executor.execute_remote_task, Mock)
     remote_executor.execute_remote_task.return_value = TaskResult(success=True, message="OK")
     output_dir = Path(study_mock.path) / "output"
     output_dir.mkdir()

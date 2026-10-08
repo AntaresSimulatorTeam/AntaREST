@@ -50,7 +50,7 @@ def test_multiple_areas(db_session: Session, db_dao: DatabaseStudyDao) -> None:
     default_props = _default_props(dao)
 
     # Ensures we do not perform N+1 requests
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_properties = dao.get_all_area_properties()
         assert all_properties == {"paris": default_props, "london": default_props}
 

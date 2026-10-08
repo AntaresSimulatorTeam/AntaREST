@@ -13,8 +13,11 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from antares.study.version import StudyVersion
+
 from antarest.study.storage.rawstudy.model.filesystem.bucket_node import BucketNode, RegisteredFile
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.user.expansion.settings import ExpansionSettings
 
 
@@ -44,25 +47,27 @@ def test_get_bucket(tmp_path: Path) -> None:
     file = build_bucket(tmp_path)
 
     node = BucketNode(
-        config=FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=-1),
+        config=FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=StudyVersion.parse("8.8")),
         matrix_storage_context=Mock(),
         registered_files=registered_files,
     )
 
-    assert node.get(["fileA.txt"]) == b"Content A"
+    file_node = node.get_node(["fileA.txt"])
+    assert isinstance(file_node, RawFileNode)
+    assert file_node.get() == b"Content A"
     bucket = node.get()
     assert "fileA.txt" in bucket["fileA.txt"]
     assert "fileB.txt" in bucket["fileB.txt"]
     assert "fileC.txt" in bucket["folder"]["fileC.txt"]
     for registered_file in registered_files:
-        assert isinstance(node.get_node([registered_file.key]), registered_file.node)
+        assert isinstance(node.get_node([registered_file.key]), ExpansionSettings)
 
 
 def test_save_bucket(tmp_path: Path) -> None:
     file = build_bucket(tmp_path)
 
     node = BucketNode(
-        config=FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=-1),
+        config=FileStudyTreeConfig(study_path=file, path=file, study_id="id", version=StudyVersion.parse("8.8")),
         matrix_storage_context=Mock(),
     )
     node.save(data={"fileA.txt": b"Hello, World"})

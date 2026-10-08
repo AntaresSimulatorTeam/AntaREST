@@ -18,7 +18,7 @@ from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
 
 
-def test_variant_study_repository_get_study_lineage(db_session: Session):
+def test_variant_study_repository_get_study_lineage(db_session: Session) -> None:
     study_repo = StudyMetadataRepository(db_session)
     variant_repo = VariantStudyRepository(db_session)
 

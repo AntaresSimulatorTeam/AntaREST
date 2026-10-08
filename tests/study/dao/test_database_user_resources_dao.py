@@ -183,7 +183,7 @@ def test_save_a_file_with_the_same_name_as_an_existing_folder(dao: StudyDao, blo
     blob_id = blob_service.save(b"content")
 
     if isinstance(dao, DatabaseStudyDao):
-        expected_error = ValueError
+        expected_error: type[Exception] | tuple[type[Exception], ...] = ValueError
         expected_msg = "Cannot create 2 resources of different type at the same path"
     else:
         expected_error = (IsADirectoryError, PermissionError)  # Depends on the OS.
