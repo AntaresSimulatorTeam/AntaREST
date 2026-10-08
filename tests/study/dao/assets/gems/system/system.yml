@@ -13,6 +13,17 @@ system:
   id: System 8_1
   description: Electrolyser - V8.6
   components:
+    - id: dsr
+      model: andromede-v1-models-weo-hybrid.dsr
+      parameters:
+        - id: curtailment_price
+          time-dependent: false
+          scenario-dependent: false
+          value: 10
+        - id: max_load
+          time-dependent: false
+          scenario-dependent: false
+          value: 200
     - id: electrolyser
       model: andromede-v1-models-weo-hybrid.electrolyser
       scenario-group: sg1
@@ -26,6 +37,11 @@ system:
           time-dependent: false
           value: 300
 
+  connections:
+    - component1: dsr
+      component2: electrolyser
+      port1: balance_port
+      port2: hydrogen_port
 
   area-connections:
     - component: electrolyser

@@ -43,10 +43,20 @@ class GemsComponent(AntaresBaseModel):
     properties: List[_GemsProperties] | None = None
 
 
+class GemsComponentConnection(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case, frozen=True)
+
+    component1: str
+    component2: str
+    port1: str
+    port2: str
+
+
 class GemsSystem(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="allow", alias_generator=to_kebab_case)
 
     id: str
     description: str | None = None
     components: List[GemsComponent]
-    # TODO: add 'connections' and 'area_connections' and 'thermal-capacity-connections' fields
+    connections: List[GemsComponentConnection] = []
+    # TODO: add 'area_connections' and 'thermal-capacity-connections' fields
