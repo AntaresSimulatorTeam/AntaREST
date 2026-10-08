@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from antarest.study.business.model.link_model import LinkCreation
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
@@ -23,7 +24,13 @@ def test_aggregate_commands(command_context: CommandContext) -> None:
     command_list = [
         CreateArea(area_name="a", command_context=command_context, study_version=study_version),
         CreateArea(area_name="b", command_context=command_context, study_version=study_version),
-        CreateLink(area1="a", area2="b", command_context=command_context, study_version=study_version),
+        CreateLink(
+            parameters=LinkCreation(),
+            area1="a",
+            area2="b",
+            command_context=command_context,
+            study_version=study_version,
+        ),
         CreateArea(area_name="d", command_context=command_context, study_version=study_version),
         CreateArea(area_name="e", command_context=command_context, study_version=study_version),
     ]

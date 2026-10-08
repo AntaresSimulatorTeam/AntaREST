@@ -21,6 +21,7 @@ from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix im
     CreateXpansionCapacity,
     CreateXpansionWeight,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import build_dao_from_file_study
 
@@ -39,10 +40,10 @@ class TestCreateXpansionResource:
 
         # Constraints
         for file_name in ["constraints1.ini", "constraints2.txt"]:
-            data = file_name.encode("utf-8")
-            cmd = CreateXpansionConstraint(
+            constraint_data = file_name.encode("utf-8")
+            cmd: ICommand = CreateXpansionConstraint(
                 filename=file_name,
-                data=data,
+                data=constraint_data,
                 command_context=command_context,
                 study_version=STUDY_VERSION_8_7,
             )

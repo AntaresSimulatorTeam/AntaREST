@@ -24,6 +24,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import build_dao_from_file_study
 
@@ -39,7 +40,7 @@ def test_optional_matrices(
     file_study = empty_study_920
     dao = build_dao_from_file_study(file_study, command_context)
     version = file_study.config.version
-    cmd = CreateArea(area_name="fr", command_context=command_context, study_version=version)
+    cmd: ICommand = CreateArea(area_name="fr", command_context=command_context, study_version=version)
     output = cmd.apply(dao)
     assert output.status
     cmd = CreateCluster(

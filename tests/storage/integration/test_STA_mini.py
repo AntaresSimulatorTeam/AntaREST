@@ -428,6 +428,7 @@ def test_sta_mini_copy(
     source_study_name = UUID
     destination_study_name = "copy-STA-mini"
 
+    assert isinstance(storage_service.job_result_repository.find_by_study_and_output_ids, Mock)
     storage_service.job_result_repository.find_by_study_and_output_ids.return_value = []
 
     result = client.post(f"/v1/studies/{source_study_name}/copy?study_name={destination_study_name}&use_task=false")
@@ -491,7 +492,9 @@ def test_sta_mini_list_studies(client: TestClient) -> None:
 
 @with_admin_user
 def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
-    path_study = Path(storage_service.get_study(UUID).path)
+    study = storage_service.get_study(UUID)
+    assert study.path is not None
+    path_study = Path(study.path)
     sta_mini_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study)
     sta_mini_zip_path = Path(sta_mini_zip_filepath)
 
@@ -503,7 +506,9 @@ def test_sta_mini_import(tmp_path: Path, storage_service: StudyService, client: 
 
 @with_admin_user
 def test_sta_mini_import_output(tmp_path: Path, storage_service: StudyService, client: TestClient) -> None:
-    path_study_output = Path(storage_service.get_study(UUID).path) / "output" / "20201014-1422eco-hello"
+    study = storage_service.get_study(UUID)
+    assert study.path is not None
+    path_study_output = Path(study.path) / "output" / "20201014-1422eco-hello"
     sta_mini_output_zip_filepath = shutil.make_archive(str(tmp_path), "zip", path_study_output)
 
     sta_mini_output_zip_path = Path(sta_mini_output_zip_filepath)
@@ -597,7 +602,9 @@ def test_sta_mini_output_variables(services: tuple[StudyService, OutputService, 
 
     # No links (clean DB first)
     _clean_db()
-    study_path = Path(study_service.get_study(UUID).path)
+    study = study_service.get_study(UUID)
+    assert study.path is not None
+    study_path = Path(study.path)
     links_folder = study_path / "output" / "20201014-1422eco-hello" / "economy" / "mc-ind" / "00001" / "links"
     shutil.rmtree(links_folder)
     variables = output_service.get_output_variables_information(UUID, "20201014-1422eco-hello")

@@ -18,6 +18,7 @@ from unittest.mock import Mock
 import numpy as np
 import polars as pl
 import pytest
+from antares.study.version import StudyVersion
 from polars.testing import assert_frame_equal
 
 from antarest.core.exceptions import ChildNotFoundError
@@ -90,6 +91,7 @@ class TestInputSeriesMatrix:
 
         # checks formatted response
         actual = node.parse_as_dataframe()
+        assert node.default_empty is not None
         expected = create_polars_dataframe(node.default_empty())
         assert_frame_equal(actual, expected, check_dtypes=False)
 
@@ -169,9 +171,9 @@ class TestInputSeriesMatrix:
         assert actual_text == ""
 
         # Loading the matrix should return the default values
-        actual = node.parse_as_dataframe()
-        expected = pl.DataFrame(data=np.array([[1.0, 2.0], [3.0, 4.0]]), schema=["0", "1"])
-        assert_frame_equal(actual, expected, check_dtypes=False)
+        actual_df = node.parse_as_dataframe()
+        expected_df = pl.DataFrame(data=np.array([[1.0, 2.0], [3.0, 4.0]]), schema=["0", "1"])
+        assert_frame_equal(actual_df, expected_df, check_dtypes=False)
 
     def test_default_empty(self, my_study_config: FileStudyTreeConfig) -> None:
         file_path = my_study_config.path
@@ -211,7 +213,9 @@ class TestCopyAndRenameFile:
         self.link = self.file.parent / f"{self.file.name}.link"
         self.link.write_text("Link: Mock File Content")
 
-        config = FileStudyTreeConfig(study_path=self.file.parent, path=self.file, version=-1, study_id="")
+        config = FileStudyTreeConfig(
+            study_path=self.file.parent, path=self.file, version=StudyVersion.parse("8.8"), study_id=""
+        )
         self.node = InputSeriesMatrix(
             matrix_storage_context=MatrixStorageContext(matrix_service=Mock(), is_managed=True), config=config
         )
@@ -219,7 +223,9 @@ class TestCopyAndRenameFile:
         self.modified_file = self.file.parent / "lazy_modified.txt"
         self.modified_link = self.file.parent / f"{self.modified_file.name}.link"
 
-        config2 = FileStudyTreeConfig(study_path=self.file.parent, path=self.modified_file, version=-1, study_id="")
+        config2 = FileStudyTreeConfig(
+            study_path=self.file.parent, path=self.modified_file, version=StudyVersion.parse("8.8"), study_id=""
+        )
         self.fake_node = InputSeriesMatrix(
             matrix_storage_context=MatrixStorageContext(matrix_service=Mock(), is_managed=True), config=config2
         )

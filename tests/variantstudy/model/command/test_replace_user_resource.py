@@ -16,6 +16,7 @@ import pytest
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.variantstudy.model.command.replace_user_resource import ReplaceUserResource
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import build_dao_from_file_study
@@ -47,7 +48,9 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
     assert output.status
 
     # Checks the right file was written in the study.
-    content = study.tree.get(["user", "new_file.txt"])
+    file_node = study.tree.get_node(["user", "new_file.txt"])
+    assert isinstance(file_node, RawFileNode)
+    content = file_node.get()
     assert content == b"Hello World !"
 
     cmd = ReplaceUserResource(
@@ -62,8 +65,8 @@ def test_nominal_case(empty_study_930: FileStudy, command_context: CommandContex
     assert output.status
 
     # Checks the folder was created in the study.
-    content = study.tree.get(["user", "new_folder"])
-    assert content == {"second_folder": {}}
+    folder_content = study.tree.get(["user", "new_folder"])
+    assert folder_content == {"second_folder": {}}
 
 
 def test_error_case(fs_dao: FileStudyTreeDao, command_context: CommandContext) -> None:

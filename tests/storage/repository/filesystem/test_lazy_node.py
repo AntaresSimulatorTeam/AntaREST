@@ -13,6 +13,7 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -48,7 +49,7 @@ def test_get_no_expanded_txt(tmp_path: Path) -> None:
     file.parent.mkdir()
     file.touch()
 
-    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
+    config = FileStudyTreeConfig(study_path=file, path=file, version=StudyVersion.parse("8.8"), study_id="my-study")
 
     node = MockLazyNode(config=config)
     assert "Mock Matrix Content" == node.get(expanded=False)
@@ -59,7 +60,7 @@ def test_get_expanded_txt(tmp_path: Path) -> None:
     file.parent.mkdir()
     file.touch()
 
-    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="my-study")
+    config = FileStudyTreeConfig(study_path=file, path=file, version=StudyVersion.parse("8.8"), study_id="my-study")
 
     node = MockLazyNode(config=config)
     assert "file://lazy.txt" == node.get(expanded=True)
@@ -75,7 +76,7 @@ def test_save_uri(tmp_path: Path) -> None:
 
     matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
 
-    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
+    config = FileStudyTreeConfig(study_path=file, path=file, version=StudyVersion.parse("8.8"), study_id="")
     node = MockInputSeriesMatrix(matrix_storage_context=matrix_storage_context, config=config)
     uri = "matrix://id"
     node.save(uri)
@@ -96,7 +97,7 @@ def test_save_txt(tmp_path: Path) -> None:
 
     matrix_storage_context = MatrixStorageContext(matrix_service=matrix_service, is_managed=True)
 
-    config = FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="")
+    config = FileStudyTreeConfig(study_path=file, path=file, version=StudyVersion.parse("8.8"), study_id="")
     node = MockInputSeriesMatrix(matrix_storage_context=matrix_storage_context, config=config)
 
     content = "Mock File Content"

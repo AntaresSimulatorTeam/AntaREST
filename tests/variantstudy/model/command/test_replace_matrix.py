@@ -20,6 +20,7 @@ from antarest.study.storage.variantstudy.model.command.create_xpansion_matrix im
     CreateXpansionCapacity,
     CreateXpansionWeight,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_matrix import ReplaceMatrix
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import build_dao_from_file_study
@@ -73,7 +74,7 @@ class TestReplaceMatrix:
         study_version = study.config.version
 
         # Create the Xpansion Configuration
-        command = CreateXpansionConfiguration(command_context=command_context, study_version=study_version)
+        command: ICommand = CreateXpansionConfiguration(command_context=command_context, study_version=study_version)
         result = command.apply(dao)
         assert result.status
 

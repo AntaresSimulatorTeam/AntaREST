@@ -399,6 +399,7 @@ def test_delete_raw_study(tmp_path: Path) -> None:
     study_service.delete_study(raw_study.id, children=False)
 
     # Ensures the cache was called
+    assert isinstance(study_service.storage_service.raw_study_service.cache.invalidate_all, Mock)
     study_service.storage_service.raw_study_service.cache.invalidate_all.assert_called_once_with(
         [
             f"{CacheConstants.RAW_STUDY}/{name}",

@@ -16,6 +16,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
@@ -44,7 +45,7 @@ class TestOutputSimulationAreaItem:
             study_path=Path("path/to/study"),
             path=tmp_path,
             study_id=study_id,
-            version=850,  # will become a `str` in the future
+            version=StudyVersion.parse("850"),
             areas={},
         )
 
@@ -62,7 +63,7 @@ class TestOutputSimulationAreaItem:
             study_path=Path("path/to/study"),
             path=tmp_path,
             study_id=study_id,
-            version=860,  # will become a `str` in the future
+            version=StudyVersion.parse("860"),
             areas={},
         )
 

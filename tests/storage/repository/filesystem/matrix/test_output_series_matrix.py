@@ -15,6 +15,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError, MustNotModifyOutputException
 from antarest.study.model import MatrixFrequency
@@ -44,7 +45,7 @@ class TestOutputSeriesMatrix:
             study_path=tmp_path,
             path=tmp_path / "matrix-daily.txt",
             study_id="df0a8aa9-6c6f-4e8b-a84e-45de2fb29cd3",
-            version=800,
+            version=StudyVersion.parse("800"),
         )
 
     def test_parse_dataframe(self, my_study_config: FileStudyTreeConfig) -> None:

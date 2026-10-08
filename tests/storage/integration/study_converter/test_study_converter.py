@@ -280,7 +280,7 @@ def test_nominal_case(storage_service: StudyService, tmp_path: Path, command_con
 
     # Thermal series
     thermal_series = new_dao.get_thermal_series("fr", "01_solar")
-    assert thermal_series.equals(create_polars_dataframe(8760 * [2000]))
+    assert thermal_series.equals(create_polars_dataframe(8760 * [[2000]]))
 
     # Thermal clusters
     expected_clusters = {

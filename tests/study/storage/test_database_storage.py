@@ -60,6 +60,7 @@ def test_upgrade_fails(tmp_path: Path) -> None:
 
     # Ensures the study is still in v7.0 in database
     study_in_db = db.session.query(Study).first()
+    assert study_in_db is not None
     assert study_in_db.version == str(STUDY_VERSION_7_0)
 
 

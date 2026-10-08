@@ -114,5 +114,6 @@ def test_to_dto(command_context: CommandContext) -> None:
     )
     dto = command.to_dto()
     assert dto.action == "update_reserves_global_parameters"
+    assert isinstance(dto.args, dict)
     assert dto.args["properties"]["paris"]["reference_activation_duration_up"] == 5
     assert dto.args["properties"]["paris"]["energy_activation_ratio_up"] == 0.5

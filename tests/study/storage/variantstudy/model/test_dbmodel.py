@@ -17,6 +17,7 @@ from pathlib import Path
 
 import pytest
 from antares.study.version import StudyVersion
+from sqlalchemy import Table
 from sqlalchemy.orm import Session
 
 from antarest.core.model import PublicMode
@@ -272,6 +273,7 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
 
     # 1st case, no snapshot in DB -> Not up to date
     variant = session.get(VariantStudy, variant_id)
+    assert variant is not None
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
 
     # 2nd case: Add the snapshot in DB with a version 0 which matches the command blocks version -> Up to date
@@ -280,13 +282,17 @@ def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_
     session.commit()
 
     variant = session.get(VariantStudy, variant_id)
+    assert variant is not None
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is True
 
     # 3rd case: Changes the version in `commands_list_version` table -> Not up to date
-    upsert_one(session, CommandsListVersion.__table__, {"variant_id": variant_id, "version": 1})
+    table = CommandsListVersion.__table__
+    assert isinstance(table, Table)
+    upsert_one(session, table, {"variant_id": variant_id, "version": 1})
     session.commit()
 
     variant = session.get(VariantStudy, variant_id)
+    assert variant is not None
     session.refresh(variant)
     assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
 

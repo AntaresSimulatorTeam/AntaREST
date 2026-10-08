@@ -32,6 +32,7 @@ from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import empty_study_fixture
 from tests.db_statement_recorder import DBStatementRecorder
@@ -90,7 +91,7 @@ def test_normalize_denormalized_methods(tmp_path: Path, core_cache: ICache) -> N
 
     # Create an area and a thermal with specific matrices to have real DB matrices in our study
     version = file_study.config.version
-    cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
+    cmd: ICommand = CreateArea(command_context=command_context, area_name="fr", study_version=version)
     output = cmd.apply(dao)
     assert output.status
     cmd = CreateCluster(
@@ -111,7 +112,7 @@ def test_normalize_denormalized_methods(tmp_path: Path, core_cache: ICache) -> N
     assert not denormalized_path.exists()
 
     # Normalize the study
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         raw_study_service.normalize_study(study)
         assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
 
@@ -119,7 +120,7 @@ def test_normalize_denormalized_methods(tmp_path: Path, core_cache: ICache) -> N
     assert not denormalized_path.exists()
 
     # Denormalize the study
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         raw_study_service._file_study_storage.denormalize_study(study)
         assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
 
@@ -128,7 +129,7 @@ def test_normalize_denormalized_methods(tmp_path: Path, core_cache: ICache) -> N
     dataframe = denormalized_path.read_bytes()
 
     # Denormalize again
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         raw_study_service._file_study_storage.denormalize_study(study)
         assert len(db_recorder.sql_statements) == 0  # no DB request as there is nothing to do
 
@@ -137,7 +138,7 @@ def test_normalize_denormalized_methods(tmp_path: Path, core_cache: ICache) -> N
     assert denormalized_path.read_bytes() == dataframe
 
     # Normalize the study to come back to the initial point
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         raw_study_service.normalize_study(study)
         assert len(db_recorder.sql_statements) == 1  # 1 DB request for all matrices
 
@@ -159,7 +160,7 @@ def test_export_output(tmp_path: Path) -> None:
 
     study_factory = Mock()
 
-    study = create_raw_study(id="Yo", path=root)
+    study = create_raw_study(id="Yo", path=str(root))
     study_tree = Mock()
     study_factory.create_from_fs.return_value = study_tree
 

@@ -19,6 +19,7 @@ from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_thermal_reserve_certifications import (
     ReplaceThermalReserveCertifications,
 )
@@ -33,7 +34,7 @@ def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
     assert output.status
     # Create 2 thermals inside area `fr`
     for thermal_name in ["th1", "th2"]:
-        cmd = CreateCluster(
+        cmd: ICommand = CreateCluster(
             area_id="fr",
             parameters=ThermalClusterCreation(name=thermal_name),
             command_context=command_context,
@@ -57,8 +58,8 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     _set_up(dao_10_2, command_context)
 
     # Get reserves at first to check the current state
-    result = dao_10_2.get_all_thermal_reserve_certifications()
-    assert result == {}
+    all_result = dao_10_2.get_all_thermal_reserve_certifications()
+    assert all_result == {}
 
     cmd = ReplaceThermalReserveCertifications(
         area_id="fr",
@@ -70,8 +71,8 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     assert output.status
 
     # Check the certifications
-    result = dao_10_2.get_all_thermal_reserve_certifications()
-    assert result == {"fr": {"r1": {"th1": ThermalReserveCertification()}}}
+    all_result = dao_10_2.get_all_thermal_reserve_certifications()
+    assert all_result == {"fr": {"r1": {"th1": ThermalReserveCertification()}}}
 
     new_certifications = {
         "r1": {

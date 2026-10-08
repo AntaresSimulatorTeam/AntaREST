@@ -1230,11 +1230,11 @@ class TestCommandFactory:
     ) -> None:
         commands = command_factory.to_command(command_dto=command_dto)
 
-        expected_args = expected_args or command_dto.args
-        if isinstance(expected_args, dict):
-            exp_action_args_list = [(command_dto.action, expected_args, command_dto.version)]
+        expected_payload = expected_args or command_dto.args
+        if isinstance(expected_payload, dict):
+            exp_action_args_list = [(command_dto.action, expected_payload, command_dto.version)]
         else:
-            exp_action_args_list = [(command_dto.action, args, command_dto.version) for args in expected_args]
+            exp_action_args_list = [(command_dto.action, args, command_dto.version) for args in expected_payload]
 
         actual_cmd: ICommand
         for actual_cmd, exp_action_args_version in itertools.zip_longest(commands, exp_action_args_list):
@@ -1242,6 +1242,7 @@ class TestCommandFactory:
             assert exp_action_args_version is not None, f"Missing command for {actual_cmd=}"
             expected_action, expected_args, expected_version = exp_action_args_version
             actual_dto = actual_cmd.to_dto()
+            assert isinstance(actual_dto.args, dict)
             actual_args = {k: v for k, v in actual_dto.args.items() if v is not None}
             actual_version = actual_dto.version
             assert actual_dto.action == expected_action
@@ -1278,6 +1279,7 @@ def test_parse_create_cluster_dto_v1(command_factory: CommandFactory) -> None:
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.version == 3
     assert dto.args["parameters"]["name"] == "cluster_name"
     assert "cluster_name" not in dto.args
@@ -1299,6 +1301,7 @@ def test_parse_create_cluster_dto_v2(command_factory: CommandFactory) -> None:
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.version == 3
     assert dto.args["parameters"]["name"] == "cluster_name"
     assert "cluster_name" not in dto.args
@@ -1334,6 +1337,7 @@ def test_parse_create_st_storage_dto_v1(command_factory: CommandFactory) -> None
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.version == 3
     assert dto.args["parameters"]["name"] == "battery storage_2 candidate"
 
@@ -1353,6 +1357,7 @@ def test_parse_create_renewable_cluster_dto_v1(command_factory: CommandFactory) 
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.version == 3
     assert dto.args["parameters"]["name"] == "cluster_name"
     assert "cluster_name" not in dto.args
@@ -1369,6 +1374,7 @@ def test_parse_create_renewable_cluster_dto_v2(command_factory: CommandFactory) 
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.version == 3
     assert dto.args["parameters"]["name"] == "Sts_1"
     assert dto.args["parameters"]["tsInterpretation"] == "power-generation"
@@ -1387,6 +1393,7 @@ def test_parse_create_link_dto_v1(command_factory: CommandFactory) -> None:
         assert len(commands) == 1
         command = commands[0]
         dto = command.to_dto()
+        assert isinstance(dto.args, dict)
         assert dto.version == 2
         if parameters is None:
             assert dto.args["parameters"] == {}
@@ -1405,6 +1412,7 @@ def test_parse_generate_thermal_cluster_timeseries_dto_v1(command_factory: Comma
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.version == 2
     assert dto.args == {"thermal_outage_details": False}
 
@@ -1428,6 +1436,7 @@ def test_parse_create_binding_constraint_dto_v1(command_factory: CommandFactory)
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.version == 2
     assert dto.args == {
         "matrices": {
@@ -1465,6 +1474,7 @@ def test_parse_update_binding_constraint_dto_v1(command_factory: CommandFactory)
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.version == 2
     assert dto.args == {
         "id": "id",
@@ -1499,6 +1509,7 @@ def test_parse_update_binding_constraints_dto_v1(command_factory: CommandFactory
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.version == 2
     assert dto.args == {
         "bc_props_by_id": {
@@ -1524,6 +1535,7 @@ def test_parse_legacy_command_remove_binding_constraint(command_factory: Command
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.action == "remove_multiple_binding_constraints"
     assert dto.version == 1
     assert dto.args == {"ids": ["id"]}
@@ -1548,6 +1560,7 @@ def test_parse_update_scenario_builder_v1(command_factory: CommandFactory) -> No
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.action == "update_scenario_builder"
     assert dto.version == 3
     assert dto.args == {
@@ -1569,6 +1582,7 @@ def test_parse_legacy_command_update_comments(command_factory: CommandFactory) -
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.action == "replace_comments"
     assert dto.version == 1
     assert dto.args == {"comments": "new comment"}
@@ -1590,6 +1604,7 @@ def test_parse_legacy_command_update_playlist(command_factory: CommandFactory) -
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.action == "update_playlist"
     assert dto.version == 2
     assert dto.args == {"playlist": {"years": {1: {"status": True, "weight": 5.0}, 3: {"status": True}}}}
@@ -1618,6 +1633,7 @@ def test_parse_update_area_ui_dto_v1(command_factory: CommandFactory) -> None:
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.action == "update_area_ui"
     assert dto.version == 2
     assert dto.args == {
@@ -1664,6 +1680,7 @@ def test_parse_legacy_command_create_district(command_factory: CommandFactory) -
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.action == "create_district"
     assert dto.version == 2
     assert dto.args == {
@@ -1691,6 +1708,7 @@ def test_parse_legacy_command_create_district(command_factory: CommandFactory) -
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.action == "create_district"
     assert dto.version == 2
     assert dto.args == {
@@ -1715,6 +1733,7 @@ def test_parse_legacy_command_update_district(command_factory: CommandFactory) -
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.action == "update_district"
     assert dto.version == 2
     assert dto.args == {"parameters": {"areas": ["a"]}, "id": "id"}
@@ -1732,6 +1751,7 @@ def test_parse_create_area_dto_with_metadata(command_factory: CommandFactory) ->
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     assert dto.action == "create_area"
     assert dto.version == 2
     # The metadata should be dropped and not stored in the converted command
@@ -1751,6 +1771,7 @@ def test_parse_legacy_create_user_resource_command(command_factory: CommandFacto
     assert len(commands) == 1
     command = commands[0]
     dto = command.to_dto()
+    assert isinstance(dto.args, dict)
     # Ensures the command is renamed with the new naming
     assert dto.action == "replace_user_resource"
     assert dto.version == 2
