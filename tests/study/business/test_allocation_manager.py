@@ -27,7 +27,7 @@ from tests.helpers import build_dao_from_file_study, file_study_interface
 
 
 def _set_up(command_context: CommandContext, study: FileStudy) -> None:
-    allocation_cfg = {
+    allocation_cfg: dict[str, dict[str, dict[str, float]]] = {
         "n": {"[allocation]": {"N?": 1}},  # Write the area name in the file to ensure we're able to read the data
         "e": {"allocation": {"e": 3, "s": 1}},
         "s": {"[allocation]": {"s": 0.1, "n": 0.2, "w": 0.6}},

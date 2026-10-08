@@ -14,7 +14,6 @@ import datetime
 import json
 import logging
 import re
-import typing as t
 import uuid
 from pathlib import Path
 from unittest.mock import ANY, Mock
@@ -107,6 +106,7 @@ def _build_generator(variant_study_service: VariantStudyService) -> SnapshotGene
 
 def _get_dao_factory(variant_id: str, variant_study_service: VariantStudyService) -> StudyFactoryDao:
     variant_study = variant_study_service.repository.get(variant_id)
+    assert variant_study is not None
     ctx = variant_study_service.command_factory.command_context
 
     if variant_study.storage_mode == StorageMode.FILESYSTEM:
@@ -564,7 +564,7 @@ class RegisterNotification(ITaskNotifier):
     """
 
     def __init__(self) -> None:
-        self.notifications: t.MutableSequence[str] = []
+        self.notifications: list[dict[str, object]] = []
 
     @override
     def notify_message(self, notification: str) -> None:
@@ -816,7 +816,7 @@ class TestSnapshotGenerator:
         # Check: the variant is updated in the database (snapshot and additional_data).
         with db():
             study = variant_study_service.repository.get(variant_study.id)
-            assert study is not None
+            assert isinstance(study, VariantStudy)
             assert study.snapshot is not None
             assert study.snapshot.last_executed_command == study.commands[-1].id
             assert study.author == "john.doe"
@@ -885,6 +885,7 @@ class TestSnapshotGenerator:
         UnsupportedOperationOnArchivedStudy (no snapshot produced).
         """
         root_study = variant_study_service.repository.get(root_study_id)
+        assert root_study is not None
         root_study.archived = True
         variant_study_service.repository.save(root_study)
 
@@ -1010,6 +1011,7 @@ class TestSnapshotGenerator:
 
         # Fill the cache for the test.
         study = db.session.get(VariantStudy, variant_study_id)  #  `variant_study` isn't bound to the session yet.
+        assert study is not None
         file_study = variant_study_service.get_study_dao(study).get_file_study()
         data = FileStudyTreeConfigDTO.from_build_config(file_study.config).model_dump()
         update_cache(cache, variant_study_id, data)
@@ -1023,11 +1025,13 @@ class TestSnapshotGenerator:
         # Ensures we shouldn't have to invalidate the cache as all commands updated the config correctly
         assert not results.should_invalidate_cache
         generated_cache = cache.get(cache_key)
+        assert generated_cache is not None
         # We should see the created areas in the generated cache
         assert sorted(generated_cache["areas"].keys()) == ["north", "south"]
 
         # Add a `create_cluster` command
         variant_study = variant_study_service.repository.get(variant_study_id)
+        assert variant_study is not None
         version = StudyVersion.parse(variant_study.version)
         variant_study_service.append_commands(
             variant_study_id,
@@ -1046,6 +1050,7 @@ class TestSnapshotGenerator:
         assert not results.should_invalidate_cache
         # Ensures the cache was modified accordingly
         new_cache = cache.get(cache_key)
+        assert new_cache is not None
         thermals = new_cache["areas"]["north"]["thermals"]
         assert len(thermals) == 1
         assert thermals[0]["name"] == "my_cluster"
@@ -1120,7 +1125,7 @@ class TestSnapshotGenerator:
         factory = _get_dao_factory(variant_study_id, variant_study_service)
 
         # Generate from scratch
-        with DBStatementRecorder(db.session.bind) as db_recorder:
+        with DBStatementRecorder(db.session.get_bind().engine) as db_recorder:
             results = generator.generate_snapshot(variant_study_id, dao_factory=factory, from_scratch=True)
             assert results.success is True
 
@@ -1133,7 +1138,7 @@ class TestSnapshotGenerator:
             assert len(db_recorder.sql_statements) == 3, str(db_recorder)
 
         # `is_snapshot_up_to_date` method
-        with DBStatementRecorder(db.session.bind) as db_recorder:
+        with DBStatementRecorder(db.session.get_bind().engine) as db_recorder:
             variant_study_service.repository.is_snapshot_up_to_date(variant_study_id)
 
             # We expect 1 query:
@@ -1164,7 +1169,7 @@ class TestSnapshotGenerator:
             variant_study_service.repository.save(variant)
 
         variant_5_id = variant5.id
-        with DBStatementRecorder(db.session.bind) as db_recorder:
+        with DBStatementRecorder(db.session.get_bind().engine) as db_recorder:
             # Variants {1...5} do not have a snapshot.
             # So, we have to go back to the first variant that was generated at the start of the test to find an up-to-date snapshot.
             # This should not generate N+1 queries even if we have to go back far in the variant tree.

@@ -27,6 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix
 from antarest.study.storage.variantstudy.model.command.common import CommandName, InnerMatrices
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
 from tests.helpers import build_dao_from_file_study
@@ -407,7 +408,7 @@ class TestCreateSTStorage:
         study = empty_study_920
         dao = build_dao_from_file_study(study, command_context)
         study_version = study.config.version
-        cmd = CreateArea(area_name="Area be", command_context=command_context, study_version=study_version)
+        cmd: ICommand = CreateArea(area_name="Area be", command_context=command_context, study_version=study_version)
         cmd.apply(dao)
         cmd = CreateArea(area_name="Area FR", command_context=command_context, study_version=study_version)
         cmd.apply(dao)

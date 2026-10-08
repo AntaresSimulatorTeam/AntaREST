@@ -19,6 +19,7 @@ between threads of a single process.
 """
 
 import multiprocessing
+from multiprocessing.synchronize import Event
 from pathlib import Path
 
 from antarest.core.utils.lock import AntarestFileLock, LockNotAcquired
@@ -89,9 +90,7 @@ class TestSoftFileLock:
         assert acquired is True, "Second process should have acquired the lock"
 
     @staticmethod
-    def _acquire_and_hold(
-        lock_path: str, held_event: "multiprocessing.Event", release_event: "multiprocessing.Event"
-    ) -> None:  # type: ignore[type-arg]
+    def _acquire_and_hold(lock_path: str, held_event: Event, release_event: Event) -> None:
         """Acquire the lock, signal that it is held, then wait for a release signal."""
         lock = AntarestFileLock(lock_path, timeout=0, blocking=False)
         lock.acquire()

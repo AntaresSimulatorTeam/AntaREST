@@ -17,6 +17,7 @@ import shutil
 import typing as t
 import zipfile
 from pathlib import Path
+from typing import TypedDict
 
 import pytest
 from fastapi import FastAPI
@@ -39,6 +40,13 @@ LIST_STATUS_CODE = 200
 
 # Status code for study listing with invalid parameters
 INVALID_PARAMS_STATUS_CODE = 422
+
+
+class _StudyInfo(TypedDict, total=False):
+    owner: str | None
+    groups: list[str] | None
+    public_mode: str | None
+    type: str
 
 
 class TestStudiesListing:
@@ -909,9 +917,9 @@ class TestStudiesListing:
             groups_ids[group] = res.json().get("id")
 
         # associate users to groups
-        for user, groups in user_groups_mapping.items():
+        for user, user_groups in user_groups_mapping.items():
             user_id = users_ids[user]
-            for group in groups:
+            for group in user_groups:
                 group_id = groups_ids[group]
                 res = client.post(
                     "/v1/roles",
@@ -936,12 +944,12 @@ class TestStudiesListing:
         # create variant studies for user_1 and user_2 that are part of some groups
         # studies that have owner and groups
         for study, study_info in {
-            "study_1": {"owner": "user_1", "groups": ["group_1"]},
-            "study_2": {"owner": "user_1", "groups": ["group_2"]},
-            "study_4": {"owner": "user_2", "groups": ["group_1"]},
-            "study_5": {"owner": "user_2", "groups": ["group_2"]},
-            "study_7": {"owner": "user_1", "groups": ["group_1", "group_2"]},
-            "study_8": {"owner": "user_2", "groups": ["group_1", "group_2"]},
+            "study_1": _StudyInfo(owner="user_1", groups=["group_1"]),
+            "study_2": _StudyInfo(owner="user_1", groups=["group_2"]),
+            "study_4": _StudyInfo(owner="user_2", groups=["group_1"]),
+            "study_5": _StudyInfo(owner="user_2", groups=["group_2"]),
+            "study_7": _StudyInfo(owner="user_1", groups=["group_1", "group_2"]),
+            "study_8": _StudyInfo(owner="user_2", groups=["group_1", "group_2"]),
         }.items():
             res = client.post(
                 STUDIES_URL,
@@ -958,13 +966,15 @@ class TestStudiesListing:
             assert res.status_code in CREATE_STATUS_CODES, res.json()
             study_id = res.json()
             studies_ids_mapping[study] = study_id
-            owner_id = users_ids[study_info.get("owner")]
+            owner_name = study_info["owner"]
+            assert owner_name is not None
+            owner_id = users_ids[owner_name]
             res = client.put(
                 f"{STUDIES_URL}/{study_id}/owner/{owner_id}",
                 headers={"Authorization": f"Bearer {admin_access_token}"},
             )
             assert res.status_code == 200, res.json()
-            for group in study_info.get("groups"):
+            for group in study_info.get("groups") or []:
                 group_id = groups_ids[group]
                 res = client.put(
                     f"{STUDIES_URL}/{study_id}/groups/{group_id}",
@@ -973,8 +983,8 @@ class TestStudiesListing:
                 assert res.status_code == 200, res.json()
         # studies that have owner but no groups
         for study, study_info in {
-            "study_X10": {"owner": "user_1"},
-            "study_X11": {"owner": "user_2"},
+            "study_X10": _StudyInfo(owner="user_1"),
+            "study_X11": _StudyInfo(owner="user_2"),
         }.items():
             res = client.post(
                 STUDIES_URL,
@@ -991,7 +1001,9 @@ class TestStudiesListing:
             assert res.status_code in CREATE_STATUS_CODES, res.json()
             study_id = res.json()
             studies_ids_mapping[study] = study_id
-            owner_id = users_ids[study_info.get("owner")]
+            owner_name = study_info["owner"]
+            assert owner_name is not None
+            owner_id = users_ids[owner_name]
             res = client.put(
                 f"{STUDIES_URL}/{study_id}/owner/{owner_id}",
                 headers={"Authorization": f"Bearer {admin_access_token}"},
@@ -999,9 +1011,9 @@ class TestStudiesListing:
             assert res.status_code == 200, res.json()
         # studies that have groups but no owner
         for study, study_info in {
-            "study_3": {"groups": ["group_1"]},
-            "study_6": {"groups": ["group_2"]},
-            "study_9": {"groups": ["group_1", "group_2"]},
+            "study_3": _StudyInfo(groups=["group_1"]),
+            "study_6": _StudyInfo(groups=["group_2"]),
+            "study_9": _StudyInfo(groups=["group_1", "group_2"]),
         }.items():
             res = client.post(
                 STUDIES_URL,
@@ -1018,7 +1030,7 @@ class TestStudiesListing:
             assert res.status_code in CREATE_STATUS_CODES, res.json()
             study_id = res.json()
             studies_ids_mapping[study] = study_id
-            for group in study_info.get("groups"):
+            for group in study_info.get("groups") or []:
                 group_id = groups_ids[group]
                 res = client.put(
                     f"{STUDIES_URL}/{study_id}/groups/{group_id}",
@@ -1028,11 +1040,11 @@ class TestStudiesListing:
 
         # create variant studies with neither owner nor groups
         for study, study_info in {
-            "study_X12": {"public_mode": None},
-            "study_X13": {"public_mode": PublicMode.READ.value},
-            "study_X14": {"public_mode": PublicMode.EDIT.value},
-            "study_X15": {"public_mode": PublicMode.EXECUTE.value},
-            "study_X16": {"public_mode": PublicMode.FULL.value},
+            "study_X12": _StudyInfo(public_mode=None),
+            "study_X13": _StudyInfo(public_mode=PublicMode.READ.value),
+            "study_X14": _StudyInfo(public_mode=PublicMode.EDIT.value),
+            "study_X15": _StudyInfo(public_mode=PublicMode.EXECUTE.value),
+            "study_X16": _StudyInfo(public_mode=PublicMode.FULL.value),
         }.items():
             res = client.post(
                 STUDIES_URL,
@@ -1060,12 +1072,12 @@ class TestStudiesListing:
         # create raw studies for user_1 and user_2 that are part of some groups
         # studies that have owner and groups
         for study, study_info in {
-            "study_X17": {"owner": "user_1", "groups": ["group_1"]},
-            "study_X18": {"owner": "user_1", "groups": ["group_2"]},
-            "study_X20": {"owner": "user_2", "groups": ["group_1"]},
-            "study_X21": {"owner": "user_2", "groups": ["group_2"]},
-            "study_X23": {"owner": "user_1", "groups": ["group_1", "group_2"]},
-            "study_X24": {"owner": "user_2", "groups": ["group_1", "group_2"]},
+            "study_X17": _StudyInfo(owner="user_1", groups=["group_1"]),
+            "study_X18": _StudyInfo(owner="user_1", groups=["group_2"]),
+            "study_X20": _StudyInfo(owner="user_2", groups=["group_1"]),
+            "study_X21": _StudyInfo(owner="user_2", groups=["group_2"]),
+            "study_X23": _StudyInfo(owner="user_1", groups=["group_1", "group_2"]),
+            "study_X24": _StudyInfo(owner="user_2", groups=["group_1", "group_2"]),
         }.items():
             res = client.post(
                 STUDIES_URL,
@@ -1075,13 +1087,15 @@ class TestStudiesListing:
             assert res.status_code in CREATE_STATUS_CODES, res.json()
             study_id = res.json()
             studies_ids_mapping[study] = study_id
-            owner = users_ids[study_info.get("owner")]
+            owner_name = study_info["owner"]
+            assert owner_name is not None
+            owner = users_ids[owner_name]
             res = client.put(
                 f"{STUDIES_URL}/{study_id}/owner/{owner}",
                 headers={"Authorization": f"Bearer {admin_access_token}"},
             )
             assert res.status_code == 200, res.json()
-            for group in study_info.get("groups"):
+            for group in study_info.get("groups") or []:
                 group_id = groups_ids[group]
                 res = client.put(
                     f"{STUDIES_URL}/{study_id}/groups/{group_id}",
@@ -1090,8 +1104,8 @@ class TestStudiesListing:
                 assert res.status_code == 200, res.json()
         # studies that have owner but no groups
         for study, study_info in {
-            "study_X26": {"owner": "user_1"},
-            "study_X27": {"owner": "user_2"},
+            "study_X26": _StudyInfo(owner="user_1"),
+            "study_X27": _StudyInfo(owner="user_2"),
         }.items():
             res = client.post(
                 STUDIES_URL,
@@ -1101,7 +1115,9 @@ class TestStudiesListing:
             assert res.status_code in CREATE_STATUS_CODES, res.json()
             study_id = res.json()
             studies_ids_mapping[study] = study_id
-            owner_id = users_ids[study_info.get("owner")]
+            owner_name = study_info["owner"]
+            assert owner_name is not None
+            owner_id = users_ids[owner_name]
             res = client.put(
                 f"{STUDIES_URL}/{study_id}/owner/{owner_id}",
                 headers={"Authorization": f"Bearer {admin_access_token}"},
@@ -1109,9 +1125,9 @@ class TestStudiesListing:
             assert res.status_code == 200, res.json()
         # studies that have groups but no owner
         for study, study_info in {
-            "study_X19": {"groups": ["group_1"]},
-            "study_X22": {"groups": ["group_2"]},
-            "study_X25": {"groups": ["group_1", "group_2"]},
+            "study_X19": _StudyInfo(groups=["group_1"]),
+            "study_X22": _StudyInfo(groups=["group_2"]),
+            "study_X25": _StudyInfo(groups=["group_1", "group_2"]),
         }.items():
             res = client.post(
                 STUDIES_URL,
@@ -1121,7 +1137,7 @@ class TestStudiesListing:
             assert res.status_code in CREATE_STATUS_CODES, res.json()
             study_id = res.json()
             studies_ids_mapping[study] = study_id
-            for group in study_info.get("groups"):
+            for group in study_info.get("groups") or []:
                 group_id = groups_ids[group]
                 res = client.put(
                     f"{STUDIES_URL}/{study_id}/groups/{group_id}",
@@ -1131,11 +1147,11 @@ class TestStudiesListing:
 
         # create raw studies with neither owner nor groups
         for study, study_info in {
-            "study_X28": {"public_mode": None},
-            "study_X29": {"public_mode": PublicMode.READ.value},
-            "study_X30": {"public_mode": PublicMode.EDIT.value},
-            "study_X31": {"public_mode": PublicMode.EXECUTE.value},
-            "study_X32": {"public_mode": PublicMode.FULL.value},
+            "study_X28": _StudyInfo(public_mode=None),
+            "study_X29": _StudyInfo(public_mode=PublicMode.READ.value),
+            "study_X30": _StudyInfo(public_mode=PublicMode.EDIT.value),
+            "study_X31": _StudyInfo(public_mode=PublicMode.EXECUTE.value),
+            "study_X32": _StudyInfo(public_mode=PublicMode.FULL.value),
         }.items():
             res = client.post(
                 STUDIES_URL,
@@ -1156,8 +1172,8 @@ class TestStudiesListing:
         # create studies for user_3 that is not part of any group
         # variant studies
         for study, study_info in {
-            "study_X33": {"groups": ["group_1"]},
-            "study_X35": {"groups": []},
+            "study_X33": _StudyInfo(groups=["group_1"]),
+            "study_X35": _StudyInfo(groups=[]),
         }.items():
             res = client.post(
                 STUDIES_URL,
@@ -1180,7 +1196,7 @@ class TestStudiesListing:
                 headers={"Authorization": f"Bearer {admin_access_token}"},
             )
             assert res.status_code == 200, res.json()
-            for group in study_info.get("groups", []):
+            for group in study_info.get("groups") or []:
                 group_id = groups_ids[group]
                 res = client.put(
                     f"{STUDIES_URL}/{study_id}/groups/{group_id}",
@@ -1189,8 +1205,8 @@ class TestStudiesListing:
                 assert res.status_code == 200, res.json()
         # raw studies
         for study, study_info in {
-            "study_X34": {"groups": ["group_2"]},
-            "study_X36": {"groups": []},
+            "study_X34": _StudyInfo(groups=["group_2"]),
+            "study_X36": _StudyInfo(groups=[]),
         }.items():
             res = client.post(
                 STUDIES_URL,
@@ -1206,7 +1222,7 @@ class TestStudiesListing:
                 headers={"Authorization": f"Bearer {admin_access_token}"},
             )
             assert res.status_code == 200, res.json()
-            for group in study_info.get("groups"):
+            for group in study_info.get("groups") or []:
                 group_id = groups_ids[group]
                 res = client.put(
                     f"{STUDIES_URL}/{study_id}/groups/{group_id}",
@@ -1252,7 +1268,7 @@ class TestStudiesListing:
 
         # verify the studies creation was done correctly and that admin has access to all studies
         all_studies = set(studies_ids_mapping.values())
-        studies_target_info = {
+        studies_target_info: dict[str, _StudyInfo] = {
             "study_1": {
                 "type": "variantstudy",
                 "owner": "user_1",
@@ -1358,12 +1374,14 @@ class TestStudiesListing:
             assert study_data.get("type") == study_info.get("type")
             if study_data.get("owner") and study_info.get("owner"):
                 assert study_data["owner"]["name"] == study_info.get("owner")
-                assert study_data["owner"]["id"] == users_ids[study_info.get("owner")]
+                owner_name = study_info["owner"]
+                assert owner_name is not None
+                assert study_data["owner"]["id"] == users_ids[owner_name]
             else:
                 assert not study_info.get("owner")
                 assert study_data["owner"]["name"] == "admin"
             if study_data.get("groups"):
-                expected_groups = set(study_info.get("groups"))
+                expected_groups = set(study_info.get("groups") or [])
                 assert all(
                     (group["name"] in expected_groups) and groups_ids[group["name"]] == group["id"]
                     for group in study_data["groups"]
@@ -1395,10 +1413,10 @@ class TestStudiesListing:
         # fmt: on
         for request_groups_numbers, expected_studies_numbers in requests_params_expected_studies:
             request_groups_ids = [groups_ids[f"group_{group_number}"] for group_number in request_groups_numbers]
-            expected_studies = [
+            expected_studies = {
                 studies_ids_mapping[f"study_{(study_number if int(study_number) <= 9 else 'X' + study_number)}"]
                 for study_number in expected_studies_numbers
-            ]
+            }
             res = client.get(
                 STUDIES_URL,
                 headers={"Authorization": f"Bearer {users_tokens['user_1']}"},

@@ -21,6 +21,7 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintOperator,
     BindingConstraintUpdate,
     ClusterTerm,
+    ConstraintId,
     ConstraintTerm,
 )
 from antarest.study.dao.file.file_study_constraint_dao import generate_replacement_matrices
@@ -31,6 +32,7 @@ from antarest.study.storage.variantstudy.command_factory import CommandValidatio
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import (
     CreateBindingConstraint,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import build_dao_from_file_study
@@ -144,6 +146,7 @@ def test_apply(
     dao = build_dao_from_file_study(study_data, command_context)
     output = update_binding_constraints_command.apply(dao)
     assert output.status is True
+    assert isinstance(study_data.tree.save, Mock)
     study_data.tree.save.assert_called_with(
         {
             "1": {
@@ -192,7 +195,7 @@ def test_update_time_step_via_table_mode(empty_study_880: FileStudy, command_con
         "command_context": command_context,
         "study_version": study_version,
     }
-    cmd = CreateBindingConstraint.model_validate(args, context=CommandValidationContext(version=1))
+    cmd: ICommand = CreateBindingConstraint.model_validate(args, context=CommandValidationContext(version=1))
 
     dao = build_dao_from_file_study(empty_study_880, command_context)
     output = cmd.apply(dao)
@@ -217,7 +220,7 @@ def test_update_time_step_via_table_mode(empty_study_880: FileStudy, command_con
 
 
 def test_generate_replacement_matrices() -> None:
-    bc_id = "bc_1"
+    bc_id = ConstraintId("bc_1")
 
     # 8,6,0 HOURLY GREATER
     study_version = STUDY_VERSION_8_6
@@ -230,7 +233,7 @@ def test_generate_replacement_matrices() -> None:
     assert matrices[0][1] == []
 
     # 8,7,0 DAILY BOTH
-    bc_id = "bc_1"
+    bc_id = ConstraintId("bc_1")
     study_version = STUDY_VERSION_8_7
 
     matrices = list(generate_replacement_matrices(bc_id, study_version, BindingConstraintOperator.BOTH))

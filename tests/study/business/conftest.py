@@ -48,6 +48,3 @@ def st_storage_manager(command_context: CommandContext) -> STStorageManager:
 @pytest.fixture
 def hydro_manager(command_context: CommandContext) -> HydroManager:
     return HydroManager(command_context)
-
-
-manager = STStorageManager(command_context)

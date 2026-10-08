@@ -43,7 +43,7 @@ class TestUpdateInflowStructure:
 
         # test with invalid data
         # "inter-monthly correlation" must be between 0 and 1
-        update_properties = {"inter_monthly_correlation": 22}
+        update_properties: dict[str, float] = {"inter_monthly_correlation": 22}
         with pytest.raises(ValidationError):
             InflowStructureUpdate(**update_properties)
 

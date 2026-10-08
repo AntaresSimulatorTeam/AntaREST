@@ -285,6 +285,7 @@ class TestVariantStudyService:
                 # Modify the `created_at` and `updated_at` attributes in DB.
                 with db():
                     variant = db.session.get(Study, variant_study.id)
+                    assert variant is not None
                     variant.last_access = datetime.datetime(2023, 12, 31)
                     variant.updated_at = datetime.datetime(2023, 12, 31)
                     db.session.merge(variant)
@@ -295,9 +296,9 @@ class TestVariantStudyService:
         # Check if everything was correctly initialized
         assert len(list(variant_study_path.iterdir())) == 3
 
-        for variant in variant_study_path.iterdir():
-            assert variant.is_dir()
-            assert list(variant.iterdir())[0].name == "snapshot"
+        for variant_dir in variant_study_path.iterdir():
+            assert variant_dir.is_dir()
+            assert list(variant_dir.iterdir())[0].name == "snapshot"
 
         # =============================
         #  TEST
@@ -309,9 +310,9 @@ class TestVariantStudyService:
 
         # At this point, variants was not accessed yet
         # Thus snapshot directories must exist still
-        for variant in variant_study_path.iterdir():
-            assert variant.is_dir()
-            assert list(variant.iterdir())
+        for variant_dir in variant_study_path.iterdir():
+            assert variant_dir.is_dir()
+            assert list(variant_dir.iterdir())
 
         # Simulate access for two old snapshots
         variant_list[0].last_access = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(

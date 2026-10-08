@@ -42,8 +42,8 @@ from antarest.output.storage.output_storage import (
     OutputSettingsOptimization,
     OutputStorageType,
 )
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from tests.test_helpers.dates import utc_to_local
 
 
@@ -81,7 +81,7 @@ class OutOfStudyFileOutputProvider(IFileOutputsProvider):
 
 
 @pytest.fixture(params=[OutputStorageType.IN_STUDY_FILE_TREE, OutputStorageType.OUT_OF_STUDY_FILE_TREE])
-def output_storage(request, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputStorage:
+def output_storage(request: pytest.FixtureRequest, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputStorage:
     executor = Mock(spec=IRemoteExecutor)
 
     studies_dir = tmp_path / "studies"
@@ -94,8 +94,8 @@ def output_storage(request, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputS
         zf.extractall(studies_dir)
 
     if request.param == OutputStorageType.IN_STUDY_FILE_TREE:
-        klass = InStudyFileOutputStorage
-        outputs_provider = InStudySimpleFileOutputsProvider(studies_dir)
+        klass: type[InStudyFileOutputStorage] | type[OutOfStudyFileOutputStorage] = InStudyFileOutputStorage
+        outputs_provider: IFileOutputsProvider = InStudySimpleFileOutputsProvider(studies_dir)
     else:
         klass = OutOfStudyFileOutputStorage
         outputs_provider = OutOfStudyFileOutputProvider(outputs_dir)

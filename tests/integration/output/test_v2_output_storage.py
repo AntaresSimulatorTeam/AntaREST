@@ -33,7 +33,9 @@ def empty_study_id(admin_client: TestClient) -> str:
         params={"name": "My study"},
     )
     assert res.status_code == 201, res.json()
-    return res.json()
+    study_id = res.json()
+    assert isinstance(study_id, str)
+    return study_id
 
 
 @pytest.fixture

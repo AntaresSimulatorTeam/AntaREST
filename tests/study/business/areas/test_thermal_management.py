@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import zipfile
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -61,7 +62,8 @@ class TestThermalClusterGroup:
         When an invalid type is used to create a group, a `ValueError` should be raised.
         """
         with pytest.raises(ValueError):
-            ThermalClusterGroup(123)
+            # Deliberately pass an invalid runtime type to exercise enum validation.
+            ThermalClusterGroup(cast(str, 123))
 
 
 @pytest.fixture

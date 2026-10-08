@@ -235,7 +235,9 @@ class TestSTStorage:
         description = res.json()["description"]
         assert "Free groups are available since v9.2 and your study is in 8.6" in description
 
-        args["parameters"]["group"] = "psp_open"
+        parameters = args["parameters"]
+        assert isinstance(parameters, dict)
+        parameters["group"] = "psp_open"
         res = client.post(
             f"/v1/studies/{internal_study_id}/commands",
             headers={"Authorization": f"Bearer {user_access_token}"},

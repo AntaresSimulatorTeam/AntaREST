@@ -16,6 +16,7 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
@@ -86,7 +87,7 @@ class TestInputHydroSeriesArea:
             study_path=Path("path/to/study"),
             path=Path("path/to/study"),
             study_id=study_id,
-            version=int(version),  # will become a `str` in the future
+            version=StudyVersion.parse(version),
             areas={},
         )
 
@@ -101,5 +102,6 @@ class TestInputHydroSeriesArea:
         actual_obj = {}
         for key, value in actual.items():
             assert isinstance(value, InputSeriesMatrix)
+            assert value.default_empty is not None
             actual_obj[key] = {"default_empty": value.default_empty().tolist(), "nb_columns": value.nb_columns}
         assert actual_obj == expected

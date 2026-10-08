@@ -303,21 +303,12 @@ def test_export_files(tmp_path: Path) -> None:
 
     # Simulate the download of data using a streamed request
     client = create_test_client(mock_storage_service)
-    if client.stream is False:
-        # `TestClient` is based on `Requests` (old way before AntaREST-v2.15)
-        # noinspection PyArgumentList
-        res = client.get(f"/v1/studies/{UUID}/export", stream=True)
-        res.raise_for_status()
-        result = res.json()
-    else:
-        # `TestClient` is based on `httpx` (new way since AntaREST-v2.15)
-        data = io.BytesIO()
-        # noinspection PyCallingNonCallable
-        with client.stream("GET", f"/v1/studies/{UUID}/export") as res:
-            for chunk in res.iter_bytes():
-                data.write(chunk)
-        res.raise_for_status()
-        result = json.loads(data.getvalue())
+    data = io.BytesIO()
+    with client.stream("GET", f"/v1/studies/{UUID}/export") as res:
+        for chunk in res.iter_bytes():
+            data.write(chunk)
+    res.raise_for_status()
+    result = json.loads(data.getvalue())
 
     assert FileDownloadTaskDTO(**result).model_dump_json() == expected.model_dump_json()
 

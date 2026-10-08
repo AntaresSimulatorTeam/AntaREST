@@ -15,6 +15,7 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.core.exceptions import BadCandidateFormatError, WrongLinkFormatError
+from antarest.study.business.model.link_model import LinkCreation
 from antarest.study.business.model.xpansion_model import (
     XpansionCandidate,
     XpansionCandidateCreation,
@@ -26,6 +27,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_xpansion_candidate import CreateXpansionCandidate
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate import RemoveXpansionCandidate
 from antarest.study.storage.variantstudy.model.command.replace_xpansion_candidate import ReplaceXpansionCandidate
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
@@ -37,11 +39,17 @@ class TestXpansionCandidate:
     def set_up(empty_study: FileStudy, command_context: CommandContext) -> FileStudyTreeDao:
         dao = build_dao_from_file_study(empty_study, command_context)
         # Creates a link for candidates
-        cmd = CreateArea(command_context=command_context, area_name="at", study_version=STUDY_VERSION_8_7)
+        cmd: ICommand = CreateArea(command_context=command_context, area_name="at", study_version=STUDY_VERSION_8_7)
         cmd.apply(study_dao=dao)
         cmd = CreateArea(command_context=command_context, area_name="be", study_version=STUDY_VERSION_8_7)
         cmd.apply(study_dao=dao)
-        cmd = CreateLink(area1="at", area2="be", command_context=command_context, study_version=STUDY_VERSION_8_7)
+        cmd = CreateLink(
+            parameters=LinkCreation(),
+            area1="at",
+            area2="be",
+            command_context=command_context,
+            study_version=STUDY_VERSION_8_7,
+        )
         cmd.apply(study_dao=dao)
 
         # Creates a default xpansion configuration
@@ -62,7 +70,7 @@ class TestXpansionCandidate:
         dao = self.set_up(empty_study, command_context)
 
         # Creates 2 candidates
-        cmd = CreateXpansionCandidate(
+        cmd: ICommand = CreateXpansionCandidate(
             candidate=XpansionCandidateCreation(
                 name="cdt_1", link="at - be", annual_cost_per_mw=12, max_investment=100
             ),
@@ -174,7 +182,9 @@ max-units = 7
 
         # Create a candidate on a fake area
         cdt = XpansionCandidateCreation(name="cdt_1", link="fake - link", annual_cost_per_mw=12, max_investment=100)
-        cmd = CreateXpansionCandidate(candidate=cdt, command_context=command_context, study_version=STUDY_VERSION_8_7)
+        cmd: ICommand = CreateXpansionCandidate(
+            candidate=cdt, command_context=command_context, study_version=STUDY_VERSION_8_7
+        )
         output = cmd.apply(study_dao=dao)
         assert output.status is False
         assert "Area is not found: 'fake'" in output.message

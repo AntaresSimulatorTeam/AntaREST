@@ -52,6 +52,8 @@ class TestVariantStudyRepository:
         # Ensure the root study has 2 children
         children = repository.get_children(parent_id=raw_study.id)
         assert children == [variant2, variant1]
+        assert children[0].created_at is not None
+        assert children[1].created_at is not None
         assert children[0].created_at > children[1].created_at
 
         # Ensure variants have no children
@@ -68,6 +70,9 @@ class TestVariantStudyRepository:
         # Ensure the root study has 3 children in chronological order
         children = repository.get_children(parent_id=raw_study.id)
         assert children == [variant2, variant3, variant1]
+        assert children[0].created_at is not None
+        assert children[1].created_at is not None
+        assert children[2].created_at is not None
         assert children[0].created_at > children[1].created_at > children[2].created_at
 
         # Add a variant of a variant
@@ -142,6 +147,6 @@ class TestVariantStudyRepository:
             # must initialze here because a select is issued and we don't want the recorder to count it
             study_id = study.id
             raw_study_id = raw_study.id
-            with DBStatementRecorder(db_session.bind) as db_recorder:
+            with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
                 assert repository.get_root_ancestor_id(study_id) == raw_study_id
                 assert len(db_recorder.sql_statements) == 1, str(db_recorder)

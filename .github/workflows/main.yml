@@ -26,7 +26,7 @@ jobs:
           uv run --frozen ruff check antarest/ tests/
           uv run --frozen ruff format --check antarest/ tests/
       - name: Check Typing (mypy)
-        run: uv run --frozen mypy --install-types --non-interactive
+        run: uv run --frozen mypy --install-types --non-interactive antarest/ tests/
 
   python-test:
     runs-on: ${{ matrix.os }}

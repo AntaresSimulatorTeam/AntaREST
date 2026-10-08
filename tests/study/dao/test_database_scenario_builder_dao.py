@@ -31,16 +31,16 @@ def _setup_areas(dao: StudyDao, *area_names: str) -> None:
         save_area(dao, name)
 
 
-def _make_storage(dao: StudyDao, **kwargs) -> STStorage:
+def _make_storage(dao: StudyDao, **kwargs: object) -> STStorage:
     """Build a fully-initialized STStorage so DAO write-side validation passes."""
-    storage = STStorage(**kwargs)
+    storage = STStorage.model_validate(kwargs)
     initialize_st_storage(storage, dao.get_version())
     return storage
 
 
-def _make_thermal(dao: StudyDao, **kwargs) -> ThermalCluster:
+def _make_thermal(dao: StudyDao, **kwargs: object) -> ThermalCluster:
     """Build a fully-initialized ThermalCluster so DAO write-side validation passes."""
-    cluster = ThermalCluster(**kwargs)
+    cluster = ThermalCluster.model_validate(kwargs)
     initialize_thermal_cluster(cluster, dao.get_version())
     return cluster
 
@@ -150,7 +150,7 @@ def test_save_ruleset_with_storage_constraints(dao_93: StudyDao) -> None:
     _setup_areas(dao, "fr")
     dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints(
-        {"fr": {"battery": [STStorageAdditionalConstraint(name="Constraint_A")]}}
+        {"fr": {"battery": [STStorageAdditionalConstraint.model_validate({"name": "Constraint_A"})]}}
     )
     ruleset = Ruleset(storage_constraints={"fr": {"battery": {"constraint_a": {"0": 10, "1": 20}}}})
     dao.save_scenario_builder(ruleset)
@@ -412,7 +412,7 @@ def test_scenario_builder_st_storage_constraint_deleted(dao_93: StudyDao) -> Non
 
     dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
     dao.save_st_storage_additional_constraints(
-        {"fr": {"battery": [STStorageAdditionalConstraint(name="Constraint_A")]}}
+        {"fr": {"battery": [STStorageAdditionalConstraint.model_validate({"name": "Constraint_A"})]}}
     )
     dao.save_scenario_builder(Ruleset(storage_constraints={"fr": {"battery": {"constraint_a": {"0": 10}}}}))
 
@@ -431,7 +431,9 @@ def test_scenario_builder_st_storage_deleted_cascades_to_constraints(dao_93: Stu
     _setup_areas(dao, "fr")
 
     dao.save_st_storages({"fr": [_make_storage(dao, id="battery", name="Battery")]})
-    dao.save_st_storage_additional_constraints({"fr": {"battery": [STStorageAdditionalConstraint(name="C1")]}})
+    dao.save_st_storage_additional_constraints(
+        {"fr": {"battery": [STStorageAdditionalConstraint.model_validate({"name": "C1"})]}}
+    )
     dao.save_scenario_builder(
         Ruleset(
             storage_inflows={"fr": {"battery": {"0": 4}}},

@@ -13,6 +13,8 @@
 from pathlib import Path
 from unittest.mock import Mock
 
+from antares.study.version import StudyVersion
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.input.areas.list import InputAreasList
 
@@ -30,7 +32,7 @@ IT
         study_path=file,
         path=file,
         study_id="id",
-        version=-1,
+        version=StudyVersion.parse("8.8"),
         areas={
             "fr": AreaConfig(
                 name="FR",

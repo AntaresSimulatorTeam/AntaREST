@@ -14,6 +14,7 @@ import shutil
 import zipfile
 from pathlib import Path
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -22,7 +23,7 @@ from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 
 class TestNormalization:
     def test_endpoint(self, client: TestClient, internal_study_id: str, user_access_token: str, tmp_path: Path) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # imports a study
         sta_mini_zip_path = INTEGRATION_ASSETS_DIR.joinpath("STA-mini.zip")

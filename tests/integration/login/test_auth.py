@@ -29,7 +29,7 @@ def auth_disabled_app(app: FastAPI) -> Iterable[FastAPI]:
     app.dependency_overrides.clear()
 
 
-def test_disable_auth(auth_disabled_app: FastAPI, client: TestClient):
+def test_disable_auth(auth_disabled_app: FastAPI, client: TestClient) -> None:
     client = TestClient(auth_disabled_app)
 
     res = client.get("/v1/users")
@@ -37,7 +37,7 @@ def test_disable_auth(auth_disabled_app: FastAPI, client: TestClient):
     assert res.json() == [{"id": 1, "name": "admin"}]
 
 
-def test_enable_auth_requires_authentication(app: FastAPI, client: TestClient, user_access_token: str):
+def test_enable_auth_requires_authentication(app: FastAPI, client: TestClient, user_access_token: str) -> None:
     # Fails without authentication
     res = client.get("/v1/users")
     assert res.status_code == 401
