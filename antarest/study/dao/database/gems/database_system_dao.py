@@ -328,9 +328,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if not self._get_system_row_if_exists():
             raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
-        # This is used to check that `portX` truly belongs to the model of `componentX`
-        components_library_and_model = self._get_components_library_and_model()
-
         rows = []
         for connection in connections:
             rows.append(
@@ -348,21 +345,21 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             session.commit()
         except IntegrityError as e:
             session.rollback()
-            self._raise_the_right_connection_exception(components_library_and_model, connections, e)
+            self._raise_the_right_connection_exception(connections, e)
 
     def _raise_the_right_connection_exception(
         self,
-        components_library_and_model: dict[str, tuple[str, str]],
         connections: list[GemsComponentConnection],
         e: IntegrityError,
     ) -> NoReturn:
 
         _check_connection_does_not_link_port_component_to_itself(connections)
-        _check_components_exist(components_library_and_model, connections)
         # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
         # so we have to check that the connections are not duplicated.
         _check_no_duplicated_connections(connections)
 
+        components_library_and_model = self._get_components_library_and_model()
+        _check_components_exist(components_library_and_model, connections)
         self._check_ports_exist_in_models(components_library_and_model, connections, e)
 
         # All components and ports exist and no self-connection was found.
