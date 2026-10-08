@@ -9,13 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, String, Table
+from sqlalchemy import Boolean, CheckConstraint, Column, Float, ForeignKeyConstraint, Index, String, Table, text
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
-
 
 GEMS_SYSTEM_METADATA_TABLE = Table(
     "gems_system_metadata",
@@ -79,5 +78,49 @@ GEMS_COMPONENT_PROPERTIES_TABLE = Table(
         ["study_data_id", "component_id"],
         ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
+    ),
+)
+
+GEMS_COMPONENT_CONNECTIONS_TABLE = Table(
+    "gems_component_connections",
+    metadata,
+    study_data_id_col(),
+    Column("component1", String(255), primary_key=True),
+    Column("component2", String(255), primary_key=True),
+    Column("port1", String(255), primary_key=True),
+    Column("port2", String(255), primary_key=True),
+    # Ensures component1 exists in the study.
+    ForeignKeyConstraint(
+        ["study_data_id", "component1"],
+        [
+            "gems_components.study_data_id",
+            "gems_components.component_id",
+        ],
+        name="fk_gems_component_connections_component1_exists",
+        ondelete="CASCADE",
+    ),
+    # Ensures component2 exists in the study.
+    ForeignKeyConstraint(
+        ["study_data_id", "component2"],
+        [
+            "gems_components.study_data_id",
+            "gems_components.component_id",
+        ],
+        name="fk_gems_component_connections_component2_exists",
+        ondelete="CASCADE",
+    ),
+    CheckConstraint(
+        "component1 != component2 or port1 != port2",
+        name="ck_gems_component_connections_have_distinct_endpoints",
+    ),
+    # A connection between (component1, port1) and (component2, port2) is the same, physically,
+    # as its symmetric counterpart. Indexing on the ordered pair forbids declaring both.
+    Index(
+        "uq_no_inverted_pairs",
+        text("(CASE WHEN component1 <= component2 THEN component1 ELSE component2 END)"),
+        text("(CASE WHEN component1 >= component2 THEN component1 ELSE component2 END)"),
+        text("(CASE WHEN port1 <= port2 THEN port1 ELSE port2 END)"),
+        text("(CASE WHEN port1 >= port2 THEN port1 ELSE port2 END)"),
+        unique=True,
     ),
 )
