@@ -21,19 +21,15 @@ from sqlalchemy.orm import Session
 
 from antarest.core.model import PublicMode
 from antarest.core.roles import RoleType
-from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.sql_utils import upsert_one
 from antarest.core.utils.utils import current_time
 from antarest.login.model import Group, Role, User
-from antarest.study.model import StorageMode
 from antarest.study.storage.variantstudy.model.dbmodel import (
     CommandBlock,
-    CommandsListVersion,
+    LineageVersions,
     VariantStudy,
     VariantStudySnapshot,
 )
-from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
-from tests.helpers import create_raw_study, create_variant_study, with_db_context
+from tests.helpers import create_raw_study, create_variant_study
 
 
 @pytest.fixture(name="user_id")
@@ -98,7 +94,7 @@ class TestVariantStudySnapshot:
         Check the creation of an instance of VariantStudySnapshot
         """
         with db_session:
-            snap = VariantStudySnapshot(id=variant_study_id, version=13)
+            snap = VariantStudySnapshot(id=variant_study_id, lineage_versions=LineageVersions([(variant_study_id, 13)]))
             db_session.add(snap)
             db_session.commit()
 
@@ -111,7 +107,7 @@ class TestVariantStudySnapshot:
 
         # check Study fields
         assert obj.id == variant_study_id
-        assert obj.version == 13
+        assert obj.lineage_versions == LineageVersions([(variant_study_id, 13)])
         assert obj.last_executed_command is None
 
     def test_init__with_command(self, db_session: Session, variant_study_id: str) -> None:
@@ -121,7 +117,11 @@ class TestVariantStudySnapshot:
         command_id = str(uuid.uuid4())
 
         with db_session:
-            snap = VariantStudySnapshot(id=variant_study_id, version=2, last_executed_command=command_id)
+            snap = VariantStudySnapshot(
+                id=variant_study_id,
+                lineage_versions=LineageVersions([(variant_study_id, 2)]),
+                last_executed_command=command_id,
+            )
             db_session.add(snap)
             db_session.commit()
 
@@ -129,7 +129,7 @@ class TestVariantStudySnapshot:
             db_session.query(VariantStudySnapshot).filter(VariantStudySnapshot.id == variant_study_id).one()
         )
         assert obj.id == variant_study_id
-        assert obj.version == 2
+        assert obj.lineage_versions == LineageVersions([(variant_study_id, 2)])
         assert obj.last_executed_command == command_id
 
 
@@ -238,61 +238,3 @@ class TestVariantStudy:
         assert obj.generation_task is None
         assert obj.snapshot is None
         assert obj.commands == []
-
-
-def _set_up(session: Session, parent_id: int, user_id: int) -> str:
-    with session:
-        # Given a variant study (referencing the raw study)
-        # with optionally a snapshot and a snapshot directory
-        variant_id = str(uuid.uuid4())
-        variant = create_variant_study(
-            id=variant_id,
-            name="Study 3.0",
-            author="Sandrine",
-            parent_id=parent_id,
-            path="",
-            owner_id=user_id,
-            storage_mode=StorageMode.FILESYSTEM,
-            commands_version=CommandsListVersion(version=0, variant_id=variant_id),
-        )
-
-        session.add(variant)
-        session.commit()
-
-        return variant_id
-
-
-@with_db_context
-def test_is_snapshot_up_to_date(variant_study_service: VariantStudyService, raw_study_id: int, user_id: int) -> None:
-    """
-    Check the `is_snapshot_up_to_date()` method
-    """
-    session = db.session
-    variant_id = _set_up(session, raw_study_id, user_id)
-
-    # 1st case, no snapshot in DB -> Not up to date
-    variant = session.get(VariantStudy, variant_id)
-    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
-
-    # 2nd case: Add the snapshot in DB with a version 0 which matches the command blocks version -> Up to date
-    variant.snapshot = VariantStudySnapshot(id=variant_id, version=0, last_executed_command=None)
-    session.add(variant)
-    session.commit()
-
-    variant = session.get(VariantStudy, variant_id)
-    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is True
-
-    # 3rd case: Changes the version in `commands_list_version` table -> Not up to date
-    upsert_one(session, CommandsListVersion.__table__, {"variant_id": variant_id, "version": 1})
-    session.commit()
-
-    variant = session.get(VariantStudy, variant_id)
-    session.refresh(variant)
-    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is False
-
-    # 4th case: Adapt the version in the study snapshot to match the commands one -> Up to date
-    variant.snapshot.version = 1
-    session.add(variant)
-    session.commit()
-
-    assert variant_study_service.repository.is_snapshot_up_to_date(variant_id) is True
