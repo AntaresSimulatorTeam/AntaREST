@@ -16,7 +16,7 @@ from typing import Any
 import pytest
 
 from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId, ReserveType
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.config.reserve_participations import (
     parse_hydro_reserves_certifications,
@@ -41,7 +41,7 @@ def _set_up(dao: FileStudyTreeDao) -> None:
 
 def test_parsing_errors() -> None:
     # Duplicated reserve
-    content = {"participations": {"certifications": [{"reserve": "r1"}, {"reserve": "r1"}]}}
+    content: dict[str, object] = {"participations": {"certifications": [{"reserve": "r1"}, {"reserve": "r1"}]}}
     with pytest.raises(ValueError, match="Some reserves are duplicated for the long-term storage"):
         parse_hydro_reserves_certifications(content)
 
@@ -73,7 +73,13 @@ def test_yaml_file_is_written_and_read_correctly(filestudy_dao_v10_2: FileStudyT
     _set_up(dao)
 
     dao.save_hydro_reserve_certifications(
-        {"paris": {"r1": StorageReserveCertification(participation_cost=1.0, max_release=2.0, max_store=3.0)}}
+        {
+            "paris": {
+                ReserveDefinitionId("r1"): StorageReserveCertification(
+                    participation_cost=1.0, max_release=2.0, max_store=3.0
+                )
+            }
+        }
     )
 
     content = YAMLReader().read(_hydro_reserve_file(dao, "paris"))
@@ -117,8 +123,8 @@ def test_saving_certifications_preserves_the_symmetries(filestudy_dao_v10_2: Fil
     dao.save_hydro_reserve_certifications(
         {
             "paris": {
-                "r1": StorageReserveCertification(max_release=9.0),
-                "r2": StorageReserveCertification(max_store=4.0),
+                ReserveDefinitionId("r1"): StorageReserveCertification(max_release=9.0),
+                ReserveDefinitionId("r2"): StorageReserveCertification(max_store=4.0),
             }
         }
     )
@@ -143,7 +149,9 @@ def test_saving_certifications_removes_the_orphan_symmetries(filestudy_dao_v10_2
     _save_existing_content_with_a_symmetry(dao)
 
     # "r1" loses its certification, so the ["r1", "r2"] symmetry is left with a single reserve.
-    dao.save_hydro_reserve_certifications({"paris": {"r2": StorageReserveCertification(max_store=4.0)}})
+    dao.save_hydro_reserve_certifications(
+        {"paris": {ReserveDefinitionId("r2"): StorageReserveCertification(max_store=4.0)}}
+    )
 
     content = YAMLReader().read(_hydro_reserve_file(dao, "paris"))
     assert content == {
@@ -170,7 +178,9 @@ def test_deleting_an_area_removes_its_reserve_participations(filestudy_dao_v10_2
     # The file lives under `input/hydro/reserves/<area>`, which no other area deletion covers.
     dao = filestudy_dao_v10_2
     _set_up(dao)
-    dao.save_hydro_reserve_certifications({"paris": {"r1": StorageReserveCertification(max_release=1.0)}})
+    dao.save_hydro_reserve_certifications(
+        {"paris": {ReserveDefinitionId("r1"): StorageReserveCertification(max_release=1.0)}}
+    )
     assert _hydro_reserve_file(dao, "paris").exists()
 
     dao.delete_area("paris")

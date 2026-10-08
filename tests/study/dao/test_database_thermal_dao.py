@@ -46,9 +46,9 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from tests.study.dao.utils import save_area
 
 
-def _make_thermal(dao: StudyDao, **kwargs) -> ThermalCluster:
+def _make_thermal(dao: StudyDao, **kwargs: object) -> ThermalCluster:
     """Build a fully-initialized ThermalCluster so DAO write-side validation passes."""
-    cluster = ThermalCluster(**kwargs)
+    cluster = ThermalCluster.model_validate(kwargs)
     initialize_thermal_cluster(cluster, dao.get_version())
     return cluster
 

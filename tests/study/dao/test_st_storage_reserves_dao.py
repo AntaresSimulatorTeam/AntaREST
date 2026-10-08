@@ -14,10 +14,15 @@ import pytest
 from antarest.core.exceptions import AreaNotFound
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.reserve_certification_model import StorageReserveCertification
-from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveType
+from antarest.study.business.model.reserve_definition_model import ReserveDefinition, ReserveDefinitionId, ReserveType
 from antarest.study.business.model.reserve_symmetries_model import ReserveSymmetries
 from antarest.study.business.model.sts_model import STStorage, initialize_st_storage
 from antarest.study.dao.api.study_dao import StudyDao
+
+R1 = ReserveDefinitionId("r1")
+R2 = ReserveDefinitionId("r2")
+R3 = ReserveDefinitionId("r3")
+R4 = ReserveDefinitionId("r4")
 
 
 def _set_up(dao: StudyDao) -> None:
@@ -29,7 +34,7 @@ def _set_up(dao: StudyDao) -> None:
     initialize_st_storage(sts2, dao.get_version())
     dao.save_st_storages({"fr": [sts1, sts2]})
     reserves = []
-    for reserve_name in ["r1", "r2", "r3", "r4"]:
+    for reserve_name in [R1, R2, R3, R4]:
         reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN))
     dao.save_reserve_definitions({"fr": reserves})
 
@@ -42,44 +47,44 @@ def test_symmetries_and_certifications_do_not_overwrite_each_other(dao_10_2: Stu
     dao.save_st_storage_reserve_certifications(
         {
             "fr": {
-                "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-                "r2": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-                "r3": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-                "r4": {"sts1": StorageReserveCertification()},
+                R1: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                R2: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                R3: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                R4: {"sts1": StorageReserveCertification()},
             }
         }
     )
 
     # Save 2 symmetries. Then 1 certification.
     # As we've removed the certification from `r4` and from `r3` for `sts1`, the relative symmetry should be removed.
-    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"], ["r3", "r4"]], "sts2": [["r1", "r3"]]}})
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [[R1, R2], [R3, R4]], "sts2": [[R1, R3]]}})
     dao.save_st_storage_reserve_certifications(
         {
             "fr": {
-                "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-                "r2": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-                "r3": {"sts2": StorageReserveCertification()},
+                R1: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                R2: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                R3: {"sts2": StorageReserveCertification()},
             }
         }
     )
 
-    assert dao.get_st_storage_reserve_symmetries("fr") == {"sts1": [["r1", "r2"]], "sts2": [["r1", "r3"]]}
+    assert dao.get_st_storage_reserve_symmetries("fr") == {"sts1": [[R1, R2]], "sts2": [[R1, R3]]}
     assert dao.get_st_storage_reserve_certifications("fr") == {
-        "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-        "r2": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-        "r3": {"sts2": StorageReserveCertification()},
+        R1: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+        R2: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+        R3: {"sts2": StorageReserveCertification()},
     }
 
     # Save a new symmetry. Ensures the symmetry writing didn't affect the certification.
-    dao.save_st_storage_reserve_symmetries({"fr": {"sts2": [["r1", "r2", "r3"]]}})
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts2": [[R1, R2, R3]]}})
 
     assert dao.get_st_storage_reserve_certifications("fr") == {
-        "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-        "r2": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-        "r3": {"sts2": StorageReserveCertification()},
+        R1: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+        R2: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+        R3: {"sts2": StorageReserveCertification()},
     }
     # The symmetry should also be overwritten by the new value.
-    assert dao.get_st_storage_reserve_symmetries("fr") == {"sts2": [["r1", "r2", "r3"]]}
+    assert dao.get_st_storage_reserve_symmetries("fr") == {"sts2": [[R1, R2, R3]]}
 
 
 def test_deleting_the_last_reserves_removes_their_symmetries(dao_10_2: StudyDao) -> None:
@@ -87,11 +92,11 @@ def test_deleting_the_last_reserves_removes_their_symmetries(dao_10_2: StudyDao)
     dao = dao_10_2
     _set_up(dao)
     certification = StorageReserveCertification()
-    dao.save_st_storage_reserve_certifications({"fr": {"r1": {"sts1": certification}, "r2": {"sts1": certification}}})
-    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]]}})
+    dao.save_st_storage_reserve_certifications({"fr": {R1: {"sts1": certification}, R2: {"sts1": certification}}})
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [[R1, R2]]}})
 
     # Deleting every reserve of the area leaves it without any certification and symmetries.
-    dao.delete_reserve_definitions("fr", ["r1", "r2"])
+    dao.delete_reserve_definitions("fr", [R1, R2])
 
     certifications = dao.get_all_st_storage_reserve_certifications()
     assert certifications == {}
@@ -108,9 +113,9 @@ def test_clearing_symmetries(dao_10_2: StudyDao, symmetries: dict[str, ReserveSy
     _set_up(dao)
 
     dao.save_st_storage_reserve_certifications(
-        {"fr": {"r1": {"sts1": StorageReserveCertification()}, "r2": {"sts1": StorageReserveCertification()}}}
+        {"fr": {R1: {"sts1": StorageReserveCertification()}, R2: {"sts1": StorageReserveCertification()}}}
     )
-    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]]}})
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [[R1, R2]]}})
 
     # Ensures it's not empty
     assert dao.get_st_storage_reserve_symmetries("fr") != {}
@@ -131,24 +136,24 @@ def test_symmetries_removal_when_deleting_st_storage_or_certification(dao_10_2: 
     dao.save_st_storage_reserve_certifications(
         {
             "fr": {
-                "r1": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
-                "r2": {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                R1: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
+                R2: {"sts1": StorageReserveCertification(), "sts2": StorageReserveCertification()},
             }
         }
     )
-    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]], "sts2": [["r1", "r2"]]}})
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [[R1, R2]], "sts2": [[R1, R2]]}})
 
     # Removes the short-term storage `sts1`.
     dao.delete_st_storage("fr", STStorage(name="sts1"))
 
     # The certifications of the deleted st-storage are gone, sts2 is untouched.
     assert dao.get_st_storage_reserve_certifications("fr") == {
-        "r1": {"sts2": StorageReserveCertification()},
-        "r2": {"sts2": StorageReserveCertification()},
+        R1: {"sts2": StorageReserveCertification()},
+        R2: {"sts2": StorageReserveCertification()},
     }
 
     # Same for the symmetries.
-    assert dao.get_st_storage_reserve_symmetries("fr") == {"sts2": [["r1", "r2"]]}
+    assert dao.get_st_storage_reserve_symmetries("fr") == {"sts2": [[R1, R2]]}
 
     # Removing a certification should also clean the symmetries.
     dao.save_st_storage_reserve_certifications({"fr": {}})
@@ -166,9 +171,7 @@ def test_saving_certifications_raises_on_unknown_area(dao_10_2: StudyDao) -> Non
 
     with pytest.raises(AreaNotFound):
         # The valid area produces rows, the invalid one only a `DELETE`: the check must still catch it.
-        dao.save_st_storage_reserve_certifications(
-            {"fr": {"r1": {"sts1": StorageReserveCertification()}}, "unknown": {}}
-        )
+        dao.save_st_storage_reserve_certifications({"fr": {R1: {"sts1": StorageReserveCertification()}}, "unknown": {}})
 
 
 def test_saving_symmetries_raises_on_unknown_area(dao_10_2: StudyDao) -> None:
@@ -176,11 +179,11 @@ def test_saving_symmetries_raises_on_unknown_area(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     _set_up(dao)
     dao.save_st_storage_reserve_certifications(
-        {"fr": {"r1": {"sts1": StorageReserveCertification()}, "r2": {"sts1": StorageReserveCertification()}}}
+        {"fr": {R1: {"sts1": StorageReserveCertification()}, R2: {"sts1": StorageReserveCertification()}}}
     )
 
     with pytest.raises(AreaNotFound):
         dao.save_st_storage_reserve_symmetries({"unknown": {}})
 
     with pytest.raises(AreaNotFound):
-        dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]]}, "unknown": {}})
+        dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [[R1, R2]]}, "unknown": {}})
