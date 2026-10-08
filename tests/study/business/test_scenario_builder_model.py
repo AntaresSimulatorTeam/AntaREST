@@ -19,9 +19,13 @@ from pydantic import ValidationError
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
 from antarest.study.business.model.scenario_builder_model import (
+    AreaItemsScenarios,
+    AreaScenarios,
+    McYearToTimeSeries,
     Ruleset,
     RulesetUpdate,
     ScenarioType,
+    StorageConstraintsScenarios,
     initialize_ruleset_with_version,
     update_ruleset,
 )
@@ -43,7 +47,7 @@ from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VER
     ],
 )
 def test_gems_scenario_builder_group_id(group: object, valid: bool) -> None:
-    data = {"scenarios": {group: []}}
+    data: dict[str, dict[object, list[object]]] = {"scenarios": {group: []}}
     if valid:
         assert GemsScenarioBuilder.model_validate(data).model_dump() == data
     else:
@@ -116,18 +120,21 @@ def test_ruleset__initialization_from_study() -> None:
 def test_update_ruleset_simple_scenarios(scenario_type: ScenarioType) -> None:
     ruleset = Ruleset()
     update = RulesetUpdate()
-    update.set(scenario_type, {"be": {"1": 2, "2": 1}})  # type: ignore[arg-type]
+    scenarios: AreaScenarios = {"be": {"1": 2, "2": 1}}
+    update.set(scenario_type, scenarios)
     update_ruleset(ruleset, update, STUDY_VERSION_9_3)
 
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 1}}
 
     update = RulesetUpdate()
-    update.set(scenario_type, {"be": {"2": 3}})  # type: ignore[arg-type]
+    scenarios = {"be": {"2": 3}}
+    update.set(scenario_type, scenarios)
     update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 3}}
 
     update = RulesetUpdate()
-    update.set(scenario_type, {"be": {"2": ""}})
+    scenarios = {"be": {"2": ""}}
+    update.set(scenario_type, scenarios)
     update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": ""}}
 
@@ -195,24 +202,27 @@ def test_update_ruleset_with_version() -> None:
 def test_update_ruleset_2_levels_scenarios(scenario_type: ScenarioType) -> None:
     ruleset = Ruleset()
     update = RulesetUpdate()
-    update.set(scenario_type, {"be": {"item1": {"1": 2, "2": 1}}})
+    scenarios: AreaItemsScenarios = {"be": {"item1": {"1": 2, "2": 1}}}
+    update.set(scenario_type, scenarios)
     update_ruleset(ruleset, update, STUDY_VERSION_9_3)
 
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": 1}}}
 
     update = RulesetUpdate()
-    update.set(scenario_type, {"be": {"item1": {"2": 3}, "item2": {"1": 2, "2": 1}}})
+    scenarios = {"be": {"item1": {"2": 3}, "item2": {"1": 2, "2": 1}}}
+    update.set(scenario_type, scenarios)
     update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": 3}, "item2": {"1": 2, "2": 1}}}
 
     update = RulesetUpdate()
-    update.set(scenario_type, {"be": {"item1": {"2": ""}}})
+    scenarios = {"be": {"item1": {"2": ""}}}
+    update.set(scenario_type, scenarios)
     update_ruleset(ruleset, update, STUDY_VERSION_9_3)
     assert ruleset.get(scenario_type) == {"be": {"item1": {"1": 2, "2": ""}, "item2": {"1": 2, "2": 1}}}
 
 
 def test_update_ruleset_3_levels_scenarios() -> None:
-    mapping = {"1": 2, "2": 1}
+    mapping: McYearToTimeSeries = {"1": 2, "2": 1}
     ruleset = Ruleset()
     update = RulesetUpdate()
     update.storage_constraints = {"be": {"storage1": {"c1": mapping}}}
@@ -253,7 +263,8 @@ def test_get_set_by_type(
     getter: Callable[[Any], Any],
 ) -> None:
     ruleset = ruleset_cls()
-    ruleset.set(scenario_type, {"be": {"1": 2, "2": 1}})  # type: ignore[arg-type]
+    scenarios: AreaScenarios = {"be": {"1": 2, "2": 1}}
+    ruleset.set(scenario_type, scenarios)
     assert getter(ruleset) == {"be": {"1": 2, "2": 1}}
     assert ruleset.get(scenario_type) == {"be": {"1": 2, "2": 1}}
 
@@ -273,14 +284,15 @@ def test_get_set_by_type_2_levels(
     getter: Callable[[Any], Any],
 ) -> None:
     ruleset = ruleset_cls()
-    ruleset.set(scenario_type, {"be": {"cluster": {"1": 2, "2": 1}}})
+    scenarios: AreaItemsScenarios = {"be": {"cluster": {"1": 2, "2": 1}}}
+    ruleset.set(scenario_type, scenarios)
     assert getter(ruleset) == {"be": {"cluster": {"1": 2, "2": 1}}}
     assert ruleset.get(scenario_type) == {"be": {"cluster": {"1": 2, "2": 1}}}
 
 
 @pytest.mark.parametrize("ruleset_cls", [Ruleset, RulesetUpdate])
 def test_get_set_by_type_storage_constraints(ruleset_cls: type[Ruleset | RulesetUpdate]) -> None:
-    mapping = {"be": {"storage": {"c1": {"1": 2, "2": 1}}}}
+    mapping: StorageConstraintsScenarios = {"be": {"storage": {"c1": {"1": 2, "2": 1}}}}
     ruleset = ruleset_cls()
     ruleset.set(ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS, mapping)
     assert ruleset.storage_constraints == mapping

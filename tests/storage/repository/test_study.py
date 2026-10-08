@@ -76,8 +76,8 @@ def test_lifecycle(db_session: Session) -> None:
     repo.save(c)
     repo.save(d)
 
-    c = repo.one(a_id)
-    assert a_id == c.id
+    retrieved_study = repo.one(a_id)
+    assert a_id == retrieved_study.id
 
     assert len(repo.get_all(study_filter=StudyFilter(access_permissions=AccessPermissions(is_admin=True)))) == 4
     assert len(repo.get_all_raw(exists=True)) == 1

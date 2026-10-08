@@ -33,6 +33,7 @@ class DummyWorker(AbstractWorker):
         # simulate a "long" task ;-)
         time.sleep(0.01)
         relative_path = task_info.task_args["file"]
+        assert isinstance(relative_path, str)
         (self.tmp_path / relative_path).touch()
         return TaskResult(success=True, message="")
 

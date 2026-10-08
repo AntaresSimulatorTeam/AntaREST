@@ -26,6 +26,7 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
     CreateSTStorageAdditionalConstraints,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import build_dao_from_file_study
 
@@ -36,7 +37,7 @@ class TestCreateSTStorageAdditionalConstraint:
         study = empty_study_920
         dao = build_dao_from_file_study(study, command_context)
         version = study.config.version
-        cmd = CreateArea(area_name="fr", command_context=command_context, study_version=study.config.version)
+        cmd: ICommand = CreateArea(area_name="fr", command_context=command_context, study_version=study.config.version)
         cmd.apply(dao)
         for name in ["sts_1", "sts_2"]:
             cmd = CreateSTStorage(
@@ -112,7 +113,7 @@ class TestCreateSTStorageAdditionalConstraint:
         version = dao.get_version()
 
         # Create a constraint in a fake area
-        cmd = CreateSTStorageAdditionalConstraints(
+        cmd: ICommand = CreateSTStorageAdditionalConstraints(
             command_context=command_context,
             area_id="fr",
             storage_id="sts_1",

@@ -28,7 +28,7 @@ class TestToModel:
             ({}, BuildingMode.AUTOMATIC),
         ],
     )
-    def test_building_mode_mapping(self, ini_flags: dict, expected_mode: BuildingMode) -> None:
+    def test_building_mode_mapping(self, ini_flags: dict[str, bool], expected_mode: BuildingMode) -> None:
         file_data = GeneralFileData.model_validate(ini_flags)
         assert file_data.to_model().building_mode == expected_mode
 
@@ -69,7 +69,9 @@ class TestFromModel:
             ),
         ],
     )
-    def test_building_mode_serialization(self, building_mode: BuildingMode, version: str, expected: dict) -> None:
+    def test_building_mode_serialization(
+        self, building_mode: BuildingMode, version: str, expected: dict[str, str | bool | None]
+    ) -> None:
         config = GeneralConfig(building_mode=building_mode)
         file_data = GeneralFileData.from_model(config, StudyVersion.parse(version))
         for field, value in expected.items():

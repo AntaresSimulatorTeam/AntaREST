@@ -21,7 +21,7 @@ from antarest.maintenance.tasks.gc_blob_task import clean_blobs_task
 
 
 class TestDeleteBlobs:
-    def test_deletes_blobs_when_not_dry_run(self):
+    def test_deletes_blobs_when_not_dry_run(self) -> None:
         mock_service = Mock()
         _delete_blobs(mock_service, {"blob1", "blob2", "blob3"}, dry_run=False)
 
@@ -30,17 +30,17 @@ class TestDeleteBlobs:
         mock_service.delete.assert_any_call("blob2")
         mock_service.delete.assert_any_call("blob3")
 
-    def test_does_not_delete_when_dry_run(self):
+    def test_does_not_delete_when_dry_run(self) -> None:
         mock_service = Mock()
         _delete_blobs(mock_service, {"blob1", "blob2"}, dry_run=True)
         mock_service.delete.assert_not_called()
 
-    def test_empty_set(self):
+    def test_empty_set(self) -> None:
         mock_service = Mock()
         _delete_blobs(mock_service, set(), dry_run=False)
         mock_service.delete.assert_not_called()
 
-    def test_returns_failure_count(self):
+    def test_returns_failure_count(self) -> None:
         mock_service = Mock()
         mock_service.delete.side_effect = [None, Exception("fail"), None]
         failures = _delete_blobs(mock_service, {"b1", "b2", "b3"}, dry_run=False)
@@ -48,6 +48,6 @@ class TestDeleteBlobs:
 
 
 class TestCleanBlobsTask:
-    def test_raises_without_context(self, with_no_maintenance_ctx):
+    def test_raises_without_context(self, with_no_maintenance_ctx: None) -> None:
         with pytest.raises(RuntimeError, match="MaintenanceContext not in app.conf"):
             clean_blobs_task.run()

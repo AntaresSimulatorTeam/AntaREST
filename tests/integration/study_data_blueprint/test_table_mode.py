@@ -14,6 +14,7 @@ import copy
 import typing as t
 
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -36,7 +37,7 @@ class TestTableMode:
     def test_lifecycle__nominal(
         self, client: TestClient, user_access_token: str, internal_study_id: str, study_version: int
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # In order to test the table mode for renewable clusters and short-term storage,
         # it is required that the study is either in version 8.1 for renewable energies
@@ -88,7 +89,7 @@ class TestTableMode:
             "filterSynthesis": "daily, monthly",  # not changed
             "filterByYear": "annual, weekly",
         }
-        _es_values = {"spreadSpilledEnergyCost": None}  # not changed
+        _es_values: dict[str, str | None] = {"spreadSpilledEnergyCost": None}  # not changed
 
         if study_version >= 830:
             _es_values["adequacyPatchMode"] = "inside"
@@ -453,7 +454,7 @@ class TestTableMode:
         }
 
         if study_version >= 860:
-            _values = dict.fromkeys(POLLUTANTS_860, 0)
+            _values: dict[str, str | float] = dict.fromkeys(POLLUTANTS_860, 0)
             expected_thermals["de / 02_wind_on"].update(_values)
             expected_thermals["de / 01_solar"].update(_values, **{"so2": 8.25})
 
@@ -723,7 +724,7 @@ class TestTableMode:
             # Update some generators using the table mode
             _fr_siemes_values = {"injectionNominalCapacity": 1550, "withdrawalNominalCapacity": 1550}
             _fr_tesla_values = {"efficiency": 0.75, "initialLevel": 0.89, "initialLevelOptim": False}
-            _it_storage3_values = {"group": "Pondage"}
+            _it_storage3_values: dict[str, str | bool] = {"group": "Pondage"}
             if study_version >= 880:
                 _it_storage3_values["enabled"] = False
             if study_version >= 920:
@@ -873,7 +874,7 @@ class TestTableMode:
         )
         assert res.status_code == 200, res.json()
 
-        body = {
+        body: dict[str, object] = {
             "name": "Binding Constraint 2",
             "enabled": False,
             "time_step": "daily",
@@ -969,14 +970,14 @@ class TestTableMode:
         if study_version >= 920:
             # Create some constraints to test the table-mode
             areas_url = f"/v1/studies/{internal_study_id}/areas"
-            body = [
+            constraint_body = [
                 {"name": "C1", "occurrences": [{"hours": [2, 3]}, {"hours": [148]}]},
                 {"name": "c2", "enabled": False},
             ]
-            res = client.post(f"{areas_url}/fr/storages/tesla/additional-constraints", json=body)
+            res = client.post(f"{areas_url}/fr/storages/tesla/additional-constraints", json=constraint_body)
             assert res.status_code == 200
-            body = [{"name": "c3", "operator": "equal", "variable": "injection"}]
-            res = client.post(f"{areas_url}/it/storages/storage3/additional-constraints", json=body)
+            constraint_body = [{"name": "c3", "operator": "equal", "variable": "injection"}]
+            res = client.post(f"{areas_url}/it/storages/storage3/additional-constraints", json=constraint_body)
             assert res.status_code == 200
             # Get
             res = client.get(f"/v1/studies/{internal_study_id}/table-mode/st-storages-additional-constraints")
@@ -1024,7 +1025,7 @@ def test_table_type_aliases(client: TestClient, user_access_token: str) -> None:
     """
     Ensure that we can use the old table type aliases to get the schema of the tables.
     """
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
     # do not use `pytest.mark.parametrize`, because it is too slow
     for table_type in ["area", "link", "cluster", "renewable", "binding constraint"]:
         res = client.get(f"/v1/table-schema/{table_type}")

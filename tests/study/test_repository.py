@@ -91,7 +91,7 @@ def test_get_all__general_case(
         exists=exists,
         access_permissions=AccessPermissions(is_admin=True),
     )
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             sort_by=StudySortBy.NAME_ASC,
@@ -110,7 +110,7 @@ def test_get_all__general_case(
     page_slice = slice(page_nb * page_size, (page_nb + 1) * page_size)
 
     # test pagination in normal order
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             sort_by=StudySortBy.NAME_ASC,
@@ -120,7 +120,7 @@ def test_get_all__general_case(
     assert [s.name for s in all_studies] == expected_names[page_slice]
 
     # test pagination in reverse order
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             sort_by=StudySortBy.NAME_DESC,
@@ -137,21 +137,21 @@ def test_get_all__incompatible_case(
     repository = StudyMetadataRepository(session=db_session)
 
     now = current_time()
-    study_1 = create_variant_study(id=1, name="study-1")
-    study_2 = create_variant_study(id=2, name="study-2")
-    study_3 = create_variant_study(id=3, name="study-3")
-    study_4 = create_variant_study(id=4, name="study-4")
-    study_5 = create_raw_study(id=5, name="study-5", missing=now, workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = create_raw_study(id=6, name="study-6", missing=now, workspace=test_workspace)
-    study_7 = create_raw_study(id=7, name="study-7", missing=None, workspace=test_workspace)
-    study_8 = create_raw_study(id=8, name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
+    study_1 = create_variant_study(id="1", name="study-1")
+    study_2 = create_variant_study(id="2", name="study-2")
+    study_3 = create_variant_study(id="3", name="study-3")
+    study_4 = create_variant_study(id="4", name="study-4")
+    study_5 = create_raw_study(id="5", name="study-5", missing=now, workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = create_raw_study(id="6", name="study-6", missing=now, workspace=test_workspace)
+    study_7 = create_raw_study(id="7", name="study-7", missing=None, workspace=test_workspace)
+    study_8 = create_raw_study(id="8", name="study-8", missing=None, workspace=DEFAULT_WORKSPACE_NAME)
 
     db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()
 
     # case 1
     study_filter = StudyFilter(managed=False, variant=True, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -163,7 +163,7 @@ def test_get_all__incompatible_case(
     study_filter = StudyFilter(
         workspace=test_workspace, variant=True, access_permissions=AccessPermissions(is_admin=True)
     )
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -173,7 +173,7 @@ def test_get_all__incompatible_case(
 
     # case 3
     study_filter = StudyFilter(exists=False, variant=True, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -203,18 +203,19 @@ def test_get_all__study_name_filter(
 ) -> None:
     repository = StudyMetadataRepository(session=db_session)
 
-    study_1 = create_variant_study(id=1, name="specie-variant")
-    study_2 = create_variant_study(id=2, name="prefix-specie-variant")
-    study_3 = create_variant_study(id=3, name="prefix-specie-variant-suffix")
-    study_4 = create_variant_study(id=4, name="specie-variant-suffix")
-    study_5 = create_raw_study(id=5, name="specie-raw")
-    study_6 = create_raw_study(id=6, name="prefix-specie-raw")
-    study_7 = create_raw_study(id=7, name="prefix-specie-raw-suffix")
-    study_8 = create_raw_study(id=8, name="specie-raw-suffix")
+    study_1 = create_variant_study(id="1", name="specie-variant")
+    study_2 = create_variant_study(id="2", name="prefix-specie-variant")
+    study_3 = create_variant_study(id="3", name="prefix-specie-variant-suffix")
+    study_4 = create_variant_study(id="4", name="specie-variant-suffix")
+    study_5 = create_raw_study(id="5", name="specie-raw")
+    study_6 = create_raw_study(id="6", name="prefix-specie-raw")
+    study_7 = create_raw_study(id="7", name="prefix-specie-raw-suffix")
+    study_8 = create_raw_study(id="8", name="specie-raw-suffix")
 
-    mapping_ids_names = {
-        str(s.id): s.name for s in [study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8]
-    }
+    mapping_ids_names: dict[str, str] = {}
+    for study in [study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8]:
+        assert study.name is not None
+        mapping_ids_names[study.id] = study.name
 
     db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()
@@ -223,7 +224,7 @@ def test_get_all__study_name_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(name=name, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -236,7 +237,7 @@ def test_get_all__study_name_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(name=name, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -263,14 +264,14 @@ def test_get_all__managed_study_filter(
     test_workspace = "test-workspace"
     repository = StudyMetadataRepository(session=db_session)
 
-    study_1 = create_variant_study(id=1, name="study-1")
-    study_2 = create_variant_study(id=2, name="study-2")
-    study_3 = create_variant_study(id=3, name="study-3")
-    study_4 = create_variant_study(id=4, name="study-4")
-    study_5 = create_raw_study(id=5, name="study-5", workspace=DEFAULT_WORKSPACE_NAME)
-    study_6 = create_raw_study(id=6, name="study-6", workspace=test_workspace)
-    study_7 = create_raw_study(id=7, name="study-7", workspace=test_workspace)
-    study_8 = create_raw_study(id=8, name="study-8", workspace=DEFAULT_WORKSPACE_NAME)
+    study_1 = create_variant_study(id="1", name="study-1")
+    study_2 = create_variant_study(id="2", name="study-2")
+    study_3 = create_variant_study(id="3", name="study-3")
+    study_4 = create_variant_study(id="4", name="study-4")
+    study_5 = create_raw_study(id="5", name="study-5", workspace=DEFAULT_WORKSPACE_NAME)
+    study_6 = create_raw_study(id="6", name="study-6", workspace=test_workspace)
+    study_7 = create_raw_study(id="7", name="study-7", workspace=test_workspace)
+    study_8 = create_raw_study(id="8", name="study-8", workspace=DEFAULT_WORKSPACE_NAME)
 
     db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()
@@ -279,7 +280,7 @@ def test_get_all__managed_study_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(managed=managed, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -292,7 +293,7 @@ def test_get_all__managed_study_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(managed=managed, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -317,10 +318,10 @@ def test_get_all__archived_study_filter(
 ) -> None:
     repository = StudyMetadataRepository(session=db_session)
 
-    study_1 = create_variant_study(id=1, name="study-1", archived=True)
-    study_2 = create_variant_study(id=2, name="study-2", archived=False)
-    study_3 = create_raw_study(id=3, name="study-3", archived=True)
-    study_4 = create_raw_study(id=4, name="study-4", archived=False)
+    study_1 = create_variant_study(id="1", name="study-1", archived=True)
+    study_2 = create_variant_study(id="2", name="study-2", archived=False)
+    study_3 = create_raw_study(id="3", name="study-3", archived=True)
+    study_4 = create_raw_study(id="4", name="study-4", archived=False)
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -330,7 +331,7 @@ def test_get_all__archived_study_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     study_filter = StudyFilter(archived=archived, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -341,7 +342,7 @@ def test_get_all__archived_study_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             pagination=StudyPagination(page_nb=1, page_size=1),
@@ -365,10 +366,10 @@ def test_get_all__variant_study_filter(
 ) -> None:
     repository = StudyMetadataRepository(session=db_session)
 
-    study_1 = create_variant_study(id=1, name="study-1")
-    study_2 = create_variant_study(id=2, name="study-2")
-    study_3 = create_raw_study(id=3, name="study-3")
-    study_4 = create_raw_study(id=4, name="study-4")
+    study_1 = create_variant_study(id="1", name="study-1")
+    study_2 = create_variant_study(id="2", name="study-2")
+    study_3 = create_raw_study(id="3", name="study-3")
+    study_4 = create_raw_study(id="4", name="study-4")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -378,7 +379,7 @@ def test_get_all__variant_study_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     study_filter = StudyFilter(variant=variant, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -389,7 +390,7 @@ def test_get_all__variant_study_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             pagination=StudyPagination(page_nb=1, page_size=1),
@@ -415,10 +416,10 @@ def test_get_all__study_version_filter(
 ) -> None:
     repository = StudyMetadataRepository(session=db_session)
 
-    study_1 = create_variant_study(id=1, name="study-1", version="1")
-    study_2 = create_variant_study(id=2, name="study-2", version="2")
-    study_3 = create_raw_study(id=3, name="study-3", version="1")
-    study_4 = create_raw_study(id=4, name="study-4", version="2")
+    study_1 = create_variant_study(id="1", name="study-1", version="1")
+    study_2 = create_variant_study(id="2", name="study-2", version="2")
+    study_3 = create_raw_study(id="3", name="study-3", version="1")
+    study_4 = create_raw_study(id="4", name="study-4", version="2")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -428,7 +429,7 @@ def test_get_all__study_version_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     study_filter = StudyFilter(versions=versions, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -439,7 +440,7 @@ def test_get_all__study_version_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             pagination=StudyPagination(page_nb=1, page_size=1),
@@ -468,10 +469,10 @@ def test_get_all__study_users_filter(
     test_user_1 = User(id=1000)
     test_user_2 = User(id=2000)
 
-    study_1 = create_variant_study(id=1, name="study-1", owner=test_user_1)
-    study_2 = create_variant_study(id=2, name="study-2", owner=test_user_2)
-    study_3 = create_raw_study(id=3, name="study-3", owner=test_user_1)
-    study_4 = create_raw_study(id=4, name="study-4", owner=test_user_2)
+    study_1 = create_variant_study(id="1", name="study-1", owner=test_user_1)
+    study_2 = create_variant_study(id="2", name="study-2", owner=test_user_2)
+    study_3 = create_raw_study(id="3", name="study-3", owner=test_user_1)
+    study_4 = create_raw_study(id="4", name="study-4", owner=test_user_2)
 
     db_session.add_all([test_user_1, test_user_2])
     db_session.commit()
@@ -483,7 +484,7 @@ def test_get_all__study_users_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(users=users, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -496,7 +497,7 @@ def test_get_all__study_users_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(users=users, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -526,10 +527,10 @@ def test_get_all__study_groups_filter(
     test_group_1 = Group(id=1000)
     test_group_2 = Group(id=2000)
 
-    study_1 = create_variant_study(id=1, name="study-1", groups=[test_group_1])
-    study_2 = create_variant_study(id=2, name="study-2", groups=[test_group_1, test_group_2])
-    study_3 = create_raw_study(id=3, name="study-3", groups=[test_group_2])
-    study_4 = create_raw_study(id=4, name="study-4", groups=[test_group_1])
+    study_1 = create_variant_study(id="1", name="study-1", groups=[test_group_1])
+    study_2 = create_variant_study(id="2", name="study-2", groups=[test_group_1, test_group_2])
+    study_3 = create_raw_study(id="3", name="study-3", groups=[test_group_2])
+    study_4 = create_raw_study(id="4", name="study-4", groups=[test_group_1])
 
     db_session.add_all([test_group_1, test_group_2])
     db_session.commit()
@@ -541,7 +542,7 @@ def test_get_all__study_groups_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(groups=groups, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -554,7 +555,7 @@ def test_get_all__study_groups_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(groups=groups, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -582,10 +583,10 @@ def test_get_all__study_ids_filter(
 ) -> None:
     repository = StudyMetadataRepository(session=db_session)
 
-    study_1 = create_variant_study(id=1, name="study-1")
-    study_2 = create_variant_study(id=2, name="study-2")
-    study_3 = create_raw_study(id=3, name="study-3")
-    study_4 = create_raw_study(id=4, name="study-4")
+    study_1 = create_variant_study(id="1", name="study-1")
+    study_2 = create_variant_study(id="2", name="study-2")
+    study_3 = create_raw_study(id="3", name="study-3")
+    study_4 = create_raw_study(id="4", name="study-4")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -594,7 +595,7 @@ def test_get_all__study_ids_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(study_ids=study_ids, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -607,7 +608,7 @@ def test_get_all__study_ids_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(study_ids=study_ids, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -632,10 +633,10 @@ def test_get_all__study_existence_filter(
 ) -> None:
     repository = StudyMetadataRepository(session=db_session)
 
-    study_1 = create_variant_study(id=1, name="study-1")
-    study_2 = create_variant_study(id=2, name="study-2")
-    study_3 = create_raw_study(id=3, name="study-3", missing=current_time())
-    study_4 = create_raw_study(id=4, name="study-4")
+    study_1 = create_variant_study(id="1", name="study-1")
+    study_2 = create_variant_study(id="2", name="study-2")
+    study_3 = create_raw_study(id="3", name="study-3", missing=current_time())
+    study_4 = create_raw_study(id="4", name="study-4")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -644,7 +645,7 @@ def test_get_all__study_existence_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(exists=exists, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -657,7 +658,7 @@ def test_get_all__study_existence_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(exists=exists, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -683,10 +684,10 @@ def test_get_all__study_workspace_filter(
 ) -> None:
     repository = StudyMetadataRepository(session=db_session)
 
-    study_1 = create_variant_study(id=1, name="study-1")
-    study_2 = create_variant_study(id=2, name="study-2")
-    study_3 = create_raw_study(id=3, name="study-3", workspace="workspace-1")
-    study_4 = create_raw_study(id=4, name="study-4", workspace="workspace-2")
+    study_1 = create_variant_study(id="1", name="study-1")
+    study_2 = create_variant_study(id="2", name="study-2")
+    study_3 = create_raw_study(id="3", name="study-3", workspace="workspace-1")
+    study_4 = create_raw_study(id="4", name="study-4", workspace="workspace-2")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -695,7 +696,7 @@ def test_get_all__study_workspace_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(workspace=workspace, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -708,7 +709,7 @@ def test_get_all__study_workspace_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(workspace=workspace, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -736,10 +737,10 @@ def test_get_all__study_folder_filter(
 ) -> None:
     repository = StudyMetadataRepository(session=db_session)
 
-    study_1 = create_variant_study(id=1, name="study-1", folder="/home/folder-1")
-    study_2 = create_variant_study(id=2, name="study-2", folder="/home/folder-2")
-    study_3 = create_raw_study(id=3, name="study-3", folder="/home/folder-1")
-    study_4 = create_raw_study(id=4, name="study-4", folder="/home/folder-2")
+    study_1 = create_variant_study(id="1", name="study-1", folder="/home/folder-1")
+    study_2 = create_variant_study(id="2", name="study-2", folder="/home/folder-2")
+    study_3 = create_raw_study(id="3", name="study-3", folder="/home/folder-1")
+    study_4 = create_raw_study(id="4", name="study-4", folder="/home/folder-2")
 
     db_session.add_all([study_1, study_2, study_3, study_4])
     db_session.commit()
@@ -749,7 +750,7 @@ def test_get_all__study_folder_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     study_filter = StudyFilter(folder=folder, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -761,7 +762,7 @@ def test_get_all__study_folder_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             pagination=StudyPagination(page_nb=1, page_size=1),
@@ -791,14 +792,14 @@ def test_get_all__study_tags_filter(
     test_tag_2 = Tag(label="decennial")
     test_tag_3 = Tag(label="Winter_Transition")  # note the different case
 
-    study_1 = create_variant_study(id=1, name="study-1", tags=[test_tag_1])
-    study_2 = create_variant_study(id=2, name="study-2", tags=[test_tag_2])
-    study_3 = create_variant_study(id=3, name="study-3", tags=[test_tag_3])
-    study_4 = create_variant_study(id=4, name="study-4", tags=[test_tag_2, test_tag_3])
-    study_5 = create_raw_study(id=5, name="study-5", tags=[test_tag_1])
-    study_6 = create_raw_study(id=6, name="study-6", tags=[test_tag_2])
-    study_7 = create_raw_study(id=7, name="study-7", tags=[test_tag_3])
-    study_8 = create_raw_study(id=8, name="study-8", tags=[test_tag_2, test_tag_3])
+    study_1 = create_variant_study(id="1", name="study-1", tags=[test_tag_1])
+    study_2 = create_variant_study(id="2", name="study-2", tags=[test_tag_2])
+    study_3 = create_variant_study(id="3", name="study-3", tags=[test_tag_3])
+    study_4 = create_variant_study(id="4", name="study-4", tags=[test_tag_2, test_tag_3])
+    study_5 = create_raw_study(id="5", name="study-5", tags=[test_tag_1])
+    study_6 = create_raw_study(id="6", name="study-6", tags=[test_tag_2])
+    study_7 = create_raw_study(id="7", name="study-7", tags=[test_tag_3])
+    study_8 = create_raw_study(id="8", name="study-8", tags=[test_tag_2, test_tag_3])
 
     db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()
@@ -807,7 +808,7 @@ def test_get_all__study_tags_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(tags=tags, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -821,7 +822,7 @@ def test_get_all__study_tags_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(tags=tags, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -893,54 +894,54 @@ def test_get_all__non_admin_permissions_filter(
     user_groups_mapping = {101: [group_2.id], 102: [group_1.id], 103: []}
 
     # create variant studies for user_1 and user_2 that are part of some groups
-    study_1 = create_variant_study(id=1, name="study-1", owner=user_1, groups=[group_1])
-    study_2 = create_variant_study(id=2, name="study-2", owner=user_1, groups=[group_2])
-    study_3 = create_variant_study(id=3, name="study-3", groups=[group_1])
-    study_4 = create_variant_study(id=4, name="study-4", owner=user_2, groups=[group_1])
-    study_5 = create_variant_study(id=5, name="study-5", owner=user_2, groups=[group_2])
-    study_6 = create_variant_study(id=6, name="study-6", groups=[group_2])
-    study_7 = create_variant_study(id=7, name="study-7", owner=user_1, groups=[group_1, group_2])
-    study_8 = create_variant_study(id=8, name="study-8", owner=user_2, groups=[group_1, group_2])
-    study_9 = create_variant_study(id=9, name="study-9", groups=[group_1, group_2])
-    study_10 = create_variant_study(id=10, name="study-X10", owner=user_1)
-    study_11 = create_variant_study(id=11, name="study-X11", owner=user_2)
+    study_1 = create_variant_study(id="1", name="study-1", owner=user_1, groups=[group_1])
+    study_2 = create_variant_study(id="2", name="study-2", owner=user_1, groups=[group_2])
+    study_3 = create_variant_study(id="3", name="study-3", groups=[group_1])
+    study_4 = create_variant_study(id="4", name="study-4", owner=user_2, groups=[group_1])
+    study_5 = create_variant_study(id="5", name="study-5", owner=user_2, groups=[group_2])
+    study_6 = create_variant_study(id="6", name="study-6", groups=[group_2])
+    study_7 = create_variant_study(id="7", name="study-7", owner=user_1, groups=[group_1, group_2])
+    study_8 = create_variant_study(id="8", name="study-8", owner=user_2, groups=[group_1, group_2])
+    study_9 = create_variant_study(id="9", name="study-9", groups=[group_1, group_2])
+    study_10 = create_variant_study(id="10", name="study-X10", owner=user_1)
+    study_11 = create_variant_study(id="11", name="study-X11", owner=user_2)
 
     # create variant studies with neither owner nor groups
-    study_12 = create_variant_study(id=12, name="study-X12")
-    study_13 = create_variant_study(id=13, name="study-X13", public_mode=PublicMode.READ)
-    study_14 = create_variant_study(id=14, name="study-X14", public_mode=PublicMode.EDIT)
-    study_15 = create_variant_study(id=15, name="study-X15", public_mode=PublicMode.EXECUTE)
-    study_16 = create_variant_study(id=16, name="study-X16", public_mode=PublicMode.FULL)
+    study_12 = create_variant_study(id="12", name="study-X12")
+    study_13 = create_variant_study(id="13", name="study-X13", public_mode=PublicMode.READ)
+    study_14 = create_variant_study(id="14", name="study-X14", public_mode=PublicMode.EDIT)
+    study_15 = create_variant_study(id="15", name="study-X15", public_mode=PublicMode.EXECUTE)
+    study_16 = create_variant_study(id="16", name="study-X16", public_mode=PublicMode.FULL)
 
     # create raw studies for user_1 and user_2 that are part of some groups
-    study_17 = create_raw_study(id=17, name="study-X17", owner=user_1, groups=[group_1])
-    study_18 = create_raw_study(id=18, name="study-X18", owner=user_1, groups=[group_2])
-    study_19 = create_raw_study(id=19, name="study-X19", groups=[group_1])
-    study_20 = create_raw_study(id=20, name="study-X20", owner=user_2, groups=[group_1])
-    study_21 = create_raw_study(id=21, name="study-X21", owner=user_2, groups=[group_2])
-    study_22 = create_raw_study(id=22, name="study-X22", groups=[group_2])
-    study_23 = create_raw_study(id=23, name="study-X23", owner=user_1, groups=[group_1, group_2])
-    study_24 = create_raw_study(id=24, name="study-X24", owner=user_2, groups=[group_1, group_2])
-    study_25 = create_raw_study(id=25, name="study-X25", groups=[group_1, group_2])
-    study_26 = create_raw_study(id=26, name="study-X26", owner=user_1)
-    study_27 = create_raw_study(id=27, name="study-X27", owner=user_2)
+    study_17 = create_raw_study(id="17", name="study-X17", owner=user_1, groups=[group_1])
+    study_18 = create_raw_study(id="18", name="study-X18", owner=user_1, groups=[group_2])
+    study_19 = create_raw_study(id="19", name="study-X19", groups=[group_1])
+    study_20 = create_raw_study(id="20", name="study-X20", owner=user_2, groups=[group_1])
+    study_21 = create_raw_study(id="21", name="study-X21", owner=user_2, groups=[group_2])
+    study_22 = create_raw_study(id="22", name="study-X22", groups=[group_2])
+    study_23 = create_raw_study(id="23", name="study-X23", owner=user_1, groups=[group_1, group_2])
+    study_24 = create_raw_study(id="24", name="study-X24", owner=user_2, groups=[group_1, group_2])
+    study_25 = create_raw_study(id="25", name="study-X25", groups=[group_1, group_2])
+    study_26 = create_raw_study(id="26", name="study-X26", owner=user_1)
+    study_27 = create_raw_study(id="27", name="study-X27", owner=user_2)
 
     # create raw studies with neither owner nor groups
-    study_28 = create_raw_study(id=28, name="study-X28")
-    study_29 = create_raw_study(id=29, name="study-X29", public_mode=PublicMode.READ)
-    study_30 = create_raw_study(id=30, name="study-X30", public_mode=PublicMode.EDIT)
-    study_31 = create_raw_study(id=31, name="study-X31", public_mode=PublicMode.EXECUTE)
-    study_32 = create_raw_study(id=32, name="study-X32", public_mode=PublicMode.FULL)
+    study_28 = create_raw_study(id="28", name="study-X28")
+    study_29 = create_raw_study(id="29", name="study-X29", public_mode=PublicMode.READ)
+    study_30 = create_raw_study(id="30", name="study-X30", public_mode=PublicMode.EDIT)
+    study_31 = create_raw_study(id="31", name="study-X31", public_mode=PublicMode.EXECUTE)
+    study_32 = create_raw_study(id="32", name="study-X32", public_mode=PublicMode.FULL)
 
     # create studies for user_3 that is not part of any group
-    study_33 = create_variant_study(id=33, name="study-X33", owner=user_3, groups=[group_1])
-    study_34 = create_raw_study(id=34, name="study-X34", owner=user_3, groups=[group_2])
-    study_35 = create_variant_study(id=35, name="study-X35", owner=user_3)
-    study_36 = create_raw_study(id=36, name="study-X36", owner=user_3)
+    study_33 = create_variant_study(id="33", name="study-X33", owner=user_3, groups=[group_1])
+    study_34 = create_raw_study(id="34", name="study-X34", owner=user_3, groups=[group_2])
+    study_35 = create_variant_study(id="35", name="study-X35", owner=user_3)
+    study_36 = create_raw_study(id="36", name="study-X36", owner=user_3)
 
     # create studies for group_3 that has no user
-    study_37 = create_variant_study(id=37, name="study-X37", groups=[group_3])
-    study_38 = create_raw_study(id=38, name="study-X38", groups=[group_3])
+    study_37 = create_variant_study(id="37", name="study-X37", groups=[group_3])
+    study_38 = create_raw_study(id="38", name="study-X38", groups=[group_3])
 
     db_session.add_all([user_1, user_2, user_3, group_1, group_2, group_3])
     # fmt: off
@@ -970,7 +971,7 @@ def test_get_all__non_admin_permissions_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -981,7 +982,7 @@ def test_get_all__non_admin_permissions_filter(
         assert sorted((s.id for s in all_studies), key=int) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter, pagination=StudyPagination(page_nb=1, page_size=2))
         assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
         assert sorted((s.id for s in all_studies), key=int) == expected_ids[2:4]
@@ -1026,54 +1027,54 @@ def test_get_all__admin_permissions_filter(
     group_3 = Group(id=103, name="group3")
 
     # create variant studies for user_1 and user_2 that are part of some groups
-    study_1 = create_variant_study(id=1, name="study-1", owner=user_1, groups=[group_1])
-    study_2 = create_variant_study(id=2, name="study-2", owner=user_1, groups=[group_2])
-    study_3 = create_variant_study(id=3, name="study-3", groups=[group_1])
-    study_4 = create_variant_study(id=4, name="study-4", owner=user_2, groups=[group_1])
-    study_5 = create_variant_study(id=5, name="study-5", owner=user_2, groups=[group_2])
-    study_6 = create_variant_study(id=6, name="study-6", groups=[group_2])
-    study_7 = create_variant_study(id=7, name="study-7", owner=user_1, groups=[group_1, group_2])
-    study_8 = create_variant_study(id=8, name="study-8", owner=user_2, groups=[group_1, group_2])
-    study_9 = create_variant_study(id=9, name="study-9", groups=[group_1, group_2])
-    study_10 = create_variant_study(id=10, name="study-X10", owner=user_1)
-    study_11 = create_variant_study(id=11, name="study-X11", owner=user_2)
+    study_1 = create_variant_study(id="1", name="study-1", owner=user_1, groups=[group_1])
+    study_2 = create_variant_study(id="2", name="study-2", owner=user_1, groups=[group_2])
+    study_3 = create_variant_study(id="3", name="study-3", groups=[group_1])
+    study_4 = create_variant_study(id="4", name="study-4", owner=user_2, groups=[group_1])
+    study_5 = create_variant_study(id="5", name="study-5", owner=user_2, groups=[group_2])
+    study_6 = create_variant_study(id="6", name="study-6", groups=[group_2])
+    study_7 = create_variant_study(id="7", name="study-7", owner=user_1, groups=[group_1, group_2])
+    study_8 = create_variant_study(id="8", name="study-8", owner=user_2, groups=[group_1, group_2])
+    study_9 = create_variant_study(id="9", name="study-9", groups=[group_1, group_2])
+    study_10 = create_variant_study(id="10", name="study-X10", owner=user_1)
+    study_11 = create_variant_study(id="11", name="study-X11", owner=user_2)
 
     # create variant studies with neither owner nor groups
-    study_12 = create_variant_study(id=12, name="study-X12")
-    study_13 = create_variant_study(id=13, name="study-X13", public_mode=PublicMode.READ)
-    study_14 = create_variant_study(id=14, name="study-X14", public_mode=PublicMode.EDIT)
-    study_15 = create_variant_study(id=15, name="study-X15", public_mode=PublicMode.EXECUTE)
-    study_16 = create_variant_study(id=16, name="study-X16", public_mode=PublicMode.FULL)
+    study_12 = create_variant_study(id="12", name="study-X12")
+    study_13 = create_variant_study(id="13", name="study-X13", public_mode=PublicMode.READ)
+    study_14 = create_variant_study(id="14", name="study-X14", public_mode=PublicMode.EDIT)
+    study_15 = create_variant_study(id="15", name="study-X15", public_mode=PublicMode.EXECUTE)
+    study_16 = create_variant_study(id="16", name="study-X16", public_mode=PublicMode.FULL)
 
     # create raw studies for user_1 and user_2 that are part of some groups
-    study_17 = create_raw_study(id=17, name="study-X17", owner=user_1, groups=[group_1])
-    study_18 = create_raw_study(id=18, name="study-X18", owner=user_1, groups=[group_2])
-    study_19 = create_raw_study(id=19, name="study-X19", groups=[group_1])
-    study_20 = create_raw_study(id=20, name="study-X20", owner=user_2, groups=[group_1])
-    study_21 = create_raw_study(id=21, name="study-X21", owner=user_2, groups=[group_2])
-    study_22 = create_raw_study(id=22, name="study-X22", groups=[group_2])
-    study_23 = create_raw_study(id=23, name="study-X23", owner=user_1, groups=[group_1, group_2])
-    study_24 = create_raw_study(id=24, name="study-X24", owner=user_2, groups=[group_1, group_2])
-    study_25 = create_raw_study(id=25, name="study-X25", groups=[group_1, group_2])
-    study_26 = create_raw_study(id=26, name="study-X26", owner=user_1)
-    study_27 = create_raw_study(id=27, name="study-X27", owner=user_2)
+    study_17 = create_raw_study(id="17", name="study-X17", owner=user_1, groups=[group_1])
+    study_18 = create_raw_study(id="18", name="study-X18", owner=user_1, groups=[group_2])
+    study_19 = create_raw_study(id="19", name="study-X19", groups=[group_1])
+    study_20 = create_raw_study(id="20", name="study-X20", owner=user_2, groups=[group_1])
+    study_21 = create_raw_study(id="21", name="study-X21", owner=user_2, groups=[group_2])
+    study_22 = create_raw_study(id="22", name="study-X22", groups=[group_2])
+    study_23 = create_raw_study(id="23", name="study-X23", owner=user_1, groups=[group_1, group_2])
+    study_24 = create_raw_study(id="24", name="study-X24", owner=user_2, groups=[group_1, group_2])
+    study_25 = create_raw_study(id="25", name="study-X25", groups=[group_1, group_2])
+    study_26 = create_raw_study(id="26", name="study-X26", owner=user_1)
+    study_27 = create_raw_study(id="27", name="study-X27", owner=user_2)
 
     # create raw studies with neither owner nor groups
-    study_28 = create_raw_study(id=28, name="study-X28")
-    study_29 = create_raw_study(id=29, name="study-X29", public_mode=PublicMode.READ)
-    study_30 = create_raw_study(id=30, name="study-X30", public_mode=PublicMode.EDIT)
-    study_31 = create_raw_study(id=31, name="study-X31", public_mode=PublicMode.EXECUTE)
-    study_32 = create_raw_study(id=32, name="study-X32", public_mode=PublicMode.FULL)
+    study_28 = create_raw_study(id="28", name="study-X28")
+    study_29 = create_raw_study(id="29", name="study-X29", public_mode=PublicMode.READ)
+    study_30 = create_raw_study(id="30", name="study-X30", public_mode=PublicMode.EDIT)
+    study_31 = create_raw_study(id="31", name="study-X31", public_mode=PublicMode.EXECUTE)
+    study_32 = create_raw_study(id="32", name="study-X32", public_mode=PublicMode.FULL)
 
     # create studies for user_3 that is not part of any group
-    study_33 = create_variant_study(id=33, name="study-X33", owner=user_3, groups=[group_1])
-    study_34 = create_raw_study(id=34, name="study-X34", owner=user_3, groups=[group_2])
-    study_35 = create_variant_study(id=35, name="study-X35", owner=user_3)
-    study_36 = create_raw_study(id=36, name="study-X36", owner=user_3)
+    study_33 = create_variant_study(id="33", name="study-X33", owner=user_3, groups=[group_1])
+    study_34 = create_raw_study(id="34", name="study-X34", owner=user_3, groups=[group_2])
+    study_35 = create_variant_study(id="35", name="study-X35", owner=user_3)
+    study_36 = create_raw_study(id="36", name="study-X36", owner=user_3)
 
     # create studies for group_3 that has no user
-    study_37 = create_variant_study(id=37, name="study-X37", groups=[group_3])
-    study_38 = create_raw_study(id=38, name="study-X38", groups=[group_3])
+    study_37 = create_variant_study(id="37", name="study-X37", groups=[group_3])
+    study_38 = create_raw_study(id="38", name="study-X38", groups=[group_3])
 
     db_session.add_all([user_1, user_2, user_3, group_1, group_2, group_3])
     # fmt: off
@@ -1099,7 +1100,7 @@ def test_get_all__admin_permissions_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -1110,7 +1111,7 @@ def test_get_all__admin_permissions_filter(
         assert sorted((s.id for s in all_studies), key=int) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter, pagination=StudyPagination(page_nb=1, page_size=2))
         assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
         assert sorted((s.id for s in all_studies), key=int) == expected_ids[2:4]
@@ -1122,7 +1123,7 @@ def test_update_tags(
 ) -> None:
     repository = StudyMetadataRepository(session=db_session)
 
-    study_id = 1
+    study_id = "1"
     study = create_raw_study(id=study_id, name=f"study-{study_id}", tags=[])
     db_session.add(study)
     db_session.commit()
@@ -1131,7 +1132,7 @@ def test_update_tags(
     # 1- finding existing tags requires 1 query
     # 2- updating the study tags requires 2 queries (2 inserts)
     # 3- deleting orphan tags requires 1 query
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         repository.update_tags(study, ["Tag1", "Tag2"])
     assert len(db_recorder.sql_statements) == 4, str(db_recorder)
 
@@ -1140,7 +1141,7 @@ def test_update_tags(
     # 1- finding existing tags requires 1 query
     # 2- updating the study tags requires 3 queries (2 inserts, 1 delete)
     # 3- deleting orphan tags requires 1 query
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         repository.update_tags(study, ["TAG1", "Tag3"])
     assert len(db_recorder.sql_statements) == 5, str(db_recorder)
 
@@ -1201,7 +1202,7 @@ def test_count_studies__general_case(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         count = repository.count_studies(
             study_filter=StudyFilter(
                 managed=managed,

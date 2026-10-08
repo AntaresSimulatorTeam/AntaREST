@@ -115,29 +115,25 @@ def test_nominal_case_of_an_api_user(client: TestClient, admin_access_token: str
     res = client.post(f"/v1/studies/{variant_id}/commands", json=commands)
     assert res.status_code == 200
     # add time_series matrix
-    command_matrix = [
-        {
-            "action": "replace_matrix",
-            "args": {
-                "target": f"input/thermal/series/{area_id}/{cluster_id}/series",
-                "matrix": np.zeros((8760, 3), dtype=np.float64).tolist(),
-            },
-        }
-    ]
+    matrix_args: dict[str, object] = {
+        "target": f"input/thermal/series/{area_id}/{cluster_id}/series",
+        "matrix": np.zeros((8760, 3), dtype=np.float64).tolist(),
+    }
+    command_matrix = [{"action": "replace_matrix", "args": matrix_args}]
     res = client.post(f"/v1/studies/{variant_id}/commands", json=command_matrix)
     assert res.status_code == 200
     # add prepro data matrix
-    command_matrix[0]["args"]["target"] = f"input/thermal/prepro/{area_id}/{cluster_id}/data"
+    matrix_args["target"] = f"input/thermal/prepro/{area_id}/{cluster_id}/data"
     data_matrix = np.zeros((365, 6), dtype=np.float64)
     data_matrix[:, 2:6] = 1
-    command_matrix[0]["args"]["matrix"] = data_matrix.tolist()
+    matrix_args["matrix"] = data_matrix.tolist()
     res = client.post(f"/v1/studies/{variant_id}/commands", json=command_matrix)
     assert res.status_code == 200
     # add prepro modulation matrix
-    command_matrix[0]["args"]["target"] = f"input/thermal/prepro/{area_id}/{cluster_id}/modulation"
+    matrix_args["target"] = f"input/thermal/prepro/{area_id}/{cluster_id}/modulation"
     modulation_matrix = np.ones((8760, 4), dtype=np.float64)
     modulation_matrix[:, 3] = 0
-    command_matrix[0]["args"]["matrix"] = modulation_matrix.tolist()
+    matrix_args["matrix"] = modulation_matrix.tolist()
     res = client.post(f"/v1/studies/{variant_id}/commands", json=command_matrix)
     assert res.status_code == 200
 

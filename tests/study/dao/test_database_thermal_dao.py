@@ -20,6 +20,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound, ThermalClusterNotFound
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
@@ -45,9 +46,9 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 from tests.study.dao.utils import save_area
 
 
-def _make_thermal(dao: StudyDao, **kwargs) -> ThermalCluster:
+def _make_thermal(dao: StudyDao, **kwargs: object) -> ThermalCluster:
     """Build a fully-initialized ThermalCluster so DAO write-side validation passes."""
-    cluster = ThermalCluster(**kwargs)
+    cluster = ThermalCluster.model_validate(kwargs)
     initialize_thermal_cluster(cluster, dao.get_version())
     return cluster
 
@@ -242,7 +243,7 @@ def test_thermal_exists_returns_false_for_unknown_area(dao: StudyDao) -> None:
     assert not dao.thermal_exists("nonexistent", "gas")
 
 
-def test_thermal_matrix_round_trip(dao: StudyDao, matrix_service) -> None:
+def test_thermal_matrix_round_trip(dao: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     """Matrices survive a save/get round-trip on both backends."""
     save_area(dao, "Paris")
     dao.save_thermals({"paris": [_make_thermal(dao, name="Gas")]})

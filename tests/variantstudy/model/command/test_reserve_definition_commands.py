@@ -87,6 +87,7 @@ class TestCreateReserveDefinition:
         )
         dto = command.to_dto()
         assert dto.action == "create_reserve_definition"
+        assert isinstance(dto.args, dict)
         assert dto.args["area_id"] == "paris"
         assert dto.args["parameters"]["name"] == "Reserve 1"
         assert dto.args["parameters"]["type"] == "up"
@@ -173,6 +174,7 @@ class TestUpdateReserveDefinitions:
         )
         dto = command.to_dto()
         assert dto.action == "update_reserve_definitions"
+        assert isinstance(dto.args, dict)
         assert dto.args["reserve_properties"]["paris"]["R1"]["failureCost"] == 999.0
 
 
@@ -227,6 +229,7 @@ class TestRemoveReserveDefinitions:
         )
         dto = command.to_dto()
         assert dto.action == "remove_reserve_definitions"
+        assert isinstance(dto.args, dict)
         assert dto.args["area_id"] == "paris"
         assert dto.args["reserve_ids"] == ["R1", "R2"]
 

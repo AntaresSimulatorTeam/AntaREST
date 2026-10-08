@@ -26,6 +26,7 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
     CreateSTStorageAdditionalConstraints,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_st_storage import REQUIRED_VERSION, RemoveSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.model import CommandDTO
@@ -42,7 +43,7 @@ def recent_study_fixture(empty_study_720: FileStudy) -> FileStudy:
     Returns:
         FileStudy: The FileStudy object upgraded to the required version.
     """
-    StudyUpgrader(empty_study_720.config.study_path, str(REQUIRED_VERSION)).upgrade()
+    StudyUpgrader(empty_study_720.config.study_path, REQUIRED_VERSION).upgrade()
     empty_study_720.config.version = REQUIRED_VERSION
     return empty_study_720
 
@@ -123,7 +124,7 @@ class TestRemoveSTStorage:
         # Create an area and a short-term storage inside it
         dao = dao_92
         version = dao.get_version()
-        cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
+        cmd: ICommand = CreateArea(command_context=command_context, area_name="fr", study_version=version)
         cmd.apply(study_dao=dao)
         cmd = CreateSTStorage(
             area_id="fr", parameters={"name": "sts_1"}, command_context=command_context, study_version=version
@@ -150,7 +151,7 @@ class TestRemoveSTStorage:
         # Create an area and a short-term storage inside it
         dao = dao_92
         version = dao.get_version()
-        cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
+        cmd: ICommand = CreateArea(command_context=command_context, area_name="fr", study_version=version)
         cmd.apply(study_dao=dao)
 
         cmd = CreateSTStorage(
@@ -201,7 +202,7 @@ class TestRemoveSTStorage:
         version = dao.get_version()
 
         # Create an area and a short-term storage WITHOUT constraints
-        cmd = CreateArea(command_context=command_context, area_name="fr", study_version=version)
+        cmd: ICommand = CreateArea(command_context=command_context, area_name="fr", study_version=version)
         cmd.apply(study_dao=dao)
 
         cmd = CreateSTStorage(

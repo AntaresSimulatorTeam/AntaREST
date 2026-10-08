@@ -49,6 +49,7 @@ import uuid
 import numpy as np
 import pandas as pd
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_7
@@ -302,7 +303,7 @@ class TestThermal:
         ],
     )
     def test_lifecycle(self, client: TestClient, user_access_token: str, internal_study_id: str, version: int) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         # =============================
         #  STUDY UPGRADE
         # =============================
@@ -629,6 +630,7 @@ class TestThermal:
         assert res.json()["exception"] == "ReferencedObjectDeletionNotAllowed"
 
         # delete the binding constraint
+        assert isinstance(bc_obj["name"], str)
         bc_id = transform_name_to_id(bc_obj["name"])
         res = client.delete(f"/v1/studies/{internal_study_id}/bindingconstraints/{bc_id}")
         assert res.status_code == 200, res.json()
@@ -881,7 +883,7 @@ class TestThermal:
         In this test, we want to check that thermal clusters can be managed
         in the context of a "variant" study.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         # Create an area
         area_name = "France"
         res = client.post(f"/v1/studies/{variant_id}/areas", json={"name": area_name, "type": "AREA"})
@@ -972,7 +974,7 @@ class TestThermal:
         Test that creating a thermal cluster with invalid properties raises a validation error.
         """
 
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create an area "area_1" in the study
         res = client.post(
@@ -1133,7 +1135,7 @@ class TestThermal:
 
     @pytest.mark.flaky(reruns=3)
     def test_update_multiple_thermal_clusters(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Create a study with one area
         res = client.post("/v1/studies", params={"name": "study_test", "version": "8.8"})
@@ -1192,7 +1194,7 @@ class TestThermal:
     @pytest.mark.parametrize("base_study_id", [{"name": "test_study", "version": 860}], indirect=True)
     def test_thermal_property_values(self, client: TestClient, user_access_token: str, base_study_id: str) -> None:
         # test validation rules on minUpTime and minDownTime
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         res = client.get(f"/v1/studies/{base_study_id}")
         assert res.status_code in {200, 201}

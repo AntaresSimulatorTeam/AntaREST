@@ -17,6 +17,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.model import STUDY_VERSION_8
@@ -210,7 +211,9 @@ def test_delete(tmp_path: Path) -> None:
     assert folder_node.exists()
     assert sub_folder.exists()
 
-    config = FileStudyTreeConfig(study_path=tmp_path, path=folder_node, study_id="-1", version=-1)
+    config = FileStudyTreeConfig(
+        study_path=tmp_path, path=folder_node, study_id="-1", version=StudyVersion.parse("8.8")
+    )
     tree_node = MiddleNode(
         matrix_storage_context=Mock(),
         config=config,

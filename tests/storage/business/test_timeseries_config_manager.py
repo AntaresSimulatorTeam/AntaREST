@@ -48,7 +48,7 @@ def file_study_820(tmpdir: Path) -> FileStudy:
 
 def test_nominal_case(file_study_820: FileStudy, command_context: CommandContext) -> None:
     # Checks default value
-    assert file_study_820.tree.get(["settings", "generaldata", "general", "nbtimeseriesthermal"]) == 1
+    assert file_study_820.tree.get(["settings", "generaldata"])["general"]["nbtimeseriesthermal"] == 1
 
     study = file_study_interface(file_study_820)
 
