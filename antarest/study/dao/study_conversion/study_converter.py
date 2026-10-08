@@ -124,9 +124,12 @@ class StudyConverter:
             return
 
         self._new_dao.create_xpansion_configuration()
-        self._new_dao.save_xpansion_settings(settings)
-        # Candidates
-        self._new_dao.save_xpansion_candidates(self._source_dao.get_all_xpansion_candidates())
+
+        # Settings can contain projections that refer to Candidates but Candidates refer to the other part of Settings.
+        # So we need to build a custom method for the DB DAO to avoid any Foreign Key issue.
+        candidates = self._source_dao.get_all_xpansion_candidates()
+        self._new_dao.save_xpansion_candidates_and_settings(candidates, settings)
+
         # Adequacy criterion
         self._new_dao.save_xpansion_adequacy_criterion(self._source_dao.get_xpansion_adequacy_criterion())
 

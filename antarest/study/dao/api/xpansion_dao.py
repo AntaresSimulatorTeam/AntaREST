@@ -94,7 +94,9 @@ class XpansionDao(ReadOnlyXpansionDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
+    def save_xpansion_candidates_and_settings(
+        self, candidates: list[XpansionCandidate], settings: XpansionSettings
+    ) -> None:
         raise NotImplementedError()
 
     @abstractmethod

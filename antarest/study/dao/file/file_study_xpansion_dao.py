@@ -148,7 +148,10 @@ class FileStudyXpansionDao(XpansionDao, ABC):
         file_study.tree.save(content, ["user", "expansion", "sensitivity", "sensitivity_in"])
 
     @override
-    def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
+    def save_xpansion_candidates_and_settings(
+        self, candidates: list[XpansionCandidate], settings: XpansionSettings
+    ) -> None:
+        self.save_xpansion_settings(settings)
         self._save_xpansion_candidates([(cdt, None) for cdt in candidates])
 
     @override
