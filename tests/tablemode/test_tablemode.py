@@ -22,6 +22,7 @@ from antarest.tablemode.model import (
     AreaColumn,
     LinkColumn,
     STStorageColumn,
+    TableColumn,
     TableMode,
     TableModeDTO,
     TableType,
@@ -68,7 +69,7 @@ def test_add_tablemode_success() -> None:
     my_uuid = uuid.uuid4()
     table_name = "test_name"
     table_type = TableType.AREA
-    table_columns = [AreaColumn.DISPATCHABLE_HYDRO_POWER, AreaColumn.NON_DISPATCHABLE_POWER]
+    table_columns: list[TableColumn] = [AreaColumn.DISPATCHABLE_HYDRO_POWER, AreaColumn.NON_DISPATCHABLE_POWER]
     str_table_columns = ",".join(table_columns)
     tablemode_dto = TableModeDTO(
         table_id=my_uuid, table_name=table_name, table_type=table_type, table_columns=table_columns
@@ -129,7 +130,7 @@ def test_update_tablemode_success() -> None:
     update_table_type = TableType.ST_STORAGE
 
     str_tables = ",".join(current_table_columns)
-    update_table_columns = [STStorageColumn.EFFICIENCY]
+    update_table_columns: list[TableColumn] = [STStorageColumn.EFFICIENCY]
     str_updated_table = ",".join(update_table_columns)
 
     tablemode_service = TableModeService(mock_tablemode_repo)
@@ -156,7 +157,7 @@ def test_add_tablemode_failure_invalid_table_data() -> None:
     my_table_name = "test_name"
 
     # defining invalid and valid table_type / table_columns
-    invalid_table_columns = [LinkColumn.ASSET_TYPE, ThermalColumn.EFFICIENCY]
+    invalid_table_columns: list[TableColumn] = [LinkColumn.ASSET_TYPE, ThermalColumn.EFFICIENCY]
     str_invalid_table_columns = ",".join(invalid_table_columns)
 
     my_table_type = TableType.AREA
@@ -181,7 +182,7 @@ def test_update_tablemode_failure_updating_non_existing_tablemode() -> None:
     mock_tablemode_repo = Mock(spec=TablemodeRepository)
     my_uuid = uuid.uuid4()
     my_table_type = TableType.AREA
-    my_table_columns = [AreaColumn.DISPATCHABLE_HYDRO_POWER, AreaColumn.NON_DISPATCHABLE_POWER]
+    my_table_columns: list[TableColumn] = [AreaColumn.DISPATCHABLE_HYDRO_POWER, AreaColumn.NON_DISPATCHABLE_POWER]
     tablemode_service = TableModeService(mock_tablemode_repo)
 
     mock_tablemode_repo.get.return_value = None
@@ -197,7 +198,7 @@ def test_update_tablemode_failure_updating_tablemode_with_invalid_table_data() -
     my_uuid = uuid.uuid4()
     my_table_name = "test_name"
     my_table_type = TableType.AREA
-    incorrect_table_columns = [STStorageColumn.EFFICIENCY, STStorageColumn.ENABLED]
+    incorrect_table_columns: list[TableColumn] = [STStorageColumn.EFFICIENCY, STStorageColumn.ENABLED]
     incorrect_str_table_columns = ",".join(incorrect_table_columns)
 
     tablemode_service = TableModeService(mock_tablemode_repo)

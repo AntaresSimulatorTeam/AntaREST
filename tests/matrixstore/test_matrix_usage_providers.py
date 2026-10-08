@@ -53,6 +53,7 @@ from antarest.study.storage.variantstudy.model.command.create_cluster import Cre
 from antarest.study.storage.variantstudy.model.command.generate_thermal_cluster_timeseries import (
     GenerateThermalClusterTimeSeries,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.model.dbmodel import CommandBlock, VariantStudy
 from antarest.study.storage.variantstudy.repository import VariantStudyRepository
@@ -259,7 +260,7 @@ def test_command_matrix_usage_provider_with_snapshot(
     variant_study = variant_study_service.create_variant_study(parent_id, "variant_study")
 
     # Add a GenerateThermalTimeSeries command
-    command = GenerateThermalClusterTimeSeries(
+    command: ICommand = GenerateThermalClusterTimeSeries(
         command_context=command_context, study_version=version, thermal_outage_details=False
     )
     assert command.get_inner_matrices() == InnerMatrices(generates_matrices_at_run_time=True)
@@ -279,6 +280,7 @@ def test_command_matrix_usage_provider_with_snapshot(
     assert len(used_matrices) > 0
 
     # Clean the snapshot manually
+    assert variant_study.path is not None
     shutil.rmtree(Path(variant_study.path) / "snapshot")
 
     # Ensures no matrix is used now that the snapshot is cleaned

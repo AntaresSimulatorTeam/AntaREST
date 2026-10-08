@@ -17,8 +17,7 @@ from unittest.mock import ANY
 import numpy as np
 import pandas as pd
 import pytest
-from httpx import Headers
-from httpx._exceptions import HTTPError
+from httpx import Headers, HTTPStatusError
 from starlette.testclient import TestClient
 
 from antarest.study.business.model.binding_constraint_model import ClusterTerm, ConstraintTerm, LinkTerm
@@ -96,7 +95,7 @@ class TestBindingConstraints:
         client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         preparer = PreparerProxy(client, user_access_token)
         study_id = preparer.create_study("foo", version=880)
-        body = {}
+        body: dict[str, object] = {}
         # Creates 50 BCs
         for k in range(50):
             bc_id = f"bc_{k}"
@@ -724,16 +723,12 @@ class TestBindingConstraints:
             assert last_cmd_args["matrices"] == {"equalTermMatrix": ANY}
 
         # Check that raw matrices are created
-        for bc_id, operator in zip(
-            [bc_id_wo_group, bc_id_w_matrix, bc_id_w_group], [operator_1, operator_2, operator_3]
+        for bc_id, operator in (
+            (bc_id_wo_group, operator_1),
+            (bc_id_w_group, operator_2),
+            (bc_id_w_matrix, operator_3),
         ):
-            for term in zip(
-                [
-                    bc_id_wo_group,
-                    bc_id_w_matrix,
-                ],
-                ["lt", "gt", "eq"],
-            ):
+            for term in ["lt", "gt", "eq"]:
                 path = f"input/bindingconstraints/{bc_id}_{term}"
                 res = client.get(
                     f"/v1/studies/{study_id}/raw",
@@ -745,7 +740,7 @@ class TestBindingConstraints:
                     continue
                 assert res.status_code == 200, res.json()
                 data = res.json()["data"]
-                if term == "lt":
+                if bc_id == bc_id_w_matrix:
                     assert data == matrix_lt3.tolist()
                 else:
                     assert data == np.zeros((matrix_lt3.shape[0], 1)).tolist()
@@ -863,7 +858,11 @@ class TestBindingConstraints:
 
         # Rename term
         # We're replacing area_1%area_2 by area_1%area_3
-        body = {"id": f"{area1_id}%{area2_id}", "data": {"area1": area1_id, "area2": area3_id}, "offset": 1}
+        body: dict[str, object] = {
+            "id": f"{area1_id}%{area2_id}",
+            "data": {"area1": area1_id, "area2": area3_id},
+            "offset": 1,
+        }
         res = client.put(f"/v1/studies/{study_id}/bindingconstraints/{bc_id_w_group}/term", json=body)
         assert res.status_code == 200, res.json()
 
@@ -1420,7 +1419,7 @@ class TestBindingConstraints:
                 for matrix in superfluous_matrices:
                     try:
                         preparer.download_matrix(variant_id, f"input/bindingconstraints/{bc_id}_{matrix}")
-                    except HTTPError as e:
+                    except HTTPStatusError as e:
                         assert e.response.status_code == 404
                     else:
                         assert False, "The matrix should not exist"
@@ -1479,7 +1478,7 @@ class TestBindingConstraints:
                 for matrix in superfluous_matrices:
                     try:
                         preparer.download_matrix(variant_id, f"input/bindingconstraints/{bc_id}_{matrix}")
-                    except HTTPError as e:
+                    except HTTPStatusError as e:
                         assert e.response.status_code == 404
                     else:
                         assert False, "The matrix should not exist"

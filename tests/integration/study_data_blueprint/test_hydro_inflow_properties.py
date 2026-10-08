@@ -41,7 +41,7 @@ class TestHydroInflowProperties:
         res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/inflow-structure")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
-        expected = {"interMonthlyCorrelation": 0.5}
+        expected: dict[str, object] = {"interMonthlyCorrelation": 0.5}
         assert actual == expected
 
         # Update the values

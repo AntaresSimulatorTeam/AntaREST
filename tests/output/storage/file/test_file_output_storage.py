@@ -94,8 +94,8 @@ def output_storage(request: pytest.FixtureRequest, tmp_path: Path, sta_mini_zip_
         zf.extractall(studies_dir)
 
     if request.param == OutputStorageType.IN_STUDY_FILE_TREE:
-        klass = InStudyFileOutputStorage
-        outputs_provider = InStudySimpleFileOutputsProvider(studies_dir)
+        klass: type[InStudyFileOutputStorage] | type[OutOfStudyFileOutputStorage] = InStudyFileOutputStorage
+        outputs_provider: IFileOutputsProvider = InStudySimpleFileOutputsProvider(studies_dir)
     else:
         klass = OutOfStudyFileOutputStorage
         outputs_provider = OutOfStudyFileOutputProvider(outputs_dir)

@@ -37,6 +37,7 @@ class TestStudyUpgrade:
         assert task_id
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED
+        assert task.result is not None
         assert task.result.message == f"Successfully upgraded study '{internal_study_id}' to version 7.1"
 
     @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
@@ -54,6 +55,7 @@ class TestStudyUpgrade:
         assert task_id
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED
+        assert task.result is not None
         assert task.result.message == f"Successfully upgraded study '{internal_study_id}' to version 7.2"
 
     def test_upgrade_study__bad_target_version(
@@ -122,7 +124,7 @@ def test_study_upgrade_for_both_storage_modes(client: TestClient, user_access_to
     create_minimal_study(client, study_id)
 
     # Sets the area `fr` load to a certain value just to check its value afterwards
-    res = client.post(f"/v1/studies/{study_id}/raw?path=input/load/series/load_fr", data=b"[[100]]")
+    res = client.post(f"/v1/studies/{study_id}/raw?path=input/load/series/load_fr", content=b"[[100]]")
     assert res.status_code == 200, res.json()
 
     # Ensures the study was created in v7.0

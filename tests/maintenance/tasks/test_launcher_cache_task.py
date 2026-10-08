@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from collections.abc import Callable, Iterator
 from datetime import timedelta
+from inspect import unwrap
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -84,7 +85,7 @@ class TestSaveLauncherCacheTask:
         load_service = _build_load_service(tmp_path, {"local": slurm_load})
         with_maintenance_ctx(load_service)
 
-        result = save_launcher_cache_task.run.__wrapped__(save_launcher_cache_task)
+        result = unwrap(save_launcher_cache_task.run)(save_launcher_cache_task)
         assert result.status == BackGroundTaskStatus.SUCCESS
 
         stored_load = load_service.launcher_cache_repository.get_launcher_load("local")
@@ -124,7 +125,7 @@ class TestSaveLauncherCacheTask:
         load_service = _build_load_service(tmp_path, {"local": ok_load, "slurm": failing_load})
         with_maintenance_ctx(load_service)
 
-        result = save_launcher_cache_task.run.__wrapped__(save_launcher_cache_task)
+        result = unwrap(save_launcher_cache_task.run)(save_launcher_cache_task)
 
         assert result.status == BackGroundTaskStatus.PARTIAL_SUCCESS
         # local launchers are not cached
@@ -139,7 +140,7 @@ class TestSaveLauncherCacheTask:
         load_service = _build_load_service(tmp_path, {"local": LocalLoad()})
         with_maintenance_ctx(load_service)
 
-        result = save_launcher_cache_task.run.__wrapped__(save_launcher_cache_task)
+        result = unwrap(save_launcher_cache_task.run)(save_launcher_cache_task)
 
         assert result.status == BackGroundTaskStatus.SUCCESS
 
@@ -168,7 +169,7 @@ class TestSaveLauncherCacheTask:
         load_service = _build_load_service(tmp_path, {"slurm": slurm_launcher})
         with_maintenance_ctx(load_service)
 
-        result = save_launcher_cache_task.run.__wrapped__(save_launcher_cache_task)
+        result = unwrap(save_launcher_cache_task.run)(save_launcher_cache_task)
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         cached_load = load_service.launcher_cache_repository.get_launcher_load("slurm")
@@ -193,7 +194,7 @@ class TestSaveLauncherCacheTask:
         load_service = _build_load_service(tmp_path, {"local": local_launcher})
         with_maintenance_ctx(load_service)
 
-        result = save_launcher_cache_task.run.__wrapped__(save_launcher_cache_task)
+        result = unwrap(save_launcher_cache_task.run)(save_launcher_cache_task)
 
         assert result.status == BackGroundTaskStatus.SUCCESS
         assert load_service.launcher_cache_repository.get_launcher_load("local") is None

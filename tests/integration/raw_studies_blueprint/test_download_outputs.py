@@ -27,7 +27,7 @@ def _convert_nan_to_none(val: object) -> None | object:
 def test_get_output_variables_list(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     # Checks the endpoint works correctly
-    body = {
+    body: dict[str, object] = {
         "type": "AREA",
         "years": [],
         "level": "hourly",

@@ -205,6 +205,7 @@ class TestGenerateThermalClusterTimeseries:
         # Timeseries generation fails because these values are unacceptable
         task = self._generate_timeseries(client, user_access_token, study_id, outage_details=False)
         assert task.status == TaskStatus.FAILED
+        assert task.result is not None
         assert (
             f"Area {area1_id}, cluster {cluster_name.lower()}: Forced failure rate is greater than 1 on following days"
             in task.result.message

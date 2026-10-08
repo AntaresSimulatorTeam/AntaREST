@@ -822,7 +822,10 @@ class TestSTStorage:
         res.raise_for_status()
 
         # Create several constraints relative to the storages
-        body = [{"name": "C1?", "occurrences": [{"hours": [2, 3]}, {"hours": [148]}]}, {"name": "c2", "enabled": False}]
+        body: dict[str, object] | list[dict[str, object]] = [
+            {"name": "C1?", "occurrences": [{"hours": [2, 3]}, {"hours": [148]}]},
+            {"name": "c2", "enabled": False},
+        ]
         res = client.post(f"{areas_url}/fr/storages/tesla/additional-constraints", json=body)
         assert res.status_code == 200
         assert res.json() == [

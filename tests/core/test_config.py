@@ -280,6 +280,7 @@ class TestConfig:
         assert workers[1].queues == ["queue_2_1", "queue_2_2"]
 
     def check_metrics_config(self, metrics_config: MetricsConfig) -> None:
+        assert metrics_config.prometheus is not None
         assert metrics_config.prometheus.multiprocess
 
     def check_celery_config(self, celery_config: CeleryConfig) -> None:

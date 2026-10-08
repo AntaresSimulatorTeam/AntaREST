@@ -76,6 +76,7 @@ def generate_snapshot_fixture(client: TestClient, admin_access_token: str, base_
         # Modify the `created_at` and `updated_at` attributes in DB.
         with db():
             variant = db.session.get(Study, variant_id)
+            assert variant is not None
             variant.last_access = different_time
             variant.updated_at = different_time
             db.session.merge(variant)
@@ -315,7 +316,7 @@ def test_recursive_variant_tree(client: TestClient, admin_access_token: str, bas
     assert res.json()["node"]["id"] == parent_id
 
 
-def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, tmp_path: str) -> None:
+def test_outputs(client: TestClient, admin_access_token: str, variant_id: str, tmp_path: Path) -> None:
     # =======================
     #  SET UP
     # =======================
@@ -412,7 +413,9 @@ def test_clear_snapshots(
     assert res.json() == [{"id": "area1", "name": "area1", "thermals": [], "type": "AREA"}]
 
 
-def test_deletion_while_generating(client: TestClient, admin_access_token: str, variant_id: str, tmp_path: str) -> None:
+def test_deletion_while_generating(
+    client: TestClient, admin_access_token: str, variant_id: str, tmp_path: Path
+) -> None:
     client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
     # Generates the study from scratch
     res = client.put(f"/v1/studies/{variant_id}/generate?from_scratch=True")

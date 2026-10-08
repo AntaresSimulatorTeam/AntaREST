@@ -30,7 +30,10 @@ def test_study_data(client: TestClient, user_access_token: str, internal_study_i
     assert task.status == TaskStatus.COMPLETED
 
     # Add a binding constraint
-    body = {"name": "Constraint1", "terms": [{"weight": 4, "data": {"area1": "de", "area2": "es"}}]}
+    body: dict[str, object] | list[dict[str, object]] = {
+        "name": "Constraint1",
+        "terms": [{"weight": 4, "data": {"area1": "de", "area2": "es"}}],
+    }
     res = client.post(f"/v1/studies/{internal_study_id}/bindingconstraints", json=body)
     res.raise_for_status()
 

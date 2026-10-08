@@ -24,7 +24,7 @@ from antarest.study.model import RawStudy, Study
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 
-def _make_study(spec: Mock, study_id: str, days_ago: int, archived: bool = False) -> Study:
+def _make_study(spec: type[Study], study_id: str, days_ago: int, archived: bool = False) -> Study:
     """Helper to create mock studies."""
     study = Mock(spec=spec)
     study.id = study_id
@@ -103,6 +103,7 @@ class TestArchiveStudy:
 
         result = _archive_study("s1", True, study_svc, output_svc, dry_run=False)
         assert result.archived_studies == 0
+        assert result.error is not None
         assert "fail" in result.error
 
 

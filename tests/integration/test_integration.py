@@ -1084,6 +1084,7 @@ def test_areas_deletion_with_binding_constraints(
         )
         res.raise_for_status()
 
+        assert isinstance(constraint_term["data"], dict)
         if set(constraint_term["data"]) == {"area1", "area2"}:
             # Create a second area and a link between the two areas
             res = client.post(
@@ -1120,6 +1121,7 @@ def test_areas_deletion_with_binding_constraints(
         res = client.post(f"/v1/studies/{internal_study_id}/bindingconstraints", json=bc_obj)
         res.raise_for_status()
 
+        assert isinstance(constraint_term["data"], dict)
         if set(constraint_term["data"]) == {"area1", "area2"}:
             areas_to_delete = [area1_id, area2_id]
         elif set(constraint_term["data"]) == {"area", "cluster"}:

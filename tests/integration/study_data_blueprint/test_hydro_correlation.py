@@ -34,7 +34,7 @@ class TestHydroCorrelation:
         res = client.get(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
-        expected = {
+        expected: dict[str, object] = {
             "correlation": [
                 {"areaId": "de", "coefficient": 25.0},
                 {"areaId": "es", "coefficient": 75.0},
@@ -61,7 +61,7 @@ class TestHydroCorrelation:
         res = client.put(f"/v1/studies/{internal_study_id}/areas/{area_id}/hydro/correlation/form", json=obj)
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
-        expected = {
+        expected: dict[str, object] = {
             "correlation": [
                 {"areaId": "de", "coefficient": 20.0},
                 {"areaId": "es", "coefficient": -82.8},
@@ -132,7 +132,7 @@ class TestHydroCorrelation:
         res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix")
         assert res.status_code == HTTPStatus.OK
         actual = res.json()
-        expected = {
+        expected: dict[str, object] = {
             "columns": ["de", "es", "fr", "it", "north"],
             "data": [
                 [1.0, 0.0, 0.25, 0.0, 0.0],
@@ -178,7 +178,7 @@ class TestHydroCorrelation:
         res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/correlation/matrix")
         assert res.status_code == HTTPStatus.OK, res.json()
         actual = res.json()
-        expected = {
+        expected: dict[str, object] = {
             "columns": ["de", "es", "it"],
             "data": [
                 [1.0, 0.12, 0.14],

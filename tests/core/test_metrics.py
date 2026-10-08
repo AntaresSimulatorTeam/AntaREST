@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import time
+from collections.abc import Callable
 
 import prometheus_client
 import pytest
@@ -317,7 +318,8 @@ def test_db_transaction_is_closed_on_server_disconnect() -> None:
 def test_db_session_metrics() -> None:
     metadata = MetaData()
 
-    prometheus_client.disable_created_metrics()
+    disable_created_metrics: Callable[[], None] = prometheus_client.disable_created_metrics
+    disable_created_metrics()
     engine = create_engine("sqlite:///:memory:")
     session_factory = sessionmaker(bind=engine)
 

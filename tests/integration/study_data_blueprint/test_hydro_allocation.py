@@ -41,7 +41,7 @@ class TestHydroAllocation:
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
         actual = res.json()
-        expected = {"allocation": [{"areaId": "de", "coefficient": 1.0}]}
+        expected: dict[str, object] = {"allocation": [{"areaId": "de", "coefficient": 1.0}]}
         assert actual == expected
 
     def test_get_allocation_form_values__variant(
@@ -73,7 +73,7 @@ class TestHydroAllocation:
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
         actual = res.json()
-        expected = {"allocation": [{"areaId": "de", "coefficient": 1.0}]}
+        expected: dict[str, object] = {"allocation": [{"areaId": "de", "coefficient": 1.0}]}
         assert actual == expected
 
         # create a variant study from the managed study
@@ -147,7 +147,7 @@ class TestHydroAllocation:
     ) -> None:
         """Check `set_allocation_form_values` end point"""
         area_id = "de"
-        expected = {
+        expected: dict[str, object] = {
             "allocation": [
                 {"areaId": "de", "coefficient": 3},
                 {"areaId": "es", "coefficient": 1.0},
@@ -200,7 +200,7 @@ class TestHydroAllocation:
         )
         assert res.status_code == http.HTTPStatus.OK
         actual = res.json()
-        expected = {
+        expected: dict[str, object] = {
             "columns": ["de", "es", "fr", "it", "north"],
             "data": [
                 [1.0, 0.0, 0.0, 0.0, 0.0],
@@ -251,7 +251,7 @@ class TestHydroAllocation:
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
         actual = res.json()
-        expected = {
+        expected: dict[str, object] = {
             "columns": ["de", "es", "it"],
             "data": [
                 [10.0, 20.0, 40.0],
