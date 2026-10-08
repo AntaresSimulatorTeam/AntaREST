@@ -148,6 +148,7 @@ def test_logs() -> None:
     a.logs.append(JobLog(job_id=uuid, message="c", log_type=JobLogType.AFTER))
     b = repo.save(a)
     c = repo.get(uuid)
+    assert c is not None
     assert b.logs == c.logs
     assert b.logs[0].id == job_log_id
     assert b.logs[0].message == "a"

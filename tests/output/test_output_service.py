@@ -59,6 +59,7 @@ def _studies_repository(study: Study) -> IStudyMetadataProvider:
     class Impl(IStudyMetadataProvider):
         @override
         def get_study_metadata(self, study_id: str) -> StudyMetadata:
+            assert study.name is not None
             return StudyMetadata(study.id, study.name, study.storage_mode)
 
         @override
@@ -75,6 +76,7 @@ def _file_outputs_provider(study: RawStudy) -> IFileOutputsProvider:
     class Impl(IFileOutputsProvider):
         @override
         def get_outputs(self, study_id: str) -> FileStudyOutputs:
+            assert study.path is not None
             return FileStudyOutputs(outputs_path=Path(study.path) / "output", study_workspace=study.workspace)
 
     return Impl()
@@ -127,6 +129,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     )
 
     output_id = "some-output"
+    assert isinstance(remote_executor.execute_remote_task, Mock)
     remote_executor.execute_remote_task.return_value = TaskResult(success=True, message="OK")
     output_dir = Path(study_mock.path) / "output"
     output_dir.mkdir()

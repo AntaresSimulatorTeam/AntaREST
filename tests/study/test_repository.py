@@ -91,7 +91,7 @@ def test_get_all__general_case(
         exists=exists,
         access_permissions=AccessPermissions(is_admin=True),
     )
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             sort_by=StudySortBy.NAME_ASC,
@@ -110,7 +110,7 @@ def test_get_all__general_case(
     page_slice = slice(page_nb * page_size, (page_nb + 1) * page_size)
 
     # test pagination in normal order
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             sort_by=StudySortBy.NAME_ASC,
@@ -120,7 +120,7 @@ def test_get_all__general_case(
     assert [s.name for s in all_studies] == expected_names[page_slice]
 
     # test pagination in reverse order
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             sort_by=StudySortBy.NAME_DESC,
@@ -151,7 +151,7 @@ def test_get_all__incompatible_case(
 
     # case 1
     study_filter = StudyFilter(managed=False, variant=True, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -163,7 +163,7 @@ def test_get_all__incompatible_case(
     study_filter = StudyFilter(
         workspace=test_workspace, variant=True, access_permissions=AccessPermissions(is_admin=True)
     )
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -173,7 +173,7 @@ def test_get_all__incompatible_case(
 
     # case 3
     study_filter = StudyFilter(exists=False, variant=True, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -212,9 +212,10 @@ def test_get_all__study_name_filter(
     study_7 = create_raw_study(id="7", name="prefix-specie-raw-suffix")
     study_8 = create_raw_study(id="8", name="specie-raw-suffix")
 
-    mapping_ids_names = {
-        str(s.id): s.name for s in [study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8]
-    }
+    mapping_ids_names: dict[str, str] = {}
+    for study in [study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8]:
+        assert study.name is not None
+        mapping_ids_names[study.id] = study.name
 
     db_session.add_all([study_1, study_2, study_3, study_4, study_5, study_6, study_7, study_8])
     db_session.commit()
@@ -223,7 +224,7 @@ def test_get_all__study_name_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(name=name, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -236,7 +237,7 @@ def test_get_all__study_name_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(name=name, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -279,7 +280,7 @@ def test_get_all__managed_study_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(managed=managed, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -292,7 +293,7 @@ def test_get_all__managed_study_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(managed=managed, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -330,7 +331,7 @@ def test_get_all__archived_study_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     study_filter = StudyFilter(archived=archived, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -341,7 +342,7 @@ def test_get_all__archived_study_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             pagination=StudyPagination(page_nb=1, page_size=1),
@@ -378,7 +379,7 @@ def test_get_all__variant_study_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     study_filter = StudyFilter(variant=variant, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -389,7 +390,7 @@ def test_get_all__variant_study_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             pagination=StudyPagination(page_nb=1, page_size=1),
@@ -428,7 +429,7 @@ def test_get_all__study_version_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     study_filter = StudyFilter(versions=versions, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -439,7 +440,7 @@ def test_get_all__study_version_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             pagination=StudyPagination(page_nb=1, page_size=1),
@@ -483,7 +484,7 @@ def test_get_all__study_users_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(users=users, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -496,7 +497,7 @@ def test_get_all__study_users_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(users=users, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -541,7 +542,7 @@ def test_get_all__study_groups_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(groups=groups, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -554,7 +555,7 @@ def test_get_all__study_groups_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(groups=groups, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -594,7 +595,7 @@ def test_get_all__study_ids_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(study_ids=study_ids, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -607,7 +608,7 @@ def test_get_all__study_ids_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(study_ids=study_ids, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -644,7 +645,7 @@ def test_get_all__study_existence_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(exists=exists, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -657,7 +658,7 @@ def test_get_all__study_existence_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(exists=exists, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -695,7 +696,7 @@ def test_get_all__study_workspace_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(workspace=workspace, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -708,7 +709,7 @@ def test_get_all__study_workspace_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(workspace=workspace, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -749,7 +750,7 @@ def test_get_all__study_folder_filter(
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
     study_filter = StudyFilter(folder=folder, access_permissions=AccessPermissions(is_admin=True))
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -761,7 +762,7 @@ def test_get_all__study_folder_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=study_filter,
             pagination=StudyPagination(page_nb=1, page_size=1),
@@ -807,7 +808,7 @@ def test_get_all__study_tags_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(tags=tags, access_permissions=AccessPermissions(is_admin=True))
         )
@@ -821,7 +822,7 @@ def test_get_all__study_tags_filter(
         assert sorted(s.id for s in all_studies) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(
             study_filter=StudyFilter(tags=tags, access_permissions=AccessPermissions(is_admin=True)),
             pagination=StudyPagination(page_nb=1, page_size=2),
@@ -970,7 +971,7 @@ def test_get_all__non_admin_permissions_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -981,7 +982,7 @@ def test_get_all__non_admin_permissions_filter(
         assert sorted((s.id for s in all_studies), key=int) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter, pagination=StudyPagination(page_nb=1, page_size=2))
         assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
         assert sorted((s.id for s in all_studies), key=int) == expected_ids[2:4]
@@ -1099,7 +1100,7 @@ def test_get_all__admin_permissions_filter(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter)
         _ = [s.owner for s in all_studies]
         _ = [s.groups for s in all_studies]
@@ -1110,7 +1111,7 @@ def test_get_all__admin_permissions_filter(
         assert sorted((s.id for s in all_studies), key=int) == expected_ids
 
     # test pagination
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_studies = repository.get_all(study_filter=study_filter, pagination=StudyPagination(page_nb=1, page_size=2))
         assert len(all_studies) == max(0, min(len(expected_ids) - 2, 2))
         assert sorted((s.id for s in all_studies), key=int) == expected_ids[2:4]
@@ -1131,7 +1132,7 @@ def test_update_tags(
     # 1- finding existing tags requires 1 query
     # 2- updating the study tags requires 2 queries (2 inserts)
     # 3- deleting orphan tags requires 1 query
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         repository.update_tags(study, ["Tag1", "Tag2"])
     assert len(db_recorder.sql_statements) == 4, str(db_recorder)
 
@@ -1140,7 +1141,7 @@ def test_update_tags(
     # 1- finding existing tags requires 1 query
     # 2- updating the study tags requires 3 queries (2 inserts, 1 delete)
     # 3- deleting orphan tags requires 1 query
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         repository.update_tags(study, ["TAG1", "Tag3"])
     assert len(db_recorder.sql_statements) == 5, str(db_recorder)
 
@@ -1201,7 +1202,7 @@ def test_count_studies__general_case(
     # 1- retrieving all studies requires only 1 query
     # 2- accessing studies attributes does not require additional queries to db
     # 3- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         count = repository.count_studies(
             study_filter=StudyFilter(
                 managed=managed,

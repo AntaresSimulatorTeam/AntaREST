@@ -52,7 +52,7 @@ from antarest.login.service import LoginService
 from antarest.login.utils import current_user_context
 from antarest.matrixstore.service import MatrixService
 from antarest.output.model.download import MatrixIndex
-from antarest.output.storage.output_storage import OutputMetadata
+from antarest.output.storage.output_storage import OutputDetails, OutputMetadata
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.directory_service import DirectoryService
 from antarest.study.model import (
@@ -76,9 +76,6 @@ from antarest.study.service import (
     IOutputsAccess,
     StudyService,
     StudyUpgraderTask,
-)
-from antarest.study.storage.rawstudy.model.filesystem.config.model import (
-    Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -168,7 +165,7 @@ def build_study_service(
             return []
 
         @override
-        def get_outputs_details(self, study_id: str) -> dict[str, Simulation]:
+        def get_outputs_details(self, study_id: str) -> dict[str, OutputDetails]:
             return {}
 
         @override
@@ -311,7 +308,7 @@ def test_study_listing(db_session: Session) -> None:
     # use the db recorder to check that:
     # 1- retrieving studies information requires only 1 query
     # 2- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         studies = service.get_studies_information(
             study_filter=StudyFilter(managed=False, access_permissions=AccessPermissions.for_user(user)),
         )
@@ -325,7 +322,7 @@ def test_study_listing(db_session: Session) -> None:
     # use the db recorder to check that:
     # 1- retrieving studies information requires only 1 query
     # 2- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         studies = service.get_studies_information(
             study_filter=StudyFilter(managed=True, access_permissions=AccessPermissions.for_user(user)),
         )
@@ -339,7 +336,7 @@ def test_study_listing(db_session: Session) -> None:
     # use the db recorder to check that:
     # 1- retrieving studies information requires only 1 query
     # 2- having an exact total of queries equals to 1
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         studies = service.get_studies_information(
             study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.for_user(user)),
         )
@@ -353,7 +350,7 @@ def test_study_listing(db_session: Session) -> None:
     # check that:
     # 1- retrieving studies information still requires 1 query
     # 2- the `put` method of `cache` was never used
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         studies = service.get_studies_information(
             study_filter=StudyFilter(managed=None, access_permissions=AccessPermissions.for_user(user)),
         )
@@ -696,10 +693,12 @@ def test_change_owner(study_service: StudyService, empty_study_880: FileStudy) -
     db.session.commit()
 
     # Make the study_service returns the study
+    assert isinstance(study_service.repository.get, Mock)
     study_service.repository.get.return_value = study
 
     # The user service returns a new user Bob
     bob = User(id=3, name="Bob")
+    assert isinstance(study_service.user_service.get_user, Mock)
     study_service.user_service.get_user.return_value = bob
 
     with current_user_context(alice_jwt):
@@ -899,6 +898,7 @@ def test_assert_permission_on_studies(db_session: Session) -> None:
         db_session.commit()
 
         for user in db_session.query(User):
+            assert user.name is not None
             user_jwt_groups = jwt_users[user.name].groups
             for user_jwt_group in user_jwt_groups:
                 db_session.add(Role(type=user_jwt_group.role, identity_id=user.id, group_id=user_jwt_group.id))
@@ -1291,7 +1291,7 @@ def test_delete_studies_raises_when_children_and_no_variants_flag(tmp_path: Path
 
 
 @with_admin_user
-def test_delete_studies_also_deletes_child_variants(tmp_path: Path) -> None:
+def test_delete_studies_also_deletes_child_variants(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Deleting a parent study with with_variants=True also deletes all its child variants."""
     admin_group = Group(id="admin", name="admin")
     repository = Mock(spec=StudyMetadataRepository)
@@ -1304,8 +1304,10 @@ def test_delete_studies_also_deletes_child_variants(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    parent.to_json_summary = Mock(return_value={"id": "parent"})
-    parent.to_enhanced_json_summary = Mock(return_value={"id": "parent", "workspace": DEFAULT_WORKSPACE_NAME})
+    monkeypatch.setattr(parent, "to_json_summary", Mock(return_value={"id": "parent"}))
+    monkeypatch.setattr(
+        parent, "to_enhanced_json_summary", Mock(return_value={"id": "parent", "workspace": DEFAULT_WORKSPACE_NAME})
+    )
 
     child_variant = create_variant_study(
         id="child-variant",
@@ -1316,7 +1318,7 @@ def test_delete_studies_also_deletes_child_variants(tmp_path: Path) -> None:
         public_mode=PublicMode.NONE,
     )
     child_variant.generation_task = None
-    child_variant.to_json_summary = Mock(return_value={"id": "child-variant"})
+    monkeypatch.setattr(child_variant, "to_json_summary", Mock(return_value={"id": "child-variant"}))
 
     def get_study(study_id: str) -> Study:
         return {"parent": parent, "child-variant": child_variant}[study_id]
@@ -1349,7 +1351,7 @@ def test_delete_studies_also_deletes_child_variants(tmp_path: Path) -> None:
 
 
 @with_admin_user
-def test_delete_studies_events_pushed_after_db_delete(tmp_path: Path) -> None:
+def test_delete_studies_events_pushed_after_db_delete(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Events must be pushed only after repository.delete succeeds."""
     call_order: t.List[str] = []
     repository = Mock(spec=StudyMetadataRepository)
@@ -1363,8 +1365,10 @@ def test_delete_studies_events_pushed_after_db_delete(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    study.to_json_summary = Mock(return_value={"id": "ev-study"})
-    study.to_enhanced_json_summary = Mock(return_value={"id": "ev-study", "workspace": DEFAULT_WORKSPACE_NAME})
+    monkeypatch.setattr(study, "to_json_summary", Mock(return_value={"id": "ev-study"}))
+    monkeypatch.setattr(
+        study, "to_enhanced_json_summary", Mock(return_value={"id": "ev-study", "workspace": DEFAULT_WORKSPACE_NAME})
+    )
 
     repository.get.return_value = study
     repository.delete.side_effect = lambda *args: call_order.append("delete")
@@ -1415,7 +1419,7 @@ def test_delete_studies_exceeds_max_batch_size() -> None:
 
 
 @with_admin_user
-def test_delete_studies_runs_callbacks(tmp_path: Path) -> None:
+def test_delete_studies_runs_callbacks(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Deletion callbacks should be invoked for every deleted study."""
     repository = Mock(spec=StudyMetadataRepository)
 
@@ -1427,8 +1431,10 @@ def test_delete_studies_runs_callbacks(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    study_a.to_json_summary = Mock(return_value={"id": "cb-a"})
-    study_a.to_enhanced_json_summary = Mock(return_value={"id": "cb-a", "workspace": DEFAULT_WORKSPACE_NAME})
+    monkeypatch.setattr(study_a, "to_json_summary", Mock(return_value={"id": "cb-a"}))
+    monkeypatch.setattr(
+        study_a, "to_enhanced_json_summary", Mock(return_value={"id": "cb-a", "workspace": DEFAULT_WORKSPACE_NAME})
+    )
 
     study_b = create_raw_study(
         id="cb-b",
@@ -1438,8 +1444,10 @@ def test_delete_studies_runs_callbacks(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    study_b.to_json_summary = Mock(return_value={"id": "cb-b"})
-    study_b.to_enhanced_json_summary = Mock(return_value={"id": "cb-b", "workspace": DEFAULT_WORKSPACE_NAME})
+    monkeypatch.setattr(study_b, "to_json_summary", Mock(return_value={"id": "cb-b"}))
+    monkeypatch.setattr(
+        study_b, "to_enhanced_json_summary", Mock(return_value={"id": "cb-b", "workspace": DEFAULT_WORKSPACE_NAME})
+    )
 
     def get_study(study_id: str) -> Study:
         return {"cb-a": study_a, "cb-b": study_b}[study_id]
@@ -1608,7 +1616,7 @@ def test_delete_studies_invalid_id(tmp_path: Path) -> None:
 
 
 @with_admin_user
-def test_delete_studies_duplicate_ids(tmp_path: Path) -> None:
+def test_delete_studies_duplicate_ids(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """Duplicate IDs in the list should be deduplicated — study deleted and notified once."""
     repository = Mock(spec=StudyMetadataRepository)
     event_bus = Mock(spec=IEventBus)
@@ -1621,8 +1629,10 @@ def test_delete_studies_duplicate_ids(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    study.to_json_summary = Mock(return_value={"id": "dup-study"})
-    study.to_enhanced_json_summary = Mock(return_value={"id": "dup-study", "workspace": DEFAULT_WORKSPACE_NAME})
+    monkeypatch.setattr(study, "to_json_summary", Mock(return_value={"id": "dup-study"}))
+    monkeypatch.setattr(
+        study, "to_enhanced_json_summary", Mock(return_value={"id": "dup-study", "workspace": DEFAULT_WORKSPACE_NAME})
+    )
 
     repository.get.return_value = study
 
@@ -1646,7 +1656,7 @@ def test_delete_studies_duplicate_ids(tmp_path: Path) -> None:
 
 
 @with_admin_user
-def test_delete_studies_variant_id_also_in_list(tmp_path: Path) -> None:
+def test_delete_studies_variant_id_also_in_list(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     """When a variant ID is explicitly listed alongside its parent, it must not be deleted twice."""
     repository = Mock(spec=StudyMetadataRepository)
     event_bus = Mock(spec=IEventBus)
@@ -1659,8 +1669,10 @@ def test_delete_studies_variant_id_also_in_list(tmp_path: Path) -> None:
         owner=None,
         groups=[],
     )
-    parent.to_json_summary = Mock(return_value={"id": "parent"})
-    parent.to_enhanced_json_summary = Mock(return_value={"id": "parent", "workspace": DEFAULT_WORKSPACE_NAME})
+    monkeypatch.setattr(parent, "to_json_summary", Mock(return_value={"id": "parent"}))
+    monkeypatch.setattr(
+        parent, "to_enhanced_json_summary", Mock(return_value={"id": "parent", "workspace": DEFAULT_WORKSPACE_NAME})
+    )
 
     variant = create_variant_study(
         id="child-variant",
@@ -1671,7 +1683,7 @@ def test_delete_studies_variant_id_also_in_list(tmp_path: Path) -> None:
         groups=[],
     )
     variant.generation_task = None
-    variant.to_json_summary = Mock(return_value={"id": "child-variant"})
+    monkeypatch.setattr(variant, "to_json_summary", Mock(return_value={"id": "child-variant"}))
 
     def get_study(study_id: str) -> Study:
         return {"parent": parent, "child-variant": variant}[study_id]
@@ -1791,7 +1803,7 @@ def test_move_raw_study_fails_without_write_access_on_variant_children(tmp_path:
     ],
 )
 def test_create_command(
-    tree_node: INode[JSON, t.Union[str, int, bool, float, bytes, JSON], JSON],
+    tree_node: INode[JSON, SUB_JSON, JSON],
     url: str,
     data: SUB_JSON,
     expected_name: str,
@@ -1850,6 +1862,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
 
     study_id = "my_study"
     service.task_service.reset_mock()  # type: ignore
+    assert isinstance(service.task_service.list_tasks, Mock)
     service.task_service.list_tasks.side_effect = [
         [
             TaskDTO(
@@ -1875,6 +1888,7 @@ def test_task_upgrade_study(tmp_path: Path) -> None:
         target_version="",
     )
 
+    assert isinstance(service.task_service.add_task, Mock)
     service.task_service.add_task.assert_called_once_with(
         ANY,
         f"Upgrade study my_study ({study_id}) to version 8",
@@ -2009,7 +2023,7 @@ def test_upgrade_study__raw_study__nominal(tmp_path: Path, workspace: str) -> No
     actual = task(notifier)
 
     # The study must be updated in the database
-    actual_study: RawStudy = db.session.get(Study, study_id)
+    actual_study = db.session.get(RawStudy, study_id)
     assert actual_study is not None, "Not in database"
     assert actual_study.version == f"{parsed_target_version:2d}"
 
@@ -2091,7 +2105,7 @@ def test_upgrade_study__raw_study__failed(upgrade_mock: Mock, tmp_path: Path) ->
         task(notifier)
 
     # The study must not be updated in the database
-    actual_study: RawStudy = db.session.get(Study, study_id)
+    actual_study = db.session.get(RawStudy, study_id)
     assert actual_study is not None, "Not in database"
     assert actual_study.version == old_version
 

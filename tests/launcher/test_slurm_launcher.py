@@ -15,7 +15,7 @@ import textwrap
 import uuid
 from argparse import Namespace
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import ANY, Mock, patch
 
 import pytest
@@ -280,8 +280,9 @@ def test_extra_parameters(launcher_config: SlurmConfig) -> None:
     launcher_params = apply_params(LauncherParametersDTO(nb_cpu=999))
     assert launcher_params.n_cpu == launcher_config.nb_cores.default  # out of range
 
+    # Bypass validation to exercise the fallback for a malformed DTO.
     _config_time_limit = launcher_config.time_limit
-    launcher_params = apply_params(LauncherParametersDTO.model_construct(time_limit=None))
+    launcher_params = apply_params(LauncherParametersDTO.model_construct(time_limit=cast(int, None)))
     assert launcher_params.time_limit == _config_time_limit.default * 3600
 
     launcher_params = apply_params(LauncherParametersDTO(time_limit=10))  # 10 seconds
@@ -424,12 +425,17 @@ def test_run_study(
     assert version in launcher_config.antares_versions_on_remote_server
     assert f"solver_version = {version:ddd}" in study_antares_path.read_text(encoding="utf-8")
 
+    assert isinstance(slurm_launcher.callbacks.export_study, Mock)
     slurm_launcher.callbacks.export_study.assert_called_once()
     if job_status == JobStatus.RUNNING:
+        assert isinstance(slurm_launcher.callbacks.update_status, Mock)
         slurm_launcher.callbacks.update_status.assert_not_called()
+        assert isinstance(slurm_launcher.start, Mock)
         slurm_launcher.start.assert_called_once()
+        assert isinstance(slurm_launcher._delete_workspace_file, Mock)
         slurm_launcher._delete_workspace_file.assert_called_once()
     else:
+        assert isinstance(slurm_launcher.callbacks.update_status, Mock)
         slurm_launcher.callbacks.update_status.assert_called_once_with(ANY, JobStatus.FAILED, ANY, None)
 
 
@@ -468,10 +474,15 @@ def test_check_state(tmp_path: Path, launcher_config: SlurmConfig) -> None:
     slurm_launcher._check_studies_state()
 
     # noinspection PyUnresolvedReferences
+    assert isinstance(slurm_launcher.callbacks.update_status, Mock)
     assert slurm_launcher.callbacks.update_status.call_count == 2
+    assert isinstance(slurm_launcher._import_study_output, Mock)
     assert slurm_launcher._import_study_output.call_count == 2
+    assert isinstance(slurm_launcher._delete_workspace_file, Mock)
     assert slurm_launcher._delete_workspace_file.call_count == 4
+    assert isinstance(slurm_launcher._remove_study_from_workspace_db, Mock)
     assert slurm_launcher._remove_study_from_workspace_db.call_count == 2
+    assert isinstance(slurm_launcher.stop, Mock)
     slurm_launcher.stop.assert_called_once()
 
 
@@ -484,6 +495,7 @@ def test_import_study_output(launcher_config: SlurmConfig, tmp_path: Path) -> No
         use_private_workspace=False,
         cache=Mock(),
     )
+    assert isinstance(slurm_launcher.callbacks.import_output, Mock)
     slurm_launcher.callbacks.import_output.return_value = "output"
     res = slurm_launcher._import_study_output("1", xpansion_mode=None, log_dir=None)
     slurm_launcher.callbacks.import_output.assert_called_once_with(

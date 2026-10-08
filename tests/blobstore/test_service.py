@@ -117,7 +117,8 @@ def test_get_used_blobs(command_factory: CommandFactory) -> None:
         ),
     ]
 
-    blob_service: BlobService = command_factory.command_context.blob_service
+    blob_service = command_factory.command_context.blob_service
+    assert isinstance(blob_service, BlobService)
     # Ensures without a provider, there are no used blobs
     assert len(list(blob_service.get_used_blobs())) == 0
 

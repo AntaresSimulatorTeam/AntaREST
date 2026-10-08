@@ -34,7 +34,7 @@ class MockHTTPRequestHandler(BaseHTTPRequestHandler):
     """
 
     @override
-    def log_request(self, code: str = "-", size: str = "-") -> None:
+    def log_request(self, code: int | str = "-", size: int | str = "-") -> None:
         """Override the log_request method to suppress access logs"""
 
     # noinspection PyPep8Naming
