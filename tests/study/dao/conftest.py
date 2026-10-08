@@ -147,7 +147,7 @@ def dao_10_2(
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_10_3(
-    request,
+    request: pytest.FixtureRequest,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
     command_context: "CommandContext",
@@ -365,8 +365,8 @@ def build_real_case_study(dao: StudyDao, null_matrices: bool = False) -> RealCas
     bc_lt_matrix_id = matrix_service.create(bc_lt_df)
     bc_gt_matrix_id = matrix_service.create(bc_gt_df)
     bc_eq_matrix_id = matrix_service.create(bc_eq_df)
-    bc_both_id = "bc_both"
-    bc_equal_id = "bc_equal"
+    bc_both_id = ConstraintId("bc_both")
+    bc_equal_id = ConstraintId("bc_equal")
     dao.save_constraints(
         [
             BindingConstraint(id=bc_both_id, name=bc_both_id, operator=BindingConstraintOperator.BOTH),

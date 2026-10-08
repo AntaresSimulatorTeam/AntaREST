@@ -40,7 +40,7 @@ with (
 ):
     import antarest.maintenance.app  # noqa
 
-from antarest.maintenance.app import celery_app  # noqa
+from antarest.maintenance.app import celery_app as celery_app  # noqa
 
 
 @pytest.fixture

@@ -143,7 +143,7 @@ def command_context_fixture(matrix_service: MatrixService, blob_service: BlobSer
 
 
 @pytest.fixture(name="bucket_dir", scope="session")
-def bucket_dir_fixture(tmp_path_factory: Path) -> Path:
+def bucket_dir_fixture(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """
     Fixture that creates a session-level temporary directory named "matrix_store" for storing matrices.
 
@@ -157,13 +157,13 @@ def bucket_dir_fixture(tmp_path_factory: Path) -> Path:
     Returns:
         A Path object representing the created temporary directory for storing matrices.
     """
-    return t.cast(Path, tmp_path_factory.mktemp("matrix_store"))
+    return tmp_path_factory.mktemp("matrix_store")
 
 
 @pytest.fixture(name="blob_dir", scope="session")
-def blob_dir_fixture(tmp_path_factory: t.Any) -> Path:
+def blob_dir_fixture(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """Same as bucket_dir_fixture for the blob store"""
-    return t.cast(Path, tmp_path_factory.mktemp("blob_store"))
+    return tmp_path_factory.mktemp("blob_store")
 
 
 @pytest.fixture(name="simple_blob_service", scope="session")

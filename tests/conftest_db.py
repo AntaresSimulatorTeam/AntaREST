@@ -58,7 +58,12 @@ def db_session_fixture(db_engine: Engine) -> t.Generator[Session, None, None]:
     Yields:
         A new SQLAlchemy session object for database operations.
     """
-    make_session = sessionmaker(bind=db_engine, **SESSION_ARGS)
+    make_session = sessionmaker(
+        bind=db_engine,
+        autocommit=SESSION_ARGS["autocommit"],
+        expire_on_commit=SESSION_ARGS["expire_on_commit"],
+        autoflush=SESSION_ARGS["autoflush"],
+    )
     with contextlib.closing(make_session()) as session:
         yield session
 
