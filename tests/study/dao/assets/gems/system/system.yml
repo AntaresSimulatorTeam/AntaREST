@@ -21,9 +21,9 @@ system:
           scenario-dependent: false
           value: 10
         - id: max_load
-          time-dependent: false
+          time-dependent: true
           scenario-dependent: false
-          value: 200
+          value: max_load_values
     - id: electrolyser
       model: andromede-v1-models-weo-hybrid.electrolyser
       scenario-group: sg1
