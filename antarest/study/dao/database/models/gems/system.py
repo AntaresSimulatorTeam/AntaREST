@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, CheckConstraint, Column, Float, ForeignKeyConstraint, Index, String, Table, text
+from sqlalchemy import Boolean, CheckConstraint, Column, ForeignKeyConstraint, Index, String, Table, Text, text
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
@@ -59,12 +59,22 @@ GEMS_COMPONENT_PARAMETERS_TABLE = Table(
     Column("parameter_id", String(255), primary_key=True),
     Column("time_dependent", Boolean, nullable=False),
     Column("scenario_dependent", Boolean, nullable=False),
-    Column("value", Float, nullable=False),
+    # Either a fixed numeric value (e.g. "3.14") or the `id` of a data series (e.g. "demand_profile")
+    Column("value", String(255), nullable=False),
     ForeignKeyConstraint(
         ["study_data_id", "component_id"],
         ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
     ),
+)
+
+GEMS_COMPONENTS_DATASERIES_TABLE = Table(
+    "gems_components_dataseries",
+    metadata,
+    study_data_id_col(),
+    Column("component_id", String(255), primary_key=True),
+    Column("dataseries_id", String(255), primary_key=True),
+    Column("values", Text, nullable=False),
 )
 
 GEMS_COMPONENT_PROPERTIES_TABLE = Table(

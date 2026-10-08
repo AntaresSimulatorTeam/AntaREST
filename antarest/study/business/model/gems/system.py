@@ -14,6 +14,7 @@ from typing import List
 from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
+from antarest.core.serde.np_array import NpArray
 from antarest.core.utils.string import to_kebab_case
 
 
@@ -23,7 +24,14 @@ class _GemsParameters(AntaresBaseModel):
     id: str
     time_dependent: bool
     scenario_dependent: bool
-    value: float  # TODO: authorize string values when time_dependent and/or scenario_dependant is True
+    value: float | str
+
+
+class _GemsDataSeries(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", arbitrary_types_allowed=True)
+
+    id: str
+    values: NpArray
 
 
 class _GemsProperties(AntaresBaseModel):

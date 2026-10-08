@@ -78,6 +78,20 @@ def _check_connection_does_not_link_port_component_to_itself(connections: list[G
             )
 
 
+def _encode_parameter_value(value: float | str) -> str:
+    # The `value` column stores either a fixed numeric value or the `id` of a data series as text,
+    # since SQL has no native "number or string" column type. `repr` keeps the float's precision so
+    # it round-trips exactly through `_decode_parameter_value`.
+    return repr(value) if isinstance(value, float) else value
+
+
+def _decode_parameter_value(value: str) -> float | str:
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     """Database implementation of GemsSystemDao"""
 
@@ -156,7 +170,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     "id": parameter_row.parameter_id,
                     "time-dependent": parameter_row.time_dependent,
                     "scenario-dependent": parameter_row.scenario_dependent,
-                    "value": parameter_row.value,
+                    "value": _decode_parameter_value(parameter_row.value),
                 }
             )
         return component_parameters
@@ -258,7 +272,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                         "parameter_id": parameter.id,
                         "time_dependent": parameter.time_dependent,
                         "scenario_dependent": parameter.scenario_dependent,
-                        "value": parameter.value,
+                        "value": _encode_parameter_value(parameter.value),
                     }
                 )
 
