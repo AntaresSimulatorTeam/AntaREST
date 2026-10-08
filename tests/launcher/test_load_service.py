@@ -28,6 +28,7 @@ from antarest.core.config import (
     StorageConfig,
 )
 from antarest.core.utils.utils import current_time
+from antarest.launcher.adapters.abstract_load import AbstractLoad
 from antarest.launcher.adapters.local_launcher.local_load import LocalLoad
 from antarest.launcher.adapters.slurm_launcher.slurm_load import SlurmLoad
 from antarest.launcher.load_service import LoadService
@@ -112,7 +113,7 @@ class TestLoadService:
             launcher=LauncherConfig(default=default_launcher, configs=[LocalConfig(id="local", name="name")]),
         )
 
-        load_dict = {}
+        load_dict: dict[str, AbstractLoad] = {}
         if default_launcher == "local":
             load_dict[default_launcher] = Mock()
 

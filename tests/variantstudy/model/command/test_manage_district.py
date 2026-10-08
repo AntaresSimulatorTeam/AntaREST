@@ -69,6 +69,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d1.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("two added zone")
+    assert set_config is not None
     assert set(set_config["+"]) == {area1_id, area2_id}
     assert set_config["output"]
     assert set_config["comments"] == "First district"
@@ -89,6 +90,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d2.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
+    assert set_config is not None
     assert set_config["-"] == [area1_id]
     assert set_config["apply-filter"] == "add-all"
 
@@ -104,6 +106,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
 
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
+    assert set_config is not None
     assert set_config["+"] == [area2_id]
     assert set_config["apply-filter"] == "remove-all"
 
@@ -120,6 +123,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d2.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("empty district without output")
+    assert set_config is not None
     assert not set_config["output"]
 
     # case where district already exists
@@ -182,6 +186,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d6.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
+    assert set_config is not None
     assert "+" not in set_config
     assert "-" not in set_config
 
@@ -200,6 +205,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d7.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
+    assert set_config is not None
     assert set_config["-"] == ["area1"]
     assert "+" not in set_config
     assert set_config["apply-filter"] == "add-all"
@@ -220,6 +226,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d8.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
+    assert set_config is not None
     assert set_config["-"] == ["area1"]
     assert "+" not in set_config
     assert set_config["apply-filter"] == "add-all"

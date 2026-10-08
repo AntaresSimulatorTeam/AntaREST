@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.serde.json import from_json
@@ -20,7 +21,7 @@ from tests.integration.utils import wait_task_completion
 
 
 def test_study_data(client: TestClient, user_access_token: str, internal_study_id: str) -> None:
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     # Upgrades the study in v9.3
     res = client.put(f"/v1/studies/{internal_study_id}/upgrade", params={"target_version": "9.3"})
@@ -29,7 +30,10 @@ def test_study_data(client: TestClient, user_access_token: str, internal_study_i
     assert task.status == TaskStatus.COMPLETED
 
     # Add a binding constraint
-    body = {"name": "Constraint1", "terms": [{"weight": 4, "data": {"area1": "de", "area2": "es"}}]}
+    body: dict[str, object] | list[dict[str, object]] = {
+        "name": "Constraint1",
+        "terms": [{"weight": 4, "data": {"area1": "de", "area2": "es"}}],
+    }
     res = client.post(f"/v1/studies/{internal_study_id}/bindingconstraints", json=body)
     res.raise_for_status()
 

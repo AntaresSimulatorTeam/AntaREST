@@ -19,7 +19,7 @@ from tests.study.dao.utils import save_area
 
 
 def test_load_lifecycle(dao: StudyDao) -> None:
-    matrix_service = dao._matrix_service
+    matrix_service = dao.matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
     area_id = "paris"
@@ -42,7 +42,7 @@ def test_load_lifecycle(dao: StudyDao) -> None:
 
 
 def test_solar_lifecycle(dao: StudyDao) -> None:
-    matrix_service = dao._matrix_service
+    matrix_service = dao.matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
     area_id = "paris"
@@ -65,7 +65,7 @@ def test_solar_lifecycle(dao: StudyDao) -> None:
 
 
 def test_wind_lifecycle(dao: StudyDao) -> None:
-    matrix_service = dao._matrix_service
+    matrix_service = dao.matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
     area_id = "paris"
@@ -88,7 +88,7 @@ def test_wind_lifecycle(dao: StudyDao) -> None:
 
 
 def test_reserves_lifecycle(dao: StudyDao) -> None:
-    matrix_service = dao._matrix_service
+    matrix_service = dao.matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
     area_id = "paris"
@@ -111,7 +111,7 @@ def test_reserves_lifecycle(dao: StudyDao) -> None:
 
 
 def test_misc_gen_lifecycle(dao: StudyDao) -> None:
-    matrix_service = dao._matrix_service
+    matrix_service = dao.matrix_service
     dataframe = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series_id = matrix_service.create(dataframe)
     area_id = "paris"

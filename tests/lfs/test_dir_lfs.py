@@ -16,7 +16,7 @@ import pytest
 from antarest.lfs.dir_lfs import DirLargeFileStorage
 
 
-def test_lfs(tmp_path: Path):
+def test_lfs(tmp_path: Path) -> None:
     storage = DirLargeFileStorage(tmp_path / "lfs")
 
     assert not storage.file_exists("unknown")

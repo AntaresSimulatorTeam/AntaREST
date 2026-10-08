@@ -31,7 +31,7 @@ def mock_directory_repo() -> Mock:
 
 
 @pytest.fixture
-def directory_service(mock_directory_repo):
+def directory_service(mock_directory_repo: Mock) -> DirectoryService:
     return DirectoryService(mock_directory_repo)
 
 

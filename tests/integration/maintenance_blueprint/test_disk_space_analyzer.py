@@ -38,7 +38,7 @@ def study_disk_repo() -> StudyDiskSpaceRepository:
 
 
 class TestDiskSpaceAnalyzerIntegration:
-    def test_disk_space_analysis(self, study_disk_repo: StudyDiskSpaceRepository, study_service: StudyService):
+    def test_disk_space_analysis(self, study_disk_repo: StudyDiskSpaceRepository, study_service: StudyService) -> None:
         with current_user_context(DEFAULT_ADMIN_USER):
             with db():
                 study_1 = study_service.create_study("my_study_1", version=StudyVersion(8, 8, 0), group_ids=[])
@@ -53,15 +53,20 @@ class TestDiskSpaceAnalyzerIntegration:
             assert (
                 result.updated_studies == 2
             )  # there are 2 managed studies because one was created inside the study_service fixture before the test
-            assert is_managed(study_1)
-            assert is_managed(study_2)
+            with db():
+                assert is_managed(study_service.get_study(study_1))
+                assert is_managed(study_service.get_study(study_2))
 
             with db():
-                past_analysis_date_1 = study_disk_repo.get(study_1).last_analysis_date
-                past_analysis_date_2 = study_disk_repo.get(study_2).last_analysis_date
+                analysis_1 = study_disk_repo.get(study_1)
+                assert analysis_1 is not None
+                past_analysis_date_1 = analysis_1.last_analysis_date
+                analysis_2 = study_disk_repo.get(study_2)
+                assert analysis_2 is not None
+                past_analysis_date_2 = analysis_2.last_analysis_date
 
-                assert study_disk_repo.get(study_1).disk_space_bytes > 0
-                assert study_disk_repo.get(study_2).disk_space_bytes > 0
+                assert analysis_1.disk_space_bytes > 0
+                assert analysis_2.disk_space_bytes > 0
 
             result = disk_space_analysis(
                 service=study_service,
@@ -72,9 +77,13 @@ class TestDiskSpaceAnalyzerIntegration:
             assert result.updated_studies == 0
 
             with db():
-                past_disk_space = study_disk_repo.get(study_1).disk_space_bytes
-                recent_analysis_date_1 = study_disk_repo.get(study_1).last_analysis_date
-                recent_analysis_date_2 = study_disk_repo.get(study_2).last_analysis_date
+                analysis_1 = study_disk_repo.get(study_1)
+                assert analysis_1 is not None
+                past_disk_space = analysis_1.disk_space_bytes
+                recent_analysis_date_1 = analysis_1.last_analysis_date
+                analysis_2 = study_disk_repo.get(study_2)
+                assert analysis_2 is not None
+                recent_analysis_date_2 = analysis_2.last_analysis_date
                 delta_1 = current_time() - recent_analysis_date_1
                 delta_2 = current_time() - recent_analysis_date_2
 
@@ -97,8 +106,10 @@ class TestDiskSpaceAnalyzerIntegration:
             )
 
             with db():
-                current_disk_space = study_disk_repo.get(study_1).disk_space_bytes
-                last_analysis_date = study_disk_repo.get(study_1).last_analysis_date
+                analysis_1 = study_disk_repo.get(study_1)
+                assert analysis_1 is not None
+                current_disk_space = analysis_1.disk_space_bytes
+                last_analysis_date = analysis_1.last_analysis_date
 
             assert past_disk_space < current_disk_space
             assert recent_analysis_date_1 < last_analysis_date
@@ -107,7 +118,7 @@ class TestDiskSpaceAnalyzerIntegration:
 
     def test_returns_skipped_when_lock_held(
         self, study_service: StudyService, study_disk_repo: StudyDiskSpaceRepository
-    ):
+    ) -> None:
         lock_folder = Path(tempfile.gettempdir())
         with db():
             with create_file_lock(lock_id=LockId.STUDY_DISK_SPACE, lock_folder=lock_folder):

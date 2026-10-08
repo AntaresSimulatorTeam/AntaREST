@@ -40,9 +40,9 @@ class TestReserveDefinition:
         assert reserve.energy_activation_ratio == 1.0
 
     def test_type_is_case_insensitive(self) -> None:
-        reserve = ReserveDefinition(name="R", type="UP")  # type: ignore[arg-type]
+        reserve = ReserveDefinition(name="R", type="UP")
         assert reserve.type == ReserveType.UP
-        reserve = ReserveDefinition(name="R", type="Down")  # type: ignore[arg-type]
+        reserve = ReserveDefinition(name="R", type="Down")
         assert reserve.type == ReserveType.DOWN
 
     @pytest.mark.parametrize(
@@ -85,7 +85,7 @@ class TestReserveDefinitionCreation:
 
     def test_missing_type_invalid(self) -> None:
         with pytest.raises(ValidationError):
-            ReserveDefinitionCreation(name="R1")  # type: ignore[call-arg]
+            ReserveDefinitionCreation(name="R1")
 
 
 class TestReserveDefinitionUpdate:

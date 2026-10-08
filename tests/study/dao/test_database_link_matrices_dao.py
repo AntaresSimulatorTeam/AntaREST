@@ -20,7 +20,7 @@ from tests.study.dao.utils import save_area
 
 
 def _set_up(dao: StudyDao) -> tuple[str, str, pl.DataFrame, pl.DataFrame, Link]:
-    matrix_service = dao._matrix_service
+    matrix_service = dao.matrix_service
     df1 = pl.DataFrame(data=[[1, 2.5], [3, 4.7]], orient="row")
     series1_id = matrix_service.create(df1)
     df2 = pl.DataFrame(data=[[3, 3], [3, 3]], orient="row")

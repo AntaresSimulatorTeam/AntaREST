@@ -16,6 +16,7 @@ from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.helpers import build_dao_from_file_study
 
 
 def test_get_additional_constraints(
@@ -23,6 +24,7 @@ def test_get_additional_constraints(
 ) -> None:
     for file_study in [empty_study_880, empty_study_920]:
         version = file_study.config.version
+        dao = build_dao_from_file_study(file_study, command_context)
 
         # Create 2 areas with both 1 short-term storage
         area_1 = "area1"
@@ -30,17 +32,17 @@ def test_get_additional_constraints(
 
         CreateArea.model_validate(
             {"area_name": area_1, "command_context": command_context, "study_version": version}
-        ).apply(file_study)
+        ).apply(dao)
         CreateArea.model_validate(
             {"area_name": area_2, "command_context": command_context, "study_version": version}
-        ).apply(file_study)
+        ).apply(dao)
 
         CreateSTStorage(
             command_context=command_context, area_id=area_1, parameters={"name": "sts1"}, study_version=version
-        ).apply(file_study)
+        ).apply(dao)
         CreateSTStorage(
             command_context=command_context, area_id=area_2, parameters={"name": "sts2"}, study_version=version
-        ).apply(file_study)
+        ).apply(dao)
 
         # With study 9.2 add additional constraints for one area
         if version == STUDY_VERSION_9_2:

@@ -77,13 +77,14 @@ def create_auth_token(
 ) -> dict[str, str]:
     jwt_manager = AuthJWT()
 
-    @AuthJWT.load_config
     def get_config() -> JwtSettings:
         return JwtSettings(
             authjwt_secret_key="super-secret",
             authjwt_token_location=("headers", "cookies"),
             authjwt_denylist_enabled=False,
         )
+
+    AuthJWT.load_config(get_config)
 
     create_token = jwt_manager.create_access_token if type == TokenType.ACCESS else jwt_manager.create_refresh_token
     token = create_token(

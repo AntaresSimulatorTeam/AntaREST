@@ -42,8 +42,8 @@ def filestudy_dao_v10_2(empty_study_930: FileStudy, matrix_service: ISimpleMatri
     )
 
 
-def _make_reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overrides) -> ReserveDefinition:
-    base = dict(
+def _make_reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overrides: object) -> ReserveDefinition:
+    base: dict[str, object] = dict(
         name=name,
         type=reserve_type,
         failure_cost=10.0,
@@ -53,7 +53,7 @@ def _make_reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overr
         energy_activation_ratio=0.9,
     )
     base.update(overrides)
-    return ReserveDefinition(**base)
+    return ReserveDefinition.model_validate(base)
 
 
 def test_yaml_file_is_written_and_read_correctly(filestudy_dao_v10_2: FileStudyTreeDao) -> None:

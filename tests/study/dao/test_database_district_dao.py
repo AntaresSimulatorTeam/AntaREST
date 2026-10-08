@@ -159,6 +159,7 @@ def test_v10_2(dao_10_2: StudyDao) -> None:
 
     district = dao.get_district("d1")
     assert district.filter_year_by_year == [FilterOption.HOURLY]
+    assert district.filter_synthesis is not None
     assert sorted(district.filter_synthesis) == [FilterOption.ANNUAL, FilterOption.DAILY]
 
     # Ensures default values for filters are respected
@@ -169,5 +170,7 @@ def test_v10_2(dao_10_2: StudyDao) -> None:
     dao.save_district(district)
 
     d2 = dao.get_district("d2")
+    assert d2.filter_synthesis is not None
+    assert d2.filter_year_by_year is not None
     assert sorted(d2.filter_synthesis) == sorted(FILTER_VALUES)
     assert sorted(d2.filter_year_by_year) == sorted(FILTER_VALUES)

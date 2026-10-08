@@ -31,6 +31,7 @@ from antarest.study.business.model.binding_constraint_model import (
     LinkTerm,
 )
 from antarest.study.business.model.common import FilterOption
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
@@ -67,9 +68,9 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
+    BindingConstraintConfig,
     FileStudyTreeConfig,
     LinkConfig,
-    Mode,
     Simulation,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
@@ -114,7 +115,7 @@ def test_parse_output_parameters(study_path: Path) -> None:
     config = FileStudyTreeConfig(
         study_path=study_path,
         path=study_path,
-        version=0,
+        version=StudyVersion.parse("0"),
         store_new_set=True,
         study_id="id",
         output_path=study_path / "output",
@@ -196,7 +197,7 @@ def test_parse_outputs(study_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         study_id="id",
-        version=0,
+        version=StudyVersion.parse("0"),
         output_path=study_path / "output",
         outputs={
             "20201220-1456eco-hello": Simulation(
@@ -344,7 +345,7 @@ def test_parse_area(study_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         study_id="id",
-        version=0,
+        version=StudyVersion.parse("0"),
         output_path=study_path / "output",
         areas={
             "fr": AreaConfig(
@@ -381,7 +382,7 @@ def test_parse_area__extra_area(study_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         study_id="id",
-        version=0,
+        version=StudyVersion.parse("0"),
         output_path=study_path / "output",
         areas={
             "fr": AreaConfig(
@@ -1003,7 +1004,7 @@ def test_config_to_study_index_8_8() -> None:
                 st_storages_additional_constraints={},
             ),
         },
-        bindings=[BindingConstraint(name="Constraint", group="BCGroup")],
+        bindings=[BindingConstraintConfig.from_constraint(BindingConstraint(name="Constraint", group="BCGroup"))],
     )
 
     index = config.to_study_index()
@@ -1031,7 +1032,9 @@ def test_config_to_study_index_9_2_additional_constraints() -> None:
                 filters_synthesis=[],
                 filters_year=[],
                 st_storages=[STStorage(name="Battery")],
-                st_storages_additional_constraints={"battery": [STStorageAdditionalConstraint(name="STSConstraint")]},
+                st_storages_additional_constraints={
+                    "battery": [STStorageAdditionalConstraint.model_validate({"name": "STSConstraint"})]
+                },
             ),
         },
     )

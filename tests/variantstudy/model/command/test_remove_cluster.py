@@ -126,8 +126,8 @@ class TestRemoveCluster:
             assert "bd 1" in output.message
 
             # First remove the constraint
-            output = RemoveMultipleBindingConstraints(
-                id="bd 1", command_context=command_context, study_version=study_version
+            output = RemoveMultipleBindingConstraints.model_validate(
+                {"id": "bd 1", "command_context": command_context, "study_version": study_version}
             ).apply(study_dao=dao)
             assert output.status, output.message
 

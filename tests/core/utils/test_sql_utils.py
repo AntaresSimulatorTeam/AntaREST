@@ -45,7 +45,7 @@ def session(engine: Engine) -> Session:
 
 def test_upsert_multiple(engine: Engine, session: Session) -> None:
     with DBStatementRecorder(engine) as db_recorder:
-        insertions = [
+        insertions: list[dict[str, str | int]] = [
             {"id": "1", "sub_id": "2", "str_value": "val1", "int_value": 12},
             {"id": "1", "sub_id": "3", "str_value": "val2", "int_value": 52},
             {"id": "2", "sub_id": "3", "str_value": "val3", "int_value": 66},
@@ -54,7 +54,7 @@ def test_upsert_multiple(engine: Engine, session: Session) -> None:
         assert len(db_recorder.sql_statements) == 1
 
     rows = session.execute(select(TEST_TABLE)).fetchall()
-    assert rows == [("1", "2", "val1", 12), ("1", "3", "val2", 52), ("2", "3", "val3", 66)]
+    assert [tuple(row) for row in rows] == [("1", "2", "val1", 12), ("1", "3", "val2", 52), ("2", "3", "val3", 66)]
 
     # Updates one existing row and inserts a new one
     with DBStatementRecorder(engine) as db_recorder:
@@ -70,7 +70,7 @@ def test_upsert_multiple(engine: Engine, session: Session) -> None:
         assert len(db_recorder.sql_statements) == 1
 
     rows = session.execute(select(TEST_TABLE)).fetchall()
-    assert rows == [
+    assert [tuple(row) for row in rows] == [
         ("1", "2", "val1_updated", 72),
         ("1", "3", "val2", 52),
         ("2", "3", "val3", 66),
@@ -79,7 +79,7 @@ def test_upsert_multiple(engine: Engine, session: Session) -> None:
 
 
 def test_upsert_multiple_missing_key_raises(session: Session) -> None:
-    insertions = [
+    insertions: list[dict[str, str | int]] = [
         {"id": "1", "sub_id": "1", "str_value": "val2", "int_value": 52},
         {"id": "1", "sub_id": "3", "str_value": "val2"},
         {"id": "2", "sub_id": "3", "str_value": "val3", "int_value": 66},
@@ -92,17 +92,17 @@ def test_upsert_one(session: Session) -> None:
     # Inserting one row
     upsert_one(session, TEST_TABLE, values={"id": "1", "sub_id": "1", "str_value": "val1", "int_value": 1})
     rows = session.execute(select(TEST_TABLE)).fetchall()
-    assert rows == [("1", "1", "val1", 1)]
+    assert [tuple(row) for row in rows] == [("1", "1", "val1", 1)]
 
     # Inserting one different row
     upsert_one(session, TEST_TABLE, values={"id": "2", "sub_id": "2", "str_value": "val2", "int_value": 2})
     rows = session.execute(select(TEST_TABLE)).fetchall()
-    assert rows == [("1", "1", "val1", 1), ("2", "2", "val2", 2)]
+    assert [tuple(row) for row in rows] == [("1", "1", "val1", 1), ("2", "2", "val2", 2)]
 
     # Updating an existing row
     upsert_one(session, TEST_TABLE, values={"id": "1", "sub_id": "1", "str_value": "val3", "int_value": 3})
     rows = session.execute(select(TEST_TABLE)).fetchall()
-    assert rows == [("1", "1", "val3", 3), ("2", "2", "val2", 2)]
+    assert [tuple(row) for row in rows] == [("1", "1", "val3", 3), ("2", "2", "val2", 2)]
 
 
 def test_upsert_with_too_many_lines(engine: Engine, session: Session) -> None:
