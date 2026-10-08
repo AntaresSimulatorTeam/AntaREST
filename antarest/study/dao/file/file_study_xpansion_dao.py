@@ -151,8 +151,8 @@ class FileStudyXpansionDao(XpansionDao, ABC):
     def save_xpansion_candidates_and_settings(
         self, candidates: list[XpansionCandidate], settings: XpansionSettings
     ) -> None:
-        self.save_xpansion_settings(settings)
         self._save_xpansion_candidates([(cdt, None) for cdt in candidates])
+        self.save_xpansion_settings(settings)
 
     @override
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
