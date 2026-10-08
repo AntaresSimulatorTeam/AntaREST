@@ -139,33 +139,8 @@ class DatabaseXpansionDao(XpansionDao, DatabaseDaoBase):
 
     @override
     def save_xpansion_settings(self, settings: XpansionSettings) -> None:
-        data = settings.model_dump()
-        sensitivity = data.pop("sensitivity_config")
-        values: dict[str, Any] = {
-            "study_data_id": self._study_data_id,
-            **data,
-            "sensitivity_epsilon": sensitivity["epsilon"],
-            "sensitivity_capex": sensitivity["capex"],
-        }
-        upsert_one(self._db_session, XPANSION_SETTINGS_TABLE, values)
-        # Replace projection rows: delete existing, then insert the new list.
-        self._db_session.execute(
-            delete(XPANSION_SENSITIVITY_PROJECTION_TABLE).where(
-                XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_data_id == self._study_data_id
-            )
-        )
-        if sensitivity["projection"]:
-            try:
-                self._db_session.execute(
-                    insert(XPANSION_SENSITIVITY_PROJECTION_TABLE),
-                    [
-                        {"study_data_id": self._study_data_id, "candidate_name": name}
-                        for name in sensitivity["projection"]
-                    ],
-                )
-            except IntegrityError:
-                self._db_session.rollback()
-                raise CandidateNotFoundError("One or more candidates in the projection do not exist")
+        self._save_xpansion_settings_without_projection(settings)
+        self._save_projection(settings)
         self._db_session.commit()
 
     @override
@@ -242,10 +217,52 @@ class DatabaseXpansionDao(XpansionDao, DatabaseDaoBase):
             upsert_one(self._db_session, XPANSION_CANDIDATE_TABLE, self._candidate_to_row(candidate))
         self._db_session.commit()
 
+    def _save_xpansion_settings_without_projection(self, settings: XpansionSettings) -> None:
+        data = settings.model_dump()
+        sensitivity = data.pop("sensitivity_config")
+        values: dict[str, Any] = {
+            "study_data_id": self._study_data_id,
+            **data,
+            "sensitivity_epsilon": sensitivity["epsilon"],
+            "sensitivity_capex": sensitivity["capex"],
+        }
+        upsert_one(self._db_session, XPANSION_SETTINGS_TABLE, values)
+
+    def _save_projection(self, settings: XpansionSettings) -> None:
+        # Replace projection rows: delete existing, then insert the new list.
+        self._db_session.execute(
+            delete(XPANSION_SENSITIVITY_PROJECTION_TABLE).where(
+                XPANSION_SENSITIVITY_PROJECTION_TABLE.c.study_data_id == self._study_data_id
+            )
+        )
+        if settings.sensitivity_config.projection:
+            try:
+                self._db_session.execute(
+                    insert(XPANSION_SENSITIVITY_PROJECTION_TABLE),
+                    [
+                        {"study_data_id": self._study_data_id, "candidate_name": name}
+                        for name in settings.sensitivity_config.projection
+                    ],
+                )
+            except IntegrityError:
+                self._db_session.rollback()
+                raise CandidateNotFoundError("One or more candidates in the projection do not exist")
+
     @override
-    def save_xpansion_candidates(self, candidates: list[XpansionCandidate]) -> None:
+    def save_xpansion_candidates_and_settings(
+        self, candidates: list[XpansionCandidate], settings: XpansionSettings
+    ) -> None:
+        # Settings without projections
+        self._save_xpansion_settings_without_projection(settings)
+
+        # Candidates
         values = [self._candidate_to_row(candidate) for candidate in candidates]
         upsert_multiple(self._db_session, XPANSION_CANDIDATE_TABLE, values)
+
+        # Projection
+        self._save_projection(settings)
+
+        self._db_session.commit()
 
     @override
     def delete_xpansion_candidate(self, candidate_name: str) -> None:
