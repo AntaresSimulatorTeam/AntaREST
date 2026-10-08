@@ -74,11 +74,11 @@ class ToastNotifier(object):
         self.wc.lpszClassName = str("PythonTaskbar")  # must be a string
         self.wc.lpfnWndProc = message_map  # could also specify a wndproc.
         try:
-            self.classAtom = RegisterClass(self.wc)
-        except:
+            self.class_atom = RegisterClass(self.wc)
+        except Exception:
             pass #not sure of this
         style = WS_OVERLAPPED | WS_SYSMENU
-        self.hwnd = CreateWindow(self.classAtom, "Taskbar", style,
+        self.hwnd = CreateWindow(self.class_atom, "Taskbar", style,
                                  0, 0, CW_USEDEFAULT,
                                  CW_USEDEFAULT,
                                  0, 0, self.hinst, None)
@@ -91,7 +91,7 @@ class ToastNotifier(object):
             hicon = LoadImage(self.hinst, icon_path,
                               IMAGE_ICON, 0, 0, icon_flags)
         except Exception as e:
-            logging.error("Some trouble with the icon ({}): {}"
+            logging.exception("Some trouble with the icon ({}): {}"
                           .format(icon_path, e))
             hicon = LoadIcon(0, IDI_APPLICATION)
 

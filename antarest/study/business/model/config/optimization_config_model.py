@@ -112,12 +112,10 @@ def update_optimization_preferences(
 def initialize_optimization_preferences_against_version(
     parameters: OptimizationPreferences, version: StudyVersion
 ) -> None:
-    if version >= STUDY_VERSION_10_2:
-        if parameters.include_reserves is None:
-            parameters.include_reserves = False
-    if version >= STUDY_VERSION_10_3:
-        if parameters.include_thermal_cluster_ramping is None:
-            parameters.include_thermal_cluster_ramping = False
+    if version >= STUDY_VERSION_10_2 and parameters.include_reserves is None:
+        parameters.include_reserves = False
+    if version >= STUDY_VERSION_10_3 and parameters.include_thermal_cluster_ramping is None:
+        parameters.include_thermal_cluster_ramping = False
 
 
 def validate_optimization_preferences_against_version(

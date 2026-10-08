@@ -81,6 +81,7 @@ logger = logging.getLogger(__name__)
 
 TS_GEN_PREFIX = "~"
 TS_GEN_SUFFIX = ".thermal_timeseries_gen.tmp"
+OUTPUT_INFO_FILENAME = "info.antares-output"
 
 
 def format_timestamp(dt: datetime | None) -> float:
@@ -153,10 +154,10 @@ def extract_output_name(path_output: Path, new_suffix_name: str | None = None) -
     archived = is_output_archived(path_output)
     if archived:
         with ZipFile(path_output, "r") as zip_obj:
-            content = zip_obj.read("info.antares-output")
+            content = zip_obj.read(OUTPUT_INFO_FILENAME)
             info_antares_output = ini_reader.read(StringIO(content.decode("utf-8")))
     else:
-        info_antares_output = ini_reader.read(path_output / "info.antares-output")
+        info_antares_output = ini_reader.read(path_output / OUTPUT_INFO_FILENAME)
 
     general_info = info_antares_output["general"]
 
@@ -169,7 +170,7 @@ def extract_output_name(path_output: Path, new_suffix_name: str | None = None) -
         suffix_name = new_suffix_name
         general_info["name"] = suffix_name
         if not archived:
-            IniWriter().write(info_antares_output, path_output / "info.antares-output")
+            IniWriter().write(info_antares_output, path_output / OUTPUT_INFO_FILENAME)
         else:
             logger.warning("Could not rewrite the new name inside the output: the output is archived")
 
@@ -509,7 +510,7 @@ def has_children(path: Path, filter_in: list[str], filter_out: list[str], show_h
             show = show_hidden_file or not sub_path.name.startswith(".")
             if not should_ignore_folder_for_scan(sub_path, filter_in, filter_out) and show:
                 return True
-        except (PermissionError, OSError):
+        except OSError:
             logger.warning(f"tried to run is_non_study_folder on {sub_path} but no permission")
     return False
 
@@ -569,14 +570,13 @@ def get_disk_usage(path: Path) -> int:
     if path.is_file():
         return os.path.getsize(path)
     total_size = 0
-    with contextlib.suppress(FileNotFoundError, PermissionError):
-        with os.scandir(path) as it:
-            for entry in it:
-                with contextlib.suppress(FileNotFoundError, PermissionError):
-                    if entry.is_file():
-                        total_size += entry.stat().st_size
-                    elif entry.is_dir():
-                        total_size += get_disk_usage(path=Path(entry.path))
+    with contextlib.suppress(FileNotFoundError, PermissionError), os.scandir(path) as it:
+        for entry in it:
+            with contextlib.suppress(FileNotFoundError, PermissionError):
+                if entry.is_file():
+                    total_size += entry.stat().st_size
+                elif entry.is_dir():
+                    total_size += get_disk_usage(path=Path(entry.path))
     return total_size
 
 
