@@ -6,7 +6,7 @@ Create Date: 2026-09-29 15:53:54.445046
 
 """
 
-from sqlalchemy import CheckConstraint, Column, ForeignKeyConstraint, PrimaryKeyConstraint, String
+from sqlalchemy import CheckConstraint, Column, ForeignKeyConstraint, PrimaryKeyConstraint, String, text
 
 from alembic import op
 from antarest.study.dao.database.models import study_data_id_col
@@ -50,11 +50,29 @@ def upgrade():
         ),
         CheckConstraint(
             "component1 != component2 or port1 != port2",
-            name="ck_gems_component_connections_component1_not_equals_component2",
+            name="ck_gems_component_connections_have_distinct_endpoints",
         ),
+    )
+
+    op.create_index(
+        "uq_no_inverted_pairs",
+        "gems_component_connections",
+        [
+            # `least`/`greatest` are not portable: SQLite has no such functions (and SQLite's
+            # multi-argument `min`/`max` equivalents are not valid in PostgreSQL, which only has
+            # aggregate `MIN`/`MAX`). `CASE` is standard SQL and works identically on both backends,
+            # which matters since this migration also runs against SQLite in desktop mode.
+            # The extra parentheses are required by PostgreSQL, which rejects a bare `CASE` expression
+            # as an index key (unlike SQLite).
+            text("(CASE WHEN component1 <= component2 THEN component1 ELSE component2 END)"),
+            text("(CASE WHEN component1 >= component2 THEN component1 ELSE component2 END)"),
+            text("(CASE WHEN port1 <= port2 THEN port1 ELSE port2 END)"),
+            text("(CASE WHEN port1 >= port2 THEN port1 ELSE port2 END)"),
+        ],
+        unique=True,
     )
 
 
 def downgrade():
     op.drop_table("gems_component_connections")
-
+    op.drop_index("uq_no_inverted_pairs", table_name="gems_component_connections")

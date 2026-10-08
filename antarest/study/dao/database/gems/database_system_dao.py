@@ -317,7 +317,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                         f"Component '{component_id}' does not have a port named '{port_id}'"
                     ) from exc
 
-    def _save_connections(self, connections: List[GemsComponentConnection] | None) -> None:
+    def _save_connections(self, connections: List[GemsComponentConnection]) -> None:
 
         if not connections:
             return
@@ -328,21 +328,20 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if not self._get_system_row_if_exists():
             raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
-        # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
-        # so we have to check that the connections are not duplicated.
-        _check_no_duplicated_connections(connections)
-
-        # Clean all existing data regarding connections
-        session.execute(
-            delete(GEMS_COMPONENT_CONNECTIONS_TABLE).where(
-                GEMS_COMPONENT_CONNECTIONS_TABLE.c.study_data_id == study_data_id
-            )
-        )
-
         # This is used to check that `portX` truly belongs to the model of `componentX`
         components_library_and_model = self._get_components_library_and_model()
 
-        rows = self._build_rows(connections)
+        rows = []
+        for connection in connections:
+            rows.append(
+                {
+                    "study_data_id": study_data_id,
+                    "component1": connection.component1,
+                    "component2": connection.component2,
+                    "port1": connection.port1,
+                    "port2": connection.port2,
+                }
+            )
 
         try:
             session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
@@ -360,25 +359,12 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         _check_connection_does_not_link_port_component_to_itself(connections)
         _check_components_exist(components_library_and_model, connections)
+        # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
+        # so we have to check that the connections are not duplicated.
+        _check_no_duplicated_connections(connections)
+
         self._check_ports_exist_in_models(components_library_and_model, connections, e)
 
         # All components and ports exist and no self-connection was found.
         # It means the DB table is not filled as it should.
         raise ValueError("The connections table is not filled as it should") from e
-
-    def _build_rows(self, connections: list[GemsComponentConnection]) -> list[Any]:
-        study_data_id = self._study_data_id
-
-        rows = []
-        for connection in connections:
-            rows.append(
-                {
-                    "study_data_id": study_data_id,
-                    "component1": connection.component1,
-                    "component2": connection.component2,
-                    "port1": connection.port1,
-                    "port2": connection.port2,
-                }
-            )
-
-        return rows
