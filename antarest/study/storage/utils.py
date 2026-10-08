@@ -19,7 +19,7 @@ import os
 import re
 import shutil
 from collections.abc import Sequence
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
@@ -649,8 +649,8 @@ def update_study_from_raw_metadata(study: Study, file_study: "FileStudy") -> Non
 
         study.name = raw_meta["caption"]
         study.version = str(raw_meta["version"])
-        study.created_at = datetime.utcfromtimestamp(raw_meta["created"])
-        study.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
+        study.created_at = datetime.fromtimestamp(raw_meta["created"], tz=UTC).replace(tzinfo=None)
+        study.updated_at = datetime.fromtimestamp(raw_meta["lastsave"], tz=UTC).replace(tzinfo=None)
 
         logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
