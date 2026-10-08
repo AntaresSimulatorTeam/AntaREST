@@ -81,3 +81,50 @@ GEMS_COMPONENT_PROPERTIES_TABLE = Table(
         ondelete="CASCADE",
     ),
 )
+
+
+def _component_foreign_key(table_name: str) -> ForeignKeyConstraint:
+    return ForeignKeyConstraint(
+        ["study_data_id", "component_id"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
+        name=f"fk_{table_name}_component",
+        ondelete="CASCADE",
+    )
+
+
+# There is no foreign key to the port of the component: models and ports are never deleted,
+# so it could only check the port on insertion, which is already done application side.
+# Antares Simulator allows a single area connection per port, hence the primary key.
+GEMS_AREA_CONNECTIONS_TABLE = Table(
+    "gems_area_connections",
+    metadata,
+    study_data_id_col(),
+    Column("component_id", String(255), primary_key=True),
+    Column("port_id", String(255), primary_key=True),
+    Column("area_id", String(255), nullable=False),
+    _component_foreign_key("gems_area_connections"),
+    ForeignKeyConstraint(
+        ["study_data_id", "area_id"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_gems_area_connections_area",
+        ondelete="CASCADE",
+    ),
+)
+
+# Same design as `gems_area_connections`, with a legacy thermal cluster as target.
+GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE = Table(
+    "gems_thermal_capacity_connections",
+    metadata,
+    study_data_id_col(),
+    Column("component_id", String(255), primary_key=True),
+    Column("port_id", String(255), primary_key=True),
+    Column("area_id", String(255), nullable=False),
+    Column("cluster_id", String(255), nullable=False),
+    _component_foreign_key("gems_thermal_capacity_connections"),
+    ForeignKeyConstraint(
+        ["study_data_id", "area_id", "cluster_id"],
+        ["thermal_cluster.study_data_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
+        name="fk_gems_thermal_capacity_connections_cluster",
+        ondelete="CASCADE",
+    ),
+)

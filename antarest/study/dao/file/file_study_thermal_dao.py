@@ -19,6 +19,7 @@ from typing_extensions import override
 from antarest.core.exceptions import (
     AreaNotFound,
     ChildNotFoundError,
+    GemsConnectedObjectDeletionNotAllowed,
     ThermalClusterConfigNotFound,
     ThermalClusterNotFound,
 )
@@ -209,6 +210,9 @@ class FileStudyThermalDao(ThermalDao, ABC):
         cluster_id = thermal_id.lower()
         if not any(c.id.lower() == cluster_id for c in study_data.config.areas[area_id].thermals):
             raise ThermalClusterNotFound(area_id, thermal_id)
+
+        self._check_thermal_not_connected_to_gems(area_id, cluster_id)
+
         paths = [
             ["input", "thermal", "clusters", area_id, "list", cluster_id],
             ["input", "thermal", "prepro", area_id, cluster_id],
@@ -229,6 +233,23 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         # Deleting the thermal cluster in the configuration must be done AFTER deleting the files and folders.
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
+
+    def _check_thermal_not_connected_to_gems(self, area_id: str, cluster_id: str) -> None:
+        """Checks that no GEMS component is connected to the thermal cluster."""
+        system = self.get_impl().get_system()
+        if system is None:
+            return
+
+        if not system.thermal_capacity_connections:
+            return
+
+        connected_component_ids = {
+            c.component
+            for c in system.thermal_capacity_connections or []
+            if (c.thermal_component.area, c.thermal_component.cluster_id) == (area_id, cluster_id)
+        }
+        if connected_component_ids:
+            raise GemsConnectedObjectDeletionNotAllowed(cluster_id, connected_component_ids, object_type="Cluster")
 
     def _get_thermal_matrices(self, url_getter: Callable[[AreaId, ThermalId], list[str]]) -> ThermalSeriesMapping:
         study_data = self.get_file_study()

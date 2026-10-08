@@ -34,7 +34,7 @@ from antarest.study.business.model.config.optimization_config_model import (
 )
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
-from antarest.study.business.model.gems.system import GemsSystem
+from antarest.study.business.model.gems.system import GemsAreaConnection, GemsSystem, GemsThermalCapacityConnection
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -142,6 +142,24 @@ def dao_10_2(
     """A DAO parameterized over both backends (v10.2)."""
     return _build_dao_unreleased_version(
         request.param, STUDY_VERSION_10_2, db_session, matrix_service, command_context, tmp_path, study_factory
+    )
+
+
+@pytest.fixture
+def db_dao_10_2(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    return build_db_dao_10_2(db_session, matrix_service)
+
+
+@pytest.fixture
+def fs_dao_10_2(
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    study_factory: StudyFactory,
+) -> StudyDao:
+    return _build_dao_unreleased_version(
+        "fs", STUDY_VERSION_10_2, db_session, matrix_service, command_context, tmp_path, study_factory
     )
 
 
@@ -478,6 +496,21 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert first_component.parameters[1].time_dependent is False
     assert first_component.parameters[1].scenario_dependent is False
     assert first_component.parameters[1].value == 300
+
+    # Areas and clusters ids are lowercased
+    assert system.area_connections == [
+        GemsAreaConnection(component="electrolyser", port="hydrogen_port", area="west-h2"),
+        GemsAreaConnection(component="electrolyser", port="power_port", area="west"),
+    ]
+    assert system.thermal_capacity_connections == [
+        GemsThermalCapacityConnection.model_validate(
+            {
+                "component": "electrolyser",
+                "port": "power_port",
+                "thermal-component": {"area": "west", "cluster-id": "gas_cluster"},
+            }
+        )
+    ]
 
 
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
