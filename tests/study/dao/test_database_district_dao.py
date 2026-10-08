@@ -17,8 +17,11 @@ District DAO tests, parameterized across both database and filesystem backends.
 import pytest
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
-from antarest.study.business.model.district_model import District, DistrictApplyFilter
+from antarest.study.business.model.common import FILTER_VALUES, FilterOption
+from antarest.study.business.model.district_model import District, DistrictApplyFilter, initialize_district
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.model import STUDY_VERSION_10_2
 from tests.study.dao.utils import save_area
 
 
@@ -32,6 +35,9 @@ class TestDistrictDao:
         assert result.name == "District 1"
         assert result.output is True
         assert result.comments == "test"
+        # As the DAO used for this test is pre v10.2 we should see nullable values for filters
+        assert result.filter_synthesis is None
+        assert result.filter_year_by_year is None
 
     def test_save_district_with_areas(self, dao: StudyDao) -> None:
         save_area(dao, "Paris")
@@ -136,3 +142,32 @@ class TestDistrictDao:
 
         d1 = dao.get_district("d1")
         assert "paris" not in d1.subtract_areas
+
+
+def test_v10_2(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    save_area(dao, "Paris")
+
+    dao.save_district(
+        District(
+            id="d1",
+            name="District 1",
+            filter_year_by_year=[FilterOption.HOURLY],
+            filter_synthesis=[FilterOption.ANNUAL, FilterOption.DAILY],
+        )
+    )
+
+    district = dao.get_district("d1")
+    assert district.filter_year_by_year == [FilterOption.HOURLY]
+    assert sorted(district.filter_synthesis) == [FilterOption.ANNUAL, FilterOption.DAILY]
+
+    # Ensures default values for filters are respected
+    district = District(id="d2", name="District 2")
+    if isinstance(dao, DatabaseStudyDao):
+        initialize_district(district, STUDY_VERSION_10_2)
+
+    dao.save_district(district)
+
+    d2 = dao.get_district("d2")
+    assert sorted(d2.filter_synthesis) == sorted(FILTER_VALUES)
+    assert sorted(d2.filter_year_by_year) == sorted(FILTER_VALUES)

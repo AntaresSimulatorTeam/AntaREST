@@ -53,7 +53,10 @@ class FileStudyDistrictDao(DistrictDao):
         except KeyError:
             raise DistrictConfigNotFound(str(path))
 
-        return [parse_district(district_data, district_id) for district_id, district_data in districts.items()]
+        return [
+            parse_district(district_data, district_id, file_study.config.version)
+            for district_id, district_data in districts.items()
+        ]
 
     @override
     def get_district(self, district_id: str) -> District:
@@ -67,7 +70,7 @@ class FileStudyDistrictDao(DistrictDao):
             district_data = study_data.tree.get(path)
         except KeyError:
             raise DistrictConfigNotFound(str(path))
-        return parse_district(district_data, district_id)
+        return parse_district(district_data, district_id, study_data.config.version)
 
     @override
     def district_exists(self, district_id: str) -> bool:
@@ -100,7 +103,7 @@ class FileStudyDistrictDao(DistrictDao):
 
         # Persist the change in the filesystem
         study_data.tree.save(
-            serialize_district(district),
+            serialize_district(district, study_data.config.version),
             ["input", "areas", "sets", district.id],
         )
 

@@ -12,11 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type {
-  CertificationProductionType,
-  Reserve,
-  SymmetryProductionType,
-} from "@/services/api/studies/areas/reserves/types";
+import type { ProductionType, Reserve } from "@/services/api/studies/areas/reserves/types";
 import type { AreaWithId } from "@/types/types";
 import { areaKeys } from "../areas/keys";
 import type { Study } from "@/services/api/studies/types";
@@ -50,31 +46,27 @@ export const reserveKeys = {
   certifications: (
     studyId: Study["id"],
     areaId: AreaWithId["id"],
-    productionType: CertificationProductionType,
+    productionType: ProductionType,
   ) => {
     return [...reserveKeys.all(), "reserveCertifications", { studyId, areaId, productionType }];
   },
   updateCertifications: (
     studyId: Study["id"],
     areaId: AreaWithId["id"],
-    productionType: CertificationProductionType,
+    productionType: ProductionType,
   ) => {
     return [
       ...reserveKeys.certifications(studyId, areaId, productionType),
       "updateReservesCertifications",
     ];
   },
-  symmetries: (
-    studyId: Study["id"],
-    areaId: AreaWithId["id"],
-    productionType: SymmetryProductionType,
-  ) => {
+  symmetries: (studyId: Study["id"], areaId: AreaWithId["id"], productionType: ProductionType) => {
     return [...reserveKeys.all(), "reserveSymmetries", { studyId, areaId, productionType }];
   },
   updateSymmetries: (
     studyId: Study["id"],
     areaId: AreaWithId["id"],
-    productionType: SymmetryProductionType,
+    productionType: ProductionType,
   ) => {
     return [...reserveKeys.symmetries(studyId, areaId, productionType), "updateReservesSymmetries"];
   },

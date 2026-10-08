@@ -16,6 +16,7 @@ from unittest.mock import Mock
 
 import polars as pl
 import pytest
+from antares.study.version import StudyVersion
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -31,7 +32,9 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.config.optimization_config_model import (
     initialize_optimization_preferences_against_version,
 )
+from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.system import GemsSystem
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -41,17 +44,26 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster, 
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.model import (
+    NEW_DEFAULT_STUDY_VERSION,
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
     STUDY_VERSION_10_2,
+    STUDY_VERSION_10_3,
     Study,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import build_db_dao, build_filesystem_dao
 from tests.study.dao.utils import save_area
+
+
+@pytest.fixture
+def gems_catalog() -> GemsCatalog:
+    path = Path(__file__).parent / "assets/gems/catalogs/antares_legacy_area_catalog.yml"
+    return GemsCatalog.model_validate(YAMLReader().read(path)["catalog"])
 
 
 @pytest.fixture
@@ -78,6 +90,46 @@ def db_dao_930_shared() -> DatabaseStudyDao:
         return build_db_dao(session, InMemorySimpleMatrixService(), STUDY_VERSION_9_3)
 
 
+def _build_db_dao_unreleased_version(
+    db_session: Session, matrix_service: ISimpleMatrixService, version: StudyVersion
+) -> DatabaseStudyDao:
+    """Initialize a study at a version with no reference template, built from the default version template."""
+    dao = build_db_dao(db_session, matrix_service, NEW_DEFAULT_STUDY_VERSION)
+    study = db_session.get(Study, dao.get_study_id())
+    assert study is not None
+    study.version = str(version)
+    db_session.commit()
+    # Settings were saved at the default version; replay init so version-specific defaults stick.
+    prefs = dao.get_optimization_preferences()
+    initialize_optimization_preferences_against_version(prefs, version)
+    dao.save_optimization_preferences(prefs)
+    return dao
+
+
+def build_db_dao_10_2(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
+    """Initialize a v10.2 study using the latest available reference template."""
+    # TODO: once v10.2 is released (template available), use `build_db_dao(db_session, matrix_service, STUDY_VERSION_10_2)`.
+    return _build_db_dao_unreleased_version(db_session, matrix_service, STUDY_VERSION_10_2)
+
+
+def _build_dao_unreleased_version(
+    backend: str,
+    version: StudyVersion,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    study_factory: StudyFactory,
+) -> StudyDao:
+    # Unreleased versions have no study template on disk — create a default version study and force its version.
+    if backend == "db":
+        return _build_db_dao_unreleased_version(db_session, matrix_service, version)
+    else:
+        dao = build_filesystem_dao(db_session, NEW_DEFAULT_STUDY_VERSION, command_context, study_factory, tmp_path)
+        dao.get_file_study().config.version = version
+        return dao
+
+
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_10_2(
     request: pytest.FixtureRequest,
@@ -88,21 +140,25 @@ def dao_10_2(
     study_factory: StudyFactory,
 ) -> StudyDao:
     """A DAO parameterized over both backends (v10.2)."""
-    # v10.2 has no study template on disk — create a v9.3 study and force its version to 10.2.
-    if request.param == "db":
-        dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
-        study = db_session.get(Study, dao.get_study_id())
-        study.version = str(STUDY_VERSION_10_2)
-        db_session.commit()
-        # Settings were saved at v9.3; replay v10 init so v10-specific defaults stick.
-        prefs = dao.get_optimization_preferences()
-        initialize_optimization_preferences_against_version(prefs, STUDY_VERSION_10_2)
-        dao.save_optimization_preferences(prefs)
-        return dao
-    else:
-        dao = build_filesystem_dao(db_session, STUDY_VERSION_9_3, command_context, study_factory, tmp_path)
-        dao.get_file_study().config.version = STUDY_VERSION_10_2
-        return dao
+    return _build_dao_unreleased_version(
+        request.param, STUDY_VERSION_10_2, db_session, matrix_service, command_context, tmp_path, study_factory
+    )
+
+
+@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
+def dao_10_3(
+    request,
+    db_session: Session,
+    matrix_service: ISimpleMatrixService,
+    command_context: "CommandContext",
+    tmp_path: Path,
+    study_factory: StudyFactory,
+) -> StudyDao:
+    """A DAO parameterized over both backends (v10.3)."""
+    # TODO: once v10.3 is released (template available), use `build_db_dao` / `build_filesystem_dao` directly.
+    return _build_dao_unreleased_version(
+        request.param, STUDY_VERSION_10_3, db_session, matrix_service, command_context, tmp_path, study_factory
+    )
 
 
 def build_reserve_definition(reserve_name: str) -> ReserveDefinition:
@@ -402,6 +458,28 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert second_model.ports[1].type == "flow"
 
 
+def check_gems_system_integrity(system: GemsSystem) -> None:
+    assert system is not None
+    assert system.id == "System 8_1"
+    assert system.description == "Electrolyser - V8.6"
+    assert len(system.components) == 1
+
+    first_component = system.components[0]
+    assert first_component.id == "electrolyser"
+    assert first_component.model == "andromede-v1-models-weo-hybrid.electrolyser"
+    assert first_component.scenario_group == "sg1"
+    assert first_component.parameters is not None
+    assert len(first_component.parameters) == 2
+    assert first_component.parameters[0].id == "efficiency"
+    assert first_component.parameters[0].time_dependent is False
+    assert first_component.parameters[0].scenario_dependent is False
+    assert first_component.parameters[0].value == 0.7
+    assert first_component.parameters[1].id == "p_max"
+    assert first_component.parameters[1].time_dependent is False
+    assert first_component.parameters[1].scenario_dependent is False
+    assert first_component.parameters[1].value == 300
+
+
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
     assert taxonomy is not None
     assert taxonomy.id == "antares_legacy_taxonomy"
@@ -446,3 +524,14 @@ def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
     assert dispatchable.parent_category == "generation"
     assert dispatchable.variables == [{"id": "generation_power"}]
     assert dispatchable.properties == [{"id": "technology"}]
+
+
+def prepare_catalog_taxonomy(dao: StudyDao, taxonomy_id: str = "antares_legacy_taxonomy") -> None:
+    dao.save_taxonomy(GemsTaxonomy.model_validate({"id": taxonomy_id, "categories": [{"id": "balance"}]}))
+
+
+def assert_catalogs_equal(actual: list[GemsCatalog], expected: list[GemsCatalog]) -> None:
+    def normalize(catalog: GemsCatalog) -> GemsCatalog:
+        return catalog.model_copy(update={"metrics_definition": sorted(catalog.metrics_definition, key=lambda m: m.id)})
+
+    assert [normalize(catalog) for catalog in actual] == [normalize(catalog) for catalog in expected]

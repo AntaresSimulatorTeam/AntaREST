@@ -154,6 +154,11 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
+            "rampingEnabled": None,
+            "maxUpwardPowerRampingRate": None,
+            "maxDownwardPowerRampingRate": None,
+            "powerIncreaseCost": None,
+            "powerDecreaseCost": None,
         }
         assert actual == expected
 
@@ -212,6 +217,11 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
+                "rampingEnabled": None,
+                "maxUpwardPowerRampingRate": None,
+                "maxDownwardPowerRampingRate": None,
+                "powerIncreaseCost": None,
+                "powerDecreaseCost": None,
             },
             {
                 "id": "on and must 2",
@@ -251,6 +261,11 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
+                "rampingEnabled": None,
+                "maxUpwardPowerRampingRate": None,
+                "maxDownwardPowerRampingRate": None,
+                "powerIncreaseCost": None,
+                "powerDecreaseCost": None,
             },
             {
                 "id": "2 avail and must 2",
@@ -290,6 +305,11 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
+                "rampingEnabled": None,
+                "maxUpwardPowerRampingRate": None,
+                "maxDownwardPowerRampingRate": None,
+                "powerIncreaseCost": None,
+                "powerDecreaseCost": None,
             },
         ]
         assert actual == expected
@@ -351,6 +371,11 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
+            "rampingEnabled": None,
+            "maxUpwardPowerRampingRate": None,
+            "maxDownwardPowerRampingRate": None,
+            "powerIncreaseCost": None,
+            "powerDecreaseCost": None,
             "spinning": 0.0,
             "spreadCost": 0.0,
             "startupCost": 0.0,
@@ -414,6 +439,12 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
+            # These values are None as they are defined in v10.3+
+            "rampingEnabled": None,
+            "maxUpwardPowerRampingRate": None,
+            "maxDownwardPowerRampingRate": None,
+            "powerIncreaseCost": None,
+            "powerDecreaseCost": None,
         }
         assert actual == expected
 

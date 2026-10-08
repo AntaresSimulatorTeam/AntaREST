@@ -88,7 +88,7 @@ class DistrictManager:
         )
         study.add_commands([command])
         all_areas = study_dao.get_all_area_ids()
-        return create_district(district_creation, district_id).to_dto(all_areas)  #
+        return create_district(district_creation, district_id, study_dao.get_version()).to_dto(all_areas)
 
     def update_district(
         self,

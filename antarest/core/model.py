@@ -27,6 +27,8 @@ ELEMENT: TypeAlias = str | int | float | bool | bytes
 SUB_JSON: TypeAlias = ELEMENT | JSON | list[Any] | None
 LowerCaseStr: TypeAlias = Annotated[str, StringConstraints(to_lower=True)]
 LowerCaseId: TypeAlias = Annotated[str, BeforeValidator(lambda x: transform_name_to_id(x, lower=True))]
+# GEMS identifiers are validated without normalization to preserve cross-references.
+GemsId: TypeAlias = Annotated[str, StringConstraints(strict=True, pattern=r"^[a-z0-9_]+$")]
 
 
 class PublicMode(enum.StrEnum):

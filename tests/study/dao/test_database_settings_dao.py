@@ -140,6 +140,7 @@ def test_nominal_case(dao: StudyDao) -> None:
         transmission_capacities=TransmissionCapacities.INFINITE_FOR_ALL_LINKS,
         thermal_clusters_min_stable_power=False,
         thermal_clusters_min_ud_time=False,
+        include_thermal_cluster_ramping=True,
         day_ahead_reserve=False,
         primary_reserve=False,
         strategic_reserve=False,

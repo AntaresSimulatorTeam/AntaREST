@@ -16,19 +16,19 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useFormBlocker from "@/hooks/useFormBlocker";
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
-import { thermalQueries } from "@/queries/thermals/queries";
 import {
   adaptClusterGroupsToReservesSymmetriesDto,
   adaptReservesSymmetriesDtoToClusterGroups,
 } from "@/services/api/studies/areas/reserves/adapters";
-import type { SymmetryProductionType } from "@/services/api/studies/areas/reserves/types";
+import type { ProductionType } from "@/services/api/studies/areas/reserves/types";
 import { toError } from "@/utils/fnUtils";
 import { Alert } from "@mui/material";
 import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
 import useUndo from "use-undo";
+import ProductionTypeSelect from "./-components/ProductionTypeSelect";
 import SymmetriesTable from "./-components/SymmetriesTable";
 import type { ClusterGroup } from "./-components/SymmetriesTable/types";
 import {
@@ -38,6 +38,7 @@ import {
   toggleReserve,
   validateGroups,
 } from "./-components/SymmetriesTable/utils";
+import { DEFAULT_PRODUCTION_TYPE, PRODUCTION_TYPES } from "./-productionTypes";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/symmetries",
@@ -45,63 +46,85 @@ export const Route = createFileRoute(
   component: ReservesSymmetries,
 });
 
-// Only thermal clusters have a symmetries endpoint today. "storages" and
-// "hydro" are coming soon: add them to a selector once their endpoints are
-// released, the rest of this screen is already parameterized by this value.
-const PRODUCTION_TYPE: SymmetryProductionType = "thermals";
-
 function ReservesSymmetries() {
   const { studyId, areaId } = Route.useParams();
+  const [productionType, setProductionType] = useState(DEFAULT_PRODUCTION_TYPE);
+  // Switching type suspends on new queries: the transition keeps the current
+  // table on screen (with a progress bar) instead of the route fallback.
+  const [isProductionTypePending, startProductionTypeTransition] = useTransition();
+
+  const handleProductionTypeChange = (type: ProductionType) => {
+    startProductionTypeTransition(() => setProductionType(type));
+  };
 
   // The router doesn't remount on param-only changes: the key re-seeds the
-  // editable state (undo history, `lastSaved`) when the area/study changes.
-  return <SymmetriesView key={`${studyId}-${areaId}`} />;
+  // editable state (undo history, `lastSaved`) when the area/study or the
+  // production type changes.
+  return (
+    <SymmetriesView
+      key={`${studyId}-${areaId}-${productionType}`}
+      productionType={productionType}
+      isProductionTypePending={isProductionTypePending}
+      onProductionTypeChange={handleProductionTypeChange}
+    />
+  );
 }
 
-function SymmetriesView() {
+interface SymmetriesViewProps {
+  productionType: ProductionType;
+  isProductionTypePending: boolean;
+  onProductionTypeChange: (type: ProductionType) => void;
+}
+
+function SymmetriesView({
+  productionType,
+  isProductionTypePending,
+  onProductionTypeChange,
+}: SymmetriesViewProps) {
   const { t } = useTranslation();
   const { studyId, areaId } = Route.useParams();
   const queryClient = useQueryClient();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const { assetsQuery } = PRODUCTION_TYPES[productionType];
 
   // Run all five queries in parallel instead of suspending on them one after
   // another: the parent route's loader only prefetches `enabled` and `list`.
   const [
     { data: reservesEnabled },
     { data: reserves, isFetching: isReservesFetching },
-    { data: thermalClusters, isFetching: isThermalsFetching },
-    { data: thermalCertifications, isFetching: isCertificationsFetching },
+    { data: assets, isFetching: isAssetsFetching },
+    { data: certifications, isFetching: isCertificationsFetching },
     { data: symmetriesData, isFetching: isSymmetriesFetching },
   ] = useSuspenseQueries({
     queries: [
       reserveQueries.enabled(studyId),
       reserveQueries.list(studyId, areaId),
-      thermalQueries.list(studyId, areaId),
-      reserveQueries.certifications(studyId, areaId, "thermals"),
-      reserveQueries.symmetries(studyId, areaId, PRODUCTION_TYPE),
+      assetsQuery(studyId, areaId),
+      reserveQueries.certifications(studyId, areaId, productionType),
+      reserveQueries.symmetries(studyId, areaId, productionType),
     ],
   });
 
-  // Inverted from { reserveId: { clusterId: ... } } to { clusterId: Set<reserveId> },
-  // used to gate which checkboxes are checkable: a cluster can only be marked
+  // Inverted from { reserveId: { assetId: ... } } to { assetId: Set<reserveId> },
+  // used to gate which checkboxes are checkable: an asset can only be marked
   // symmetric on a reserve it's certified for.
   const certifiedReservesByCluster = useMemo(() => {
     const map = new Map<string, Set<string>>();
 
-    for (const [reserveId, clusters] of Object.entries(thermalCertifications)) {
-      for (const clusterId of Object.keys(clusters)) {
-        const reserveIds = map.get(clusterId) ?? new Set<string>();
+    for (const [reserveId, assetCertifications] of Object.entries(certifications)) {
+      for (const assetId of Object.keys(assetCertifications)) {
+        const reserveIds = map.get(assetId) ?? new Set<string>();
         reserveIds.add(reserveId);
-        map.set(clusterId, reserveIds);
+        map.set(assetId, reserveIds);
       }
     }
 
     return map;
-  }, [thermalCertifications]);
+  }, [certifications]);
 
   const initialGroups = useMemo(
-    () => adaptReservesSymmetriesDtoToClusterGroups(thermalClusters, symmetriesData),
-    [thermalClusters, symmetriesData],
+    () => adaptReservesSymmetriesDtoToClusterGroups(assets, symmetriesData),
+    [assets, symmetriesData],
   );
 
   const [
@@ -131,7 +154,7 @@ function SymmetriesView() {
   useFormBlocker({ isSubmitting: isSaving, isDirty });
 
   const updateSymmetriesMutation = useMutation(
-    reserveMutations.updateSymmetries(studyId, areaId, PRODUCTION_TYPE),
+    reserveMutations.updateSymmetries(studyId, areaId, productionType),
   );
 
   ////////////////////////////////////////////////////////////////
@@ -165,14 +188,14 @@ function SymmetriesView() {
       const updatedSymmetries = await updateSymmetriesMutation.mutateAsync({
         studyId,
         areaId,
-        productionType: PRODUCTION_TYPE,
+        productionType,
         data: adaptClusterGroupsToReservesSymmetriesDto(groups),
       });
 
       // The response is the server-normalized payload; the resync effect
       // adopts it once `lastSaved` marks the form pristine.
       queryClient.setQueryData(
-        reserveQueries.symmetries(studyId, areaId, PRODUCTION_TYPE).queryKey,
+        reserveQueries.symmetries(studyId, areaId, productionType).queryKey,
         updatedSymmetries,
       );
 
@@ -200,12 +223,22 @@ function SymmetriesView() {
         reserves={reserves}
         certifiedReservesByCluster={certifiedReservesByCluster}
         validationErrors={validationErrors}
+        toolbarActions={
+          // Switching type remounts the view and would drop unsaved edits.
+          <ProductionTypeSelect
+            value={productionType}
+            onChange={onProductionTypeChange}
+            disabled={isDirty || isSaving || isProductionTypePending}
+            disabledReason={t("study.modeling.reserves.productionType.unsavedChanges")}
+          />
+        }
         readOnly={!reservesEnabled}
         isFetching={
           isReservesFetching ||
-          isThermalsFetching ||
+          isAssetsFetching ||
           isCertificationsFetching ||
-          isSymmetriesFetching
+          isSymmetriesFetching ||
+          isProductionTypePending
         }
         canUndo={canUndo}
         canRedo={canRedo}

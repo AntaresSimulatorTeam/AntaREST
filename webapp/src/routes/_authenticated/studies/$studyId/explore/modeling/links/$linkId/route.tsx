@@ -37,7 +37,7 @@ function LinkLayout() {
         tabs={[
           {
             id: "properties",
-            label: "Properties",
+            label: t("study.modeling.properties"),
             linkOptions: linkOptions({
               to: "/studies/$studyId/explore/modeling/links/$linkId/properties",
               params,

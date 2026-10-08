@@ -12,58 +12,26 @@
  * This file is part of the Antares project.
  */
 
-import client from "@/services/api/client";
-import type { Area, StudyMetadata } from "@/types/types";
-import type { ExcludeNullFromProps, PartialExceptFor } from "@/utils/tsUtils";
+import * as storageApi from "@/services/api/studies/areas/storages";
+import type { StorageGroup, StorageResponse } from "@/services/api/studies/areas/storages/types";
+import type { Area } from "@/types/types";
+import type { PartialExceptFor } from "@/utils/tsUtils";
 import * as RA from "ramda-adjunct";
+import { adaptStorageToView } from "./-adapters";
+import type { Study } from "@/services/api/studies/types";
 
-////////////////////////////////////////////////////////////////
-// Constants
-////////////////////////////////////////////////////////////////
+// TODO(PR2): remove compatibility exports and wrappers once consumers use the Storage data layer.
+export { STORAGE_GROUPS } from "@/services/api/studies/areas/storages/constants";
+export type { StorageGroup } from "@/services/api/studies/areas/storages/types";
 
-export const STORAGE_GROUPS = [
-  "psp_open",
-  "psp_closed",
-  "pondage",
-  "battery",
-  "other1",
-  "other2",
-  "other3",
-  "other4",
-  "other5",
-] as const;
+export type Storage<LegacyGroup extends boolean = false> = Omit<
+  Required<StorageResponse>,
+  "group"
+> & {
+  group: LegacyGroup extends true ? StorageGroup : string;
+};
 
-////////////////////////////////////////////////////////////////
-// Types
-////////////////////////////////////////////////////////////////
-
-export type StorageGroup = (typeof STORAGE_GROUPS)[number];
-
-export interface Storage<LegacyGroup extends boolean = false> {
-  id: string;
-  name: string;
-  group: LegacyGroup extends true ? StorageGroup : string; // Before v9.2 => StorageGroup, since v9.2 => string
-  injectionNominalCapacity: number;
-  withdrawalNominalCapacity: number;
-  reservoirCapacity: number;
-  efficiency: number;
-  initialLevel: number;
-  initialLevelOptim: boolean;
-  // Since v8.8
-  enabled: boolean | null;
-  // Since v9.2
-  efficiencyWithdrawal: number | null;
-  penalizeVariationInjection: boolean | null;
-  penalizeVariationWithdrawal: boolean | null;
-  // Since v9.3
-  allowOverflow: boolean | null;
-}
-
-export type FormalizedStorage = ExcludeNullFromProps<Storage>;
-
-////////////////////////////////////////////////////////////////
-// Functions
-////////////////////////////////////////////////////////////////
+export type FormalizedStorage = ReturnType<typeof adaptStorageToView>;
 
 export function getStoragesTotals(storages: Storage[]) {
   return storages.reduce(
@@ -79,91 +47,60 @@ export function getStoragesTotals(storages: Storage[]) {
   );
 }
 
-const getStoragesUrl = (studyId: StudyMetadata["id"], areaId: Area["name"]): string =>
-  `/v1/studies/${studyId}/areas/${areaId}/storages`;
-
-const getStorageUrl = (
-  studyId: StudyMetadata["id"],
-  areaId: Area["name"],
-  storageId: Storage["id"],
-): string => `${getStoragesUrl(studyId, areaId)}/${storageId}`;
-
-////////////////////////////////////////////////////////////////
-// API
-////////////////////////////////////////////////////////////////
-
-/**
- * Formalizes a storage object by ensuring all properties are defined.
- * Using condition with the study version doesn't allow TypeScript
- * to infer properties types.
- *
- * @param storage - Storage object to formalize.
- * @returns Formalized storage object with all properties defined.
- */
-function formalizeStorage(storage: Storage): FormalizedStorage {
-  return {
-    ...storage,
-    enabled: storage.enabled ?? false,
-    efficiencyWithdrawal: storage.efficiencyWithdrawal ?? -1,
-    penalizeVariationInjection: storage.penalizeVariationInjection ?? false,
-    penalizeVariationWithdrawal: storage.penalizeVariationWithdrawal ?? false,
-    allowOverflow: storage.allowOverflow ?? false,
-  };
-}
-
-export async function getStorages(studyId: StudyMetadata["id"], areaId: Area["name"]) {
-  const res = await client.get<Storage[]>(getStoragesUrl(studyId, areaId));
-  return res.data.map(formalizeStorage);
+export async function getStorages(studyId: Study["id"], areaId: Area["name"]) {
+  const storages = await storageApi.getStorages({ studyId, areaId });
+  return storages.map(adaptStorageToView);
 }
 
 export async function getStorage(
-  studyId: StudyMetadata["id"],
+  studyId: Study["id"],
   areaId: Area["name"],
   storageId: Storage["id"],
 ) {
-  const res = await client.get<Storage>(getStorageUrl(studyId, areaId, storageId));
-  return formalizeStorage(res.data);
+  const storage = await storageApi.getStorage({ studyId, areaId, storageId });
+  return adaptStorageToView(storage);
 }
 
 export async function updateStorage(
-  studyId: StudyMetadata["id"],
+  studyId: Study["id"],
   areaId: Area["name"],
   storageId: Storage["id"],
   data: Partial<Storage>,
 ) {
-  const res = await client.patch<Storage>(getStorageUrl(studyId, areaId, storageId), data);
-  return res.data;
+  const storage = await storageApi.updateStorage({ studyId, areaId, storageId, values: data });
+  return adaptStorageToView(storage);
 }
 
 export async function createStorage(
-  studyId: StudyMetadata["id"],
+  studyId: Study["id"],
   areaId: Area["name"],
   data: PartialExceptFor<Storage, "name">,
 ) {
-  const res = await client.post<Storage>(getStoragesUrl(studyId, areaId), data);
-  return formalizeStorage(res.data);
+  const storage = await storageApi.createStorage({ studyId, areaId, values: data });
+  return adaptStorageToView(storage);
 }
 
 export async function duplicateStorage(
-  studyId: StudyMetadata["id"],
+  studyId: Study["id"],
   areaId: Area["name"],
   sourceClusterId: Storage["id"],
   newName: Storage["name"],
 ) {
-  const res = await client.post<Storage>(
-    `/v1/studies/${studyId}/areas/${areaId}/storages/${sourceClusterId}`,
-    null,
-    { params: { newName } },
-  );
-  return formalizeStorage(res.data);
+  const storage = await storageApi.duplicateStorage({
+    studyId,
+    areaId,
+    storageId: sourceClusterId,
+    newName,
+  });
+  return adaptStorageToView(storage);
 }
 
-export async function deleteStorages(
-  studyId: StudyMetadata["id"],
+export function deleteStorages(
+  studyId: Study["id"],
   areaId: Area["name"],
   storageIds: Array<Storage["id"]>,
 ) {
-  await client.delete(getStoragesUrl(studyId, areaId), { data: storageIds });
+  return storageApi.deleteStorages({ studyId, areaId, storageIds });
 }
 
 export function convertRatioToPercentage<T extends Partial<Storage>>(storage: T): T {

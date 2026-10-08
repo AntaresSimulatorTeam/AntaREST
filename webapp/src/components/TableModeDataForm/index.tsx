@@ -14,7 +14,8 @@
 
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import usePromise from "@/hooks/usePromise";
-import { getTableModeData, setTableModeData } from "@/services/api/studies/tableMode";
+import useUpdateTableModeData from "./hooks/useUpdateTableModeData";
+import { getTableModeData } from "@/services/api/studies/tableMode";
 import type { TableModeData } from "@/services/api/studies/tableMode/types";
 import type { Study } from "@/services/api/studies/types";
 import type { TableModeColumnsForType, TableModeType } from "@/services/api/tablemode/types";
@@ -24,10 +25,10 @@ import { Box, Typography } from "@mui/material";
 import startCase from "lodash/startCase";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import DataGridForm, { type DataGridFormProps } from "./DataGridForm";
-import type { SubmitHandlerPlus } from "./Form/types";
-import EmptyView from "./page/EmptyView";
-import UsePromiseCond from "./utils/UsePromiseCond";
+import DataGridForm, { type DataGridFormProps } from "../DataGridForm";
+import type { SubmitHandlerPlus } from "../Form/types";
+import EmptyView from "../page/EmptyView";
+import UsePromiseCond from "../utils/UsePromiseCond";
 
 export interface TableModeDataFormProps<T extends TableModeType = TableModeType> {
   studyId: Study["id"];
@@ -45,6 +46,7 @@ function TableModeDataForm<T extends TableModeType>({
   extraActions,
 }: TableModeDataFormProps<T>) {
   const { t } = useTranslation();
+  const updateData = useUpdateTableModeData();
   const columnsDep = columns.join(",");
 
   const res = usePromise(
@@ -74,8 +76,8 @@ function TableModeDataForm<T extends TableModeType>({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus<TableModeData>) => {
-    return setTableModeData({ studyId, tableType: type, data: data.dirtyValues });
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<TableModeData>) => {
+    return updateData.mutateAsync({ studyId, tableType: type, data: dirtyValues });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -103,7 +105,7 @@ function TableModeDataForm<T extends TableModeType>({
           ) : (
             <EmptyView
               icon={GridOffIcon}
-              title={t("study.outputs.noData")}
+              title={t("global.noData")}
               secondaryActions={
                 typeof extraActions === "function"
                   ? extraActions({ canSubmit: false })

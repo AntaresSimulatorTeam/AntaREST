@@ -94,6 +94,16 @@ class StudyConverter:
                 self._new_dao.save_taxonomy(gems_taxonomy)
             self._new_dao.save_library(gems_library)
 
+            self._new_dao.save_catalogs(self._source_dao.get_catalogs())
+
+            scenario_builder = self._source_dao.get_gems_scenario_builder()
+            if scenario_builder is not None:
+                self._new_dao.save_gems_scenario_builder(scenario_builder)
+
+            system = self._source_dao.get_system()
+            if system is not None:
+                self._new_dao.save_system(system)
+
     def _convert_settings(self) -> None:
         self._new_dao.save_general_config(self._source_dao.get_general_config())
         self._new_dao.save_playlist_config(self._source_dao.get_playlist_config())

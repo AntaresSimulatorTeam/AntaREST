@@ -269,6 +269,7 @@ def test_export_output(admin_client: TestClient, study_id: str, output_name: str
     data = res.json()
     assert "task" in data
     assert "file" in data
+    assert data["file"]["filename"] == f"{study_id}_{output_name}.zip"
 
     download_id = data["file"]["id"]
     download_to_file(client, download_id, tmp_path / "output.zip")

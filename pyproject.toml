@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "AntaREST"
-version = "2.34.0"
+version = "2.35.0"
 authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com" }]
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
@@ -32,7 +32,7 @@ dependencies = [
     "gunicorn~=23.0.0",
     "humanize~=4.16.0",
     "jsonref~=0.2",
-    "PyJWT~=2.12.0",
+    "PyJWT~=2.15.0",
     "MarkupSafe~=2.1.5",
     "numpy~=2.4.2",
     "numexpr==2.14.2",
@@ -90,7 +90,7 @@ test = [
 [project.optional-dependencies]
 desktop = ["PyQt6~=6.11.0"]
 windows = [
-    "win10toast; platform_system == 'Windows'",
+    "pypiwin32; platform_system == 'Windows'",
 ]
 doc = [
     "mkdocs",
@@ -106,7 +106,7 @@ Repository="https://github.com/AntaresSimulatorTeam/api-iso-antares"
 packages = ["antarest"]
 
 [tool.mypy]
-exclude = "antarest/fastapi_jwt_auth/*"
+exclude = ["antarest/fastapi_jwt_auth/*", "antarest/desktop/win10toast/*"]
 strict = true
 files = "antarest"
 plugins = "pydantic.mypy"
@@ -151,6 +151,7 @@ exclude = [
     "resources/*",
     "scripts/*",
     "webapp/*",
+    "antarest/desktop/win10toast/*",
 ]
 
 # Same as Black.
