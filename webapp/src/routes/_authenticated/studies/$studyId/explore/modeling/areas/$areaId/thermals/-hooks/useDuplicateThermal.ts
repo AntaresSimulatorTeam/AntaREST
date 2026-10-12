@@ -16,12 +16,15 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { thermalMutations } from "@/queries/thermals/mutations";
 import { thermalQueries } from "@/queries/thermals/queries";
 import { createOptimisticListItem } from "@/queries/utils";
-import type { Thermal, ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
+import {
+  TS_GENERATION_OPTIONS,
+  TS_LAW_OPTIONS,
+} from "@/services/api/studies/areas/thermals/constants";
+import type { Thermal, ThermalsParams } from "@/services/api/studies/areas/thermals/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { TS_GENERATION_OPTIONS, TS_LAW_OPTIONS } from "../-utils";
 
-function useDuplicateThermal({ studyId, areaId }: ThermalsAreaParams) {
+function useDuplicateThermal({ studyId, areaId }: ThermalsParams) {
   const queryClient = useQueryClient();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
