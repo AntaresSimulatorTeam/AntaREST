@@ -46,13 +46,15 @@ function useDuplicateBindingConstraint() {
   const mutation = useMutation({
     ...bindingConstraintMutations.duplicate(studyId),
     onMutate: async (variables) => {
-      const { constraintId: constraintToDuplicateId, newConstraintName } = variables;
+      const { constraintId: constraintToDuplicateId, newName } = variables;
       const tempConstraintId = crypto.randomUUID();
 
       await queryClient.cancelQueries({ queryKey: queryListKey });
 
       const prevConstraints = queryClient.getQueryData(queryListKey);
-      const constraintToDuplicate = prevConstraints?.find((c) => c.id === constraintToDuplicateId);
+      const constraintToDuplicate = prevConstraints?.find(
+        ({ id }) => id === constraintToDuplicateId,
+      );
 
       queryClient.setQueryData(queryListKey, (old = []) => {
         return [
@@ -61,7 +63,7 @@ function useDuplicateBindingConstraint() {
             ...DEFAULT_CONSTRAINT_VALUES,
             ...constraintToDuplicate,
             id: tempConstraintId,
-            name: newConstraintName,
+            name: newName,
           }),
         ];
       });
@@ -77,7 +79,7 @@ function useDuplicateBindingConstraint() {
     },
     onError: (error, variables, tempConstraintId) => {
       enqueueErrorSnackbar(
-        t("study.modeling.bindingConst.duplicate.error", { name: variables.newConstraintName }),
+        t("study.modeling.bindingConst.duplicate.error", { name: variables.newName }),
         error,
       );
 
@@ -97,17 +99,17 @@ function useDuplicateBindingConstraint() {
         });
       }
     },
-    onSuccess: (newConstraint, _, tempConstraintId) => {
+    onSuccess: (duplicatedConstraint, _, tempConstraintId) => {
       queryClient.setQueryData(queryListKey, (old = []) => {
         return old.map((constraint) =>
-          constraint.id === tempConstraintId ? newConstraint : constraint,
+          constraint.id === tempConstraintId ? duplicatedConstraint : constraint,
         );
       });
 
       if (isRouterMatchTempConstraint(tempConstraintId)) {
         router.navigate({
           to: ".",
-          params: { ...params, bindingConstraintId: newConstraint.id },
+          params: { ...params, bindingConstraintId: duplicatedConstraint.id },
           replace: true,
         });
       }
