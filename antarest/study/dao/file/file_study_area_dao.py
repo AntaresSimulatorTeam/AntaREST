@@ -18,7 +18,12 @@ from typing import TYPE_CHECKING, Any, Callable
 import polars as pl
 from typing_extensions import override
 
-from antarest.core.exceptions import ChildNotFoundError, LayerNotFound, ReferencedObjectDeletionNotAllowed
+from antarest.core.exceptions import (
+    ChildNotFoundError,
+    GemsConnectedObjectDeletionNotAllowed,
+    LayerNotFound,
+    ReferencedObjectDeletionNotAllowed,
+)
 from antarest.core.model import JSON
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
@@ -331,6 +336,8 @@ class FileStudyAreaDao(AreaDao):
             binding_ids = [bc.id for bc in referencing_binding_constraints]
             raise ReferencedObjectDeletionNotAllowed(area_id, binding_ids, object_type="Area")
 
+        self._check_area_not_connected_to_gems(area_id)
+
         # Delete all area files from the tree
         self._delete_area_files(area_id, study_data)
 
@@ -347,6 +354,17 @@ class FileStudyAreaDao(AreaDao):
         # Update area list
         new_area_data: JSON = {"input": {"areas": {"list": [area.name for area in study_data.config.areas.values()]}}}
         study_data.tree.save(new_area_data)
+
+    def _check_area_not_connected_to_gems(self, area_id: str) -> None:
+        """Checks that no GEMS component is connected to the area or to its thermal clusters."""
+        system = self.get_impl().get_system()
+        if system is None:
+            return
+        if not system.area_connections:
+            return
+        connected_component_ids = {c.component for c in system.area_connections if c.area == area_id}
+        if connected_component_ids:
+            raise GemsConnectedObjectDeletionNotAllowed(area_id, connected_component_ids, object_type="Area")
 
     def _delete_area_files(self, area_id: str, study_data: Any) -> None:
         """Delete all files associated with an area from the tree."""
