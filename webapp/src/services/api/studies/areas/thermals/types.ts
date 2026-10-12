@@ -27,27 +27,27 @@ export type Thermal = z.infer<typeof thermalSchema>;
 export type ThermalCreation = z.infer<typeof thermalCreationSchema>;
 export type ThermalUpdate = z.infer<typeof thermalUpdateSchema>;
 
-export interface ThermalsAreaParams {
+export interface ThermalsParams {
   studyId: Study["id"];
   areaId: AreaWithId["id"];
 }
 
-export interface GetThermalParams extends ThermalsAreaParams {
+export interface ThermalParams extends ThermalsParams {
   thermalId: Thermal["id"];
 }
 
-export interface CreateThermalParams extends ThermalsAreaParams {
+export interface CreateThermalParams extends ThermalsParams {
   values: ThermalCreation;
 }
 
-export interface UpdateThermalParams extends GetThermalParams {
+export interface UpdateThermalParams extends ThermalParams {
   values: ThermalUpdate;
 }
 
-export interface DuplicateThermalParams extends GetThermalParams {
+export interface DuplicateThermalParams extends ThermalParams {
   newName: Thermal["name"];
 }
 
-export interface DeleteThermalsParams extends ThermalsAreaParams {
+export interface DeleteThermalsParams extends ThermalsParams {
   thermalIds: Array<Thermal["id"]>;
 }

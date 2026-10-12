@@ -23,9 +23,9 @@ import type {
   CreateThermalParams,
   DeleteThermalsParams,
   DuplicateThermalParams,
-  GetThermalParams,
   Thermal,
-  ThermalsAreaParams,
+  ThermalParams,
+  ThermalsParams,
   UpdateThermalParams,
 } from "./types";
 
@@ -38,7 +38,7 @@ import type {
  * @returns All cluster properties, with IDs normalized for existing list consumers.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getThermals({ studyId, areaId }: ThermalsAreaParams): Promise<Thermal[]> {
+export async function getThermals({ studyId, areaId }: ThermalsParams): Promise<Thermal[]> {
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`);
   return thermalsSchema.parse(res.data);
 }
@@ -53,11 +53,7 @@ export async function getThermals({ studyId, areaId }: ThermalsAreaParams): Prom
  * @returns The complete cluster, with a normalized ID.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getThermal({
-  studyId,
-  areaId,
-  thermalId,
-}: GetThermalParams): Promise<Thermal> {
+export async function getThermal({ studyId, areaId, thermalId }: ThermalParams): Promise<Thermal> {
   const res = await client.get(
     `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${thermalId}`,
   );

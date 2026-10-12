@@ -13,10 +13,10 @@
  */
 
 import { thermalQueries } from "@/queries/thermals/queries";
-import type { Thermal, ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
+import type { Thermal, ThermalsParams } from "@/services/api/studies/areas/thermals/types";
 import { useSuspenseQuery } from "@tanstack/react-query";
 
-interface Params<TData = Thermal[]> extends ThermalsAreaParams {
+interface Params<TData = Thermal[]> extends ThermalsParams {
   select?: (data: Thermal[]) => TData;
 }
 
