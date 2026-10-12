@@ -21,7 +21,7 @@ import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/t
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-function useDeleteThermalClusters({ studyId, areaId }: ThermalsAreaParams) {
+function useDeleteThermals({ studyId, areaId }: ThermalsAreaParams) {
   const queryClient = useQueryClient();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
@@ -31,29 +31,29 @@ function useDeleteThermalClusters({ studyId, areaId }: ThermalsAreaParams) {
   return useMutation({
     ...thermalMutations.delete(studyId, areaId),
     onMutate: async (variables) => {
-      const { clusterIds } = variables;
+      const { thermalIds } = variables;
 
       await queryClient.cancelQueries({ queryKey: queryListKey });
 
       const prevThermals = queryClient.getQueryData(queryListKey);
-      const thermalsToDelete = prevThermals?.filter(({ id }) => clusterIds.includes(id));
+      const thermalsToDelete = prevThermals?.filter(({ id }) => thermalIds.includes(id));
 
       if (thermalsToDelete && thermalsToDelete.length > 0) {
         queryClient.setQueryData(queryListKey, (old = []) => {
-          return old.filter((thermal) => !clusterIds.includes(thermal.id));
+          return old.filter((thermal) => !thermalIds.includes(thermal.id));
         });
       }
 
       return { thermalsToDelete };
     },
     onError: (error, variables, onMutateResult) => {
-      const { clusterIds } = variables;
+      const { thermalIds } = variables;
       const { thermalsToDelete } = onMutateResult || {};
 
       enqueueErrorSnackbar(
         // TODO i18n
         t("study.modeling.bindingConst.deleteBindingConstraint.error", {
-          name: thermalsToDelete?.map((t) => t.name) || clusterIds,
+          name: thermalsToDelete?.map((t) => t.name) || thermalIds,
         }),
         error,
       );
@@ -77,4 +77,4 @@ function useDeleteThermalClusters({ studyId, areaId }: ThermalsAreaParams) {
   });
 }
 
-export default useDeleteThermalClusters;
+export default useDeleteThermals;

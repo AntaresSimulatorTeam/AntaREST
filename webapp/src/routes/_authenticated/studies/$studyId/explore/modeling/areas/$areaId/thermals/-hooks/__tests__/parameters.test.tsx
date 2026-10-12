@@ -16,12 +16,12 @@ import "./setup";
 
 import { thermalKeys } from "@/queries/thermals/keys";
 import * as api from "@/services/api/studies/areas/thermals";
-import type { QueryClient } from "@tanstack/react-query";
 import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
-import { cluster } from "./fixtures";
+import type { QueryClient } from "@tanstack/react-query";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route } from "../../$thermalId/parameters";
+import { cluster } from "./fixtures";
 
 const { params, notify } = vi.hoisted(() => ({
   params: { studyId: "study", areaId: "area", thermalId: "gas" },
@@ -67,7 +67,7 @@ beforeEach(() => {
   client = createQueryClient();
   wrapper = createQueryWrapper(client);
 
-  vi.mocked(api.getThermalClusters).mockReset().mockResolvedValue([cluster]);
+  vi.mocked(api.getThermals).mockReset().mockResolvedValue([cluster]);
 });
 
 afterEach(() => client.clear());
@@ -75,7 +75,7 @@ afterEach(() => client.clear());
 describe("Thermal parameters", () => {
   test("preserves edits across refetches and saves only changed fields", async () => {
     client.setQueryData(key, [cluster]);
-    vi.mocked(api.updateThermalCluster)
+    vi.mocked(api.updateThermal)
       .mockReset()
       .mockResolvedValue({ ...cluster, nominalCapacity: 250, unitCount: 5 });
 
@@ -85,7 +85,7 @@ describe("Thermal parameters", () => {
     await userEvent.type(input, "250");
 
     // Another writer changed the capacity and unit count while this form was being edited.
-    vi.mocked(api.getThermalClusters).mockResolvedValue([
+    vi.mocked(api.getThermals).mockResolvedValue([
       { ...cluster, nominalCapacity: 999, unitCount: 5 },
     ]);
 
@@ -98,7 +98,7 @@ describe("Thermal parameters", () => {
     await userEvent.click(screen.getByRole("button", { name: "global.save" }));
 
     await waitFor(() =>
-      expect(api.updateThermalCluster).toHaveBeenCalledWith(
+      expect(api.updateThermal).toHaveBeenCalledWith(
         { ...scope, clusterId: "gas", values: { nominalCapacity: 250 } },
         expect.anything(),
       ),
@@ -106,7 +106,7 @@ describe("Thermal parameters", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: "global.save" })).toBeDisabled());
     expect(input).toHaveValue(250);
     expect(client.getQueryData(key)).toEqual([{ ...cluster, nominalCapacity: 250, unitCount: 5 }]);
-    expect(api.getThermalClusters).toHaveBeenCalledTimes(1);
+    expect(api.getThermals).toHaveBeenCalledTimes(1);
   });
 
   test("resets defaults when the area changes", async () => {

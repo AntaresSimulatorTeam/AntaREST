@@ -21,14 +21,14 @@ import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
+import type { Thermal } from "@/services/api/studies/areas/thermals/types";
 import { nameToId } from "@/services/utils";
 import { validateNumber } from "@/utils/validation/number";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import useThermalClusters from "../-hooks/useThermalClusters";
-import useUpdateThermalCluster from "../-hooks/useUpdateThermalCluster";
+import useThermals from "../-hooks/useThermals";
+import useUpdateThermalCluster from "../-hooks/useUpdateThermal";
 import {
   COST_GENERATION_OPTIONS,
   THERMAL_GROUPS,
@@ -48,17 +48,17 @@ function Parameters() {
   const { areaId, thermalId } = Route.useParams();
   const { t } = useTranslation();
   const scope = { studyId: study.id, areaId };
-  const { data: clusters, isPending, error } = useThermalClusters(scope);
+  const { data: clusters, isPending, error } = useThermals(scope);
   const updateCluster = useUpdateThermalCluster(scope);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<Thermal>) => {
     return updateCluster.mutateAsync({
       ...scope,
-      clusterId: thermalId,
+      thermalId,
       values: dirtyValues,
     });
   };

@@ -25,7 +25,7 @@ import {
   toCapacityString,
 } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
 import { THERMAL_GROUPS } from "@/services/api/studies/areas/thermals/constants";
-import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
+import type { Thermal } from "@/services/api/studies/areas/thermals/types";
 import { Box } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
@@ -33,10 +33,10 @@ import { createMRTColumnHelper } from "material-react-table";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import useCreateThermalCluster from "./-hooks/useCreateThermalCluster";
-import useDeleteThermalClusters from "./-hooks/useDeleteThermalClusters";
-import useDuplicateThermalCluster from "./-hooks/useDuplicateThermalCluster";
-import useThermalClusters from "./-hooks/useThermalClusters";
+import useCreateThermal from "./-hooks/useCreateThermal";
+import useDeleteThermals from "./-hooks/useDeleteThermals";
+import useDuplicateThermal from "./-hooks/useDuplicateThermal";
+import useThermals from "./-hooks/useThermals";
 import { type ThermalClusterWithCapacity } from "./-utils";
 
 export const Route = createFileRoute(
@@ -50,7 +50,7 @@ export const Route = createFileRoute(
 
 const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
-const selectClustersData = (clusters: ThermalCluster[]) => {
+const selectClustersData = (clusters: Thermal[]) => {
   const clustersWithCapacity = clusters.map(addClusterCapacity);
   return {
     clustersWithCapacity,
@@ -63,14 +63,14 @@ function Thermals() {
   const params = Route.useParams();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const createCluster = useCreateThermalCluster(params);
-  const duplicateCluster = useDuplicateThermalCluster(params);
-  const deleteClusters = useDeleteThermalClusters(params);
+  const createCluster = useCreateThermal(params);
+  const duplicateCluster = useDuplicateThermal(params);
+  const deleteClusters = useDeleteThermals(params);
   const { areaId } = params;
 
   const {
     data: { clustersWithCapacity, totals },
-  } = useThermalClusters({ ...params, select: selectClustersData });
+  } = useThermals({ ...params, select: selectClustersData });
 
   const isSaving = queryClient.isMutating({ mutationKey: thermalKeys.list(study.id, areaId) }) > 0;
 
@@ -134,11 +134,11 @@ function Thermals() {
   };
 
   const handleDuplicate = (row: ThermalClusterWithCapacity, newName: string) => {
-    duplicateCluster.mutate({ clusterId: row.id, newName });
+    duplicateCluster.mutate({ thermalId: row.id, newName });
   };
 
   const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
-    deleteClusters.mutate({ clusterIds: rows.map((row) => row.id) });
+    deleteClusters.mutate({ thermalIds: rows.map((row) => row.id) });
   };
 
   ////////////////////////////////////////////////////////////////
