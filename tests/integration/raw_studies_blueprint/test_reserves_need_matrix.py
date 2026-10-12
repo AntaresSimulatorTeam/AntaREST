@@ -10,7 +10,10 @@
 #
 # This file is part of the Antares project.
 
+import io
+
 import numpy as np
+import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
@@ -74,6 +77,18 @@ class TestReserveNeedMatrix:
         data = np.asarray(body["data"], dtype=float)
         assert data.shape == (8760, 1)
         np.testing.assert_allclose(data, np.asarray(custom_values))
+
+        # Download with the default headers: reserve needs have one time-series column.
+        res = client.get(
+            f"/v1/studies/{study_id}/raw/download",
+            params={"path": matrix_path},
+            headers=preparer.headers,
+        )
+        assert res.status_code == 200, res.text
+        downloaded = pd.read_csv(io.BytesIO(res.content), index_col=0)
+        assert list(downloaded.columns) == ["TS-1"]
+        assert downloaded.shape == (8760, 1)
+        np.testing.assert_allclose(downloaded.to_numpy(), np.asarray(custom_values))
 
         res = client.request(
             "DELETE",
