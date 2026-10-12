@@ -16,38 +16,38 @@ import type { AreaWithId } from "@/types/types";
 import type { z } from "zod";
 import type { Study } from "../../types";
 import type {
-  renewableClusterCreationSchema,
-  renewableClusterSchema,
-  renewableClusterUpdateSchema,
+  renewableCreationSchema,
   renewableGroupSchema,
+  renewableSchema,
+  renewableUpdateSchema,
 } from "./schemas";
 
 export type RenewableGroup = z.infer<typeof renewableGroupSchema>;
-export type RenewableCluster = z.infer<typeof renewableClusterSchema>;
-export type RenewableClusterCreation = z.input<typeof renewableClusterCreationSchema>;
-export type RenewableClusterUpdate = z.input<typeof renewableClusterUpdateSchema>;
+export type Renewable = z.infer<typeof renewableSchema>;
+export type RenewableCreation = z.input<typeof renewableCreationSchema>;
+export type RenewableUpdate = z.input<typeof renewableUpdateSchema>;
 
 export interface RenewablesAreaParams {
   studyId: Study["id"];
   areaId: AreaWithId["id"];
 }
 
-export interface GetRenewableClusterParams extends RenewablesAreaParams {
-  clusterId: RenewableCluster["id"];
+export interface GetRenewableParams extends RenewablesAreaParams {
+  renewableId: Renewable["id"];
 }
 
-export interface CreateRenewableClusterParams extends RenewablesAreaParams {
-  values: RenewableClusterCreation;
+export interface CreateRenewableParams extends RenewablesAreaParams {
+  values: RenewableCreation;
 }
 
-export interface UpdateRenewableClusterParams extends GetRenewableClusterParams {
-  values: RenewableClusterUpdate;
+export interface UpdateRenewableParams extends GetRenewableParams {
+  values: RenewableUpdate;
 }
 
-export interface DuplicateRenewableClusterParams extends GetRenewableClusterParams {
-  newName: RenewableCluster["name"];
+export interface DuplicateRenewableParams extends GetRenewableParams {
+  newName: Renewable["name"];
 }
 
-export interface DeleteRenewableClustersParams extends RenewablesAreaParams {
-  clusterIds: Array<RenewableCluster["id"]>;
+export interface DeleteRenewablesParams extends RenewablesAreaParams {
+  renewableIds: Array<Renewable["id"]>;
 }

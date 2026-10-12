@@ -24,7 +24,7 @@ import {
 
 export const thermalGroupSchema = z.enum(THERMAL_GROUPS);
 
-export const thermalClusterSchema = z.object({
+export const thermalSchema = z.object({
   // Backend models preserve name casing, while database storage lowercases IDs.
   // TODO: Remove normalization once the backend returns consistent IDs.
   id: z.string().transform(nameToId),
@@ -70,13 +70,11 @@ export const thermalClusterSchema = z.object({
   variableOMCost: nullishToOptional(z.number()).optional(),
 });
 
-export const thermalClustersSchema = z.array(thermalClusterSchema);
+export const thermalsSchema = z.array(thermalSchema);
 
-export const thermalClusterCreationSchema = thermalClusterSchema
+export const thermalCreationSchema = thermalSchema
   .omit({ id: true })
   .partial()
   .required({ name: true });
 
-export const thermalClusterUpdateSchema = thermalClusterSchema
-  .omit({ id: true, name: true })
-  .partial();
+export const thermalUpdateSchema = thermalSchema.omit({ id: true, name: true }).partial();

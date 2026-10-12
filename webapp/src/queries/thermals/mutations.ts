@@ -13,11 +13,17 @@
  */
 
 import {
-  createThermalCluster,
-  deleteThermalClusters,
-  duplicateThermalCluster,
-  updateThermalCluster,
+  createThermal,
+  deleteThermals,
+  duplicateThermal,
+  updateThermal,
 } from "@/services/api/studies/areas/thermals";
+import type {
+  CreateThermalParams,
+  DeleteThermalsParams,
+  DuplicateThermalParams,
+  UpdateThermalParams,
+} from "@/services/api/studies/areas/thermals/types";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { mutationOptions } from "@tanstack/react-query";
@@ -27,25 +33,29 @@ export const thermalMutations = {
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: thermalKeys.create(studyId, areaId),
-      mutationFn: createThermalCluster,
+      mutationFn: (params: Omit<CreateThermalParams, "studyId" | "areaId">) =>
+        createThermal({ ...params, studyId, areaId }),
     });
   },
   update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: thermalKeys.update(studyId, areaId),
-      mutationFn: updateThermalCluster,
+      mutationFn: (params: Omit<UpdateThermalParams, "studyId" | "areaId">) =>
+        updateThermal({ ...params, studyId, areaId }),
     });
   },
   duplicate: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: thermalKeys.duplicate(studyId, areaId),
-      mutationFn: duplicateThermalCluster,
+      mutationFn: (params: Omit<DuplicateThermalParams, "studyId" | "areaId">) =>
+        duplicateThermal({ ...params, studyId, areaId }),
     });
   },
   delete: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: thermalKeys.delete(studyId, areaId),
-      mutationFn: deleteThermalClusters,
+      mutationFn: (params: Omit<DeleteThermalsParams, "studyId" | "areaId">) =>
+        deleteThermals({ ...params, studyId, areaId }),
     });
   },
 };

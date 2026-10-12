@@ -29,7 +29,7 @@ export type RenewableCluster = ReturnType<typeof adaptRenewableClusterToView>;
 export type RenewableClusterWithCapacity = ClusterWithCapacity<RenewableCluster>;
 
 export async function getRenewableClusters(studyId: StudyMetadata["id"], areaId: Area["name"]) {
-  const clusters = await renewableApi.getRenewableClusters({ studyId, areaId });
+  const clusters = await renewableApi.getRenewables({ studyId, areaId });
   return clusters.map(adaptRenewableClusterToView);
 }
 
@@ -38,7 +38,7 @@ export async function getRenewableCluster(
   areaId: Area["name"],
   clusterId: Cluster["id"],
 ) {
-  const cluster = await renewableApi.getRenewableCluster({ studyId, areaId, clusterId });
+  const cluster = await renewableApi.getRenewable({ studyId, areaId, renewableId: clusterId });
   return adaptRenewableClusterToView(cluster);
 }
 
@@ -48,10 +48,10 @@ export async function updateRenewableCluster(
   clusterId: Cluster["id"],
   data: Partial<RenewableCluster>,
 ) {
-  const cluster = await renewableApi.updateRenewableCluster({
+  const cluster = await renewableApi.updateRenewable({
     studyId,
     areaId,
-    clusterId,
+    renewableId: clusterId,
     values: data,
   });
   return adaptRenewableClusterToView(cluster);
@@ -62,7 +62,7 @@ export async function createRenewableCluster(
   areaId: Area["name"],
   data: PartialExceptFor<RenewableCluster, "name">,
 ) {
-  const cluster = await renewableApi.createRenewableCluster({ studyId, areaId, values: data });
+  const cluster = await renewableApi.createRenewable({ studyId, areaId, values: data });
   return adaptRenewableClusterToView(cluster);
 }
 
@@ -72,10 +72,10 @@ export async function duplicateRenewableCluster(
   sourceClusterId: RenewableCluster["id"],
   newName: RenewableCluster["name"],
 ) {
-  const cluster = await renewableApi.duplicateRenewableCluster({
+  const cluster = await renewableApi.duplicateRenewable({
     studyId,
     areaId,
-    clusterId: sourceClusterId,
+    renewableId: sourceClusterId,
     newName,
   });
   return adaptRenewableClusterToView(cluster);
@@ -86,5 +86,5 @@ export function deleteRenewableClusters(
   areaId: Area["name"],
   clusterIds: Array<Cluster["id"]>,
 ) {
-  return renewableApi.deleteRenewableClusters({ studyId, areaId, clusterIds });
+  return renewableApi.deleteRenewables({ studyId, areaId, renewableIds: clusterIds });
 }

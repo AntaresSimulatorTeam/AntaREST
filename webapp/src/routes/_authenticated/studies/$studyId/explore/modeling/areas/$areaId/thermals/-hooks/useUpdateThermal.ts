@@ -20,16 +20,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 function useUpdateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
   const queryClient = useQueryClient();
 
+  const { queryKey: queryListKey } = thermalQueries.list(studyId, areaId);
+
   return useMutation({
     ...thermalMutations.update(studyId, areaId),
-    onSuccess: async (updatedCluster, { studyId, areaId }) => {
-      const { queryKey } = thermalQueries.list(studyId, areaId);
-
-      // An older read must not overwrite the saved cluster.
-      await queryClient.cancelQueries({ queryKey });
-
-      queryClient.setQueryData(queryKey, (clusters) =>
-        clusters?.map((cluster) => (cluster.id === updatedCluster.id ? updatedCluster : cluster)),
+    onSuccess: (updatedThermal) => {
+      queryClient.setQueryData(queryListKey, (old = []) =>
+        old.map((thermal) => (thermal.id === updatedThermal.id ? updatedThermal : thermal)),
       );
     },
   });

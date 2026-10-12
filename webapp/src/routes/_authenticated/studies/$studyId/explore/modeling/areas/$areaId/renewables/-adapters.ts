@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { RenewableCluster } from "@/services/api/studies/areas/renewables/types";
+import type { Renewable } from "@/services/api/studies/areas/renewables/types";
 
 /**
  * Represents an absent API group as an empty group for the existing table and form.
@@ -20,6 +20,6 @@ import type { RenewableCluster } from "@/services/api/studies/areas/renewables/t
  * @param cluster - The complete API cluster.
  * @returns The cluster with a string group for UI consumers.
  */
-export function adaptRenewableClusterToView(cluster: RenewableCluster) {
+export function adaptRenewableClusterToView(cluster: Renewable) {
   return { ...cluster, group: cluster.group ?? "" };
 }

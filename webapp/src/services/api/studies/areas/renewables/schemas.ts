@@ -18,7 +18,7 @@ import { RENEWABLE_GROUPS, TS_INTERPRETATION_OPTIONS } from "./constants";
 
 export const renewableGroupSchema = z.enum(RENEWABLE_GROUPS);
 
-export const renewableClusterSchema = z.object({
+export const renewableSchema = z.object({
   id: z.string(),
   name: z.string(),
   // Before v9.3, non-null groups are mapped to the values in renewableGroupSchema.
@@ -30,17 +30,17 @@ export const renewableClusterSchema = z.object({
   nominalCapacity: z.number().min(0),
 });
 
-export const renewableClustersSchema = z.array(renewableClusterSchema);
+export const renewablesSchema = z.array(renewableSchema);
 
 // Null write values are ignored by the backend, including group; they do not clear fields.
-export const renewableClusterUpdateSchema = z.object({
-  group: nullishToOptional(renewableClusterSchema.shape.group.unwrap()),
-  tsInterpretation: nullishToOptional(renewableClusterSchema.shape.tsInterpretation),
-  enabled: nullishToOptional(renewableClusterSchema.shape.enabled),
-  unitCount: nullishToOptional(renewableClusterSchema.shape.unitCount),
-  nominalCapacity: nullishToOptional(renewableClusterSchema.shape.nominalCapacity),
+export const renewableUpdateSchema = z.object({
+  group: nullishToOptional(renewableSchema.shape.group.unwrap()),
+  tsInterpretation: nullishToOptional(renewableSchema.shape.tsInterpretation),
+  enabled: nullishToOptional(renewableSchema.shape.enabled),
+  unitCount: nullishToOptional(renewableSchema.shape.unitCount),
+  nominalCapacity: nullishToOptional(renewableSchema.shape.nominalCapacity),
 });
 
-export const renewableClusterCreationSchema = renewableClusterUpdateSchema.extend({
-  name: renewableClusterSchema.shape.name,
+export const renewableCreationSchema = renewableUpdateSchema.extend({
+  name: renewableSchema.shape.name,
 });

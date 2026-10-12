@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
+import type { Thermal } from "@/services/api/studies/areas/thermals/types";
 
 /** Order of the emission fields displayed in the parameters form. */
 export const THERMAL_POLLUTANTS = [
@@ -28,7 +28,7 @@ export const THERMAL_POLLUTANTS = [
   "op3",
   "op4",
   "op5",
-] as const satisfies ReadonlyArray<keyof ThermalCluster>;
+] as const satisfies ReadonlyArray<keyof Thermal>;
 
 export const COMMON_MATRIX_COLS = [
   "Marginal cost modulation",

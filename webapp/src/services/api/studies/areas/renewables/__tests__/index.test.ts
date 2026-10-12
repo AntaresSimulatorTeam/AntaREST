@@ -17,7 +17,7 @@ import { renewableQueries } from "@/queries/renewables/queries";
 import client from "@/services/api/client";
 import { ZodError, type z } from "zod";
 import * as api from "..";
-import type { renewableClusterSchema } from "../schemas";
+import type { renewableSchema } from "../schemas";
 
 vi.mock("@/services/api/client", () => ({
   default: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -27,7 +27,7 @@ const studyId = "study-1";
 const areaId = "area-1";
 const clusterId = "wind cluster";
 const listUrl = `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable`;
-const cluster: z.input<typeof renewableClusterSchema> = {
+const cluster: z.input<typeof renewableSchema> = {
   id: "Wind Cluster",
   name: "Wind Cluster",
   group: "custom wind",
@@ -72,7 +72,7 @@ test("caches complete cluster properties separately for each study and area", as
 test("normalizes detail IDs to match list IDs while preserving display names", async () => {
   vi.mocked(client.get).mockResolvedValue({ data: cluster });
 
-  const detail = await api.getRenewableCluster({ studyId, areaId, clusterId });
+  const detail = await api.getRenewable({ studyId, areaId, renewableId: clusterId });
 
   expect(detail).toEqual({ ...cluster, id: clusterId });
   expect(client.get).toHaveBeenCalledWith(`${listUrl}/${clusterId}`);
@@ -83,13 +83,13 @@ test("rejects malformed list responses", async () => {
     data: [{ ...cluster, tsInterpretation: "unknown interpretation" }],
   });
 
-  await expect(api.getRenewableClusters({ studyId, areaId })).rejects.toBeInstanceOf(ZodError);
+  await expect(api.getRenewables({ studyId, areaId })).rejects.toBeInstanceOf(ZodError);
 });
 
 test("creates a cluster from a name-only payload", async () => {
   vi.mocked(client.post).mockResolvedValue({ data: cluster });
 
-  const created = await api.createRenewableCluster({
+  const created = await api.createRenewable({
     studyId,
     areaId,
     values: { name: "New cluster" },
@@ -103,10 +103,10 @@ test("patches supplied values while omitting null writes and preserving null res
   const updated = { ...cluster, enabled: false, nominalCapacity: 0, group: null };
   vi.mocked(client.patch).mockResolvedValue({ data: updated });
 
-  const result = await api.updateRenewableCluster({
+  const result = await api.updateRenewable({
     studyId,
     areaId,
-    clusterId,
+    renewableId: clusterId,
     values: { enabled: false, nominalCapacity: 0, group: null, unitCount: null },
   });
 
@@ -119,7 +119,7 @@ test("patches supplied values while omitting null writes and preserving null res
 test("duplicates through the dedicated endpoint and newName query parameter", async () => {
   vi.mocked(client.post).mockResolvedValue({ data: cluster });
 
-  await api.duplicateRenewableCluster({ studyId, areaId, clusterId, newName: "Copy" });
+  await api.duplicateRenewable({ studyId, areaId, renewableId: clusterId, newName: "Copy" });
 
   expect(client.post).toHaveBeenCalledWith(
     `/v1/studies/${studyId}/areas/${areaId}/renewables/${clusterId}`,
@@ -129,17 +129,22 @@ test("duplicates through the dedicated endpoint and newName query parameter", as
 });
 
 test("sends bulk deletion IDs in the request body", async () => {
-  await api.deleteRenewableClusters({ studyId, areaId, clusterIds: [clusterId, "other"] });
+  await api.deleteRenewables({ studyId, areaId, renewableIds: [clusterId, "other"] });
 
   expect(client.delete).toHaveBeenCalledWith(listUrl, { data: [clusterId, "other"] });
 });
 
 test("rejects invalid create and update values before sending a request", async () => {
   await expect(
-    api.createRenewableCluster({ studyId, areaId, values: { name: "New cluster", unitCount: 0 } }),
+    api.createRenewable({ studyId, areaId, values: { name: "New cluster", unitCount: 0 } }),
   ).rejects.toBeInstanceOf(ZodError);
   await expect(
-    api.updateRenewableCluster({ studyId, areaId, clusterId, values: { nominalCapacity: -1 } }),
+    api.updateRenewable({
+      studyId,
+      areaId,
+      renewableId: clusterId,
+      values: { nominalCapacity: -1 },
+    }),
   ).rejects.toBeInstanceOf(ZodError);
 
   expect(client.post).not.toHaveBeenCalled();
