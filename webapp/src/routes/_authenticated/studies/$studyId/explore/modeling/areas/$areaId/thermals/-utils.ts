@@ -13,7 +13,7 @@
  */
 
 import type { ClusterWithCapacity } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
-import { adaptThermalClusterToView } from "./-adapters";
+import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
 
 export {
   COST_GENERATION_OPTIONS,
@@ -24,5 +24,4 @@ export {
 export type { ThermalGroup } from "@/services/api/studies/areas/thermals/types";
 export { COMMON_MATRIX_COLS, THERMAL_POLLUTANTS, TS_GEN_MATRIX_COLS } from "./-constants";
 
-export type ThermalCluster = ReturnType<typeof adaptThermalClusterToView>;
 export type ThermalClusterWithCapacity = ClusterWithCapacity<ThermalCluster>;

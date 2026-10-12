@@ -20,13 +20,13 @@ import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import SimpleLoader from "@/components/loaders/SimpleLoader";
-import { nameToId } from "@/services/utils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
+import { nameToId } from "@/services/utils";
 import { validateNumber } from "@/utils/validation/number";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import { adaptThermalClusterToView } from "../-adapters";
 import useThermalClusters from "../-hooks/useThermalClusters";
 import useUpdateThermalCluster from "../-hooks/useUpdateThermalCluster";
 import {
@@ -35,7 +35,6 @@ import {
   THERMAL_POLLUTANTS,
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
-  type ThermalCluster,
 } from "../-utils";
 
 export const Route = createFileRoute(
@@ -56,13 +55,12 @@ function Parameters() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
-    const cluster = await updateCluster.mutateAsync({
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
+    return updateCluster.mutateAsync({
       ...scope,
       clusterId: thermalId,
       values: dirtyValues,
     });
-    return adaptThermalClusterToView(cluster);
   };
 
   if (isPending) {

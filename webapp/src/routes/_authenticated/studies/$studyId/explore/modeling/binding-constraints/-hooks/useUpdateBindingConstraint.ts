@@ -23,11 +23,11 @@ function useUpdateBindingConstraint() {
   });
   const queryClient = useQueryClient();
 
+  const { queryKey: queryListKey } = bindingConstraintQueries.list(studyId);
+
   const mutation = useMutation({
     ...bindingConstraintMutations.update(studyId),
     onSuccess: (updatedConstraint) => {
-      const { queryKey: queryListKey } = bindingConstraintQueries.list(studyId);
-
       queryClient.setQueryData(queryListKey, (old = []) => {
         return old.map((constraint) =>
           constraint.id === updatedConstraint.id ? updatedConstraint : constraint,

@@ -12,28 +12,87 @@
  * This file is part of the Antares project.
  */
 
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { thermalMutations } from "@/queries/thermals/mutations";
 import { thermalQueries } from "@/queries/thermals/queries";
-import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
+import { createOptimisticListItem } from "@/queries/utils";
+import type {
+  ThermalCluster,
+  ThermalsAreaParams,
+} from "@/services/api/studies/areas/thermals/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { TS_GENERATION_OPTIONS, TS_LAW_OPTIONS } from "../-utils";
 
 function useDuplicateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
   const queryClient = useQueryClient();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const { t } = useTranslation();
+
+  const { queryKey: queryListKey } = thermalQueries.list(studyId, areaId);
 
   return useMutation({
     ...thermalMutations.duplicate(studyId, areaId),
-    onSuccess: async (duplicatedCluster, { studyId, areaId }) => {
-      const { queryKey } = thermalQueries.list(studyId, areaId);
+    onMutate: async (variables) => {
+      const { clusterId: thermalToDuplicateId, newName } = variables;
+      const tempThermalId = crypto.randomUUID();
 
-      // An older read must not overwrite the saved cluster.
-      await queryClient.cancelQueries({ queryKey });
+      await queryClient.cancelQueries({ queryKey: queryListKey });
 
-      queryClient.setQueryData(queryKey, (clusters) => {
-        if (!clusters || clusters.some(({ id }) => id === duplicatedCluster.id)) {
-          return clusters;
-        }
+      const prevThermals = queryClient.getQueryData(queryListKey);
+      const thermalToDuplicate = prevThermals?.find(({ id }) => id === thermalToDuplicateId);
 
-        return [...clusters, duplicatedCluster];
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return [
+          ...old,
+          createOptimisticListItem<ThermalCluster>({
+            group: null,
+            enabled: false,
+            unitCount: 0,
+            nominalCapacity: 0,
+            mustRun: false,
+            minStablePower: 0,
+            spinning: 0,
+            minUpTime: 0,
+            minDownTime: 0,
+            marginalCost: 0,
+            fixedCost: 0,
+            startupCost: 0,
+            marketBidCost: 0,
+            spreadCost: 0,
+            genTs: TS_GENERATION_OPTIONS[0],
+            volatilityForced: 0,
+            volatilityPlanned: 0,
+            lawForced: TS_LAW_OPTIONS[0],
+            lawPlanned: TS_LAW_OPTIONS[0],
+            co2: 0,
+            ...thermalToDuplicate,
+            id: tempThermalId,
+            name: newName,
+          }),
+        ];
+      });
+
+      return tempThermalId;
+    },
+    onError: (error, variables, tempThermalId) => {
+      enqueueErrorSnackbar(
+        // TODO i18n
+        t("study.modeling.bindingConst.duplicate.error", { name: variables.newName }),
+        error,
+      );
+
+      if (!tempThermalId) {
+        return;
+      }
+
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return old.filter((thermal) => thermal.id !== tempThermalId);
+      });
+    },
+    onSuccess: (duplicatedThermal, _, tempThermalId) => {
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return old.map((thermal) => (thermal.id === tempThermalId ? duplicatedThermal : thermal));
       });
     },
   });

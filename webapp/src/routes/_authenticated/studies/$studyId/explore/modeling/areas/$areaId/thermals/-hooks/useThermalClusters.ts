@@ -17,16 +17,14 @@ import type {
   ThermalCluster,
   ThermalsAreaParams,
 } from "@/services/api/studies/areas/thermals/types";
-import { useQuery } from "@tanstack/react-query";
-import { adaptThermalClusterToView } from "../-adapters";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
-const selectClusters = (clusters: ThermalCluster[]) => clusters.map(adaptThermalClusterToView);
+interface Params<TData = ThermalCluster[]> extends ThermalsAreaParams {
+  select?: (data: ThermalCluster[]) => TData;
+}
 
-function useThermalClusters({ studyId, areaId }: ThermalsAreaParams) {
-  return useQuery({
-    ...thermalQueries.list(studyId, areaId),
-    select: selectClusters,
-  });
+function useThermalClusters<TData = ThermalCluster[]>({ studyId, areaId, select }: Params<TData>) {
+  return useSuspenseQuery({ ...thermalQueries.list(studyId, areaId), select });
 }
 
 export default useThermalClusters;
