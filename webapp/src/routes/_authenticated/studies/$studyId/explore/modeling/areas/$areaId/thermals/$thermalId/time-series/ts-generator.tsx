@@ -14,7 +14,7 @@
 
 import Matrix from "@/components/Matrix";
 import { createFileRoute } from "@tanstack/react-router";
-import { TS_GEN_MATRIX_COLS } from "../../-types";
+import { TS_GEN_MATRIX_COLS } from "../../-constants";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId/time-series/ts-generator",
