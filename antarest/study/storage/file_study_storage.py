@@ -222,7 +222,8 @@ class FileStudyStorage(IStudyStorage):
             assert link_content is not None
             matrices_mapping.setdefault(link_content, []).append(node)
 
-        for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
-            for node in matrices_mapping[matrix_content.id]:
-                node.write_dataframe(matrix_content.data)
+        if matrices_mapping:
+            for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
+                for node in matrices_mapping[matrix_content.id]:
+                    node.write_dataframe(matrix_content.data)
         ensure_legacy_reserves_files(file_study.config)
