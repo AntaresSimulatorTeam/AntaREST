@@ -17,11 +17,11 @@ import { invalidateQueriesAfterMutation } from "@/queries/invalidateQueriesAfter
 import { reserveKeys } from "@/queries/reserves/keys";
 import { thermalMutations } from "@/queries/thermals/mutations";
 import { thermalQueries } from "@/queries/thermals/queries";
-import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
+import type { ThermalsParams } from "@/services/api/studies/areas/thermals/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-function useDeleteThermals({ studyId, areaId }: ThermalsAreaParams) {
+function useDeleteThermals({ studyId, areaId }: ThermalsParams) {
   const queryClient = useQueryClient();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
