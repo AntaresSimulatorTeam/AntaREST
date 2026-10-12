@@ -26,7 +26,6 @@ from antarest.study.business.model.gems.system import (
     GemsComponentConnection,
     GemsSystem,
     GemsThermalCapacityConnection,
-    check_legacy_connections,
 )
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -43,17 +42,6 @@ from antarest.study.dao.database.models.gems.system import (
 from antarest.study.dao.database.models.thermal import THERMAL_CLUSTER_TABLE
 
 METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
-
-# Maps a component id to the `(library_id, model_id)` of its model
-ComponentModels = dict[str, tuple[str, str]]
-
-
-def _get_component_models(components: List[GemsComponent]) -> ComponentModels:
-    component_models: ComponentModels = {}
-    for component in components:
-        library_id, model_id = component.model.split(".", 1)
-        component_models[component.id] = (library_id, model_id)
-    return component_models
 
 
 def _reorder_connection(connection: GemsComponentConnection) -> GemsComponentConnection:
@@ -99,6 +87,27 @@ def _check_connection_does_not_link_port_component_to_itself(connections: list[G
             )
 
 
+def _check_legacy_connections(
+    section: str,
+    connections: Sequence[GemsAreaConnection | GemsThermalCapacityConnection],
+    component_ids: set[str],
+) -> None:
+    """
+    Checks that the connections of a section reference existing components, and that each port is connected once.
+    """
+    connected_ports: set[tuple[str, str]] = set()
+    for connection in connections:
+        if connection.component not in component_ids:
+            raise GemsInvalidConnection(f"{section}: component '{connection.component}' does not exist")
+        # Antares Simulator only allows a single connection of each kind per port
+        port = (connection.component, connection.port)
+        if port in connected_ports:
+            raise GemsInvalidConnection(
+                f"{section}: port '{connection.port}' of component '{connection.component}' is connected more than once"
+            )
+        connected_ports.add(port)
+
+
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     """Database implementation of GemsSystemDao"""
 
@@ -110,19 +119,21 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             # No system found, as it is not mandatory to have one, we simply return None.
             return None
 
-        system: dict[str, Any] = {
-            "id": metadata_row.system_id,
-            "description": metadata_row.description,
-            "components": self.get_components(),
-            "connections": self._get_connections(),
-        }
-        # Empty sections are left unset, as they are in a system file without these sections
-        if area_connections := self._get_area_connections():
-            system["area_connections"] = area_connections
-        if thermal_capacity_connections := self._get_thermal_capacity_connections():
-            system["thermal_capacity_connections"] = thermal_capacity_connections
+        components = self.get_components()
+        connections = self._get_connections()
+        area_connections = self._get_area_connections()
+        thermal_capacity_connections = self._get_thermal_capacity_connections()
 
-        return GemsSystem.model_validate(system)
+        return GemsSystem.model_validate(
+            {
+                "id": metadata_row.system_id,
+                "description": metadata_row.description,
+                "components": components,
+                "connections": connections,
+                "area_connections": area_connections,
+                "thermal_capacity_connections": thermal_capacity_connections,
+            }
+        )
 
     def _get_system_row_if_exists(self) -> Row[tuple[Any]] | None:
         study_data_id = self._study_data_id
@@ -268,8 +279,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         try:
             self.save_components(system.components)
             self._save_connections(system.connections)
-            self.save_area_connections(system.area_connections or [])
-            self.save_thermal_capacity_connections(system.thermal_capacity_connections or [])
+            self.save_area_connections(system.area_connections)
+            self.save_thermal_capacity_connections(system.thermal_capacity_connections)
         except Exception as e:
             session.rollback()
             raise e
@@ -282,54 +293,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if not self._get_system_row_if_exists():
             raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
-        # Deleting the components cascades to their connections: keep them to restore them afterwards
-        area_connections = self._get_area_connections()
-        thermal_capacity_connections = self._get_thermal_capacity_connections()
-
         # Clean all existing data regarding components
         session.execute(delete(GEMS_COMPONENTS_TABLE).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id))
-        self._insert_components(components)
-
-        # Connections of removed components, or of ports that no longer exist in their new model, are dropped
-        component_models = _get_component_models(components)
-        valid_ports = self._get_valid_ports()
-
-        def is_still_valid(connection: GemsAreaConnection | GemsThermalCapacityConnection) -> bool:
-            component_model = component_models.get(connection.component)
-            return component_model is not None and (*component_model, connection.port) in valid_ports
-
-        self._insert_area_connections([c for c in area_connections if is_still_valid(c)])
-        self._insert_thermal_capacity_connections([c for c in thermal_capacity_connections if is_still_valid(c)])
-
-        session.commit()
-
-    @override
-    def save_area_connections(self, connections: List[GemsAreaConnection]) -> None:
-        if not self._get_system_row_if_exists():
-            raise GemsSystemNotFound(f"No system configuration found for study {self._study_data_id}")
-
-        try:
-            self._insert_area_connections(connections)
-            self._db_session.commit()
-        except IntegrityError as e:
-            self._db_session.rollback()
-            self._raise_the_right_area_connection_exception(connections, e)
-
-    @override
-    def save_thermal_capacity_connections(self, connections: List[GemsThermalCapacityConnection]) -> None:
-        if not self._get_system_row_if_exists():
-            raise GemsSystemNotFound(f"No system configuration found for study {self._study_data_id}")
-
-        try:
-            self._insert_thermal_capacity_connections(connections)
-            self._db_session.commit()
-        except IntegrityError as e:
-            self._db_session.rollback()
-            self._raise_the_right_thermal_capacity_connection_exception(connections, e)
-
-    def _insert_components(self, components: List[GemsComponent]) -> None:
-        study_data_id = self._study_data_id
-        session = self._db_session
 
         component_values = []
         parameter_values = []
@@ -376,45 +341,66 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
 
-    def _insert_area_connections(self, connections: List[GemsAreaConnection]) -> None:
+        session.commit()
+
+    @override
+    def save_area_connections(self, connections: List[GemsAreaConnection]) -> None:
         if not connections:
             return
 
-        values = []
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        if not self._get_system_row_if_exists():
+            raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
+
+        rows = []
         for connection in connections:
-            values.append(
+            rows.append(
                 {
-                    "study_data_id": self._study_data_id,
+                    "study_data_id": study_data_id,
                     "component_id": connection.component,
                     "port_id": connection.port,
                     "area_id": connection.area,
                 }
             )
-        self._db_session.execute(insert(GEMS_AREA_CONNECTIONS_TABLE), values)
 
-    def _insert_thermal_capacity_connections(self, connections: List[GemsThermalCapacityConnection]) -> None:
+        try:
+            session.execute(insert(GEMS_AREA_CONNECTIONS_TABLE), rows)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            self._raise_the_right_area_connection_exception(connections, e)
+
+    @override
+    def save_thermal_capacity_connections(self, connections: List[GemsThermalCapacityConnection]) -> None:
         if not connections:
             return
 
-        values = []
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        if not self._get_system_row_if_exists():
+            raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
+
+        rows = []
         for connection in connections:
-            values.append(
+            rows.append(
                 {
-                    "study_data_id": self._study_data_id,
+                    "study_data_id": study_data_id,
                     "component_id": connection.component,
                     "port_id": connection.port,
                     "area_id": connection.thermal_component.area,
                     "cluster_id": connection.thermal_component.cluster_id,
                 }
             )
-        self._db_session.execute(insert(GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE), values)
 
-    def _get_valid_ports(self) -> set[tuple[str, str, str]]:
-        table = GEMS_MODELS_PORTS_TABLE
-        stmt = select(table.c.library_id, table.c.model_id, table.c.port_id).where(
-            table.c.study_data_id == self._study_data_id
-        )
-        return {(row.library_id, row.model_id, row.port_id) for row in self._db_session.execute(stmt)}
+        try:
+            session.execute(insert(GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE), rows)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            self._raise_the_right_thermal_capacity_connection_exception(connections, e)
 
     def _check_legacy_connections_components_and_ports(
         self,
@@ -425,7 +411,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     ) -> None:
         component_ids = set(self._get_components_library_and_model())
         try:
-            check_legacy_connections(section, connections, component_ids)
+            _check_legacy_connections(section, connections, component_ids)
         except GemsInvalidConnection as error:
             raise error from e
 

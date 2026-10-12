@@ -245,7 +245,7 @@ class FileStudyThermalDao(ThermalDao, ABC):
 
         connected_component_ids = {
             c.component
-            for c in system.thermal_capacity_connections or []
+            for c in system.thermal_capacity_connections
             if (c.thermal_component.area, c.thermal_component.cluster_id) == (area_id, cluster_id)
         }
         if connected_component_ids:

@@ -360,9 +360,12 @@ class FileStudyAreaDao(AreaDao):
         system = self.get_impl().get_system()
         if system is None:
             return
-        if not system.area_connections:
-            return
+
         connected_component_ids = {c.component for c in system.area_connections if c.area == area_id}
+        # Deleting the area also deletes its thermal clusters
+        connected_component_ids |= {
+            c.component for c in system.thermal_capacity_connections if c.thermal_component.area == area_id
+        }
         if connected_component_ids:
             raise GemsConnectedObjectDeletionNotAllowed(area_id, connected_component_ids, object_type="Area")
 
