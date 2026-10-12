@@ -70,7 +70,7 @@ export type ClusterWithCapacity<T extends BaseCluster> = T & {
  * @param cluster - The cluster to add the capacity fields to.
  * @returns The cluster with the installed and enabled capacity fields added.
  */
-export function addClusterCapacity<T extends BaseCluster>(cluster: T) {
+export function addClusterCapacity<T extends BaseCluster>(cluster: T): ClusterWithCapacity<T> {
   const { unitCount, nominalCapacity, enabled } = cluster;
   const installedCapacity = unitCount * nominalCapacity;
   const enabledCapacity = enabled ? installedCapacity : 0;

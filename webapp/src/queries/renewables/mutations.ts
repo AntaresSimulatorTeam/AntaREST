@@ -13,10 +13,10 @@
  */
 
 import {
-  createRenewableCluster,
-  deleteRenewableClusters,
-  duplicateRenewableCluster,
-  updateRenewableCluster,
+  createRenewable,
+  deleteRenewables,
+  duplicateRenewable,
+  updateRenewable,
 } from "@/services/api/studies/areas/renewables";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
@@ -27,25 +27,25 @@ export const renewableMutations = {
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: renewableKeys.create(studyId, areaId),
-      mutationFn: createRenewableCluster,
+      mutationFn: createRenewable,
     });
   },
   update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: renewableKeys.update(studyId, areaId),
-      mutationFn: updateRenewableCluster,
+      mutationFn: updateRenewable,
     });
   },
   duplicate: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: renewableKeys.duplicate(studyId, areaId),
-      mutationFn: duplicateRenewableCluster,
+      mutationFn: duplicateRenewable,
     });
   },
   delete: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: renewableKeys.delete(studyId, areaId),
-      mutationFn: deleteRenewableClusters,
+      mutationFn: deleteRenewables,
     });
   },
 };
