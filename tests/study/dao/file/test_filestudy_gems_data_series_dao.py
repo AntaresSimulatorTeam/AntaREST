@@ -12,6 +12,8 @@
 import shutil
 from pathlib import Path
 
+import numpy as np
+
 from antarest.study.business.model.gems.data_series import GemsDataSeries
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
@@ -30,13 +32,17 @@ def test_data_series_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     ds_folder = dao.get_file_study().config.study_path / "input" / "data-series"
     ds_folder.mkdir(exist_ok=True)
     shutil.copy(ASSETS_PATH / "gems" / "data-series" / "max_load_values.csv", ds_folder / "max_load_values.csv")
+    shutil.copy(
+        ASSETS_PATH / "gems" / "data-series" / "time-and-scenario-dependent-example.csv",
+        ds_folder / "time-and-scenario-dependent-example.csv",
+    )
 
     data_series = dao.get_data_series()
-    assert len(data_series) == 1
     check_data_series_integrity(data_series)
 
-    # Remove the data series file
+    # Remove the data series files
     (ds_folder / "max_load_values.csv").unlink()
+    (ds_folder / "time-and-scenario-dependent-example.csv").unlink()
     assert dao.get_data_series() == []
 
     # Save the old content
@@ -47,10 +53,18 @@ def test_data_series_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
 
 
 def check_data_series_integrity(data_series: list[GemsDataSeries]) -> None:
-    assert len(data_series) == 1
+    assert len(data_series) == 2
+
     assert data_series[0].id == "max_load_values"
     values = data_series[0].values
-
     assert len(values) == 24
     for i in range(24):
         assert values[i][0] == 10 + i * 2
+
+    assert data_series[1].id == "time-and-scenario-dependent-example"
+    values = data_series[1].values
+    assert len(values) == 3
+    assert len(values[0]) == 8
+    assert np.array_equal(values[0], np.array([2, 4, 6, 8, 10, 12, 14, 16]))
+    assert np.array_equal(values[1], np.array([3, 6, 9, 12, 15, 18, 21, 24]))
+    assert np.array_equal(values[2], np.array([4, 8, 12, 16, 20, 24, 28, 32]))

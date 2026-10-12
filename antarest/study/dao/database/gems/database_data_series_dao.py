@@ -9,16 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+from typing_extensions import override
 
 from antarest.study.business.model.gems.data_series import GemsDataSeries
 from antarest.study.dao.api.gems_data_series import GemsDataSeriesDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 
 
-class DatabaseGemsDataSeriesyDao(GemsDataSeriesDao, DatabaseDaoBase):
+class DatabaseGemsDataSeriesDao(GemsDataSeriesDao, DatabaseDaoBase):
+    @override
     def save_data_series(self, data_series: list[GemsDataSeries]) -> None:
         pass
 
+    @override
     def get_data_series(self) -> list[GemsDataSeries]:
         return []
