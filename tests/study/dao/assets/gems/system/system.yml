@@ -33,9 +33,9 @@ system:
           time-dependent: false
           value: 0.7
         - id: p_max
-          scenario-dependent: false
-          time-dependent: false
-          value: 300
+          time-dependent: true
+          scenario-dependent: true
+          value: time-and-scenario-dependent-example
 
   connections:
     - component1: dsr
