@@ -36,7 +36,7 @@ def _get_gems_data_series_files_path(study_path: Path) -> list[Path]:
 
 def _convert_csv_to_array(csv_content: Any) -> NpArray:
     csv_content_as_list = list(csv_content)
-    csv_with_floats = [[float(s)] for row in csv_content_as_list for s in row]
+    csv_with_floats = [[float(s) for s in row] for row in csv_content_as_list]
     return np.array(csv_with_floats)
 
 
