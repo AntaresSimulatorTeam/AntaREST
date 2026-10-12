@@ -110,23 +110,14 @@ function AreaLayout() {
             }),
           },
           // The new reserve management system is only available since v10.2
-          semver.gte(study.version, "10.2.0")
-            ? {
-                id: "reserves",
-                label: t("study.modeling.reserves"),
-                linkOptions: linkOptions({
-                  to: "/studies/$studyId/explore/modeling/areas/$areaId/reserves",
-                  params,
-                }),
-              }
-            : {
-                id: "reservesLegacy",
-                label: t("study.modeling.reserves"),
-                linkOptions: linkOptions({
-                  to: "/studies/$studyId/explore/modeling/areas/$areaId/reserves-legacy",
-                  params,
-                }),
-              },
+          semver.gte(study.version, "10.2.0") && {
+            id: "reserves",
+            label: t("study.modeling.reserves"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/modeling/areas/$areaId/reserves",
+              params,
+            }),
+          },
           {
             id: "miscGen",
             label: t("study.modeling.miscGen"),

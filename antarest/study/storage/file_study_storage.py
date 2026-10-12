@@ -24,6 +24,7 @@ from antarest.study.model import RawStudy, Study, StudyMetadataCopy
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.storage.file_study_utils import (
     check_study_path,
+    ensure_legacy_reserves_files,
     export_study_to_flat_directory,
     get_study_path,
     update_antares_info,
@@ -214,8 +215,6 @@ class FileStudyStorage(IStudyStorage):
 
     def _denormalize_file_study(self, file_study: FileStudy) -> None:
         matrix_nodes = file_study.tree.get_matrix_nodes_to_denormalize()
-        if not matrix_nodes:
-            return
 
         matrices_mapping: dict[str, list[InputSeriesMatrix]] = {}
         for node in matrix_nodes:
@@ -226,3 +225,4 @@ class FileStudyStorage(IStudyStorage):
         for matrix_content in self._matrix_service.yield_matrices(list(matrices_mapping)):
             for node in matrices_mapping[matrix_content.id]:
                 node.write_dataframe(matrix_content.data)
+        ensure_legacy_reserves_files(file_study.config)

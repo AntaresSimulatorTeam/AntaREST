@@ -24,19 +24,26 @@ from antarest.study.storage.rawstudy.model.filesystem.root.input.reserves.area_r
 class InputReserves(FolderNode):
     @override
     def build(self) -> TREE:
-        if self.config.version >= STUDY_VERSION_10_2:
-            return {
-                a: InputReservesAreaFolder(
-                    self.matrix_storage_context,
-                    self.config.next_file(a),
-                )
-                for a in self.config.area_names()
-            }
-        return {
-            a: InputSeriesMatrix(
+        # The solver still reads the legacy matrices alongside the new reserve folders.
+        # Include the extension in their tree key to distinguish both nodes in v10.2+.
+        has_reserve_definitions = self.config.version >= STUDY_VERSION_10_2
+        tree: TREE = {
+            f"{a}.txt" if has_reserve_definitions else a: InputSeriesMatrix(
                 self.matrix_storage_context,
                 self.config.next_file(f"{a}.txt"),
                 default_empty=default_4_fixed_hourly,
+                should_exist=not has_reserve_definitions,
             )
             for a in self.config.area_names()
         }
+        if self.config.version >= STUDY_VERSION_10_2:
+            tree.update(
+                {
+                    a: InputReservesAreaFolder(
+                        self.matrix_storage_context,
+                        self.config.next_file(a),
+                    )
+                    for a in self.config.area_names()
+                }
+            )
+        return tree
