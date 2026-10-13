@@ -152,9 +152,9 @@ function Thermals() {
         })
       }
       deleteConfirmationMessage={(rows) => {
-        return t("studies.modeling.clusters.question.delete", {
+        return t("study.modeling.thermals.question.delete", {
           count: rows.length,
-          clusterNames: rows.map((row) => row.name),
+          names: rows.map((row) => row.name),
         });
       }}
     />

@@ -16,13 +16,10 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { thermalMutations } from "@/queries/thermals/mutations";
 import { thermalQueries } from "@/queries/thermals/queries";
 import { createOptimisticListItem } from "@/queries/utils";
-import {
-  TS_GENERATION_OPTIONS,
-  TS_LAW_OPTIONS,
-} from "@/services/api/studies/areas/thermals/constants";
 import type { Thermal, ThermalsParams } from "@/services/api/studies/areas/thermals/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { DEFAULT_THERMAL_VALUES } from "../-utils";
 
 function useDuplicateThermal({ studyId, areaId }: ThermalsParams) {
   const queryClient = useQueryClient();
@@ -46,26 +43,7 @@ function useDuplicateThermal({ studyId, areaId }: ThermalsParams) {
         return [
           ...old,
           createOptimisticListItem<Thermal>({
-            group: null,
-            enabled: false,
-            unitCount: 0,
-            nominalCapacity: 0,
-            mustRun: false,
-            minStablePower: 0,
-            spinning: 0,
-            minUpTime: 0,
-            minDownTime: 0,
-            marginalCost: 0,
-            fixedCost: 0,
-            startupCost: 0,
-            marketBidCost: 0,
-            spreadCost: 0,
-            genTs: TS_GENERATION_OPTIONS[0],
-            volatilityForced: 0,
-            volatilityPlanned: 0,
-            lawForced: TS_LAW_OPTIONS[0],
-            lawPlanned: TS_LAW_OPTIONS[0],
-            co2: 0,
+            ...DEFAULT_THERMAL_VALUES,
             ...thermalToDuplicate,
             id: tempThermalId,
             name: newName,
@@ -77,8 +55,7 @@ function useDuplicateThermal({ studyId, areaId }: ThermalsParams) {
     },
     onError: (error, variables, tempThermalId) => {
       enqueueErrorSnackbar(
-        // TODO i18n
-        t("study.modeling.bindingConst.duplicate.error", { name: variables.newName }),
+        t("study.modeling.thermals.duplicate.error", { name: variables.newName }),
         error,
       );
 

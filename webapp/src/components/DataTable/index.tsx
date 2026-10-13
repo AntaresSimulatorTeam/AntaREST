@@ -390,7 +390,7 @@ function DataTable<TData extends RowData>({
           title={t("dialog.title.confirmation")}
           onCancel={closeDialog}
           onConfirm={handleDelete}
-          alert="warning"
+          alert="error"
         >
           {RA.isFunction(deleteConfirmationMessage)
             ? deleteConfirmationMessage(selectedRows)
