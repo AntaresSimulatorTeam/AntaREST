@@ -34,7 +34,7 @@ function useThermal({ studyId, areaId, thermalId }: ThermalParams) {
   }
 
   if (!thermal) {
-    throw new Error(t("study.modeling.thermal.notFound", { id: thermalId }));
+    throw new Error(t("study.modeling.thermals.notFound", { id: thermalId }));
   }
 
   return thermal;
