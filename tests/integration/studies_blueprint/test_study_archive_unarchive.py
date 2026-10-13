@@ -9,17 +9,20 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import errno
 import zipfile
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 from sqlalchemy import select
 from starlette.testclient import TestClient
 
+from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.dao.database.models import STUDY_DATA_TABLE
 from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
-from tests.integration.utils import wait_for
+from tests.integration.utils import wait_for, wait_task_completion
 
 
 def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, internal_study_id: str) -> None:
@@ -109,6 +112,22 @@ def test_archive(client: TestClient, admin_access_token: str, tmp_path: Path, in
     assert fake_zipped_output.is_file()
     with zipfile.ZipFile(fake_zipped_output) as zf:
         assert zf.read("simulation.log").decode() == "Zipped simulation done"
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_archive_failure_preserves_study(
+    admin_client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, storage_mode: str
+) -> None:
+    study_id = admin_client.post("/v1/studies", params={"name": "Archive failure", "storage_mode": storage_mode}).json()
+    monkeypatch.setattr(
+        "antarest.study.storage.rawstudy.raw_study_service.archive_dir",
+        Mock(side_effect=OSError(errno.ENOSPC, "No space left on device")),
+    )
+
+    task_id = admin_client.put(f"/v1/studies/{study_id}/archive").json()
+    assert wait_task_completion(admin_client, None, task_id).status == TaskStatus.FAILED
+    assert not admin_client.get(f"/v1/studies/{study_id}").json()["archived"]
+    assert not (tmp_path / "tmp" / f"archive_{study_id}").exists()
 
 
 @pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
