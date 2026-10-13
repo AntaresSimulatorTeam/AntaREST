@@ -33,6 +33,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": false,
     "verbatimModuleSyntax": true,
+    // "exactOptionalPropertyTypes": true
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
