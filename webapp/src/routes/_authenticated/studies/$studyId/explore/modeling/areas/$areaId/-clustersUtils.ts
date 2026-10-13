@@ -13,8 +13,19 @@
  */
 
 import type { MRT_AggregationFn } from "material-react-table";
-import type { RenewableClusterWithCapacity } from "./renewables/-utils";
-import type { ThermalClusterWithCapacity } from "./thermals/-types";
+
+interface BaseCluster {
+  name: string;
+  group: string | null;
+  unitCount: number;
+  nominalCapacity: number;
+  enabled: boolean;
+}
+
+export type ClusterWithCapacity<T extends BaseCluster = BaseCluster> = T & {
+  installedCapacity: number;
+  enabledCapacity: number;
+};
 
 export function toCapacityString(enabledCapacity: number, installedCapacity: number) {
   return `${Math.round(enabledCapacity)} / ${Math.round(installedCapacity)}`;
@@ -34,7 +45,7 @@ export function toCapacityString(enabledCapacity: number, installedCapacity: num
  * @see https://www.material-react-table.com/docs/guides/aggregation-and-grouping#custom-aggregation-functions for more information on custom aggregation functions in Material React Table.
  */
 export const capacityAggregationFn = <
-  T extends ThermalClusterWithCapacity | RenewableClusterWithCapacity,
+  T extends ClusterWithCapacity<BaseCluster>,
 >(): MRT_AggregationFn<T> => {
   return (columnId, leafRows) => {
     const { enabledCapacitySum, installedCapacitySum } = leafRows.reduce(
@@ -49,19 +60,6 @@ export const capacityAggregationFn = <
 
     return toCapacityString(enabledCapacitySum, installedCapacitySum);
   };
-};
-
-interface BaseCluster {
-  name: string;
-  group: string | null;
-  unitCount: number;
-  nominalCapacity: number;
-  enabled: boolean;
-}
-
-export type ClusterWithCapacity<T extends BaseCluster> = T & {
-  installedCapacity: number;
-  enabledCapacity: number;
 };
 
 /**
