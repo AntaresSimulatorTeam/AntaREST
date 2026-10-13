@@ -51,9 +51,9 @@ function useDeleteThermals({ studyId, areaId }: ThermalsParams) {
       const { thermalsToDelete } = onMutateResult || {};
 
       enqueueErrorSnackbar(
-        // TODO i18n
-        t("study.modeling.bindingConst.deleteBindingConstraint.error", {
-          name: thermalsToDelete?.map((t) => t.name) || thermalIds,
+        t("study.modeling.thermals.delete.error", {
+          count: thermalIds.length,
+          names: thermalsToDelete?.map((t) => t.name) || thermalIds,
         }),
         error,
       );
