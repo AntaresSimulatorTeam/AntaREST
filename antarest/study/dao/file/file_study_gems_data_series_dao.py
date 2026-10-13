@@ -52,7 +52,7 @@ class FileStudyGemsDataSeriesDao(GemsDataSeriesDao, ABC):
 
         data_series_list = []
         for data_series_file in all_data_series_files:
-            with open(data_series_file, "r") as f:
+            with open(data_series_file, "r", newline="") as f:
                 csv_content = csv.reader(f)
                 ds_id = data_series_file.name.split(".")[0]
                 current_ds = GemsDataSeries.model_validate({"id": ds_id, "values": _convert_csv_to_array(csv_content)})
@@ -69,6 +69,6 @@ class FileStudyGemsDataSeriesDao(GemsDataSeriesDao, ABC):
             _get_gems_data_series_folder_path(file_study.config.study_path).mkdir(exist_ok=True)
             ds_path = _get_gems_data_series_folder_path(file_study.config.study_path) / f"{ds.id}.csv"
 
-            with open(ds_path, "w") as f:
+            with open(ds_path, "w", newline="") as f:
                 writer = csv.writer(f)
                 writer.writerows(csv_content["values"])
