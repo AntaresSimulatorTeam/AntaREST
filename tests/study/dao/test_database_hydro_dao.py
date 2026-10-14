@@ -17,6 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
 )
@@ -748,6 +749,26 @@ class TestConvertHydroPmax:
 
     compatibility parameter is only available from version 9.2 so we use dao_bd_920 in the tests below.
     """
+
+    def test_convert_daily_restores_missing_maxpower_and_preserves_existing(
+        self, dao_92: StudyDao, matrix_service: ISimpleMatrixService
+    ) -> None:
+        dao = dao_92
+        save_area(dao, "Paris")
+        save_area(dao, "London")
+        dao.convert_hydro_pmax(HydroPmax.HOURLY)
+
+        # Imported hourly studies may omit maxpower for some or all areas.
+        custom = pl.DataFrame({str(i): [float(i + 1)] * 365 for i in range(4)})
+        dao.save_hydro_maxpower({"london": matrix_service.create(custom)})
+        assert set(dao.get_all_hydro_maxpower()) == {"london"}
+
+        dao.convert_hydro_pmax(HydroPmax.DAILY)
+
+        assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
+        assert set(dao.get_all_hydro_maxpower()) == {"paris", "london"}
+        np.testing.assert_array_equal(dao.get_hydro_maxpower("paris").to_numpy(), [[0, 24, 0, 24]] * 365)
+        pl.testing.assert_frame_equal(dao.get_hydro_maxpower("london"), custom, check_dtypes=False)
 
     def test_roundtrip(self, db_dao_920: DatabaseStudyDao) -> None:
         dao = db_dao_920

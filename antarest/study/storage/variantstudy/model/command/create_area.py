@@ -116,9 +116,8 @@ class CreateArea(ICommand):
         study_data.save_misc_gen({area_id: constants.get_default_miscgen()})
 
         # Reserves
-        if self.study_version < STUDY_VERSION_10_2:
-            study_data.save_reserves({area_id: constants.get_default_reserves()})
-        else:
+        study_data.save_reserves({area_id: constants.get_default_reserves()})
+        if self.study_version >= STUDY_VERSION_10_2:
             study_data.save_reserves_global_parameters({area_id: ReservesGlobalParameters()})
 
         return command_succeeded(message=f"Area '{self.area_name}' created", result=None)

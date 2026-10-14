@@ -36,6 +36,7 @@ class TestCreateStudy:
             "8.8",
             "9.2",
             "9.3",
+            "10.2",
         ],
     )
     def test_create_study_versions(

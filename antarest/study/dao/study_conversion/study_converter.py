@@ -244,11 +244,9 @@ class StudyConverter:
                 self._convert_short_term_storages(st_storages, st_storages_constraints)
 
         # Once every area assets are converted, converting reserves
+        self._new_dao.save_reserves(self._source_dao.get_all_reserves())
         if self._study_version >= STUDY_VERSION_10_2:
             self._convert_reserves()
-        else:
-            # Legacy reserves behavior
-            self._new_dao.save_reserves(self._source_dao.get_all_reserves())
 
     def _convert_thermal_clusters(self, data: dict[str, list[ThermalCluster]]) -> None:
         self._new_dao.save_thermals(data)

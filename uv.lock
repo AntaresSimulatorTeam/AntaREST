@@ -79,15 +79,15 @@ wheels = [
 
 [[package]]
 name = "antares-study-version"
-version = "1.0.20"
+version = "1.0.21"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
     { name = "pandas" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d8/e3/745bc7ce527a0b2a639f9d04fde47e19a779dc6ebc6bed892459d1c58dc6/antares_study_version-1.0.20.tar.gz", hash = "sha256:a598a82c2e4373240ee36ac6e3a90fde43a898038193a3265240b276d779656e", size = 881716, upload-time = "2025-07-31T09:31:08.754Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cc/94/c68ae6e2e6e32aac473372ef65c72444a6a042bb1c8e2ee105085529dc13/antares_study_version-1.0.21.tar.gz", hash = "sha256:c5c8e720a626dd158d142a5f7a0250829b7cac8cbbc20d5ba7e3c8fb8d45505e", size = 940290, upload-time = "2026-10-09T15:15:22.666Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/c9/0d8213316e186684ef6c66e7cd1bf74febc72026219be6b28537b549e52c/antares_study_version-1.0.20-py3-none-any.whl", hash = "sha256:cf37e2aeb0f06236bc619e5f6919e691e42307beff29800f735e9ae1d0c5fcc4", size = 1746991, upload-time = "2025-07-31T09:31:06.97Z" },
+    { url = "https://files.pythonhosted.org/packages/45/71/db8b42123bba223eeadbcd17779091ea0e6d93d1688745870349b6e4ed9a/antares_study_version-1.0.21-py3-none-any.whl", hash = "sha256:599edc67c20e6ef58bcd30e5c4f1e59eca0042f7db059bb536328b21d652f179", size = 1863306, upload-time = "2026-10-09T15:15:20.827Z" },
 ]
 
 [[package]]
@@ -200,7 +200,7 @@ test = [
 requires-dist = [
     { name = "alembic", specifier = "~=1.18.4" },
     { name = "antares-launcher", specifier = "==1.6.0" },
-    { name = "antares-study-version", specifier = "==1.0.20" },
+    { name = "antares-study-version", specifier = "==1.0.21" },
     { name = "antares-timeseries-generation", specifier = "==0.1.9" },
     { name = "bcrypt", specifier = "~=5.0.0" },
     { name = "celery", extras = ["redis"], specifier = "~=5.6.2" },
