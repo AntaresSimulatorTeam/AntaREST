@@ -18,7 +18,7 @@ classifiers=[
     ]
 dependencies = [
     "antares-launcher==1.6.0",
-    "antares-study-version==1.0.20",
+    "antares-study-version==1.0.21",
     "antares-timeseries-generation==0.1.9",
     "fastapi==0.141.1",
     "uvicorn[standard]~=0.52.0",

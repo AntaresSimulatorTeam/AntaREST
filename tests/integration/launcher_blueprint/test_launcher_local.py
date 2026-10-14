@@ -34,7 +34,7 @@ def test_get_launchers(client: TestClient, user_access_token: str) -> None:
                 "max": local_config.time_limit.max,
                 "default": local_config.time_limit.default,
             },
-            "versions": ["7.0", "8.8", "9.3"],
+            "versions": ["7.0", "8.8", "9.3", "10.2"],
         }
     ]
 

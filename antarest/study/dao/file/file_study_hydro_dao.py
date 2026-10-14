@@ -525,6 +525,12 @@ class FileStudyHydroDao(HydroDao):
             self.save_hydro_max_daily_pump_energy(max_daily_pump_power)
 
         else:
+            # Keep existing daily values and only restore matrices omitted in hourly mode.
+            missing_areas = areas - self.get_all_hydro_maxpower().keys()
+            if missing_areas:
+                generator = self.get_impl().generator_matrix_constants
+                maxpower_id = generator.get_hydro_max_power(self.get_impl().get_version())
+                self.save_hydro_maxpower({area_id: maxpower_id for area_id in missing_areas})
             for area_id in areas:
                 file_study.tree.delete(_get_max_hourly_gen_power_path(area_id))
                 file_study.tree.delete(_get_max_hourly_pump_power_path(area_id))
