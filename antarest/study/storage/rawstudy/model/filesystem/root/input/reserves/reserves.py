@@ -36,7 +36,7 @@ class InputReserves(FolderNode):
             )
             for a in self.config.area_names()
         }
-        if self.config.version >= STUDY_VERSION_10_2:
+        if has_reserve_definitions:
             tree.update(
                 {
                     a: InputReservesAreaFolder(
