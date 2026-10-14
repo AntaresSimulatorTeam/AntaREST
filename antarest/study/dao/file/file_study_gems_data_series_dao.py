@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import csv
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -20,6 +19,7 @@ from typing_extensions import override
 from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.gems.data_series import GemsDataSeries
 from antarest.study.dao.api.gems_data_series import GemsDataSeriesDao
+from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvReader, CsvWriter
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 
@@ -52,11 +52,10 @@ class FileStudyGemsDataSeriesDao(GemsDataSeriesDao, ABC):
 
         data_series_list = []
         for data_series_file in all_data_series_files:
-            with open(data_series_file, "r", newline="") as f:
-                csv_content = csv.reader(f)
-                ds_id = data_series_file.name.split(".")[0]
-                current_ds = GemsDataSeries.model_validate({"id": ds_id, "values": _convert_csv_to_array(csv_content)})
-                data_series_list.append(current_ds)
+            csv_content = CsvReader().read(data_series_file)
+            ds_id = data_series_file.name.split(".")[0]
+            current_ds = GemsDataSeries.model_validate({"id": ds_id, "values": _convert_csv_to_array(csv_content)})
+            data_series_list.append(current_ds)
 
         return data_series_list
 
@@ -69,6 +68,4 @@ class FileStudyGemsDataSeriesDao(GemsDataSeriesDao, ABC):
             _get_gems_data_series_folder_path(file_study.config.study_path).mkdir(exist_ok=True)
             ds_path = _get_gems_data_series_folder_path(file_study.config.study_path) / f"{ds.id}.csv"
 
-            with open(ds_path, "w", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerows(csv_content["values"])
+            CsvWriter.write_rows(csv_content["values"], ds_path)
