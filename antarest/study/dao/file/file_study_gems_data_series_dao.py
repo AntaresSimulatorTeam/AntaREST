@@ -40,6 +40,24 @@ def _convert_csv_to_array(csv_content: Any) -> NpArray:
     return np.array(csv_with_floats)
 
 
+def _delete_old_data_series(data_series: list[GemsDataSeries], file_study: FileStudy):
+    # Full replace: remove any previously saved data series omitted from this batch,
+    # so a smaller/different batch doesn't leave stale files behind.
+
+    new_ids = {ds.id for ds in data_series}
+    for existing_file in _get_gems_data_series_files_path(file_study.config.study_path):
+        if existing_file.name.split(".")[0] not in new_ids:
+            existing_file.unlink()
+
+
+def _write_new_data_series(data_series: list[GemsDataSeries], folder: Path):
+    folder.mkdir(exist_ok=True)
+    for ds in data_series:
+        csv_content = ds.model_dump(mode="csv", exclude_unset=True)
+        ds_path = folder / f"{ds.id}.csv"
+        CsvWriter.write_rows(csv_content["values"], ds_path)
+
+
 class FileStudyGemsDataSeriesDao(GemsDataSeriesDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
@@ -62,10 +80,11 @@ class FileStudyGemsDataSeriesDao(GemsDataSeriesDao, ABC):
     @override
     def save_data_series(self, data_series: list[GemsDataSeries]) -> None:
         file_study = self.get_file_study()
+        folder = _get_gems_data_series_folder_path(file_study.config.study_path)
 
-        for ds in data_series:
-            csv_content = ds.model_dump(mode="csv", exclude_unset=True)
-            _get_gems_data_series_folder_path(file_study.config.study_path).mkdir(exist_ok=True)
-            ds_path = _get_gems_data_series_folder_path(file_study.config.study_path) / f"{ds.id}.csv"
+        _delete_old_data_series(data_series, file_study)
 
-            CsvWriter.write_rows(csv_content["values"], ds_path)
+        if not data_series:
+            return
+
+        _write_new_data_series(data_series, folder)
