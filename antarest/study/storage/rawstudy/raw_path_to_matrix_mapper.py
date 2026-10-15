@@ -61,6 +61,8 @@ class RawPathToMatrixMapper:
     """
 
     def __init__(self, dao: StudyDao) -> None:
+        study_version = dao.get_version()
+
         def _save_thermal_prepro(area_id: str, thermal_id: str, series_id: str) -> None:
             dao.save_thermal_prepro({area_id: {thermal_id: series_id}})
 
@@ -246,7 +248,11 @@ class RawPathToMatrixMapper:
                 frequency=_get_hourly_frequency,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/reserves/(?P<area_id>[^/]+)"),
+                pattern=re.compile(
+                    r"input/reserves/(?P<area_id>[^/]+)\.txt"
+                    if study_version >= STUDY_VERSION_10_2
+                    else r"input/reserves/(?P<area_id>[^/]+)"
+                ),
                 getter=dao.get_reserves,
                 setter=_save_reserves,
                 frequency=_get_hourly_frequency,
@@ -455,7 +461,6 @@ class RawPathToMatrixMapper:
             ),
         ]
         # Handle version specific patterns
-        study_version = dao.get_version()
         if study_version < STUDY_VERSION_8_2:
             self._path_matchers.append(
                 RegexMatcher(

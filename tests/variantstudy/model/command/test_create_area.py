@@ -27,7 +27,7 @@ from tests.helpers import build_dao_from_file_study
 
 
 class TestCreateArea:
-    @pytest.mark.parametrize("version", [600, 650, 810, 830, 860])
+    @pytest.mark.parametrize("version", [600, 650, 810, 830, 860, 1020])
     @pytest.mark.parametrize("enr_modelling", list(EnrModelling))
     def test_apply(
         self,

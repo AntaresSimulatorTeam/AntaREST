@@ -10,10 +10,16 @@
 #
 # This file is part of the Antares project.
 import shutil
+from collections.abc import Callable
 from pathlib import Path
 from unittest.mock import Mock
 from zipfile import ZipFile
 
+import polars as pl
+import pytest
+from antares.study.version import StudyVersion
+from sqlalchemy import delete
+from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.blobstore.service import BlobService
@@ -26,7 +32,9 @@ from antarest.matrixstore.service import MatrixService
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_8_8
+from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.database.models.area import RESERVES_TABLE
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, STUDY_VERSION_8_8, STUDY_VERSION_10_2, StorageMode, Study
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy, StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
@@ -38,6 +46,51 @@ from tests.conftest import empty_study_fixture
 from tests.db_statement_recorder import DBStatementRecorder
 from tests.helpers import build_dao_from_file_study, create_raw_study, dirhash, with_db_context
 from tests.test_helpers.outputs import create_minimal_output_dir_from_name
+
+
+@pytest.mark.parametrize("missing_legacy", [False, True])
+@with_db_context
+def test_export_10_2_preserves_both_reserve_formats(
+    dao_builder: Callable[[StudyVersion], StudyDao],
+    db_session: Session,
+    command_context: CommandContext,
+    raw_study_service: RawStudyService,
+    tmp_path: Path,
+    missing_legacy: bool,
+) -> None:
+    dao = dao_builder(STUDY_VERSION_10_2)
+    for area_id in ("de", "fr"):
+        result = CreateArea(command_context=command_context, area_name=area_id, study_version=STUDY_VERSION_10_2).apply(
+            dao
+        )
+        assert result.status
+        assert dao.get_reserves(area_id).shape == (8760, 4)
+
+    # Existing, nonzero legacy reserves must survive normalization and export.
+    legacy = pl.DataFrame({str(i): [i + 1.0] * 8760 for i in range(4)})
+    dao.save_reserves({"fr": command_context.matrix_service.create(legacy)})
+    study = db_session.get(Study, dao.get_study_id())
+    assert study is not None
+    if missing_legacy:
+        # Reproduce studies created before the v10.2 legacy files were restored.
+        if study.storage_mode == StorageMode.FILESYSTEM:
+            assert study.path is not None
+            (Path(study.path) / "input/reserves/de.txt.link").unlink()
+        else:
+            db_session.execute(delete(RESERVES_TABLE).where(RESERVES_TABLE.c.area_id == "de"))
+            db_session.commit()
+
+    destination = tmp_path / "export"
+    raw_study_service.export_study_flat(study, destination)
+    reserves = destination / "input/reserves"
+    assert (reserves / "de.txt").read_text() == ""
+    exported_legacy = pl.read_csv(reserves / "fr.txt", separator="\t", has_header=False)
+    assert exported_legacy.rows() == legacy.rows()
+    for area_id in ("de", "fr"):
+        assert (reserves / area_id / "reserves.yml").exists()
+        assert not (reserves / f"{area_id}.txt.link").exists()
+    if study.path:
+        assert not (Path(study.path) / "input/reserves/fr.txt").exists()
 
 
 def test_export_flat_export_all_files_except_output(

@@ -18,6 +18,7 @@ from unittest.mock import Mock
 import pytest
 from antares.study.version import StudyVersion
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
@@ -94,3 +95,46 @@ class TestInputHydroCommonCapacity:
             assert value.default_empty is not None
             actual_obj[key] = {"default_empty": [[]], "nb_columns": value.nb_columns}
         assert actual_obj == expected
+
+
+@pytest.mark.parametrize(
+    "version, hydro_pmax, optional",
+    [
+        ("9.1", "hourly", False),
+        ("9.2", "daily", False),
+        ("9.2", "hourly", True),
+        ("10.2", None, False),
+        ("10.2", "daily", False),
+        ("10.2", "hourly", True),
+    ],
+)
+def test_missing_maxpower_only_allowed_with_hourly_pmax(
+    tmp_path: Path, version: str, hydro_pmax: str | None, optional: bool
+) -> None:
+    if hydro_pmax is not None:
+        settings = tmp_path / "settings"
+        settings.mkdir()
+        (settings / "generaldata.ini").write_text(f"[compatibility]\nhydro-pmax = {hydro_pmax}\n")
+    capacity_path = tmp_path / "input/hydro/common/capacity"
+    capacity_path.mkdir(parents=True)
+    config = FileStudyTreeConfig(
+        study_path=tmp_path,
+        path=capacity_path,
+        study_id="study",
+        version=StudyVersion.parse(version),
+        areas={
+            "fr": AreaConfig(name="FR", links={}, thermals=[], renewables=[], filters_synthesis=[], filters_year=[])
+        },
+    )
+    node = capacity.InputHydroCommonCapacity(Mock(spec=MatrixStorageContext), config).build()["maxpower_fr"]
+    assert isinstance(node, InputSeriesMatrix)
+    if optional:
+        assert node.parse_content().is_empty()
+        assert node.parse_as_dataframe().shape == (365, 4)
+    else:
+        with pytest.raises(ChildNotFoundError):
+            node.parse_content()
+
+    # Even in hourly mode, existing legacy values must be preserved.
+    (capacity_path / "maxpower_fr.txt").write_text("1\t2\t3\t4\n")
+    assert node.parse_content().rows() == [(1, 2, 3, 4)]

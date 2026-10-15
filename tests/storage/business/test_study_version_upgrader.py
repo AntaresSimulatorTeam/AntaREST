@@ -45,7 +45,7 @@ MAPPING_TRANSMISSION_CAPACITIES = {
 class TestFindNextVersion:
     @pytest.mark.parametrize(
         "from_version, expected",
-        [("700", "710"), ("870", "880")],
+        [("700", "710"), ("870", "880"), ("9.3", "10.2")],
     )
     def test_find_next_version_nominal(self, from_version: str, expected: str) -> None:
         actual = find_next_version(StudyVersion.parse(from_version))
@@ -55,7 +55,7 @@ class TestFindNextVersion:
         "from_version, message",
         [
             ("3.14", "Version '3.14' isn't among supported versions"),
-            ("930", "Your study is already in the latest supported version: '9.3'"),
+            ("10.2", "Your study is already in the latest supported version: '10.2'"),
             ("900", "Version '9' isn't among supported versions"),
         ],
     )
@@ -67,7 +67,7 @@ class TestFindNextVersion:
 class TestCheckVersionCoherence:
     @pytest.mark.parametrize(
         "from_version, target_version",
-        [("700", "710"), ("870", "880"), ("820", "840")],
+        [("700", "710"), ("870", "880"), ("820", "840"), ("9.3", "10.2")],
     )
     def test_check_version_coherence_nominal(self, from_version: str, target_version: str) -> None:
         check_versions_coherence(StudyVersion.parse(from_version), StudyVersion.parse(target_version))
@@ -75,7 +75,7 @@ class TestCheckVersionCoherence:
     @pytest.mark.parametrize(
         "from_version, target_version, message",
         [
-            ("1020", "710", "Version '10.2' isn't among supported versions"),
+            ("11.0", "710", "Version '11' isn't among supported versions"),
             ("820", "32", "Version '32' isn't among supported versions"),
         ],
     )
@@ -88,6 +88,7 @@ class TestCheckVersionCoherence:
         [
             ("860", "860", "Your study is already in the version you asked: 8.6"),
             ("870", "840", "Cannot downgrade your study version : from 8.7 to 8.4"),
+            ("10.2", "9.3", "Cannot downgrade your study version : from 10.2 to 9.3"),
         ],
     )
     def test_check_version_coherence_fails(self, from_version: str, target_version: str, message: str) -> None:
@@ -108,7 +109,7 @@ def test_end_to_end_upgrades(tmp_path: Path) -> None:
     old_areas_values = get_old_area_values(study_dir)
     old_binding_constraint_values = get_old_binding_constraint_values(study_dir)
     # Only checks if the study_upgrader can go from the first supported version to the last one
-    target_version = "9.3"
+    target_version = "10.2"
     study_upgrader = StudyUpgrader(study_dir, StudyVersion.parse(target_version))
     study_upgrader.upgrade()
     assert_study_antares_file_is_updated(study_dir, target_version)
@@ -191,7 +192,8 @@ def assert_settings_are_updated(tmp_path: Path, old_values: list[str]) -> None:
     assert "set-to-null-ntc-between-physical-out-for-first-step" not in adequacy_patch
     assert "initial-reservoir-levels" not in other_preferences
     compatibility = data["compatibility"]
-    assert compatibility == {"hydro-pmax": "daily"}
+    assert compatibility == {"hydro-pmax": "daily", "hydro-rule-curves": "single"}
+    assert optimization["include-reserves"] is False
     # v9.3 upgrade
     assert "refreshtimeseries" not in general
     assert "refreshintervalload" not in general

@@ -80,6 +80,7 @@ from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import RawStudy, Study, StudyMetadataCopy, StudyMetadataCreation
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.file_study_utils import ensure_legacy_reserves_files
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.utils import (
@@ -240,6 +241,8 @@ class DatabaseStudyStorage(IStudyStorage):
             source_dao=source_dao, new_dao=new_dao, study_version=study_version, matrix_service=self._matrix_service
         )
         converter.convert_study_inputs()
+        if not normalized_matrices:
+            ensure_legacy_reserves_files(new_dao.get_file_study().config)
 
     @override
     def get_disk_usage(self, study: Study) -> int:
