@@ -569,8 +569,8 @@ class AbstractFileOutputStorage(IOutputStorage):
     @override
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         study_outputs = self._outputs_provider.get_outputs(study_id)
-        output_dir = _output_path(study_outputs.outputs_path, output_id)
-        return get_disk_usage(output_dir)
+        output_paths = _output_paths(study_outputs.outputs_path, output_id)
+        return sum(get_disk_usage(path) for path in output_paths)
 
     @override
     def get_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
