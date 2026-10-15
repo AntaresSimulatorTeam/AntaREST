@@ -32,8 +32,13 @@ from antarest.study.model import (
     STUDY_VERSION_7_2,
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
+    STUDY_VERSION_8_8,
     STUDY_VERSION_10_2,
     STUDY_VERSION_10_3,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    parse_thermal_cluster,
+    serialize_thermal_cluster,
 )
 
 
@@ -492,7 +497,6 @@ def invalid_fields() -> list[dict[str, Any]]:
         "spread_cost",
         "fixed_cost",
         "startup_cost",
-        "market_bid_cost",
         "variable_o_m_cost",
         "power_increase_cost",
         "power_decrease_cost",
@@ -516,6 +520,27 @@ def test_invalid_field_values(
         if thermal_cluster_cls != ThermalClusterUpdate:
             kwargs["name"] = "cluster-data"
         thermal_cluster_cls(**kwargs)
+
+
+@pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
+def test_negative_market_bid_cost(
+    thermal_cluster_cls: type[ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate],
+) -> None:
+    data: dict[str, Any] = {"marketBidCost": -12.5}
+    if thermal_cluster_cls != ThermalClusterUpdate:
+        data["name"] = "cluster-data"
+
+    cluster = thermal_cluster_cls.model_validate(data)
+
+    assert cluster.market_bid_cost == -12.5
+    assert cluster.model_dump(by_alias=True)["marketBidCost"] == -12.5
+
+
+def test_parse_negative_market_bid_cost() -> None:
+    cluster = parse_thermal_cluster(STUDY_VERSION_8_8, {"name": "gas", "market-bid-cost": -12.5})
+
+    assert cluster.market_bid_cost == -12.5
+    assert serialize_thermal_cluster(STUDY_VERSION_8_8, cluster)["market-bid-cost"] == -12.5
 
 
 @pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
