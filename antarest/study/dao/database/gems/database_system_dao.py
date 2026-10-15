@@ -92,9 +92,6 @@ def _check_legacy_connections(
     connections: Sequence[GemsAreaConnection | GemsThermalCapacityConnection],
     component_ids: set[str],
 ) -> None:
-    """
-    Checks that the connections of a section reference existing components, and that each port is connected once.
-    """
     connected_ports: set[tuple[str, str]] = set()
     for connection in connections:
         if connection.component not in component_ids:
@@ -415,7 +412,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         except GemsInvalidConnection as error:
             raise error from e
 
-        # A port can only have one connection of each kind, including the ones already saved
+        # Including the connections already saved
         stmt = select(table.c.component_id, table.c.port_id).where(table.c.study_data_id == self._study_data_id)
         connected_ports = {(row.component_id, row.port_id) for row in self._db_session.execute(stmt)}
         for connection in connections:

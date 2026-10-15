@@ -356,7 +356,6 @@ class FileStudyAreaDao(AreaDao):
         study_data.tree.save(new_area_data)
 
     def _check_area_not_connected_to_gems(self, area_id: str) -> None:
-        """Checks that no GEMS component is connected to the area or to its thermal clusters."""
         system = self.get_impl().get_system()
         if system is None:
             return

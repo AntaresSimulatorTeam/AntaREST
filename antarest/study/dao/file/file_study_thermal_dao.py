@@ -235,7 +235,6 @@ class FileStudyThermalDao(ThermalDao, ABC):
         remove_first_match(study_data.config.areas[area_id].thermals, lambda c: c.id.lower() == cluster_id)
 
     def _check_thermal_not_connected_to_gems(self, area_id: str, cluster_id: str) -> None:
-        """Checks that no GEMS component is connected to the thermal cluster."""
         system = self.get_impl().get_system()
         if system is None:
             return

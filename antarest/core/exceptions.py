@@ -927,6 +927,11 @@ class GemsModelIncorrectlyFormatted(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
+class GemsSystemIncorrectlyFormatted(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class GemsTaxonomyAlreadyExists(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)

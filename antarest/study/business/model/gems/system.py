@@ -53,10 +53,6 @@ class GemsComponentConnection(AntaresBaseModel):
 
 
 class GemsAreaConnection(AntaresBaseModel):
-    """
-    Connects a port of a GEMS component to a legacy Antares area.
-    """
-
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     component: str
@@ -76,10 +72,10 @@ class _GemsThermalComponent(AntaresBaseModel):
     area: str
     cluster_id: str
 
-    @field_validator("area", "cluster_id")
+    @field_validator("area")
     @classmethod
     def _to_lower(cls, value: str) -> str:
-        # Legacy area and thermal cluster ids are lowercase
+        # Antares Simulator lowercases the area, but matches the cluster id exactly
         return value.lower()
 
 

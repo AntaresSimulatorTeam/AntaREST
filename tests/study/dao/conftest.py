@@ -501,7 +501,7 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert connection.port1 == "balance_port"
     assert connection.port2 == "hydrogen_port"
 
-    # Areas and clusters ids are lowercased
+    # Area ids are lowercased, as Antares Simulator does
     assert system.area_connections == [
         GemsAreaConnection(component="electrolyser", port="hydrogen_port", area="west-h2"),
         GemsAreaConnection(component="electrolyser", port="power_port", area="west"),

@@ -135,10 +135,7 @@ def _component_foreign_key(table_name: str) -> ForeignKeyConstraint:
     )
 
 
-# There is no foreign key to the port of the component: models and ports are never deleted,
-# so it could only check the port on insertion.
-# TODO: check the port validity application side (existence, type, sender/receiver roles).
-# Antares Simulator allows a single area connection per port, hence the primary key.
+# Antares Simulator allows a single connection of each kind per port, hence the primary keys.
 GEMS_AREA_CONNECTIONS_TABLE = Table(
     "gems_area_connections",
     metadata,
@@ -155,7 +152,6 @@ GEMS_AREA_CONNECTIONS_TABLE = Table(
     ),
 )
 
-# Same design as `gems_area_connections`, with a legacy thermal cluster as target.
 GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE = Table(
     "gems_thermal_capacity_connections",
     metadata,

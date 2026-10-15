@@ -57,4 +57,4 @@ system:
       port: power_port
       thermal-component:
         area: west
-        cluster-id: Gas_Cluster
+        cluster-id: gas_cluster

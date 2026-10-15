@@ -429,6 +429,19 @@ def test_cannot_save_legacy_connections_without_system(dao_10_2: StudyDao) -> No
             id="unknown_cluster",
         ),
         pytest.param(
+            "thermal-capacity-connections",
+            [
+                {
+                    "component": "dsr",
+                    "port": "balance_port",
+                    "thermal-component": {"area": "West", "cluster-id": "Gas_Cluster"},
+                }
+            ],
+            # Antares Simulator matches the cluster id exactly, only the area is lowercased
+            "Component 'dsr' is connected to a non-existing thermal cluster 'Gas_Cluster' in area 'west'",
+            id="cluster_id_not_lowercased",
+        ),
+        pytest.param(
             "area-connections",
             [
                 {"component": "dsr", "port": "balance_port", "area": "west"},
