@@ -126,15 +126,6 @@ GEMS_COMPONENT_CONNECTIONS_TABLE = Table(
 )
 
 
-def _component_foreign_key(table_name: str) -> ForeignKeyConstraint:
-    return ForeignKeyConstraint(
-        ["study_data_id", "component_id"],
-        ["gems_components.study_data_id", "gems_components.component_id"],
-        name=f"fk_{table_name}_component",
-        ondelete="CASCADE",
-    )
-
-
 # Antares Simulator allows a single connection of each kind per port, hence the primary keys.
 GEMS_AREA_CONNECTIONS_TABLE = Table(
     "gems_area_connections",
@@ -143,7 +134,12 @@ GEMS_AREA_CONNECTIONS_TABLE = Table(
     Column("component_id", String(255), primary_key=True),
     Column("port_id", String(255), primary_key=True),
     Column("area_id", String(255), nullable=False),
-    _component_foreign_key("gems_area_connections"),
+    ForeignKeyConstraint(
+        ["study_data_id", "component_id"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
+        name="fk_gems_area_connections_component",
+        ondelete="CASCADE",
+    ),
     ForeignKeyConstraint(
         ["study_data_id", "area_id"],
         ["area.study_data_id", "area.area_id"],
@@ -160,7 +156,12 @@ GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE = Table(
     Column("port_id", String(255), primary_key=True),
     Column("area_id", String(255), nullable=False),
     Column("cluster_id", String(255), nullable=False),
-    _component_foreign_key("gems_thermal_capacity_connections"),
+    ForeignKeyConstraint(
+        ["study_data_id", "component_id"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
+        name="fk_gems_thermal_capacity_connections_component",
+        ondelete="CASCADE",
+    ),
     ForeignKeyConstraint(
         ["study_data_id", "area_id", "cluster_id"],
         ["thermal_cluster.study_data_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
