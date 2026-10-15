@@ -21,6 +21,7 @@ from starlette.testclient import TestClient
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.study.dao.database.models import STUDY_DATA_TABLE
+from antarest.study.model import Study
 from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
 from tests.integration.utils import wait_for, wait_task_completion
 
@@ -126,6 +127,39 @@ def test_archive_failure_preserves_study(
 
     task_id = admin_client.put(f"/v1/studies/{study_id}/archive").json()
     assert wait_task_completion(admin_client, None, task_id).status == TaskStatus.FAILED
+    assert not admin_client.get(f"/v1/studies/{study_id}").json()["archived"]
+    assert not (tmp_path / "tmp" / f"archive_{study_id}").exists()
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_rearchive_after_interrupted_archive_keeps_archive(
+    admin_client: TestClient, tmp_path: Path, storage_mode: str
+) -> None:
+    """Retrying an interrupted archive must preserve the only remaining copy of the study."""
+    res = admin_client.post("/v1/studies", params={"name": "Interrupted archive", "storage_mode": storage_mode})
+    assert res.status_code == 201
+    study_id = res.json()
+
+    res = admin_client.put(f"/v1/studies/{study_id}/archive")
+    assert res.status_code == 200
+    assert wait_task_completion(admin_client, None, res.json()).status == TaskStatus.COMPLETED
+
+    archive_path = tmp_path / "archive_dir" / f"{study_id}.zip"
+    original_archive = archive_path.read_bytes()
+
+    # Simulate a crash after removing the study data but before committing archived=True.
+    with db():
+        study = db.session.get(Study, study_id)
+        assert study is not None
+        study.archived = False
+        db.session.commit()
+
+    res = admin_client.put(f"/v1/studies/{study_id}/archive")
+    assert res.status_code == 200
+    assert wait_task_completion(admin_client, None, res.json()).status == TaskStatus.FAILED
+
+    assert archive_path.is_file(), "The only copy of the study was deleted"
+    assert archive_path.read_bytes() == original_archive
     assert not admin_client.get(f"/v1/studies/{study_id}").json()["archived"]
     assert not (tmp_path / "tmp" / f"archive_{study_id}").exists()
 
