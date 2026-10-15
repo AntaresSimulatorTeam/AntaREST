@@ -38,7 +38,6 @@ from antarest.output.routes import create_output_routes
 from antarest.output.service import OutputService
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
-    STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_7_0,
     STUDY_VERSION_8_8,
     OwnerInfo,
@@ -391,4 +390,21 @@ def test_get_study_versions(tmp_path: Path) -> None:
     client = create_test_client(Mock(), raise_server_exceptions=False)
 
     result = client.get("/v1/studies/_versions")
-    assert result.json() == sorted([str(v) for v in STUDY_REFERENCE_TEMPLATES])
+    assert result.status_code == HTTPStatus.OK
+    assert result.json() == [
+        "7",
+        "7.1",
+        "7.2",
+        "8",
+        "8.1",
+        "8.2",
+        "8.3",
+        "8.4",
+        "8.5",
+        "8.6",
+        "8.7",
+        "8.8",
+        "9.2",
+        "9.3",
+        "10.2",
+    ]

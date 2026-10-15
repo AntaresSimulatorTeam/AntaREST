@@ -59,10 +59,6 @@ def _get_wind_matrix_path(area_id: AreaId) -> list[str]:
     return ["input", "wind", "series", f"wind_{area_id}"]
 
 
-def _get_reserves_matrix_path(area_id: AreaId) -> list[str]:
-    return ["input", "reserves", area_id]
-
-
 def _get_misc_gen_matrix_path(area_id: AreaId) -> list[str]:
     return ["input", "misc-gen", f"miscgen-{area_id}"]
 
@@ -204,7 +200,11 @@ class FileStudyAreaDao(AreaDao):
 
     @override
     def get_reserves(self, area_id: str) -> pl.DataFrame:
-        return self._get_area_matrix(area_id, _get_reserves_matrix_path)
+        return self._get_area_matrix(area_id, self._get_reserves_matrix_path)
+
+    def _get_reserves_matrix_path(self, area_id: AreaId) -> list[str]:
+        key = f"{area_id}.txt" if self.get_file_study().config.version >= STUDY_VERSION_10_2 else area_id
+        return ["input", "reserves", key]
 
     @override
     def get_solar(self, area_id: str) -> pl.DataFrame:
@@ -227,7 +227,7 @@ class FileStudyAreaDao(AreaDao):
     @override
     def get_all_reserves(self) -> AreaSeriesMapping:
         study_data = self.get_file_study()
-        return get_all_area_matrices(self.get_impl(), study_data, _get_reserves_matrix_path)
+        return get_all_area_matrices(self.get_impl(), study_data, self._get_reserves_matrix_path)
 
     @override
     def get_all_solar(self) -> AreaSeriesMapping:
@@ -383,6 +383,8 @@ class FileStudyAreaDao(AreaDao):
         study_data.tree.delete(["input", "load", "series", f"load_{area_id}"])
         study_data.tree.delete(["input", "misc-gen", f"miscgen-{area_id}"])
         study_data.tree.delete(["input", "reserves", area_id])
+        if study_data.config.version >= STUDY_VERSION_10_2:
+            study_data.tree.delete(self._get_reserves_matrix_path(area_id))
         study_data.tree.delete(["input", "solar", "prepro", area_id])
         study_data.tree.delete(["input", "solar", "series", f"solar_{area_id}"])
         study_data.tree.delete(["input", "thermal", "clusters", area_id])
@@ -653,7 +655,7 @@ class FileStudyAreaDao(AreaDao):
 
     @override
     def save_reserves(self, series: AreaSeriesMapping) -> None:
-        self._save_area_matrices(series, _get_reserves_matrix_path)
+        self._save_area_matrices(series, self._get_reserves_matrix_path)
 
     @override
     def save_solar(self, series: AreaSeriesMapping) -> None:

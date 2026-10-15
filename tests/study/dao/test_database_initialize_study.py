@@ -43,6 +43,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_4,
     STUDY_VERSION_9_2,
+    STUDY_VERSION_10_2,
 )
 
 
@@ -73,6 +74,8 @@ def test_initialize_study(dao_builder: Callable[[StudyVersion], StudyDao], versi
     expected_opt = OptimizationPreferences()
     if study_version >= STUDY_VERSION_8_4:
         expected_opt.transmission_capacities = TransmissionCapacities.LOCAL_VALUES
+    if study_version >= STUDY_VERSION_10_2:
+        expected_opt.include_reserves = False
     assert actual_opt == expected_opt
 
     actual_adv = dao.get_advanced_parameters()

@@ -9,6 +9,10 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from pathlib import Path
+from zipfile import ZipFile
+
+import numpy as np
 import pytest
 from httpx import Headers
 from starlette.testclient import TestClient
@@ -19,7 +23,9 @@ from antarest.study.business.model.config.optimization_config_model import (
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
 )
+from tests.integration.assets import ASSETS_DIR
 from tests.integration.prepare_proxy import PreparerProxy
+from tests.test_helpers.download import download_to_file
 
 
 def test_study_settings(client: TestClient, admin_access_token: str) -> None:
@@ -425,6 +431,59 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
     res_ts_config = client.get(f"/v1/studies/{study_id}/timeseries/config")
     res_ts_config_json = res_ts_config.json()
     assert res_ts_config_json == {"thermal": {"number": 2}}
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_import_hourly_study_convert_to_daily_and_export(
+    admin_client: TestClient, storage_mode: str, tmp_path: Path
+) -> None:
+    client = admin_client
+    reference = ASSETS_DIR / "symmetry_test_3_LT.zip"
+    maxpower_path = "input/hydro/common/capacity/maxpower_france.txt"
+    with ZipFile(reference) as archive:
+        assert maxpower_path not in archive.namelist()
+
+    res = client.post(
+        "/v1/studies/_import",
+        params={"storage_mode": storage_mode},
+        files={"study": ("reference.zip", reference.read_bytes())},
+    )
+    assert res.status_code == 201, res.text
+    study_id = res.json()
+    compatibility_url = f"/v1/studies/{study_id}/config/compatibility/form"
+    res = client.get(compatibility_url)
+    assert res.status_code == 200, res.text
+    assert res.json()["hydroPmax"] == "hourly"
+    res = client.put(compatibility_url, json={"hydroPmax": "daily"})
+    assert res.status_code == 200, res.text
+    res = client.get(compatibility_url)
+    assert res.status_code == 200, res.text
+    assert res.json()["hydroPmax"] == "daily"
+
+    matrix_path = maxpower_path.removesuffix(".txt")
+    res = client.get(f"/v1/studies/{study_id}/raw", params={"path": matrix_path})
+    assert res.status_code == 200, res.text
+    maxpower = res.json()["data"]
+    assert np.asarray(maxpower).shape == (365, 4)
+
+    res = client.get(f"/v1/studies/{study_id}/export")
+    assert res.status_code == 200, res.text
+    archive_path = tmp_path / "daily.zip"
+    download_to_file(client, res.json()["file"]["id"], archive_path)
+    with ZipFile(archive_path) as archive:
+        assert maxpower_path in archive.namelist()
+        assert "input/hydro/series/france/maxHourlyGenPower.txt" not in archive.namelist()
+        assert "input/hydro/series/france/maxHourlyPumpPower.txt" not in archive.namelist()
+
+    res = client.post(
+        "/v1/studies/_import",
+        params={"storage_mode": storage_mode},
+        files={"study": ("daily.zip", archive_path.read_bytes())},
+    )
+    assert res.status_code == 201, res.text
+    res = client.get(f"/v1/studies/{res.json()}/raw", params={"path": matrix_path})
+    assert res.status_code == 200, res.text
+    np.testing.assert_array_equal(res.json()["data"], maxpower)
 
 
 def test_compatibility_settings(client: TestClient, admin_access_token: str) -> None:
