@@ -14,12 +14,19 @@ import shutil
 import zipfile
 from pathlib import Path
 from subprocess import run
+from typing import Any
 
 import pytest
 
 from antarest.core.exceptions import BadArchiveContent, ShouldNotHappenException
 from antarest.core.utils import archives
-from antarest.core.utils.archives import ArchiveFormat, archive_dir, extract_archive_from_path, unzip
+from antarest.core.utils.archives import (
+    ArchiveFormat,
+    archive_dir,
+    archive_dir_atomically,
+    extract_archive_from_path,
+    unzip,
+)
 
 
 def _create_sample_dir(base: Path) -> Path:
@@ -158,3 +165,44 @@ class TestUnzip:
 
         _assert_extracted_sample_files(target_dir)
         assert not archive_path.exists()
+
+
+class TestArchiveDirAtomically:
+    def test_creates_archive_without_leftovers(self, tmp_path: Path) -> None:
+        src = _create_sample_dir(tmp_path)
+        target = tmp_path / "archives" / "study.zip"
+        target.parent.mkdir()
+
+        archive_dir_atomically(src, target, ArchiveFormat.ZIP)
+
+        with zipfile.ZipFile(target) as zf:
+            _assert_archive_contains_sample_files(set(zf.namelist()))
+        assert [p.name for p in target.parent.iterdir()] == ["study.zip"]
+
+    def test_replaces_existing_archive(self, tmp_path: Path) -> None:
+        src = _create_sample_dir(tmp_path)
+        target = tmp_path / "study.zip"
+        target.write_bytes(b"previous archive")
+
+        archive_dir_atomically(src, target, ArchiveFormat.ZIP)
+
+        with zipfile.ZipFile(target) as zf:
+            _assert_archive_contains_sample_files(set(zf.namelist()))
+
+    def test_failure_keeps_existing_archive(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        src = _create_sample_dir(tmp_path)
+        target = tmp_path / "archives" / "study.zip"
+        target.parent.mkdir()
+        target.write_bytes(b"previous archive")
+
+        def failing_archive_dir(src_dir_path: Path, target_archive_path: Path, **kwargs: Any) -> None:
+            target_archive_path.write_bytes(b"partial")
+            raise OSError("disk full")
+
+        monkeypatch.setattr(archives, "archive_dir", failing_archive_dir)
+
+        with pytest.raises(OSError, match="disk full"):
+            archive_dir_atomically(src, target, ArchiveFormat.ZIP)
+
+        assert target.read_bytes() == b"previous archive"
+        assert [p.name for p in target.parent.iterdir()] == ["study.zip"]

@@ -126,6 +126,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
         storages=[output_storage],
         task_service=task_service,
         output_repository=Mock(),
+        study_disk_space_repository=Mock(),
     )
 
     output_id = "some-output"
@@ -183,6 +184,7 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         storages=[output_storage],
         task_service=task_service,
         output_repository=Mock(),
+        study_disk_space_repository=Mock(),
     )
 
     output_zipped = "some-output_zipped"
@@ -287,6 +289,7 @@ def test_already_existing_study_raises_error_and_deletes_output() -> None:
         studies_repository=studies_repo,
         task_service=Mock(),
         output_repository=Mock(),
+        study_disk_space_repository=Mock(),
     )
 
     # Output

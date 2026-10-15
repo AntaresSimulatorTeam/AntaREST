@@ -9,10 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import errno
 import os
 import shutil
 import zipfile
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
 import pytest
@@ -27,6 +29,7 @@ from antarest.core.exceptions import (
     StudyNotFoundError,
 )
 from antarest.core.remote.remote_executor import IRemoteExecutor
+from antarest.core.utils import archives
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
@@ -418,6 +421,69 @@ def test_output_exists(output_storage: IOutputStorage) -> None:
 
     with pytest.raises(StudyNotFoundError):
         output_storage.output_exists("non-existent", "20201014-1427eco")
+
+
+def _outputs_folder(output_storage: IOutputStorage, tmp_path: Path) -> Path:
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        return tmp_path / "studies" / "STA-mini" / "output"
+    return tmp_path / "outputs" / "STA-mini"
+
+
+def _failing_archive_dir(src_dir_path: Path, target_archive_path: Path, *args: Any, **kwargs: Any) -> None:
+    """Simulates an archival interrupted after writing part of the archive."""
+    target_archive_path.write_bytes(b"PK\x03\x04 truncated")
+    raise OSError(errno.ENOSPC, "No space left on device")
+
+
+def test_output_archival_failure_keeps_output_and_leaves_no_partial_archive(
+    output_storage: IOutputStorage, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    output_id = "20201014-1422eco-hello"
+    output_folder = _outputs_folder(output_storage, tmp_path)
+    expected_files = _count_files_in_dir(output_folder / output_id)
+
+    with monkeypatch.context() as m:
+        m.setattr(archives, "archive_dir", _failing_archive_dir)
+        with pytest.raises(OSError, match="No space left on device"):
+            output_storage.archive_study_output("STA-mini", output_id)
+
+    assert (output_folder / output_id).is_dir()
+    assert _count_files_in_dir(output_folder / output_id) == expected_files
+    assert not (output_folder / f"{output_id}.zip").exists()
+    assert not list(output_folder.glob("~*"))
+    assert not output_storage.is_output_archived("STA-mini", output_id)
+
+    # Retrying must build a complete archive
+    output_storage.archive_study_output("STA-mini", output_id)
+    assert not (output_folder / output_id).exists()
+    assert _count_files_in_zip(output_folder / f"{output_id}.zip") == expected_files
+
+
+def test_output_archival_rebuilds_truncated_archive(output_storage: IOutputStorage, tmp_path: Path) -> None:
+    output_id = "20201014-1422eco-hello"
+    output_folder = _outputs_folder(output_storage, tmp_path)
+    expected_files = _count_files_in_dir(output_folder / output_id)
+    # Truncated archive left next to the output by an interrupted archival
+    (output_folder / f"{output_id}.zip").write_bytes(b"PK\x03\x04 truncated")
+
+    output_storage.archive_study_output("STA-mini", output_id)
+
+    assert not (output_folder / output_id).exists()
+    assert _count_files_in_zip(output_folder / f"{output_id}.zip") == expected_files
+
+
+def test_output_archival_reuses_existing_valid_archive(output_storage: IOutputStorage, tmp_path: Path) -> None:
+    output_id = "20201014-1422eco-hello"
+    output_folder = _outputs_folder(output_storage, tmp_path)
+    expected_files = _count_files_in_dir(output_folder / output_id)
+    # Interrupted unarchival: the archive is complete, the output directory is only partially extracted
+    archive_dir(output_folder / output_id, output_folder / f"{output_id}.zip", archive_format=ArchiveFormat.ZIP)
+    next(p for p in (output_folder / output_id).rglob("*") if p.is_file()).unlink()
+
+    output_storage.archive_study_output("STA-mini", output_id)
+
+    assert not (output_folder / output_id).exists()
+    assert _count_files_in_zip(output_folder / f"{output_id}.zip") == expected_files
 
 
 def _count_files_in_dir(dir_path: Path) -> int:

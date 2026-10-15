@@ -82,6 +82,7 @@ from antarest.study.model import (
     MatrixFrequency,
     StorageMode,
 )
+from antarest.study.repository import StudyDiskSpaceRepository
 from antarest.study.storage.df_download import export_df_chunks
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import (
@@ -220,6 +221,7 @@ class OutputService:
         tmp_dir: Path,
         studies_repository: IStudyMetadataProvider,
         output_repository: OutputRepository,
+        study_disk_space_repository: StudyDiskSpaceRepository,
     ) -> None:
         self._storages = tuple(storages)
         self._task_service = task_service
@@ -228,8 +230,17 @@ class OutputService:
         self._tmp_dir = tmp_dir
         self._studies_repository = studies_repository
         self._output_repository = output_repository
+        self._study_disk_space_repository = study_disk_space_repository
 
         OutputVariablesMatrixUsageProvider(self._matrix_service)
+
+    def _invalidate_disk_usage(self, study_id: str, output_id: str) -> None:
+        """
+        Removes the cached disk usage of the output and the disk space analysis of its study.
+        Must be called whenever the disk usage of an output changes.
+        """
+        self._output_repository.delete(study_id, output_id)
+        self._study_disk_space_repository.delete(study_id)
 
     def _find_output_storage(self, study_id: str, output_id: str) -> IOutputStorage:
         for storage in self._storages:
@@ -307,7 +318,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.unarchive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
-                self._output_repository.delete(study_id, output_id)
+                self._invalidate_disk_usage(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -409,6 +420,7 @@ class OutputService:
                 raise OutputAlreadyExists(output_id)
 
         logger.info(f"output added to study {uuid}")
+        self._invalidate_disk_usage(uuid, output_id)
 
         # TODO: as commented elsewhere, that workflow should be refactored to not span multiple files
         if output_id and isinstance(output, Path) and output.suffix == ArchiveFormat.ZIP and auto_unzip:
@@ -512,7 +524,7 @@ class OutputService:
 
         self._find_output_storage(uuid, output_name).delete_output(uuid, output_name)
 
-        self._output_repository.delete(uuid, output_name)
+        self._invalidate_disk_usage(uuid, output_name)
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
@@ -562,7 +574,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
-                self._output_repository.delete(study_id, output_id)
+                self._invalidate_disk_usage(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
@@ -862,7 +874,7 @@ class OutputService:
             target_storage.import_output(study_id, tmp_zip)
             current_storage.delete_output(study_id, output_id)
 
-        self._output_repository.delete(study_id, output_id)
+        self._invalidate_disk_usage(study_id, output_id)
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)

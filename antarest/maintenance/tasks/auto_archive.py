@@ -21,6 +21,7 @@ from typing import NamedTuple
 from pydantic import BaseModel
 
 from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.core.utils.utils import current_time
@@ -72,6 +73,21 @@ def _get_studies_to_archive(study_service: StudyService, threshold_days: int) ->
     ]
 
 
+def _await_task_success(study_service: StudyService, task_id: str) -> None:
+    """
+    Waits for the task to end, and raises if it did not complete successfully.
+
+    `await_task` returns normally when the task fails, because task errors are caught
+    by the task service and only recorded in the task status.
+    """
+    task_service = study_service.task_service
+    task_service.await_task(task_id)
+    task = task_service.status_task(task_id)
+    if task.status != TaskStatus.COMPLETED:
+        message = task.result.message if task.result else "no result"
+        raise RuntimeError(f"Task {task_id} ended with status {task.status.name}: {message}")
+
+
 def _archive_study(
     study_id: str,
     is_raw_study: bool,
@@ -85,12 +101,12 @@ def _archive_study(
             logger.info(f"Archiving raw study {study_id}" + (" [dry-run]" if dry_run else ""))
             if not dry_run:
                 task_id = study_service.archive(study_id)
-                study_service.task_service.await_task(task_id)
+                _await_task_success(study_service, task_id)
         else:
             logger.info(f"Archiving variant outputs {study_id}" + (" [dry-run]" if dry_run else ""))
             if not dry_run:
                 for task_id in output_service.archive_outputs(study_id):
-                    study_service.task_service.await_task(task_id)
+                    _await_task_success(study_service, task_id)
         return ArchiveStudyResult(1)
     except TaskAlreadyRunning:
         return ArchiveStudyResult(0)
