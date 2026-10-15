@@ -233,9 +233,6 @@ function Parameters() {
                 label={t("study.modeling.clusters.marketBidCost")}
                 name="marketBidCost"
                 control={control}
-                rules={{
-                  validate: validateNumber(),
-                }}
                 disabled={isCostGenerationEnabled}
               />
               <NumberFE
