@@ -185,7 +185,7 @@ class ThermalCluster(AntaresBaseModel):
     spread_cost: Cost = 0
     fixed_cost: Cost = 0
     startup_cost: Cost = 0
-    market_bid_cost: Cost = 0
+    market_bid_cost: float = 0
     co2: Emission = 0
 
     # Added in 8.6
@@ -258,7 +258,7 @@ class ThermalClusterCreation(AntaresBaseModel):
     spread_cost: Cost | None = None
     fixed_cost: Cost | None = None
     startup_cost: Cost | None = None
-    market_bid_cost: Cost | None = None
+    market_bid_cost: float | None = None
     co2: Emission | None = None
     nh3: Emission | None = None
     so2: Emission | None = None
@@ -343,7 +343,7 @@ class ThermalClusterUpdate(AntaresBaseModel):
     spread_cost: Cost | None = None
     fixed_cost: Cost | None = None
     startup_cost: Cost | None = None
-    market_bid_cost: Cost | None = None
+    market_bid_cost: float | None = None
     co2: Emission | None = None
     nh3: Emission | None = None
     so2: Emission | None = None
