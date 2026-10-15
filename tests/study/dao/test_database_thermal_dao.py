@@ -27,6 +27,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalCluster,
     ThermalClusterCreation,
     ThermalClusterGroup,
+    ThermalClusterUpdate,
     ThermalCostGeneration,
     initialize_thermal_cluster,
 )
@@ -42,6 +43,7 @@ from antarest.study.dao.database.models.thermal import (
 )
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
+from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.dao.utils import save_area
 
@@ -129,6 +131,29 @@ def test_save_thermal_creates_cluster(dao: StudyDao) -> None:
 
     with pytest.raises(AreaNotFound):
         dao.save_thermals({"nonexistent": [thermal]})
+
+
+def test_negative_market_bid_cost_commands(dao: StudyDao, command_context: CommandContext) -> None:
+    save_area(dao, "Paris")
+
+    creation = CreateCluster(
+        area_id="paris",
+        parameters=ThermalClusterCreation(name="gas", market_bid_cost=-12.5),
+        command_context=command_context,
+        study_version=dao.get_version(),
+    )
+    assert creation.apply(dao).status
+    assert dao.get_thermal("paris", "gas").market_bid_cost == -12.5
+    assert dao.get_all_thermals_for_area("paris")[0].market_bid_cost == -12.5
+    assert dao.get_all_thermals()["paris"]["gas"].market_bid_cost == -12.5
+
+    update = UpdateThermalClusters(
+        cluster_properties={"paris": {"gas": ThermalClusterUpdate(market_bid_cost=-25.5)}},
+        command_context=command_context,
+        study_version=dao.get_version(),
+    )
+    assert update.apply(dao).status
+    assert dao.get_thermal("paris", "gas").market_bid_cost == -25.5
 
 
 def test_save_thermal_overwrites_existing(dao: StudyDao) -> None:

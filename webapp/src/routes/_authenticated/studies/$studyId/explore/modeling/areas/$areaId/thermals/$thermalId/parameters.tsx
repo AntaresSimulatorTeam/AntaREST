@@ -234,7 +234,7 @@ function Parameters() {
                 name="marketBidCost"
                 control={control}
                 rules={{
-                  validate: validateNumber({ min: 0 }),
+                  validate: validateNumber(),
                 }}
                 disabled={isCostGenerationEnabled}
               />
