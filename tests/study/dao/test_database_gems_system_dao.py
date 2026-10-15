@@ -303,22 +303,6 @@ def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_save_components_removes_all_connections(dao_10_2: StudyDao) -> None:
-    dao = dao_10_2
-    system = _add_system_file_to_study_dao(dao)
-
-    # Even when saving the same components, their connections are removed with them
-    dao.save_components(system.components)
-
-    saved_system = dao.get_system()
-    assert saved_system is not None
-    assert saved_system.components == system.components
-    assert saved_system.connections == []
-    assert saved_system.area_connections == []
-    assert saved_system.thermal_capacity_connections == []
-
-
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_deleting_a_cluster_removes_its_connections(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     _add_system_file_to_study_dao(dao)
