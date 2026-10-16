@@ -85,6 +85,13 @@ GEMS_COMPONENT_PARAMETERS_TABLE = Table(
         ["gems_data_series.study_data_id", "gems_data_series.id"],
         name="fk_gems_component_parameters_dataseries_id",
     ),
+    # `dataseries_id` is NULL exactly when `value` is a fixed numeric value (see DAO), so this
+    # encodes: value must be a plain float if and only if the parameter is neither time- nor
+    # scenario-dependent; otherwise it must reference a data series.
+    CheckConstraint(
+        "(dataseries_id IS NULL) = (NOT time_dependent AND NOT scenario_dependent)",
+        name="ck_gems_component_parameters_value_type_matches_dependency",
+    ),
     CheckConstraint(
         "dataseries_id IS NULL OR dataseries_id = value",
         name="ck_gems_component_parameters_dataseries_id_matches_value",
