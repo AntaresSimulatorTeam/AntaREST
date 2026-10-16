@@ -13,8 +13,19 @@
  */
 
 import type { MRT_AggregationFn } from "material-react-table";
-import type { RenewableClusterWithCapacity } from "./renewables/-utils";
-import type { ThermalClusterWithCapacity } from "./thermals/-utils";
+
+interface BaseCluster {
+  name: string;
+  group: string | null;
+  unitCount: number;
+  nominalCapacity: number;
+  enabled: boolean;
+}
+
+export type ClusterWithCapacity<T extends BaseCluster = BaseCluster> = T & {
+  installedCapacity: number;
+  enabledCapacity: number;
+};
 
 export function toCapacityString(enabledCapacity: number, installedCapacity: number) {
   return `${Math.round(enabledCapacity)} / ${Math.round(installedCapacity)}`;
@@ -34,7 +45,7 @@ export function toCapacityString(enabledCapacity: number, installedCapacity: num
  * @see https://www.material-react-table.com/docs/guides/aggregation-and-grouping#custom-aggregation-functions for more information on custom aggregation functions in Material React Table.
  */
 export const capacityAggregationFn = <
-  T extends ThermalClusterWithCapacity | RenewableClusterWithCapacity,
+  T extends ClusterWithCapacity<BaseCluster>,
 >(): MRT_AggregationFn<T> => {
   return (columnId, leafRows) => {
     const { enabledCapacitySum, installedCapacitySum } = leafRows.reduce(
@@ -51,26 +62,13 @@ export const capacityAggregationFn = <
   };
 };
 
-interface BaseCluster {
-  name: string;
-  group: string;
-  unitCount: number;
-  nominalCapacity: number;
-  enabled: boolean;
-}
-
-export type ClusterWithCapacity<T extends BaseCluster> = T & {
-  installedCapacity: number;
-  enabledCapacity: number;
-};
-
 /**
  * Adds the installed and enabled capacity fields to a cluster.
  *
  * @param cluster - The cluster to add the capacity fields to.
  * @returns The cluster with the installed and enabled capacity fields added.
  */
-export function addClusterCapacity<T extends BaseCluster>(cluster: T) {
+export function addClusterCapacity<T extends BaseCluster>(cluster: T): ClusterWithCapacity<T> {
   const { unitCount, nominalCapacity, enabled } = cluster;
   const installedCapacity = unitCount * nominalCapacity;
   const enabledCapacity = enabled ? installedCapacity : 0;

@@ -14,19 +14,19 @@
 
 import client from "@/services/api/client";
 import {
-  thermalClusterCreationSchema,
-  thermalClusterSchema,
-  thermalClustersSchema,
-  thermalClusterUpdateSchema,
+  thermalCreationSchema,
+  thermalSchema,
+  thermalsSchema,
+  thermalUpdateSchema,
 } from "./schemas";
 import type {
-  CreateThermalClusterParams,
-  DeleteThermalClustersParams,
-  DuplicateThermalClusterParams,
-  GetThermalClusterParams,
-  ThermalCluster,
-  ThermalsAreaParams,
-  UpdateThermalClusterParams,
+  CreateThermalParams,
+  DeleteThermalsParams,
+  DuplicateThermalParams,
+  Thermal,
+  ThermalParams,
+  ThermalsParams,
+  UpdateThermalParams,
 } from "./types";
 
 /**
@@ -38,33 +38,26 @@ import type {
  * @returns All cluster properties, with IDs normalized for existing list consumers.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getThermalClusters({
-  studyId,
-  areaId,
-}: ThermalsAreaParams): Promise<ThermalCluster[]> {
+export async function getThermals({ studyId, areaId }: ThermalsParams): Promise<Thermal[]> {
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`);
-  return thermalClustersSchema.parse(res.data);
+  return thermalsSchema.parse(res.data);
 }
 
 /**
- * GET /v1/studies/{studyId}/areas/{areaId}/clusters/thermal/{clusterId} - Gets a thermal cluster.
+ * GET /v1/studies/{studyId}/areas/{areaId}/clusters/thermal/{thermalId} - Gets a thermal cluster.
  *
- * @param params - Study, area, and cluster identifiers.
+ * @param params - Study, area, and thermal cluster identifiers.
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
- * @param params.clusterId - Cluster identifier.
+ * @param params.thermalId - Thermal cluster identifier.
  * @returns The complete cluster, with a normalized ID.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getThermalCluster({
-  studyId,
-  areaId,
-  clusterId,
-}: GetThermalClusterParams): Promise<ThermalCluster> {
+export async function getThermal({ studyId, areaId, thermalId }: ThermalParams): Promise<Thermal> {
   const res = await client.get(
-    `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${clusterId}`,
+    `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${thermalId}`,
   );
-  return thermalClusterSchema.parse(res.data);
+  return thermalSchema.parse(res.data);
 }
 
 /**
@@ -77,64 +70,64 @@ export async function getThermalCluster({
  * @returns The created cluster, with a normalized ID.
  * @throws If the values or response don't match the expected schema.
  */
-export async function createThermalCluster({
+export async function createThermal({
   studyId,
   areaId,
   values,
-}: CreateThermalClusterParams): Promise<ThermalCluster> {
-  const body = thermalClusterCreationSchema.parse(values);
+}: CreateThermalParams): Promise<Thermal> {
+  const body = thermalCreationSchema.parse(values);
   const res = await client.post(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`, body);
-  return thermalClusterSchema.parse(res.data);
+  return thermalSchema.parse(res.data);
 }
 
 /**
- * PATCH /v1/studies/{studyId}/areas/{areaId}/clusters/thermal/{clusterId} - Updates a thermal cluster.
+ * PATCH /v1/studies/{studyId}/areas/{areaId}/clusters/thermal/{thermalId} - Updates a thermal cluster.
  *
  * @param params - Identifiers and the partial cluster values to update.
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
- * @param params.clusterId - Cluster identifier.
+ * @param params.thermalId - Thermal cluster identifier.
  * @param params.values - Partial cluster values to update.
  * @returns The updated cluster, with a normalized ID.
  * @throws If the values or response don't match the expected schema.
  */
-export async function updateThermalCluster({
+export async function updateThermal({
   studyId,
   areaId,
-  clusterId,
+  thermalId,
   values,
-}: UpdateThermalClusterParams): Promise<ThermalCluster> {
-  const body = thermalClusterUpdateSchema.parse(values);
+}: UpdateThermalParams): Promise<Thermal> {
+  const body = thermalUpdateSchema.parse(values);
   const res = await client.patch(
-    `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${clusterId}`,
+    `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${thermalId}`,
     body,
   );
-  return thermalClusterSchema.parse(res.data);
+  return thermalSchema.parse(res.data);
 }
 
 /**
- * POST /v1/studies/{studyId}/areas/{areaId}/thermals/{clusterId} - Duplicates a thermal cluster.
+ * POST /v1/studies/{studyId}/areas/{areaId}/thermals/{thermalId} - Duplicates a thermal cluster.
  *
  * @param params - Source identifiers and the new name, sent as a query parameter.
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
- * @param params.clusterId - Source cluster identifier.
+ * @param params.thermalId - Source thermal cluster identifier.
  * @param params.newName - New cluster name.
  * @returns The duplicated cluster, with a normalized ID.
  * @throws If the response doesn't match the expected schema.
  */
-export async function duplicateThermalCluster({
+export async function duplicateThermal({
   studyId,
   areaId,
-  clusterId,
+  thermalId,
   newName,
-}: DuplicateThermalClusterParams): Promise<ThermalCluster> {
+}: DuplicateThermalParams): Promise<Thermal> {
   const res = await client.post(
-    `/v1/studies/${studyId}/areas/${areaId}/thermals/${clusterId}`,
+    `/v1/studies/${studyId}/areas/${areaId}/thermals/${thermalId}`,
     null,
     { params: { newName } },
   );
-  return thermalClusterSchema.parse(res.data);
+  return thermalSchema.parse(res.data);
 }
 
 /**
@@ -143,14 +136,14 @@ export async function duplicateThermalCluster({
  * @param params - Study and area identifiers and the cluster IDs to send in the request body.
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
- * @param params.clusterIds - Cluster identifiers to delete.
+ * @param params.thermalIds - Thermal cluster identifiers to delete.
  */
-export async function deleteThermalClusters({
+export async function deleteThermals({
   studyId,
   areaId,
-  clusterIds,
-}: DeleteThermalClustersParams): Promise<void> {
+  thermalIds,
+}: DeleteThermalsParams): Promise<void> {
   await client.delete(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`, {
-    data: clusterIds,
+    data: thermalIds,
   });
 }

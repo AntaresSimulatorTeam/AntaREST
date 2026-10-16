@@ -12,17 +12,92 @@
  * This file is part of the Antares project.
  */
 
-import type { ClusterWithCapacity } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
-import { adaptThermalClusterToView } from "./-adapters";
-
-export {
-  COST_GENERATION_OPTIONS,
-  THERMAL_GROUPS,
+import {
+  addClusterCapacity,
+  getClustersWithCapacityTotals,
+  type ClusterWithCapacity,
+} from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
+import {
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
 } from "@/services/api/studies/areas/thermals/constants";
-export type { ThermalGroup } from "@/services/api/studies/areas/thermals/types";
-export { COMMON_MATRIX_COLS, THERMAL_POLLUTANTS, TS_GEN_MATRIX_COLS } from "./-constants";
+import type { Thermal, ThermalCreation } from "@/services/api/studies/areas/thermals/types";
 
-export type ThermalCluster = ReturnType<typeof adaptThermalClusterToView>;
-export type ThermalClusterWithCapacity = ClusterWithCapacity<ThermalCluster>;
+////////////////////////////////////////////////////////////////
+// Types
+////////////////////////////////////////////////////////////////
+
+export type ThermalClusterWithCapacity = ClusterWithCapacity<Thermal>;
+
+////////////////////////////////////////////////////////////////
+// Constants
+////////////////////////////////////////////////////////////////
+
+/** Order of the emission fields displayed in the parameters form. */
+export const THERMAL_POLLUTANTS = [
+  "so2",
+  "nh3",
+  "nox",
+  "nmvoc",
+  "pm25",
+  "pm5",
+  "pm10",
+  "op1",
+  "op2",
+  "op3",
+  "op4",
+  "op5",
+] as const satisfies ReadonlyArray<keyof Thermal>;
+
+export const COMMON_MATRIX_COLS = [
+  "Marginal cost modulation",
+  "Market bid modulation",
+  "Capacity modulation",
+  "Min gen modulation",
+] as const;
+
+export const TS_GEN_MATRIX_COLS = [
+  "FO Duration",
+  "PO Duration",
+  "FO Rate",
+  "PO Rate",
+  "NPO Min",
+  "NPO Max",
+] as const;
+
+export const DEFAULT_THERMAL_VALUES = {
+  name: "",
+  group: null,
+  enabled: false,
+  unitCount: 0,
+  nominalCapacity: 0,
+  mustRun: false,
+  minStablePower: 0,
+  spinning: 0,
+  minUpTime: 0,
+  minDownTime: 0,
+  marginalCost: 0,
+  fixedCost: 0,
+  startupCost: 0,
+  marketBidCost: 0,
+  spreadCost: 0,
+  genTs: TS_GENERATION_OPTIONS[0],
+  volatilityForced: 0,
+  volatilityPlanned: 0,
+  lawForced: TS_LAW_OPTIONS[0],
+  lawPlanned: TS_LAW_OPTIONS[0],
+  co2: 0,
+} satisfies ThermalCreation;
+
+////////////////////////////////////////////////////////////////
+// Functions
+////////////////////////////////////////////////////////////////
+
+export function selectClustersData(clusters: Thermal[]) {
+  const clustersWithCapacity = clusters.map(addClusterCapacity);
+
+  return {
+    clustersWithCapacity,
+    totals: getClustersWithCapacityTotals(clustersWithCapacity),
+  };
+}
