@@ -21,7 +21,12 @@ from antarest.core.exceptions import (
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
+from antarest.study.business.model.gems.system import (
+    GemsComponent,
+    GemsComponentConnection,
+    GemsSystem,
+    _GemsParameters,
+)
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.data_series import GEMS_DATA_SERIES_TABLE
@@ -92,6 +97,55 @@ def _decode_parameter_value(value: str) -> float | str:
         return float(value)
     except ValueError:
         return value
+
+
+def _check_parameters_values_are_correctly_typed(
+    components: List[GemsComponent], original_exception: Exception
+) -> None:
+    incorrectly_float_typed_parameter_ids = set()
+    incorrectly_str_typed_parameter_ids = set()
+
+    for component in components:
+        if component.parameters:
+            for parameter in component.parameters:
+                _check_float_value_is_correctly_typed(incorrectly_float_typed_parameter_ids, parameter)
+                _check_str_value_is_correctly_typed(incorrectly_str_typed_parameter_ids, parameter)
+
+    if incorrectly_str_typed_parameter_ids or incorrectly_float_typed_parameter_ids:
+        message = _build_error_message(incorrectly_float_typed_parameter_ids, incorrectly_str_typed_parameter_ids)
+
+        raise GemsInvalidParameterValue(message) from original_exception
+
+
+def _check_str_value_is_correctly_typed(incorrectly_str_typed_parameter_ids: set[Any], parameter: _GemsParameters):
+    is_incorrectly_typed_str = isinstance(parameter.value, str) and (
+        not parameter.time_dependent and not parameter.scenario_dependent
+    )
+
+    if is_incorrectly_typed_str:
+        incorrectly_str_typed_parameter_ids.add(parameter.id)
+
+
+def _check_float_value_is_correctly_typed(incorrectly_float_typed_parameter_ids: set[Any], parameter: _GemsParameters):
+    is_incorrectly_typed_float = isinstance(parameter.value, (int, float)) and (
+        parameter.time_dependent or parameter.scenario_dependent
+    )
+    if is_incorrectly_typed_float:
+        incorrectly_float_typed_parameter_ids.add(parameter.id)
+
+
+def _build_error_message(
+    incorrectly_float_typed_parameter_ids: set[str], incorrectly_str_typed_parameter_ids: set[str]
+) -> str:
+    message = ""
+    if incorrectly_str_typed_parameter_ids:
+        message += f"Parameter value(s) must be a float when they do not depend on time or scenario: {sorted(incorrectly_str_typed_parameter_ids)}"
+
+    if incorrectly_float_typed_parameter_ids:
+        if message:
+            message += "\n"
+        message += f"Parameter value(s) must be a string when they depend on time or scenario: {sorted(incorrectly_float_typed_parameter_ids)}"
+    return message
 
 
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
@@ -321,6 +375,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             try:
                 session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
             except IntegrityError as e:
+                _check_parameters_values_are_correctly_typed(components, e)
                 self._check_parameter_values_reference_existing_data_series(components, e)
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
