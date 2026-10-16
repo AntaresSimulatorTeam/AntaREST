@@ -17,12 +17,14 @@ from typing_extensions import override
 
 from antarest.core.exceptions import (
     GemsInvalidConnection,
+    GemsInvalidParameterValue,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
 from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
+from antarest.study.dao.database.models.gems.data_series import GEMS_DATA_SERIES_TABLE
 from antarest.study.dao.database.models.gems.library import GEMS_MODELS_PORTS_TABLE
 from antarest.study.dao.database.models.gems.system import (
     GEMS_COMPONENT_CONNECTIONS_TABLE,
@@ -237,6 +239,32 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             session.rollback()
             raise e
 
+    def _check_parameter_values_reference_existing_data_series(
+        self, components: List[GemsComponent], original_exception: Exception
+    ) -> None:
+        referenced_ids = {
+            parameter.value
+            for component in components
+            for parameter in component.parameters or []
+            if isinstance(parameter.value, str)
+        }
+        if not referenced_ids:
+            return
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        existing_ids_stmt = select(GEMS_DATA_SERIES_TABLE.c.id).where(
+            GEMS_DATA_SERIES_TABLE.c.study_data_id == study_data_id,
+            GEMS_DATA_SERIES_TABLE.c.id.in_(referenced_ids),
+        )
+        existing_ids = {row.id for row in session.execute(existing_ids_stmt).fetchall()}
+
+        if missing_ids := referenced_ids - existing_ids:
+            raise GemsInvalidParameterValue(
+                f"Parameter value(s) reference non-existing data series: {sorted(missing_ids)}"
+            ) from original_exception
+
     @override
     def save_components(self, components: List[GemsComponent]) -> None:
         study_data_id = self._study_data_id
@@ -273,6 +301,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                         "time_dependent": parameter.time_dependent,
                         "scenario_dependent": parameter.scenario_dependent,
                         "value": _encode_parameter_value(parameter.value),
+                        "dataseries_id": parameter.value if isinstance(parameter.value, str) else None,
                     }
                 )
 
@@ -289,7 +318,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if component_values:
             session.execute(insert(GEMS_COMPONENTS_TABLE), component_values)
         if parameter_values:
-            session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
+            try:
+                session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
+            except IntegrityError as e:
+                self._check_parameter_values_reference_existing_data_series(components, e)
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
 
