@@ -41,7 +41,7 @@ def _convert_csv_to_array(csv_content: Any) -> NpArray:
     return np.array(csv_with_floats)
 
 
-def _delete_old_data_series(data_series: list[GemsDataSeries], file_study: FileStudy):
+def _delete_old_data_series(data_series: list[GemsDataSeries], file_study: FileStudy) -> None:
     # Full replace: remove any previously saved data series omitted from this batch,
     # so a smaller/different batch doesn't leave stale files behind.
 
@@ -64,7 +64,7 @@ def _check_no_duplicated_ids(data_series: list[GemsDataSeries]) -> None:
         raise GemsDuplicatedDataSeriesId(f"Duplicated data series IDs: {duplicated_ids}")
 
 
-def _write_new_data_series(data_series: list[GemsDataSeries], folder: Path):
+def _write_new_data_series(data_series: list[GemsDataSeries], folder: Path) -> None:
     folder.mkdir(exist_ok=True)
     for ds in data_series:
         csv_content = ds.model_dump(mode="csv", exclude_unset=True)

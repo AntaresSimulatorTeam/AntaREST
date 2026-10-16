@@ -102,8 +102,8 @@ def _decode_parameter_value(value: str) -> float | str:
 def _check_parameters_values_are_correctly_typed(
     components: List[GemsComponent], original_exception: Exception
 ) -> None:
-    incorrectly_float_typed_parameter_ids = set()
-    incorrectly_str_typed_parameter_ids = set()
+    incorrectly_float_typed_parameter_ids: set[str] = set()
+    incorrectly_str_typed_parameter_ids: set[str] = set()
 
     for component in components:
         if component.parameters:
@@ -117,7 +117,9 @@ def _check_parameters_values_are_correctly_typed(
         raise GemsInvalidParameterValue(message) from original_exception
 
 
-def _check_str_value_is_correctly_typed(incorrectly_str_typed_parameter_ids: set[Any], parameter: _GemsParameters):
+def _check_str_value_is_correctly_typed(
+    incorrectly_str_typed_parameter_ids: set[str], parameter: _GemsParameters
+) -> None:
     is_incorrectly_typed_str = isinstance(parameter.value, str) and (
         not parameter.time_dependent and not parameter.scenario_dependent
     )
@@ -126,7 +128,9 @@ def _check_str_value_is_correctly_typed(incorrectly_str_typed_parameter_ids: set
         incorrectly_str_typed_parameter_ids.add(parameter.id)
 
 
-def _check_float_value_is_correctly_typed(incorrectly_float_typed_parameter_ids: set[Any], parameter: _GemsParameters):
+def _check_float_value_is_correctly_typed(
+    incorrectly_float_typed_parameter_ids: set[str], parameter: _GemsParameters
+) -> None:
     is_incorrectly_typed_float = isinstance(parameter.value, (int, float)) and (
         parameter.time_dependent or parameter.scenario_dependent
     )
