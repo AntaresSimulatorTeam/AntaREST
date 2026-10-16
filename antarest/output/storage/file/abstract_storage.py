@@ -34,6 +34,7 @@ from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import (
     ArchiveFormat,
     archive_dir,
+    archive_dir_atomically,
     extract_archive_from_path,
     extract_archive_from_stream,
     is_zip,
@@ -433,13 +434,11 @@ class AbstractFileOutputStorage(IOutputStorage):
             raise OutputAlreadyArchived(output_id)
 
         output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
-        # If exists, we assume it's a valid archive.
-        if not archived_output_path.is_file():
-            archive_dir(
-                output_path,
-                archived_output_path,
-                archive_format=ArchiveFormat.ZIP,
-            )
+        # An existing archive may be left by an interrupted unarchival: it is complete, so we reuse it
+        # (the output directory may be only partially extracted). A truncated zip, left by an archival
+        # interrupted before archives were written atomically, is rebuilt from the output directory.
+        if not archived_output_path.is_file() or not zipfile.is_zipfile(archived_output_path):
+            archive_dir_atomically(output_path, archived_output_path, ArchiveFormat.ZIP)
         shutil.rmtree(output_path)
 
         remove_from_cache(self._cache, study_id)
@@ -469,8 +468,7 @@ class AbstractFileOutputStorage(IOutputStorage):
             study_outputs = self._outputs_provider.get_outputs(study_id)
             output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
             try:
-                # Note: here we don't remove the archived version, allows to speed up a subsequent archival,
-                #       but at some disk usage cost for unarchived studies.
+                # Note: `unzip` removes the archive once it is extracted.
                 unzip(output_path, archived_output_path)
                 remove_from_cache(self._cache, study_id)
             except Exception as e:
