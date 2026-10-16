@@ -362,6 +362,23 @@ def test_output_archival(output_storage: IOutputStorage, tmp_path: Path) -> None
         output_storage.unarchive_study_output("STA-mini", "non-existent")
 
 
+def test_get_disk_usage_includes_archive(output_storage: IOutputStorage, tmp_path: Path) -> None:
+    output_folder = tmp_path / "studies" / "STA-mini" / "output"
+    if output_storage.storage_type == OutputStorageType.OUT_OF_STUDY_FILE_TREE:
+        output_folder = tmp_path / "outputs" / "STA-mini"
+
+    output_id = "20201014-1422eco-hello"
+    directory_size = output_storage.get_disk_usage("STA-mini", output_id)
+    archive_path = output_folder / f"{output_id}.zip"
+    archive_dir(output_folder / output_id, archive_path)
+    archive_size = archive_path.stat().st_size
+
+    assert output_storage.get_disk_usage("STA-mini", output_id) == directory_size + archive_size
+
+    shutil.rmtree(output_folder / output_id)
+    assert output_storage.get_disk_usage("STA-mini", output_id) == archive_size
+
+
 def test_output_copy(output_storage: IOutputStorage, tmp_path: Path) -> None:
     ##########################
     # Set Up
