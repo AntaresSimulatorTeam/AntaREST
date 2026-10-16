@@ -16,10 +16,24 @@ from typing import Any
 from sqlalchemy import delete, insert, select
 from typing_extensions import override
 
+from antarest.core.exceptions import GemsDuplicatedDataSeriesId
 from antarest.study.business.model.gems.data_series import GemsDataSeries
 from antarest.study.dao.api.gems_data_series import GemsDataSeriesDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.data_series import GEMS_DATA_SERIES_TABLE
+
+
+def _check_no_duplicated_ids(data_series: list[GemsDataSeries]) -> None:
+    deduplicated_ids = {ds.id for ds in data_series}
+    if len(deduplicated_ids) != len(data_series):
+        count_ds_per_id = dict.fromkeys(deduplicated_ids, 0)
+        duplicated_ids = []
+        for current_ds in data_series:
+            count_ds_per_id[current_ds.id] += 1
+            if count_ds_per_id[current_ds.id] > 1:
+                duplicated_ids.append(current_ds.id)
+
+        raise GemsDuplicatedDataSeriesId(f"Duplicated data series IDs: {duplicated_ids}")
 
 
 class DatabaseGemsDataSeriesDao(GemsDataSeriesDao, DatabaseDaoBase):
@@ -41,11 +55,8 @@ class DatabaseGemsDataSeriesDao(GemsDataSeriesDao, DatabaseDaoBase):
         # Full replace: clear what is already stored for this study, then re-insert the batch.
         session.execute(delete(table).where(table.c.study_data_id == self._study_data_id))
         if data_series:
-            # Mirrors `FileStudyGemsDataSeriesDao`, which writes one file per ID: a duplicate ID
-            # in the batch silently keeps the last occurrence instead of raising, so both backends
-            # behave identically for the same input.
-            deduplicated_by_id = {ds.id: ds for ds in data_series}
-            session.execute(insert(table), [self._to_row(ds) for ds in deduplicated_by_id.values()])
+            _check_no_duplicated_ids(data_series)
+            session.execute(insert(table), [self._to_row(ds) for ds in data_series])
         session.commit()
 
     def _to_row(self, data_series: GemsDataSeries) -> dict[str, Any]:
