@@ -10,8 +10,12 @@
 #
 # This file is part of the Antares project.
 
-import numpy as np
+import re
 
+import numpy as np
+import pytest
+
+from antarest.core.exceptions import GemsDuplicatedDataSeriesId
 from antarest.study.business.model.gems.data_series import GemsDataSeries
 from antarest.study.dao.api.study_dao import StudyDao
 
@@ -49,14 +53,19 @@ def test_data_series_roundtrip(dao_10_2: StudyDao) -> None:
 
 
 def test_duplicate_ids_in_batch_keep_the_last_occurrence(dao_10_2: StudyDao) -> None:
-    # The filesystem DAO writes one file per ID, so a duplicate ID in the same batch silently
-    # overwrites the earlier one instead of raising. The database DAO must behave identically.
-    first = GemsDataSeries(id="demand", values=np.array([[1.0]]))
-    last = GemsDataSeries(id="demand", values=np.array([[2.0]]))
+    data_series = [
+        GemsDataSeries(id="ds1", values=np.array([[1.0]])),
+        GemsDataSeries(id="ds2", values=np.array([[1.0]])),
+        GemsDataSeries(id="ds3", values=np.array([[1.0]])),
+        GemsDataSeries(id="ds1", values=np.array([[2.0]])),
+        GemsDataSeries(id="ds3", values=np.array([[1.0]])),
+        GemsDataSeries(id="ds4", values=np.array([[1.0]])),
+    ]
 
-    dao_10_2.save_data_series([first, last])
+    with pytest.raises(GemsDuplicatedDataSeriesId, match=re.escape("Duplicated data series IDs: ['ds1', 'ds3']")):
+        dao_10_2.save_data_series(data_series)
 
-    assert_data_series_equal(dao_10_2.get_data_series(), [last])
+    assert dao_10_2.get_data_series() == []
 
 
 def test_values_precision_is_preserved(dao_10_2: StudyDao) -> None:
