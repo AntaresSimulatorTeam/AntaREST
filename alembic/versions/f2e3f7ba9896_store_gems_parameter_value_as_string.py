@@ -13,7 +13,7 @@
 """store_gems_parameter_value_as_string
 
 Revision ID: f2e3f7ba9896
-Revises: 3b48d03db4ef
+Revises: b60aab4df757
 Create Date: 2026-10-08 16:00:00.000000
 
 """
@@ -25,7 +25,7 @@ from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = "f2e3f7ba9896"
-down_revision = "3b48d03db4ef"
+down_revision = "b60aab4df757"
 branch_labels = None
 depends_on = None
 
@@ -58,6 +58,10 @@ def upgrade():
             "ck_gems_component_parameters_dataseries_id_matches_value",
             "dataseries_id IS NULL OR dataseries_id = value",
         )
+        batch_op.create_check_constraint(
+            "ck_gems_component_parameters_value_type_matches_dependency",
+            "(dataseries_id IS NULL) = (NOT time_dependent AND NOT scenario_dependent)",
+        )
         batch_op.create_foreign_key(
             "fk_gems_component_parameters_dataseries_id",
             "gems_data_series",
@@ -69,6 +73,7 @@ def upgrade():
 def downgrade():
     with op.batch_alter_table("gems_component_parameters", schema=None) as batch_op:
         batch_op.drop_constraint("fk_gems_component_parameters_dataseries_id", type_="foreignkey")
+        batch_op.drop_constraint("ck_gems_component_parameters_value_type_matches_dependency", type_="check")
         batch_op.drop_constraint("ck_gems_component_parameters_dataseries_id_matches_value", type_="check")
         batch_op.drop_column("dataseries_id")
         batch_op.alter_column(

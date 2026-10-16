@@ -304,6 +304,47 @@ def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_parameter_value_must_be_a_float_when_value_does_not_depend_on_time_or_scenario(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_library_file_to_study_dao(dao)
+    dao.save_data_series(
+        [
+            GemsDataSeries(id="demand_profile1", values=np.array([[1.0], [2.0]])),
+            GemsDataSeries(id="demand_profile2", values=np.array([[1.0, 2.0]])),
+            GemsDataSeries(id="demand_profile3", values=np.array([[1.0, 2.0], [3.0, 4.0]])),
+        ]
+    )
+
+    component = GemsComponent.model_validate(
+        {
+            "id": "dsr",
+            "model": "andromede-v1-models-weo-hybrid.dsr",
+            "parameters": [
+                {"id": "param1", "time-dependent": True, "scenario-dependent": False, "value": "demand_profile1"},
+                {"id": "param2", "time-dependent": False, "scenario-dependent": True, "value": "demand_profile2"},
+                {"id": "param3", "time-dependent": False, "scenario-dependent": False, "value": "demand_profile2"},
+                {"id": "param4", "time-dependent": True, "scenario-dependent": False, "value": 42},
+                {"id": "param5", "time-dependent": False, "scenario-dependent": True, "value": 3.14},
+                {"id": "param6", "time-dependent": True, "scenario-dependent": True, "value": "demand_profile3"},
+                {"id": "param7", "time-dependent": True, "scenario-dependent": True, "value": 2.718},
+            ],
+        }
+    )
+    system = GemsSystem.model_validate({"id": "sys_id", "components": [component]})
+
+    with pytest.raises(
+        GemsInvalidParameterValue,
+        match=re.escape(
+            "Parameter value(s) must be a float when they do not depend on time or scenario: ['param3']\n"
+            + "Parameter value(s) must be a string when they depend on time or scenario: ['param4', 'param5', 'param7']"
+        ),
+    ):
+        dao.save_system(system)
+
+    assert dao.get_system() is None
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_deleting_a_cluster_removes_its_connections(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     _add_library_file_to_study_dao(dao)
