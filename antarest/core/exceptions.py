@@ -974,6 +974,11 @@ class GemsScenarioAlreadyExists(HTTPException):
         super().__init__(HTTPStatus.CONFLICT, message)
 
 
+class GemsInvalidParameterValue(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class GemsDuplicatedDataSeriesId(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
