@@ -61,10 +61,22 @@ GEMS_COMPONENT_PARAMETERS_TABLE = Table(
     Column("scenario_dependent", Boolean, nullable=False),
     # Either a fixed numeric value (e.g. "3.14") or the `id` of a data series (e.g. "demand_profile")
     Column("value", String(255), nullable=False),
+    # Mirrors `value` whenever it holds a data series reference, and is left NULL for fixed numeric
+    # values. Foreign keys are not checked on NULL
+    Column("dataseries_id", String(255), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id", "component_id"],
         ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
+    ),
+    ForeignKeyConstraint(
+        ["study_data_id", "dataseries_id"],
+        ["gems_data_series.study_data_id", "gems_data_series.id"],
+        name="fk_gems_component_parameters_dataseries_id",
+    ),
+    CheckConstraint(
+        "dataseries_id IS NULL OR dataseries_id = value",
+        name="ck_gems_component_parameters_dataseries_id_matches_value",
     ),
 )
 
