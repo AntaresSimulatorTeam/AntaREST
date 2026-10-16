@@ -16,6 +16,7 @@ from typing import Any
 import numpy as np
 from typing_extensions import override
 
+from antarest.core.exceptions import GemsDuplicatedDataSeriesId
 from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.gems.data_series import GemsDataSeries
 from antarest.study.dao.api.gems_data_series import GemsDataSeriesDao
@@ -48,6 +49,19 @@ def _delete_old_data_series(data_series: list[GemsDataSeries], file_study: FileS
     for existing_file in _get_gems_data_series_files_path(file_study.config.study_path):
         if existing_file.name.split(".")[0] not in new_ids:
             existing_file.unlink()
+
+
+def _check_no_duplicated_ids(data_series: list[GemsDataSeries]) -> None:
+    deduplicated_ids = {ds.id for ds in data_series}
+    if len(deduplicated_ids) != len(data_series):
+        count_ds_per_id = dict.fromkeys(deduplicated_ids, 0)
+        duplicated_ids = []
+        for current_ds in data_series:
+            count_ds_per_id[current_ds.id] += 1
+            if count_ds_per_id[current_ds.id] > 1:
+                duplicated_ids.append(current_ds.id)
+
+        raise GemsDuplicatedDataSeriesId(f"Duplicated data series IDs: {duplicated_ids}")
 
 
 def _write_new_data_series(data_series: list[GemsDataSeries], folder: Path):
@@ -87,4 +101,5 @@ class FileStudyGemsDataSeriesDao(GemsDataSeriesDao, ABC):
         if not data_series:
             return
 
+        _check_no_duplicated_ids(data_series)
         _write_new_data_series(data_series, folder)
