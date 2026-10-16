@@ -12,13 +12,16 @@
 import re
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from antarest.core.exceptions import (
     GemsInvalidConnection,
+    GemsInvalidParameterValue,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
+from antarest.study.business.model.gems.data_series import GemsDataSeries
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
 from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
@@ -292,12 +295,110 @@ def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None
         dao.save_system(system)
 
 
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_parameter_value_must_be_a_float_when_value_does_not_depend_on_time_or_scenario(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_library_file_to_study_dao(dao)
+    dao.save_data_series(
+        [
+            GemsDataSeries(id="demand_profile1", values=np.array([[1.0], [2.0]])),
+            GemsDataSeries(id="demand_profile2", values=np.array([[1.0, 2.0]])),
+            GemsDataSeries(id="demand_profile3", values=np.array([[1.0, 2.0], [3.0, 4.0]])),
+        ]
+    )
+
+    component = GemsComponent.model_validate(
+        {
+            "id": "dsr",
+            "model": "andromede-v1-models-weo-hybrid.dsr",
+            "parameters": [
+                {"id": "param1", "time-dependent": True, "scenario-dependent": False, "value": "demand_profile1"},
+                {"id": "param2", "time-dependent": False, "scenario-dependent": True, "value": "demand_profile2"},
+                {"id": "param3", "time-dependent": False, "scenario-dependent": False, "value": "demand_profile2"},
+                {"id": "param4", "time-dependent": True, "scenario-dependent": False, "value": 42},
+                {"id": "param5", "time-dependent": False, "scenario-dependent": True, "value": 3.14},
+                {"id": "param6", "time-dependent": True, "scenario-dependent": True, "value": "demand_profile3"},
+                {"id": "param7", "time-dependent": True, "scenario-dependent": True, "value": 2.718},
+            ],
+        }
+    )
+    system = GemsSystem.model_validate({"id": "sys_id", "components": [component]})
+
+    with pytest.raises(
+        GemsInvalidParameterValue,
+        match=re.escape(
+            "Parameter value(s) must be a float when they do not depend on time or scenario: ['param3']\n"
+            + "Parameter value(s) must be a string when they depend on time or scenario: ['param4', 'param5', 'param7']"
+        ),
+    ):
+        dao.save_system(system)
+
+    assert dao.get_system() is None
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_library_file_to_study_dao(dao)
+    dao.save_data_series([GemsDataSeries(id="demand_profile", values=np.array([[1.0], [2.0]]))])
+
+    component = GemsComponent.model_validate(
+        {
+            "id": "dsr",
+            "model": "andromede-v1-models-weo-hybrid.dsr",
+            "parameters": [
+                {"id": "param1", "time-dependent": True, "scenario-dependent": False, "value": "demand_profile"},
+            ],
+        }
+    )
+    system = GemsSystem.model_validate({"id": "sys_id", "components": [component]})
+    dao.save_system(system)
+
+    components = dao.get_components()
+    assert components[0].parameters is not None
+    assert components[0].parameters[0].value == "demand_profile"
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_parameter_value_referencing_a_missing_data_series_is_rejected(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_library_file_to_study_dao(dao)
+
+    component = GemsComponent.model_validate(
+        {
+            "id": "dsr",
+            "model": "andromede-v1-models-weo-hybrid.dsr",
+            "parameters": [
+                {"id": "param1", "time-dependent": True, "scenario-dependent": False, "value": "unknown_series"},
+                {"id": "param1", "time-dependent": False, "scenario-dependent": False, "value": 2.0},
+            ],
+        }
+    )
+    system = GemsSystem.model_validate({"id": "sys_id", "components": [component]})
+
+    with pytest.raises(
+        GemsInvalidParameterValue,
+        match=re.escape("Parameter value(s) reference non-existing data series: ['unknown_series']"),
+    ):
+        dao.save_system(system)
+
+    assert dao.get_system() is None
+
+
 def _add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
     # Add the library first, as the system file requires it
     _add_library_file_to_study_dao(dao)
 
     dao.save_gems_scenario_builder(
         GemsScenarioBuilder(scenarios={"sg1": [GemsScBuilderMapping(scenario=0, time_series_index=1)]})
+    )
+
+    # The system file references these data series by id, which must exist beforehand.
+    dao.save_data_series(
+        [
+            GemsDataSeries(id="max_load_values", values=np.array([[1.0], [2.0]])),
+            GemsDataSeries(id="time-and-scenario-dependent-example", values=np.array([[1.0, 2.0], [3.0, 4.0]])),
+        ]
     )
 
     gems_system_asset_path = ASSETS_PATH / "gems" / "system" / "system.yml"

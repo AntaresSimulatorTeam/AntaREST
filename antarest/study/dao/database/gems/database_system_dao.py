@@ -17,12 +17,19 @@ from typing_extensions import override
 
 from antarest.core.exceptions import (
     GemsInvalidConnection,
+    GemsInvalidParameterValue,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
+from antarest.study.business.model.gems.system import (
+    GemsComponent,
+    GemsComponentConnection,
+    GemsSystem,
+    _GemsParameters,
+)
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
+from antarest.study.dao.database.models.gems.data_series import GEMS_DATA_SERIES_TABLE
 from antarest.study.dao.database.models.gems.library import GEMS_MODELS_PORTS_TABLE
 from antarest.study.dao.database.models.gems.system import (
     GEMS_COMPONENT_CONNECTIONS_TABLE,
@@ -76,6 +83,73 @@ def _check_connection_does_not_link_port_component_to_itself(connections: list[G
             raise GemsInvalidConnection(
                 f"A connection cannot link the port '{connection.port1}' of component '{connection.component1}' to itself"
             )
+
+
+def _encode_parameter_value(value: float | str) -> str:
+    # The `value` column stores either a fixed numeric value or the `id` of a data series as text,
+    # since SQL has no native "number or string" column type. `repr` keeps the float's precision so
+    # it round-trips exactly through `_decode_parameter_value`.
+    return repr(value) if isinstance(value, float) else value
+
+
+def _decode_parameter_value(value: str) -> float | str:
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
+def _check_parameters_values_are_correctly_typed(
+    components: List[GemsComponent], original_exception: Exception
+) -> None:
+    incorrectly_float_typed_parameter_ids: set[str] = set()
+    incorrectly_str_typed_parameter_ids: set[str] = set()
+
+    for component in components:
+        if component.parameters:
+            for parameter in component.parameters:
+                _check_float_value_is_correctly_typed(incorrectly_float_typed_parameter_ids, parameter)
+                _check_str_value_is_correctly_typed(incorrectly_str_typed_parameter_ids, parameter)
+
+    if incorrectly_str_typed_parameter_ids or incorrectly_float_typed_parameter_ids:
+        message = _build_error_message(incorrectly_float_typed_parameter_ids, incorrectly_str_typed_parameter_ids)
+
+        raise GemsInvalidParameterValue(message) from original_exception
+
+
+def _check_str_value_is_correctly_typed(
+    incorrectly_str_typed_parameter_ids: set[str], parameter: _GemsParameters
+) -> None:
+    is_incorrectly_typed_str = isinstance(parameter.value, str) and (
+        not parameter.time_dependent and not parameter.scenario_dependent
+    )
+
+    if is_incorrectly_typed_str:
+        incorrectly_str_typed_parameter_ids.add(parameter.id)
+
+
+def _check_float_value_is_correctly_typed(
+    incorrectly_float_typed_parameter_ids: set[str], parameter: _GemsParameters
+) -> None:
+    is_incorrectly_typed_float = isinstance(parameter.value, (int, float)) and (
+        parameter.time_dependent or parameter.scenario_dependent
+    )
+    if is_incorrectly_typed_float:
+        incorrectly_float_typed_parameter_ids.add(parameter.id)
+
+
+def _build_error_message(
+    incorrectly_float_typed_parameter_ids: set[str], incorrectly_str_typed_parameter_ids: set[str]
+) -> str:
+    message = ""
+    if incorrectly_str_typed_parameter_ids:
+        message += f"Parameter value(s) must be a float when they do not depend on time or scenario: {sorted(incorrectly_str_typed_parameter_ids)}"
+
+    if incorrectly_float_typed_parameter_ids:
+        if message:
+            message += "\n"
+        message += f"Parameter value(s) must be a string when they depend on time or scenario: {sorted(incorrectly_float_typed_parameter_ids)}"
+    return message
 
 
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
@@ -156,7 +230,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     "id": parameter_row.parameter_id,
                     "time-dependent": parameter_row.time_dependent,
                     "scenario-dependent": parameter_row.scenario_dependent,
-                    "value": parameter_row.value,
+                    "value": _decode_parameter_value(parameter_row.value),
                 }
             )
         return component_parameters
@@ -223,6 +297,32 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             session.rollback()
             raise e
 
+    def _check_parameter_values_reference_existing_data_series(
+        self, components: List[GemsComponent], original_exception: Exception
+    ) -> None:
+        referenced_ids = {
+            parameter.value
+            for component in components
+            for parameter in component.parameters or []
+            if isinstance(parameter.value, str)
+        }
+        if not referenced_ids:
+            return
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        existing_ids_stmt = select(GEMS_DATA_SERIES_TABLE.c.id).where(
+            GEMS_DATA_SERIES_TABLE.c.study_data_id == study_data_id,
+            GEMS_DATA_SERIES_TABLE.c.id.in_(referenced_ids),
+        )
+        existing_ids = {row.id for row in session.execute(existing_ids_stmt).fetchall()}
+
+        if missing_ids := referenced_ids - existing_ids:
+            raise GemsInvalidParameterValue(
+                f"Parameter value(s) reference non-existing data series: {sorted(missing_ids)}"
+            ) from original_exception
+
     @override
     def save_components(self, components: List[GemsComponent]) -> None:
         study_data_id = self._study_data_id
@@ -258,7 +358,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                         "parameter_id": parameter.id,
                         "time_dependent": parameter.time_dependent,
                         "scenario_dependent": parameter.scenario_dependent,
-                        "value": parameter.value,
+                        "value": _encode_parameter_value(parameter.value),
+                        "dataseries_id": parameter.value if isinstance(parameter.value, str) else None,
                     }
                 )
 
@@ -275,7 +376,11 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if component_values:
             session.execute(insert(GEMS_COMPONENTS_TABLE), component_values)
         if parameter_values:
-            session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
+            try:
+                session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
+            except IntegrityError as e:
+                _check_parameters_values_are_correctly_typed(components, e)
+                self._check_parameter_values_reference_existing_data_series(components, e)
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
 

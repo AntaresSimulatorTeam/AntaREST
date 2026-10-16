@@ -474,9 +474,9 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert first_component.parameters[0].scenario_dependent is False
     assert first_component.parameters[0].value == 10
     assert first_component.parameters[1].id == "max_load"
-    assert first_component.parameters[1].time_dependent is False
+    assert first_component.parameters[1].time_dependent is True
     assert first_component.parameters[1].scenario_dependent is False
-    assert first_component.parameters[1].value == 200
+    assert first_component.parameters[1].value == "max_load_values"
 
     second_component = system.components[1]
     assert second_component.id == "electrolyser"
@@ -489,9 +489,9 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert second_component.parameters[0].scenario_dependent is False
     assert second_component.parameters[0].value == 0.7
     assert second_component.parameters[1].id == "p_max"
-    assert second_component.parameters[1].time_dependent is False
-    assert second_component.parameters[1].scenario_dependent is False
-    assert second_component.parameters[1].value == 300
+    assert second_component.parameters[1].time_dependent is True
+    assert second_component.parameters[1].scenario_dependent is True
+    assert second_component.parameters[1].value == "time-and-scenario-dependent-example"
 
     assert system.connections is not None
     assert len(system.connections) == 1

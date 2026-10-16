@@ -23,7 +23,7 @@ class _GemsParameters(AntaresBaseModel):
     id: str
     time_dependent: bool
     scenario_dependent: bool
-    value: float  # TODO: authorize string values when time_dependent and/or scenario_dependant is True
+    value: float | str
 
 
 class _GemsProperties(AntaresBaseModel):
