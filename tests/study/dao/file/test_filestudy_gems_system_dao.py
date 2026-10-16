@@ -71,6 +71,18 @@ def test_should_not_access_system_components(filestudy_dao_v10_2: FileStudyTreeD
     ):
         dao.save_components([])
 
+    with pytest.raises(
+        GemsUnavailableForFileSystemStudies,
+        match=f"Gems is unavailable for FileSystem studies, but study {dao.get_file_study().config.study_id} tried to use it.",
+    ):
+        dao.save_area_connections([])
+
+    with pytest.raises(
+        GemsUnavailableForFileSystemStudies,
+        match=f"Gems is unavailable for FileSystem studies, but study {dao.get_file_study().config.study_id} tried to use it.",
+    ):
+        dao.save_thermal_capacity_connections([])
+
 
 def _add_system_file_to_study(dao: FileStudyTreeDao) -> None:
     input_folder = dao.get_file_study().config.study_path / "input"

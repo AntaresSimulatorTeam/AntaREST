@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import List
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, field_validator
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
@@ -52,6 +52,45 @@ class GemsComponentConnection(AntaresBaseModel):
     port2: str
 
 
+class GemsAreaConnection(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
+
+    component: str
+    port: str
+    area: str
+
+    @field_validator("area")
+    @classmethod
+    def _to_lower(cls, value: str) -> str:
+        # Antares Simulator lowercases the area before matching it against the legacy area ids
+        return value.lower()
+
+
+class _GemsThermalComponent(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
+
+    area: str
+    cluster_id: str
+
+    @field_validator("area")
+    @classmethod
+    def _to_lower(cls, value: str) -> str:
+        # Antares Simulator lowercases the area, but matches the cluster id exactly
+        return value.lower()
+
+
+class GemsThermalCapacityConnection(AntaresBaseModel):
+    """
+    Connects a port of a GEMS component to a legacy thermal cluster, whose capacity is replaced by the port field.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
+
+    component: str
+    port: str
+    thermal_component: _GemsThermalComponent
+
+
 class GemsSystem(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="allow", alias_generator=to_kebab_case)
 
@@ -59,4 +98,5 @@ class GemsSystem(AntaresBaseModel):
     description: str | None = None
     components: List[GemsComponent]
     connections: List[GemsComponentConnection] = []
-    # TODO: add 'area_connections' and 'thermal-capacity-connections' fields
+    area_connections: List[GemsAreaConnection] = []
+    thermal_capacity_connections: List[GemsThermalCapacityConnection] = []

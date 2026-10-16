@@ -11,20 +11,30 @@
 # This file is part of the Antares project.
 import re
 from pathlib import Path
+from typing import Any
 
 import pytest
 
 from antarest.core.exceptions import (
+    GemsConnectedObjectDeletionNotAllowed,
     GemsInvalidConnection,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
-from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
+from antarest.study.business.model.gems.system import (
+    GemsAreaConnection,
+    GemsComponent,
+    GemsComponentConnection,
+    GemsSystem,
+    GemsThermalCapacityConnection,
+)
+from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 from tests.study.dao.conftest import check_gems_system_integrity
+from tests.study.dao.utils import save_area
 
 ASSETS_PATH = Path(__file__).parent / "assets"
 
@@ -292,10 +302,254 @@ def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None
         dao.save_system(system)
 
 
-def _add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
-    # Add the library first, as the system file requires it
-    _add_library_file_to_study_dao(dao)
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_deleting_a_cluster_removes_its_connections(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_system_file_to_study_dao(dao)
 
+    dao.delete_thermal("west", "gas_cluster")
+
+    system = dao.get_system()
+    assert system is not None
+    assert system.thermal_capacity_connections == []
+    assert len(system.area_connections) == 2
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_deleting_an_area_removes_its_connections_and_the_ones_of_its_clusters(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_system_file_to_study_dao(dao)
+
+    dao.delete_area("west")
+
+    system = dao.get_system()
+    assert system is not None
+    assert system.thermal_capacity_connections == []
+    assert [(c.component, c.port, c.area) for c in system.area_connections] == [
+        ("electrolyser", "hydrogen_port", "west-h2")
+    ]
+    # Components stay in the system
+    assert [component.id for component in system.components] == ["dsr", "electrolyser"]
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_save_legacy_connections_adds_them_to_the_system(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    _add_library_file_to_study_dao(dao)
+    _add_legacy_objects_to_study_dao(dao)
+    dao.save_system(
+        GemsSystem.model_validate(
+            {
+                "id": "sys_id",
+                "components": [{"id": "electrolyser", "model": "andromede-v1-models-weo-hybrid.electrolyser"}],
+            }
+        )
+    )
+
+    area_connection = GemsAreaConnection(component="electrolyser", port="power_port", area="West-H2")
+    dao.save_area_connections([area_connection])
+    thermal_connection = GemsThermalCapacityConnection.model_validate(
+        {
+            "component": "electrolyser",
+            "port": "hydrogen_port",
+            "thermal-component": {"area": "west", "cluster-id": "gas_cluster"},
+        }
+    )
+    dao.save_thermal_capacity_connections([thermal_connection])
+
+    system = dao.get_system()
+    assert system is not None
+    assert system.area_connections == [area_connection]
+    assert system.thermal_capacity_connections == [thermal_connection]
+    # The rest of the system is untouched
+    assert [component.id for component in system.components] == ["electrolyser"]
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_cannot_save_legacy_connections_without_system(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+
+    area_connection = GemsAreaConnection(component="electrolyser", port="power_port", area="west")
+    with pytest.raises(GemsSystemNotFound, match="No system configuration found for study"):
+        dao.save_area_connections([area_connection])
+
+    thermal_connection = GemsThermalCapacityConnection.model_validate(
+        {
+            "component": "electrolyser",
+            "port": "power_port",
+            "thermal-component": {"area": "west", "cluster-id": "gas_cluster"},
+        }
+    )
+    with pytest.raises(GemsSystemNotFound, match="No system configuration found for study"):
+        dao.save_thermal_capacity_connections([thermal_connection])
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize(
+    "section, connections, error_msg",
+    [
+        pytest.param(
+            "area-connections",
+            [{"component": "unknown", "port": "power_port", "area": "west"}],
+            "area-connections: component 'unknown' does not exist",
+            id="unknown_component",
+        ),
+        pytest.param(
+            "area-connections",
+            [{"component": "dsr", "port": "balance_port", "area": "unknown"}],
+            "Component 'dsr' is connected to a non-existing area 'unknown'",
+            id="unknown_area",
+        ),
+        pytest.param(
+            "thermal-capacity-connections",
+            [
+                {
+                    "component": "dsr",
+                    "port": "balance_port",
+                    "thermal-component": {"area": "west", "cluster-id": "unknown"},
+                }
+            ],
+            "Component 'dsr' is connected to a non-existing thermal cluster 'unknown' in area 'west'",
+            id="unknown_cluster",
+        ),
+        pytest.param(
+            "thermal-capacity-connections",
+            [
+                {
+                    "component": "dsr",
+                    "port": "balance_port",
+                    "thermal-component": {"area": "West", "cluster-id": "Gas_Cluster"},
+                }
+            ],
+            # Antares Simulator matches the cluster id exactly, only the area is lowercased
+            "Component 'dsr' is connected to a non-existing thermal cluster 'Gas_Cluster' in area 'west'",
+            id="cluster_id_not_lowercased",
+        ),
+        pytest.param(
+            "area-connections",
+            [
+                {"component": "dsr", "port": "balance_port", "area": "west"},
+                {"component": "dsr", "port": "balance_port", "area": "west-h2"},
+            ],
+            "area-connections: port 'balance_port' of component 'dsr' is connected more than once",
+            id="port_connected_twice",
+        ),
+        pytest.param(
+            "area-connections",
+            [{"component": "electrolyser", "port": "power_port", "area": "west-h2"}],
+            "area-connections: port 'power_port' of component 'electrolyser' is already connected",
+            id="area_port_already_connected",
+        ),
+        pytest.param(
+            "thermal-capacity-connections",
+            [
+                {
+                    "component": "electrolyser",
+                    "port": "power_port",
+                    "thermal-component": {"area": "west", "cluster-id": "gas_cluster"},
+                }
+            ],
+            "thermal-capacity-connections: port 'power_port' of component 'electrolyser' is already connected",
+            id="thermal_port_already_connected",
+        ),
+    ],
+)
+def test_cannot_save_invalid_legacy_connections(
+    dao_10_2: StudyDao, section: str, connections: list[dict[str, Any]], error_msg: str
+) -> None:
+    dao = dao_10_2
+    _add_system_file_to_study_dao(dao)
+    system_before = dao.get_system()
+
+    with pytest.raises(GemsInvalidConnection, match=error_msg):
+        if section == "area-connections":
+            dao.save_area_connections([GemsAreaConnection.model_validate(c) for c in connections])
+        else:
+            dao.save_thermal_capacity_connections(
+                [GemsThermalCapacityConnection.model_validate(c) for c in connections]
+            )
+
+    # Nothing has been saved
+    assert dao.get_system() == system_before
+
+
+@pytest.mark.parametrize("dao_10_2", ["fs"], indirect=True)
+def test_cannot_delete_legacy_objects_connected_to_gems_in_filesystem_studies(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    system = _add_system_file_to_study_dao(dao)
+
+    with pytest.raises(
+        GemsConnectedObjectDeletionNotAllowed,
+        match="Cluster 'gas_cluster' is not allowed to be deleted, because the following GEMS components"
+        " are connected to it: 'electrolyser'",
+    ):
+        dao.delete_thermal("west", "gas_cluster")
+    with pytest.raises(
+        GemsConnectedObjectDeletionNotAllowed,
+        match="Area 'west-h2' is not allowed to be deleted, because the following GEMS components"
+        " are connected to it: 'electrolyser'",
+    ):
+        dao.delete_area("west-h2")
+
+    # Nothing has been deleted
+    assert set(dao.get_all_area_ids()) >= {"west", "west-h2"}
+    assert "gas_cluster" in dao.get_all_thermals()["west"]
+    assert dao.get_system() == system
+
+    # Legacy objects that are not connected to GEMS components can still be deleted
+    save_area(dao, "east")
+    dao.delete_area("east")
+    assert "east" not in dao.get_all_area_ids()
+
+
+@pytest.mark.parametrize("dao_10_2", ["fs"], indirect=True)
+def test_cannot_delete_area_whose_clusters_are_connected_to_gems_in_filesystem_studies(
+    dao_10_2: StudyDao,
+) -> None:
+    dao = dao_10_2
+    _add_library_file_to_study_dao(dao)
+    _add_legacy_objects_to_study_dao(dao)
+    # The area is only referenced through its thermal cluster
+    system = GemsSystem.model_validate(
+        {
+            "id": "sys_id",
+            "components": [{"id": "electrolyser", "model": "andromede-v1-models-weo-hybrid.electrolyser"}],
+            "thermal-capacity-connections": [
+                {
+                    "component": "electrolyser",
+                    "port": "power_port",
+                    "thermal-component": {"area": "west", "cluster-id": "gas_cluster"},
+                }
+            ],
+        }
+    )
+    dao.save_system(system)
+
+    with pytest.raises(
+        GemsConnectedObjectDeletionNotAllowed,
+        match="Area 'west' is not allowed to be deleted, because the following GEMS components"
+        " are connected to it: 'electrolyser'",
+    ):
+        dao.delete_area("west")
+
+    # Nothing has been deleted
+    assert "west" in dao.get_all_area_ids()
+    assert dao.get_system() == system
+
+
+def _add_legacy_objects_to_study_dao(dao: StudyDao) -> None:
+    # Legacy objects referenced by the system file asset
+    save_area(dao, "west")
+    save_area(dao, "West-H2")
+    cluster = ThermalCluster(id="gas_cluster", name="Gas_Cluster")
+    initialize_thermal_cluster(cluster, dao.get_version())
+    dao.save_thermals({"west": [cluster]})
+
+
+def _add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
+    # Add the library and the legacy objects first, as the system file requires them
+    _add_library_file_to_study_dao(dao)
+    _add_legacy_objects_to_study_dao(dao)
     dao.save_gems_scenario_builder(
         GemsScenarioBuilder(scenarios={"sg1": [GemsScBuilderMapping(scenario=0, time_series_index=1)]})
     )
