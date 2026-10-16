@@ -43,11 +43,7 @@ class CsvReader(IReader):
         else:  # pragma: no cover
             raise TypeError(repr(type(path)))
 
-        try:
-            return rows
-        except csv.Error as exc:
-            err_msg = f"Failed to parse CSV file '{path}'"
-            raise ValueError(err_msg) from exc
+        return rows
 
 
 class CsvWriter(IniWriter):
