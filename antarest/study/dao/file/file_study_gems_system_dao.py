@@ -23,6 +23,7 @@ from antarest.core.exceptions import (
 from antarest.study.business.model.gems.system import (
     GemsAreaConnection,
     GemsComponent,
+    GemsComponentConnection,
     GemsSystem,
     GemsThermalCapacityConnection,
 )
@@ -75,9 +76,29 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
+    def delete_components(self, component_ids: list[str]) -> None:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
+    def save_connections(self, connections: list[GemsComponentConnection]) -> None:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
+    def delete_connections(self, connections: list[GemsComponentConnection]) -> None:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
     def save_area_connections(self, connections: list[GemsAreaConnection]) -> None:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
+    def delete_area_connections(self, connections: list[GemsAreaConnection]) -> None:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
     def save_thermal_capacity_connections(self, connections: list[GemsThermalCapacityConnection]) -> None:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
+    def delete_thermal_capacity_connections(self, connections: list[GemsThermalCapacityConnection]) -> None:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

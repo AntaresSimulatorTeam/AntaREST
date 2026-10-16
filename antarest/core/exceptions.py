@@ -899,6 +899,16 @@ class GemsSystemNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class GemsComponentNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsConnectionNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
 class GemsConnectedObjectDeletionNotAllowed(HTTPException):
     """
     Exception raised when a legacy object of a FileSystem study cannot be deleted because GEMS components are
@@ -940,6 +950,11 @@ class GemsTaxonomyAlreadyExists(HTTPException):
 class GemsCatalogAlreadyExists(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class GemsInvalidComponent(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
 class GemsInvalidConnection(HTTPException):

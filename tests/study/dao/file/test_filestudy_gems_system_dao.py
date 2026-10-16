@@ -58,30 +58,36 @@ def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
 def test_should_not_access_system_components(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     dao = filestudy_dao_v10_2
     _add_system_file_to_study(dao)
+    error_msg = (
+        f"Gems is unavailable for FileSystem studies, but study {dao.get_file_study().config.study_id} tried to use it."
+    )
 
-    with pytest.raises(
-        GemsUnavailableForFileSystemStudies,
-        match=f"Gems is unavailable for FileSystem studies, but study {dao.get_file_study().config.study_id} tried to use it.",
-    ):
+    with pytest.raises(GemsUnavailableForFileSystemStudies, match=error_msg):
         dao.get_components()
 
-    with pytest.raises(
-        GemsUnavailableForFileSystemStudies,
-        match=f"Gems is unavailable for FileSystem studies, but study {dao.get_file_study().config.study_id} tried to use it.",
-    ):
+    with pytest.raises(GemsUnavailableForFileSystemStudies, match=error_msg):
         dao.save_components([])
 
-    with pytest.raises(
-        GemsUnavailableForFileSystemStudies,
-        match=f"Gems is unavailable for FileSystem studies, but study {dao.get_file_study().config.study_id} tried to use it.",
-    ):
+    with pytest.raises(GemsUnavailableForFileSystemStudies, match=error_msg):
+        dao.delete_components([])
+
+    with pytest.raises(GemsUnavailableForFileSystemStudies, match=error_msg):
+        dao.save_connections([])
+
+    with pytest.raises(GemsUnavailableForFileSystemStudies, match=error_msg):
+        dao.delete_connections([])
+
+    with pytest.raises(GemsUnavailableForFileSystemStudies, match=error_msg):
         dao.save_area_connections([])
 
-    with pytest.raises(
-        GemsUnavailableForFileSystemStudies,
-        match=f"Gems is unavailable for FileSystem studies, but study {dao.get_file_study().config.study_id} tried to use it.",
-    ):
+    with pytest.raises(GemsUnavailableForFileSystemStudies, match=error_msg):
+        dao.delete_area_connections([])
+
+    with pytest.raises(GemsUnavailableForFileSystemStudies, match=error_msg):
         dao.save_thermal_capacity_connections([])
+
+    with pytest.raises(GemsUnavailableForFileSystemStudies, match=error_msg):
+        dao.delete_thermal_capacity_connections([])
 
 
 def _add_system_file_to_study(dao: FileStudyTreeDao) -> None:
