@@ -169,26 +169,28 @@ function Parameters() {
               Injection ≤ withdrawal efficiency (prevents energy creation).
               Bidirectional validation. Pre-9.2.0: single efficiency field capped at 100%.
             */}
-            <NumberFE
-              label={t("study.modeling.storages.efficiency")}
-              name="efficiency"
-              control={control}
-              rules={{
-                deps: semver.gte(study.version, "9.2.0") ? ["efficiencyWithdrawal"] : undefined,
-                validate: {
-                  checkMinMax: validateNumber({
-                    min: 0,
-                    max: semver.gte(study.version, "9.2.0") ? undefined : 100,
-                  }),
-                  compareWithEfficiencyWithdrawal: (value, { efficiencyWithdrawal }) => {
-                    if (semver.gte(study.version, "9.2.0") && value > efficiencyWithdrawal) {
-                      return t("study.modeling.storages.efficiency.error.tooHigh");
-                    }
-                    return true;
+            <Tooltip title={t("study.modeling.storages.efficiency.info")} arrow placement="top">
+              <NumberFE
+                label={t("study.modeling.storages.efficiency")}
+                name="efficiency"
+                control={control}
+                rules={{
+                  deps: semver.gte(study.version, "9.2.0") ? ["efficiencyWithdrawal"] : undefined,
+                  validate: {
+                    checkMinMax: validateNumber({
+                      min: 0,
+                      max: semver.gte(study.version, "9.2.0") ? undefined : 100,
+                    }),
+                    compareWithEfficiencyWithdrawal: (value, { efficiencyWithdrawal }) => {
+                      if (semver.gte(study.version, "9.2.0") && value > efficiencyWithdrawal) {
+                        return t("study.modeling.storages.efficiency.error.tooHigh");
+                      }
+                      return true;
+                    },
                   },
-                },
-              }}
-            />
+                }}
+              />
+            </Tooltip>
             {semver.gte(study.version, "9.2.0") && (
               <SwitchFE
                 label={t("study.modeling.storages.penalizeVariationInjection")}
