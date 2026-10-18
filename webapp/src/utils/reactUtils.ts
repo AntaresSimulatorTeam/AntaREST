@@ -30,16 +30,65 @@ export function getComponentDisplayName<T>(comp: React.ComponentType<T>): string
   return comp.displayName || comp.name || "Component";
 }
 
+type Primitive = string | number | boolean;
+
+function encode(value: Primitive): string {
+  if (typeof value === "number") {
+    if (Object.is(value, -0)) {
+      return "-0";
+    }
+    if (!Number.isFinite(value)) {
+      return String(value);
+    }
+  }
+  return JSON.stringify(value);
+}
+
 /**
- * Builds a stable key string for React elements from one or more items.
+ * Builds a deterministic string key from primitives, arrays of primitives
+ * and flat objects of primitives. Meant to be used as a React `key`.
  *
- * Useful when the item array does not have a unique id.
- * Helps avoid using array indexes as keys, which can lead to subtle and confusing bugs
- * when items are reordered, added, or removed.
+ * Each value is written on its own line, and the lines are joined with `\n`:
+ * - `"a"` → `"a"`
+ * - `1` → `1`
+ * - `["a", 1]` → `[2]`, `"a"`, `1`
+ * - `{ b: 2, a: 1 }` → `{2}`, `"a"=1`, `"b"=2`
  *
- * @param items - Items to build the key from.
- * @returns The formed key string.
+ * Two different inputs never produce the same key:
+ * - Strings are quoted, so `1` !== `"1"` and `true` !== `"true"`.
+ * - Line breaks in values and object keys are escaped, so they can't fake an extra line.
+ * - Arrays and objects start with a size header (`[n]` / `{n}`), so `[]`, `{}`,
+ *   `["a", "b"]` and `"a", "b"` all differ.
+ *
+ * Array order is preserved, while object keys are sorted
+ * (`{ a: 1, b: 2 }` === `{ b: 2, a: 1 }`).
+ *
+ * @param items - Primitives, arrays of primitives or flat objects of primitives.
+ * @returns A multi-line string that uniquely identifies the given items.
  */
-export function buildKey(...items: Array<Array<string | number> | string | number>) {
-  return items.map((item) => (Array.isArray(item) ? item.join(",") : item)).join("-");
+export function buildKey(...items: Array<Primitive[] | Primitive | Record<string, Primitive>>) {
+  const lines: string[] = [];
+
+  for (const item of items) {
+    if (Array.isArray(item)) {
+      lines.push(`[${item.length}]`);
+      for (const value of item) {
+        lines.push(encode(value));
+      }
+      continue;
+    }
+
+    if (typeof item === "object") {
+      const keys = Object.keys(item).sort();
+      lines.push(`{${keys.length}}`);
+      for (const key of keys) {
+        lines.push(`${JSON.stringify(key)}=${encode(item[key])}`);
+      }
+      continue;
+    }
+
+    lines.push(encode(item));
+  }
+
+  return lines.join("\n");
 }

@@ -16,38 +16,38 @@ import type { AreaWithId } from "@/types/types";
 import type { z } from "zod";
 import type { Study } from "../../types";
 import type {
-  thermalCreationSchema,
+  thermalClusterCreationSchema,
+  thermalClusterSchema,
+  thermalClusterUpdateSchema,
   thermalGroupSchema,
-  thermalSchema,
-  thermalUpdateSchema,
 } from "./schemas";
 
 export type ThermalGroup = z.infer<typeof thermalGroupSchema>;
-export type Thermal = z.infer<typeof thermalSchema>;
-export type ThermalCreation = z.infer<typeof thermalCreationSchema>;
-export type ThermalUpdate = z.infer<typeof thermalUpdateSchema>;
+export type ThermalCluster = z.infer<typeof thermalClusterSchema>;
+export type ThermalClusterCreation = z.infer<typeof thermalClusterCreationSchema>;
+export type ThermalClusterUpdate = z.infer<typeof thermalClusterUpdateSchema>;
 
-export interface ThermalsParams {
+export interface ThermalClustersParams {
   studyId: Study["id"];
   areaId: AreaWithId["id"];
 }
 
-export interface ThermalParams extends ThermalsParams {
-  thermalId: Thermal["id"];
+export interface ThermalClusterParams extends ThermalClustersParams {
+  thermalId: ThermalCluster["id"];
 }
 
-export interface CreateThermalParams extends ThermalsParams {
-  values: ThermalCreation;
+export interface CreateThermalClusterParams extends ThermalClustersParams {
+  values: ThermalClusterCreation;
 }
 
-export interface UpdateThermalParams extends ThermalParams {
-  values: ThermalUpdate;
+export interface UpdateThermalClusterParams extends ThermalClusterParams {
+  values: ThermalClusterUpdate;
 }
 
-export interface DuplicateThermalParams extends ThermalParams {
-  newName: Thermal["name"];
+export interface DuplicateThermalClusterParams extends ThermalClusterParams {
+  newName: ThermalCluster["name"];
 }
 
-export interface DeleteThermalsParams extends ThermalsParams {
-  thermalIds: Array<Thermal["id"]>;
+export interface DeleteThermalClustersParams extends ThermalClustersParams {
+  thermalIds: Array<ThermalCluster["id"]>;
 }

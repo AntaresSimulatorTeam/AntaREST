@@ -12,32 +12,35 @@
  * This file is part of the Antares project.
  */
 
-import type { Thermal, ThermalParams } from "@/services/api/studies/areas/thermals/types";
+import type {
+  ThermalCluster,
+  ThermalClusterParams,
+} from "@/services/api/studies/areas/thermals/types";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import useThermals from "../../-hooks/useThermals";
+import useThermalClusters from "../../-hooks/useThermalClusters";
 
-function useThermal({ studyId, areaId, thermalId }: ThermalParams) {
+function useThermalCluster({ studyId, areaId, thermalId }: ThermalClusterParams) {
   const { t } = useTranslation();
 
   const getThermal = useCallback(
-    (thermals: Thermal[]) => {
+    (thermals: ThermalCluster[]) => {
       return thermals.find(({ id }) => id === thermalId);
     },
     [thermalId],
   );
 
-  const { data: thermal } = useThermals({ studyId, areaId, select: getThermal });
+  const { data: thermal } = useThermalClusters({ studyId, areaId, select: getThermal });
 
   if (!thermalId) {
     throw new Error(t("route.noParameter", { param: "thermalId" }));
   }
 
   if (!thermal) {
-    throw new Error(t("study.modeling.thermals.notFound", { id: thermalId }));
+    throw new Error(t("study.modeling.clusters.notFound", { id: thermalId }));
   }
 
   return thermal;
 }
 
-export default useThermal;
+export default useThermalCluster;

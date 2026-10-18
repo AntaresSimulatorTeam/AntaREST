@@ -17,7 +17,7 @@ import { thermalQueries } from "@/queries/thermals/queries";
 import client from "@/services/api/client";
 import { ZodError, type z } from "zod";
 import * as api from "..";
-import type { thermalSchema } from "../schemas";
+import type { thermalClusterSchema } from "../schemas";
 
 vi.mock("@/services/api/client", () => ({
   default: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -27,7 +27,7 @@ const studyId = "study-1";
 const areaId = "area-1";
 const clusterId = "gas cluster";
 const listUrl = `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`;
-const cluster: z.input<typeof thermalSchema> = {
+const cluster: z.input<typeof thermalClusterSchema> = {
   id: "Gas Cluster",
   name: "Gas Cluster",
   group: "custom gas",
@@ -84,7 +84,7 @@ test("caches complete cluster properties so consumers can select without a detai
 test("normalizes detail IDs to match list IDs while preserving display names", async () => {
   vi.mocked(client.get).mockResolvedValue({ data: cluster });
 
-  const detail = await api.getThermal({ studyId, areaId, thermalId: clusterId });
+  const detail = await api.getThermalCluster({ studyId, areaId, thermalId: clusterId });
 
   expect(detail).toEqual({ ...cluster, id: clusterId });
   expect(client.get).toHaveBeenCalledWith(`${listUrl}/${clusterId}`);
@@ -95,13 +95,13 @@ test("rejects malformed list responses", async () => {
     data: [{ ...cluster, genTs: "unknown behavior" }],
   });
 
-  await expect(api.getThermals({ studyId, areaId })).rejects.toBeInstanceOf(ZodError);
+  await expect(api.getThermalClusters({ studyId, areaId })).rejects.toBeInstanceOf(ZodError);
 });
 
 test("creates a cluster from a name-only payload", async () => {
   vi.mocked(client.post).mockResolvedValue({ data: cluster });
 
-  const created = await api.createThermal({
+  const created = await api.createThermalCluster({
     studyId,
     areaId,
     values: { name: "New cluster" },
@@ -116,19 +116,21 @@ test("patches only supplied values and normalizes absent response fields", async
   const updated = { ...cluster, ...values, so2: null, costGeneration: null };
   vi.mocked(client.patch).mockResolvedValue({ data: updated });
 
-  expect(await api.updateThermal({ studyId, areaId, thermalId: clusterId, values })).toEqual({
-    ...updated,
-    id: clusterId,
-    so2: undefined,
-    costGeneration: undefined,
-  });
+  expect(await api.updateThermalCluster({ studyId, areaId, thermalId: clusterId, values })).toEqual(
+    {
+      ...updated,
+      id: clusterId,
+      so2: undefined,
+      costGeneration: undefined,
+    },
+  );
   expect(client.patch).toHaveBeenCalledWith(`${listUrl}/${clusterId}`, values);
 });
 
 test("duplicates through the dedicated endpoint and newName query parameter", async () => {
   vi.mocked(client.post).mockResolvedValue({ data: cluster });
 
-  const duplicated = await api.duplicateThermal({
+  const duplicated = await api.duplicateThermalCluster({
     studyId,
     areaId,
     thermalId: clusterId,
@@ -144,21 +146,26 @@ test("duplicates through the dedicated endpoint and newName query parameter", as
 });
 
 test("sends bulk deletion IDs in the request body", async () => {
-  await api.deleteThermals({ studyId, areaId, thermalIds: [clusterId, "other"] });
+  await api.deleteThermalClusters({ studyId, areaId, thermalIds: [clusterId, "other"] });
 
   expect(client.delete).toHaveBeenCalledWith(listUrl, { data: [clusterId, "other"] });
 });
 
 test("rejects invalid create and update values before sending a request", async () => {
   await expect(
-    api.createThermal({
+    api.createThermalCluster({
       studyId,
       areaId,
       values: { name: "New cluster", nominalCapacity: NaN },
     }),
   ).rejects.toBeInstanceOf(ZodError);
   await expect(
-    api.updateThermal({ studyId, areaId, thermalId: clusterId, values: { nominalCapacity: NaN } }),
+    api.updateThermalCluster({
+      studyId,
+      areaId,
+      thermalId: clusterId,
+      values: { nominalCapacity: NaN },
+    }),
   ).rejects.toBeInstanceOf(ZodError);
 
   expect(client.post).not.toHaveBeenCalled();

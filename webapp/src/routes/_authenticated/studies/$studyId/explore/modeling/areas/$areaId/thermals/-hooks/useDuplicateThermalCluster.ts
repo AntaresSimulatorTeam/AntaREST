@@ -16,34 +16,40 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { thermalMutations } from "@/queries/thermals/mutations";
 import { thermalQueries } from "@/queries/thermals/queries";
 import { createOptimisticListItem } from "@/queries/utils";
-import type { Thermal, ThermalsParams } from "@/services/api/studies/areas/thermals/types";
+import type {
+  ThermalCluster,
+  ThermalClustersParams,
+} from "@/services/api/studies/areas/thermals/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import * as R from "ramda";
-import * as RA from "ramda-adjunct";
 import { useTranslation } from "react-i18next";
-import { DEFAULT_THERMAL_VALUES } from "../-utils";
+import { DEFAULT_THERMAL_VALUES } from "../-constants";
 
-function useCreateThermal({ studyId, areaId }: ThermalsParams) {
+function useDuplicateThermalCluster({ studyId, areaId }: ThermalClustersParams) {
   const queryClient = useQueryClient();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
 
   const { queryKey: queryListKey } = thermalQueries.list(studyId, areaId);
 
-  const mutation = useMutation({
-    ...thermalMutations.create(studyId, areaId),
-    onMutate: async ({ values }) => {
+  return useMutation({
+    ...thermalMutations.duplicate(studyId, areaId),
+    onMutate: async (variables) => {
+      const { thermalId: thermalToDuplicateId, newName } = variables;
       const tempThermalId = crypto.randomUUID();
 
       await queryClient.cancelQueries({ queryKey: queryListKey });
 
+      const prevThermals = queryClient.getQueryData(queryListKey);
+      const thermalToDuplicate = prevThermals?.find(({ id }) => id === thermalToDuplicateId);
+
       queryClient.setQueryData(queryListKey, (old = []) => {
         return [
           ...old,
-          createOptimisticListItem<Thermal>({
+          createOptimisticListItem<ThermalCluster>({
             ...DEFAULT_THERMAL_VALUES,
-            ...R.reject(RA.isUndefined, values),
+            ...thermalToDuplicate,
             id: tempThermalId,
+            name: newName,
           }),
         ];
       });
@@ -52,7 +58,7 @@ function useCreateThermal({ studyId, areaId }: ThermalsParams) {
     },
     onError: (error, variables, tempThermalId) => {
       enqueueErrorSnackbar(
-        t("study.modeling.thermals.create.error", { name: variables.values.name }),
+        t("study.modeling.clusters.duplicate.error", { name: variables.newName }),
         error,
       );
 
@@ -64,14 +70,13 @@ function useCreateThermal({ studyId, areaId }: ThermalsParams) {
         return old.filter((thermal) => thermal.id !== tempThermalId);
       });
     },
-    onSuccess: (newThermal, _, tempThermalId) => {
+    onSuccess: async (duplicatedThermal, _, tempThermalId) => {
+      await queryClient.cancelQueries({ queryKey: queryListKey });
       queryClient.setQueryData(queryListKey, (old = []) => {
-        return old.map((thermal) => (thermal.id === tempThermalId ? newThermal : thermal));
+        return old.map((thermal) => (thermal.id === tempThermalId ? duplicatedThermal : thermal));
       });
     },
   });
-
-  return mutation;
 }
 
-export default useCreateThermal;
+export default useDuplicateThermalCluster;

@@ -12,9 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import { thermalSchema } from "@/services/api/studies/areas/thermals/schemas";
+import { thermalClusterSchema } from "@/services/api/studies/areas/thermals/schemas";
 
-export const cluster = thermalSchema.parse({
+export const cluster = thermalClusterSchema.parse({
   id: "gas",
   name: "Gas",
   group: null,

@@ -13,21 +13,20 @@
  */
 
 import client from "@/services/api/client";
-import { nameToId } from "@/services/utils";
 import {
-  renewableCreationSchema,
-  renewableSchema,
-  renewablesSchema,
-  renewableUpdateSchema,
+  renewableClusterCreationSchema,
+  renewableClusterSchema,
+  renewableClustersSchema,
+  renewableClusterUpdateSchema,
 } from "./schemas";
 import type {
-  CreateRenewableParams,
-  DeleteRenewablesParams,
-  DuplicateRenewableParams,
-  GetRenewableParams,
-  Renewable,
-  RenewablesAreaParams,
-  UpdateRenewableParams,
+  CreateRenewableClusterParams,
+  DeleteRenewableClustersParams,
+  DuplicateRenewableClusterParams,
+  RenewableCluster,
+  RenewableClusterParams,
+  RenewableClustersParams,
+  UpdateRenewableClusterParams,
 } from "./types";
 
 /**
@@ -39,17 +38,12 @@ import type {
  * @returns All cluster properties, with IDs normalized for existing list consumers.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getRenewables({
+export async function getRenewableClusters({
   studyId,
   areaId,
-}: RenewablesAreaParams): Promise<Renewable[]> {
+}: RenewableClustersParams): Promise<RenewableCluster[]> {
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/clusters/renewable`);
-  const clusters = renewablesSchema.parse(res.data);
-  // The backend model preserves name casing for backward compatibility,
-  // while database storage lowercases IDs. Creation and file-backed reads can therefore
-  // return different ID casing from database-backed reads.
-  // TODO: Return canonical lowercase IDs consistently from the API, then remove this normalization.
-  return clusters.map((cluster) => ({ ...cluster, id: nameToId(cluster.id) }));
+  return renewableClustersSchema.parse(res.data);
 }
 
 /**
@@ -62,17 +56,15 @@ export async function getRenewables({
  * @returns The complete cluster, with a normalized ID.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getRenewable({
+export async function getRenewableCluster({
   studyId,
   areaId,
   renewableId,
-}: GetRenewableParams): Promise<Renewable> {
+}: RenewableClusterParams): Promise<RenewableCluster> {
   const res = await client.get(
     `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable/${renewableId}`,
   );
-  const cluster = renewableSchema.parse(res.data);
-  // TODO: Return canonical lowercase IDs consistently from the API, then remove this normalization.
-  return { ...cluster, id: nameToId(cluster.id) };
+  return renewableClusterSchema.parse(res.data);
 }
 
 /**
@@ -85,14 +77,14 @@ export async function getRenewable({
  * @returns The created cluster, preserving the server's ID casing.
  * @throws If the values or response don't match the expected schema.
  */
-export async function createRenewable({
+export async function createRenewableCluster({
   studyId,
   areaId,
   values,
-}: CreateRenewableParams): Promise<Renewable> {
-  const body = renewableCreationSchema.parse(values);
+}: CreateRenewableClusterParams): Promise<RenewableCluster> {
+  const body = renewableClusterCreationSchema.parse(values);
   const res = await client.post(`/v1/studies/${studyId}/areas/${areaId}/clusters/renewable`, body);
-  return renewableSchema.parse(res.data);
+  return renewableClusterSchema.parse(res.data);
 }
 
 /**
@@ -106,18 +98,18 @@ export async function createRenewable({
  * @returns The updated cluster, preserving the server's ID casing.
  * @throws If the values or response don't match the expected schema.
  */
-export async function updateRenewable({
+export async function updateRenewableCluster({
   studyId,
   areaId,
   renewableId,
   values,
-}: UpdateRenewableParams): Promise<Renewable> {
-  const body = renewableUpdateSchema.parse(values);
+}: UpdateRenewableClusterParams): Promise<RenewableCluster> {
+  const body = renewableClusterUpdateSchema.parse(values);
   const res = await client.patch(
     `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable/${renewableId}`,
     body,
   );
-  return renewableSchema.parse(res.data);
+  return renewableClusterSchema.parse(res.data);
 }
 
 /**
@@ -131,18 +123,18 @@ export async function updateRenewable({
  * @returns The duplicated cluster, preserving the server's ID casing.
  * @throws If the response doesn't match the expected schema.
  */
-export async function duplicateRenewable({
+export async function duplicateRenewableCluster({
   studyId,
   areaId,
   renewableId,
   newName,
-}: DuplicateRenewableParams): Promise<Renewable> {
+}: DuplicateRenewableClusterParams): Promise<RenewableCluster> {
   const res = await client.post(
     `/v1/studies/${studyId}/areas/${areaId}/renewables/${renewableId}`,
     null,
     { params: { newName } },
   );
-  return renewableSchema.parse(res.data);
+  return renewableClusterSchema.parse(res.data);
 }
 
 /**
@@ -153,11 +145,11 @@ export async function duplicateRenewable({
  * @param params.areaId - Area identifier.
  * @param params.renewableIds - Renewable cluster identifiers to delete.
  */
-export async function deleteRenewables({
+export async function deleteRenewableClusters({
   studyId,
   areaId,
   renewableIds,
-}: DeleteRenewablesParams): Promise<void> {
+}: DeleteRenewableClustersParams): Promise<void> {
   await client.delete(`/v1/studies/${studyId}/areas/${areaId}/clusters/renewable`, {
     data: renewableIds,
   });

@@ -187,6 +187,7 @@ function DataTable<TData extends RowData>({
 
   const table = useMaterialReactTable({
     data,
+    getRowId: (row, index) => row.name + index,
     columns: tableColumns,
     localization: { noRecordsToDisplay: t("global.noData") },
     initialState: {

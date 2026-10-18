@@ -24,14 +24,14 @@ import {
 
 export const thermalGroupSchema = z.enum(THERMAL_GROUPS);
 
-export const thermalSchema = z.object({
+export const thermalClusterSchema = z.object({
   // Backend models preserve name casing, while database storage lowercases IDs.
   // TODO: Remove normalization once the backend returns consistent IDs.
   id: z.string().transform(nameToId),
   name: z.string(),
-  // Before v9.3, non-null groups are mapped to the values in thermalGroupSchema.
-  // Since v9.3, groups can be custom strings. The API also permits null.
-  group: z.string().nullable(),
+  // Before v9.3, `group` was restricted to the predefined groups (see `thermalGroupSchema`).
+  // Since v9.3, it can be any custom string.
+  group: z.string(),
   enabled: z.boolean(),
   unitCount: z.number(),
   nominalCapacity: z.number(),
@@ -51,7 +51,9 @@ export const thermalSchema = z.object({
   lawForced: z.enum(TS_LAW_OPTIONS),
   lawPlanned: z.enum(TS_LAW_OPTIONS),
   co2: z.number(),
-  // Since v8.6; older studies may omit these fields or return null.
+  // Version-specific fields may be missing or `null` for older studies.
+  // `nullishToOptional` normalizes `null` to `undefined`.
+  // Since v8.6
   so2: nullishToOptional(z.number()).optional(),
   nh3: nullishToOptional(z.number()).optional(),
   nox: nullishToOptional(z.number()).optional(),
@@ -70,11 +72,13 @@ export const thermalSchema = z.object({
   variableOMCost: nullishToOptional(z.number()).optional(),
 });
 
-export const thermalsSchema = z.array(thermalSchema);
+export const thermalClustersSchema = z.array(thermalClusterSchema);
 
-export const thermalCreationSchema = thermalSchema
+export const thermalClusterCreationSchema = thermalClusterSchema
   .omit({ id: true })
   .partial()
   .required({ name: true });
 
-export const thermalUpdateSchema = thermalSchema.omit({ id: true, name: true }).partial();
+export const thermalClusterUpdateSchema = thermalClusterSchema
+  .omit({ id: true, name: true })
+  .partial();
