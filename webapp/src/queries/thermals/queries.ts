@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { getThermals } from "@/services/api/studies/areas/thermals";
+import { getThermalClusters } from "@/services/api/studies/areas/thermals";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { queryListOptions } from "../utils";
@@ -22,7 +22,7 @@ export const thermalQueries = {
   list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return queryListOptions({
       queryKey: thermalKeys.list(studyId, areaId),
-      queryFn: () => getThermals({ studyId, areaId }),
+      queryFn: () => getThermalClusters({ studyId, areaId }),
     });
   },
 };

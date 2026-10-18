@@ -16,38 +16,38 @@ import type { AreaWithId } from "@/types/types";
 import type { z } from "zod";
 import type { Study } from "../../types";
 import type {
-  renewableCreationSchema,
+  renewableClusterCreationSchema,
+  renewableClusterSchema,
+  renewableClusterUpdateSchema,
   renewableGroupSchema,
-  renewableSchema,
-  renewableUpdateSchema,
 } from "./schemas";
 
 export type RenewableGroup = z.infer<typeof renewableGroupSchema>;
-export type Renewable = z.infer<typeof renewableSchema>;
-export type RenewableCreation = z.input<typeof renewableCreationSchema>;
-export type RenewableUpdate = z.input<typeof renewableUpdateSchema>;
+export type RenewableCluster = z.infer<typeof renewableClusterSchema>;
+export type RenewableClusterCreation = z.input<typeof renewableClusterCreationSchema>;
+export type RenewableClusterUpdate = z.input<typeof renewableClusterUpdateSchema>;
 
-export interface RenewablesAreaParams {
+export interface RenewableClustersParams {
   studyId: Study["id"];
   areaId: AreaWithId["id"];
 }
 
-export interface GetRenewableParams extends RenewablesAreaParams {
-  renewableId: Renewable["id"];
+export interface RenewableClusterParams extends RenewableClustersParams {
+  renewableId: RenewableCluster["id"];
 }
 
-export interface CreateRenewableParams extends RenewablesAreaParams {
-  values: RenewableCreation;
+export interface CreateRenewableClusterParams extends RenewableClustersParams {
+  values: RenewableClusterCreation;
 }
 
-export interface UpdateRenewableParams extends GetRenewableParams {
-  values: RenewableUpdate;
+export interface UpdateRenewableClusterParams extends RenewableClusterParams {
+  values: RenewableClusterUpdate;
 }
 
-export interface DuplicateRenewableParams extends GetRenewableParams {
-  newName: Renewable["name"];
+export interface DuplicateRenewableClusterParams extends RenewableClusterParams {
+  newName: RenewableCluster["name"];
 }
 
-export interface DeleteRenewablesParams extends RenewablesAreaParams {
-  renewableIds: Array<Renewable["id"]>;
+export interface DeleteRenewableClustersParams extends RenewableClustersParams {
+  renewableIds: Array<RenewableCluster["id"]>;
 }

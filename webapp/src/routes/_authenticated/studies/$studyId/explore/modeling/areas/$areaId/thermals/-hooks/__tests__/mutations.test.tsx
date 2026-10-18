@@ -20,10 +20,10 @@ import * as api from "@/services/api/studies/areas/thermals";
 import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
 import type { QueryClient } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
-import useCreateThermal from "../useCreateThermal";
-import useDeleteThermals from "../useDeleteThermals";
-import useDuplicateThermal from "../useDuplicateThermal";
-import useThermals from "../useThermals";
+import useCreateThermalCluster from "../useCreateThermalCluster";
+import useDeleteThermalClusters from "../useDeleteThermalClusters";
+import useDuplicateThermalCluster from "../useDuplicateThermalCluster";
+import useThermalClusters from "../useThermalClusters";
 import { cluster } from "./fixtures";
 
 const scope = { studyId: "study", areaId: "area" };
@@ -36,10 +36,10 @@ beforeEach(() => {
   wrapper = createQueryWrapper(client);
   client.setQueryData(key, [cluster]);
 
-  vi.mocked(api.getThermals).mockReset().mockResolvedValue([cluster]);
-  vi.mocked(api.createThermal).mockReset().mockResolvedValue(cluster);
-  vi.mocked(api.deleteThermals).mockReset().mockResolvedValue(undefined);
-  vi.mocked(api.duplicateThermal).mockReset().mockResolvedValue(cluster);
+  vi.mocked(api.getThermalClusters).mockReset().mockResolvedValue([cluster]);
+  vi.mocked(api.createThermalCluster).mockReset().mockResolvedValue(cluster);
+  vi.mocked(api.deleteThermalClusters).mockReset().mockResolvedValue(undefined);
+  vi.mocked(api.duplicateThermalCluster).mockReset().mockResolvedValue(cluster);
 });
 
 afterEach(() => client.clear());
@@ -67,8 +67,8 @@ describe("Thermal mutations", () => {
 
     const { result } = renderHook(
       () => {
-        useThermals(scope);
-        return useDeleteThermals(scope);
+        useThermalClusters(scope);
+        return useDeleteThermalClusters(scope);
       },
       { wrapper },
     );
@@ -78,7 +78,7 @@ describe("Thermal mutations", () => {
     });
 
     expect(client.getQueryData(key)).toEqual([coal]);
-    expect(api.getThermals).not.toHaveBeenCalled();
+    expect(api.getThermalClusters).not.toHaveBeenCalled();
 
     affected.forEach((key) => {
       expect(client.getQueryState(key)?.isInvalidated).toBe(true);
@@ -91,14 +91,14 @@ describe("Thermal mutations", () => {
   test("creating and duplicating clusters updates the list without refetching", async () => {
     const created = { ...cluster, id: "coal", name: "Coal" };
     const duplicated = { ...cluster, id: "gas copy", name: "Gas Copy" };
-    vi.mocked(api.createThermal).mockResolvedValue(created);
-    vi.mocked(api.duplicateThermal).mockResolvedValue(duplicated);
+    vi.mocked(api.createThermalCluster).mockResolvedValue(created);
+    vi.mocked(api.duplicateThermalCluster).mockResolvedValue(duplicated);
 
     const { result } = renderHook(
       () => ({
-        list: useThermals(scope),
-        create: useCreateThermal(scope),
-        duplicate: useDuplicateThermal(scope),
+        list: useThermalClusters(scope),
+        create: useCreateThermalCluster(scope),
+        duplicate: useDuplicateThermalCluster(scope),
       }),
       { wrapper },
     );
@@ -122,6 +122,6 @@ describe("Thermal mutations", () => {
 
     await waitFor(() => expect(result.current.list.data).toHaveLength(3));
     expect(client.getQueryData(key)).toEqual([cluster, created, duplicated]);
-    expect(api.getThermals).not.toHaveBeenCalled();
+    expect(api.getThermalClusters).not.toHaveBeenCalled();
   });
 });

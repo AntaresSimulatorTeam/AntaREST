@@ -15,11 +15,13 @@
 import DataTable from "@/components/DataTable";
 import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
 import type { RowData } from "@/components/DataTable/types";
+import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
 import { thermalKeys } from "@/queries/thermals/keys";
 import { thermalQueries } from "@/queries/thermals/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
   capacityAggregationFn,
+  selectClustersData,
   toCapacityString,
 } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
 import { THERMAL_GROUPS } from "@/services/api/studies/areas/thermals/constants";
@@ -30,11 +32,11 @@ import { createMRTColumnHelper } from "material-react-table";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import useCreateThermal from "./-hooks/useCreateThermal";
-import useDeleteThermals from "./-hooks/useDeleteThermals";
-import useDuplicateThermal from "./-hooks/useDuplicateThermal";
-import useThermals from "./-hooks/useThermals";
-import { selectClustersData, type ThermalClusterWithCapacity } from "./-utils";
+import useCreateThermalCluster from "./-hooks/useCreateThermalCluster";
+import useDeleteThermalClusters from "./-hooks/useDeleteThermalClusters";
+import useDuplicateThermalCluster from "./-hooks/useDuplicateThermalCluster";
+import useThermalClusters from "./-hooks/useThermalClusters";
+import type { ThermalClusterWithCapacity } from "./-types";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/",
@@ -52,14 +54,16 @@ function Thermals() {
   const params = Route.useParams();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const createThermal = useCreateThermal(params);
-  const duplicateThermal = useDuplicateThermal(params);
-  const deleteThermals = useDeleteThermals(params);
+  const createThermalCluster = useCreateThermalCluster(params);
+  const duplicateThermalCluster = useDuplicateThermalCluster(params);
+  const deleteThermalClusters = useDeleteThermalClusters(params);
   const { areaId } = params;
 
   const {
     data: { clustersWithCapacity, totals },
-  } = useThermals({ ...params, select: selectClustersData });
+    error,
+    isRefetchError,
+  } = useThermalClusters({ ...params, select: selectClustersData });
 
   const isSaving = queryClient.isMutating({ mutationKey: thermalKeys.list(study.id, areaId) }) > 0;
 
@@ -119,15 +123,15 @@ function Thermals() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreate = (values: RowData) => {
-    createThermal.mutate({ values });
+    createThermalCluster.mutate({ values });
   };
 
   const handleDuplicate = (row: ThermalClusterWithCapacity, newName: string) => {
-    duplicateThermal.mutate({ thermalId: row.id, newName });
+    duplicateThermalCluster.mutate({ thermalId: row.id, newName });
   };
 
   const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
-    deleteThermals.mutate({ thermalIds: rows.map((row) => row.id) });
+    deleteThermalClusters.mutate({ thermalIds: rows.map((row) => row.id) });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -135,28 +139,31 @@ function Thermals() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <DataTable
-      key={areaId}
-      data={clustersWithCapacity}
-      columns={columns}
-      groups={[...THERMAL_GROUPS]}
-      allowNewGroups={semver.gte(study.version, "9.3.0")}
-      onCreate={handleCreate}
-      onDuplicate={handleDuplicate}
-      onDelete={handleDelete}
-      isSaving={isSaving}
-      nameLinkOptions={(row) =>
-        linkOptions({
-          to: "/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId",
-          params: { ...params, thermalId: row.id },
-        })
-      }
-      deleteConfirmationMessage={(rows) => {
-        return t("study.modeling.thermals.question.delete", {
-          count: rows.length,
-          names: rows.map((row) => row.name),
-        });
-      }}
-    />
+    <>
+      <RefetchErrorAlert isRefetchError={isRefetchError} error={error} />
+      <DataTable
+        key={areaId}
+        data={clustersWithCapacity}
+        columns={columns}
+        groups={[...THERMAL_GROUPS]}
+        allowNewGroups={semver.gte(study.version, "9.3.0")}
+        onCreate={handleCreate}
+        onDuplicate={handleDuplicate}
+        onDelete={handleDelete}
+        isSaving={isSaving}
+        nameLinkOptions={(row) =>
+          linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId",
+            params: { ...params, thermalId: row.id },
+          })
+        }
+        deleteConfirmationMessage={(rows) => {
+          return t("study.modeling.clusters.question.delete", {
+            count: rows.length,
+            names: rows.map((row) => row.name),
+          });
+        }}
+      />
+    </>
   );
 }

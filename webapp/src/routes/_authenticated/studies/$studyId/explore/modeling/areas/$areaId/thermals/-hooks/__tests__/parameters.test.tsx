@@ -67,7 +67,7 @@ beforeEach(() => {
   client = createQueryClient();
   wrapper = createQueryWrapper(client);
 
-  vi.mocked(api.getThermals).mockReset().mockResolvedValue([cluster]);
+  vi.mocked(api.getThermalClusters).mockReset().mockResolvedValue([cluster]);
 });
 
 afterEach(() => client.clear());
@@ -75,7 +75,7 @@ afterEach(() => client.clear());
 describe("Thermal parameters", () => {
   test("preserves edits across refetches and saves only changed fields", async () => {
     client.setQueryData(key, [cluster]);
-    vi.mocked(api.updateThermal)
+    vi.mocked(api.updateThermalCluster)
       .mockReset()
       .mockResolvedValue({ ...cluster, nominalCapacity: 250, unitCount: 5 });
 
@@ -85,7 +85,7 @@ describe("Thermal parameters", () => {
     await userEvent.type(input, "250");
 
     // Another writer changed the capacity and unit count while this form was being edited.
-    vi.mocked(api.getThermals).mockResolvedValue([
+    vi.mocked(api.getThermalClusters).mockResolvedValue([
       { ...cluster, nominalCapacity: 999, unitCount: 5 },
     ]);
 
@@ -98,15 +98,16 @@ describe("Thermal parameters", () => {
     await userEvent.click(screen.getByRole("button", { name: "global.save" }));
 
     await waitFor(() =>
-      expect(api.updateThermal).toHaveBeenCalledWith(
-        { ...scope, clusterId: "gas", values: { nominalCapacity: 250 } },
-        expect.anything(),
-      ),
+      expect(api.updateThermalCluster).toHaveBeenCalledWith({
+        ...scope,
+        thermalId: "gas",
+        values: { nominalCapacity: 250 },
+      }),
     );
     await waitFor(() => expect(screen.getByRole("button", { name: "global.save" })).toBeDisabled());
     expect(input).toHaveValue(250);
     expect(client.getQueryData(key)).toEqual([{ ...cluster, nominalCapacity: 250, unitCount: 5 }]);
-    expect(api.getThermals).toHaveBeenCalledTimes(1);
+    expect(api.getThermalClusters).toHaveBeenCalledTimes(1);
   });
 
   test("resets defaults when the area changes", async () => {

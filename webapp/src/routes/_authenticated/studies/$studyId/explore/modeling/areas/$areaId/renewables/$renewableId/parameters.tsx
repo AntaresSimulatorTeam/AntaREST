@@ -20,16 +20,17 @@ import Fieldset from "@/components/Fieldset";
 import Form from "@/components/Form";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import {
+  RENEWABLE_GROUPS,
+  TS_INTERPRETATION_OPTIONS,
+} from "@/services/api/studies/areas/renewables/constants";
+import type { RenewableCluster } from "@/services/api/studies/areas/renewables/types";
+import { buildKey } from "@/utils/reactUtils";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import {
-  getRenewableCluster,
-  RENEWABLE_GROUPS,
-  TS_INTERPRETATION_OPTIONS,
-  updateRenewableCluster,
-  type RenewableCluster,
-} from "../-utils";
+import useUpdateRenewableCluster from "../-hooks/useUpdateRenewableCluster";
+import useRenewableCluster from "./-hooks/useRenewableCluster";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId/parameters",
@@ -38,16 +39,21 @@ export const Route = createFileRoute(
 });
 
 function Parameters() {
-  const study = useStudy();
-  const { areaId, renewableId } = Route.useParams();
   const { t } = useTranslation();
+  const params = Route.useParams();
+  const study = useStudy();
+  const renewableCluster = useRenewableCluster(params);
+  const updateRenewableCluster = useUpdateRenewableCluster(params);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<RenewableCluster>) => {
-    return updateRenewableCluster(study.id, areaId, renewableId, dirtyValues);
+    return updateRenewableCluster.mutateAsync({
+      renewableId: renewableCluster.id,
+      values: dirtyValues,
+    });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -56,8 +62,8 @@ function Parameters() {
 
   return (
     <Form
-      key={renewableId}
-      config={{ defaultValues: () => getRenewableCluster(study.id, areaId, renewableId) }}
+      key={buildKey(params)}
+      config={{ defaultValues: renewableCluster }}
       onSubmit={handleSubmit}
       enableUndoRedo
     >

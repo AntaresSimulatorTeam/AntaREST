@@ -13,25 +13,13 @@
  */
 
 import {
-  addClusterCapacity,
-  getClustersWithCapacityTotals,
-  type ClusterWithCapacity,
-} from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
-import {
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
 } from "@/services/api/studies/areas/thermals/constants";
-import type { Thermal, ThermalCreation } from "@/services/api/studies/areas/thermals/types";
-
-////////////////////////////////////////////////////////////////
-// Types
-////////////////////////////////////////////////////////////////
-
-export type ThermalClusterWithCapacity = ClusterWithCapacity<Thermal>;
-
-////////////////////////////////////////////////////////////////
-// Constants
-////////////////////////////////////////////////////////////////
+import type {
+  ThermalCluster,
+  ThermalClusterCreation,
+} from "@/services/api/studies/areas/thermals/types";
 
 /** Order of the emission fields displayed in the parameters form. */
 export const THERMAL_POLLUTANTS = [
@@ -47,7 +35,7 @@ export const THERMAL_POLLUTANTS = [
   "op3",
   "op4",
   "op5",
-] as const satisfies ReadonlyArray<keyof Thermal>;
+] as const satisfies ReadonlyArray<keyof ThermalCluster>;
 
 export const COMMON_MATRIX_COLS = [
   "Marginal cost modulation",
@@ -67,7 +55,7 @@ export const TS_GEN_MATRIX_COLS = [
 
 export const DEFAULT_THERMAL_VALUES = {
   name: "",
-  group: null,
+  group: "",
   enabled: false,
   unitCount: 0,
   nominalCapacity: 0,
@@ -87,17 +75,4 @@ export const DEFAULT_THERMAL_VALUES = {
   lawForced: TS_LAW_OPTIONS[0],
   lawPlanned: TS_LAW_OPTIONS[0],
   co2: 0,
-} satisfies ThermalCreation;
-
-////////////////////////////////////////////////////////////////
-// Functions
-////////////////////////////////////////////////////////////////
-
-export function selectClustersData(clusters: Thermal[]) {
-  const clustersWithCapacity = clusters.map(addClusterCapacity);
-
-  return {
-    clustersWithCapacity,
-    totals: getClustersWithCapacityTotals(clustersWithCapacity),
-  };
-}
+} as const satisfies ThermalClusterCreation;
