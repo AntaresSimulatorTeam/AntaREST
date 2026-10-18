@@ -26,14 +26,15 @@ import {
   TS_GENERATION_OPTIONS,
   TS_LAW_OPTIONS,
 } from "@/services/api/studies/areas/thermals/constants";
-import type { Thermal } from "@/services/api/studies/areas/thermals/types";
+import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
+import { buildKey } from "@/utils/reactUtils";
 import { validateNumber } from "@/utils/validation/number";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import useUpdateThermal from "../-hooks/useUpdateThermal";
-import { THERMAL_POLLUTANTS } from "../-utils";
-import useThermal from "./-hooks/useThermal";
+import { THERMAL_POLLUTANTS } from "../-constants";
+import useUpdateThermalCluster from "../-hooks/useUpdateThermalCluster";
+import useThermalCluster from "./-hooks/useThermalCluster";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId/parameters",
@@ -42,18 +43,18 @@ export const Route = createFileRoute(
 });
 
 function Parameters() {
-  const study = useStudy();
-  const params = Route.useParams();
   const { t } = useTranslation();
-  const thermal = useThermal(params);
-  const updateThermal = useUpdateThermal(params);
+  const params = Route.useParams();
+  const study = useStudy();
+  const thermalCluster = useThermalCluster(params);
+  const updateThermalCluster = useUpdateThermalCluster(params);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<Thermal>) => {
-    return updateThermal.mutateAsync({ thermalId: thermal.id, values: dirtyValues });
+  const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
+    return updateThermalCluster.mutateAsync({ thermalId: thermalCluster.id, values: dirtyValues });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -62,8 +63,8 @@ function Parameters() {
 
   return (
     <Form
-      key={thermal.id}
-      config={{ defaultValues: thermal }}
+      key={buildKey(params)}
+      config={{ defaultValues: thermalCluster }}
       onSubmit={handleSubmit}
       enableUndoRedo
     >

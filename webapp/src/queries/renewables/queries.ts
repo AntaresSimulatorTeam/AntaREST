@@ -12,19 +12,17 @@
  * This file is part of the Antares project.
  */
 
-import { getRenewables } from "@/services/api/studies/areas/renewables";
+import { getRenewableClusters } from "@/services/api/studies/areas/renewables";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
-import { EXTERNALLY_MUTATED, queryListOptions } from "../utils";
+import { queryListOptions } from "../utils";
 import { renewableKeys } from "./keys";
 
 export const renewableQueries = {
   list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return queryListOptions({
       queryKey: renewableKeys.list(studyId, areaId),
-      queryFn: () => getRenewables({ studyId, areaId }),
-      // TODO: keep it stale until we update all writers to invalidate it.
-      ...EXTERNALLY_MUTATED,
+      queryFn: () => getRenewableClusters({ studyId, areaId }),
     });
   },
 };

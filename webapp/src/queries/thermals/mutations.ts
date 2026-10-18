@@ -13,16 +13,16 @@
  */
 
 import {
-  createThermal,
-  deleteThermals,
-  duplicateThermal,
-  updateThermal,
+  createThermalCluster,
+  deleteThermalClusters,
+  duplicateThermalCluster,
+  updateThermalCluster,
 } from "@/services/api/studies/areas/thermals";
 import type {
-  CreateThermalParams,
-  DeleteThermalsParams,
-  DuplicateThermalParams,
-  UpdateThermalParams,
+  CreateThermalClusterParams,
+  DeleteThermalClustersParams,
+  DuplicateThermalClusterParams,
+  UpdateThermalClusterParams,
 } from "@/services/api/studies/areas/thermals/types";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
@@ -33,29 +33,33 @@ export const thermalMutations = {
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: thermalKeys.create(studyId, areaId),
-      mutationFn: (params: Omit<CreateThermalParams, "studyId" | "areaId">) =>
-        createThermal({ ...params, studyId, areaId }),
+      mutationFn: (params: Omit<CreateThermalClusterParams, "studyId" | "areaId">) => {
+        return createThermalCluster({ ...params, studyId, areaId });
+      },
     });
   },
   update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: thermalKeys.update(studyId, areaId),
-      mutationFn: (params: Omit<UpdateThermalParams, "studyId" | "areaId">) =>
-        updateThermal({ ...params, studyId, areaId }),
+      mutationFn: (params: Omit<UpdateThermalClusterParams, "studyId" | "areaId">) => {
+        return updateThermalCluster({ ...params, studyId, areaId });
+      },
     });
   },
   duplicate: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: thermalKeys.duplicate(studyId, areaId),
-      mutationFn: (params: Omit<DuplicateThermalParams, "studyId" | "areaId">) =>
-        duplicateThermal({ ...params, studyId, areaId }),
+      mutationFn: (params: Omit<DuplicateThermalClusterParams, "studyId" | "areaId">) => {
+        return duplicateThermalCluster({ ...params, studyId, areaId });
+      },
     });
   },
   delete: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: thermalKeys.delete(studyId, areaId),
-      mutationFn: (params: Omit<DeleteThermalsParams, "studyId" | "areaId">) =>
-        deleteThermals({ ...params, studyId, areaId }),
+      mutationFn: (params: Omit<DeleteThermalClustersParams, "studyId" | "areaId">) => {
+        return deleteThermalClusters({ ...params, studyId, areaId });
+      },
     });
   },
 };

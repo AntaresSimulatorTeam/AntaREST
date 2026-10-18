@@ -14,10 +14,10 @@
 
 import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
 import TabsView from "@/components/page/TabsView";
-import type { Thermal } from "@/services/api/studies/areas/thermals/types";
 import { createFileRoute, linkOptions, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import useThermals from "../-hooks/useThermals";
+import useThermalClusters from "../-hooks/useThermalClusters";
+import { clustersToOptions } from "../../-clustersUtils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId",
@@ -25,20 +25,14 @@ export const Route = createFileRoute(
   component: ThermalLayout,
 });
 
-const thermalToOptions = (thermals: Thermal[]) => {
-  return thermals.map((thermal) => ({
-    label: thermal.name,
-    value: thermal.id,
-    group: thermal.group ?? undefined,
-  }));
-};
-
 function ThermalLayout() {
   const params = Route.useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { thermalId } = params;
-  const { data: thermalOptions } = useThermals({ ...params, select: thermalToOptions });
+  const { data: thermalOptions } = useThermalClusters({
+    ...params,
+    select: clustersToOptions,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -88,7 +82,7 @@ function ThermalLayout() {
       primaryActions={
         <SelectFE
           label={t("study.modeling.thermals.select")}
-          value={thermalId}
+          value={params.thermalId}
           options={thermalOptions}
           onChange={handleChange}
           size="extra-small"

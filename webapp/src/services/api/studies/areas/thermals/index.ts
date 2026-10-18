@@ -14,19 +14,19 @@
 
 import client from "@/services/api/client";
 import {
-  thermalCreationSchema,
-  thermalSchema,
-  thermalsSchema,
-  thermalUpdateSchema,
+  thermalClusterCreationSchema,
+  thermalClusterSchema,
+  thermalClustersSchema,
+  thermalClusterUpdateSchema,
 } from "./schemas";
 import type {
-  CreateThermalParams,
-  DeleteThermalsParams,
-  DuplicateThermalParams,
-  Thermal,
-  ThermalParams,
-  ThermalsParams,
-  UpdateThermalParams,
+  CreateThermalClusterParams,
+  DeleteThermalClustersParams,
+  DuplicateThermalClusterParams,
+  ThermalCluster,
+  ThermalClusterParams,
+  ThermalClustersParams,
+  UpdateThermalClusterParams,
 } from "./types";
 
 /**
@@ -38,9 +38,12 @@ import type {
  * @returns All cluster properties, with IDs normalized for existing list consumers.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getThermals({ studyId, areaId }: ThermalsParams): Promise<Thermal[]> {
+export async function getThermalClusters({
+  studyId,
+  areaId,
+}: ThermalClustersParams): Promise<ThermalCluster[]> {
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`);
-  return thermalsSchema.parse(res.data);
+  return thermalClustersSchema.parse(res.data);
 }
 
 /**
@@ -53,11 +56,15 @@ export async function getThermals({ studyId, areaId }: ThermalsParams): Promise<
  * @returns The complete cluster, with a normalized ID.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getThermal({ studyId, areaId, thermalId }: ThermalParams): Promise<Thermal> {
+export async function getThermalCluster({
+  studyId,
+  areaId,
+  thermalId,
+}: ThermalClusterParams): Promise<ThermalCluster> {
   const res = await client.get(
     `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${thermalId}`,
   );
-  return thermalSchema.parse(res.data);
+  return thermalClusterSchema.parse(res.data);
 }
 
 /**
@@ -70,14 +77,14 @@ export async function getThermal({ studyId, areaId, thermalId }: ThermalParams):
  * @returns The created cluster, with a normalized ID.
  * @throws If the values or response don't match the expected schema.
  */
-export async function createThermal({
+export async function createThermalCluster({
   studyId,
   areaId,
   values,
-}: CreateThermalParams): Promise<Thermal> {
-  const body = thermalCreationSchema.parse(values);
+}: CreateThermalClusterParams): Promise<ThermalCluster> {
+  const body = thermalClusterCreationSchema.parse(values);
   const res = await client.post(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`, body);
-  return thermalSchema.parse(res.data);
+  return thermalClusterSchema.parse(res.data);
 }
 
 /**
@@ -91,18 +98,18 @@ export async function createThermal({
  * @returns The updated cluster, with a normalized ID.
  * @throws If the values or response don't match the expected schema.
  */
-export async function updateThermal({
+export async function updateThermalCluster({
   studyId,
   areaId,
   thermalId,
   values,
-}: UpdateThermalParams): Promise<Thermal> {
-  const body = thermalUpdateSchema.parse(values);
+}: UpdateThermalClusterParams): Promise<ThermalCluster> {
+  const body = thermalClusterUpdateSchema.parse(values);
   const res = await client.patch(
     `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${thermalId}`,
     body,
   );
-  return thermalSchema.parse(res.data);
+  return thermalClusterSchema.parse(res.data);
 }
 
 /**
@@ -116,18 +123,18 @@ export async function updateThermal({
  * @returns The duplicated cluster, with a normalized ID.
  * @throws If the response doesn't match the expected schema.
  */
-export async function duplicateThermal({
+export async function duplicateThermalCluster({
   studyId,
   areaId,
   thermalId,
   newName,
-}: DuplicateThermalParams): Promise<Thermal> {
+}: DuplicateThermalClusterParams): Promise<ThermalCluster> {
   const res = await client.post(
     `/v1/studies/${studyId}/areas/${areaId}/thermals/${thermalId}`,
     null,
     { params: { newName } },
   );
-  return thermalSchema.parse(res.data);
+  return thermalClusterSchema.parse(res.data);
 }
 
 /**
@@ -138,11 +145,11 @@ export async function duplicateThermal({
  * @param params.areaId - Area identifier.
  * @param params.thermalIds - Thermal cluster identifiers to delete.
  */
-export async function deleteThermals({
+export async function deleteThermalClusters({
   studyId,
   areaId,
   thermalIds,
-}: DeleteThermalsParams): Promise<void> {
+}: DeleteThermalClustersParams): Promise<void> {
   await client.delete(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`, {
     data: thermalIds,
   });
