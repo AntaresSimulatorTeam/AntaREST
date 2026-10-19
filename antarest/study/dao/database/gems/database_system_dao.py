@@ -115,13 +115,6 @@ def _encode_parameter_value(value: float | str) -> str:
     return repr(value) if isinstance(value, float) else value
 
 
-def _decode_parameter_value(value: str) -> float | str:
-    try:
-        return float(value)
-    except ValueError:
-        return value
-
-
 def _check_parameters_values_are_correctly_typed(
     components: List[GemsComponent], original_exception: Exception
 ) -> None:
@@ -257,7 +250,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     "id": parameter_row.parameter_id,
                     "time-dependent": parameter_row.time_dependent,
                     "scenario-dependent": parameter_row.scenario_dependent,
-                    "value": _decode_parameter_value(parameter_row.value),
+                    "value": parameter_row.dataseries_id
+                    if parameter_row.dataseries_id is not None
+                    else float(parameter_row.value),
                 }
             )
         return component_parameters
@@ -388,7 +383,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                         "time_dependent": parameter.time_dependent,
                         "scenario_dependent": parameter.scenario_dependent,
                         "value": _encode_parameter_value(parameter.value),
-                        "dataseries_id": parameter.value if isinstance(parameter.value, str) else None,
+                        "dataseries_id": parameter.value
+                        if parameter.time_dependent or parameter.scenario_dependent
+                        else None,
                     }
                 )
 
