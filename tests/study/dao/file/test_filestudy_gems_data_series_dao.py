@@ -63,6 +63,21 @@ def test_data_series_check_path_traversal_attack(filestudy_dao_v10_2: FileStudyT
     assert data_series[0].id == "max_load_values"
 
 
+def test_data_series_ignore_non_csv_files(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    dao = filestudy_dao_v10_2
+    ds_folder = dao.get_file_study().config.study_path / "input" / "data-series"
+    ds_folder.mkdir(exist_ok=True)
+
+    shutil.copy(ASSETS_PATH / "gems" / "data-series" / "max_load_values.csv", ds_folder / "max_load_values.csv")
+    shutil.copy(ASSETS_PATH / "gems" / "data-series" / "max_load_values.csv", ds_folder / "non_csv_file.pdf")
+    csv_folder = ds_folder / "fake_csv.csv"
+    csv_folder.mkdir(exist_ok=True)
+
+    data_series = dao.get_data_series()
+    assert len(data_series) == 1
+    assert data_series[0].id == "max_load_values"
+
+
 def check_data_series_integrity(data_series: list[GemsDataSeries]) -> None:
     assert len(data_series) == 2
 
