@@ -59,3 +59,15 @@ def test_values_are_stored_as_json_encoded_text(db_session: Session, matrix_serv
     row = db_session.execute(select(GEMS_DATA_SERIES_TABLE)).one()
     assert isinstance(row.values, str)
     assert json.loads(row.values) == [[1.0, 2.0], [3.0, 4.0]]
+
+
+def test_data_series_check_path_traversal_attack(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
+    dao = build_db_dao_10_2(db_session, matrix_service)
+
+    # Should not write in other folders
+    dao.save_data_series([GemsDataSeries(id="../max_load_values", values=np.array([[1, 2, 3]]))])
+
+    data_series = dao.get_data_series()
+
+    assert len(data_series) == 1
+    assert data_series[0].id == "max_load_values"
