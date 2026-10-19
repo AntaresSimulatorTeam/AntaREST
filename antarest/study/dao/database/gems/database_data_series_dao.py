@@ -14,9 +14,10 @@ import json
 from typing import Any
 
 from sqlalchemy import delete, insert, select
+from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsDuplicatedDataSeriesId
+from antarest.core.exceptions import GemsDuplicatedDataSeriesId, GemsInvalidParameterValue
 from antarest.study.business.model.gems.data_series import GemsDataSeries
 from antarest.study.dao.api.gems_data_series import GemsDataSeriesDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -55,8 +56,12 @@ class DatabaseGemsDataSeriesDao(GemsDataSeriesDao, DatabaseDaoBase):
         # Full replace: clear what is already stored for this study, then re-insert the batch.
         session.execute(delete(table).where(table.c.study_data_id == self._study_data_id))
         if data_series:
-            _check_no_duplicated_ids(data_series)
-            session.execute(insert(table), [self._to_row(ds) for ds in data_series])
+            try:
+                session.execute(insert(table), [self._to_row(ds) for ds in data_series])
+            except IntegrityError:
+                session.rollback()
+                _check_no_duplicated_ids(data_series)
+                raise GemsInvalidParameterValue("The data series table is not saved as it should")
         session.commit()
 
     def _to_row(self, data_series: GemsDataSeries) -> dict[str, Any]:

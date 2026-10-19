@@ -85,7 +85,7 @@ class FileStudyGemsDataSeriesDao(GemsDataSeriesDao, ABC):
         data_series_list = []
         for data_series_file in all_data_series_files:
             csv_content = CsvReader().read(data_series_file)
-            ds_id = data_series_file.name.split(".")[0]
+            ds_id = Path(data_series_file.name).stem
             current_ds = GemsDataSeries.model_validate({"id": ds_id, "values": _convert_csv_to_array(csv_content)})
             data_series_list.append(current_ds)
 
