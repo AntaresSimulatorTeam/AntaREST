@@ -52,6 +52,17 @@ def test_data_series_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     check_data_series_integrity(data_series)
 
 
+def test_data_series_check_path_traversal_attack(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    dao = filestudy_dao_v10_2
+
+    # Should not write in other folders
+    dao.save_data_series([GemsDataSeries(id="../max_load_values", values=np.array([[1, 2, 3]]))])
+
+    data_series = dao.get_data_series()
+    assert len(data_series) == 1
+    assert data_series[0].id == "max_load_values"
+
+
 def check_data_series_integrity(data_series: list[GemsDataSeries]) -> None:
     assert len(data_series) == 2
 
