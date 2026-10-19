@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import json
-from pathlib import Path
 from typing import Any
 
 from sqlalchemy import delete, insert, select
@@ -26,22 +25,16 @@ from antarest.study.dao.database.models.gems.data_series import GEMS_DATA_SERIES
 
 
 def _check_no_duplicated_ids(data_series: list[GemsDataSeries]) -> None:
-    deduplicated_ids = {_sanitise_ds_id(ds) for ds in data_series}
+    deduplicated_ids = {ds.id for ds in data_series}
     if len(deduplicated_ids) != len(data_series):
         count_ds_per_id = dict.fromkeys(deduplicated_ids, 0)
         duplicated_ids = []
         for current_ds in data_series:
-            count_ds_per_id[_sanitise_ds_id(current_ds)] += 1
-            if count_ds_per_id[_sanitise_ds_id(current_ds)] > 1:
-                duplicated_ids.append(_sanitise_ds_id(current_ds))
+            count_ds_per_id[current_ds.id] += 1
+            if count_ds_per_id[current_ds.id] > 1:
+                duplicated_ids.append(current_ds.id)
 
         raise GemsDuplicatedDataSeriesId(f"Duplicated data series IDs: {duplicated_ids}")
-
-
-def _sanitise_ds_id(ds: GemsDataSeries) -> Any:
-    # Path.stem is applied to avoid paths like '../other_folder/' which
-    # would lead to writing files outside the study folder.
-    return Path(ds.id).stem
 
 
 class DatabaseGemsDataSeriesDao(GemsDataSeriesDao, DatabaseDaoBase):
@@ -75,6 +68,6 @@ class DatabaseGemsDataSeriesDao(GemsDataSeriesDao, DatabaseDaoBase):
         values = data_series.model_dump(mode="json")["values"]
         return {
             "study_data_id": self._study_data_id,
-            "id": _sanitise_ds_id(data_series),
+            "id": data_series.id,
             "values": json.dumps(values),
         }

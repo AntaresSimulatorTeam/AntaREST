@@ -52,29 +52,23 @@ def _delete_old_data_series(data_series: list[GemsDataSeries], file_study: FileS
 
 
 def _check_no_duplicated_ids(data_series: list[GemsDataSeries]) -> None:
-    deduplicated_ids = {_sanitise_ds_id(ds) for ds in data_series}
+    deduplicated_ids = {ds.id for ds in data_series}
     if len(deduplicated_ids) != len(data_series):
         count_ds_per_id = dict.fromkeys(deduplicated_ids, 0)
         duplicated_ids = []
         for current_ds in data_series:
-            count_ds_per_id[_sanitise_ds_id(current_ds)] += 1
-            if count_ds_per_id[_sanitise_ds_id(current_ds)] > 1:
-                duplicated_ids.append(_sanitise_ds_id(current_ds))
+            count_ds_per_id[current_ds.id] += 1
+            if count_ds_per_id[current_ds.id] > 1:
+                duplicated_ids.append(current_ds.id)
 
         raise GemsDuplicatedDataSeriesId(f"Duplicated data series IDs: {duplicated_ids}")
-
-
-def _sanitise_ds_id(ds: GemsDataSeries) -> Any:
-    # Path.stem is applied to avoid paths like '../other_folder/' which
-    # would lead to writing files outside the study folder.
-    return Path(ds.id).stem
 
 
 def _write_new_data_series(data_series: list[GemsDataSeries], folder: Path) -> None:
     folder.mkdir(exist_ok=True)
     for ds in data_series:
         csv_content = ds.model_dump(mode="csv", exclude_unset=True)
-        ds_path = folder / f"{_sanitise_ds_id(ds)}.csv"
+        ds_path = folder / f"{ds.id}.csv"
         CsvWriter.write_rows(csv_content["values"], ds_path)
 
 
@@ -102,10 +96,10 @@ class FileStudyGemsDataSeriesDao(GemsDataSeriesDao, ABC):
         file_study = self.get_file_study()
         folder = _get_gems_data_series_folder_path(file_study.config.study_path)
 
+        _check_no_duplicated_ids(data_series)
         _delete_old_data_series(data_series, file_study)
 
         if not data_series:
             return
 
-        _check_no_duplicated_ids(data_series)
         _write_new_data_series(data_series, folder)
