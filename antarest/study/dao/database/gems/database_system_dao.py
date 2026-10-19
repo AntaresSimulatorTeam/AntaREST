@@ -354,6 +354,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             try:
                 session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
             except IntegrityError as e:
+                session.rollback()
                 self._raise_the_right_component_exception(components, e)
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
