@@ -514,12 +514,12 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         # It means the DB table is not filled as it should.
         raise ValueError("The thermal capacity connections table is not filled as it should") from e
 
-    def _raise_the_right_component_exception(self, components: list[GemsComponent], e: IntegrityError) -> None:
+    def _raise_the_right_component_exception(self, components: list[GemsComponent], e: IntegrityError) -> NoReturn:
         _check_parameters_values_are_correctly_typed(components, e)
         self._check_parameter_values_reference_existing_data_series(components, e)
 
-        # Default exceptio
-        raise GemsInvalidComponents("Could not save components, the table is not  filled as it should") from e
+        # Default exception
+        raise GemsInvalidComponents("Could not save components, the table is not filled as it should") from e
 
     def _check_parameter_values_reference_existing_data_series(
         self, components: List[GemsComponent], original_exception: Exception
