@@ -16,6 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import (
+    GemsInvalidComponents,
     GemsInvalidConnection,
     GemsInvalidParameterValue,
     GemsSystemAlreadyExists,
@@ -351,32 +352,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             session.rollback()
             raise e
 
-    def _check_parameter_values_reference_existing_data_series(
-        self, components: List[GemsComponent], original_exception: Exception
-    ) -> None:
-        referenced_ids = {
-            parameter.value
-            for component in components
-            for parameter in component.parameters or []
-            if isinstance(parameter.value, str)
-        }
-        if not referenced_ids:
-            return
-
-        study_data_id = self._study_data_id
-        session = self._db_session
-
-        existing_ids_stmt = select(GEMS_DATA_SERIES_TABLE.c.id).where(
-            GEMS_DATA_SERIES_TABLE.c.study_data_id == study_data_id,
-            GEMS_DATA_SERIES_TABLE.c.id.in_(referenced_ids),
-        )
-        existing_ids = {row.id for row in session.execute(existing_ids_stmt).fetchall()}
-
-        if missing_ids := referenced_ids - existing_ids:
-            raise GemsInvalidParameterValue(
-                f"Parameter value(s) reference non-existing data series: {sorted(missing_ids)}"
-            ) from original_exception
-
     @override
     def save_components(self, components: List[GemsComponent]) -> None:
         study_data_id = self._study_data_id
@@ -433,8 +408,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             try:
                 session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
             except IntegrityError as e:
-                _check_parameters_values_are_correctly_typed(components, e)
-                self._check_parameter_values_reference_existing_data_series(components, e)
+                self._raise_the_right_component_exception(components, e)
         if property_values:
             session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
 
@@ -538,6 +512,39 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         # All components and clusters exist and no port is connected twice.
         # It means the DB table is not filled as it should.
         raise ValueError("The thermal capacity connections table is not filled as it should") from e
+
+    def _raise_the_right_component_exception(self, components: list[GemsComponent], e: IntegrityError) -> None:
+        _check_parameters_values_are_correctly_typed(components, e)
+        self._check_parameter_values_reference_existing_data_series(components, e)
+
+        # Default exceptio
+        raise GemsInvalidComponents("Could not save components, the table is not  filled as it should") from e
+
+    def _check_parameter_values_reference_existing_data_series(
+        self, components: List[GemsComponent], original_exception: Exception
+    ) -> None:
+        referenced_ids = {
+            parameter.value
+            for component in components
+            for parameter in component.parameters or []
+            if isinstance(parameter.value, str)
+        }
+        if not referenced_ids:
+            return
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        existing_ids_stmt = select(GEMS_DATA_SERIES_TABLE.c.id).where(
+            GEMS_DATA_SERIES_TABLE.c.study_data_id == study_data_id,
+            GEMS_DATA_SERIES_TABLE.c.id.in_(referenced_ids),
+        )
+        existing_ids = {row.id for row in session.execute(existing_ids_stmt).fetchall()}
+
+        if missing_ids := referenced_ids - existing_ids:
+            raise GemsInvalidParameterValue(
+                f"Parameter value(s) reference non-existing data series: {sorted(missing_ids)}"
+            ) from original_exception
 
     def _get_components_library_and_model(self) -> dict[str, tuple[str, str]]:
         study_data_id = self._study_data_id

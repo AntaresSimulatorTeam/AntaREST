@@ -942,6 +942,11 @@ class GemsInvalidConnection(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
+class GemsInvalidComponents(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class GemsInvalidParameterValue(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
