@@ -19,11 +19,7 @@ import {
   getReservesCertifications,
   getReservesSymmetries,
 } from "@/services/api/studies/areas/reserves";
-import type {
-  CertificationProductionType,
-  Reserve,
-  SymmetryProductionType,
-} from "@/services/api/studies/areas/reserves/types";
+import type { ProductionType, Reserve } from "@/services/api/studies/areas/reserves/types";
 import { getOptimization } from "@/services/api/studies/config/optimization";
 import type { AreaWithId } from "@/types/types";
 import { queryOptions } from "@tanstack/react-query";
@@ -59,7 +55,7 @@ export const reserveQueries = {
   certifications: (
     studyId: Study["id"],
     areaId: AreaWithId["id"],
-    productionType: CertificationProductionType,
+    productionType: ProductionType,
   ) => {
     return queryOptions({
       queryKey: reserveKeys.certifications(studyId, areaId, productionType),
@@ -69,11 +65,7 @@ export const reserveQueries = {
       ...EXTERNALLY_MUTATED,
     });
   },
-  symmetries: (
-    studyId: Study["id"],
-    areaId: AreaWithId["id"],
-    productionType: SymmetryProductionType,
-  ) => {
+  symmetries: (studyId: Study["id"], areaId: AreaWithId["id"], productionType: ProductionType) => {
     return queryOptions({
       queryKey: reserveKeys.symmetries(studyId, areaId, productionType),
       queryFn: () => getReservesSymmetries({ studyId, areaId, productionType }),

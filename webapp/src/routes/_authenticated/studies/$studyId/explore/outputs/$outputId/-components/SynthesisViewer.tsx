@@ -63,7 +63,7 @@ function SynthesisViewer({ gridType }: SynthesisViewerProps) {
         ifPending={() => <DataGridSkeleton />}
         ifFulfilled={(matrix) => {
           if (!matrix) {
-            return <EmptyView title={t("study.outputs.noData")} icon={GridOffIcon} />;
+            return <EmptyView title={t("global.noData")} icon={GridOffIcon} />;
           }
 
           return (

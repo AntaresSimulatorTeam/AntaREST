@@ -238,7 +238,8 @@ class DatabaseScenarioBuilderDao(ScenarioBuilderDao, DatabaseDaoBase):
                 renewables = {a: list(renew_clusters.get(a, {})) for a in areas}
 
             if scenario_type == ScenarioType.SHORT_TERM_STORAGE_INFLOWS:
-                storages = {a: list(impl.get_all_st_storages().get(a, {})) for a in areas}
+                all_storages = impl.get_all_st_storages()
+                storages = {a: list(all_storages.get(a, {})) for a in areas}
 
             if scenario_type == ScenarioType.SHORT_TERM_STORAGE_ADDITIONAL_CONSTRAINTS:
                 sts = impl.get_all_st_storages()

@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, TypeAlias
 
 from antares.study.version import StudyVersion
 from pydantic import ConfigDict, Field
@@ -18,6 +18,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.utils import check_min_version, initialize_field_with_default_value
 from antarest.study.model import (
     STUDY_VERSION_8_3,
     STUDY_VERSION_8_5,
@@ -80,11 +81,6 @@ def update_adequacy_patch_parameters(
     return AdequacyPatchParameters.model_validate(current_properties)
 
 
-def _check_min_version(data: Any, field: str, version: StudyVersion) -> None:
-    if getattr(data, field) is not None:
-        raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version {version}")
-
-
 def validate_adequacy_patch_parameters_against_version(
     version: StudyVersion,
     parameters_data: AdequacyPatchParameters | AdequacyPatchParametersUpdate,
@@ -105,18 +101,13 @@ def validate_adequacy_patch_parameters_against_version(
             "threshold_display_local_matching_rule_violations",
             "threshold_csr_variable_bounds_relaxation",
         ]:
-            _check_min_version(parameters_data, field, version)
+            check_min_version(parameters_data, field, version)
 
     if version < STUDY_VERSION_9_3:
-        _check_min_version(parameters_data, "redispatch", version)
+        check_min_version(parameters_data, "redispatch", version)
 
     if version >= STUDY_VERSION_9_2:
-        _check_min_version(parameters_data, "ntc_between_physical_areas_out_adequacy_patch", version)
-
-
-def _initialize_field_default(parameters: AdequacyPatchParameters, field: str, default_value: Any) -> None:
-    if getattr(parameters, field) is None:
-        setattr(parameters, field, default_value)
+        check_min_version(parameters_data, "ntc_between_physical_areas_out_adequacy_patch", version)
 
 
 def _reset_field(parameters: AdequacyPatchParameters, field: str) -> None:
@@ -128,18 +119,18 @@ def initialize_adequacy_patch_parameters(parameters: AdequacyPatchParameters, ve
     Set undefined version-specific fields to default values.
     """
     if version >= STUDY_VERSION_8_3:
-        _initialize_field_default(parameters, "ntc_between_physical_areas_out_adequacy_patch", True)
+        initialize_field_with_default_value(parameters, "ntc_between_physical_areas_out_adequacy_patch", True)
 
     if version >= STUDY_VERSION_8_5:
-        _initialize_field_default(parameters, "price_taking_order", PriceTakingOrder.DENS)
-        _initialize_field_default(parameters, "include_hurdle_cost_csr", False)
-        _initialize_field_default(parameters, "check_csr_cost_function", False)
-        _initialize_field_default(parameters, "threshold_initiate_curtailment_sharing_rule", 1)
-        _initialize_field_default(parameters, "threshold_display_local_matching_rule_violations", 0)
-        _initialize_field_default(parameters, "threshold_csr_variable_bounds_relaxation", 7)
+        initialize_field_with_default_value(parameters, "price_taking_order", PriceTakingOrder.DENS)
+        initialize_field_with_default_value(parameters, "include_hurdle_cost_csr", False)
+        initialize_field_with_default_value(parameters, "check_csr_cost_function", False)
+        initialize_field_with_default_value(parameters, "threshold_initiate_curtailment_sharing_rule", 1)
+        initialize_field_with_default_value(parameters, "threshold_display_local_matching_rule_violations", 0)
+        initialize_field_with_default_value(parameters, "threshold_csr_variable_bounds_relaxation", 7)
 
     if version >= STUDY_VERSION_9_2:
         _reset_field(parameters, "ntc_between_physical_areas_out_adequacy_patch")
 
     if version >= STUDY_VERSION_9_3:
-        _initialize_field_default(parameters, "redispatch", False)
+        initialize_field_with_default_value(parameters, "redispatch", False)

@@ -11,15 +11,72 @@
 # This file is part of the Antares project.
 
 import sys
+from io import BytesIO
+from pathlib import Path
+from zipfile import ZipFile
 
+import numpy as np
 import pytest
+import yaml
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
 from tests.integration.utils import wait_task_completion
+from tests.test_helpers.download import download_to_file
 
 RUN_ON_WINDOWS = sys.platform == "win32"
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+@pytest.mark.parametrize("explicit_target", [False, True])
+def test_upgrade_9_3_to_10_2(
+    client: TestClient, user_access_token: str, storage_mode: str, explicit_target: bool, tmp_path: Path
+) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    res = client.post(
+        "/v1/studies", params={"name": "Upgrade reserves", "version": "9.3", "storage_mode": storage_mode}
+    )
+    assert res.status_code == 201, res.text
+    study_id = res.json()
+    res = client.post(f"/v1/studies/{study_id}/areas", json={"name": "fr", "type": "AREA"})
+    assert res.status_code == 200, res.text
+    legacy_values = [[1, 2, 3, 4]] * 8760
+    res = client.post(f"/v1/studies/{study_id}/raw", params={"path": "input/reserves/fr"}, json=legacy_values)
+    assert res.status_code == 200, res.text
+
+    params = {"target_version": "10.2"} if explicit_target else {}
+    res = client.put(f"/v1/studies/{study_id}/upgrade", params=params)
+    assert res.status_code == 200, res.text
+    task = wait_task_completion(client, user_access_token, res.json())
+    assert task.status == TaskStatus.COMPLETED, task
+    res = client.get(f"/v1/studies/{study_id}")
+    assert res.status_code == 200, res.text
+    assert res.json()["version"] == "10.2"
+
+    res = client.get(f"/v1/studies/{study_id}/raw", params={"path": "input/reserves/fr.txt"})
+    assert res.status_code == 200, res.text
+    assert res.json()["data"] == legacy_values
+    base = f"/v1/studies/{study_id}/areas/fr/reserves"
+    res = client.get(base)
+    assert res.status_code == 200, res.text
+    assert res.json() == []
+    res = client.post(base, json={"name": "R1", "type": "up", "failureCost": 500})
+    assert res.status_code == 200, res.text
+    res = client.get(f"{base}/r1")
+    assert res.status_code == 200, res.text
+    assert res.json()["failureCost"] == 500
+
+    res = client.get(f"/v1/studies/{study_id}/export")
+    assert res.status_code == 200, res.text
+    archive_path = tmp_path / "upgraded.zip"
+    download_to_file(client, res.json()["file"]["id"], archive_path)
+    with ZipFile(archive_path) as archive:
+        np.testing.assert_array_equal(np.loadtxt(BytesIO(archive.read("input/reserves/fr.txt"))), legacy_values)
+        reserves = yaml.safe_load(archive.read("input/reserves/fr/reserves.yml"))
+        assert reserves["reserves"][0]["name"] == "R1"
+        assert reserves["reserves"][0]["failure-cost"] == 500
 
 
 class TestStudyUpgrade:
@@ -36,6 +93,7 @@ class TestStudyUpgrade:
         assert task_id
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED
+        assert task.result is not None
         assert task.result.message == f"Successfully upgraded study '{internal_study_id}' to version 7.1"
 
     @pytest.mark.skipif(RUN_ON_WINDOWS, reason="This test runs randomly on Windows")
@@ -53,6 +111,7 @@ class TestStudyUpgrade:
         assert task_id
         task = wait_task_completion(client, user_access_token, task_id)
         assert task.status == TaskStatus.COMPLETED
+        assert task.result is not None
         assert task.result.message == f"Successfully upgraded study '{internal_study_id}' to version 7.2"
 
     def test_upgrade_study__bad_target_version(
@@ -76,7 +135,7 @@ class TestStudyUpgrade:
         """
 
         # set the admin access token in the client headers
-        client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
         # create a raw study
         res = client.post("/v1/studies", params={"name": "My Study"})
@@ -121,7 +180,7 @@ def test_study_upgrade_for_both_storage_modes(client: TestClient, user_access_to
     create_minimal_study(client, study_id)
 
     # Sets the area `fr` load to a certain value just to check its value afterwards
-    res = client.post(f"/v1/studies/{study_id}/raw?path=input/load/series/load_fr", data=b"[[100]]")
+    res = client.post(f"/v1/studies/{study_id}/raw?path=input/load/series/load_fr", content=b"[[100]]")
     assert res.status_code == 200, res.json()
 
     # Ensures the study was created in v7.0

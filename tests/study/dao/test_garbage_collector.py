@@ -22,7 +22,7 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.gc_matrix import clean_matrices
 from antarest.matrixstore.repository import MatrixContentRepository, MatrixDataSetRepository, MatrixRepository
-from antarest.matrixstore.service import MatrixService
+from antarest.matrixstore.service import ISimpleMatrixService, MatrixService
 from antarest.study.business.model.reserve_definition_model import ReserveDefinitionId
 from antarest.study.business.model.xpansion_model import XpansionResourceFileType
 from antarest.study.dao.api.study_dao import StudyDao
@@ -39,7 +39,7 @@ from tests.study.dao.conftest import build_real_case_study, build_reserve_defini
 from tests.study.dao.utils import save_area
 
 
-def _build_storage_mapping(matrix_service: MatrixService) -> dict[StorageMode, IStudyStorage]:
+def _build_storage_mapping(matrix_service: ISimpleMatrixService) -> dict[StorageMode, IStudyStorage]:
     study_factory = StudyFactory(matrix_service=matrix_service, cache=Mock())
     return {
         StorageMode.FILESYSTEM: FileStudyStorage(Mock(), Mock(), matrix_service, study_factory),
@@ -48,7 +48,7 @@ def _build_storage_mapping(matrix_service: MatrixService) -> dict[StorageMode, I
 
 
 def _register_provider(
-    dao: StudyDao, db_session: Session, matrix_service: MatrixService
+    dao: StudyDao, db_session: Session, matrix_service: ISimpleMatrixService
 ) -> RawStudyMatrixUsageProvider:
     storage_mapping = _build_storage_mapping(matrix_service)
     repository = Mock()
@@ -259,9 +259,11 @@ def test_garbage_collection(command_context: CommandContext, tmp_path: Path, db_
         pl.testing.assert_frame_equal(hydro_max_daily_pump_energy, hydro_max_daily_pump_energy_df, check_dtypes=False)
 
         xpansion_capacity = dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
+        assert isinstance(xpansion_capacity, pl.DataFrame)
         pl.testing.assert_frame_equal(xpansion_capacity, xpansion_capacity_df, check_dtypes=False)
 
         xpansion_weight = dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
+        assert isinstance(xpansion_weight, pl.DataFrame)
         pl.testing.assert_frame_equal(xpansion_weight, xpansion_weight_df, check_dtypes=False)
 
         bc_lt = dao.get_constraint_less_term_matrix(bc_both_id)

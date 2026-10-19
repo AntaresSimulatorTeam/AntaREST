@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.study.business.model.link_model import TransmissionCapacity
@@ -20,7 +21,7 @@ from tests.integration.prepare_proxy import PreparerProxy
 class TestLink:
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_link_update(self, client: TestClient, user_access_token: str, study_type: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         preparer = PreparerProxy(client, user_access_token)
         study_id = preparer.create_study("foo", version=820)
@@ -146,7 +147,7 @@ class TestLink:
 
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_link_820(self, client: TestClient, user_access_token: str, study_type: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         preparer = PreparerProxy(client, user_access_token)
         study_id = preparer.create_study("foo", version=820)

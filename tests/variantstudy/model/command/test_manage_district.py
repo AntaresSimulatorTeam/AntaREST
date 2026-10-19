@@ -9,9 +9,12 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import pytest
 
 from antarest.core.serde.ini_reader import IniReader
+from antarest.study.business.model.common import FilterOption
 from antarest.study.business.model.district_model import DistrictApplyFilter, DistrictCreation, DistrictUpdate
+from antarest.study.model import STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -66,6 +69,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d1.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("two added zone")
+    assert set_config is not None
     assert set(set_config["+"]) == {area1_id, area2_id}
     assert set_config["output"]
     assert set_config["comments"] == "First district"
@@ -86,6 +90,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d2.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
+    assert set_config is not None
     assert set_config["-"] == [area1_id]
     assert set_config["apply-filter"] == "add-all"
 
@@ -101,6 +106,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
 
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
+    assert set_config is not None
     assert set_config["+"] == [area2_id]
     assert set_config["apply-filter"] == "remove-all"
 
@@ -117,6 +123,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d2.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("empty district without output")
+    assert set_config is not None
     assert not set_config["output"]
 
     # case where district already exists
@@ -179,6 +186,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d6.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
+    assert set_config is not None
     assert "+" not in set_config
     assert "-" not in set_config
 
@@ -197,6 +205,7 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d7.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
+    assert set_config is not None
     assert set_config["-"] == ["area1"]
     assert "+" not in set_config
     assert set_config["apply-filter"] == "add-all"
@@ -217,8 +226,26 @@ def test_manage_district(empty_study_810: FileStudy, command_context: CommandCon
     assert output_d8.status
     sets_config = IniReader(["+", "-"]).read(empty_study.config.study_path / "input/areas/sets.ini")
     set_config = sets_config.get("one subtracted zone")
+    assert set_config is not None
     assert set_config["-"] == ["area1"]
     assert "+" not in set_config
     assert set_config["apply-filter"] == "add-all"
     assert not set_config["output"]
     assert set_config["comments"] == "next gen comment"
+
+
+def test_version_errors(command_context: CommandContext) -> None:
+    with pytest.raises(ValueError, match="Field filter_synthesis is not a valid field for study version 9.3"):
+        CreateDistrict(
+            parameters=DistrictCreation(name="d1", filter_synthesis=[FilterOption.DAILY]),
+            command_context=command_context,
+            study_version=STUDY_VERSION_9_3,
+        )
+
+    with pytest.raises(ValueError, match="Field filter_year_by_year is not a valid field for study version 9.3"):
+        UpdateDistrict(
+            id="d1",
+            parameters=DistrictUpdate(filter_year_by_year=[FilterOption.ANNUAL]),
+            command_context=command_context,
+            study_version=STUDY_VERSION_9_3,
+        )

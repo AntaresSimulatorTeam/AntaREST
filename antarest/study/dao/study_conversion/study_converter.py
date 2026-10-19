@@ -94,6 +94,16 @@ class StudyConverter:
                 self._new_dao.save_taxonomy(gems_taxonomy)
             self._new_dao.save_library(gems_library)
 
+            self._new_dao.save_catalogs(self._source_dao.get_catalogs())
+
+            scenario_builder = self._source_dao.get_gems_scenario_builder()
+            if scenario_builder is not None:
+                self._new_dao.save_gems_scenario_builder(scenario_builder)
+
+            system = self._source_dao.get_system()
+            if system is not None:
+                self._new_dao.save_system(system)
+
     def _convert_settings(self) -> None:
         self._new_dao.save_general_config(self._source_dao.get_general_config())
         self._new_dao.save_playlist_config(self._source_dao.get_playlist_config())
@@ -114,9 +124,12 @@ class StudyConverter:
             return
 
         self._new_dao.create_xpansion_configuration()
-        self._new_dao.save_xpansion_settings(settings)
-        # Candidates
-        self._new_dao.save_xpansion_candidates(self._source_dao.get_all_xpansion_candidates())
+
+        # Settings can contain projections that refer to Candidates but Candidates refer to the other part of Settings.
+        # So we need to build a custom method for the DB DAO to avoid any Foreign Key issue.
+        candidates = self._source_dao.get_all_xpansion_candidates()
+        self._new_dao.save_xpansion_candidates_and_settings(candidates, settings)
+
         # Adequacy criterion
         self._new_dao.save_xpansion_adequacy_criterion(self._source_dao.get_xpansion_adequacy_criterion())
 
@@ -231,11 +244,9 @@ class StudyConverter:
                 self._convert_short_term_storages(st_storages, st_storages_constraints)
 
         # Once every area assets are converted, converting reserves
+        self._new_dao.save_reserves(self._source_dao.get_all_reserves())
         if self._study_version >= STUDY_VERSION_10_2:
             self._convert_reserves()
-        else:
-            # Legacy reserves behavior
-            self._new_dao.save_reserves(self._source_dao.get_all_reserves())
 
     def _convert_thermal_clusters(self, data: dict[str, list[ThermalCluster]]) -> None:
         self._new_dao.save_thermals(data)

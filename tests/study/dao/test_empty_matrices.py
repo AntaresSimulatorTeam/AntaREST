@@ -195,9 +195,11 @@ def test_empty_matrices(dao_93: StudyDao) -> None:
     assert_frame_equal(hydro_max_daily_pump_energy, default_scenario_daily_dataframe, check_dtypes=False)
 
     xpansion_capacity = dao.get_xpansion_resource(XpansionResourceFileType.CAPACITIES, "link_capa.txt")
+    assert isinstance(xpansion_capacity, pl.DataFrame)
     assert_frame_equal(xpansion_capacity, null_dataframe, check_dtypes=False)
 
     xpansion_weight = dao.get_xpansion_resource(XpansionResourceFileType.WEIGHTS, "mc_weights.csv")
+    assert isinstance(xpansion_weight, pl.DataFrame)
     assert_frame_equal(xpansion_weight, null_dataframe, check_dtypes=False)
 
     bc_lt = dao.get_constraint_less_term_matrix(bc_both_id)

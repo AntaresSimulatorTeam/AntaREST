@@ -20,6 +20,7 @@ from antarest.study.storage.variantstudy.model.command.create_st_storage import 
 from antarest.study.storage.variantstudy.model.command.create_st_storage_constraints import (
     CreateSTStorageAdditionalConstraints,
 )
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_multiple_storage_constraints import (
     RemoveMultipleSTStorageConstraints,
 )
@@ -34,7 +35,9 @@ class TestRemoveSTStorageAdditionalConstraint:
         dao = build_dao_from_file_study(study, command_context)
         version = study.config.version
         for area in ["fr", "de"]:
-            cmd = CreateArea(area_name=area, command_context=command_context, study_version=study.config.version)
+            cmd: ICommand = CreateArea(
+                area_name=area, command_context=command_context, study_version=study.config.version
+            )
             cmd.apply(dao)
             cmd = CreateSTStorage(
                 area_id=area, parameters={"name": f"sts_{area}"}, command_context=command_context, study_version=version

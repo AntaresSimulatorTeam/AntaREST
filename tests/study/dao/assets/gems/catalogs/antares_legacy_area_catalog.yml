@@ -1,0 +1,391 @@
+catalog:
+  id: antares_area_metrics
+
+  taxonomy: antares_legacy_taxonomy
+
+  location:
+    taxonomy-category: balance
+
+  metrics-definition:
+    - id: OV.COST
+      terms:
+        - taxonomy-category: balance
+          output-id: imbalance_cost
+          location-port: null
+        - taxonomy-category: dispatchable_generation
+          output-id: prop_cost
+          location-port: balance_port
+        - taxonomy-category: dispatchable_generation
+          output-id: non_prop_cost
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: OP.COST
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: prop_cost
+          location-port: balance_port
+        - taxonomy-category: dispatchable_generation
+          output-id: non_prop_cost
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: MRG.PRICE
+      terms:
+        - taxonomy-category: balance
+          output-id: price
+          location-port: null
+      terms-operator: avg
+      time-operator: avg
+
+    - id: CO2.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: co2_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: NH3.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: nh3_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: SO2.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: so2_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: NOX.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: nox_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: PM2_5.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: pm2_5_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: PM5.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: pm5_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: PM10.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: pm10_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: NMVOC.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: nmvoc_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: OP1.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: op1_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: OP2.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: op2_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: OP3.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: op3_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: OP4.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: op4_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: OP5.EMIS
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: op5_emissions
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: LOAD
+      terms:
+        - taxonomy-category: fatal_consumption
+          output-id: actual_load
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: RES.LOAD
+      terms:
+        - taxonomy-category: fatal_consumption
+          output-id: actual_load
+          location-port: balance_port
+        - taxonomy-category: renewable_fatal_generation
+          output-id: minus_generation
+          location-port: balance_port
+        - taxonomy-category: miscellaneous_fatal_generation
+          output-id: minus_generation
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: DTG.BY.TECHNOLOGY
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: generation_power
+          location-port: balance_port
+      terms-operator: sum
+      breakdown:
+        - key: technology
+      time-operator: sum
+
+    - id: BALANCE
+      terms:
+        - taxonomy-category: link
+          output-id: minus_flow
+          location-port: out_port
+        - taxonomy-category: link
+          output-id: flow
+          location-port: in_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: RES.GENERATION
+      terms:
+        - taxonomy-category: renewable_fatal_generation
+          output-id: generation_power
+          location-port: balance_port
+      breakdown:
+        - key: technology
+      terms-operator: sum
+      time-operator: sum
+
+    - id: STS.INJECTION
+      terms:
+        - taxonomy-category: short_term_storage
+          output-id: injection_power
+          location-port: balance_port
+      breakdown:
+        - key: group
+      terms-operator: sum
+      time-operator: sum
+
+    - id: STS.WITHDRAWAL
+      terms:
+        - taxonomy-category: short_term_storage
+          output-id: withdrawal_power
+          location-port: balance_port
+      breakdown:
+        - key: group
+      terms-operator: sum
+      time-operator: sum
+
+    - id: STS.LEVEL
+      terms:
+        - taxonomy-category: short_term_storage
+          output-id: level
+          location-port: balance_port
+      breakdown:
+        - key: group
+      terms-operator: avg
+      time-operator: avg
+
+    - id: UNSP.ENRG
+      terms:
+        - taxonomy-category: balance
+          output-id: unsupplied_energy
+          location-port: null
+      terms-operator: sum
+      time-operator: sum
+
+    - id: SPIL.ENRG
+      terms:
+        - taxonomy-category: balance
+          output-id: spilled_energy
+          location-port: null
+      terms-operator: sum
+      time-operator: sum
+
+    - id: NODU
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: actual_num_units_on
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: NP.COST
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: non_prop_cost
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: AVL.DTG
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: cluster_availability
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: DTG.MRG
+      terms:
+        - taxonomy-category: dispatchable_generation
+          output-id: up_margin
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: LOLD
+      terms:
+        - taxonomy-category: balance
+          output-id: is_significant_loss_of_load
+          location-port: null
+      terms-operator: sum
+      time-operator: sum
+
+    - id: LOLP
+      terms:
+        - taxonomy-category: balance
+          output-id: is_loss_of_load
+          location-port: null
+      terms-operator: avg
+      time-operator: avg
+
+    - id: NPCAP.HOURS
+      terms:
+        - taxonomy-category: balance
+          output-id: is_near_loss_of_load
+          location-port: null
+      terms-operator: sum
+      time-operator: sum
+
+    - id: ROW.BAL
+      terms:
+        - taxonomy-category: miscellaneous_fatal_generation
+          output-id: generation_power
+          location-port: balance_port
+      filter:
+        key: miscellaneous_type
+        value: rest_world
+      terms-operator: sum
+      time-operator: sum
+
+    - id: MISC.NDG
+      terms:
+        - taxonomy-category: miscellaneous_fatal_generation
+          output-id: generation_power
+          location-port: balance_port
+      filter:
+        key: miscellaneous_type
+        value: misc_ndg
+      terms-operator: sum
+      time-operator: sum
+
+    - id: PSP
+      terms:
+        - taxonomy-category: miscellaneous_fatal_generation
+          output-id: generation_power
+          location-port: balance_port
+      filter:
+        key: miscellaneous_type
+        value: pumped_storage_power
+      terms-operator: sum
+      time-operator: sum
+
+    - id: H.STOR
+      terms:
+        - taxonomy-category: long_term_storage
+          output-id: withdrawal_power
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: H.PUMP
+      terms:
+        - taxonomy-category: long_term_storage
+          output-id: injection_power
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: H.OVFL
+      terms:
+        - taxonomy-category: long_term_storage
+          output-id: overflow
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: H.INFL
+      terms:
+        - taxonomy-category: long_term_storage
+          output-id: actual_inflows
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+    - id: H.LEV
+      terms:
+        - taxonomy-category: long_term_storage
+          output-id: level_percentage
+          location-port: balance_port
+      terms-operator: avg
+      time-operator: avg
+
+    - id: H.VAL # WARNING : metric different from the one in Antares
+      terms:
+        - taxonomy-category: long_term_storage_with_watervalues
+          output-id: hydro_shadow_price
+          location-port: balance_port
+      terms-operator: avg
+      time-operator: avg
+
+    - id: H.COST # WARNING : metric different from the one in Antares
+      terms:
+        - taxonomy-category: long_term_storage_with_watervalues
+          output-id: bellman_value
+          location-port: balance_port
+      terms-operator: sum
+      time-operator: sum
+
+  # - id: MAX.MRG # TODO : traat as a postreatment. Calulation from hour to hour can differ for this metric max-mrg-utilis.cpp in Simulator, there is an algorithm to compute this metric.

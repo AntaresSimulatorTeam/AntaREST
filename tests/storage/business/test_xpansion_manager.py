@@ -42,21 +42,22 @@ from antarest.study.business.model.xpansion_model import (
     XpansionResourceFileType,
     XpansionSettingsUpdate,
 )
-from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.business.xpansion_management import (
     XpansionManager,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
+from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from tests.helpers import file_study_interface
 
 
-def make_areas(area_manager: AreaManager, study: StudyInterface) -> None:
+def make_areas(area_manager: AreaManager, study: FileStudyInterface) -> None:
     area_manager.create_area(study, AreaCreation(name="area1"))
     area_manager.create_area(study, AreaCreation(name="area2"))
 
 
-def make_link(link_manager: LinkManager, study: StudyInterface) -> None:
+def make_link(link_manager: LinkManager, study: FileStudyInterface) -> None:
     link_manager.create_link(study, Link(area1="area1", area2="area2"))
 
 
@@ -332,8 +333,8 @@ def test_get_candidate(
     xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_1))
     xpansion_manager.add_candidate(study, XpansionCandidateCreation(**cdt_2))
 
-    assert xpansion_manager.get_candidate(study, cdt_1["name"]) == XpansionCandidate(**cdt_1)
-    assert xpansion_manager.get_candidate(study, cdt_2["name"]) == XpansionCandidate(**cdt_2)
+    assert xpansion_manager.get_candidate(study, XpansionCandidateCreation(**cdt_1).name) == XpansionCandidate(**cdt_1)
+    assert xpansion_manager.get_candidate(study, XpansionCandidateCreation(**cdt_2).name) == XpansionCandidate(**cdt_2)
 
 
 def test_get_candidates(
@@ -400,9 +401,13 @@ def test_update_candidates(
         "max-investment": 1,
     }
 
-    xpansion_manager.replace_candidate(study, cdt_1["name"], XpansionCandidateCreation(**cdt_2))
+    xpansion_manager.replace_candidate(
+        study, XpansionCandidateCreation(**cdt_1).name, XpansionCandidateCreation(**cdt_2)
+    )
 
-    assert xpansion_manager.get_candidate(study, candidate_name=cdt_1["name"]) == XpansionCandidate(**cdt_2)
+    assert xpansion_manager.get_candidate(
+        study, candidate_name=XpansionCandidateCreation(**cdt_1).name
+    ) == XpansionCandidate(**cdt_2)
 
 
 def test_delete_candidate(
@@ -521,7 +526,7 @@ def test_update_weights_via_the_front(xpansion_manager: XpansionManager, empty_s
     assert "yearly-weights" not in json_content
 
 
-def test_add_resources(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
+def test_add_resources(xpansion_manager: XpansionManager, study: FileStudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "constraints1.txt"
@@ -540,11 +545,15 @@ def test_add_resources(xpansion_manager: XpansionManager, study: StudyInterface)
     xpansion_manager.add_resource(study, XpansionResourceFileType.WEIGHTS, file_3)
 
     assert filename1 in study.get_files().tree.get(["user", "expansion", "constraints"])
-    expected1 = study.get_files().tree.get(["user", "expansion", "constraints", filename1])
+    resource_node1 = study.get_files().tree.get_node(["user", "expansion", "constraints", filename1])
+    assert isinstance(resource_node1, RawFileNode)
+    expected1 = resource_node1.get()
     assert content1 == expected1
 
     assert filename2 in study.get_files().tree.get(["user", "expansion", "constraints"])
-    expected2 = study.get_files().tree.get(["user", "expansion", "constraints", filename2])
+    resource_node2 = study.get_files().tree.get_node(["user", "expansion", "constraints", filename2])
+    assert isinstance(resource_node2, RawFileNode)
+    expected2 = resource_node2.get()
     assert content2 == expected2
 
     assert filename3 in study.get_files().tree.get(["user", "expansion", "weights"])
@@ -597,7 +606,7 @@ def test_get_settings_without_sensitivity(xpansion_manager: XpansionManager, emp
     xpansion_manager.get_xpansion_settings(study)
 
 
-def test_get_all_constraints(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
+def test_get_all_constraints(xpansion_manager: XpansionManager, study: FileStudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "constraints1.txt"
@@ -617,7 +626,7 @@ def test_get_all_constraints(xpansion_manager: XpansionManager, study: StudyInte
     ]
 
 
-def test_add_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
+def test_add_capa(xpansion_manager: XpansionManager, study: FileStudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
@@ -646,7 +655,7 @@ def test_add_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> N
     assert_frame_equal(matrix, expected_matrix)
 
 
-def test_delete_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
+def test_delete_capa(xpansion_manager: XpansionManager, study: FileStudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
@@ -667,7 +676,7 @@ def test_delete_capa(xpansion_manager: XpansionManager, study: StudyInterface) -
     assert filename2 in study.get_files().tree.get(["user", "expansion", "capa"])
 
 
-def test_get_single_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
+def test_get_single_capa(xpansion_manager: XpansionManager, study: FileStudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
@@ -681,13 +690,14 @@ def test_get_single_capa(xpansion_manager: XpansionManager, study: StudyInterfac
     xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_1)
 
     df = xpansion_manager.get_resource_content(study, XpansionResourceFileType.CAPACITIES, filename1)
+    assert isinstance(df, pl.DataFrame)
     pd.testing.assert_frame_equal(df.to_pandas(), pd.DataFrame({"0": [0.0]}))
 
     with pytest.raises(MatrixImportFailed):
         xpansion_manager.add_resource(study, XpansionResourceFileType.CAPACITIES, file_2)
 
 
-def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) -> None:
+def test_get_all_capa(xpansion_manager: XpansionManager, study: FileStudyInterface) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 
     filename1 = "capa1.txt"
@@ -706,7 +716,7 @@ def test_get_all_capa(xpansion_manager: XpansionManager, study: StudyInterface) 
 
 @pytest.mark.parametrize("optional_folder", [True, False])
 def test_adequacy_criterion(
-    area_manager: AreaManager, xpansion_manager: XpansionManager, study: StudyInterface, optional_folder: bool
+    area_manager: AreaManager, xpansion_manager: XpansionManager, study: FileStudyInterface, optional_folder: bool
 ) -> None:
     xpansion_manager.create_xpansion_configuration(study)
 

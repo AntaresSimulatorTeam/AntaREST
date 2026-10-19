@@ -122,6 +122,11 @@ function Storages() {
       }),
       columnHelper.accessor("efficiency", {
         header: t("study.modeling.storages.efficiency"),
+        Header: ({ column }) => (
+          <Tooltip title={t("study.modeling.storages.efficiency.info")} placement="top" arrow>
+            <span>{column.columnDef.header}</span>
+          </Tooltip>
+        ),
         size: 50,
         Cell: ({ cell }) => `${Math.round(cell.getValue() * 100)}`,
       }),

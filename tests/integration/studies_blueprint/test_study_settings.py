@@ -9,20 +9,27 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from pathlib import Path
+from zipfile import ZipFile
+
+import numpy as np
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.config.optimization_config_model import (
     SimplexOptimizationRange,
     TransmissionCapacities,
     UnfeasibleProblemBehavior,
 )
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
+from tests.integration.assets import ASSETS_DIR
 from tests.integration.prepare_proxy import PreparerProxy
+from tests.test_helpers.download import download_to_file
 
 
 def test_study_settings(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     created = client.post("/v1/studies", params={"name": "foo", "version": 870})
     study_id = created.json()
@@ -426,6 +433,59 @@ def test_study_settings(client: TestClient, admin_access_token: str) -> None:
     assert res_ts_config_json == {"thermal": {"number": 2}}
 
 
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_import_hourly_study_convert_to_daily_and_export(
+    admin_client: TestClient, storage_mode: str, tmp_path: Path
+) -> None:
+    client = admin_client
+    reference = ASSETS_DIR / "symmetry_test_3_LT.zip"
+    maxpower_path = "input/hydro/common/capacity/maxpower_france.txt"
+    with ZipFile(reference) as archive:
+        assert maxpower_path not in archive.namelist()
+
+    res = client.post(
+        "/v1/studies/_import",
+        params={"storage_mode": storage_mode},
+        files={"study": ("reference.zip", reference.read_bytes())},
+    )
+    assert res.status_code == 201, res.text
+    study_id = res.json()
+    compatibility_url = f"/v1/studies/{study_id}/config/compatibility/form"
+    res = client.get(compatibility_url)
+    assert res.status_code == 200, res.text
+    assert res.json()["hydroPmax"] == "hourly"
+    res = client.put(compatibility_url, json={"hydroPmax": "daily"})
+    assert res.status_code == 200, res.text
+    res = client.get(compatibility_url)
+    assert res.status_code == 200, res.text
+    assert res.json()["hydroPmax"] == "daily"
+
+    matrix_path = maxpower_path.removesuffix(".txt")
+    res = client.get(f"/v1/studies/{study_id}/raw", params={"path": matrix_path})
+    assert res.status_code == 200, res.text
+    maxpower = res.json()["data"]
+    assert np.asarray(maxpower).shape == (365, 4)
+
+    res = client.get(f"/v1/studies/{study_id}/export")
+    assert res.status_code == 200, res.text
+    archive_path = tmp_path / "daily.zip"
+    download_to_file(client, res.json()["file"]["id"], archive_path)
+    with ZipFile(archive_path) as archive:
+        assert maxpower_path in archive.namelist()
+        assert "input/hydro/series/france/maxHourlyGenPower.txt" not in archive.namelist()
+        assert "input/hydro/series/france/maxHourlyPumpPower.txt" not in archive.namelist()
+
+    res = client.post(
+        "/v1/studies/_import",
+        params={"storage_mode": storage_mode},
+        files={"study": ("daily.zip", archive_path.read_bytes())},
+    )
+    assert res.status_code == 201, res.text
+    res = client.get(f"/v1/studies/{res.json()}/raw", params={"path": matrix_path})
+    assert res.status_code == 200, res.text
+    np.testing.assert_array_equal(res.json()["data"], maxpower)
+
+
 def test_compatibility_settings(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
@@ -452,6 +512,25 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
         json={"reservesEnabled": True},
     )
     assert res.status_code == 422
+
+
+@pytest.mark.parametrize("field, min_version", [("includeReserves", "10.2"), ("includeThermalClusterRamping", "10.3")])
+def test_optimization_fields_since_v10_rejected_before(
+    client: TestClient, admin_access_token: str, field: str, min_version: str
+) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    study_id = client.post("/v1/studies", params={"name": "foo", "version": 930}).json()
+
+    res = client.get(f"/v1/studies/{study_id}/config/optimization/form")
+    assert field not in res.json()
+
+    res = client.put(f"/v1/studies/{study_id}/config/optimization/form", json={field: True})
+    assert res.status_code == 422
+    assert f"is not a valid field for study version before {min_version}" in res.json()["description"]
+
+    # Field was not written to the study
+    res = client.get(f"/v1/studies/{study_id}/config/optimization/form")
+    assert field not in res.json()
 
 
 @pytest.mark.parametrize("study_type", ["raw", "variant"])

@@ -18,6 +18,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
+from antarest.study.business.model.utils import initialize_field_with_default_value
 from antarest.study.model import STUDY_VERSION_7_1
 
 
@@ -181,13 +182,8 @@ def validate_general_config_version(config: GeneralConfig | GeneralConfigUpdate,
 
 def initialize_general_config_against_version(config: GeneralConfig, version: StudyVersion) -> None:
     if version < STUDY_VERSION_7_1:
-        _initialize_field_default(config, "filtering", False)
+        initialize_field_with_default_value(config, "filtering", False)
 
     if version >= STUDY_VERSION_7_1:
         for field in ["geographic_trimming", "thematic_trimming"]:
-            _initialize_field_default(config, field, False)
-
-
-def _initialize_field_default(cluster: GeneralConfig, field: str, default_value: Any) -> None:
-    if getattr(cluster, field) is None:
-        setattr(cluster, field, default_value)
+            initialize_field_with_default_value(config, field, False)

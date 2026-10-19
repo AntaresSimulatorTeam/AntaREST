@@ -16,12 +16,30 @@ from pathlib import Path
 from typing import Sequence
 
 from antarest.core.exceptions import IncorrectPathError
-from antarest.study.model import Study, StudyMetadataCreation
+from antarest.study.model import STUDY_VERSION_10_2, Study, StudyMetadataCreation
+from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.filestudytree import FileStudyTree
 from antarest.study.storage.utils import format_timestamp
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
+
+
+def ensure_legacy_reserves_files(config: FileStudyTreeConfig) -> None:
+    """Complete v10.2+ exports created before legacy reserve matrices were restored.
+
+    The solver requires these files even with the new reserve definitions. An empty
+    file represents zero legacy reserves; existing matrices must be preserved.
+    Call after denormalizing the study so that matrix links have been resolved.
+    """
+    if config.version < STUDY_VERSION_10_2:
+        return
+    reserves_path = config.study_path / "input" / "reserves"
+    reserves_path.mkdir(parents=True, exist_ok=True)
+    for area_id in config.area_names():
+        path = reserves_path / f"{area_id}.txt"
+        if not path.exists():
+            path.touch()
 
 
 def get_study_path(study: Study) -> Path:

@@ -96,15 +96,15 @@ class TestLoginService:
     @pytest.fixture(name="populate_db", autouse=True)
     @with_db_context
     def populate_db_fixture(self, login_service: LoginService) -> None:
-        for group in _GROUPS:
-            login_service.groups.save(Group(**group))
+        for group_data in _GROUPS:
+            login_service.groups.save(Group(**group_data))
         main_characters = (u for u in _USERS if u["id"] < 10)
-        for user in main_characters:
-            login_service.users.save(User(**user))
-        for role in _ROLES:
-            group = t.cast(Group, login_service.groups.get(role["group_id"]))
-            user = t.cast(User, login_service.users.get(role["identity_id"]))
-            role = Role(**role, group=group, identity=user)
+        for user_data in main_characters:
+            login_service.users.save(User(**user_data))
+        for role_data in _ROLES:
+            group = t.cast(Group, login_service.groups.get(role_data["group_id"]))
+            user = t.cast(User, login_service.users.get(role_data["identity_id"]))
+            role = Role(**role_data, group=group, identity=user)
             login_service.roles.save(role)
 
     @with_db_context
@@ -198,7 +198,7 @@ class TestLoginService:
         joh_fredersen = get_user(login_service, user_id=4, group_id="metropolis")
         with current_user_context(joh_fredersen):
             login_service.save_bot(BotCreateDTO(name="Maria I", roles=[]))
-        actual: t.Sequence[Role] = login_service.bots.get_all_by_owner(4)
+        actual = login_service.bots.get_all_by_owner(4)
         assert len(actual) == 1
         assert actual[0].name == "Maria I"
 
@@ -423,9 +423,9 @@ class TestLoginService:
         # Create the admin user "Storm"
         storm = login_service.users.save(User(id=50, name="Storm"))
         # Create the LDAP user "Jane DOE"
-        jane = login_service.users.save(UserLdap(id=60, name="Jane DOE"))
+        jane = login_service.ldap.users.save(UserLdap(id=60, name="Jane DOE"))
         # Create the bot "Maria"
-        maria = login_service.users.save(Bot(id=70, name="Maria", owner=50, is_author=False))
+        maria = login_service.bots.save(Bot(id=70, name="Maria", owner=50, is_author=False))
 
         assert login_service.get_identity(50, include_token=False) == storm
         assert login_service.get_identity(60, include_token=False) == jane
@@ -630,7 +630,7 @@ class TestLoginService:
             firstname="Jane",
             lastname="DOE",
         )
-        login_service.users.save(user_ldap)
+        login_service.ldap.users.save(user_ldap)
 
         # Mock the LDAP service
         with patch("antarest.login.ldap.LdapService.login") as mock_login:
@@ -662,7 +662,7 @@ class TestLoginService:
             firstname="Jane",
             lastname="DOE",
         )
-        login_service.users.save(user_ldap)
+        login_service.ldap.users.save(user_ldap)
 
         # We can get a JWT for a user, an LDAP user, but not a bot
         lois_id = 3
@@ -689,7 +689,7 @@ class TestLoginService:
         admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         with current_user_context(admin_user):
             # Without details
-            with DBStatementRecorder(db_session.bind) as db_recorder:
+            with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
                 actual = login_service.get_all_groups()
                 assert len(db_recorder.sql_statements) == 1  # Only one request to get all groups
                 assert [g.model_dump() for g in actual] == [
@@ -699,7 +699,7 @@ class TestLoginService:
                 ]
 
             # With details
-            with DBStatementRecorder(db_session.bind) as db_recorder:
+            with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
                 actual = login_service.get_all_groups(details=True)
                 assert len(db_recorder.sql_statements) == 2
                 # 1 request to get all users
@@ -732,13 +732,13 @@ class TestLoginService:
         group_admin = get_user(login_service, user_id=2, group_id="superman")
         with current_user_context(group_admin):
             # Without details
-            with DBStatementRecorder(db_session.bind) as db_recorder:
+            with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
                 actual = login_service.get_all_groups()
                 assert len(db_recorder.sql_statements) == 1
                 assert [g.model_dump() for g in actual] == [{"id": "superman", "name": "Superman"}]
 
             # With details
-            with DBStatementRecorder(db_session.bind) as db_recorder:
+            with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
                 actual = login_service.get_all_groups(details=True)
                 assert len(db_recorder.sql_statements) == 3
                 # One request to get the current user groups
@@ -767,7 +767,7 @@ class TestLoginService:
         admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
         with current_user_context(admin_user):
             # Without details
-            with DBStatementRecorder(db_session.bind) as db_recorder:
+            with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
                 actual = login_service.get_all_users()
             assert len(db_recorder.sql_statements) == 1  # Only one request to get all users
             assert [u.model_dump() for u in actual] == [
@@ -778,7 +778,7 @@ class TestLoginService:
                 {"id": 5, "name": "Freder Fredersen"},
             ]
             # With details
-            with DBStatementRecorder(db_session.bind) as db_recorder:
+            with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
                 actual = login_service.get_all_users(details=True)
             assert len(db_recorder.sql_statements) == 2
             # One request to get all users
@@ -828,7 +828,7 @@ class TestLoginService:
         group_admin = get_user(login_service, user_id=2, group_id="superman")
         with current_user_context(group_admin):
             # Without details
-            with DBStatementRecorder(db_session.bind) as db_recorder:
+            with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
                 actual = login_service.get_all_users()
             assert len(db_recorder.sql_statements) == 3
             # One request to get the current user groups
@@ -837,7 +837,7 @@ class TestLoginService:
             assert [u.model_dump() for u in actual] == [{"id": 2, "name": "Clark Kent"}, {"id": 3, "name": "Lois Lane"}]
 
             # With details
-            with DBStatementRecorder(db_session.bind) as db_recorder:
+            with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
                 actual = login_service.get_all_users(details=True)
             assert len(db_recorder.sql_statements) == 3  # Same requests
             assert [u.model_dump() for u in actual] == [
@@ -866,7 +866,7 @@ class TestLoginService:
     @with_db_context
     def test_get_all_users_for_user_wo_group(self, login_service: LoginService) -> None:
         # Add an LDAP user with no group
-        login_service.users.save(UserLdap(id=60, name="Jane DOE"))
+        login_service.ldap.users.save(UserLdap(id=60, name="Jane DOE"))
 
         # Ensures the admin is able to fetch the LDAP user
         admin_user = get_user(login_service, user_id=ADMIN_ID, group_id="admin")
@@ -1105,9 +1105,9 @@ class TestLoginService:
         assert login_service.roles.get(role.identity.id, "g1") is not None
 
         # The user cannot delete a role
-        user = get_user(login_service, user_id=1, group_id="g1")
+        jwt_user = get_user(login_service, user_id=1, group_id="g1")
         with pytest.raises(UserHasNotPermissionError):
-            with current_user_context(user):
+            with current_user_context(jwt_user):
                 login_service.delete_role(role.identity.id, role.group.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is not None
 
@@ -1148,10 +1148,10 @@ class TestLoginService:
         assert login_service.roles.get(role.identity.id, role.group.id) is not None
 
         # The user cannot delete a role
-        user = get_user(login_service, user_id=1, group_id="g1")
+        jwt_user = get_user(login_service, user_id=1, group_id="g1")
         with pytest.raises(UserHasNotPermissionError):
             with current_user_context(group_admin):
-                login_service.delete_all_roles_from_user(user.id)
+                login_service.delete_all_roles_from_user(jwt_user.id)
         assert login_service.roles.get(role.identity.id, role.group.id) is not None
 
     @with_db_context

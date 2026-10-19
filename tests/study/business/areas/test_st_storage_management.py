@@ -22,7 +22,7 @@ from antarest.study.business.model.sts_model import (
     STStorageGroup,
     STStorageUpdate,
 )
-from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.study_interface import FileStudyInterface, StudyInterface
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
@@ -149,7 +149,7 @@ def _set_up_study(study: FileStudy, command_context: CommandContext) -> None:
 @pytest.fixture
 def study_interface(
     matrix_service: ISimpleMatrixService, empty_study_930: FileStudy, command_context: CommandContext
-) -> StudyInterface:
+) -> FileStudyInterface:
     study_interface = file_study_interface(empty_study_930, matrix_service)
     _set_up_study(empty_study_930, command_context)
     return study_interface
@@ -227,10 +227,10 @@ class TestSTStorageManager:
         assert "unknown_area" in ctx.value.detail
 
         # Test behavior for st_storage not in study
-        with pytest.raises(STStorageNotFound) as ctx:
+        with pytest.raises(STStorageNotFound) as storage_error:
             manager.update_storage(study_interface, area_id="fr", storage_id="unknown_storage", cluster_data=edit_form)
-        assert "fr" in ctx.value.detail
-        assert "unknown_storage" in ctx.value.detail
+        assert "fr" in storage_error.value.detail
+        assert "unknown_storage" in storage_error.value.detail
 
         # Test behavior for nominal case
         st_storage_output = manager.update_storage(
@@ -243,7 +243,7 @@ class TestSTStorageManager:
         assert st_storage_output.efficiency == 0.94  # Asserts this field wasn't modified as we didn't ask to
 
 
-def test_delete_storages_from_sc_builder(manager: STStorageManager, study_interface: StudyInterface) -> None:
+def test_delete_storages_from_sc_builder(manager: STStorageManager, study_interface: FileStudyInterface) -> None:
     # Create 3 short-term storage additional constraints
     c1 = STStorageAdditionalConstraintCreation(name="c1")
     c2 = STStorageAdditionalConstraintCreation(name="c2")

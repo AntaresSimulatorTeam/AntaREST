@@ -148,6 +148,7 @@ OPTIMIZATION_PREFERENCES_TABLE = Table(
     Column("unfeasible_problem_behavior", enum_col(UnfeasibleProblemBehavior), nullable=False),
     Column("simplex_optimization_range", enum_col(SimplexOptimizationRange), nullable=False),
     Column("include_reserves", Boolean(), nullable=True),
+    Column("include_thermal_cluster_ramping", Boolean(), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id"],
         ["study_data.study_data_id"],

@@ -40,7 +40,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_9_3
-from tests.study.dao.conftest import build_db_dao
+from tests.conftest import build_db_dao
 
 
 def test_nominal_case(dao: StudyDao) -> None:
@@ -140,6 +140,7 @@ def test_nominal_case(dao: StudyDao) -> None:
         transmission_capacities=TransmissionCapacities.INFINITE_FOR_ALL_LINKS,
         thermal_clusters_min_stable_power=False,
         thermal_clusters_min_ud_time=False,
+        include_thermal_cluster_ramping=True,
         day_ahead_reserve=False,
         primary_reserve=False,
         strategic_reserve=False,

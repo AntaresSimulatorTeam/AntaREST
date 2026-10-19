@@ -27,7 +27,7 @@ from tests.helpers import build_dao_from_file_study
 
 
 class TestCreateArea:
-    @pytest.mark.parametrize("version", [600, 650, 810, 830, 860])
+    @pytest.mark.parametrize("version", [600, 650, 810, 830, 860, 1020])
     @pytest.mark.parametrize("enr_modelling", list(EnrModelling))
     def test_apply(
         self,
@@ -119,9 +119,9 @@ class TestCreateArea:
         assert (study_path / "input" / "hydro" / "prepro" / area_id).is_dir()
         assert (study_path / "input" / "hydro" / "prepro" / area_id / "energy.txt.link").exists()
 
-        allocation = configparser.ConfigParser()
-        allocation.read(study_path / "input" / "hydro" / "prepro" / area_id / "prepro.ini")
-        assert float(allocation["prepro"]["intermonthly-correlation"]) == 0.5
+        prepro_config = configparser.ConfigParser()
+        prepro_config.read(study_path / "input" / "hydro" / "prepro" / area_id / "prepro.ini")
+        assert float(prepro_config["prepro"]["intermonthly-correlation"]) == 0.5
 
         # Series
         assert (study_path / "input" / "hydro" / "series" / area_id).is_dir()

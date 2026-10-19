@@ -26,6 +26,7 @@ from pathlib import Path
 
 from starlette.testclient import TestClient
 
+from antarest.core.model import JSON
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.tasks.model import TaskStatus
 from tests.integration.prepare_proxy import PreparerProxy
@@ -434,7 +435,7 @@ def test_db_study_properties_edition_and_deletion(
     assert res.status_code == 404
 
 
-def _export_variant(client: TestClient, tmp_path: Path, variant_id: str) -> dict:
+def _export_variant(client: TestClient, tmp_path: Path, variant_id: str) -> JSON:
     res = client.get(f"/v1/studies/{variant_id}/export")
     download_id = res.json()["file"]["id"]
 

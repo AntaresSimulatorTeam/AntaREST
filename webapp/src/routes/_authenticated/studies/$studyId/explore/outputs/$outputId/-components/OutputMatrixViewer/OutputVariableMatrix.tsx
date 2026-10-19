@@ -169,7 +169,7 @@ function OutputVariableMatrix() {
       ifPending={() => <DataGridSkeleton />}
       ifFulfilled={([variableViewData, matrixIndex]) => {
         if (!variableViewData || !isNonEmptyMatrix(variableViewData.data)) {
-          return <EmptyView title={t("study.outputs.noData")} icon={GridOffIcon} />;
+          return <EmptyView title={t("global.noData")} icon={GridOffIcon} />;
         }
 
         return (

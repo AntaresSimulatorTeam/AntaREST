@@ -18,6 +18,7 @@ from collections.abc import Sequence
 from typing import Any, NoReturn
 
 import polars as pl
+from antares.study.version import StudyVersion
 from sqlalchemy import CursorResult, Row, Table, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
@@ -79,13 +80,12 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
         values["st_storage_id"] = values.pop("id")
         return values
 
-    def _convert_db_row_to_st_storage(self, row: Row[Any]) -> STStorage:
+    def _convert_db_row_to_st_storage(self, row: Row[Any], version: StudyVersion) -> STStorage:
         data = get_row_representation_as_dict(row)
         del data["study_data_id"]
         del data["area_id"]
         data["id"] = data.pop("st_storage_id")
         storage = STStorage(**data)
-        version = self.get_impl().get_version()
         validate_st_storage_against_version(version, storage)
         return storage
 
@@ -180,10 +180,13 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
         stmt = select(ST_STORAGE_TABLE).where(ST_STORAGE_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
+        if not rows:
+            return {}
+        version = self.get_impl().get_version()
 
         st_storages_by_areas: dict[str, dict[str, STStorage]] = {}
         for row in rows:
-            st_storage = self._convert_db_row_to_st_storage(row)
+            st_storage = self._convert_db_row_to_st_storage(row, version)
             st_storages_by_areas.setdefault(row.area_id, {})[st_storage.id] = st_storage
         return st_storages_by_areas
 
@@ -199,8 +202,10 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
 
         if not rows:
             validate_area_exists(session, study_data_id, area_id)
+            return []
+        version = self.get_impl().get_version()
 
-        return [self._convert_db_row_to_st_storage(row) for row in rows]
+        return [self._convert_db_row_to_st_storage(row, version) for row in rows]
 
     @override
     def get_st_storage(self, area_id: str, storage_id: str) -> STStorage:
@@ -217,7 +222,7 @@ class DatabaseStStorageDao(STStorageDao, DatabaseDaoBase):
         if not row:
             self.raise_the_right_storage_exception({area_id: [storage_id]})
 
-        return self._convert_db_row_to_st_storage(row)
+        return self._convert_db_row_to_st_storage(row, self.get_impl().get_version())
 
     @override
     def st_storage_exists(self, area_id: str, storage_id: str) -> bool:

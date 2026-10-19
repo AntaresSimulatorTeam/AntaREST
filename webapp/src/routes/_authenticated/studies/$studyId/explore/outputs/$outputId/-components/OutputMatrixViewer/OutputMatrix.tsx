@@ -158,7 +158,7 @@ function OutputMatrix() {
       ifPending={() => <DataGridSkeleton />}
       ifFulfilled={([matrixResult, matrixIndex]) => {
         if (!isNonEmptyMatrix(matrixResult.data)) {
-          return <EmptyView title={t("study.outputs.noData")} icon={GridOffIcon} />;
+          return <EmptyView title={t("global.noData")} icon={GridOffIcon} />;
         }
 
         return (
@@ -179,9 +179,7 @@ function OutputMatrix() {
             // 404 error is expected when their is no data
             // for the selected area or link result
             // TODO: Instead this should be an empty response from the server
-            toError(err).message.includes("404")
-              ? t("study.outputs.noData")
-              : t("data.error.matrix")
+            toError(err).message.includes("404") ? t("global.noData") : t("data.error.matrix")
           }
           icon={GridOffIcon}
         />

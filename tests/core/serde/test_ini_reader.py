@@ -12,6 +12,7 @@
 
 import io
 import textwrap
+from collections.abc import Callable
 from pathlib import Path
 
 from antarest.core.serde.ini_common import OptionMatcher, any_section_option_matcher
@@ -330,7 +331,7 @@ class TestIniReader:
 
         # exact match
         actual = reader.read(path, option="foo")
-        expected = {"part1": {"foo": 5}, "part2": {"foo": 6}, "other": {}}
+        expected: dict[str, dict[str, str | int]] = {"part1": {"foo": 5}, "part2": {"foo": 6}, "other": {}}
         assert actual == expected
 
         # regex match
@@ -370,7 +371,9 @@ class TestIniReader:
         def double_parser(value: str) -> str:
             return value + value
 
-        value_parsers = {OptionMatcher("part2", "bar"): double_parser}
+        value_parsers: dict[OptionMatcher, Callable[[str], str | int | float | bool]] = {
+            OptionMatcher("part2", "bar"): double_parser
+        }
         actual = IniReader(value_parsers=value_parsers).read(path)
         expected = {"part1": {"bar": "Hello"}, "part2": {"bar": "HelloHello"}}
         assert actual == expected

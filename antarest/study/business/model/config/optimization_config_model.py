@@ -16,7 +16,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_10_2
+from antarest.study.model import STUDY_VERSION_10_2, STUDY_VERSION_10_3
 
 
 class LegacyTransmissionCapacities(EnumIgnoreCase):
@@ -74,6 +74,8 @@ class OptimizationPreferences(AntaresBaseModel):
     simplex_optimization_range: SimplexOptimizationRange = SimplexOptimizationRange.WEEK
     # Since v10.2
     include_reserves: bool | None = None
+    # Since v10.3
+    include_thermal_cluster_ramping: bool | None = None
 
 
 class OptimizationPreferencesUpdate(AntaresBaseModel):
@@ -92,6 +94,7 @@ class OptimizationPreferencesUpdate(AntaresBaseModel):
     unfeasible_problem_behavior: UnfeasibleProblemBehavior | None = None
     simplex_optimization_range: SimplexOptimizationRange | None = None
     include_reserves: bool | None = None
+    include_thermal_cluster_ramping: bool | None = None
 
 
 def update_optimization_preferences(
@@ -109,12 +112,22 @@ def update_optimization_preferences(
 def initialize_optimization_preferences_against_version(
     parameters: OptimizationPreferences, version: StudyVersion
 ) -> None:
-    if version >= STUDY_VERSION_10_2 and parameters.include_reserves is None:
-        parameters.include_reserves = False
+    if version >= STUDY_VERSION_10_2:
+        if parameters.include_reserves is None:
+            parameters.include_reserves = False
+    if version >= STUDY_VERSION_10_3:
+        if parameters.include_thermal_cluster_ramping is None:
+            parameters.include_thermal_cluster_ramping = False
 
 
 def validate_optimization_preferences_against_version(
     version: StudyVersion, parameters: OptimizationPreferences | OptimizationPreferencesUpdate
 ) -> None:
-    if version < STUDY_VERSION_10_2 and parameters.include_reserves is not None:
-        raise InvalidFieldForVersionError("Field include_reserves is not a valid field for study version before 10.2")
+    for field, min_version in (
+        ("include_reserves", STUDY_VERSION_10_2),
+        ("include_thermal_cluster_ramping", STUDY_VERSION_10_3),
+    ):
+        if version < min_version and getattr(parameters, field) is not None:
+            raise InvalidFieldForVersionError(
+                f"Field {field} is not a valid field for study version before {min_version:2d}"
+            )

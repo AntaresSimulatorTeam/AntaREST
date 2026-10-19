@@ -9,12 +9,17 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, Final
+from typing import Any, Final, Self
 
 from pydantic import ValidationInfo, field_validator, model_validator
 from typing_extensions import override
 
-from antarest.study.business.model.district_model import District, DistrictCreation, create_district
+from antarest.study.business.model.district_model import (
+    District,
+    DistrictCreation,
+    create_district,
+    validate_district_against_version,
+)
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -73,6 +78,11 @@ class CreateDistrict(ICommand):
             raise ValueError("Area name must only contains [a-zA-Z0-9],&,-,_,(,) characters")
         return val
 
+    @model_validator(mode="after")
+    def _validate_against_version(self) -> Self:
+        validate_district_against_version(self.study_version, self.parameters)
+        return self
+
     @override
     def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[District]:
         district_id = transform_name_to_id(self.parameters.name)
@@ -84,7 +94,7 @@ class CreateDistrict(ICommand):
         if invalid_areas:
             return command_failed(message=f"District '{self.parameters.name}' has invalid areas: {invalid_areas}")
 
-        new_district_definition = create_district(self.parameters, district_id)
+        new_district_definition = create_district(self.parameters, district_id, self.study_version)
 
         study_data.save_district(new_district_definition)
 

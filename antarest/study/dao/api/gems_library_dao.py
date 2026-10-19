@@ -18,6 +18,9 @@ from antarest.study.business.model.gems.library import GemsLibrary
 class ReadOnlyGemsLibraryDao(ABC):
     @abstractmethod
     def get_library(self) -> GemsLibrary | None:
+        """
+        For the moment, we consider that we only have one library per study even if the DB schema allows several ones.
+        """
         raise NotImplementedError()
 
 

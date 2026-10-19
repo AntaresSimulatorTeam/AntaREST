@@ -12,12 +12,45 @@
  * This file is part of the Antares project.
  */
 
+import type { AreaWithId, StudyMetadata } from "@/types/types";
 import type { PartialExceptFor } from "@/utils/tsUtils";
+import type { z } from "zod";
+import type {
+  storageCreationSchema,
+  storageGroupSchema,
+  storageSchema,
+  storageUpdateSchema,
+} from "./schemas";
 
-export interface StorageParams {
-  studyId: string;
-  areaId: string;
-  storageId: string;
+export type StorageGroup = z.infer<typeof storageGroupSchema>;
+export type Storage = z.infer<typeof storageSchema>;
+export type StorageResponse = z.input<typeof storageSchema>;
+export type StorageCreation = z.input<typeof storageCreationSchema>;
+export type StorageUpdate = z.input<typeof storageUpdateSchema>;
+
+export interface StoragesAreaParams {
+  studyId: StudyMetadata["id"];
+  areaId: AreaWithId["id"];
+}
+
+export interface StorageParams extends StoragesAreaParams {
+  storageId: Storage["id"];
+}
+
+export interface CreateStorageParams extends StoragesAreaParams {
+  values: StorageCreation;
+}
+
+export interface UpdateStorageParams extends StorageParams {
+  values: StorageUpdate;
+}
+
+export interface DuplicateStorageParams extends StorageParams {
+  newName: Storage["name"];
+}
+
+export interface DeleteStoragesParams extends StoragesAreaParams {
+  storageIds: Array<Storage["id"]>;
 }
 
 ////////////////////////////////////////////////////////////////

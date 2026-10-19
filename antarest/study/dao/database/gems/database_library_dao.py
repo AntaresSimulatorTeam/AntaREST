@@ -142,6 +142,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
         port_type_values = [
             {
                 "study_data_id": study_data_id,
+                "library_id": library.id,
                 "id": port_type.id,
                 "description": port_type.description,
                 "fields": json.dumps([field.model_dump() for field in port_type.fields]),
@@ -165,6 +166,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
             model_values.append(
                 {
                     "study_data_id": study_data_id,
+                    "library_id": library.id,
                     "id": model.id,
                     "description": model.description,
                     "taxonomy_category": model.taxonomy_category,
@@ -183,6 +185,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                 model_port_values.append(
                     {
                         "study_data_id": study_data_id,
+                        "library_id": library.id,
                         "model_id": model.id,
                         "port_id": model_port["id"],
                         "type": model_port["type"],
@@ -193,6 +196,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                 model_parameter_values.append(
                     {
                         "study_data_id": study_data_id,
+                        "library_id": library.id,
                         "model_id": model.id,
                         "parameter_id": model_parameter["id"],
                         "time_dependent": model_parameter["time_dependent"],

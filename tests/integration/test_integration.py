@@ -13,6 +13,7 @@ import os
 from http import HTTPStatus
 from unittest.mock import ANY
 
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.study.business.model.layer_model import Layer
@@ -21,7 +22,7 @@ from tests.integration.prepare_proxy import PreparerProxy
 
 
 def test_main(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # create some new users
     # TODO check for bad username or empty password
@@ -323,7 +324,7 @@ def test_main(client: TestClient, admin_access_token: str) -> None:
 
 
 def test_area_management(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     created = client.post("/v1/studies", params={"name": "foo", "version": 870})
     study_id = created.json()
@@ -465,6 +466,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "lawPlanned": "uniform",
                     "marginalCost": 0.0,
                     "marketBidCost": 0.0,
+                    "maxDownwardPowerRampingRate": None,
+                    "maxUpwardPowerRampingRate": None,
                     "minDownTime": 1,
                     "minStablePower": 0.0,
                     "minUpTime": 1,
@@ -482,6 +485,9 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "pm10": 0.0,
                     "pm25": 0.0,
                     "pm5": 0.0,
+                    "rampingEnabled": None,
+                    "powerDecreaseCost": None,
+                    "powerIncreaseCost": None,
                     "so2": 0.0,
                     "spinning": 0.0,
                     "spreadCost": 0.0,
@@ -511,6 +517,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "lawPlanned": "uniform",
                     "marginalCost": 0.0,
                     "marketBidCost": 0.0,
+                    "maxDownwardPowerRampingRate": None,
+                    "maxUpwardPowerRampingRate": None,
                     "minDownTime": 1,
                     "minStablePower": 0.0,
                     "minUpTime": 1,
@@ -528,6 +536,9 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "pm10": 0.0,
                     "pm25": 0.0,
                     "pm5": 0.0,
+                    "rampingEnabled": None,
+                    "powerDecreaseCost": None,
+                    "powerIncreaseCost": None,
                     "so2": 0.0,
                     "spinning": 0.0,
                     "spreadCost": 0.0,
@@ -649,6 +660,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         "output": True,
         "comments": "My District",
         "areas": [],
+        "filterSynthesis": None,
+        "filterYearByYear": None,
     }
 
     res = client.put(
@@ -673,6 +686,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "output": False,
             "comments": "Spatial aggregates on all areas",
             "areas": ["area 1", "area 2"],
+            "filterSynthesis": None,
+            "filterYearByYear": None,
         },
         {
             "id": "district 1",
@@ -680,6 +695,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
             "output": True,
             "comments": "Your District",
             "areas": [],
+            "filterSynthesis": None,
+            "filterYearByYear": None,
         },
     ]
 
@@ -853,7 +870,14 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
         f"/v1/studies/{study_id}/areas/area 1/clusters/thermal/cluster 1/form",
     )
     assert res.status_code == 200, res.json()
-    assert res.json() == {"id": "cluster 1", **obj}
+    ramping_fields = {
+        "rampingEnabled": None,
+        "maxUpwardPowerRampingRate": None,
+        "maxDownwardPowerRampingRate": None,
+        "powerIncreaseCost": None,
+        "powerDecreaseCost": None,
+    }
+    assert res.json() == {"id": "cluster 1", **obj, **ramping_fields}
 
     # Links
 
@@ -933,6 +957,8 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "lawPlanned": "uniform",
                     "marginalCost": 0.0,
                     "marketBidCost": 0.0,
+                    "maxDownwardPowerRampingRate": None,
+                    "maxUpwardPowerRampingRate": None,
                     "minDownTime": 1,
                     "minStablePower": 0.0,
                     "minUpTime": 1,
@@ -950,6 +976,9 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
                     "pm10": 0.0,
                     "pm25": 0.0,
                     "pm5": 0.0,
+                    "rampingEnabled": None,
+                    "powerDecreaseCost": None,
+                    "powerIncreaseCost": None,
                     "so2": 0.0,
                     "spinning": 0.0,
                     "spreadCost": 0.0,
@@ -966,7 +995,7 @@ def test_area_management(client: TestClient, admin_access_token: str) -> None:
 
 
 def test_maintenance(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # Create non admin user
     res = client.post(
@@ -1024,7 +1053,7 @@ def test_areas_deletion_with_binding_constraints(
     """
 
     # set client headers to user access token
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     area1_id = "france"
     area2_id = "germany"
@@ -1055,6 +1084,7 @@ def test_areas_deletion_with_binding_constraints(
         )
         res.raise_for_status()
 
+        assert isinstance(constraint_term["data"], dict)
         if set(constraint_term["data"]) == {"area1", "area2"}:
             # Create a second area and a link between the two areas
             res = client.post(
@@ -1091,6 +1121,7 @@ def test_areas_deletion_with_binding_constraints(
         res = client.post(f"/v1/studies/{internal_study_id}/bindingconstraints", json=bc_obj)
         res.raise_for_status()
 
+        assert isinstance(constraint_term["data"], dict)
         if set(constraint_term["data"]) == {"area1", "area2"}:
             areas_to_delete = [area1_id, area2_id]
         elif set(constraint_term["data"]) == {"area", "cluster"}:
@@ -1124,7 +1155,7 @@ def test_links_deletion_with_binding_constraints(
     """
 
     # set client headers to user access token
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
     # Create an area "area_1" in the study
     res = client.post(
@@ -1189,7 +1220,7 @@ def test_links_deletion_with_binding_constraints(
 
 
 def test_update_with_editor(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # 1. Create a group and two users
     group_name = "test_copy_group"
@@ -1328,7 +1359,7 @@ def test_update_with_editor(client: TestClient, admin_access_token: str) -> None
 
 
 def test_update_variant_with_editor(client: TestClient, admin_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+    client.headers = Headers({"Authorization": f"Bearer {admin_access_token}"})
 
     # 1. Create a group and two users
     group_name = "test_copy_group"

@@ -12,6 +12,8 @@
 
 from pathlib import Path
 
+from antares.study.version import StudyVersion
+
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.root.settings.scenariobuilder import ScenarioBuilder
@@ -124,7 +126,7 @@ def test_get(tmp_path: Path) -> None:
         config=FileStudyTreeConfig(
             study_path=path,
             path=path,
-            version=870,
+            version=StudyVersion.parse("870"),
             areas=areas,
             outputs=dict(),
             study_id="id",

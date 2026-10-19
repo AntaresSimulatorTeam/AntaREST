@@ -86,7 +86,7 @@ function Text({ studyId, path, name, type: fileType }: DataCompProps) {
             <DownloadButton onClick={() => downloadFile(text, name)} />
           </Menubar>
           {isEmptyContent(text) ? (
-            <EmptyView icon={GridOffIcon} title={t("study.outputs.noData")} />
+            <EmptyView icon={GridOffIcon} title={t("global.noData")} />
           ) : (
             <SyntaxHighlighter
               style={atomOneDark}

@@ -20,7 +20,7 @@ from antarest.study.business.model.area_model import AreaCreation, AreaUIUpdate
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.link_model import AssetType, Link, TransmissionCapacity
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster
-from antarest.study.business.study_interface import StudyInterface
+from antarest.study.business.study_interface import FileStudyInterface
 from antarest.study.model import STUDY_VERSION_7_0
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
@@ -34,7 +34,10 @@ from tests.helpers import file_study_interface
 
 
 def test_area_crud(
-    study: StudyInterface, matrix_service: ISimpleMatrixService, area_manager: AreaManager, link_manager: LinkManager
+    study: FileStudyInterface,
+    matrix_service: ISimpleMatrixService,
+    area_manager: AreaManager,
+    link_manager: LinkManager,
 ) -> None:
     file_study = study.get_files()
     assert len(file_study.config.areas.keys()) == 0
@@ -140,6 +143,8 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                     "law_planned": "uniform",
                     "marginal_cost": 0.0,
                     "market_bid_cost": 0.0,
+                    "max_downward_power_ramping_rate": None,
+                    "max_upward_power_ramping_rate": None,
                     "min_down_time": 1,
                     "min_stable_power": 200.0,
                     "min_up_time": 1,
@@ -157,6 +162,9 @@ def test_get_all_area(area_manager: AreaManager, link_manager: LinkManager) -> N
                     "pm10": None,
                     "pm2_5": None,
                     "pm5": None,
+                    "ramping_enabled": None,
+                    "power_decrease_cost": None,
+                    "power_increase_cost": None,
                     "so2": None,
                     "spinning": 0.0,
                     "spread_cost": 0.0,

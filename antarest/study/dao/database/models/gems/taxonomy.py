@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Column, ForeignKeyConstraint, String, Table
+from sqlalchemy import Column, ForeignKeyConstraint, Index, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
@@ -22,6 +22,7 @@ GEMS_TAXONOMY_METADATA_TABLE = Table(
     study_data_id_col(),
     Column("id", String(255), nullable=False),
     Column("description", String(), nullable=True),
+    Index("uq_gems_taxonomy_metadata_study_data_id_id", "study_data_id", "id", unique=True),
     ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
 )
 

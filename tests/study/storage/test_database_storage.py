@@ -60,11 +60,12 @@ def test_upgrade_fails(tmp_path: Path) -> None:
 
     # Ensures the study is still in v7.0 in database
     study_in_db = db.session.query(Study).first()
+    assert study_in_db is not None
     assert study_in_db.version == str(STUDY_VERSION_7_0)
 
 
 @with_db_context
-def test_upgrade_does_not_use_cache(tmp_path: Path, study_factory) -> None:
+def test_upgrade_does_not_use_cache(tmp_path: Path, study_factory: StudyFactory) -> None:
     """
     Ensures that the upgrade method does not use the cache of the FS study exported when filling the DB with new data.
     Otherwise, it would just fill the DB with some info pre-upgrade.

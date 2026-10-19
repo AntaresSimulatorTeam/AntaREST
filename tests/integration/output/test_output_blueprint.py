@@ -12,7 +12,7 @@
 from starlette.testclient import TestClient
 
 
-def test_list_outputs(admin_client: TestClient, internal_study_id: str):
+def test_list_outputs(admin_client: TestClient, internal_study_id: str) -> None:
     client = admin_client
 
     res = client.get(f"/v1/studies/{internal_study_id}/outputs")

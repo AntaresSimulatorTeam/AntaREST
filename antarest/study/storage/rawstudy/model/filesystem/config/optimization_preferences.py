@@ -46,6 +46,7 @@ class OptimizationPreferencesFileData(AntaresBaseModel):
     )
     simplex_optimization_range: SimplexOptimizationRange | None = Field(default=None, alias="simplex-range")
     include_reserves: bool | None = Field(default=None, alias="include-reserves")
+    include_thermal_cluster_ramping: bool | None = Field(default=None, alias="include-thermal-cluster-ramping")
 
     def to_model(self) -> OptimizationPreferences:
         return OptimizationPreferences.model_validate(self.model_dump(exclude_none=True))

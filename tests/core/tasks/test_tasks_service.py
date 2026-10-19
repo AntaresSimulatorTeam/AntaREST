@@ -405,6 +405,7 @@ def test_ts_generation_task(tmp_path: Path, variant_study_service: VariantStudyS
 
     event_bus = DummyEventBusService()
     variant_study_service.event_bus = event_bus
+    assert isinstance(variant_study_service.task_service, TaskJobService)
     variant_study_service.task_service.event_bus = event_bus
 
     # Create a raw study
@@ -456,7 +457,7 @@ def test_ts_generation_task(tmp_path: Path, variant_study_service: VariantStudyS
     prepro_array[1] = [1] * 365
     prepro = prepro_array.to_numpy().tolist()
     for name in ["th_1", "th_2"]:
-        cmd = CreateCluster(
+        cluster_command = CreateCluster(
             area_id="fr",
             parameters=ThermalClusterCreation(name=name, nominal_capacity=14),
             command_context=cmd_ctx,
@@ -464,7 +465,7 @@ def test_ts_generation_task(tmp_path: Path, variant_study_service: VariantStudyS
             modulation=modulation,
             prepro=prepro,
         )
-        output = cmd.apply(dao)
+        output = cluster_command.apply(dao)
         assert output.status
 
     # Set up the `StudyService` object
@@ -508,12 +509,12 @@ def test_ts_generation_task(tmp_path: Path, variant_study_service: VariantStudyS
     study_service.task_service.await_task(task_id, 2)
     tasks = study_service.task_service.list_tasks(TaskListFilter())
     assert len(tasks) == 1
-    task = tasks[0]
-    assert task.ref_id == raw_study.id
-    assert task.id == task_id
-    assert task.name == "test_generation"
-    assert task.status == TaskStatus.COMPLETED
-    assert task.progress == 100
+    task_dto = tasks[0]
+    assert task_dto.ref_id == raw_study.id
+    assert task_dto.id == task_id
+    assert task_dto.name == "test_generation"
+    assert task_dto.status == TaskStatus.COMPLETED
+    assert task_dto.progress == 100
 
     # Check eventbus
     events = event_bus.events
@@ -552,6 +553,7 @@ def test_task_user(core_config: Config, event_bus: IEventBus) -> None:
 
         # get current user
         current_user = get_current_user()
+        assert current_user is not None
 
         notifier.notify_message("end")
         # must set the task 'result' field at regular_user.id
@@ -575,11 +577,12 @@ def test_task_user(core_config: Config, event_bus: IEventBus) -> None:
     assert len(task_list) == 1
     assert task_list[0].owner != DEFAULT_ADMIN_USER.id
     assert task_list[0].owner == jwt_user.id
+    assert task_list[0].result is not None
     assert task_list[0].result.return_value == str(jwt_user.id)
 
 
 @with_db_context
-def test_get_tasks(core_config: Config, event_bus: IEventBus):
+def test_get_tasks(core_config: Config, event_bus: IEventBus) -> None:
     # Create a user who has no admin rights
     regular_user = User(id=99, name="regular")
     db.session.add(regular_user)
@@ -596,6 +599,7 @@ def test_get_tasks(core_config: Config, event_bus: IEventBus):
 
         # get current user
         current_user = get_current_user()
+        assert current_user is not None
 
         notifier.notify_message("end")
         # must set the task 'result' field at regular_user.id
@@ -641,9 +645,10 @@ def test_get_tasks(core_config: Config, event_bus: IEventBus):
         task_list = task_job_service.list_tasks(TaskListFilter())
 
     assert len(task_list) == 3
-    assert task_list[0] == task_job_repository.get(task_1).to_dto()
-    assert task_list[1] == task_job_repository.get(task_2).to_dto()
-    assert task_list[2] == task_job_repository.get(task_3).to_dto()
+    for task_dto, task_id in zip(task_list, [task_1, task_2, task_3], strict=True):
+        task_job = task_job_repository.get(task_id)
+        assert task_job is not None
+        assert task_dto == task_job.to_dto()
 
 
 def test_task_timeout_other_worker(task_repo: TaskJobRepository, task_service: TaskJobService) -> None:

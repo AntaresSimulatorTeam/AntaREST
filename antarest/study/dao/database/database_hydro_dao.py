@@ -696,6 +696,19 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
                 invalid = self.get_impl().get_invalid_area_ids(area_ids)
                 raise AreaNotFound(*invalid) from e
         else:
+            # Hourly studies may omit maxpower, but daily mode requires it for every area.
+            missing_areas = set(self.get_impl().get_all_area_ids()) - self.get_all_hydro_maxpower().keys()
+            if missing_areas:
+                generator = self.get_impl().generator_matrix_constants
+                maxpower_id = generator.get_hydro_max_power(self.get_impl().get_version())
+                upsert_multiple(
+                    session,
+                    HYDRO_MAXPOWER_TABLE,
+                    [
+                        {"study_data_id": study_data_id, "area_id": area_id, "matrix_id": maxpower_id}
+                        for area_id in missing_areas
+                    ],
+                )
             for table in [
                 HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
                 HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,

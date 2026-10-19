@@ -16,14 +16,16 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from antares.study.version import StudyVersion
 
+from antarest.core.exceptions import ChildNotFoundError
 from antarest.study.storage.rawstudy.model.filesystem.config.model import AreaConfig, FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.root.input.hydro.common.capacity import capacity
 
 # noinspection SpellCheckingInspection
-BEFORE_650 = {
+BEFORE_650: dict[str, dict[str, list[list[float]] | int | None]] = {
     "maxpower_en": {"default_empty": [[]], "nb_columns": None},
     "maxpower_fr": {"default_empty": [[]], "nb_columns": None},
     "reservoir_en": {"default_empty": [[]], "nb_columns": None},
@@ -31,7 +33,7 @@ BEFORE_650 = {
 }
 
 # noinspection SpellCheckingInspection
-AFTER_650 = {
+AFTER_650: dict[str, dict[str, list[list[float]] | int | None]] = {
     "creditmodulations_en": {"default_empty": [[]], "nb_columns": None},
     "creditmodulations_fr": {"default_empty": [[]], "nb_columns": None},
     "inflowPattern_en": {"default_empty": [[]], "nb_columns": None},
@@ -65,7 +67,7 @@ class TestInputHydroCommonCapacity:
             study_path=Path("path/to/study"),
             path=Path("path/to/study"),
             study_id=study_id,
-            version=int(version),  # will become a `str` in the future
+            version=StudyVersion.parse(version),
             areas={
                 name: AreaConfig(
                     name=name.upper(),
@@ -87,8 +89,52 @@ class TestInputHydroCommonCapacity:
         actual = node.build()
 
         # check the result
-        actual_obj = {}
+        actual_obj: dict[str, dict[str, list[list[float]] | int | None]] = {}
         for key, value in actual.items():
             assert isinstance(value, InputSeriesMatrix)
+            assert value.default_empty is not None
             actual_obj[key] = {"default_empty": [[]], "nb_columns": value.nb_columns}
         assert actual_obj == expected
+
+
+@pytest.mark.parametrize(
+    "version, hydro_pmax, optional",
+    [
+        ("9.1", "hourly", False),
+        ("9.2", "daily", False),
+        ("9.2", "hourly", True),
+        ("10.2", None, False),
+        ("10.2", "daily", False),
+        ("10.2", "hourly", True),
+    ],
+)
+def test_missing_maxpower_only_allowed_with_hourly_pmax(
+    tmp_path: Path, version: str, hydro_pmax: str | None, optional: bool
+) -> None:
+    if hydro_pmax is not None:
+        settings = tmp_path / "settings"
+        settings.mkdir()
+        (settings / "generaldata.ini").write_text(f"[compatibility]\nhydro-pmax = {hydro_pmax}\n")
+    capacity_path = tmp_path / "input/hydro/common/capacity"
+    capacity_path.mkdir(parents=True)
+    config = FileStudyTreeConfig(
+        study_path=tmp_path,
+        path=capacity_path,
+        study_id="study",
+        version=StudyVersion.parse(version),
+        areas={
+            "fr": AreaConfig(name="FR", links={}, thermals=[], renewables=[], filters_synthesis=[], filters_year=[])
+        },
+    )
+    node = capacity.InputHydroCommonCapacity(Mock(spec=MatrixStorageContext), config).build()["maxpower_fr"]
+    assert isinstance(node, InputSeriesMatrix)
+    if optional:
+        assert node.parse_content().is_empty()
+        assert node.parse_as_dataframe().shape == (365, 4)
+    else:
+        with pytest.raises(ChildNotFoundError):
+            node.parse_content()
+
+    # Even in hourly mode, existing legacy values must be preserved.
+    (capacity_path / "maxpower_fr.txt").write_text("1\t2\t3\t4\n")
+    assert node.parse_content().rows() == [(1, 2, 3, 4)]

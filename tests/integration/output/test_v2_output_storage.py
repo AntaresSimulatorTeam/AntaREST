@@ -33,7 +33,9 @@ def empty_study_id(admin_client: TestClient) -> str:
         params={"name": "My study"},
     )
     assert res.status_code == 201, res.json()
-    return res.json()
+    study_id = res.json()
+    assert isinstance(study_id, str)
+    return study_id
 
 
 @pytest.fixture
@@ -269,6 +271,7 @@ def test_export_output(admin_client: TestClient, study_id: str, output_name: str
     data = res.json()
     assert "task" in data
     assert "file" in data
+    assert data["file"]["filename"] == f"{study_id}_{output_name}.zip"
 
     download_id = data["file"]["id"]
     download_to_file(client, download_id, tmp_path / "output.zip")

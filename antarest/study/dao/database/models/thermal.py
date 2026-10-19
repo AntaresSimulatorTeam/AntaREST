@@ -73,6 +73,11 @@ THERMAL_CLUSTER_TABLE = Table(
     Column("cost_generation", _COST_GEN_ENUM, nullable=True),
     Column("efficiency", Float, nullable=True),
     Column("variable_o_m_cost", Float, nullable=True),
+    Column("ramping_enabled", Boolean, nullable=True),
+    Column("max_upward_power_ramping_rate", Float, nullable=True),
+    Column("max_downward_power_ramping_rate", Float, nullable=True),
+    Column("power_increase_cost", Float, nullable=True),
+    Column("power_decrease_cost", Float, nullable=True),
     ForeignKeyConstraint(["study_data_id", "area_id"], ["area.study_data_id", "area.area_id"], ondelete="CASCADE"),
 )
 
