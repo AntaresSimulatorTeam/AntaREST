@@ -32,7 +32,7 @@ def _get_gems_data_series_files_path(study_path: Path) -> list[Path]:
     data_series_folder = _get_gems_data_series_folder_path(study_path)
     if not data_series_folder.exists():
         return []
-    return list(data_series_folder.iterdir())
+    return [f for f in data_series_folder.iterdir() if f.is_file() and f.suffix.lower() == ".csv"]
 
 
 def _convert_csv_to_array(csv_content: Any) -> NpArray:
