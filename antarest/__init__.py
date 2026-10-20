@@ -20,9 +20,9 @@ from pathlib import Path
 
 # Standard project metadata
 
-__version__ = "2.35.0"
+__version__ = "2.36.0"
 __author__ = "RTE, Antares Web Team"
-__date__ = "2026-09-21"
+__date__ = "2026-10-21"
 # noinspection SpellCheckingInspection
 __credits__ = "(c) Réseau de Transport de l’Électricité (RTE)"
 
