@@ -9,7 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, CheckConstraint, Column, Float, ForeignKeyConstraint, Index, String, Table, text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    Float,
+    ForeignKeyConstraint,
+    Index,
+    PrimaryKeyConstraint,
+    String,
+    Table,
+    text,
+)
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
@@ -130,9 +141,9 @@ GEMS_COMPONENT_CONNECTIONS_TABLE = Table(
 GEMS_AREA_CONNECTIONS_TABLE = Table(
     "gems_area_connections",
     metadata,
-    study_data_id_col(),
-    Column("component_id", String(255), primary_key=True),
-    Column("port_id", String(255), primary_key=True),
+    study_data_id_col(primary_key=False),
+    Column("component_id", String(255), nullable=False),
+    Column("port_id", String(255), nullable=False),
     Column("area_id", String(255), nullable=False),
     ForeignKeyConstraint(
         ["study_data_id", "component_id"],
@@ -146,14 +157,15 @@ GEMS_AREA_CONNECTIONS_TABLE = Table(
         name="fk_gems_area_connections_area",
         ondelete="CASCADE",
     ),
+    PrimaryKeyConstraint("study_data_id", "component_id", "port_id", name="pk_gems_area_connections"),
 )
 
 GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE = Table(
     "gems_thermal_capacity_connections",
     metadata,
-    study_data_id_col(),
-    Column("component_id", String(255), primary_key=True),
-    Column("port_id", String(255), primary_key=True),
+    study_data_id_col(primary_key=False),
+    Column("component_id", String(255), nullable=False),
+    Column("port_id", String(255), nullable=False),
     Column("area_id", String(255), nullable=False),
     Column("cluster_id", String(255), nullable=False),
     ForeignKeyConstraint(
@@ -168,4 +180,5 @@ GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE = Table(
         name="fk_gems_thermal_capacity_connections_cluster",
         ondelete="CASCADE",
     ),
+    PrimaryKeyConstraint("study_data_id", "component_id", "port_id", name="pk_gems_thermal_capacity_connections"),
 )
