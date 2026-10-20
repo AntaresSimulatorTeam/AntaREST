@@ -18,7 +18,6 @@ from fastapi import UploadFile
 from antarest.core.exceptions import (
     FileImportFailed,
     MatrixImportFailed,
-    XpansionFileAlreadyExistsError,
 )
 from antarest.core.serde.np_array import imports_matrix_from_bytes
 from antarest.core.utils.string import sanitize_for_log
@@ -172,11 +171,6 @@ class XpansionManager:
             raise FileImportFailed("A filename is required")
         filename = sanitize_for_log(filename, "filename must not contain newline characters.")
         logger.info(f"Adding xpansion {resource_type} resource file {filename} to study '{study.id}'")
-
-        # checks the file doesn't already exist
-        resources = study.get_study_dao().get_xpansion_resources(resource_type)
-        if filename in resources:
-            raise XpansionFileAlreadyExistsError(f"File '{filename}' already exists")
 
         # parses the content
         content = file.file.read()
