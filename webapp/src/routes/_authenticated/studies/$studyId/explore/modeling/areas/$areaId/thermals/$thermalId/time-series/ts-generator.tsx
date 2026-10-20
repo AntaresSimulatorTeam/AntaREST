@@ -30,6 +30,7 @@ function TimeSeriesGenerator() {
       key={thermalId}
       studyId={studyId}
       url={`input/thermal/prepro/${areaId}/${thermalId}/data`}
+      filterKey="thermals.ts-generator"
       customColumns={TS_GEN_MATRIX_COLS}
       isTimeSeries={false}
       enableFilters

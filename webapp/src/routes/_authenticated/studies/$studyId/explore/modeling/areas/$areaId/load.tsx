@@ -25,5 +25,7 @@ function Load() {
   const { studyId, areaId } = Route.useParams();
   const url = `input/load/series/load_${areaId}`;
 
-  return <Matrix key={areaId} studyId={studyId} url={url} aggregateColumns="stats" />;
+  return (
+    <Matrix key={areaId} studyId={studyId} url={url} filterKey="load" aggregateColumns="stats" />
+  );
 }
