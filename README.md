@@ -8,7 +8,7 @@
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=AntaresSimulatorTeam_api-iso-antares&metric=coverage)](https://sonarcloud.io/dashboard?id=AntaresSimulatorTeam_api-iso-antares)
 [![License](https://img.shields.io/github/license/AntaresSimulatorTeam/AntaREST)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Python](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
-[![React](https://img.shields.io/badge/react-18.x-blue.svg)](https://reactjs.org/)
+[![React](https://img.shields.io/badge/react-19.x-blue.svg)](https://reactjs.org/)
 
 [Documentation](https://antares-web.readthedocs.io/) • [Installation](#installation) • [Contributing](./contributing.md) • [Issues](https://github.com/AntaresSimulatorTeam/AntaREST/issues)
 
