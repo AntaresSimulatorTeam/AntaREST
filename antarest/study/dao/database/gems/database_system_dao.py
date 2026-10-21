@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import Any, List, NoReturn, Sequence
 
-from sqlalchemy import Row, Table, delete, insert, select
+from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
@@ -276,8 +276,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         try:
             self.save_components(system.components)
             self._save_connections(system.connections)
-            self.save_area_connections(system.area_connections)
-            self.save_thermal_capacity_connections(system.thermal_capacity_connections)
+            self._save_area_connections(system.area_connections)
+            self._save_thermal_capacity_connections(system.thermal_capacity_connections)
         except Exception as e:
             session.rollback()
             raise e
@@ -340,16 +340,12 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         session.commit()
 
-    @override
-    def save_area_connections(self, connections: List[GemsAreaConnection]) -> None:
+    def _save_area_connections(self, connections: List[GemsAreaConnection]) -> None:
         if not connections:
             return
 
         study_data_id = self._study_data_id
         session = self._db_session
-
-        if not self._get_system_row_if_exists():
-            raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
         rows = []
         for connection in connections:
@@ -369,16 +365,12 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             session.rollback()
             self._raise_the_right_area_connection_exception(connections, e)
 
-    @override
-    def save_thermal_capacity_connections(self, connections: List[GemsThermalCapacityConnection]) -> None:
+    def _save_thermal_capacity_connections(self, connections: List[GemsThermalCapacityConnection]) -> None:
         if not connections:
             return
 
         study_data_id = self._study_data_id
         session = self._db_session
-
-        if not self._get_system_row_if_exists():
-            raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
         rows = []
         for connection in connections:
@@ -403,7 +395,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         self,
         section: str,
         connections: Sequence[GemsAreaConnection | GemsThermalCapacityConnection],
-        table: Table,
         e: IntegrityError,
     ) -> None:
         component_ids = set(self._get_components_library_and_model())
@@ -412,21 +403,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         except GemsInvalidConnection as error:
             raise error from e
 
-        # Including the connections already saved
-        stmt = select(table.c.component_id, table.c.port_id).where(table.c.study_data_id == self._study_data_id)
-        connected_ports = {(row.component_id, row.port_id) for row in self._db_session.execute(stmt)}
-        for connection in connections:
-            if (connection.component, connection.port) in connected_ports:
-                raise GemsInvalidConnection(
-                    f"{section}: port '{connection.port}' of component '{connection.component}' is already connected"
-                ) from e
-
     def _raise_the_right_area_connection_exception(
         self, connections: List[GemsAreaConnection], e: IntegrityError
     ) -> NoReturn:
-        self._check_legacy_connections_components_and_ports(
-            "area-connections", connections, GEMS_AREA_CONNECTIONS_TABLE, e
-        )
+        self._check_legacy_connections_components_and_ports("area-connections", connections, e)
 
         area_ids = set(self.get_impl().get_all_area_ids())
         for connection in connections:
@@ -442,9 +422,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     def _raise_the_right_thermal_capacity_connection_exception(
         self, connections: List[GemsThermalCapacityConnection], e: IntegrityError
     ) -> NoReturn:
-        self._check_legacy_connections_components_and_ports(
-            "thermal-capacity-connections", connections, GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE, e
-        )
+        self._check_legacy_connections_components_and_ports("thermal-capacity-connections", connections, e)
 
         table = THERMAL_CLUSTER_TABLE
         stmt = select(table.c.area_id, table.c.thermal_id).where(table.c.study_data_id == self._study_data_id)

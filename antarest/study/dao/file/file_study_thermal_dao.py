@@ -239,9 +239,6 @@ class FileStudyThermalDao(ThermalDao, ABC):
         if system is None:
             return
 
-        if not system.thermal_capacity_connections:
-            return
-
         connected_component_ids = {
             c.component
             for c in system.thermal_capacity_connections

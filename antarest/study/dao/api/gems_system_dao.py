@@ -12,12 +12,7 @@
 
 from abc import ABC, abstractmethod
 
-from antarest.study.business.model.gems.system import (
-    GemsAreaConnection,
-    GemsComponent,
-    GemsSystem,
-    GemsThermalCapacityConnection,
-)
+from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 
 
 class ReadOnlyGemsSystemDao(ABC):
@@ -40,18 +35,4 @@ class GemsSystemDao(ReadOnlyGemsSystemDao):
 
     @abstractmethod
     def save_components(self, components: list[GemsComponent]) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def save_area_connections(self, connections: list[GemsAreaConnection]) -> None:
-        """
-        Adds area connections to the system.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def save_thermal_capacity_connections(self, connections: list[GemsThermalCapacityConnection]) -> None:
-        """
-        Adds thermal capacity connections to the system.
-        """
         raise NotImplementedError()
