@@ -131,9 +131,23 @@ export const getDirectoryListSx = (
     : listHeight !== undefined
       ? { height: listHeight }
       : { minHeight: 400, maxHeight: 700 }),
-  overflowY: "auto",
+  overflow: "hidden",
   bgcolor: "background.paper",
 });
+
+/** Lets the form body's CustomScrollbar own scrolling in study destination dialogs. */
+export const studyDestinationDialogContentSx: SxProps<Theme> = {
+  overflow: "hidden",
+  ".Form": { overflow: "hidden", minHeight: 0 },
+  ".Form .Form__Content": {
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    minHeight: 0,
+    p: 0,
+    "fieldset:last-child": { pb: 0 },
+  },
+};
 
 /** Centred placeholder shown when the current directory has no sub-directories. */
 export const emptyStateSx: SxProps<Theme> = {

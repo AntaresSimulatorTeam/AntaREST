@@ -26,6 +26,7 @@ import { StorageMode } from "@/types/types";
 
 import { StudyDestinationFE } from "../../StudyDestinationFE";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
+import { useDefaultStudyDestination } from "../../StudyDestinationFE/useDefaultStudyDestination";
 import { useRedirectToDestination } from "../../StudyDestinationFE/useRedirectToDestination";
 import { refreshDirectoriesIfNeeded, toDirectoryPath } from "../../StudyDestinationFE/utils";
 
@@ -33,8 +34,6 @@ interface Props {
   open: boolean;
   onClose: VoidFunction;
 }
-
-const ROOT_DESTINATION: DirectoryDestination = { directoryId: null, newSubdirectoriesPath: "" };
 
 const STORAGE_MODE_OPTIONS = [
   { value: StorageMode.FILESYSTEM, label: (t) => t("studies.storageMode.filesystem") },
@@ -47,8 +46,9 @@ function ImportStudyDialog({ open, onClose }: Props) {
   const queryClient = useQueryClient();
   const redirectToDestination = useRedirectToDestination();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
+  const defaultDestination = useDefaultStudyDestination(directories);
 
-  const [destination, setDestination] = useState<DirectoryDestination>(ROOT_DESTINATION);
+  const [destination, setDestination] = useState<DirectoryDestination>(defaultDestination);
   const [redirect, setRedirect] = useState(true);
   const [storageMode, setStorageMode] = useState(StorageMode.FILESYSTEM);
 
