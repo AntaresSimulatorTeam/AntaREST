@@ -9,28 +9,41 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List, NoReturn
+from typing import Any, List, NoReturn, Sequence
 
-from sqlalchemy import Row, delete, insert, select
+from sqlalchemy import ColumnElement, CursorResult, Row, Table, delete, insert, select, tuple_
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import (
+    GemsComponentNotFound,
+    GemsConnectionNotFound,
+    GemsInvalidComponent,
     GemsInvalidConnection,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
+from antarest.core.utils.sql_utils import upsert_multiple
+from antarest.study.business.model.gems.system import (
+    GemsAreaConnection,
+    GemsComponent,
+    GemsComponentConnection,
+    GemsSystem,
+    GemsThermalCapacityConnection,
+)
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.library import GEMS_MODELS_PORTS_TABLE
 from antarest.study.dao.database.models.gems.system import (
+    GEMS_AREA_CONNECTIONS_TABLE,
     GEMS_COMPONENT_CONNECTIONS_TABLE,
     GEMS_COMPONENT_PARAMETERS_TABLE,
     GEMS_COMPONENT_PROPERTIES_TABLE,
     GEMS_COMPONENTS_TABLE,
     GEMS_SYSTEM_METADATA_TABLE,
+    GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE,
 )
+from antarest.study.dao.database.models.thermal import THERMAL_CLUSTER_TABLE
 
 METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
 
@@ -78,6 +91,37 @@ def _check_connection_does_not_link_port_component_to_itself(connections: list[G
             )
 
 
+def _check_no_duplicated_components(components: list[GemsComponent]) -> None:
+    seen: set[str] = set()
+    for component in components:
+        if component.id in seen:
+            raise GemsInvalidComponent(f"Component '{component.id}' is declared more than once")
+        seen.add(component.id)
+
+
+def _check_ports_are_connected_once(
+    section: str, connections: Sequence[GemsAreaConnection | GemsThermalCapacityConnection]
+) -> None:
+    connected_ports: set[tuple[str, str]] = set()
+    for connection in connections:
+        # Antares Simulator only allows a single connection of each kind per port
+        port = (connection.component, connection.port)
+        if port in connected_ports:
+            raise GemsInvalidConnection(
+                f"{section}: port '{connection.port}' of component '{connection.component}' is connected more than once"
+            )
+        connected_ports.add(port)
+
+
+def _area_connection_key(connection: GemsAreaConnection) -> tuple[str, str, str]:
+    return connection.component, connection.port, connection.area
+
+
+def _thermal_capacity_connection_key(connection: GemsThermalCapacityConnection) -> tuple[str, str, str, str]:
+    thermal = connection.thermal_component
+    return connection.component, connection.port, thermal.area, thermal.cluster_id
+
+
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     """Database implementation of GemsSystemDao"""
 
@@ -91,6 +135,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         components = self.get_components()
         connections = self._get_connections()
+        area_connections = self._get_area_connections()
+        thermal_capacity_connections = self._get_thermal_capacity_connections()
 
         return GemsSystem.model_validate(
             {
@@ -98,6 +144,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                 "description": metadata_row.description,
                 "components": components,
                 "connections": connections,
+                "area_connections": area_connections,
+                "thermal_capacity_connections": thermal_capacity_connections,
             }
         )
 
@@ -199,6 +247,45 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
         return connections
 
+    def _get_area_connections(self) -> List[GemsAreaConnection]:
+        table = GEMS_AREA_CONNECTIONS_TABLE
+        stmt = select(table.c.component_id, table.c.port_id, table.c.area_id).where(
+            table.c.study_data_id == self._study_data_id
+        )
+        return [
+            GemsAreaConnection.model_validate({"component": row.component_id, "port": row.port_id, "area": row.area_id})
+            for row in self._db_session.execute(stmt)
+        ]
+
+    def _get_thermal_capacity_connections(self) -> List[GemsThermalCapacityConnection]:
+        table = GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE
+        stmt = select(table.c.component_id, table.c.port_id, table.c.area_id, table.c.cluster_id).where(
+            table.c.study_data_id == self._study_data_id
+        )
+        return [
+            GemsThermalCapacityConnection.model_validate(
+                {
+                    "component": row.component_id,
+                    "port": row.port_id,
+                    "thermal_component": {"area": row.area_id, "cluster_id": row.cluster_id},
+                }
+            )
+            for row in self._db_session.execute(stmt)
+        ]
+
+    def _check_system_exists(self) -> None:
+        if not self._get_system_row_if_exists():
+            raise GemsSystemNotFound(f"No system configuration found for study {self._study_id}")
+
+    def _delete_rows(self, table: Table, condition: ColumnElement[bool]) -> int:
+        """
+        Deletes the rows of the study matching the condition, and returns how many of them were deleted.
+        """
+        stmt = delete(table).where(table.c.study_data_id == self._study_data_id, condition)
+        result = self._db_session.execute(stmt)
+        assert isinstance(result, CursorResult)
+        return result.rowcount
+
     @override
     def save_system(self, system: GemsSystem) -> None:
         study_data_id = self._study_data_id
@@ -218,21 +305,23 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         try:
             self.save_components(system.components)
-            self._save_connections(system.connections)
+            self.save_connections(system.connections)
+            self.save_area_connections(system.area_connections)
+            self.save_thermal_capacity_connections(system.thermal_capacity_connections)
         except Exception as e:
             session.rollback()
             raise e
 
     @override
     def save_components(self, components: List[GemsComponent]) -> None:
+        if not components:
+            return
+
         study_data_id = self._study_data_id
         session = self._db_session
 
-        if not self._get_system_row_if_exists():
-            raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
-
-        # Clean all existing data regarding components
-        session.execute(delete(GEMS_COMPONENTS_TABLE).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id))
+        self._check_system_exists()
+        _check_no_duplicated_components(components)
 
         component_values = []
         parameter_values = []
@@ -272,14 +361,284 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     }
                 )
 
-        if component_values:
-            session.execute(insert(GEMS_COMPONENTS_TABLE), component_values)
-        if parameter_values:
-            session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
-        if property_values:
-            session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
+        component_ids = [component.id for component in components]
+        try:
+            upsert_multiple(session, GEMS_COMPONENTS_TABLE, component_values)
+            # The parameters and properties of the saved components are replaced by the given ones
+            for table in (GEMS_COMPONENT_PARAMETERS_TABLE, GEMS_COMPONENT_PROPERTIES_TABLE):
+                self._delete_rows(table, table.c.component_id.in_(component_ids))
+            if parameter_values:
+                session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
+            if property_values:
+                session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
+        except IntegrityError:
+            session.rollback()
+            raise
 
         session.commit()
+
+    @override
+    def delete_components(self, component_ids: List[str]) -> None:
+        if not component_ids:
+            return
+
+        session = self._db_session
+
+        # The parameters, properties and connections of the components are deleted by cascade
+        table = GEMS_COMPONENTS_TABLE
+        ids_to_delete = set(component_ids)
+        if self._delete_rows(table, table.c.component_id.in_(list(ids_to_delete))) != len(ids_to_delete):
+            # Means some components do not exist
+            session.rollback()
+            self._check_system_exists()
+            missing_ids = ids_to_delete - self._get_components_library_and_model().keys()
+            raise GemsComponentNotFound(f"Component(s) not found in the system: {sorted(missing_ids)}")
+
+        session.commit()
+
+    @override
+    def save_connections(self, connections: List[GemsComponentConnection]) -> None:
+        if not connections:
+            return
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        self._check_system_exists()
+        # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
+        # so we have to check that the connections are not duplicated.
+        _check_no_duplicated_connections(connections)
+
+        # The connections already in the system, whatever the order of their endpoints, are left untouched
+        existing_connections = {_reorder_connection(connection) for connection in self._get_connections()}
+        new_connections = [c for c in connections if _reorder_connection(c) not in existing_connections]
+        if not new_connections:
+            return
+
+        rows = []
+        for connection in new_connections:
+            rows.append(
+                {
+                    "study_data_id": study_data_id,
+                    "component1": connection.component1,
+                    "component2": connection.component2,
+                    "port1": connection.port1,
+                    "port2": connection.port2,
+                }
+            )
+
+        try:
+            session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            self._raise_the_right_connection_exception(new_connections, e)
+
+    @override
+    def delete_connections(self, connections: List[GemsComponentConnection]) -> None:
+        if not connections:
+            return
+
+        # A connection is stored with its endpoints in any order, so both orders are looked for
+        table = GEMS_COMPONENT_CONNECTIONS_TABLE
+        endpoints = tuple_(table.c.component1, table.c.port1, table.c.component2, table.c.port2)
+        keys = [
+            key
+            for c in connections
+            for key in ((c.component1, c.port1, c.component2, c.port2), (c.component2, c.port2, c.component1, c.port1))
+        ]
+        expected_count = len({_reorder_connection(connection) for connection in connections})
+        if self._delete_rows(table, endpoints.in_(keys)) != expected_count:
+            # Means some connections do not exist
+            self._db_session.rollback()
+            self._raise_connection_not_found(connections)
+
+        self._db_session.commit()
+
+    def _raise_connection_not_found(self, connections: List[GemsComponentConnection]) -> NoReturn:
+        self._check_system_exists()
+
+        existing_connections = {_reorder_connection(connection) for connection in self._get_connections()}
+        for connection in connections:
+            if _reorder_connection(connection) not in existing_connections:
+                raise GemsConnectionNotFound(
+                    f"Connection between '{connection.component1}.{connection.port1}' and "
+                    f"'{connection.component2}.{connection.port2}' does not exist"
+                )
+
+        # All connections exist. It means the DB table is not filled as it should.
+        raise ValueError("The connections table is not filled as it should")
+
+    @override
+    def save_area_connections(self, connections: List[GemsAreaConnection]) -> None:
+        if not connections:
+            return
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        self._check_system_exists()
+        _check_ports_are_connected_once("area-connections", connections)
+
+        rows = []
+        for connection in connections:
+            rows.append(
+                {
+                    "study_data_id": study_data_id,
+                    "component_id": connection.component,
+                    "port_id": connection.port,
+                    "area_id": connection.area,
+                }
+            )
+
+        try:
+            # A port already connected to an area is connected to the new one instead
+            upsert_multiple(session, GEMS_AREA_CONNECTIONS_TABLE, rows)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            self._raise_the_right_area_connection_exception(connections, e)
+
+    @override
+    def delete_area_connections(self, connections: List[GemsAreaConnection]) -> None:
+        if not connections:
+            return
+
+        table = GEMS_AREA_CONNECTIONS_TABLE
+        keys = {_area_connection_key(connection) for connection in connections}
+        condition = tuple_(table.c.component_id, table.c.port_id, table.c.area_id).in_(list(keys))
+        if self._delete_rows(table, condition) != len(keys):
+            # Means some connections do not exist
+            self._db_session.rollback()
+            self._raise_area_connection_not_found(connections)
+
+        self._db_session.commit()
+
+    def _raise_area_connection_not_found(self, connections: List[GemsAreaConnection]) -> NoReturn:
+        self._check_system_exists()
+
+        existing_keys = {_area_connection_key(connection) for connection in self._get_area_connections()}
+        for connection in connections:
+            if _area_connection_key(connection) not in existing_keys:
+                raise GemsConnectionNotFound(
+                    f"area-connections: port '{connection.port}' of component '{connection.component}'"
+                    f" is not connected to area '{connection.area}'"
+                )
+
+        # All connections exist. It means the DB table is not filled as it should.
+        raise ValueError("The area connections table is not filled as it should")
+
+    @override
+    def save_thermal_capacity_connections(self, connections: List[GemsThermalCapacityConnection]) -> None:
+        if not connections:
+            return
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        self._check_system_exists()
+        _check_ports_are_connected_once("thermal-capacity-connections", connections)
+
+        rows = []
+        for connection in connections:
+            rows.append(
+                {
+                    "study_data_id": study_data_id,
+                    "component_id": connection.component,
+                    "port_id": connection.port,
+                    "area_id": connection.thermal_component.area,
+                    "cluster_id": connection.thermal_component.cluster_id,
+                }
+            )
+
+        try:
+            # A port already connected to a thermal cluster is connected to the new one instead
+            upsert_multiple(session, GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE, rows)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            self._raise_the_right_thermal_capacity_connection_exception(connections, e)
+
+    @override
+    def delete_thermal_capacity_connections(self, connections: List[GemsThermalCapacityConnection]) -> None:
+        if not connections:
+            return
+
+        table = GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE
+        keys = {_thermal_capacity_connection_key(connection) for connection in connections}
+        condition = tuple_(table.c.component_id, table.c.port_id, table.c.area_id, table.c.cluster_id).in_(list(keys))
+        if self._delete_rows(table, condition) != len(keys):
+            # Means some connections do not exist
+            self._db_session.rollback()
+            self._raise_thermal_capacity_connection_not_found(connections)
+
+        self._db_session.commit()
+
+    def _raise_thermal_capacity_connection_not_found(
+        self, connections: List[GemsThermalCapacityConnection]
+    ) -> NoReturn:
+        self._check_system_exists()
+
+        existing_keys = {
+            _thermal_capacity_connection_key(connection) for connection in self._get_thermal_capacity_connections()
+        }
+        for connection in connections:
+            if _thermal_capacity_connection_key(connection) not in existing_keys:
+                thermal = connection.thermal_component
+                raise GemsConnectionNotFound(
+                    f"thermal-capacity-connections: port '{connection.port}' of component '{connection.component}'"
+                    f" is not connected to thermal cluster '{thermal.cluster_id}' in area '{thermal.area}'"
+                )
+
+        # All connections exist. It means the DB table is not filled as it should.
+        raise ValueError("The thermal capacity connections table is not filled as it should")
+
+    def _check_legacy_connections_components_exist(
+        self,
+        section: str,
+        connections: Sequence[GemsAreaConnection | GemsThermalCapacityConnection],
+        e: IntegrityError,
+    ) -> None:
+        component_ids = self._get_components_library_and_model().keys()
+        for connection in connections:
+            if connection.component not in component_ids:
+                raise GemsInvalidConnection(f"{section}: component '{connection.component}' does not exist") from e
+
+    def _raise_the_right_area_connection_exception(
+        self, connections: List[GemsAreaConnection], e: IntegrityError
+    ) -> NoReturn:
+        self._check_legacy_connections_components_exist("area-connections", connections, e)
+
+        area_ids = set(self.get_impl().get_all_area_ids())
+        for connection in connections:
+            if connection.area not in area_ids:
+                raise GemsInvalidConnection(
+                    f"Component '{connection.component}' is connected to a non-existing area '{connection.area}'"
+                ) from e
+
+        # All components and areas exist and no port is connected twice.
+        # It means the DB table is not filled as it should.
+        raise ValueError("The area connections table is not filled as it should") from e
+
+    def _raise_the_right_thermal_capacity_connection_exception(
+        self, connections: List[GemsThermalCapacityConnection], e: IntegrityError
+    ) -> NoReturn:
+        self._check_legacy_connections_components_exist("thermal-capacity-connections", connections, e)
+
+        table = THERMAL_CLUSTER_TABLE
+        stmt = select(table.c.area_id, table.c.thermal_id).where(table.c.study_data_id == self._study_data_id)
+        cluster_ids = {(row.area_id, row.thermal_id) for row in self._db_session.execute(stmt)}
+        for connection in connections:
+            thermal = connection.thermal_component
+            if (thermal.area, thermal.cluster_id) not in cluster_ids:
+                raise GemsInvalidConnection(
+                    f"Component '{connection.component}' is connected to a non-existing thermal cluster"
+                    f" '{thermal.cluster_id}' in area '{thermal.area}'"
+                ) from e
+
+        # All components and clusters exist and no port is connected twice.
+        # It means the DB table is not filled as it should.
+        raise ValueError("The thermal capacity connections table is not filled as it should") from e
 
     def _get_components_library_and_model(self) -> dict[str, tuple[str, str]]:
         study_data_id = self._study_data_id
@@ -317,36 +676,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                         f"Component '{component_id}' does not have a port named '{port_id}'"
                     ) from exc
 
-    def _save_connections(self, connections: List[GemsComponentConnection]) -> None:
-
-        if not connections:
-            return
-
-        study_data_id = self._study_data_id
-        session = self._db_session
-
-        if not self._get_system_row_if_exists():
-            raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
-
-        rows = []
-        for connection in connections:
-            rows.append(
-                {
-                    "study_data_id": study_data_id,
-                    "component1": connection.component1,
-                    "component2": connection.component2,
-                    "port1": connection.port1,
-                    "port2": connection.port2,
-                }
-            )
-
-        try:
-            session.execute(insert(GEMS_COMPONENT_CONNECTIONS_TABLE), rows)
-            session.commit()
-        except IntegrityError as e:
-            session.rollback()
-            self._raise_the_right_connection_exception(connections, e)
-
     def _raise_the_right_connection_exception(
         self,
         connections: list[GemsComponentConnection],
@@ -354,9 +683,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     ) -> NoReturn:
 
         _check_connection_does_not_link_port_component_to_itself(connections)
-        # GEMS tolerates exact duplicates (same component1/component2/port1/port2) inside a system.yml file,
-        # so we have to check that the connections are not duplicated.
-        _check_no_duplicated_connections(connections)
 
         components_library_and_model = self._get_components_library_and_model()
         _check_components_exist(components_library_and_model, connections)

@@ -51,3 +51,10 @@ system:
     - component: electrolyser
       port: power_port
       area: west
+
+  thermal-capacity-connections:
+    - component: electrolyser
+      port: power_port
+      thermal-component:
+        area: west
+        cluster-id: gas_cluster
