@@ -45,7 +45,6 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.dbmodel import Output
 from antarest.output.filestudy.aggregation import (
     CLUSTER_ID_COL,
 )
@@ -248,6 +247,27 @@ class OutputService:
                 return storage
         raise ValueError(f"Output storage {storage_type} does not exist.")
 
+    def _initialize_output_metadata(self, study_id: str, storage: IOutputStorage, output_id: str | None = None) -> None:
+        if storage.storage_type == OutputStorageType.V2:
+            return
+
+        last_access = current_time()
+        output_ids = [output_id] if output_id is not None else [output.id for output in storage.list_outputs(study_id)]
+        for output_id in output_ids:
+            self._output_repository.initialize(
+                study_id, output_id, last_access, storage.is_output_archived(study_id, output_id)
+            )
+
+    def _update_output_metadata(
+        self, study_id: str, storage: IOutputStorage, output_id: str, archived: bool | None = None
+    ) -> None:
+        if storage.storage_type == OutputStorageType.V2:
+            self._output_repository.delete(study_id, output_id)
+        else:
+            if archived is None:
+                archived = storage.is_output_archived(study_id, output_id)
+            self._output_repository.update_archived(study_id, output_id, archived)
+
     def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
         return self._find_output_storage(study_id, output_id).get_digest(study_id, output_id)
@@ -307,7 +327,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.unarchive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
-                self._output_repository.delete(study_id, output_id)
+                self._update_output_metadata(study_id, storage, output_id, archived=False)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -357,6 +377,7 @@ class OutputService:
         storage = self._get_storage(uuid)
 
         storage.import_outputs(uuid, outputs_dir)
+        self._initialize_output_metadata(uuid, storage)
 
     def _get_storage(self, study_id: str, storage_type: OutputStorageType | None = None) -> IOutputStorage:
         storage = self._get_storage_based_on_type(storage_type)
@@ -407,6 +428,8 @@ class OutputService:
                 )
                 storage.delete_output(uuid, output_id)
                 raise OutputAlreadyExists(output_id)
+
+        self._initialize_output_metadata(uuid, storage, output_id)
 
         logger.info(f"output added to study {uuid}")
 
@@ -562,7 +585,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
-                self._output_repository.delete(study_id, output_id)
+                self._update_output_metadata(study_id, storage, output_id, archived=True)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
@@ -822,7 +845,9 @@ class OutputService:
         """
         self._studies_repository.assert_permission(src_study_id, StudyPermissionType.READ)
         self._studies_repository.assert_permission(target_study_id, StudyPermissionType.WRITE)
-        self._find_output_storage(src_study_id, output_name).copy_output(src_study_id, target_study_id, output_name)
+        storage = self._find_output_storage(src_study_id, output_name)
+        storage.copy_output(src_study_id, target_study_id, output_name)
+        self._initialize_output_metadata(target_study_id, storage, output_name)
 
     def write_output_to_dir(self, study_id: str, output_id: str, outputs_dir: Path) -> None:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
@@ -841,7 +866,7 @@ class OutputService:
             return output.disk_space_bytes
         else:
             disk_usage = self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
-            self._output_repository.save(Output(study_id=study_id, output_id=output_id, disk_space_bytes=disk_usage))
+            self._output_repository.save_disk_usage(study_id, output_id, disk_usage)
             return disk_usage
 
     def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
@@ -862,7 +887,10 @@ class OutputService:
             target_storage.import_output(study_id, tmp_zip)
             current_storage.delete_output(study_id, output_id)
 
-        self._output_repository.delete(study_id, output_id)
+        if current_storage.storage_type == OutputStorageType.V2:
+            self._output_repository.delete(study_id, output_id)
+        else:
+            self._update_output_metadata(study_id, target_storage, output_id)
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)
