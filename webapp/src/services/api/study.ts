@@ -25,7 +25,6 @@ import {
   type StudyLayer,
   type StudyMetadata,
   type StudyMetadataDTO,
-  type StudyMetadataPatchDTO,
   type StudyOutputDownloadDTO,
   type StudyPublicMode,
   type StudySynthesis,
@@ -33,6 +32,8 @@ import {
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
+import { studyMetadataPatchSchema, studySchema } from "./studies/schemas";
+import type { StudyMetadataPatch } from "./studies/types";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies?exists=True`);
@@ -309,12 +310,22 @@ export const renameStudy = async (studyId: string, name: string): Promise<void> 
   return res.data;
 };
 
+/**
+ * Updates study metadata with PUT /v1/studies/{studyId}.
+ *
+ * @param studyId - ID of the study to update.
+ * @param data - Metadata fields to update.
+ * @returns The complete updated metadata, including unchanged fields.
+ * @throws {z.ZodError} If the request or response does not match its schema.
+ */
 export const updateStudyMetadata = async (
   studyId: string,
-  data: StudyMetadataPatchDTO,
-): Promise<void> => {
-  const res = await client.put(`/v1/studies/${studyId}`, data);
-  return res.data;
+  data: StudyMetadataPatch,
+): Promise<StudyMetadata> => {
+  const res = await client.put(`/v1/studies/${studyId}`, studyMetadataPatchSchema.parse(data));
+  // Validate the wire response while preserving the legacy Redux model's conversion.
+  studySchema.in.parse(res.data);
+  return convertStudyDtoToMetadata(studyId, res.data);
 };
 
 export const scanFolder = async (folderPath: string, recursive = false) => {

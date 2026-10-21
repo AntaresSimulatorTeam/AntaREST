@@ -77,3 +77,10 @@ export const studySchema = z
 export const studyVersionsSchema = z
   .array(z.string())
   .transform((versions) => versions.map(toSemanticVersion));
+
+export const studyMetadataPatchSchema = z.object({
+  name: z.string().optional(),
+  author: z.string().optional(),
+  horizon: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
