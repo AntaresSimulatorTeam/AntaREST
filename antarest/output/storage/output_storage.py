@@ -11,7 +11,8 @@
 # This file is part of the Antares project.
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import StrEnum
 from http import HTTPStatus
@@ -232,6 +233,11 @@ class IOutputStorage(ABC):
     @abstractmethod
     def archive_study_output(self, study_id: str, output_id: str) -> None:
         """Archive a study output."""
+
+    @contextmanager
+    def prepare_output_archive(self, study_id: str, output_id: str) -> Iterator[Callable[[], None]]:
+        """Yield the action that finalizes the archive; leaving without calling it cancels the archive."""
+        yield lambda: self.archive_study_output(study_id, output_id)
 
     # noinspection SpellCheckingInspection
     @abstractmethod

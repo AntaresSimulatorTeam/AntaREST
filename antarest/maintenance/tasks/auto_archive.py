@@ -116,6 +116,8 @@ def _archive_old_outputs(
         StudyFilter(managed=True, archived=False, access_permissions=AccessPermissions(is_admin=True))
     )
     for study in studies:
+        if not dry_run:
+            output_service.reconcile_outputs_metadata(study.id)
         for output in repository.get_outputs_to_archive(study.id, cutoff):
             try:
                 logger.info("Archiving output %s/%s%s", study.id, output.output_id, " [dry-run]" if dry_run else "")

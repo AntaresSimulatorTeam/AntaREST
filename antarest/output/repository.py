@@ -115,6 +115,10 @@ class OutputRepository:
         )
         return list(self.session.scalars(stmt))
 
+    def get_output_ids(self, study_id: str) -> list[str]:
+        stmt = select(Output.output_id).where(Output.study_id == study_id)
+        return list(self.session.scalars(stmt))
+
     def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
         stmt = (
             select(Output.output_id)

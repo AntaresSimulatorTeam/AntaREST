@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import hashlib
 import itertools
 import logging
 import tempfile
@@ -22,6 +23,7 @@ from typing import Any, BinaryIO
 import pandas as pd
 import polars as pl
 from fastapi import HTTPException
+from filelock import FileLock
 from starlette.responses import FileResponse
 
 from antarest.core.exceptions import (
@@ -241,17 +243,23 @@ class OutputService:
                 return storage
         raise OutputNotFound(output_id)
 
+    def _output_access_lock(self, study_id: str, output_id: str) -> FileLock:
+        """Coordinate consultations and archive finalization across threads and processes."""
+        key = hashlib.sha256(f"{study_id}/{output_id}".encode()).hexdigest()
+        return FileLock(self._tmp_dir / f"output-access-{key}.lock")
+
     def _get_output_storage_for_read(self, study_id: str, output_id: str) -> IOutputStorage:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        storage = self._find_output_storage(study_id, output_id)
-        if storage.storage_type != OutputStorageType.V2:
-            last_access = current_time()
-            if self._output_repository.get(study_id, output_id) is None:
-                self._output_repository.initialize(
-                    study_id, output_id, last_access, storage.is_output_archived(study_id, output_id)
-                )
-            self._output_repository.update_last_access(study_id, output_id, last_access)
-            self._studies_repository.update_last_access(study_id, last_access)
+        with self._output_access_lock(study_id, output_id):
+            storage = self._find_output_storage(study_id, output_id)
+            if storage.storage_type != OutputStorageType.V2:
+                last_access = current_time()
+                if self._output_repository.get(study_id, output_id) is None:
+                    self._output_repository.initialize(
+                        study_id, output_id, last_access, storage.is_output_archived(study_id, output_id)
+                    )
+                self._output_repository.update_last_access(study_id, output_id, last_access)
+                self._studies_repository.update_last_access(study_id, last_access)
         return storage
 
     def _get_storage_based_on_type(self, storage_type: OutputStorageType | None) -> IOutputStorage:
@@ -269,6 +277,20 @@ class OutputService:
         """Initialize existing file outputs without overwriting known metadata."""
         for storage in self._storages:
             self._initialize_output_metadata(study_id, storage, last_access=reference_date)
+
+    def reconcile_outputs_metadata(self, study_id: str) -> None:
+        """Repair archive statuses from existing files without changing access dates."""
+        for output_id in self._output_repository.get_output_ids(study_id):
+            with self._output_access_lock(study_id, output_id):
+                for storage in self._storages:
+                    if storage.storage_type == OutputStorageType.V2 or not storage.output_exists(study_id, output_id):
+                        continue
+                    archived = storage.is_output_archived(study_id, output_id)
+                    metadata = self._output_repository.get(study_id, output_id)
+                    if metadata is not None and metadata.archived != archived:
+                        logger.info("Reconciling output %s/%s: archived=%s", study_id, output_id, archived)
+                        self._update_output_metadata(study_id, storage, output_id, archived=archived)
+                    break
 
     def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
         """Keep the study available while file outputs are unarchived or recently accessed."""
@@ -358,9 +380,10 @@ class OutputService:
         def unarchive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 stopwatch = StopWatch()
-                storage.unarchive_study_output(study_id, output_id)
+                with self._output_access_lock(study_id, output_id):
+                    storage.unarchive_study_output(study_id, output_id)
+                    self._update_output_metadata(study_id, storage, output_id, archived=False)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
-                self._update_output_metadata(study_id, storage, output_id, archived=False)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -612,21 +635,30 @@ class OutputService:
             if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
                 raise TaskAlreadyRunning()
 
+        def is_eligible_for_archive() -> bool:
+            if last_access_before is None:
+                return True
+            output = self._output_repository.get(study_id, output_id)
+            return (
+                output is not None
+                and output.archived is False
+                and output.last_access is not None
+                and output.last_access <= last_access_before
+            )
+
         def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
-                if last_access_before is not None:
-                    output = self._output_repository.get(study_id, output_id)
-                    if (
-                        output is None
-                        or output.archived is not False
-                        or output.last_access is None
-                        or output.last_access > last_access_before
-                    ):
-                        return TaskResult(success=True, message=f"Output {study_id}/{output_id} no longer eligible")
+                skipped = TaskResult(success=True, message=f"Output {study_id}/{output_id} no longer eligible")
+                if not is_eligible_for_archive():
+                    return skipped
                 stopwatch = StopWatch()
-                storage.archive_study_output(study_id, output_id)
+                with storage.prepare_output_archive(study_id, output_id) as finalize:
+                    with self._output_access_lock(study_id, output_id):
+                        if not is_eligible_for_archive():
+                            return skipped
+                        finalize()
+                        self._update_output_metadata(study_id, storage, output_id, archived=True)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
-                self._update_output_metadata(study_id, storage, output_id, archived=True)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",

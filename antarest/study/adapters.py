@@ -59,6 +59,10 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
             return output_service.has_outputs_to_preserve(study_id, cutoff)
 
         @override
+        def initialize_outputs_metadata(self, study_id: str, reference_date: datetime) -> None:
+            output_service.initialize_outputs_metadata(study_id, reference_date)
+
+        @override
         def get_disk_usage(self, study_id: str, output_id: str) -> int:
             return output_service.get_disk_usage(study_id, output_id)
 
