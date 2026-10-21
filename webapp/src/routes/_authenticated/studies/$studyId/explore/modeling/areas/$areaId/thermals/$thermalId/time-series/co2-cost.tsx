@@ -38,6 +38,7 @@ function Co2Costs() {
       key={thermalId}
       studyId={study.id}
       url={`input/thermal/series/${areaId}/${thermalId}/CO2Cost`}
+      filterKey="thermals.co2-cost"
     />
   );
 }

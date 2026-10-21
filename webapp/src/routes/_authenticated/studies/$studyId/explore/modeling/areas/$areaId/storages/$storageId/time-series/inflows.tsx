@@ -32,6 +32,7 @@ function Inflows() {
       key={storageId}
       studyId={study.id}
       url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
+      filterKey="storages.inflows"
       // Since v9.3 this matrix supports the resize functionality
       {...(semver.lt(study.version, "9.3.0") && {
         isTimeSeries: false,

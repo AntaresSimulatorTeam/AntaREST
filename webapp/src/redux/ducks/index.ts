@@ -21,6 +21,7 @@ import auth, { logout } from "./auth";
 import ui from "./ui";
 import studySyntheses from "./studySyntheses";
 import studyMaps from "./studyMaps";
+import matrixFilters from "./matrixFilters";
 
 const appReducer = combineReducers({
   studies,
@@ -30,6 +31,7 @@ const appReducer = combineReducers({
   ui,
   studySyntheses,
   studyMaps,
+  matrixFilters,
 });
 
 type AppReducerType = typeof appReducer;

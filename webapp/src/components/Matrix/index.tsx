@@ -58,6 +58,8 @@ interface MatrixProps {
    * Useful for matrices that need filtering but can't be resized.
    */
   enableFilters?: boolean;
+  /** Remembers this view's filters across areas for the current study session. */
+  filterKey?: string;
   /**
    * Feature flag for data resizing functionality.
    * Some matrices have temporal structure but fixed dimensions.
@@ -82,6 +84,7 @@ function Matrix({
   canImport = true,
   rowCountSource,
   enableFilters = isTimeSeries,
+  filterKey,
   enableResize = isTimeSeries,
 }: MatrixProps) {
   const { t } = useTranslation();
@@ -188,6 +191,7 @@ function Matrix({
                 onMatrixUpdated={reload}
                 canImport={canImport}
                 enableFilters={enableFilters}
+                filterKey={filterKey}
                 enableResize={enableResize}
                 readOnly={isSubmitting || readOnly}
                 onImport={(_, index) => {

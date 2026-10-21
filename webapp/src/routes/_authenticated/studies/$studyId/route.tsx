@@ -15,6 +15,7 @@
 import SimpleLoader from "@/components/loaders/SimpleLoader";
 import { directoryQueries } from "@/queries/directories/queries";
 import { variantQueries } from "@/queries/variants/queries";
+import { clearStudyMatrixFilters } from "@/redux/ducks/matrixFilters";
 import { setCurrentStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
@@ -46,6 +47,10 @@ function StudyHomeLayout() {
 
   useEffect(() => {
     dispatch(setCurrentStudy(studyId));
+
+    return () => {
+      dispatch(clearStudyMatrixFilters(studyId));
+    };
   }, [dispatch, studyId]);
 
   // Change the name of the web browser tab

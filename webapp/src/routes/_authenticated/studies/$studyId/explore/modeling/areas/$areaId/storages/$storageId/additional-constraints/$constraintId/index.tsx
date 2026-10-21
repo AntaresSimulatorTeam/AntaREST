@@ -137,6 +137,7 @@ function Constraint() {
             studyId={study.id}
             title={t("global.timeSeries")}
             url={`input/st-storage/constraints/${areaId}/${storageId}/rhs_${constraintId}`}
+            filterKey={`storages.constraints.${constraint.variable}`}
             // Since v9.3 supports resize, older versions need fixed layout
             {...(semver.lt(study.version, "9.3.0") && {
               isTimeSeries: false,
