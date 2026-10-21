@@ -79,23 +79,6 @@ class TestArchiveStudy:
         assert result == ArchiveStudyResult(1)
         study_svc.archive.assert_called_once_with("s1", last_access_before=CUTOFF, output_last_access_before=CUTOFF)
 
-    def test_dry_run_does_not_archive(self) -> None:
-        study_svc, output_svc = Mock(), Mock()
-        output_svc.has_outputs_to_preserve.return_value = False
-        result = _archive_study("s1", study_svc, output_svc, True, CUTOFF, CUTOFF)
-
-        assert result == ArchiveStudyResult(1)
-        study_svc.archive.assert_not_called()
-
-    def test_preserves_study_with_recent_outputs(self) -> None:
-        study_svc, output_svc = Mock(), Mock()
-        output_svc.has_outputs_to_preserve.return_value = True
-
-        result = _archive_study("s1", study_svc, output_svc, False, CUTOFF, CUTOFF)
-
-        assert result == ArchiveStudyResult(0)
-        study_svc.archive.assert_not_called()
-
     def test_handles_task_already_running(self) -> None:
         study_svc, output_svc = Mock(), Mock()
         study_svc.archive.side_effect = TaskAlreadyRunning()

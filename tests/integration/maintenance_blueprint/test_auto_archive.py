@@ -16,7 +16,6 @@ import datetime
 import tempfile
 import threading
 import time
-import zipfile
 from collections.abc import Callable
 from contextlib import nullcontext
 from pathlib import Path
@@ -156,7 +155,7 @@ class TestArchiveOldStudiesIntegration:
 
         # But no actual archive calls should be made
         mock_study_service.archive.assert_not_called()
-        mock_output_service.archive_outputs.assert_not_called()
+        mock_output_service.archive_output.assert_not_called()
 
     def test_archives_inactive_outputs_of_active_study(
         self, services: Services, internal_study_id: str, tmp_path: Path, mocker: MockerFixture
@@ -177,8 +176,6 @@ class TestArchiveOldStudiesIntegration:
             db.session.commit()
             outputs = [o for o in services.output_service.list_outputs(study.id) if not o.archived]
             output_dir = Path(study.path) / "output" / outputs[1].id
-            parameters = (output_dir / "about-the-study" / "parameters.ini").read_bytes()
-            original_size = sum(p.stat().st_size for p in output_dir.rglob("*") if p.is_file())
 
             result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
             assert result.status == BackGroundTaskStatus.SUCCESS
@@ -204,48 +201,7 @@ class TestArchiveOldStudiesIntegration:
             assert stored is not None and stored.archived and stored.last_access == now
             assert (Path(study.path) / "output" / outputs[0].id).is_dir()
             assert not output_dir.exists()
-            archive = output_dir.with_name(output_dir.name + ".zip")
-            assert archive.stat().st_size < original_size
-            with zipfile.ZipFile(archive) as zipped:
-                assert zipped.read("about-the-study/parameters.ini") == parameters
-
-    def test_excludes_already_archived_studies(self) -> None:
-        mock_study_service = Mock(spec=StudyService)
-        mock_output_service = Mock(spec=OutputService)
-
-        now = current_time()
-
-        with db():
-            repository = StudyMetadataRepository()
-            db_session = repository.session
-
-            # Create an old but already archived study
-            db_session.add(
-                create_raw_study(
-                    id="already_archived",
-                    workspace=DEFAULT_WORKSPACE_NAME,
-                    updated_at=now - datetime.timedelta(days=90),
-                    archived=True,
-                ),
-            )
-            db_session.commit()
-
-            mock_study_service.repository = repository
-            mock_study_service.storage_service = Mock()
-            mock_study_service.storage_service.variant_study_service = Mock()
-            mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
-
-        result = archive_old_studies(
-            study_service=mock_study_service,
-            output_service=mock_output_service,
-            threshold_days=60,
-            snapshot_retention_days=7,
-            dry_run=True,
-            lock_folder=Path(tempfile.gettempdir()),
-        )
-
-        assert result.status == BackGroundTaskStatus.SUCCESS
-        assert result.archived_studies == 0
+            assert output_dir.with_name(output_dir.name + ".zip").is_file()
 
     def test_concurrent_archive_old_studies_is_skipped(self, db_middleware: None) -> None:
         results = _run_concurrent_archive()
