@@ -883,6 +883,7 @@
   "studies.warning.moveStudiesPartial_other": "{{failed}} of {{total}} studies could not be moved",
   "studies.moveStudies_one": "Move {{count}} study",
   "studies.moveStudies_other": "Move {{count}} studies",
+  "studies.destination": "Destination directory",
   "studies.destination.newDirectoryPath": "new directory",
   "studies.destination.goUp": "Go up one level (Backspace)",
   "studies.destination.noSubDirectories": "No sub-directories",

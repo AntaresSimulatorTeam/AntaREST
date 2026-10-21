@@ -80,6 +80,7 @@ interface StudyCreator {
   publicMode?: StudyPublicMode;
   tags?: string[];
   storageMode?: StorageMode;
+  directory?: string;
 }
 
 interface StudyUpload {
@@ -186,10 +187,10 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
       }
 
       // StudyCreator
-      const { name, version, groups, publicMode, tags, storageMode } = arg;
+      const { name, version, groups, publicMode, tags, storageMode, directory } = arg;
 
       // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
-      const studyId = await api.createStudy(name, version, groups, storageMode);
+      const studyId = await api.createStudy(name, version, groups, storageMode, directory);
 
       if (publicMode) {
         await api.changePublicMode(studyId, publicMode);
