@@ -115,6 +115,14 @@ class OutputRepository:
         )
         return list(self.session.scalars(stmt))
 
+    def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
+        stmt = (
+            select(Output.output_id)
+            .where(Output.study_id == study_id, (Output.archived.is_(False)) | (Output.last_access > cutoff))
+            .limit(1)
+        )
+        return self.session.scalar(stmt) is not None
+
     def delete(self, study_id: str, output_id: str) -> None:
 
         session = self.session

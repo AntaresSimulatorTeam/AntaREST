@@ -18,10 +18,13 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.tasks.model import TaskResult
 from antarest.maintenance.tasks.auto_archive import ArchiveStudyResult, _archive_study, _get_studies_to_archive
 from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+
+CUTOFF = datetime.datetime(2026, 1, 1)
 
 
 def _make_study(spec: type[Study], study_id: str, days_ago: int, archived: bool = False) -> Study:
@@ -39,12 +42,12 @@ class TestGetStudiesToArchive:
     def test_returns_old_raw_studies(self) -> None:
         svc = Mock()
         svc.repository.get_all.return_value = [_make_study(RawStudy, "s1", 90)]
-        assert _get_studies_to_archive(svc, 60) == [("s1", True)]
+        assert _get_studies_to_archive(svc, 60) == ["s1"]
 
-    def test_returns_old_variant_studies(self) -> None:
+    def test_excludes_variant_studies(self) -> None:
         svc = Mock()
         svc.repository.get_all.return_value = [_make_study(VariantStudy, "v1", 90)]
-        assert _get_studies_to_archive(svc, 60) == [("v1", False)]
+        assert _get_studies_to_archive(svc, 60) == []
 
     def test_excludes_recent_studies(self) -> None:
         svc = Mock()
@@ -61,47 +64,53 @@ class TestGetStudiesToArchive:
         study = _make_study(RawStudy, "s1", 90)
         study.last_access = None
         svc.repository.get_all.return_value = [study]
-        assert _get_studies_to_archive(svc, 60) == [("s1", True)]
+        assert _get_studies_to_archive(svc, 60) == ["s1"]
 
 
 class TestArchiveStudy:
     def test_archives_raw_study(self) -> None:
         study_svc, output_svc = Mock(), Mock()
         study_svc.archive.return_value = "task1"
+        study_svc.task_service.status_task.return_value.result = TaskResult(success=True, message="ok")
+        output_svc.has_outputs_to_preserve.return_value = False
 
-        result = _archive_study("s1", True, study_svc, output_svc, dry_run=False)
+        result = _archive_study("s1", study_svc, output_svc, False, CUTOFF, CUTOFF)
 
         assert result == ArchiveStudyResult(1)
-        study_svc.archive.assert_called_once_with("s1")
+        study_svc.archive.assert_called_once_with("s1", last_access_before=CUTOFF, output_last_access_before=CUTOFF)
 
     def test_dry_run_does_not_archive(self) -> None:
         study_svc, output_svc = Mock(), Mock()
-        result = _archive_study("s1", True, study_svc, output_svc, dry_run=True)
+        output_svc.has_outputs_to_preserve.return_value = False
+        result = _archive_study("s1", study_svc, output_svc, True, CUTOFF, CUTOFF)
 
         assert result == ArchiveStudyResult(1)
         study_svc.archive.assert_not_called()
 
-    def test_archives_variant_outputs(self) -> None:
+    def test_preserves_study_with_recent_outputs(self) -> None:
         study_svc, output_svc = Mock(), Mock()
-        output_svc.archive_outputs.return_value = ["t1", "t2"]
+        output_svc.has_outputs_to_preserve.return_value = True
 
-        result = _archive_study("v1", False, study_svc, output_svc, dry_run=False)
+        result = _archive_study("s1", study_svc, output_svc, False, CUTOFF, CUTOFF)
 
-        assert result == ArchiveStudyResult(1)
-        output_svc.archive_outputs.assert_called_once_with("v1")
+        assert result == ArchiveStudyResult(0)
+        study_svc.archive.assert_not_called()
 
     def test_handles_task_already_running(self) -> None:
         study_svc, output_svc = Mock(), Mock()
         study_svc.archive.side_effect = TaskAlreadyRunning()
+        output_svc.has_outputs_to_preserve.return_value = False
 
-        result = _archive_study("s1", True, study_svc, output_svc, dry_run=False)
+        result = _archive_study("s1", study_svc, output_svc, False, CUTOFF, CUTOFF)
         assert result == ArchiveStudyResult(0)
 
     def test_returns_error_on_exception(self) -> None:
         study_svc, output_svc = Mock(), Mock()
-        study_svc.archive.side_effect = Exception("fail")
+        study_svc.archive.return_value = "task1"
+        study_svc.task_service.status_task.return_value.result = TaskResult(success=False, message="fail")
+        output_svc.has_outputs_to_preserve.return_value = False
 
-        result = _archive_study("s1", True, study_svc, output_svc, dry_run=False)
+        result = _archive_study("s1", study_svc, output_svc, False, CUTOFF, CUTOFF)
         assert result.archived_studies == 0
         assert result.error is not None
         assert "fail" in result.error

@@ -265,11 +265,27 @@ class OutputService:
                 return storage
         raise ValueError(f"Output storage {storage_type} does not exist.")
 
-    def _initialize_output_metadata(self, study_id: str, storage: IOutputStorage, output_id: str | None = None) -> None:
+    def initialize_outputs_metadata(self, study_id: str, reference_date: datetime) -> None:
+        """Initialize existing file outputs without overwriting known metadata."""
+        for storage in self._storages:
+            self._initialize_output_metadata(study_id, storage, last_access=reference_date)
+
+    def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
+        """Keep the study available while file outputs are unarchived or recently accessed."""
+        return self._output_repository.has_outputs_to_preserve(study_id, cutoff)
+
+    def _initialize_output_metadata(
+        self,
+        study_id: str,
+        storage: IOutputStorage,
+        output_id: str | None = None,
+        *,
+        last_access: datetime | None = None,
+    ) -> None:
         if storage.storage_type == OutputStorageType.V2:
             return
 
-        last_access = current_time()
+        last_access = last_access or current_time()
         output_ids = [output_id] if output_id is not None else [output.id for output in storage.list_outputs(study_id)]
         for output_id in output_ids:
             self._output_repository.initialize(
