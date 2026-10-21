@@ -18,7 +18,6 @@ import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
 
-import CustomScrollbar from "@/components/CustomScrollbar";
 import FormDialog from "@/components/dialogs/FormDialog";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
@@ -29,9 +28,9 @@ import { moveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import StudyDestinationFE from "../../StudyDestinationFE";
-import { studyDestinationDialogContentSx } from "../../StudyDestinationFE/styles";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
 import { useRedirectToDestination } from "../../StudyDestinationFE/useRedirectToDestination";
+import { studyDestinationDialogContentSx, studyDestinationDialogPaperSx } from "../styles";
 import {
   computeAllowSubmitOnPristine,
   formSchema,
@@ -168,6 +167,7 @@ function MoveStudyDialog({ open, studies, onClose, onRun }: Props) {
       titleIcon={DriveFileMoveIcon}
       config={{ defaultValues }}
       maxWidth="sm"
+      slotProps={{ paper: { sx: studyDestinationDialogPaperSx } }}
       contentProps={{ sx: studyDestinationDialogContentSx }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
@@ -177,18 +177,16 @@ function MoveStudyDialog({ open, studies, onClose, onRun }: Props) {
       submitButtonText={t("global.move")}
     >
       {({ control }) => (
-        <CustomScrollbar style={{ minHeight: 0 }}>
-          <Box sx={{ p: 1 }}>
-            <StudyDestinationFE name="destination" control={control} />
-            <CheckBoxFE
-              name="redirect"
-              control={control}
-              label={t("studies.destination.redirectAfterMove")}
-              size="small"
-              sx={{ color: "text.secondary" }}
-            />
-          </Box>
-        </CustomScrollbar>
+        <Box sx={{ p: 1, flex: 1, minHeight: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+          <StudyDestinationFE name="destination" control={control} fillHeight />
+          <CheckBoxFE
+            name="redirect"
+            control={control}
+            label={t("studies.destination.redirectAfterMove")}
+            size="small"
+            sx={{ color: "text.secondary", flexShrink: 0 }}
+          />
+        </Box>
       )}
     </FormDialog>
   );

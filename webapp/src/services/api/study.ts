@@ -118,16 +118,6 @@ export const downloadOutput = async (
   return res.data;
 };
 
-/**
- * Creates a study with POST /v1/studies.
- *
- * @param name - Study name.
- * @param version - Simulator version.
- * @param groups - Groups granted access to the study.
- * @param storageMode - Study storage mode.
- * @param directory - Slash-separated destination path; omitted or empty for root.
- * @returns Created study ID.
- */
 export const createStudy = async (
   name: string,
   version: string,
@@ -135,12 +125,15 @@ export const createStudy = async (
   storageMode: StorageMode = StorageMode.FILESYSTEM,
   directory?: string,
 ): Promise<string> => {
-  const groupIds = groups && groups.length > 0 ? `&groups=${groups.join(",")}` : "";
-  const res = await client.post(
-    `/v1/studies?name=${encodeURIComponent(name)}&version=${compactSemanticVersion(version)}${groupIds}&storage_mode=${storageMode}`,
-    undefined,
-    { params: { directory } },
-  );
+  const res = await client.post("/v1/studies", undefined, {
+    params: {
+      name,
+      version: compactSemanticVersion(version),
+      groups: groups?.length ? groups.join(",") : undefined,
+      storage_mode: storageMode,
+      directory,
+    },
+  });
   return res.data;
 };
 

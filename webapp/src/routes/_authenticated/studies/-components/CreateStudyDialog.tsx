@@ -17,7 +17,6 @@ import FormDialog from "@/components/dialogs/FormDialog";
 import CheckboxesTagsFE from "@/components/fieldEditors/CheckboxesTagsFE";
 import SelectFE, { type Options } from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
-import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
 import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
 import { directoryQueries } from "@/queries/directories/queries";
@@ -26,7 +25,10 @@ import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getGroups, getLatestStudyVersion, getStudyVersions } from "@/redux/selectors";
 import StudyDestinationFE from "@/routes/-shared/components/studies/StudyDestinationFE";
-import { studyDestinationDialogContentSx } from "@/routes/-shared/components/studies/StudyDestinationFE/styles";
+import {
+  studyDestinationDialogContentSx,
+  studyDestinationDialogPaperSx,
+} from "@/routes/-shared/components/studies/dialogs/styles";
 import type { DirectoryDestination } from "@/routes/-shared/components/studies/StudyDestinationFE/types";
 import { useDefaultStudyDestination } from "@/routes/-shared/components/studies/StudyDestinationFE/useDefaultStudyDestination";
 import { useRedirectToDestination } from "@/routes/-shared/components/studies/StudyDestinationFE/useRedirectToDestination";
@@ -37,8 +39,9 @@ import {
 import { StorageMode, type StudyPublicMode } from "@/types/types";
 import { validateStudyName } from "@/utils/studiesUtils";
 import { getSemanticVersionOptions } from "@/utils/versionUtils";
+import AddIcon from "@mui/icons-material/Add";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import { Box, Button, IconButton } from "@mui/material";
+import { Box, Button, Divider, IconButton, Stack, Typography } from "@mui/material";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useSnackbar } from "notistack";
@@ -146,8 +149,23 @@ function CreateStudyDialog({ open, onClose }: Props) {
     <FormDialog
       title={t("studies.createNewStudy")}
       open={open}
-      maxWidth="sm"
+      maxWidth="md"
+      slotProps={{
+        paper: {
+          sx: [
+            studyDestinationDialogPaperSx,
+            {
+              [`&:has([data-storage-mode="${StorageMode.DATABASE}"])`]: {
+                maxWidth: 560,
+                height: "auto",
+              },
+            },
+          ],
+        },
+      }}
       contentProps={{ sx: studyDestinationDialogContentSx }}
+      submitButtonText={t("global.create")}
+      submitButtonIcon={<AddIcon />}
       onCancel={onClose}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
@@ -163,70 +181,126 @@ function CreateStudyDialog({ open, onClose }: Props) {
         },
       }}
     >
-      {({ control, watch }) => (
-        <CustomScrollbar style={{ minHeight: 0 }}>
-          <Box sx={{ p: 1 }}>
-            <Fieldset fullFieldWidth>
-              <StringFE
-                label={t("studies.studyName")}
-                name="name"
-                control={control}
-                rules={{ validate: validateStudyName }}
-              />
-              <SelectFE
-                label={t("global.version")}
-                options={versionOptions}
-                name="version"
-                control={control}
-                rules={{ required: t("form.field.required") }}
-              />
-              <SelectFE
-                label={t("studies.storageMode")}
-                options={STORAGE_MODE_OPTIONS}
-                name="storageMode"
-                control={control}
-                helperText={
-                  watch("storageMode") === StorageMode.DATABASE
-                    ? t("studies.storageMode.gemsCompatible")
-                    : undefined
-                }
-              />
-            </Fieldset>
-            {watch("storageMode") === StorageMode.FILESYSTEM && (
-              <Fieldset legend={t("studies.destination")} fullFieldWidth>
-                <StudyDestinationFE name="destination" control={control} listHeight={200} />
-              </Fieldset>
-            )}
-            <Fieldset legend={t("global.permission")} fullFieldWidth>
-              <SelectFE
-                label={t("study.publicMode")}
-                options={PUBLIC_MODE_LIST.map((mode) => ({
-                  label: t(mode.name),
-                  value: mode.id,
-                }))}
-                name="publicMode"
-                control={control}
-              />
-              <SelectFE
-                label={t("global.group")}
-                options={groupList.map((group) => group.name)}
-                name="groups"
-                control={control}
-                multiple
-              />
-            </Fieldset>
-            <Fieldset legend="Metadata" fullFieldWidth>
-              <CheckboxesTagsFE
-                options={[]}
-                label={t("studies.enterTag")}
-                freeSolo
-                name="tags"
-                control={control}
-              />
-            </Fieldset>
-          </Box>
-        </CustomScrollbar>
-      )}
+      {({ control, watch }) => {
+        const storageMode = watch("storageMode");
+        const isFilesystem = storageMode === StorageMode.FILESYSTEM;
+
+        return (
+          <CustomScrollbar style={{ flex: 1, minHeight: 0 }}>
+            <Stack
+              data-storage-mode={storageMode}
+              direction={{ xs: "column", md: "row" }}
+              spacing={3}
+              sx={{ height: isFilesystem ? { xs: "auto", md: 1 } : "auto" }}
+            >
+              <Box
+                component={CustomScrollbar}
+                sx={{
+                  minHeight: 0,
+                  minWidth: 0,
+                  width: 1,
+                  flex: { md: 9 },
+                }}
+              >
+                <Stack direction="column" spacing={2} sx={{ p: 1 }}>
+                  <Typography component="h3" variant="subtitle2">
+                    {t("global.general")}
+                  </Typography>
+                  <StringFE
+                    label={t("studies.studyName")}
+                    name="name"
+                    control={control}
+                    rules={{ validate: validateStudyName }}
+                    autoFocus
+                    fullWidth
+                  />
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <SelectFE
+                      label={t("global.version")}
+                      options={versionOptions}
+                      name="version"
+                      control={control}
+                      rules={{ required: t("form.field.required") }}
+                      fullWidth
+                      sx={{ minWidth: 0, flex: { sm: 2 } }}
+                    />
+                    <SelectFE
+                      label={t("studies.storageMode")}
+                      options={STORAGE_MODE_OPTIONS}
+                      name="storageMode"
+                      control={control}
+                      fullWidth
+                      sx={{ minWidth: 0, flex: { sm: 3 } }}
+                      helperText={
+                        storageMode === StorageMode.DATABASE
+                          ? t("studies.storageMode.gemsCompatible")
+                          : undefined
+                      }
+                    />
+                  </Stack>
+                  <Divider sx={{ my: 0.5 }} />
+                  <Typography component="h3" variant="subtitle2">
+                    {t("global.permissions")}
+                  </Typography>
+                  <SelectFE
+                    label={t("study.publicMode")}
+                    options={PUBLIC_MODE_LIST.map((mode) => ({
+                      label: t(mode.name),
+                      value: mode.id,
+                    }))}
+                    name="publicMode"
+                    control={control}
+                    fullWidth
+                  />
+                  <SelectFE
+                    label={t("global.group")}
+                    options={groupList.map((group) => group.name)}
+                    name="groups"
+                    control={control}
+                    multiple
+                    fullWidth
+                  />
+                  <Divider sx={{ my: 0.5 }} />
+                  <CheckboxesTagsFE
+                    options={[]}
+                    label={t("global.tags")}
+                    placeholder={t("studies.enterTag")}
+                    freeSolo
+                    name="tags"
+                    control={control}
+                  />
+                </Stack>
+              </Box>
+              {isFilesystem && (
+                <Stack
+                  direction="column"
+                  spacing={2}
+                  sx={{
+                    p: 1,
+                    pt: { xs: 3, md: 1 },
+                    pl: { xs: 1, md: 3 },
+                    borderTopWidth: { xs: 1, md: 0 },
+                    borderTopStyle: "solid",
+                    borderLeftWidth: { xs: 0, md: 1 },
+                    borderLeftStyle: "solid",
+                    borderColor: "divider",
+                    minWidth: 0,
+                    minHeight: 0,
+                    height: { xs: "clamp(320px, 50dvh, 480px)", md: 1 },
+                    // Give the destination explorer slightly more room than the form fields.
+                    flex: { md: 11 },
+                  }}
+                >
+                  <Typography component="h3" variant="subtitle2">
+                    {t("studies.destination")}
+                  </Typography>
+                  <StudyDestinationFE name="destination" control={control} fillHeight />
+                </Stack>
+              )}
+            </Stack>
+          </CustomScrollbar>
+        );
+      }}
     </FormDialog>
   );
 }
