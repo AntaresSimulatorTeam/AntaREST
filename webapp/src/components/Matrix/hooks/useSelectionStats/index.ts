@@ -29,9 +29,29 @@ interface UseSelectionStatsProps {
   selection: GridSelection;
   columns: readonly EnhancedGridColumn[];
   rows: number;
+  /**
+   * Resolves visible grid coordinates to an unrounded numeric value.
+   * Returns undefined for cells excluded from statistics.
+   *
+   * Its identity must change when underlying values change so the memoized
+   * statistics are recalculated, even when the selection stays unchanged.
+   */
   getCellValue: (coordinates: Item) => number | undefined;
 }
 
+/**
+ * Calculates footer statistics using visible grid coordinates.
+ *
+ * Overlapping cell ranges contribute each cell once. Row selections include
+ * only matrix inputs, column selections can also summarize aggregate values.
+ *
+ * @param params - Selection, visible grid layout, and value lookup.
+ * @param params.selection - Grid selection to summarize.
+ * @param params.columns - Visible columns in display order.
+ * @param params.rows - Number of visible rows.
+ * @param params.getCellValue - Resolves visible cells to their unrounded numeric values.
+ * @returns Statistics, or null when the selection contains no numeric values.
+ */
 export function useSelectionStats({
   selection,
   columns,
@@ -61,23 +81,21 @@ export function useSelectionStats({
       : [];
 
     for (const [index, range] of ranges.entries()) {
-      // Clip each rectangle to the visible grid before reading cell values.
-      for (
-        let col = Math.max(0, range.x);
-        col < Math.min(columns.length, range.x + range.width);
-        col++
-      ) {
-        for (let row = Math.max(0, range.y); row < Math.min(rows, range.y + range.height); row++) {
-          // Earlier ranges already contributed their cells, skip overlaps to count each cell once.
+      // Clip once per rectangle. right and bottom are exclusive bounds.
+      const left = Math.max(0, range.x);
+      const right = Math.min(columns.length, range.x + range.width);
+      const top = Math.max(0, range.y);
+      const bottom = Math.min(rows, range.y + range.height);
+      const earlierRanges = ranges.slice(0, index);
+
+      for (let col = left; col < right; col++) {
+        for (let row = top; row < bottom; row++) {
+          // Only earlier ranges have contributed cells. Skip their overlaps to count each cell once.
           const alreadySelected =
             index > 0 &&
-            ranges.some(
-              ({ x, y, width, height }, previousIndex) =>
-                previousIndex < index &&
-                col >= x &&
-                col < x + width &&
-                row >= y &&
-                row < y + height,
+            earlierRanges.some(
+              ({ x, y, width, height }) =>
+                col >= x && col < x + width && row >= y && row < y + height,
             );
 
           if (!alreadySelected) {
