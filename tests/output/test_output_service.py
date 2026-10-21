@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 import uuid
 import zipfile
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import ANY, Mock
@@ -174,6 +174,7 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
 
     cache_mock = Mock()
     task_service = Mock(spec=ITaskService)
+    output_repository = Mock()
     file_outputs_provider = _file_outputs_provider(study_mock)
     output_storage = InStudyFileOutputStorage(
         cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock(), repository=Mock()
@@ -187,7 +188,7 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         studies_repository=studies_metadata_repository,
         storages=[output_storage],
         task_service=task_service,
-        output_repository=Mock(),
+        output_repository=output_repository,
     )
 
     output_zipped = "some-output_zipped"
@@ -266,6 +267,15 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         progress=None,
         custom_event_messages=None,
     )
+
+    task_service.list_tasks.side_effect = None
+    task_service.list_tasks.return_value = []
+    cutoff = current_time()
+    output_service.archive_output(study_id, output_unzipped, last_access_before=cutoff)
+    output_repository.get.return_value = Mock(archived=False, last_access=cutoff + timedelta(seconds=1))
+    task_service.add_task.call_args.args[0](Mock())
+    assert (tmp_path / "output" / output_unzipped).is_dir()
+    output_repository.update_archived.assert_not_called()
 
 
 def test_already_existing_study_raises_error_and_deletes_output() -> None:

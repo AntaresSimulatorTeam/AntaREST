@@ -573,6 +573,7 @@ class OutputService:
         study_id: str,
         output_id: str,
         force: bool = False,
+        last_access_before: datetime | None = None,
     ) -> str | None:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
         metadata = self._studies_repository.get_study_metadata(study_id)
@@ -588,7 +589,6 @@ class OutputService:
             study_tasks = self._task_service.list_tasks(
                 TaskListFilter(
                     ref_id=study_id,
-                    name=task_name,
                     type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                     status=[TaskStatus.RUNNING, TaskStatus.PENDING],
                 )
@@ -598,6 +598,15 @@ class OutputService:
 
         def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
+                if last_access_before is not None:
+                    output = self._output_repository.get(study_id, output_id)
+                    if (
+                        output is None
+                        or output.archived is not False
+                        or output.last_access is None
+                        or output.last_access > last_access_before
+                    ):
+                        return TaskResult(success=True, message=f"Output {study_id}/{output_id} no longer eligible")
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
