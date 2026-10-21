@@ -28,7 +28,7 @@ interface Props {
 
 function DeleteStudiesDialog({ studyIds, open, onClose, onRun }: Props) {
   const { t } = useTranslation();
-  const deleteStudies = useDeleteStudies({ onSuccess: onClose });
+  const deleteStudies = useDeleteStudies();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -36,6 +36,7 @@ function DeleteStudiesDialog({ studyIds, open, onClose, onRun }: Props) {
 
   const handleConfirm = () => {
     deleteStudies.mutate({ studyIds });
+    onClose();
     onRun?.();
   };
 

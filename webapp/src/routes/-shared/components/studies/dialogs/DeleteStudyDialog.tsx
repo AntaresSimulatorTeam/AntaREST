@@ -43,10 +43,10 @@ function DeleteStudyDialog({ study, parentStudy, variantNb, open, onClose }: Pro
   ////////////////////////////////////////////////////////////////
 
   const handleConfirm = async () => {
+    onClose();
+
     try {
       await dispatch(deleteStudy({ id: study.id, deleteChildren: true })).unwrap();
-
-      onClose();
 
       navigate(
         parentStudy

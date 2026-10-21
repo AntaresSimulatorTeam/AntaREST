@@ -191,7 +191,7 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
 
       const studyId = await api.createStudy(name, version, groups, storageMode, directory);
 
-      // New studies already use NONE; writing it again emits an unnecessary edit event.
+      // New studies already use NONE, writing it again emits an unnecessary edit event.
       if (publicMode && publicMode !== "NONE") {
         await api.changePublicMode(studyId, publicMode);
       }
