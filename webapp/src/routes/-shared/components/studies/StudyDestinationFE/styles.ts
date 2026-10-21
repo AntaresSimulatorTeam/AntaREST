@@ -121,9 +121,6 @@ export const getDirectoryListSx = (
   listHeight: number | string | undefined,
   fillHeight: boolean,
 ): SxProps<Theme> => ({
-  m: 0,
-  p: 0,
-  listStyle: "none",
   display: "flex",
   flexDirection: "column",
   ...(fillHeight
@@ -134,20 +131,6 @@ export const getDirectoryListSx = (
   overflow: "hidden",
   bgcolor: "background.paper",
 });
-
-/** Lets the form body's CustomScrollbar own scrolling in study destination dialogs. */
-export const studyDestinationDialogContentSx: SxProps<Theme> = {
-  overflow: "hidden",
-  ".Form": { overflow: "hidden", minHeight: 0 },
-  ".Form .Form__Content": {
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
-    minHeight: 0,
-    p: 0,
-    "fieldset:last-child": { pb: 0 },
-  },
-};
 
 /** Centred placeholder shown when the current directory has no sub-directories. */
 export const emptyStateSx: SxProps<Theme> = {
