@@ -56,12 +56,16 @@ tanstackQueryMiddleware.startListening({
 
 tanstackQueryMiddleware.startListening({
   actionCreator: deleteStudy.fulfilled,
-  effect: () => {
-    // Invalidate favorites in case the deleted study or its variants were favorites
-    queryClient.invalidateQueries({ queryKey: studyKeys.favorites() });
+  effect: async (_, listenerApi) => {
+    // Local completion and WebSocket echoes (including bulk deletions) can arrive
+    // together. Refresh after the burst so each completion doesn't restart the GETs.
+    listenerApi.cancelActiveListeners();
+    await listenerApi.delay(100);
 
-    // Invalidate variant tree queries to remove the deleted study from the trees
-    queryClient.invalidateQueries({ queryKey: variantKeys.allTree() });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: studyKeys.favorites() }),
+      queryClient.invalidateQueries({ queryKey: variantKeys.allTree() }),
+    ]);
   },
 });
 

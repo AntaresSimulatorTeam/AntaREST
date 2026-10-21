@@ -13,11 +13,13 @@
  */
 
 import type z from "zod";
-import type { studySchema } from "./schemas";
+import type { studyMetadataPatchSchema, studySchema } from "./schemas";
 
 export type StudyDTO = z.input<typeof studySchema>;
 
 export type Study = z.output<typeof studySchema>;
+
+export type StudyMetadataPatch = z.infer<typeof studyMetadataPatchSchema>;
 
 export interface CopyStudyParams {
   studyId: Study["id"];
