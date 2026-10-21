@@ -147,7 +147,7 @@ Cost: TypeAlias = Annotated[float, Field(ge=0)]
 RampRate: TypeAlias = Annotated[float, Field(ge=0)]
 Volatility: TypeAlias = Annotated[float, Field(ge=0, le=1)]
 HoursInWeek: TypeAlias = Annotated[int, PlainValidator(_validate_week_hours)]
-Group: TypeAlias = LowerCaseStr | None
+Group: TypeAlias = LowerCaseStr
 
 
 class ThermalCluster(AntaresBaseModel):
@@ -243,7 +243,7 @@ class ThermalClusterCreation(AntaresBaseModel):
     unit_count: UnitCount | None = None
     nominal_capacity: NominalCapacity | None = None
     enabled: bool | None = None
-    group: Group = None
+    group: Group | None = None
     gen_ts: LocalTSGenerationBehavior | None = None
     min_stable_power: float | None = None
     min_up_time: HoursInWeek | None = None
@@ -328,7 +328,7 @@ class ThermalClusterUpdate(AntaresBaseModel):
     unit_count: UnitCount | None = None
     nominal_capacity: NominalCapacity | None = None
     enabled: bool | None = None
-    group: Group = None
+    group: Group | None = None
     gen_ts: LocalTSGenerationBehavior | None = None
     min_stable_power: float | None = None
     min_up_time: HoursInWeek | None = None
