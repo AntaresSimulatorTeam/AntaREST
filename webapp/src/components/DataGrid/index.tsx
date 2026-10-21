@@ -91,13 +91,6 @@ function DataGrid({
   });
   const gridSelection = controlledSelection ?? internalSelection;
 
-  const setGridSelection = (selection: GridSelection) => {
-    if (controlledSelection === undefined) {
-      setInternalSelection(selection);
-    }
-    onGridSelectionChange?.(selection);
-  };
-
   // Expose an imperative resize method so callers (e.g. paste handler) can grow columns
   // without triggering a full columnsFromProps reset that would discard user resizes.
   useImperativeHandle(ref, () => ({
@@ -155,6 +148,14 @@ function DataGrid({
       ? [{ id: "", title: "", width: rowMarkersOptions.width }, ...columnsFromProps]
       : columnsFromProps;
   }
+
+  const updateGridSelection = (selection: GridSelection) => {
+    if (controlledSelection === undefined) {
+      setInternalSelection(selection);
+    }
+
+    onGridSelectionChange?.(selection);
+  };
 
   const ifElseStringRowMarkers = <R1, R2>(
     colIndex: number,
@@ -289,7 +290,7 @@ function DataGrid({
       if (newSelection.current) {
         // Select the whole row when clicking on a row marker cell
         if (rowMarkersOptions.kind === "clickable-string" && newSelection.current.cell[0] === 0) {
-          setGridSelection({
+          updateGridSelection({
             ...newSelection,
             current: undefined,
             rows: CompactSelection.fromSingleSelection(newSelection.current.cell[1]),
@@ -308,7 +309,7 @@ function DataGrid({
       if (newSelection.columns.hasIndex(0)) {
         const isSelectedAll = gridSelection.rows.length === rows;
 
-        setGridSelection({
+        updateGridSelection({
           ...newSelection,
           columns: CompactSelection.empty(),
           rows: isSelectedAll
@@ -320,7 +321,7 @@ function DataGrid({
       }
     }
 
-    setGridSelection(newSelection);
+    updateGridSelection(newSelection);
   };
 
   ////////////////////////////////////////////////////////////////

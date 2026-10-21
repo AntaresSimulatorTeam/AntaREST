@@ -55,19 +55,20 @@ export function useSelectionStats({
       }
     };
 
+    // Include ranges retained by multi-rect selection or keyboard navigation, even in rect mode.
     const ranges = selection.current
       ? [...selection.current.rangeStack, selection.current.range]
       : [];
 
     for (const [index, range] of ranges.entries()) {
+      // Clip each rectangle to the visible grid before reading cell values.
       for (
         let col = Math.max(0, range.x);
         col < Math.min(columns.length, range.x + range.width);
         col++
       ) {
         for (let row = Math.max(0, range.y); row < Math.min(rows, range.y + range.height); row++) {
-          // Stacked ranges can come from multi-rect selection or keyboard navigation that
-          // retains a previous range, even in rect mode. Count overlapping cells only once.
+          // Earlier ranges already contributed their cells, skip overlaps to count each cell once.
           const alreadySelected =
             index > 0 &&
             ranges.some(
@@ -99,6 +100,7 @@ export function useSelectionStats({
       }
     }
 
+    // A selected column contributes all visible rows, including aggregates when selected.
     for (const col of selection.columns) {
       if (col < 0 || col >= columns.length) {
         continue;
