@@ -367,7 +367,6 @@ def test_deleting_an_area_removes_its_connections_and_the_ones_of_its_clusters(d
                     "thermal-component": {"area": "West", "cluster-id": "Gas_Cluster"},
                 }
             ],
-            # Antares Simulator matches the cluster id exactly, only the area is lowercased
             "Component 'dsr' is connected to a non-existing thermal cluster 'Gas_Cluster' in area 'west'",
             id="cluster_id_not_lowercased",
         ),

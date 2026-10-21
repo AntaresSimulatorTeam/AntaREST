@@ -96,7 +96,6 @@ def _check_legacy_connections(
     for connection in connections:
         if connection.component not in component_ids:
             raise GemsInvalidConnection(f"{section}: component '{connection.component}' does not exist")
-        # Antares Simulator only allows a single connection of each kind per port
         port = (connection.component, connection.port)
         if port in connected_ports:
             raise GemsInvalidConnection(
