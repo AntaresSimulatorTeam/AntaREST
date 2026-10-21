@@ -16,9 +16,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import FilterAltOffIcon from "@mui/icons-material/FilterAltOff";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import { Box, Divider, Drawer, IconButton, Tooltip } from "@mui/material";
-import { useCallback, useImperativeHandle, useMemo, useState } from "react";
+import { useCallback, useImperativeHandle, useLayoutEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useUpdateEffect } from "react-use";
 import { useMatrixContext } from "../../context/MatrixContext";
 import ColumnFilter from "./ColumnFilter";
 import FilterControls from "./components/FilterControls";
@@ -31,7 +30,14 @@ import { COMPONENT_DIMENSIONS, DESIGN_TOKENS, DRAWER_STYLES } from "./styles";
 import type { MatrixFilterProps } from "./types";
 import { extractDatesInfo, getMatrixDimensions } from "./utils";
 
-function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly, ref }: MatrixFilterProps) {
+function MatrixFilter({
+  dateTime,
+  isTimeSeries,
+  timeFrequency,
+  readOnly,
+  persistence,
+  ref,
+}: MatrixFilterProps) {
   const { t } = useTranslation();
   const { currentState, setFilterPreview } = useMatrixContext();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -43,11 +49,13 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly, ref }: 
   );
 
   // Filter state and operations
-  const { filter, setFilter, toggleFilter, resetFilters, applyOperation } = useMatrixFilter({
-    rowCount,
-    columnCount,
-    timeFrequency,
-  });
+  const { filter, setFilter, setOperation, toggleFilter, resetFilters, applyOperation } =
+    useMatrixFilter({
+      rowCount,
+      columnCount,
+      timeFrequency,
+      persistence,
+    });
 
   const datesInfo = useMemo(() => {
     if (!dateTime || dateTime.values.length === 0) {
@@ -66,18 +74,13 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly, ref }: 
     columnCount,
   });
 
-  // Sync filter preview with filtered data when filter is active
-  useUpdateEffect(() => {
+  // Apply restored filters before displaying the newly mounted matrix.
+  useLayoutEffect(() => {
     setFilterPreview({
       active: filter.active,
-      criteria: filter.active
-        ? currentFilteredData
-        : {
-            columnsIndices: Array.from({ length: columnCount }, (_, i) => i),
-            rowsIndices: Array.from({ length: rowCount }, (_, i) => i),
-          },
+      criteria: currentFilteredData,
     });
-  }, [filter.active, currentFilteredData, setFilterPreview, columnCount, rowCount]);
+  }, [filter.active, currentFilteredData, setFilterPreview]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -186,7 +189,7 @@ function MatrixFilter({ dateTime, isTimeSeries, timeFrequency, readOnly, ref }: 
           {!readOnly && (
             <Operations
               filter={filter}
-              setFilter={setFilter}
+              setOperation={setOperation}
               onApplyOperation={handleApplyOperation}
             />
           )}

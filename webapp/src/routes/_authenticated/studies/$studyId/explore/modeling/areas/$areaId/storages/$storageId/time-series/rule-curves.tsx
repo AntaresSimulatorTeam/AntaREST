@@ -37,6 +37,7 @@ function RuleCurves() {
           studyId={studyId}
           title={t("study.modeling.storages.lowerRuleCurve")}
           url={`input/st-storage/series/${areaId}/${storageId}/lower_rule_curve`}
+          filterKey="storages.lower-rule-curve"
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}
@@ -49,6 +50,7 @@ function RuleCurves() {
           studyId={studyId}
           title={t("study.modeling.storages.upperRuleCurve")}
           url={`input/st-storage/series/${areaId}/${storageId}/upper_rule_curve`}
+          filterKey="storages.upper-rule-curve"
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}

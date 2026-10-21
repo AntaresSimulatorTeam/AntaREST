@@ -46,6 +46,7 @@ function Costs() {
           studyId={study.id}
           title={t("study.modeling.storages.injectionCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_injection`}
+          filterKey="storages.injection-cost"
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}
@@ -58,6 +59,7 @@ function Costs() {
           studyId={study.id}
           title={t("study.modeling.storages.withdrawalCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_withdrawal`}
+          filterKey="storages.withdrawal-cost"
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}

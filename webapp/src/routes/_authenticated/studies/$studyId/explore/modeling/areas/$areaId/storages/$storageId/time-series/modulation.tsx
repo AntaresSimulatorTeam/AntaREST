@@ -37,6 +37,7 @@ function Modulation() {
           studyId={studyId}
           title={t("study.modeling.storages.injectionModulation")}
           url={`input/st-storage/series/${areaId}/${storageId}/pmax_injection`}
+          filterKey="storages.injection-modulation"
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}
@@ -49,6 +50,7 @@ function Modulation() {
           studyId={studyId}
           title={t("study.modeling.storages.withdrawalModulation")}
           url={`input/st-storage/series/${areaId}/${storageId}/pmax_withdrawal`}
+          filterKey="storages.withdrawal-modulation"
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}

@@ -29,6 +29,7 @@ function Availability() {
       key={thermalId}
       studyId={studyId}
       url={`input/thermal/series/${areaId}/${thermalId}/series`}
+      filterKey="thermals.availability"
       aggregateColumns="stats" // avg, min, max
     />
   );

@@ -38,6 +38,7 @@ function FuelCost() {
       key={thermalId}
       studyId={study.id}
       url={`input/thermal/series/${areaId}/${thermalId}/fuelCost`}
+      filterKey="thermals.fuel-cost"
     />
   );
 }

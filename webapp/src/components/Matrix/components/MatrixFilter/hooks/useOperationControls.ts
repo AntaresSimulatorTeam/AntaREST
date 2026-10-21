@@ -13,65 +13,49 @@
  */
 
 import { produce } from "immer";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback } from "react";
+import { Operation } from "../../../shared/constants";
 import type { FilterState } from "../types";
 
 interface UseOperationControlsProps {
   filter: FilterState;
-  setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
-  onApplyOperation: () => void;
+  setOperation: React.Dispatch<React.SetStateAction<FilterState["operation"]>>;
 }
 
-export function useOperationControls({
-  filter,
-  setFilter,
-  onApplyOperation,
-}: UseOperationControlsProps) {
-  // Local state allows clearing the field (undefined = empty/cleared).
-  const [value, setValue] = useState<number | undefined>(filter.operation.value);
-
-  const hasValidFilters = useMemo(
-    () =>
-      filter.active &&
-      (filter.columnsFilter.range ||
-        (filter.columnsFilter.list && filter.columnsFilter.list.length > 0)),
-    [filter.active, filter.columnsFilter.range, filter.columnsFilter.list],
-  );
+export function useOperationControls({ filter, setOperation }: UseOperationControlsProps) {
+  const canApplyOperation =
+    filter.active &&
+    Boolean(filter.columnsFilter.range || filter.columnsFilter.list?.length) &&
+    (filter.operation.type === Operation.Abs || filter.operation.value !== undefined);
 
   const handleOperationTypeChange = useCallback(
     (operationType: string) => {
-      setFilter(
+      setOperation(
         produce((draft) => {
-          draft.operation.type = operationType;
+          draft.type = operationType;
         }),
       );
     },
-    [setFilter],
+    [setOperation],
   );
 
   const handleValueChange = useCallback(
     (newValue: string) => {
       const parsed = Number.parseFloat(newValue);
 
-      if (Number.isFinite(parsed)) {
-        setValue(parsed);
-        setFilter(
-          produce((draft) => {
-            draft.operation.value = parsed;
-          }),
-        );
-      } else {
-        setValue(undefined);
-      }
+      setOperation(
+        produce((draft) => {
+          draft.value = Number.isFinite(parsed) ? parsed : undefined;
+        }),
+      );
     },
-    [setFilter],
+    [setOperation],
   );
 
   return {
-    value,
-    hasValidFilters,
+    value: filter.operation.value,
+    canApplyOperation,
     handleOperationTypeChange,
     handleValueChange,
-    onApplyOperation,
   };
 }

@@ -46,6 +46,7 @@ function VariationCosts() {
           studyId={study.id}
           title={t("study.modeling.storages.injectionVariationCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_variation_injection`}
+          filterKey="storages.injection-variation-cost"
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}
@@ -58,6 +59,7 @@ function VariationCosts() {
           studyId={study.id}
           title={t("study.modeling.storages.withdrawalVariationCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_variation_withdrawal`}
+          filterKey="storages.withdrawal-variation-cost"
           isTimeSeries={false}
           enableFilters
           customColumns={["TS 1"]}

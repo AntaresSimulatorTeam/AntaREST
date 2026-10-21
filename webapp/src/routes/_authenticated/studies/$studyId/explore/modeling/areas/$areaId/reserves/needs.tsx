@@ -88,6 +88,7 @@ function ReservesNeeds() {
           key={`${areaId}-${selectedReserveId}`}
           studyId={studyId}
           url={`input/reserves/${areaId}/${selectedReserveId}`}
+          filterKey="reserves.needs"
           readOnly={!reservesEnabled}
         />
       </Box>
