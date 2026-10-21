@@ -15,6 +15,7 @@ import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, BinaryIO
 
@@ -99,7 +100,7 @@ class StudyMetadata:
 
 class IStudyMetadataProvider(ABC):
     """
-    Provides a lightweigth, read only, access to studies metadata.
+    Provides access to studies metadata and access dates.
     """
 
     @abstractmethod
@@ -115,6 +116,10 @@ class IStudyMetadataProvider(ABC):
             UserHasNotPermissionError: if the user does not have the permission
             UnsupportedOperationOnArchivedStudy: if the study is archived
         """
+
+    @abstractmethod
+    def update_last_access(self, study_id: str, last_access: datetime) -> None:
+        """Record a consultation of the study's outputs."""
 
 
 class OutputVariablesViewMaterializationTask:
@@ -236,6 +241,19 @@ class OutputService:
                 return storage
         raise OutputNotFound(output_id)
 
+    def _get_output_storage_for_read(self, study_id: str, output_id: str) -> IOutputStorage:
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.storage_type != OutputStorageType.V2:
+            last_access = current_time()
+            if self._output_repository.get(study_id, output_id) is None:
+                self._output_repository.initialize(
+                    study_id, output_id, last_access, storage.is_output_archived(study_id, output_id)
+                )
+            self._output_repository.update_last_access(study_id, output_id, last_access)
+            self._studies_repository.update_last_access(study_id, last_access)
+        return storage
+
     def _get_storage_based_on_type(self, storage_type: OutputStorageType | None) -> IOutputStorage:
         """
         Returns the storage for the specified type, or the first one (which is then the default one).
@@ -269,8 +287,7 @@ class OutputService:
             self._output_repository.update_archived(study_id, output_id, archived)
 
     def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        return self._find_output_storage(study_id, output_id).get_digest(study_id, output_id)
+        return self._get_output_storage_for_read(study_id, output_id).get_digest(study_id, output_id)
 
     def _get_ongoing_variables_view_materialization_task(
         self, item_identifier: OutputItemId, study_id: str, output_id: str, frequency: MatrixFrequency
@@ -451,8 +468,9 @@ class OutputService:
         Returns:
             MatrixIndex with start_date, steps, first_week_size and level
         """
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        return self._find_output_storage(study_id, output_id).get_output_time_index(study_id, output_id, frequency)
+        return self._get_output_storage_for_read(study_id, output_id).get_output_time_index(
+            study_id, output_id, frequency
+        )
 
     def export_output(self, study_uuid: str, output_uuid: str) -> FileDownloadTaskDTO:
         """
@@ -474,7 +492,7 @@ class OutputService:
 
         def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
-                self._find_output_storage(study_uuid, output_uuid).export_output(
+                self._get_output_storage_for_read(study_uuid, output_uuid).export_output(
                     study_id=study_uuid,
                     output_id=output_uuid,
                     target=export_path,
@@ -510,10 +528,8 @@ class OutputService:
         Returns: FileResponse containing the asked data.
 
         """
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._get_output_storage_for_read(study_id, output_id)
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
-
-        storage = self._find_output_storage(study_id, output_id)
 
         result = storage.get_matrix_aggregation_result(study_id, output_id, data)
         with open(tmp_file, "w", encoding="utf-8") as fh:
@@ -695,7 +711,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
 
-                results = self._find_output_storage(uuid, output_id).aggregate_output_data(
+                results = self._get_output_storage_for_read(uuid, output_id).aggregate_output_data(
                     uuid,
                     output_id,
                     query_file,
@@ -738,9 +754,7 @@ class OutputService:
         """
         Returns the list of variables concerning a given output.
         """
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-
-        storage = self._find_output_storage(study_id, output_id)
+        storage = self._get_output_storage_for_read(study_id, output_id)
         return storage.get_variables_list(study_id, output_id)
 
     def get_output_variables_information(self, study_id: str, output_id: str) -> OutputVariablesInformation:
@@ -765,8 +779,7 @@ class OutputService:
         If the view is already registered in DB, updates its `last_read` value and returns it.
         Else, returns a pydantic model specifying if the view materialization is in progress or not.
         """
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-
+        storage = self._get_output_storage_for_read(study_id, output_id)
         db_model = get_output_view_inside_db(study_id, output_id, variable_name, frequency, output_item_id)
         if db_model is not None:
             # Update `last_read` value inside DB
@@ -781,12 +794,12 @@ class OutputService:
                 polars_df = polars_df.with_columns(pl.all().cast(pl.Float64))
             df = polars_df.to_pandas()
             if with_index:
-                matrix_index = self.get_output_time_index(study_id, output_id, frequency)
+                matrix_index = storage.get_output_time_index(study_id, output_id, frequency)
                 matrix_index.set_as_df_index(df)
             return df
 
         # Checks if the asked couple `variable name` / `output_identifier` exists for the output
-        available_variables = self.get_output_variables_list(study_id, output_id)
+        available_variables = storage.get_variables_list(study_id, output_id)
         check_output_variable_exists(output_id, variable_name, available_variables, output_item_id)
 
         # Return a 404 Response with a body specifying if the materialization is in progress or not.
@@ -857,8 +870,7 @@ class OutputService:
         return itertools.chain(*(s.list_outputs(study_id) for s in self._storages))
 
     def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, log_type)
+        return self._get_output_storage_for_read(study_id, output_id).get_logs(study_id, output_id, log_type)
 
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         output = self._output_repository.get(study_id, output_id)
@@ -893,14 +905,16 @@ class OutputService:
             self._update_output_metadata(study_id, target_storage, output_id)
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
-        return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)
+        return self._get_output_storage_for_read(study_id, output_id).get_raw_content(
+            study_id, output_id, url, formatted
+        )
 
     def get_matrix_as_dataframe(
         self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
     ) -> pd.DataFrame:
-        return self._find_output_storage(study_id, output_id).get_matrix_as_dataframe(
+        return self._get_output_storage_for_read(study_id, output_id).get_matrix_as_dataframe(
             study_id, output_id, url, frequency
         )
 
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
-        return self._find_output_storage(study_id, output_id).get_original_file(study_id, output_id, url)
+        return self._get_output_storage_for_read(study_id, output_id).get_original_file(study_id, output_id, url)

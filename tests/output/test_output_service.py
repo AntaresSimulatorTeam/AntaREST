@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import uuid
 import zipfile
+from datetime import datetime
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import ANY, Mock
@@ -65,6 +66,10 @@ def _studies_repository(study: Study) -> IStudyMetadataProvider:
         @override
         def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
             pass
+
+        @override
+        def update_last_access(self, study_id: str, last_access: datetime) -> None:
+            study.last_access = last_access
 
     return Impl()
 
