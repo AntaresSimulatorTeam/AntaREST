@@ -20,5 +20,5 @@ class OutputDataType(StrEnum):
     @staticmethod
     def from_output_dir(output_dir: Path) -> "OutputDataType":
         if (output_dir / "gems-views").is_dir():
-            return OutputDataType.GEMS_VIEWS
+            return OutputDataType.GEMS_VIEWS  # implicit interface agreement with the Simulator
         return OutputDataType.LEGACY

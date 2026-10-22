@@ -366,7 +366,7 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
         data_type = OutputDataType.LEGACY  # Does not matter for Xpansion Simulations
     else:
         simulation_ended_files_exist = any((path / f).exists() for f in ["checkIntegrity.txt", "execution_info.ini"])
-        error = not simulation_ended_files_exist
+        error = not simulation_ended_files_exist  # implicit interface agreement with the Simulator
         xpansion_version = ""
         data_type = OutputDataType.from_output_dir(path)
 
