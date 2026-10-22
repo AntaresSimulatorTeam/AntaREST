@@ -26,7 +26,7 @@ import {
 import "@glideapps/glide-data-grid/dist/index.css";
 import { useCallback, useImperativeHandle, useMemo, useState } from "react";
 import { useUpdateEffect } from "react-use";
-import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "./Matrix/styles";
+import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "../Matrix/styles";
 
 interface StringRowMarkerOptions {
   kind: "string" | "clickable-string";
@@ -45,9 +45,10 @@ export interface DataGridHandle {
   resizeColumns: (updates: Map<string, number>) => void;
 }
 
-export interface DataGridProps
-  extends Omit<DataEditorProps, "rowMarkers" | "gridSelection" | "theme"> {
+export interface DataGridProps extends Omit<DataEditorProps, "rowMarkers" | "theme"> {
   ref?: React.Ref<DataGridHandle>;
+  /** Omit or pass undefined for internal selection state; keep the control mode stable while mounted. */
+  gridSelection?: GridSelection;
   rowMarkers?: RowMarkers;
   enableColumnResize?: boolean;
   readOnly?: boolean;
@@ -69,6 +70,7 @@ function DataGrid({
   onColumnResizeStart,
   onColumnResizeEnd,
   onGridSelectionChange,
+  gridSelection: controlledSelection,
   enableColumnResize = true,
   readOnly = false,
   freezeColumns,
@@ -83,10 +85,11 @@ function DataGrid({
   const adjustedFreezeColumns = isStringRowMarkers ? (freezeColumns || 0) + 1 : freezeColumns;
 
   const [columns, setColumns] = useState(initColumns);
-  const [gridSelection, setGridSelection] = useState<GridSelection>({
+  const [internalSelection, setInternalSelection] = useState<GridSelection>({
     rows: CompactSelection.empty(),
     columns: CompactSelection.empty(),
   });
+  const gridSelection = controlledSelection ?? internalSelection;
 
   // Expose an imperative resize method so callers (e.g. paste handler) can grow columns
   // without triggering a full columnsFromProps reset that would discard user resizes.
@@ -145,6 +148,14 @@ function DataGrid({
       ? [{ id: "", title: "", width: rowMarkersOptions.width }, ...columnsFromProps]
       : columnsFromProps;
   }
+
+  const updateGridSelection = (selection: GridSelection) => {
+    if (controlledSelection === undefined) {
+      setInternalSelection(selection);
+    }
+
+    onGridSelectionChange?.(selection);
+  };
 
   const ifElseStringRowMarkers = <R1, R2>(
     colIndex: number,
@@ -279,7 +290,7 @@ function DataGrid({
       if (newSelection.current) {
         // Select the whole row when clicking on a row marker cell
         if (rowMarkersOptions.kind === "clickable-string" && newSelection.current.cell[0] === 0) {
-          setGridSelection({
+          updateGridSelection({
             ...newSelection,
             current: undefined,
             rows: CompactSelection.fromSingleSelection(newSelection.current.cell[1]),
@@ -298,7 +309,7 @@ function DataGrid({
       if (newSelection.columns.hasIndex(0)) {
         const isSelectedAll = gridSelection.rows.length === rows;
 
-        setGridSelection({
+        updateGridSelection({
           ...newSelection,
           columns: CompactSelection.empty(),
           rows: isSelectedAll
@@ -310,8 +321,7 @@ function DataGrid({
       }
     }
 
-    setGridSelection(newSelection);
-    onGridSelectionChange?.(newSelection);
+    updateGridSelection(newSelection);
   };
 
   ////////////////////////////////////////////////////////////////
