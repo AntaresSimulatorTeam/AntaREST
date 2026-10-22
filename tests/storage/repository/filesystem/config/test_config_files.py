@@ -23,6 +23,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde.ini_writer import write_ini_file
+from antarest.output.model.data_type import OutputDataType
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
@@ -210,6 +211,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 error=False,
                 playlist=[1],
                 xpansion="",
+                data_type=OutputDataType.LEGACY,
             )
         },
     )
@@ -233,6 +235,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="",
+                    data_type=OutputDataType.LEGACY,
                 ),
                 "20230203-1530eco": Simulation(
                     name="",
@@ -245,6 +248,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="1.0.2",
+                    data_type=OutputDataType.LEGACY,
                 ),
                 "20230203-1531eco": Simulation(
                     name="",
@@ -257,6 +261,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=True,
                     xpansion="",
+                    data_type=OutputDataType.LEGACY,
                 ),
                 "20230203-1600eco": Simulation(
                     name="",
@@ -269,6 +274,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="",
+                    data_type=OutputDataType.LEGACY,
                 ),
             },
         ),
