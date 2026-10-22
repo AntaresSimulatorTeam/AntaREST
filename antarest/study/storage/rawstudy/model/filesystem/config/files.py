@@ -28,6 +28,7 @@ from antarest.core.serde.ini_common import DUPLICATE_KEYS
 from antarest.core.serde.ini_reader import IniReader, IReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
+from antarest.output.model.data_type import OutputDataType
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.common import FILTER_VALUES
 from antarest.study.business.model.config.general_model import Mode
@@ -362,9 +363,12 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
     if xpansion_simulation:
         error = xpansion_simulation.ended_in_error
         xpansion_version = xpansion_simulation.version
+        data_type = OutputDataType.LEGACY  # Does not matter for Xpansion Simulations
     else:
-        error = not (path / "checkIntegrity.txt").exists()
+        simulation_ended_files_exist = any((path / f).exists() for f in ["checkIntegrity.txt", "execution_info.ini"])
+        error = not simulation_ended_files_exist
         xpansion_version = ""
+        data_type = OutputDataType.GEMS_VIEWS if (path / "gems-views").exists() else OutputDataType.LEGACY
 
     return Simulation(
         date=match.group(1),
@@ -377,6 +381,7 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
         playlist=list(get_playlist(obj) or {}),
         archived=False,
         xpansion=xpansion_version,
+        data_type=data_type,
     )
 
 
