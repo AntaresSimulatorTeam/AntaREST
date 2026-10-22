@@ -14,6 +14,7 @@ import logging
 import os
 import shutil
 import tempfile
+import uuid
 import zipfile
 from collections.abc import Callable
 from enum import StrEnum
@@ -73,6 +74,25 @@ def archive_dir(
         raise ShouldNotHappenException(f"Unsupported archive format {target_archive_path.suffix}")
     if remove_source_dir:
         shutil.rmtree(src_dir_path)
+
+
+def archive_dir_atomically(src_dir_path: Path, target_archive_path: Path, archive_format: ArchiveFormat) -> None:
+    """
+    Same as `archive_dir`, except that `target_archive_path` only appears once the archive is complete.
+
+    The archive is first written next to the target, under a temporary name starting with `~`
+    (such files are ignored when parsing outputs), then renamed to the target.
+    On failure, only the temporary file is removed: an existing archive at `target_archive_path` is left untouched.
+    """
+    tmp_archive_path = target_archive_path.with_name(
+        f"~{target_archive_path.stem}.{uuid.uuid4().hex}{target_archive_path.suffix}"
+    )
+    try:
+        archive_dir(src_dir_path, tmp_archive_path, archive_format=archive_format)
+        tmp_archive_path.replace(target_archive_path)
+    except Exception:
+        tmp_archive_path.unlink(missing_ok=True)
+        raise
 
 
 def extract_archive_from_path(archive_path: Path, target_dir: Path) -> None:
