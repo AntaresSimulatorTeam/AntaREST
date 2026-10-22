@@ -12,10 +12,12 @@
  * This file is part of the Antares project.
  */
 
+import { Box } from "@mui/material";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import CustomScrollbar from "@/components/CustomScrollbar";
 import UploadDialog, { type UploadDialogProps } from "@/components/dialogs/UploadDialog";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import SelectFE, { type Options } from "@/components/fieldEditors/SelectFE";
@@ -26,15 +28,15 @@ import { StorageMode } from "@/types/types";
 
 import { StudyDestinationFE } from "../../StudyDestinationFE";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
+import { useDefaultStudyDestination } from "../../StudyDestinationFE/useDefaultStudyDestination";
 import { useRedirectToDestination } from "../../StudyDestinationFE/useRedirectToDestination";
 import { refreshDirectoriesIfNeeded, toDirectoryPath } from "../../StudyDestinationFE/utils";
+import { studyDestinationDialogPaperSx } from "../styles";
 
 interface Props {
   open: boolean;
   onClose: VoidFunction;
 }
-
-const ROOT_DESTINATION: DirectoryDestination = { directoryId: null, newSubdirectoriesPath: "" };
 
 const STORAGE_MODE_OPTIONS = [
   { value: StorageMode.FILESYSTEM, label: (t) => t("studies.storageMode.filesystem") },
@@ -47,8 +49,9 @@ function ImportStudyDialog({ open, onClose }: Props) {
   const queryClient = useQueryClient();
   const redirectToDestination = useRedirectToDestination();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
+  const defaultDestination = useDefaultStudyDestination(directories);
 
-  const [destination, setDestination] = useState<DirectoryDestination>(ROOT_DESTINATION);
+  const [destination, setDestination] = useState<DirectoryDestination>(defaultDestination);
   const [redirect, setRedirect] = useState(true);
   const [storageMode, setStorageMode] = useState(StorageMode.FILESYSTEM);
 
@@ -89,36 +92,48 @@ function ImportStudyDialog({ open, onClose }: Props) {
       onCancel={onClose}
       onImport={handleImport}
       onImportComplete={handleImportComplete}
-      maxWidth="md"
+      maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { height: "100%" } }}
+      slotProps={{ paper: { sx: studyDestinationDialogPaperSx } }}
+      contentProps={{ sx: { overflow: "hidden" } }}
       extraContent={
-        <>
-          <StudyDestinationFE
-            value={destination}
-            onChange={(event) => setDestination(event.target.value)}
-            fillHeight
-          />
-          <SelectFE
-            label={t("studies.storageMode")}
-            options={STORAGE_MODE_OPTIONS}
-            value={storageMode}
-            onChange={(event) => setStorageMode(event.target.value)}
-            helperText={
-              storageMode === StorageMode.DATABASE
-                ? t("studies.storageMode.gemsCompatible")
-                : undefined
-            }
-            size="small"
-          />
-          <CheckBoxFE
-            value={redirect}
-            onChange={(_event, checked) => setRedirect(checked)}
-            label={t("studies.destination.redirectAfterImport")}
-            size="small"
-            sx={{ color: "text.secondary" }}
-          />
-        </>
+        <CustomScrollbar style={{ flex: 1, minHeight: 0, marginInline: -8 }}>
+          <Box
+            sx={{
+              p: 1,
+              height: 1,
+              minHeight: 320,
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            <StudyDestinationFE
+              value={destination}
+              onChange={(event) => setDestination(event.target.value)}
+              fillHeight
+            />
+            <SelectFE
+              label={t("studies.storageMode")}
+              options={STORAGE_MODE_OPTIONS}
+              value={storageMode}
+              onChange={(event) => setStorageMode(event.target.value)}
+              helperText={
+                storageMode === StorageMode.DATABASE
+                  ? t("studies.storageMode.gemsCompatible")
+                  : undefined
+              }
+              size="small"
+            />
+            <CheckBoxFE
+              value={redirect}
+              onChange={(_event, checked) => setRedirect(checked)}
+              label={t("studies.destination.redirectAfterImport")}
+              size="small"
+              sx={{ color: "text.secondary", flexShrink: 0 }}
+            />
+          </Box>
+        </CustomScrollbar>
       }
     />
   );

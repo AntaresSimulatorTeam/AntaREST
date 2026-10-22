@@ -28,14 +28,14 @@ interface Props {
 
 function DeleteStudiesDialog({ studyIds, open, onClose, onRun }: Props) {
   const { t } = useTranslation();
-  const deleteStudies = useDeleteStudies({ onSuccess: onClose });
+  const deleteStudies = useDeleteStudies();
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleConfirm = () => {
-    deleteStudies.mutate({ studyIds });
+    deleteStudies.mutate({ studyIds }, { onSuccess: onClose });
     onRun?.();
   };
 
@@ -51,7 +51,7 @@ function DeleteStudiesDialog({ studyIds, open, onClose, onRun }: Props) {
       maxWidth="xs"
       onConfirm={handleConfirm}
       onCancel={onClose}
-      disableConfirm={deleteStudies.isPending}
+      loading={deleteStudies.isPending}
     >
       <Typography>{t("studies.question.deleteMany", { count: studyIds.length })}</Typography>
     </ConfirmationDialog>

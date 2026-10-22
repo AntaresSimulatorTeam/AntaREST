@@ -46,6 +46,12 @@ const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
 
 const RECONNECTION_DEFAULT_DELAY = 3000;
+const STUDY_REFRESH_DELAY = 100;
+
+const pendingStudyRefreshes = new Map<
+  string,
+  { timer: ReturnType<typeof setTimeout>; edited: boolean }
+>();
 
 let webSocket: WebSocket | null;
 let eventListeners: WsEventListener[] = [];
@@ -192,6 +198,10 @@ export function closeWs(clean = true) {
   webSocket = null;
 
   if (clean) {
+    for (const { timer } of pendingStudyRefreshes.values()) {
+      clearTimeout(timer);
+    }
+    pendingStudyRefreshes.clear();
     eventListeners = [];
     channelSubscribed = new Set();
     globalListenerAdded = false;
@@ -210,17 +220,27 @@ export function reloadWs(dispatch: AppDispatch, user?: UserInfo) {
 function makeStudyListener(dispatch: AppDispatch): WsEventListener {
   return function listener(e: WsEvent) {
     switch (e.type) {
-      case WsEventType.StudyCreated: {
-        const study = getStudy(store.getState(), e.payload.id);
-        if (!study) {
-          dispatch(setStudy(e.payload));
-        }
+      case WsEventType.StudyCreated:
+      case WsEventType.StudyEdited: {
+        const studyId = e.payload.id;
+        const pending = pendingStudyRefreshes.get(studyId);
+        const edited = e.type === WsEventType.StudyEdited || !!pending?.edited;
+        clearTimeout(pending?.timer);
+
+        // Creation can emit several edits (permissions, tags). Refresh once per burst,
+        // but always refresh for later edits, which may come from another user.
+        const timer = setTimeout(() => {
+          pendingStudyRefreshes.delete(studyId);
+          if (edited || !getStudy(store.getState(), studyId)) {
+            dispatch(setStudy(studyId));
+          }
+        }, STUDY_REFRESH_DELAY);
+        pendingStudyRefreshes.set(studyId, { timer, edited });
         break;
       }
-      case WsEventType.StudyEdited:
-        dispatch(setStudy(e.payload));
-        break;
       case WsEventType.StudyDeleted:
+        clearTimeout(pendingStudyRefreshes.get(e.payload.id)?.timer);
+        pendingStudyRefreshes.delete(e.payload.id);
         dispatch(deleteStudy(e.payload));
         break;
     }

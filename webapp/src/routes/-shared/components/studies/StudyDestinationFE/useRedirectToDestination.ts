@@ -24,7 +24,7 @@ import { resolveRedirectDirectoryId } from "./utils";
 /**
  * Hook returning a callback that points the studies page at a destination directory.
  *
- * Shared by Move and Import dialogs which both navigate to `/studies` after success.
+ * Shared by creation, move, and import dialogs that navigate to `/studies` after success.
  * The caller is responsible for ensuring `directories` is fresh (invalidating the
  * directory cache when new sub-directories were created).
  *

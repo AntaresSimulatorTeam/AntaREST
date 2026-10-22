@@ -13,12 +13,13 @@
  */
 
 import { queryClient } from "@/queries/queryClient";
-import { studyKeys } from "@/queries/studies/keys";
 import { studyQueries } from "@/queries/studies/queries";
 import { variantKeys } from "@/queries/variants/keys";
 import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import type { AppState } from "../ducks";
 import { createStudy, deleteStudy, setStudy, updateStudy } from "../ducks/studies";
+import { getDeepVariantsIds, getStudiesStatus } from "../selectors";
+import { FetchStatus } from "../utils";
 
 const tanstackQueryMiddleware = createListenerMiddleware<AppState>();
 
@@ -56,12 +57,44 @@ tanstackQueryMiddleware.startListening({
 
 tanstackQueryMiddleware.startListening({
   actionCreator: deleteStudy.fulfilled,
-  effect: () => {
-    // Invalidate favorites in case the deleted study or its variants were favorites
-    queryClient.invalidateQueries({ queryKey: studyKeys.favorites() });
+  effect: async ({ payload: studyId }, listenerApi) => {
+    // Capture cascaded deletions now, their individual WebSocket events may be missed.
+    const originalState = listenerApi.getOriginalState();
+    const deletedStudyIds = new Set([studyId, ...getDeepVariantsIds(originalState, studyId)]);
+    const hasStudiesSnapshot = getStudiesStatus(originalState) === FetchStatus.Succeeded;
+    const favoritesQuery = studyQueries.favorites();
+    const { queryKey } = favoritesQuery;
 
-    // Invalidate variant tree queries to remove the deleted study from the trees
-    queryClient.invalidateQueries({ queryKey: variantKeys.allTree() });
+    // Join any refresh before removing the ID, so its response cannot restore it.
+    // Reapplying the deletion for a delayed WebSocket echo is then harmless.
+    if (queryClient.getQueryState(queryKey)?.fetchStatus === "fetching") {
+      // Query observers surface fetch errors, still update any cached data on failure.
+      await queryClient.fetchQuery({ ...favoritesQuery, staleTime: 0 }).catch(() => undefined);
+    }
+
+    const previousState = queryClient.getQueryState(queryKey);
+
+    queryClient.setQueryData(
+      queryKey,
+      (old) => old?.filter((favorite) => !deletedStudyIds.has(favorite.studyId)),
+      { updatedAt: previousState?.dataUpdatedAt },
+    );
+
+    // Recover unknown descendants or missing data, and preserve unrelated invalidations.
+    if (!hasStudiesSnapshot || !previousState?.data || previousState.isInvalidated) {
+      await queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false });
+    }
+  },
+});
+
+tanstackQueryMiddleware.startListening({
+  actionCreator: deleteStudy.fulfilled,
+  effect: async (_, listenerApi) => {
+    // Variant trees still need a server refresh, coalesce bulk deletion notifications.
+    listenerApi.cancelActiveListeners();
+    await listenerApi.delay(100);
+
+    await queryClient.invalidateQueries({ queryKey: variantKeys.allTree() });
   },
 });
 

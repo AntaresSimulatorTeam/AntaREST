@@ -22,6 +22,7 @@ export interface ConfirmationDialogProps extends Omit<BasicDialogProps, "actions
   onConfirm: VoidFunction;
   onCancel: VoidFunction;
   disableConfirm?: boolean;
+  loading?: boolean;
   onlyCloseOnCancel?: boolean;
 }
 
@@ -32,6 +33,7 @@ function ConfirmationDialog({
   onCancel,
   onClose,
   disableConfirm,
+  loading = false,
   onlyCloseOnCancel,
   ...basicDialogProps
 }: ConfirmationDialogProps) {
@@ -43,6 +45,10 @@ function ConfirmationDialog({
   ////////////////////////////////////////////////////////////////
 
   const handleClose = (...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>) => {
+    if (loading) {
+      return;
+    }
+
     onCancel();
     onClose?.(...args);
   };
@@ -58,10 +64,16 @@ function ConfirmationDialog({
       {...basicDialogProps}
       actions={
         <>
-          <Button onClick={onCancel} color={alert ? "inherit" : "primary"}>
+          <Button onClick={onCancel} color={alert ? "inherit" : "primary"} disabled={loading}>
             {cancelButtonText || t("global.cancel")}
           </Button>
-          <Button onClick={onConfirm} variant="contained" disabled={disableConfirm} color={alert}>
+          <Button
+            onClick={onConfirm}
+            variant="contained"
+            disabled={disableConfirm}
+            loading={loading}
+            color={alert}
+          >
             {confirmButtonText || t("global.confirm")}
           </Button>
         </>
