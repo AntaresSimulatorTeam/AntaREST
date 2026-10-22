@@ -58,7 +58,7 @@ interface MatrixProps {
    * Useful for matrices that need filtering but can't be resized.
    */
   enableFilters?: boolean;
-  /** Remembers this view's filters across areas for the current study session. */
+  /** Remembers this study and view's filters in memory across navigation. */
   filterKey?: string;
   /**
    * Feature flag for data resizing functionality.

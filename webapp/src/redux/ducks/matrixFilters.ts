@@ -33,8 +33,6 @@ export const setMatrixFilters = createAction<
 
 export const resetMatrixFilters = createAction<MatrixFiltersKey>(n("RESET_MATRIX_FILTERS"));
 
-export const clearStudyMatrixFilters = createAction<string>(n("CLEAR_STUDY_MATRIX_FILTERS"));
-
 export const getMatrixFilters = (
   { matrixFilters }: Pick<AppState, "matrixFilters">,
   { studyId, key }: MatrixFiltersKey,
@@ -48,8 +46,5 @@ export default createReducer(initialState, (builder) => {
     })
     .addCase(resetMatrixFilters, (draftState, { payload: { studyId, key } }) => {
       delete draftState[studyId]?.[key];
-    })
-    .addCase(clearStudyMatrixFilters, (draftState, { payload: studyId }) => {
-      delete draftState[studyId];
     });
 });
