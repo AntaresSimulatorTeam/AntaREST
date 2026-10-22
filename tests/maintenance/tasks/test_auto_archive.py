@@ -18,6 +18,7 @@ from unittest.mock import Mock
 import pytest
 
 from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.tasks.model import TaskResult, TaskStatus
 from antarest.maintenance.tasks.auto_archive import ArchiveStudyResult, _archive_study, _get_studies_to_archive
 from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
 from antarest.study.model import RawStudy, Study
@@ -33,6 +34,15 @@ def _make_study(spec: type[Study], study_id: str, days_ago: int, archived: bool 
     if hasattr(spec, "archived"):
         study.archived = archived
     return study
+
+
+def _make_services(status: TaskStatus = TaskStatus.COMPLETED, message: str = "ok") -> tuple[Mock, Mock]:
+    """Helper to create mock study and output services whose awaited tasks end with the given status."""
+    study_svc, output_svc = Mock(), Mock()
+    task = study_svc.task_service.status_task.return_value
+    task.status = status
+    task.result = TaskResult(success=status == TaskStatus.COMPLETED, message=message)
+    return study_svc, output_svc
 
 
 class TestGetStudiesToArchive:
@@ -66,13 +76,26 @@ class TestGetStudiesToArchive:
 
 class TestArchiveStudy:
     def test_archives_raw_study(self) -> None:
-        study_svc, output_svc = Mock(), Mock()
+        study_svc, output_svc = _make_services()
         study_svc.archive.return_value = "task1"
 
         result = _archive_study("s1", True, study_svc, output_svc, dry_run=False)
 
         assert result == ArchiveStudyResult(1)
         study_svc.archive.assert_called_once_with("s1")
+        study_svc.task_service.await_task.assert_called_once_with("task1")
+        study_svc.task_service.status_task.assert_called_once_with("task1")
+
+    def test_returns_error_when_raw_study_archive_task_fails(self) -> None:
+        study_svc, output_svc = _make_services(TaskStatus.FAILED, "No space left on device")
+        study_svc.archive.return_value = "task1"
+
+        result = _archive_study("s1", True, study_svc, output_svc, dry_run=False)
+
+        assert result.archived_studies == 0
+        assert result.error is not None
+        assert "FAILED" in result.error
+        assert "No space left on device" in result.error
 
     def test_dry_run_does_not_archive(self) -> None:
         study_svc, output_svc = Mock(), Mock()
@@ -82,13 +105,24 @@ class TestArchiveStudy:
         study_svc.archive.assert_not_called()
 
     def test_archives_variant_outputs(self) -> None:
-        study_svc, output_svc = Mock(), Mock()
+        study_svc, output_svc = _make_services()
         output_svc.archive_outputs.return_value = ["t1", "t2"]
 
         result = _archive_study("v1", False, study_svc, output_svc, dry_run=False)
 
         assert result == ArchiveStudyResult(1)
         output_svc.archive_outputs.assert_called_once_with("v1")
+        assert study_svc.task_service.status_task.call_count == 2
+
+    def test_returns_error_when_variant_output_archive_task_fails(self) -> None:
+        study_svc, output_svc = _make_services(TaskStatus.FAILED, "boom")
+        output_svc.archive_outputs.return_value = ["t1", "t2"]
+
+        result = _archive_study("v1", False, study_svc, output_svc, dry_run=False)
+
+        assert result.archived_studies == 0
+        assert result.error is not None
+        assert "boom" in result.error
 
     def test_handles_task_already_running(self) -> None:
         study_svc, output_svc = Mock(), Mock()
