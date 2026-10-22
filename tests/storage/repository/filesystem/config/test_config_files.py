@@ -23,6 +23,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde.ini_writer import write_ini_file
+from antarest.output.model.data_type import OutputDataType
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
@@ -210,6 +211,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 error=False,
                 playlist=[1],
                 xpansion="",
+                data_type=OutputDataType.LEGACY,
             )
         },
     )
@@ -233,6 +235,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="",
+                    data_type=OutputDataType.LEGACY,
                 ),
                 "20230203-1530eco": Simulation(
                     name="",
@@ -245,6 +248,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="1.0.2",
+                    data_type=OutputDataType.LEGACY,
                 ),
                 "20230203-1531eco": Simulation(
                     name="",
@@ -257,6 +261,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=True,
                     xpansion="",
+                    data_type=OutputDataType.LEGACY,
                 ),
                 "20230203-1600eco": Simulation(
                     name="",
@@ -269,6 +274,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="",
+                    data_type=OutputDataType.LEGACY,
                 ),
             },
         ),
@@ -921,6 +927,46 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     assert "file_3" not in output_tree[output_id]
     # Asserts the `economy` folder is scanned
     assert "economy" in output_tree[output_id]
+
+
+def test_parse_simulation_error_parameter(empty_study_880: FileStudy) -> None:
+    output_id = "20250521-1009eco-fake_output"
+    study_path = empty_study_880.config.path
+    _set_up_output(study_path, output_id)
+
+    output_path = study_path / "output" / output_id
+
+    # 1st case: no `checkIntegrity.txt`, no `execution_info.ini` -> Simulation in error
+    simulation = parse_simulation(output_path, output_id)
+    assert simulation.error is True
+
+    # 2nd case: add a `checkIntegrity.txt` file -> Simulation succeeded
+    (output_path / "checkIntegrity.txt").touch()
+    simulation = parse_simulation(output_path, output_id)
+    assert not simulation.error
+
+    # 3rd case: Only a `execution_info.ini` file -> Simulation succeeded
+    (output_path / "checkIntegrity.txt").unlink()
+    (output_path / "execution_info.ini").touch()
+    simulation = parse_simulation(output_path, output_id)
+    assert not simulation.error
+
+
+def test_parse_simulation_data_type(empty_study_880: FileStudy) -> None:
+    output_id = "20250521-1009eco-fake_output"
+    study_path = empty_study_880.config.path
+    _set_up_output(study_path, output_id)
+
+    output_path = study_path / "output" / output_id
+
+    # 1st case: No `gems-views` folder -> Should be seen as Legacy
+    simulation = parse_simulation(output_path, output_id)
+    assert simulation.data_type == OutputDataType.LEGACY
+
+    # 2nd case: The folder exists -> Should be seen as GemsViews
+    (output_path / "gems-views").mkdir()
+    simulation = parse_simulation(output_path, output_id)
+    assert simulation.data_type == OutputDataType.GEMS_VIEWS
 
 
 def test_parse_xpansion_simulation(empty_study_880: FileStudy) -> None:

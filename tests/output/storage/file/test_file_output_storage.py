@@ -30,6 +30,7 @@ from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
+from antarest.output.model.data_type import OutputDataType
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.output.storage.file.out_of_study import OutOfStudyFileOutputStorage
@@ -132,6 +133,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=1,
             archived=False,
             storage_type=storage_type,
+            data_type=OutputDataType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -159,6 +161,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=2,
             archived=False,
             storage_type=storage_type,
+            data_type=OutputDataType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -186,6 +189,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=1,
             archived=False,
             storage_type=storage_type,
+            data_type=OutputDataType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -213,6 +217,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=1,
             archived=False,
             storage_type=storage_type,
+            data_type=OutputDataType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Adequacy",
@@ -240,6 +245,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=1,
             archived=True,
             storage_type=storage_type,
+            data_type=OutputDataType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Adequacy",
@@ -267,6 +273,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=1,
             archived=False,
             storage_type=storage_type,
+            data_type=OutputDataType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",

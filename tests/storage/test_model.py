@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from antarest.output.model.data_type import OutputDataType
 from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
@@ -60,6 +61,7 @@ def config() -> FileStudyTreeConfig:
                 error=True,
                 playlist=[0],
                 xpansion="",
+                data_type=OutputDataType.LEGACY,
             )
         },
         bindings=[

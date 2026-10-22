@@ -89,6 +89,7 @@ def test_import(admin_client: TestClient, empty_study_id: str, output_zip: Path)
         "nbYears": 1,
         "synthesis": True,
         "storageType": "V2",
+        "dataType": "Legacy",
     }, res.json()
 
 
@@ -359,6 +360,7 @@ def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_stud
             "nbYears": 1,
             "synthesis": True,
             "storageType": "V2",
+            "dataType": "Legacy",
         }
     ]
 
