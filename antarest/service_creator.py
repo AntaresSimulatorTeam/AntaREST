@@ -290,6 +290,7 @@ def build_output_service(
         matrix_service=matrix_service,
         tmp_dir=config.storage.tmp_dir,
         output_repository=output_repo,
+        study_disk_space_repository=StudyDiskSpaceRepository(),
     )
 
     study_service.register_output_access(adapt_output_service_to_study_service(output_service))

@@ -101,6 +101,7 @@ def build_study_service(
         file_transfer_manager=Mock(),
         cache_service=cache_service,
         config=config,
+        study_disk_space_repository=Mock(),
     )
 
 

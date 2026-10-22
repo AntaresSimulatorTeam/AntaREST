@@ -655,3 +655,11 @@ class StudyDiskSpaceRepository:
 
         session.execute(stmt)
         session.commit()
+
+    def delete(self, study_id: str) -> None:
+        """
+        Removes the disk space analysis of the study, so that it is recomputed by the next analysis.
+        """
+        session = self.session
+        session.execute(delete(StudyDiskSpaceAnalysis).where(StudyDiskSpaceAnalysis.study_id == study_id))
+        session.commit()
