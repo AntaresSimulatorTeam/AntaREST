@@ -368,7 +368,7 @@ def parse_simulation(path: Path, canonical_name: str) -> Simulation:
         simulation_ended_files_exist = any((path / f).exists() for f in ["checkIntegrity.txt", "execution_info.ini"])
         error = not simulation_ended_files_exist
         xpansion_version = ""
-        data_type = OutputDataType.GEMS_VIEWS if (path / "gems-views").exists() else OutputDataType.LEGACY
+        data_type = OutputDataType.GEMS_VIEWS if (path / "gems-views").is_dir() else OutputDataType.LEGACY
 
     return Simulation(
         date=match.group(1),
