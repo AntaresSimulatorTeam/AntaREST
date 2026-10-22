@@ -22,6 +22,7 @@ import { toError } from "@/utils/fnUtils";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { Typography } from "@mui/material";
 import { useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 
 interface Props {
@@ -37,16 +38,19 @@ function DeleteStudyDialog({ study, parentStudy, variantNb, open, onClose }: Pro
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleConfirm = async () => {
-    onClose();
+    setIsDeleting(true);
 
     try {
       await dispatch(deleteStudy({ id: study.id, deleteChildren: true })).unwrap();
+
+      onClose();
 
       navigate(
         parentStudy
@@ -55,6 +59,8 @@ function DeleteStudyDialog({ study, parentStudy, variantNb, open, onClose }: Pro
       );
     } catch (err) {
       enqueueErrorSnackbar(t("studies.error.deleteStudy"), toError(err));
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -70,6 +76,7 @@ function DeleteStudyDialog({ study, parentStudy, variantNb, open, onClose }: Pro
       maxWidth="xs"
       onConfirm={handleConfirm}
       onCancel={onClose}
+      loading={isDeleting}
     >
       <Typography>
         {typeof variantNb !== "number" || variantNb > 0 ? (
