@@ -19,6 +19,7 @@ from unittest.mock import Mock
 from zipfile import ZipFile
 
 import pytest
+from pytest_mock import MockerFixture
 
 from antarest.blobstore.repository import BlobContentRepository
 from antarest.blobstore.service import BlobService
@@ -33,6 +34,7 @@ from antarest.core.config import (
 from antarest.core.tasks.service import ITaskService
 from antarest.login.model import User
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
+from antarest.output.repository import OutputRepository
 from antarest.output.service import OutputService
 from antarest.service_creator import build_output_service
 from antarest.study.main import build_study_service
@@ -62,7 +64,9 @@ def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path
 
 
 @pytest.fixture
-def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tuple[StudyService, OutputService, Config]:
+def services(
+    tmp_path: Path, project_path: Path, sta_mini_zip_path: Path, mocker: MockerFixture
+) -> tuple[StudyService, OutputService, Config]:
     path_studies = tmp_path / "studies"
 
     path_resources = project_path / "resources"
@@ -141,6 +145,10 @@ def services(tmp_path: Path, project_path: Path, sta_mini_zip_path: Path) -> tup
         job_result_repository=job_result_repository,
     )
 
+    # Metadata persistence is mocked for both studies and outputs; these tests exercise the file tree.
+    output_repository = Mock(spec=OutputRepository)
+    output_repository.get.return_value = None
+    mocker.patch("antarest.service_creator.OutputRepository", return_value=output_repository)
     output_service = build_output_service(
         study_service=study_service,
         config=config,

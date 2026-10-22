@@ -76,24 +76,30 @@ def test_initialize_rejects_unknown_study(repository: OutputRepository) -> None:
 @pytest.mark.parametrize("last_access", [None, INITIAL_ACCESS + timedelta(days=1)])
 @pytest.mark.parametrize("archived", [None, False, True])
 def test_initialize_preserves_known_metadata(
-    repository: OutputRepository, last_access: datetime | None, archived: bool | None
+    repository: OutputRepository, mocker: MockerFixture, last_access: datetime | None, archived: bool | None
 ) -> None:
-    repository.save(
+    repository.session.add(
         Output(study_id="study", output_id="output", last_access=last_access, archived=archived, disk_space_bytes=42)
     )
+    repository.session.commit()
 
     repository.initialize("study", "output", INITIAL_ACCESS, False)
     # Re-running the inventory must not reset the date or the archive status.
+    execute = mocker.spy(repository.session, "execute")
+    commit = mocker.spy(repository.session, "commit")
     repository.initialize("study", "output", INITIAL_ACCESS + timedelta(days=2), True)
 
+    assert all(call.args[0].is_select for call in execute.call_args_list)
+    commit.assert_not_called()
     assert _metadata(repository) == (last_access or INITIAL_ACCESS, archived if archived is not None else False, 42)
 
 
 @pytest.mark.parametrize("last_access", [None, INITIAL_ACCESS - timedelta(days=1), INITIAL_ACCESS])
 def test_update_last_access(repository: OutputRepository, last_access: datetime | None) -> None:
-    repository.save(
+    repository.session.add(
         Output(study_id="study", output_id="output", last_access=last_access, archived=False, disk_space_bytes=42)
     )
+    repository.session.commit()
 
     repository.update_last_access("study", "output", INITIAL_ACCESS)
 
@@ -102,11 +108,12 @@ def test_update_last_access(repository: OutputRepository, last_access: datetime 
 
 @pytest.mark.parametrize("archived", [False, True])
 def test_update_archived_preserves_access_date(repository: OutputRepository, archived: bool) -> None:
-    repository.save(
+    repository.session.add(
         Output(
             study_id="study", output_id="output", last_access=INITIAL_ACCESS, archived=not archived, disk_space_bytes=42
         )
     )
+    repository.session.commit()
 
     repository.update_archived("study", "output", archived)
 
@@ -124,9 +131,6 @@ def test_disk_usage(repository: OutputRepository, disk_space_bytes: int) -> None
     repository.save_disk_usage("study", "output", disk_space_bytes)
     assert _metadata(repository) == (INITIAL_ACCESS, True, disk_space_bytes)
 
-    repository.invalidate_disk_usage("study", "output")
-    assert _metadata(repository) == (INITIAL_ACCESS, True, None)
-
 
 def test_updates_are_scoped_to_one_output(repository: OutputRepository) -> None:
     for study_id, output_id in [("study", "output"), ("study", "other-output"), ("other-study", "output")]:
@@ -136,13 +140,11 @@ def test_updates_are_scoped_to_one_output(repository: OutputRepository) -> None:
     repository.update_last_access("study", "output", INITIAL_ACCESS + timedelta(days=1))
     repository.update_archived("study", "output", True)
     repository.save_disk_usage("study", "output", 100)
-    repository.invalidate_disk_usage("study", "output")
     repository.delete("study", "output")
 
     # Late updates must not recreate deleted metadata.
     repository.update_last_access("study", "output", INITIAL_ACCESS)
     repository.update_archived("study", "output", True)
-    repository.invalidate_disk_usage("study", "output")
     assert repository.get("study", "output") is None
     for study_id, output_id in [("study", "other-output"), ("other-study", "output")]:
         assert _metadata(repository, study_id, output_id) == (INITIAL_ACCESS, False, 42)
@@ -178,7 +180,10 @@ def test_get_outputs_to_archive(repository: OutputRepository) -> None:
         ("unknown-date", None, False),
         ("unknown", None, None),
     ]:
-        repository.save(Output(study_id="study", output_id=output_id, last_access=last_access, archived=archived))
+        repository.session.add(
+            Output(study_id="study", output_id=output_id, last_access=last_access, archived=archived)
+        )
+    repository.session.commit()
     repository.initialize("other-study", "old", cutoff, False)
 
     outputs = repository.get_outputs_to_archive("study", cutoff)

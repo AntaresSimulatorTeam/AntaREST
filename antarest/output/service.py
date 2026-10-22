@@ -274,23 +274,9 @@ class OutputService:
         raise ValueError(f"Output storage {storage_type} does not exist.")
 
     def initialize_outputs_metadata(self, study_id: str, reference_date: datetime) -> None:
-        """Initialize existing file outputs without overwriting known metadata."""
+        """Initialize missing file metadata and repair archive statuses without resetting access dates."""
         for storage in self._storages:
             self._initialize_output_metadata(study_id, storage, last_access=reference_date)
-
-    def reconcile_outputs_metadata(self, study_id: str) -> None:
-        """Repair archive statuses from existing files without changing access dates."""
-        for output_id in self._output_repository.get_output_ids(study_id):
-            with self._output_access_lock(study_id, output_id):
-                for storage in self._storages:
-                    if storage.storage_type == OutputStorageType.V2 or not storage.output_exists(study_id, output_id):
-                        continue
-                    archived = storage.is_output_archived(study_id, output_id)
-                    metadata = self._output_repository.get(study_id, output_id)
-                    if metadata is not None and metadata.archived != archived:
-                        logger.info("Reconciling output %s/%s: archived=%s", study_id, output_id, archived)
-                        self._update_output_metadata(study_id, storage, output_id, archived=archived)
-                    break
 
     def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
         """Keep the study available while file outputs are unarchived or recently accessed."""
@@ -310,9 +296,14 @@ class OutputService:
         last_access = last_access or current_time()
         output_ids = [output_id] if output_id is not None else [output.id for output in storage.list_outputs(study_id)]
         for output_id in output_ids:
-            self._output_repository.initialize(
-                study_id, output_id, last_access, storage.is_output_archived(study_id, output_id)
-            )
+            with self._output_access_lock(study_id, output_id):
+                archived = storage.is_output_archived(study_id, output_id)
+                metadata = self._output_repository.get(study_id, output_id)
+                if metadata is None or metadata.last_access is None or metadata.archived is None:
+                    self._output_repository.initialize(study_id, output_id, last_access, archived)
+                if metadata is not None and metadata.archived != archived:
+                    logger.info("Reconciling output %s/%s: archived=%s", study_id, output_id, archived)
+                    self._update_output_metadata(study_id, storage, output_id, archived=archived)
 
     def _update_output_metadata(
         self, study_id: str, storage: IOutputStorage, output_id: str, archived: bool | None = None
@@ -593,19 +584,6 @@ class OutputService:
         self._output_repository.delete(uuid, output_name)
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
-
-    def archive_outputs(self, study_id: str) -> list[str]:
-        logger.info(f"Archiving all outputs for study {study_id}")
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
-
-        outputs = self.list_outputs(study_id)
-        task_ids = []
-        for output in outputs:
-            if not output.archived:
-                task_id = self.archive_output(study_id, output.id)
-                if task_id:
-                    task_ids.append(task_id)
-        return task_ids
 
     def archive_output(
         self,
@@ -958,6 +936,7 @@ class OutputService:
 
         if current_storage.storage_type == OutputStorageType.V2:
             self._output_repository.delete(study_id, output_id)
+            self._initialize_output_metadata(study_id, target_storage, output_id)
         else:
             self._update_output_metadata(study_id, target_storage, output_id)
 

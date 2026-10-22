@@ -311,6 +311,7 @@ listing outputs and computing disk usage do not. Parquet outputs are not include
 At deployment, the database migration saves a fixed reference date. The first maintenance pass outside
 dry-run mode initializes existing file outputs from this date, preserving recorded consultations.
 Initialization resumes automatically after failure and subsequent restarts do not reset the reference date.
+Outputs of restored studies are initialized on their first consultation or the next maintenance pass.
 Automatic archival of an entire study waits until its file outputs are already archived and none was accessed within 60 days.
 
 ## **snapshot_retention_days**

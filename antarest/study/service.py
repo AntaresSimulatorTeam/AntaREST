@@ -34,8 +34,6 @@ from sqlalchemy import inspect as sa_inspect
 from typing_extensions import override
 
 from antarest.core.config import Config
-from antarest.core.configdata.model import ConfigDataAppKeys
-from antarest.core.configdata.repository import ConfigDataRepository
 from antarest.core.exceptions import (
     BadEditInstructionException,
     ChildNotFoundError,
@@ -585,10 +583,6 @@ class IOutputsAccess(ABC):
 
     @abstractmethod
     def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def initialize_outputs_metadata(self, study_id: str, reference_date: datetime) -> None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -2086,14 +2080,6 @@ class StudyService:
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             with db():
                 study_to_unarchive = clone_raw_study(assert_raw(self.get_study(uuid)))
-                reference_date = None
-                if is_managed(study_to_unarchive):
-                    reference = ConfigDataRepository().get(ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE)
-                    if reference is None or reference.value is None:
-                        raise RuntimeError(
-                            "Output archiving reference date is missing; database migrations must be applied"
-                        )
-                    reference_date = datetime.fromisoformat(reference.value)
 
             self.storage_service.raw_study_service.unarchive(study_to_unarchive)
 
@@ -2104,8 +2090,6 @@ class StudyService:
                 study_db.archived = False
                 self.repository.save(study_db)
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
-                if reference_date is not None:
-                    self._get_outputs_access().initialize_outputs_metadata(uuid, reference_date)
                 notify_study_edition(self.event_bus, study_db)
 
             return TaskResult(success=True, message="ok")

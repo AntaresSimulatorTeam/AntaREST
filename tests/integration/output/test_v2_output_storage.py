@@ -18,6 +18,9 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
+from antarest.output.repository import OutputRepository
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.dates import utc_to_local
 from tests.test_helpers.download import download_to_file
@@ -331,7 +334,7 @@ def test_unarchive_nonexistent_output(admin_client: TestClient, empty_study_id: 
 
 
 def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_study_id: str) -> None:
-    """Test conversion of an output to V2 storage."""
+    """Test conversion of an output to V2 storage and back to files."""
     client = admin_client
     study_id = empty_study_id
 
@@ -367,3 +370,12 @@ def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_stud
         f"/v1/studies/{study_id}/output/{output_id}/_convert?storage_type=V2",
     )
     assert res.status_code == 400, res.json()
+
+    conversion_date = current_time()
+    res = client.post(f"/v1/studies/{study_id}/output/{output_id}/_convert?storage_type=IN_STUDY_FILE_TREE")
+    assert res.status_code == 200, res.json()
+    with db():
+        output = OutputRepository().get(study_id, output_id)
+        assert output is not None
+        assert output.last_access is not None and output.last_access >= conversion_date
+        assert output.archived is True

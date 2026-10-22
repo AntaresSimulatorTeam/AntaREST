@@ -20,10 +20,9 @@ from typing import NamedTuple
 
 from pydantic import BaseModel
 
-from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
+from antarest.core.configdata.model import ConfigDataAppKeys
 from antarest.core.configdata.repository import ConfigDataRepository
 from antarest.core.exceptions import OutputAlreadyArchived, TaskAlreadyRunning
-from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.tasks.model import TaskResult
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -55,11 +54,8 @@ class AutoArchiveTaskResult(BaseModel):
 
 
 def _initialize_outputs_metadata(study_service: StudyService, output_service: OutputService) -> None:
-    """Inventory existing outputs once, under the auto-archive lock and DB session."""
+    """Complete the output inventory on every run, including after an interrupted restoration."""
     repository = ConfigDataRepository()
-    if repository.get(ConfigDataAppKeys.OUTPUT_METADATA_INITIALIZED) is not None:
-        return
-
     reference = repository.get(ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE)
     if reference is None or reference.value is None:
         raise RuntimeError("Output archiving reference date is missing; database migrations must be applied")
@@ -72,10 +68,6 @@ def _initialize_outputs_metadata(study_service: StudyService, output_service: Ou
     for study in studies:
         logger.info("Initializing outputs metadata for study %s", study.id)
         output_service.initialize_outputs_metadata(study.id, reference_date)
-
-    repository.save(
-        ConfigData(owner=DEFAULT_ADMIN_USER.id, key=ConfigDataAppKeys.OUTPUT_METADATA_INITIALIZED, value="true")
-    )
 
 
 def _get_studies_to_archive(study_service: StudyService, threshold_days: int) -> list[str]:
@@ -116,8 +108,6 @@ def _archive_old_outputs(
         StudyFilter(managed=True, archived=False, access_permissions=AccessPermissions(is_admin=True))
     )
     for study in studies:
-        if not dry_run:
-            output_service.reconcile_outputs_metadata(study.id)
         for output in repository.get_outputs_to_archive(study.id, cutoff):
             try:
                 logger.info("Archiving output %s/%s%s", study.id, output.output_id, " [dry-run]" if dry_run else "")

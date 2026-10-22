@@ -21,10 +21,12 @@ from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pytest
 from pytest_mock import MockerFixture
 
 from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
 from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.launcher.model import LogType
@@ -166,7 +168,7 @@ class TestArchiveOldStudiesIntegration:
             assert isinstance(study, RawStudy) and study.path is not None
             study.workspace = DEFAULT_WORKSPACE_NAME
             study.last_access = study.updated_at = now - datetime.timedelta(days=90)
-            db.session.add(
+            db.session.merge(
                 ConfigData(
                     owner=DEFAULT_ADMIN_USER.id,
                     key=ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE,
@@ -189,6 +191,10 @@ class TestArchiveOldStudiesIntegration:
             assert preview.archived_outputs == len(outputs) - 1
             assert output_dir.is_dir()
 
+            # Existing outputs may still lack metadata before the next inventory.
+            OutputRepository().delete(study.id, outputs[1].id)
+            # A decompressed output may still be marked as archived after a SQL failure.
+            OutputRepository().update_archived(study.id, outputs[2].id, True)
             result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
             assert result.status == BackGroundTaskStatus.SUCCESS
             assert result.archived_outputs == len(outputs) - 1
@@ -202,6 +208,55 @@ class TestArchiveOldStudiesIntegration:
             assert (Path(study.path) / "output" / outputs[0].id).is_dir()
             assert not output_dir.exists()
             assert output_dir.with_name(output_dir.name + ".zip").is_file()
+
+    @pytest.mark.parametrize("consult_before_maintenance", [False, True])
+    def test_archives_restored_outputs_without_metadata(
+        self, services: Services, internal_study_id: str, tmp_path: Path, consult_before_maintenance: bool
+    ) -> None:
+        now = current_time()
+        reference_date = now - datetime.timedelta(days=90)
+        with current_user_context(DEFAULT_ADMIN_USER):
+            with db():
+                study = services.study.get_study(internal_study_id)
+                assert isinstance(study, RawStudy)
+                study.workspace = DEFAULT_WORKSPACE_NAME
+                study.last_access = now
+                db.session.merge(
+                    ConfigData(
+                        owner=DEFAULT_ADMIN_USER.id,
+                        key=ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE,
+                        value=reference_date.isoformat(),
+                    )
+                )
+                db.session.commit()
+                output_ids = [o.id for o in services.output_service.list_outputs(study.id) if not o.archived]
+                for output_id in output_ids:
+                    OutputRepository().delete(study.id, output_id)
+
+            # Restore a legacy study whose outputs have never been inventoried.
+            for action in (services.study.archive, services.study.unarchive):
+                with db():
+                    task_id = action(internal_study_id)
+                services.task_service.await_task(task_id)
+                with db():
+                    assert services.task_service.status_task(task_id).status == TaskStatus.COMPLETED
+
+            with db():
+                if consult_before_maintenance:
+                    services.output_service.get_logs(internal_study_id, output_ids[0], LogType.STDOUT)
+                result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+                assert result.status == BackGroundTaskStatus.SUCCESS
+                assert result.archived_studies == 0
+                assert result.archived_outputs == len(output_ids) - int(consult_before_maintenance)
+                for output_id in output_ids:
+                    stored = OutputRepository().get(internal_study_id, output_id)
+                    assert stored is not None
+                    if consult_before_maintenance and output_id == output_ids[0]:
+                        assert stored.archived is False
+                        assert stored.last_access is not None and stored.last_access >= now
+                    else:
+                        assert stored.archived is True
+                        assert stored.last_access == reference_date
 
     def test_concurrent_archive_old_studies_is_skipped(self, db_middleware: None) -> None:
         results = _run_concurrent_archive()

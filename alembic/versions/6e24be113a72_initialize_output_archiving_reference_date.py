@@ -39,6 +39,6 @@ def downgrade() -> None:
     op.execute(
         CONFIG_DATA.delete().where(
             CONFIG_DATA.c.owner == 1,
-            CONFIG_DATA.c.key.in_(["OUTPUT_ARCHIVING_REFERENCE_DATE", "OUTPUT_METADATA_INITIALIZED"]),
+            CONFIG_DATA.c.key == "OUTPUT_ARCHIVING_REFERENCE_DATE",
         )
     )
