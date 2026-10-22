@@ -29,6 +29,7 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.output.filestudy.model import QueryFileType
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
+from antarest.output.model.data_type import OutputDataType
 from antarest.output.model.download import MatrixIndex
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
@@ -121,6 +122,7 @@ class OutputDetails(AntaresBaseModel):
     nb_years: int
     archived: bool
     storage_type: OutputStorageType
+    data_type: OutputDataType
 
     settings: OutputSettings | None = Field(deprecated=True, default=None)
 

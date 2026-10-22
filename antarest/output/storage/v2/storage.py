@@ -46,6 +46,7 @@ from antarest.output.filestudy.metadata import (
 from antarest.output.filestudy.model import QueryFileType
 from antarest.output.filestudy.variables import extract_variables_list
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
+from antarest.output.model.data_type import OutputDataType
 from antarest.output.model.download import MatrixIndex
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -150,6 +151,7 @@ def _db_metadata_to_details(metadata: DbOutputMetadataV2) -> OutputDetails:
         nb_years=metadata.nb_years,
         archived=metadata.archived,
         storage_type=OutputStorageType.V2,
+        data_type=OutputDataType.LEGACY,
     )
 
 
