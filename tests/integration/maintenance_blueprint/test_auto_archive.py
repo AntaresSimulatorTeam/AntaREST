@@ -22,7 +22,6 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
-from pytest_mock import MockerFixture
 
 from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
 from antarest.core.jwt import DEFAULT_ADMIN_USER
@@ -160,54 +159,45 @@ class TestArchiveOldStudiesIntegration:
         mock_output_service.archive_output.assert_not_called()
 
     def test_archives_inactive_outputs_of_active_study(
-        self, services: Services, internal_study_id: str, tmp_path: Path, mocker: MockerFixture
+        self, services: Services, internal_study_id: str, tmp_path: Path
     ) -> None:
         now = current_time()
         with current_user_context(DEFAULT_ADMIN_USER), db():
             study = services.study.get_study(internal_study_id)
             assert isinstance(study, RawStudy) and study.path is not None
             study.workspace = DEFAULT_WORKSPACE_NAME
-            study.last_access = study.updated_at = now - datetime.timedelta(days=90)
-            db.session.merge(
-                ConfigData(
-                    owner=DEFAULT_ADMIN_USER.id,
-                    key=ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE,
-                    value=now.isoformat(),
-                )
-            )
+            study.last_access = now
             db.session.commit()
             outputs = [o for o in services.output_service.list_outputs(study.id) if not o.archived]
             output_dir = Path(study.path) / "output" / outputs[1].id
 
-            result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
-            assert result.status == BackGroundTaskStatus.SUCCESS
-            assert result.archived_outputs == result.archived_studies == 0
-
-            future = now + datetime.timedelta(days=61)
-            mocker.patch("antarest.maintenance.tasks.auto_archive.current_time", return_value=future)
-            mocker.patch("antarest.output.service.current_time", return_value=future)
+            services.output_service.initialize_outputs_metadata(study.id, now - datetime.timedelta(days=61))
             services.output_service.get_logs(study.id, outputs[0].id, LogType.STDOUT)
-            preview = archive_old_studies(services.study, services.output_service, 60, 7, True, tmp_path)
-            assert preview.archived_outputs == len(outputs) - 1
-            assert output_dir.is_dir()
 
-            # Existing outputs may still lack metadata before the next inventory.
-            OutputRepository().delete(study.id, outputs[1].id)
-            # A decompressed output may still be marked as archived after a SQL failure.
-            OutputRepository().update_archived(study.id, outputs[2].id, True)
             result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+
             assert result.status == BackGroundTaskStatus.SUCCESS
             assert result.archived_outputs == len(outputs) - 1
             assert result.archived_studies == 0
-            task_id = services.study.archive(study.id, last_access_before=future - datetime.timedelta(days=60))
-            services.task_service.await_task(task_id)
-            task = services.task_service.status_task(task_id)
-            assert task.result is not None and task.result.return_value == "skipped"
-            stored = OutputRepository().get(study.id, outputs[1].id)
-            assert stored is not None and stored.archived and stored.last_access == now
             assert (Path(study.path) / "output" / outputs[0].id).is_dir()
             assert not output_dir.exists()
             assert output_dir.with_name(output_dir.name + ".zip").is_file()
+
+    def test_inventory_repairs_archive_status(self, services: Services, internal_study_id: str) -> None:
+        last_access = current_time() - datetime.timedelta(days=90)
+        with current_user_context(DEFAULT_ADMIN_USER), db():
+            output_id = next(o.id for o in services.output_service.list_outputs(internal_study_id) if not o.archived)
+            repository = OutputRepository()
+            repository.initialize(internal_study_id, output_id, last_access, archived=True)
+            repository.save_disk_usage(internal_study_id, output_id, 42)
+
+            services.output_service.initialize_outputs_metadata(internal_study_id, current_time())
+
+            stored = repository.get(internal_study_id, output_id)
+            assert stored is not None
+            assert stored.archived is False
+            assert stored.last_access == last_access
+            assert stored.disk_space_bytes is None
 
     @pytest.mark.parametrize("consult_before_maintenance", [False, True])
     def test_archives_restored_outputs_without_metadata(

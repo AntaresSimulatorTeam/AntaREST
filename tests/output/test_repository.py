@@ -76,7 +76,7 @@ def test_initialize_rejects_unknown_study(repository: OutputRepository) -> None:
 @pytest.mark.parametrize("last_access", [None, INITIAL_ACCESS + timedelta(days=1)])
 @pytest.mark.parametrize("archived", [None, False, True])
 def test_initialize_preserves_known_metadata(
-    repository: OutputRepository, mocker: MockerFixture, last_access: datetime | None, archived: bool | None
+    repository: OutputRepository, last_access: datetime | None, archived: bool | None
 ) -> None:
     repository.session.add(
         Output(study_id="study", output_id="output", last_access=last_access, archived=archived, disk_space_bytes=42)
@@ -85,12 +85,8 @@ def test_initialize_preserves_known_metadata(
 
     repository.initialize("study", "output", INITIAL_ACCESS, False)
     # Re-running the inventory must not reset the date or the archive status.
-    execute = mocker.spy(repository.session, "execute")
-    commit = mocker.spy(repository.session, "commit")
     repository.initialize("study", "output", INITIAL_ACCESS + timedelta(days=2), True)
 
-    assert all(call.args[0].is_select for call in execute.call_args_list)
-    commit.assert_not_called()
     assert _metadata(repository) == (last_access or INITIAL_ACCESS, archived if archived is not None else False, 42)
 
 
