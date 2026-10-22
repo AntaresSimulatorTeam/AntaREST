@@ -24,7 +24,7 @@ from antarest.study.business.model.area_properties_model import (
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationArea
-from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure
+from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure, initialize_hydro_management
 from antarest.study.business.model.reserves_global_parameters_model import ReservesGlobalParameters
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import (
@@ -77,7 +77,9 @@ class CreateArea(ICommand):
         study_data.save_areas_with_properties({self.area_name: area_properties})
 
         area_id = transform_name_to_id(self.area_name)
-        study_data.save_hydro_management({area_id: HydroManagement()})
+        hydro_management = HydroManagement()
+        initialize_hydro_management(hydro_management, self.study_version)
+        study_data.save_hydro_management({area_id: hydro_management})
         study_data.save_area_ui({area_id: {DEFAULT_LAYER_ID: AreaUI()}})
 
         # Hydro

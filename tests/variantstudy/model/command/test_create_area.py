@@ -16,6 +16,7 @@ import pytest
 from antares.study.version import StudyVersion
 
 from antarest.core.serde.ini_reader import IniReader
+from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
 from antarest.study.storage.rawstudy.model.filesystem.config.model import EnrModelling
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -212,3 +213,12 @@ class TestCreateArea:
         assert daily_pump.exists() == should_exist
         assert hourly_gen.exists() == should_exist
         assert hourly_pump.exists() == should_exist
+
+
+def test_save_hydro_properties_according_to_version(dao_92: StudyDao, command_context: CommandContext) -> None:
+    command = CreateArea(command_context=command_context, study_version=dao_92.get_version(), area_name="fr")
+    res = command.apply(study_dao=dao_92)
+    assert res.status is True
+
+    # Ensures the hydro property `overflow_spilled_cost_difference` is well saved with its default value
+    assert dao_92.get_all_hydro_properties()["fr"].management_options.overflow_spilled_cost_difference == 1
