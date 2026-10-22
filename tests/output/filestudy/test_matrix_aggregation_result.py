@@ -19,17 +19,15 @@ from antarest.study.model import MatrixFrequency
 
 
 @pytest.fixture
-def data_dir() -> Path:
-    return Path(__file__).parent / "data"
+def output_dir(data_dir: Path) -> Path:
+    return data_dir / "20260810-1420eco-thermal_groups"
 
 
-def test_build_aggregates__different_thermal_groups(data_dir: Path) -> None:
+def test_build_aggregates__different_thermal_groups(output_dir: Path) -> None:
     """
     Checks that when areas have different variables, we only get the relevant ones for each area.
     Here areas fr and es have different thermal groups.
     """
-    output_dir = data_dir / "20260810-1420eco-thermal_groups"
-
     download = StudyDownloadDTO(
         type=StudyDownloadType.AREA,
         years=[1],
@@ -63,8 +61,7 @@ def test_build_aggregates__different_thermal_groups(data_dir: Path) -> None:
     ]
 
 
-def test_build_aggregates__district(data_dir: Path) -> None:
-    output_dir = data_dir / "20260810-1420eco-thermal_groups"
+def test_build_aggregates__district(output_dir: Path) -> None:
 
     download = StudyDownloadDTO(
         type=StudyDownloadType.DISTRICT,
