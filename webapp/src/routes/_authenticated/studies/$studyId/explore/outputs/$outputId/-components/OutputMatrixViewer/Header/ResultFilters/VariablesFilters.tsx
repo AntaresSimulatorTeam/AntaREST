@@ -55,15 +55,29 @@ function VariablesFilters() {
     return getClusters(variablesList, dataType, item.id).map((cluster) => cluster.name);
   }, [variablesList, showClusterField, dataType, item.id]);
 
-  // Select the first variable by default
-  useEffect(() => {
-    setVariable(variableOptions[0] || "");
-  }, [variableOptions, setVariable]);
+  // Select the first option by default if no valid variable is selected
+  useEffect(
+    () => {
+      if (!variable || !variableOptions.includes(variable)) {
+        setVariable(variableOptions[0] || "");
+      }
+    },
+    // `variable` is omitted on purpose so the user can clear the field.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [variableOptions, setVariable],
+  );
 
-  // Select the first cluster by default
-  useEffect(() => {
-    setClusterId(clusterOptions[0] || "");
-  }, [clusterOptions, setClusterId]);
+  // Select the first option by default if no valid cluster is selected
+  useEffect(
+    () => {
+      if (!clusterId || !clusterOptions.includes(clusterId)) {
+        setClusterId(clusterOptions[0] || "");
+      }
+    },
+    // `clusterId` is omitted on purpose so the user can clear the field.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [clusterOptions, setClusterId],
+  );
 
   // Reset variable and clusterId on unmount
   useUnmount(() => {
