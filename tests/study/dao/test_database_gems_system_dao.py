@@ -303,20 +303,62 @@ def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_deleting_a_cluster_removes_its_connections(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    _add_system_file_to_study_dao(dao)
+    _add_library_file_to_study_dao(dao)
+    _add_legacy_objects_to_study_dao(dao)
+    coal_cluster = ThermalCluster(id="coal_cluster", name="Coal_Cluster")
+    initialize_thermal_cluster(coal_cluster, dao.get_version())
+    dao.save_thermals({"west": [coal_cluster]})
+    dao.save_system(
+        GemsSystem.model_validate(
+            {
+                "id": "sys_id",
+                "components": [{"id": "electrolyser", "model": "andromede-v1-models-weo-hybrid.electrolyser"}],
+                "area-connections": [{"component": "electrolyser", "port": "hydrogen_port", "area": "west"}],
+                "thermal-capacity-connections": [
+                    {
+                        "component": "electrolyser",
+                        "port": "power_port",
+                        "thermal-component": {"area": "west", "cluster-id": "gas_cluster"},
+                    },
+                    {
+                        "component": "electrolyser",
+                        "port": "hydrogen_port",
+                        "thermal-component": {"area": "west", "cluster-id": "coal_cluster"},
+                    },
+                ],
+            }
+        )
+    )
+    system_before = dao.get_system()
+    assert system_before is not None
+    assert {c.thermal_component.cluster_id for c in system_before.thermal_capacity_connections} == {
+        "gas_cluster",
+        "coal_cluster",
+    }
 
     dao.delete_thermal("west", "gas_cluster")
 
     system = dao.get_system()
     assert system is not None
-    assert system.thermal_capacity_connections == []
-    assert len(system.area_connections) == 2
+    # Only the connection to the deleted cluster is removed
+    assert {c.thermal_component.cluster_id for c in system.thermal_capacity_connections} == {"coal_cluster"}
+    assert system.area_connections == system_before.area_connections
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_deleting_an_area_removes_its_connections_and_the_ones_of_its_clusters(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     _add_system_file_to_study_dao(dao)
+    system_before = dao.get_system()
+    assert system_before is not None
+    assert [(c.component, c.port, c.area) for c in system_before.area_connections] == [
+        ("electrolyser", "hydrogen_port", "west-h2"),
+        ("electrolyser", "power_port", "west"),
+    ]
+    assert [
+        (c.component, c.thermal_component.area, c.thermal_component.cluster_id)
+        for c in system_before.thermal_capacity_connections
+    ] == [("electrolyser", "west", "gas_cluster")]
 
     dao.delete_area("west")
 
@@ -357,6 +399,18 @@ def test_deleting_an_area_removes_its_connections_and_the_ones_of_its_clusters(d
             ],
             "Component 'dsr' is connected to a non-existing thermal cluster 'unknown' in area 'west'",
             id="unknown_cluster",
+        ),
+        pytest.param(
+            "thermal-capacity-connections",
+            [
+                {
+                    "component": "dsr",
+                    "port": "balance_port",
+                    "thermal-component": {"area": "unknown", "cluster-id": "gas_cluster"},
+                }
+            ],
+            "Component 'dsr' is connected to a non-existing thermal cluster 'gas_cluster' in area 'unknown'",
+            id="unknown_cluster_area",
         ),
         pytest.param(
             "thermal-capacity-connections",
