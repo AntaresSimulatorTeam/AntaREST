@@ -10,8 +10,15 @@
 #
 # This file is part of the Antares project.
 from enum import StrEnum
+from pathlib import Path
 
 
 class OutputDataType(StrEnum):
     LEGACY = "Legacy"
     GEMS_VIEWS = "GemsViews"
+
+    @staticmethod
+    def from_output_dir(output_dir: Path) -> "OutputDataType":
+        if (output_dir / "gems-views").is_dir():
+            return OutputDataType.GEMS_VIEWS
+        return OutputDataType.LEGACY
