@@ -149,6 +149,7 @@ from antarest.study.model import (
     StudyRepairType,
 )
 from antarest.study.repository import (
+    StudyDiskSpaceRepository,
     StudyFilter,
     StudyMetadataRepository,
     StudyPagination,
@@ -631,6 +632,7 @@ class StudyService:
         task_service: ITaskService,
         cache_service: ICache,
         config: Config,
+        study_disk_space_repository: StudyDiskSpaceRepository,
     ):
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
@@ -677,6 +679,7 @@ class StudyService:
         self.user_resources_manager = UserResourcesManager(command_context)
         self.cache_service = cache_service
         self.config = config
+        self.study_disk_space_repository = study_disk_space_repository
         self.on_deletion_callbacks: list[Callable[[str], None]] = []
         self._outputs_access: IOutputsAccess | None = None
 
@@ -2027,6 +2030,7 @@ class StudyService:
                     raise StudyNotFoundError(uuid)
                 study_db.archived = True
                 self.repository.save(study_db)
+                self.study_disk_space_repository.delete(uuid)
                 notify_study_edition(self.event_bus, study_db)
             return TaskResult(success=True, message="ok")
 
@@ -2070,6 +2074,7 @@ class StudyService:
                     raise StudyNotFoundError(uuid)
                 study_db.archived = False
                 self.repository.save(study_db)
+                self.study_disk_space_repository.delete(uuid)
                 notify_study_edition(self.event_bus, study_db)
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
 

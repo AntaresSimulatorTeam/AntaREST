@@ -21,7 +21,7 @@ from antarest.launcher.repository import JobResultRepository
 from antarest.login.service import LoginService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.directory_service import DirectoryService
-from antarest.study.repository import DirectoryRepository, StudyMetadataRepository
+from antarest.study.repository import DirectoryRepository, StudyDiskSpaceRepository, StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
@@ -115,6 +115,7 @@ def build_study_service(
         task_service=task_service,
         cache_service=cache,
         config=config,
+        study_disk_space_repository=StudyDiskSpaceRepository(),
     )
 
     return study_service, directory_service

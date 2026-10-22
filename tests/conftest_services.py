@@ -457,4 +457,5 @@ def study_service_fixture(
         task_service,
         Mock(),
         core_config,
+        Mock(),
     )
