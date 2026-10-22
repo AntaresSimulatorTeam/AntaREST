@@ -16,6 +16,7 @@ from pathlib import Path
 from unittest.mock import Mock
 
 from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
@@ -78,6 +79,7 @@ def test_auto_archival() -> None:
     mock_study_service.storage_service.variant_study_service = Mock()
     mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
     mock_study_service.task_service = Mock()
+    mock_study_service.task_service.status_task.return_value.status = TaskStatus.COMPLETED
     mock_study_service.archive.side_effect = TaskAlreadyRunning
     mock_study_service.get_study = repository.get
     mock_output_service.archive_outputs.return_value = ["task1"]
