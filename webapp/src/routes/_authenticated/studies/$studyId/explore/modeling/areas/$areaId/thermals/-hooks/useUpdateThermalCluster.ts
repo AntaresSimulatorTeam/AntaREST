@@ -14,22 +14,21 @@
 
 import { thermalMutations } from "@/queries/thermals/mutations";
 import { thermalQueries } from "@/queries/thermals/queries";
-import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
+import type { ThermalClustersParams } from "@/services/api/studies/areas/thermals/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-function useUpdateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
+function useUpdateThermalCluster({ studyId, areaId }: ThermalClustersParams) {
   const queryClient = useQueryClient();
+
+  const { queryKey: queryListKey } = thermalQueries.list(studyId, areaId);
 
   return useMutation({
     ...thermalMutations.update(studyId, areaId),
-    onSuccess: async (updatedCluster, { studyId, areaId }) => {
-      const { queryKey } = thermalQueries.list(studyId, areaId);
+    onSuccess: async (updatedThermal) => {
+      await queryClient.cancelQueries({ queryKey: queryListKey });
 
-      // An older read must not overwrite the saved cluster.
-      await queryClient.cancelQueries({ queryKey });
-
-      queryClient.setQueryData(queryKey, (clusters) =>
-        clusters?.map((cluster) => (cluster.id === updatedCluster.id ? updatedCluster : cluster)),
+      queryClient.setQueryData(queryListKey, (old = []) =>
+        old.map((thermal) => (thermal.id === updatedThermal.id ? updatedThermal : thermal)),
       );
     },
   });

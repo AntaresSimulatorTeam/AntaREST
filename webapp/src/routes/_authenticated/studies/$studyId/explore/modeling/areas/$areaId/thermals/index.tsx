@@ -12,33 +12,38 @@
  * This file is part of the Antares project.
  */
 
-import GroupedDataTable from "@/components/GroupedDataTable";
-import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
-import type { RowData } from "@/components/GroupedDataTable/types";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import DataTable from "@/components/DataTable";
+import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
+import type { RowData } from "@/components/DataTable/types";
+import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
+import { thermalKeys } from "@/queries/thermals/keys";
+import { thermalQueries } from "@/queries/thermals/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import {
-  addClusterCapacity,
   capacityAggregationFn,
-  getClustersWithCapacityTotals,
+  selectClustersData,
   toCapacityString,
 } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
+import { THERMAL_GROUPS } from "@/services/api/studies/areas/thermals/constants";
 import { Box } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import { adaptThermalClusterToView } from "./-adapters";
 import useCreateThermalCluster from "./-hooks/useCreateThermalCluster";
 import useDeleteThermalClusters from "./-hooks/useDeleteThermalClusters";
 import useDuplicateThermalCluster from "./-hooks/useDuplicateThermalCluster";
 import useThermalClusters from "./-hooks/useThermalClusters";
-import { THERMAL_GROUPS, type ThermalClusterWithCapacity } from "./-utils";
+import type { ThermalClusterWithCapacity } from "./-types";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/",
 )({
+  loader: async ({ context, params: { studyId, areaId } }) => {
+    await context.queryClient.ensureQueryData(thermalQueries.list(studyId, areaId));
+  },
   component: Thermals,
 });
 
@@ -46,24 +51,21 @@ const columnHelper = createMRTColumnHelper<ThermalClusterWithCapacity>();
 
 function Thermals() {
   const study = useStudy();
-  const { areaId } = Route.useParams();
+  const params = Route.useParams();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const createThermalCluster = useCreateThermalCluster(params);
+  const duplicateThermalCluster = useDuplicateThermalCluster(params);
+  const deleteThermalClusters = useDeleteThermalClusters(params);
+  const { areaId } = params;
 
-  const scope = { studyId: study.id, areaId };
-  const { data: clusters, isPending, status, error } = useThermalClusters(scope);
-  const createCluster = useCreateThermalCluster(scope);
-  const duplicateCluster = useDuplicateThermalCluster(scope);
-  const deleteClusters = useDeleteThermalClusters(scope);
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const clustersWithCapacity = useMemo(() => clusters?.map(addClusterCapacity) ?? [], [clusters]);
+  const {
+    data: { clustersWithCapacity, totals },
+    error,
+    isRefetchError,
+  } = useThermalClusters({ ...params, select: selectClustersData });
 
-  useEffect(() => {
-    if (error) {
-      enqueueErrorSnackbar(t("studies.error.retrieveData"), error);
-    }
-  }, [enqueueErrorSnackbar, t, error]);
-
-  const [totals, setTotals] = useState(() => getClustersWithCapacityTotals(clustersWithCapacity));
+  const isSaving = queryClient.isMutating({ mutationKey: thermalKeys.list(study.id, areaId) }) > 0;
 
   const columns = useMemo(() => {
     const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } = totals;
@@ -120,19 +122,16 @@ function Thermals() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: RowData) => {
-    const cluster = await createCluster.mutateAsync({ ...scope, values });
-    return addClusterCapacity(adaptThermalClusterToView(cluster));
+  const handleCreate = (values: RowData) => {
+    createThermalCluster.mutate({ values });
   };
 
-  const handleDuplicate = async (row: ThermalClusterWithCapacity, newName: string) => {
-    const cluster = await duplicateCluster.mutateAsync({ ...scope, clusterId: row.id, newName });
-    return addClusterCapacity(adaptThermalClusterToView(cluster));
+  const handleDuplicate = (row: ThermalClusterWithCapacity, newName: string) => {
+    duplicateThermalCluster.mutate({ thermalId: row.id, newName });
   };
 
   const handleDelete = (rows: ThermalClusterWithCapacity[]) => {
-    const ids = rows.map((row) => row.id);
-    return deleteClusters.mutateAsync({ ...scope, clusterIds: ids });
+    deleteThermalClusters.mutate({ thermalIds: rows.map((row) => row.id) });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -140,42 +139,31 @@ function Thermals() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <GroupedDataTable
-      key={`${study.id}/${areaId}/${clusters ? "loaded" : status}`}
-      isLoading={isPending}
-      readOnly={!clusters}
-      data={clustersWithCapacity}
-      columns={columns}
-      groups={[...THERMAL_GROUPS] as string[]}
-      allowNewGroups={semver.gte(study.version, "9.3.0")}
-      onCreate={handleCreate}
-      onDuplicate={handleDuplicate}
-      onDelete={handleDelete}
-      nameLinkOptions={(row) =>
-        linkOptions({
-          to: "/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId",
-          params: {
-            studyId: study.id,
-            areaId,
-            thermalId: row.id,
-          },
-        })
-      }
-      deleteConfirmationMessage={(rows) => {
-        return t("studies.modeling.clusters.question.delete", {
-          count: rows.length,
-          clusterNames: rows.map((row) => row.name),
-        });
-      }}
-      fillPendingRow={(row) => ({
-        unitCount: 0,
-        enabledCapacity: 0,
-        installedCapacity: 0,
-        ...row,
-      })}
-      onDataChange={(data) => {
-        setTotals(getClustersWithCapacityTotals(data));
-      }}
-    />
+    <>
+      <RefetchErrorAlert isRefetchError={isRefetchError} error={error} />
+      <DataTable
+        key={areaId}
+        data={clustersWithCapacity}
+        columns={columns}
+        groups={[...THERMAL_GROUPS]}
+        allowNewGroups={semver.gte(study.version, "9.3.0")}
+        onCreate={handleCreate}
+        onDuplicate={handleDuplicate}
+        onDelete={handleDelete}
+        isSaving={isSaving}
+        nameLinkOptions={(row) =>
+          linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId",
+            params: { ...params, thermalId: row.id },
+          })
+        }
+        deleteConfirmationMessage={(rows) => {
+          return t("study.modeling.clusters.question.delete", {
+            count: rows.length,
+            names: rows.map((row) => row.name),
+          });
+        }}
+      />
+    </>
   );
 }

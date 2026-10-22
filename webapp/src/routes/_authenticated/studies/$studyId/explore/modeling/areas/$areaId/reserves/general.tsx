@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import GroupedDataTable from "@/components/GroupedDataTable";
-import type { RowData } from "@/components/GroupedDataTable/types";
+import DataTable from "@/components/DataTable";
+import type { RowData } from "@/components/DataTable/types";
 import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
 import type { Reserve, UpdateReserveData } from "@/services/api/studies/areas/reserves/types";
@@ -160,7 +160,7 @@ function ReservesGeneral() {
           {t("study.modeling.reserves.readOnly.alert")}
         </Alert>
       )}
-      <GroupedDataTable
+      <DataTable
         key={`${studyId}-${areaId}`}
         data={rows}
         columns={columns}

@@ -12,14 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
-
-/**
- * Uses empty groups for the existing table and form.
- *
- * @param cluster - The complete API cluster.
- * @returns The cluster with a string group for UI consumers.
- */
-export function adaptThermalClusterToView(cluster: ThermalCluster) {
-  return { ...cluster, group: cluster.group ?? "" };
+export interface RowData {
+  name: string;
+  group?: string;
 }
