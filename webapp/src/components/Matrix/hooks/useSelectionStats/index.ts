@@ -13,10 +13,11 @@
  */
 
 import type { GridSelection, Item } from "@glideapps/glide-data-grid";
-import { useState } from "react";
-import { useUpdateEffect } from "react-use";
+import { useMemo } from "react";
+import { Column } from "../../shared/constants";
+import type { EnhancedGridColumn } from "../../shared/types";
 
-interface SelectionStats {
+export interface SelectionStats {
   sum: number;
   average: number;
   min: number;
@@ -25,75 +26,109 @@ interface SelectionStats {
 }
 
 interface UseSelectionStatsProps {
-  data: number[][];
   selection: GridSelection;
-  gridToData: (coordinates: Item) => Item | null;
+  columns: readonly EnhancedGridColumn[];
+  rows: number;
+  /**
+   * Resolves visible grid coordinates to an unrounded numeric value.
+   * Returns undefined for cells excluded from statistics.
+   *
+   * Its identity must change when underlying values change so the memoized
+   * statistics are recalculated, even when the selection stays unchanged.
+   */
+  getCellValue: (coordinates: Item) => number | undefined;
 }
 
-export function useSelectionStats({ data, selection, gridToData }: UseSelectionStatsProps) {
-  const [stats, setStats] = useState<SelectionStats | null>(null);
-
-  useUpdateEffect(() => {
+/**
+ * Calculates footer statistics using visible grid coordinates.
+ *
+ * Overlapping cell ranges contribute each cell once. Row selections include
+ * only matrix inputs, column selections can also summarize aggregate values.
+ *
+ * @param params - Selection, visible grid layout, and value lookup.
+ * @param params.selection - Grid selection to summarize.
+ * @param params.columns - Visible columns in display order.
+ * @param params.rows - Number of visible rows.
+ * @param params.getCellValue - Resolves visible cells to their unrounded numeric values.
+ * @returns Statistics, or null when the selection contains no numeric values.
+ */
+export function useSelectionStats({
+  selection,
+  columns,
+  rows,
+  getCellValue,
+}: UseSelectionStatsProps): SelectionStats | null {
+  return useMemo(() => {
     let sum = 0;
     let min = Number.POSITIVE_INFINITY;
     let max = Number.NEGATIVE_INFINITY;
     let count = 0;
-    const numRows = data.length;
-    const numCols = data[0]?.length ?? 0;
 
-    const processValue = (value: number) => {
-      sum += value;
-      min = Math.min(min, value);
-      max = Math.max(max, value);
-      count++;
+    const processCell = (col: number, row: number) => {
+      const value = getCellValue([col, row]);
+
+      if (value !== undefined) {
+        sum += value;
+        min = Math.min(min, value);
+        max = Math.max(max, value);
+        count++;
+      }
     };
 
-    if (selection.current?.range) {
-      const { x, y, width, height } = selection.current.range;
+    // Include ranges retained by multi-rect selection or keyboard navigation, even in rect mode.
+    const ranges = selection.current
+      ? [...selection.current.rangeStack, selection.current.range]
+      : [];
 
-      for (let col = x; col < x + width; ++col) {
-        for (let row = y; row < y + height; ++row) {
-          const coordinates = gridToData([col, row]);
+    for (const [index, range] of ranges.entries()) {
+      // Clip once per rectangle. right and bottom are exclusive bounds.
+      const left = Math.max(0, range.x);
+      const right = Math.min(columns.length, range.x + range.width);
+      const top = Math.max(0, range.y);
+      const bottom = Math.min(rows, range.y + range.height);
+      const earlierRanges = ranges.slice(0, index);
 
-          if (coordinates) {
-            const [dataCol, dataRow] = coordinates;
-            const value = data[dataRow]?.[dataCol];
+      for (let col = left; col < right; col++) {
+        for (let row = top; row < bottom; row++) {
+          // Only earlier ranges have contributed cells. Skip their overlaps to count each cell once.
+          const alreadySelected =
+            index > 0 &&
+            earlierRanges.some(
+              ({ x, y, width, height }) =>
+                col >= x && col < x + width && row >= y && row < y + height,
+            );
 
-            if (value !== undefined) {
-              processValue(value);
-            }
+          if (!alreadySelected) {
+            processCell(col, row);
           }
         }
       }
     }
 
     for (const row of selection.rows) {
-      for (let col = 0; col < numCols; ++col) {
-        const value = data[row]?.[col];
+      if (row < 0 || row >= rows) {
+        continue;
+      }
 
-        if (value !== undefined) {
-          processValue(value);
+      for (const [col, column] of columns.entries()) {
+        // Row selection summarizes matrix inputs, not their derived aggregates.
+        if (column.type === Column.Number) {
+          processCell(col, row);
         }
       }
     }
 
+    // A selected column contributes all visible rows, including aggregates when selected.
     for (const col of selection.columns) {
-      for (let row = 0; row < numRows; ++row) {
-        const coordinates = gridToData([col, row]);
+      if (col < 0 || col >= columns.length) {
+        continue;
+      }
 
-        if (coordinates) {
-          const [dataCol, dataRow] = coordinates;
-          const value = data[dataRow]?.[dataCol];
-
-          if (value !== undefined) {
-            processValue(value);
-          }
-        }
+      for (let row = 0; row < rows; row++) {
+        processCell(col, row);
       }
     }
 
-    setStats(count ? { sum, min, max, count, average: sum / count } : null);
-  }, [data, selection]);
-
-  return stats;
+    return count ? { sum, min, max, count, average: sum / count } : null;
+  }, [selection, columns, rows, getCellValue]);
 }

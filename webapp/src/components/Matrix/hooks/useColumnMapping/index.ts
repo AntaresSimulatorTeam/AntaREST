@@ -54,10 +54,13 @@ export function useColumnMapping(columns: readonly EnhancedGridColumn[]) {
       }
       return acc;
     }, [] as number[]);
+    const gridToDataColumns = new Map(
+      dataColumnIndices.map((gridCol, dataCol) => [gridCol, dataCol]),
+    );
 
     const gridToData = ([col, row]: Item): Item | null => {
-      const dataColIndex = dataColumnIndices.indexOf(col);
-      return dataColIndex !== -1 ? [dataColIndex, row] : null;
+      const dataColIndex = gridToDataColumns.get(col);
+      return dataColIndex !== undefined ? [dataColIndex, row] : null;
     };
 
     const dataToGrid = ([col, row]: Item): Item => [dataColumnIndices[col], row];

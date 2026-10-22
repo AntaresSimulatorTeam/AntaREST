@@ -15,7 +15,7 @@
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import MatrixUpload from "@/components/Matrix/components/MatrixUpload";
 import type { fetchMatrixFn } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/-utils";
-import type { StudyMetadata } from "@/types/types";
+import type { Study } from "@/services/api/studies/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Tooltip } from "@mui/material";
 import { useCallback, useMemo, useState } from "react";
@@ -34,7 +34,7 @@ import { calculateMatrixAggregates, getAggregateTypes } from "./shared/utils";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 
 interface MatrixProps {
-  studyId: StudyMetadata["id"];
+  studyId: Study["id"];
   url: string;
   title?: string;
   customRowHeaders?: string[];
