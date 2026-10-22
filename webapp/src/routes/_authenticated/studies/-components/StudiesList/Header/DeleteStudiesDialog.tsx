@@ -35,8 +35,7 @@ function DeleteStudiesDialog({ studyIds, open, onClose, onRun }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleConfirm = () => {
-    deleteStudies.mutate({ studyIds });
-    onClose();
+    deleteStudies.mutate({ studyIds }, { onSuccess: onClose });
     onRun?.();
   };
 
@@ -52,7 +51,7 @@ function DeleteStudiesDialog({ studyIds, open, onClose, onRun }: Props) {
       maxWidth="xs"
       onConfirm={handleConfirm}
       onCancel={onClose}
-      disableConfirm={deleteStudies.isPending}
+      loading={deleteStudies.isPending}
     >
       <Typography>{t("studies.question.deleteMany", { count: studyIds.length })}</Typography>
     </ConfirmationDialog>

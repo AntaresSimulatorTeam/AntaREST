@@ -45,7 +45,7 @@ import { Box, Button, Divider, IconButton, Stack, Typography } from "@mui/materi
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useSnackbar } from "notistack";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface FieldValues {
@@ -80,6 +80,8 @@ function CreateStudyDialog({ open, onClose }: Props) {
   const redirectToDestination = useRedirectToDestination();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
   const defaultDestination = useDefaultStudyDestination(directories);
+  const [storageMode, setStorageMode] = useState<StorageMode>(StorageMode.FILESYSTEM);
+  const isFilesystem = storageMode === StorageMode.FILESYSTEM;
 
   const versionOptions = useMemo(() => getSemanticVersionOptions(versionList), [versionList]);
 
@@ -154,11 +156,9 @@ function CreateStudyDialog({ open, onClose }: Props) {
         paper: {
           sx: [
             studyDestinationDialogPaperSx,
-            {
-              [`&:has([data-storage-mode="${StorageMode.DATABASE}"])`]: {
-                maxWidth: 560,
-                height: "auto",
-              },
+            storageMode === StorageMode.DATABASE && {
+              maxWidth: 560,
+              height: "auto",
             },
           ],
         },
@@ -181,14 +181,10 @@ function CreateStudyDialog({ open, onClose }: Props) {
         },
       }}
     >
-      {({ control, watch }) => {
-        const storageMode = watch("storageMode");
-        const isFilesystem = storageMode === StorageMode.FILESYSTEM;
-
+      {({ control }) => {
         return (
           <CustomScrollbar style={{ flex: 1, minHeight: 0 }}>
             <Stack
-              data-storage-mode={storageMode}
               direction={{ xs: "column", md: "row" }}
               spacing={3}
               sx={{ height: isFilesystem ? { xs: "auto", md: 1 } : "auto" }}
@@ -229,6 +225,7 @@ function CreateStudyDialog({ open, onClose }: Props) {
                       options={STORAGE_MODE_OPTIONS}
                       name="storageMode"
                       control={control}
+                      onChange={({ target: { value } }) => setStorageMode(value)}
                       fullWidth
                       sx={{ minWidth: 0, flex: { sm: 3 } }}
                       helperText={
