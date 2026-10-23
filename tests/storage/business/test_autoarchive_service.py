@@ -14,6 +14,8 @@ import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
+import pytest
+
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
@@ -23,8 +25,11 @@ from antarest.study.repository import StudyMetadataRepository
 from tests.helpers import create_raw_study, create_variant_study, with_db_context
 
 
+@pytest.mark.parametrize("threshold_days, expected_archived_outputs", [(30, 1), (60, 1), (90, 0)])
 @with_db_context
-def test_output_archival_includes_variants_but_excludes_external_and_archived_studies(tmp_path: Path) -> None:
+def test_output_archival_includes_variants_but_excludes_external_and_archived_studies(
+    tmp_path: Path, threshold_days: int, expected_archived_outputs: int
+) -> None:
     now = current_time()
     repository = StudyMetadataRepository()
     repository.session.add_all(
@@ -40,9 +45,9 @@ def test_output_archival_includes_variants_but_excludes_external_and_archived_st
         Output(study_id="variant", output_id="output", last_access=now - datetime.timedelta(days=61), archived=False)
     ]
 
-    result = archive_old_studies(study_service, output_service, 60, 7, True, tmp_path)
+    result = archive_old_studies(study_service, output_service, threshold_days, 7, True, tmp_path)
 
     assert result.status == BackGroundTaskStatus.SUCCESS
-    assert result.archived_outputs == 1
+    assert result.archived_outputs == expected_archived_outputs
     assert result.archived_studies == 0
     output_service.initialize_outputs_metadata.assert_called_once_with("variant", dry_run=True)

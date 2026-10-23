@@ -175,7 +175,7 @@ def archive_old_studies(
     lock_folder: Path,
 ) -> AutoArchiveTaskResult:
     """
-    Archive file outputs inactive for 60 days, then inactive studies, and clean old snapshots.
+    Archive file outputs and studies inactive for threshold_days, and clean old snapshots.
     """
     start_time = time.time()
     archived_count = 0
@@ -183,7 +183,7 @@ def archive_old_studies(
     errors: list[str] = []
     now = current_time()
     study_cutoff = now - datetime.timedelta(days=threshold_days)
-    output_cutoff = now - datetime.timedelta(days=60)
+    output_cutoff = now - datetime.timedelta(days=threshold_days)
 
     logger.info(f"Starting auto-archive (dry_run={dry_run}, threshold={threshold_days}d)")
 
