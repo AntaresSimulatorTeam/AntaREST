@@ -30,6 +30,7 @@ function Common() {
       key={thermalId}
       studyId={studyId}
       url={`input/thermal/prepro/${areaId}/${thermalId}/modulation`}
+      filterKey="thermals.common"
       customColumns={COMMON_MATRIX_COLS}
       isTimeSeries={false}
       enableFilters

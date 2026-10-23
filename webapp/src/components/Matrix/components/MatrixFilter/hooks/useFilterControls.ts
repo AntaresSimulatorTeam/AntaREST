@@ -14,11 +14,11 @@
 
 import { produce } from "immer";
 import { useCallback, useState } from "react";
-import type { FilterOperatorType, FilterState, FilterType } from "../types";
+import type { FilterOperatorType, FilterState, FilterType, PersistedMatrixFilters } from "../types";
 
 interface UseFilterControlsProps {
   filter: FilterState;
-  setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
+  setFilter: React.Dispatch<React.SetStateAction<PersistedMatrixFilters>>;
   filterId?: string;
 }
 

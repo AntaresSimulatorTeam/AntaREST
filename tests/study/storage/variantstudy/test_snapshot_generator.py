@@ -1163,7 +1163,7 @@ class TestSnapshotGenerator:
                     command="create_area",
                     version=1,
                     args=args,
-                    study_version="9.3",
+                    study_version=variant.version,
                 )
             ]
             variant_study_service.repository.save(variant)

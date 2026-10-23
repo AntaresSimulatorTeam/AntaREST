@@ -29,6 +29,7 @@ function TimeSeries() {
       key={renewableId}
       studyId={studyId}
       url={`input/renewables/series/${areaId}/${renewableId}/series`}
+      filterKey="renewables.time-series"
       aggregateColumns="stats"
     />
   );

@@ -13,16 +13,11 @@
  */
 
 import { Box, Typography, Divider } from "@mui/material";
+import type { SelectionStats } from "../hooks/useSelectionStats";
 import { formatGridNumber } from "../shared/utils";
 
 interface MatrixStatsProps {
-  stats: {
-    count: number;
-    sum: number;
-    average: number;
-    min: number;
-    max: number;
-  } | null;
+  stats: SelectionStats | null;
 }
 
 function MatrixStats({ stats }: MatrixStatsProps) {

@@ -41,6 +41,7 @@ function LevelCost() {
       studyId={study.id}
       title={t("study.modeling.storages.levelCost")}
       url={`input/st-storage/series/${areaId}/${storageId}/cost_level`}
+      filterKey="storages.level-cost"
       isTimeSeries={false}
       enableFilters
       customColumns={["TS 1"]}

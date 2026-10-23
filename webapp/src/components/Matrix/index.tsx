@@ -15,7 +15,7 @@
 import DataGridSkeleton from "@/components/DataGridSkeleton";
 import MatrixUpload from "@/components/Matrix/components/MatrixUpload";
 import type { fetchMatrixFn } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/-utils";
-import type { StudyMetadata } from "@/types/types";
+import type { Study } from "@/services/api/studies/types";
 import GridOffIcon from "@mui/icons-material/GridOff";
 import { Box, Tooltip } from "@mui/material";
 import { useCallback, useMemo, useState } from "react";
@@ -34,7 +34,7 @@ import { calculateMatrixAggregates, getAggregateTypes } from "./shared/utils";
 import { MatrixContainer, MatrixHeader, MatrixTitle } from "./styles";
 
 interface MatrixProps {
-  studyId: StudyMetadata["id"];
+  studyId: Study["id"];
   url: string;
   title?: string;
   customRowHeaders?: string[];
@@ -58,6 +58,8 @@ interface MatrixProps {
    * Useful for matrices that need filtering but can't be resized.
    */
   enableFilters?: boolean;
+  /** Remembers this study and view's filters in memory across navigation. */
+  filterKey?: string;
   /**
    * Feature flag for data resizing functionality.
    * Some matrices have temporal structure but fixed dimensions.
@@ -82,6 +84,7 @@ function Matrix({
   canImport = true,
   rowCountSource,
   enableFilters = isTimeSeries,
+  filterKey,
   enableResize = isTimeSeries,
 }: MatrixProps) {
   const { t } = useTranslation();
@@ -188,6 +191,7 @@ function Matrix({
                 onMatrixUpdated={reload}
                 canImport={canImport}
                 enableFilters={enableFilters}
+                filterKey={filterKey}
                 enableResize={enableResize}
                 readOnly={isSubmitting || readOnly}
                 onImport={(_, index) => {
