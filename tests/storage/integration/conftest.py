@@ -64,8 +64,16 @@ def sta_mini_seven_zip_path(project_path: Path, sta_mini_zip_path: Path) -> Path
 
 
 @pytest.fixture
+def mock_output_repository(mocker: MockerFixture) -> None:
+    # These file-tree tests mock study metadata too; persistence is covered by HTTP integration tests.
+    output_repository = Mock(spec=OutputRepository)
+    output_repository.get.return_value = None
+    mocker.patch("antarest.service_creator.OutputRepository", return_value=output_repository)
+
+
+@pytest.fixture
 def services(
-    tmp_path: Path, project_path: Path, sta_mini_zip_path: Path, mocker: MockerFixture
+    tmp_path: Path, project_path: Path, sta_mini_zip_path: Path, mock_output_repository: None
 ) -> tuple[StudyService, OutputService, Config]:
     path_studies = tmp_path / "studies"
 
@@ -145,10 +153,6 @@ def services(
         job_result_repository=job_result_repository,
     )
 
-    # Metadata persistence is mocked for both studies and outputs; these tests exercise the file tree.
-    output_repository = Mock(spec=OutputRepository)
-    output_repository.get.return_value = None
-    mocker.patch("antarest.service_creator.OutputRepository", return_value=output_repository)
     output_service = build_output_service(
         study_service=study_service,
         config=config,

@@ -121,7 +121,6 @@ def test_disk_usage(repository: OutputRepository, disk_space_bytes: int) -> None
     with db():
         OutputRepository().save_disk_usage("study", "output", 42)
     assert _metadata(repository) == (None, None, 42)
-    assert repository.get_outputs_to_archive("study", INITIAL_ACCESS) == []
 
     repository.initialize("study", "output", INITIAL_ACCESS, True)
     repository.save_disk_usage("study", "output", disk_space_bytes)
@@ -163,28 +162,3 @@ def test_stale_session_cannot_overwrite_a_more_recent_consultation(repository: O
     repository.update_last_access("study", "output", INITIAL_ACCESS + timedelta(days=1))
 
     assert _metadata(repository) == (latest_access, True, None)
-
-
-def test_get_outputs_to_archive(repository: OutputRepository) -> None:
-    cutoff = INITIAL_ACCESS - timedelta(days=60)
-    for output_id, last_access, archived in [
-        ("old", cutoff - timedelta(microseconds=1), False),
-        ("at-cutoff", cutoff, False),
-        ("recent", cutoff + timedelta(microseconds=1), False),
-        ("archived", cutoff, True),
-        ("unknown-status", cutoff, None),
-        ("unknown-date", None, False),
-        ("unknown", None, None),
-    ]:
-        repository.session.add(
-            Output(study_id="study", output_id=output_id, last_access=last_access, archived=archived)
-        )
-    repository.session.commit()
-    repository.initialize("other-study", "old", cutoff, False)
-
-    outputs = repository.get_outputs_to_archive("study", cutoff)
-
-    assert [(output.output_id, output.last_access) for output in outputs] == [
-        ("at-cutoff", cutoff),
-        ("old", cutoff - timedelta(microseconds=1)),
-    ]

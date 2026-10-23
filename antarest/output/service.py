@@ -48,6 +48,7 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.output.dbmodel import Output
 from antarest.output.filestudy.aggregation import (
     CLUSTER_ID_COL,
 )
@@ -273,10 +274,16 @@ class OutputService:
                 return storage
         raise ValueError(f"Output storage {storage_type} does not exist.")
 
-    def initialize_outputs_metadata(self, study_id: str, reference_date: datetime) -> None:
-        """Initialize missing file metadata and repair archive statuses without resetting access dates."""
+    def initialize_outputs_metadata(
+        self, study_id: str, reference_date: datetime, *, dry_run: bool = False
+    ) -> list[Output]:
+        """Inventory file outputs, initializing missing metadata unless running a read-only preview."""
+        outputs = []
         for storage in self._storages:
-            self._initialize_output_metadata(study_id, storage, last_access=reference_date)
+            outputs.extend(
+                self._initialize_output_metadata(study_id, storage, last_access=reference_date, dry_run=dry_run)
+            )
+        return outputs
 
     def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
         """Keep the study available while file outputs are unarchived or recently accessed."""
@@ -289,21 +296,34 @@ class OutputService:
         output_id: str | None = None,
         *,
         last_access: datetime | None = None,
-    ) -> None:
+        dry_run: bool = False,
+    ) -> list[Output]:
         if storage.storage_type == OutputStorageType.V2:
-            return
+            return []
 
         last_access = last_access or current_time()
         output_ids = [output_id] if output_id is not None else [output.id for output in storage.list_outputs(study_id)]
+        outputs = []
         for output_id in output_ids:
             with self._output_access_lock(study_id, output_id):
                 archived = storage.is_output_archived(study_id, output_id)
                 metadata = self._output_repository.get(study_id, output_id)
-                if metadata is None or metadata.last_access is None or metadata.archived is None:
-                    self._output_repository.initialize(study_id, output_id, last_access, archived)
-                if metadata is not None and metadata.archived != archived:
-                    logger.info("Reconciling output %s/%s: archived=%s", study_id, output_id, archived)
-                    self._update_output_metadata(study_id, storage, output_id, archived=archived)
+                if not dry_run:
+                    if metadata is None or metadata.last_access is None or metadata.archived is None:
+                        self._output_repository.initialize(study_id, output_id, last_access, archived)
+                    if metadata is not None and metadata.archived != archived:
+                        logger.info("Reconciling output %s/%s: archived=%s", study_id, output_id, archived)
+                        self._update_output_metadata(study_id, storage, output_id, archived=archived)
+                # Return a snapshot without attaching or changing ORM objects in dry-run mode.
+                outputs.append(
+                    Output(
+                        study_id=study_id,
+                        output_id=output_id,
+                        last_access=(metadata.last_access if metadata is not None else None) or last_access,
+                        archived=archived,
+                    )
+                )
+        return outputs
 
     def _update_output_metadata(
         self, study_id: str, storage: IOutputStorage, output_id: str, archived: bool | None = None
@@ -610,7 +630,9 @@ class OutputService:
                     status=[TaskStatus.RUNNING, TaskStatus.PENDING],
                 )
             )
-            if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
+            if (last_access_before is not None and study_tasks) or any(
+                task.name in archive_task_names for task in study_tasks
+            ):
                 raise TaskAlreadyRunning()
 
         def is_eligible_for_archive() -> bool:
@@ -891,15 +913,13 @@ class OutputService:
         """
         Copies one output from src_study_id to target_study_id.
         """
-        self._studies_repository.assert_permission(src_study_id, StudyPermissionType.READ)
         self._studies_repository.assert_permission(target_study_id, StudyPermissionType.WRITE)
-        storage = self._find_output_storage(src_study_id, output_name)
+        storage = self._get_output_storage_for_read(src_study_id, output_name)
         storage.copy_output(src_study_id, target_study_id, output_name)
         self._initialize_output_metadata(target_study_id, storage, output_name)
 
     def write_output_to_dir(self, study_id: str, output_id: str, outputs_dir: Path) -> None:
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        self._find_output_storage(study_id, output_id).write_output_to_dir(study_id, output_id, outputs_dir)
+        self._get_output_storage_for_read(study_id, output_id).write_output_to_dir(study_id, output_id, outputs_dir)
 
     def list_outputs(self, study_id: str) -> Iterable[OutputMetadata]:
         return itertools.chain(*(s.list_outputs(study_id) for s in self._storages))

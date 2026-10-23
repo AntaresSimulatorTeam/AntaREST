@@ -22,6 +22,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
+from pytest_mock import MockerFixture
 
 from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
 from antarest.core.jwt import DEFAULT_ADMIN_USER
@@ -104,7 +105,7 @@ class TestArchiveOldStudiesIntegration:
     def test_archives_old_studies_dry_run(self) -> None:
         mock_study_service = Mock(spec=StudyService)
         mock_output_service = Mock(spec=OutputService)
-        mock_output_service.has_outputs_to_preserve.return_value = False
+        mock_output_service.initialize_outputs_metadata.return_value = []
 
         now = current_time()
 
@@ -115,6 +116,11 @@ class TestArchiveOldStudiesIntegration:
             # Create old studies that should be archived
             db_session.add_all(
                 [
+                    ConfigData(
+                        owner=DEFAULT_ADMIN_USER.id,
+                        key=ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE,
+                        value=now.isoformat(),
+                    ),
                     create_raw_study(
                         id="old_raw",
                         workspace=DEFAULT_WORKSPACE_NAME,
@@ -183,7 +189,8 @@ class TestArchiveOldStudiesIntegration:
             assert not output_dir.exists()
             assert output_dir.with_name(output_dir.name + ".zip").is_file()
 
-    def test_inventory_repairs_archive_status(self, services: Services, internal_study_id: str) -> None:
+    @pytest.mark.parametrize("dry_run", [False, True])
+    def test_inventory_repairs_archive_status(self, services: Services, internal_study_id: str, dry_run: bool) -> None:
         last_access = current_time() - datetime.timedelta(days=90)
         with current_user_context(DEFAULT_ADMIN_USER), db():
             output_id = next(o.id for o in services.output_service.list_outputs(internal_study_id) if not o.archived)
@@ -191,13 +198,90 @@ class TestArchiveOldStudiesIntegration:
             repository.initialize(internal_study_id, output_id, last_access, archived=True)
             repository.save_disk_usage(internal_study_id, output_id, 42)
 
-            services.output_service.initialize_outputs_metadata(internal_study_id, current_time())
+            inventory = services.output_service.initialize_outputs_metadata(
+                internal_study_id, current_time(), dry_run=dry_run
+            )
+            assert next(output for output in inventory if output.output_id == output_id).archived is False
 
             stored = repository.get(internal_study_id, output_id)
             assert stored is not None
-            assert stored.archived is False
+            assert stored.archived is dry_run
             assert stored.last_access == last_access
-            assert stored.disk_space_bytes is None
+            assert stored.disk_space_bytes == (42 if dry_run else None)
+
+    def test_inventory_failure_does_not_stop_other_studies(
+        self, services: Services, internal_study_id: str, tmp_path: Path, mocker: MockerFixture
+    ) -> None:
+        now = current_time()
+        clear_snapshots = mocker.spy(services.study.storage_service.variant_study_service, "clear_all_snapshots")
+        with current_user_context(DEFAULT_ADMIN_USER), db():
+            study = services.study.get_study(internal_study_id)
+            assert isinstance(study, RawStudy)
+            study.workspace = DEFAULT_WORKSPACE_NAME
+            study.last_access = now
+            broken_path = tmp_path / "broken"
+            parameters = broken_path / "output" / "20260101-0000eco" / "about-the-study" / "parameters.ini"
+            parameters.parent.mkdir(parents=True)
+            parameters.write_text("[general]\nnbyears = 1\nyear-by-year = true\n[output]\n")
+            broken = create_raw_study(
+                id="broken",
+                path=str(broken_path),
+                workspace=DEFAULT_WORKSPACE_NAME,
+                last_access=now - datetime.timedelta(days=90),
+            )
+            db.session.add(broken)
+            db.session.commit()
+            services.output_service.initialize_outputs_metadata(study.id, now - datetime.timedelta(days=90))
+            output_count = sum(not output.archived for output in services.output_service.list_outputs(study.id))
+
+            result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+
+            assert result.status == BackGroundTaskStatus.PARTIAL_SUCCESS
+            assert result.archived_outputs == output_count > 0
+            assert len(result.errors) == 1 and "broken" in result.errors[0]
+            assert services.study.get_study(broken.id).archived is False
+            clear_snapshots.assert_called_once()
+
+    @pytest.mark.parametrize("initialized, reference_age", [(False, 0), (False, 90), (True, 0)])
+    def test_dry_run_matches_archival_without_writing_metadata(
+        self, services: Services, internal_study_id: str, tmp_path: Path, initialized: bool, reference_age: int
+    ) -> None:
+        now = current_time()
+        with current_user_context(DEFAULT_ADMIN_USER), db():
+            study = services.study.get_study(internal_study_id)
+            assert isinstance(study, RawStudy)
+            study.workspace = DEFAULT_WORKSPACE_NAME
+            study.last_access = now - datetime.timedelta(days=90)
+            db.session.merge(
+                ConfigData(
+                    owner=DEFAULT_ADMIN_USER.id,
+                    key=ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE,
+                    value=(now - datetime.timedelta(days=reference_age)).isoformat(),
+                )
+            )
+            db.session.commit()
+            outputs = list(services.output_service.list_outputs(study.id))
+            repository = OutputRepository()
+            for output in outputs:
+                repository.delete(study.id, output.id)
+            if initialized:
+                services.output_service.initialize_outputs_metadata(study.id, now - datetime.timedelta(days=90))
+
+            preview = archive_old_studies(services.study, services.output_service, 60, 7, True, tmp_path)
+            for output in outputs:
+                stored = repository.get(study.id, output.id)
+                if initialized:
+                    assert stored is not None and stored.archived == output.archived
+                    assert stored.last_access == now - datetime.timedelta(days=90)
+                else:
+                    assert stored is None
+            assert list(services.output_service.list_outputs(study.id)) == outputs
+            assert services.study.get_study(study.id).archived is False
+
+            result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+            assert preview.status == result.status == BackGroundTaskStatus.SUCCESS
+            assert preview.archived_studies == result.archived_studies == int(initialized or reference_age > 60)
+            assert preview.archived_outputs == result.archived_outputs
 
     @pytest.mark.parametrize("consult_before_maintenance", [False, True])
     def test_archives_restored_outputs_without_metadata(

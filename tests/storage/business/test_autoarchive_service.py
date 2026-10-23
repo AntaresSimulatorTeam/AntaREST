@@ -21,6 +21,7 @@ from antarest.core.tasks.model import TaskResult
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
+from antarest.output.dbmodel import Output
 from antarest.output.repository import OutputRepository
 from antarest.output.service import OutputService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
@@ -101,6 +102,9 @@ def test_auto_archival() -> None:
     mock_study_service.task_service = Mock()
     mock_study_service.task_service.status_task.return_value.result = TaskResult(success=True, message="ok")
     mock_study_service.get_study = repository.get
+    mock_output_service.initialize_outputs_metadata.side_effect = lambda study_id, *args, **kwargs: (
+        db_session.query(Output).filter_by(study_id=study_id).all()
+    )
     mock_output_service.archive_output.side_effect = archive_output
     mock_output_service.has_outputs_to_preserve.side_effect = outputs.has_outputs_to_preserve
 
@@ -114,7 +118,7 @@ def test_auto_archival() -> None:
     )
 
     assert result.status == BackGroundTaskStatus.SUCCESS
-    mock_output_service.initialize_outputs_metadata.assert_any_call("d", now)
+    mock_output_service.initialize_outputs_metadata.assert_any_call("d", now, dry_run=False)
     assert result.archived_outputs == 2
     mock_study_service.archive.assert_not_called()
     mock_output_service.archive_output.assert_has_calls(

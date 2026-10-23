@@ -53,23 +53,6 @@ class AutoArchiveTaskResult(BaseModel):
     reason: str | None = None
 
 
-def _initialize_outputs_metadata(study_service: StudyService, output_service: OutputService) -> None:
-    """Complete the output inventory on every run, including after an interrupted restoration."""
-    repository = ConfigDataRepository()
-    reference = repository.get(ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE)
-    if reference is None or reference.value is None:
-        raise RuntimeError("Output archiving reference date is missing; database migrations must be applied")
-    reference_date = datetime.datetime.fromisoformat(reference.value)
-
-    logger.info("Initializing outputs metadata with reference date %s", reference_date)
-    studies = study_service.repository.get_all(
-        StudyFilter(managed=True, archived=False, access_permissions=AccessPermissions(is_admin=True))
-    )
-    for study in studies:
-        logger.info("Initializing outputs metadata for study %s", study.id)
-        output_service.initialize_outputs_metadata(study.id, reference_date)
-
-
 def _get_studies_to_archive(study_service: StudyService, threshold_days: int) -> list[str]:
     """Return managed raw studies inactive longer than threshold_days."""
     old_date = current_time() - datetime.timedelta(days=threshold_days)
@@ -100,32 +83,56 @@ def _await_archive_task(task_service: ITaskService, task_id: str) -> TaskResult:
 
 def _archive_old_outputs(
     study_service: StudyService, output_service: OutputService, cutoff: datetime.datetime, dry_run: bool
-) -> tuple[int, list[str]]:
+) -> tuple[int, set[str], list[str]]:
     repository = OutputRepository()
     archived_count = 0
+    preserved_studies: set[str] = set()
     errors: list[str] = []
     studies = study_service.repository.get_all(
         StudyFilter(managed=True, archived=False, access_permissions=AccessPermissions(is_admin=True))
     )
-    for study in studies:
-        for output in repository.get_outputs_to_archive(study.id, cutoff):
+    if not studies:
+        return archived_count, preserved_studies, errors
+
+    reference = ConfigDataRepository().get(ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE)
+    if reference is None or reference.value is None:
+        raise RuntimeError("Output archiving reference date is missing; database migrations must be applied")
+    reference_date = datetime.datetime.fromisoformat(reference.value)
+
+    for study_id in [study.id for study in studies]:
+        try:
+            outputs = output_service.initialize_outputs_metadata(study_id, reference_date, dry_run=dry_run)
+        except Exception as e:
+            db.session.rollback()
+            logger.exception("Failed to inventory outputs of study %s", study_id)
+            errors.append(f"{study_id}: {e}")
+            preserved_studies.add(study_id)
+            continue
+
+        for output in outputs:
+            if output.last_access is None or output.last_access > cutoff:
+                preserved_studies.add(study_id)
+                continue
+            if output.archived:
+                continue
             try:
-                logger.info("Archiving output %s/%s%s", study.id, output.output_id, " [dry-run]" if dry_run else "")
+                logger.info("Archiving output %s/%s%s", study_id, output.output_id, " [dry-run]" if dry_run else "")
                 if dry_run:
                     archived_count += 1
                     continue
-                task_id = output_service.archive_output(study.id, output.output_id, last_access_before=cutoff)
+                task_id = output_service.archive_output(study_id, output.output_id, last_access_before=cutoff)
                 if task_id:
                     _await_archive_task(study_service.task_service, task_id)
-                    stored = repository.get(study.id, output.output_id)
+                    stored = repository.get(study_id, output.output_id)
                     if stored is not None and stored.archived:
                         archived_count += 1
             except (TaskAlreadyRunning, OutputAlreadyArchived):
                 continue
             except Exception as e:
-                logger.error("Failed to archive output %s/%s", study.id, output.output_id, exc_info=True)
-                errors.append(f"{study.id}/{output.output_id}: {e}")
-    return archived_count, errors
+                db.session.rollback()
+                logger.exception("Failed to archive output %s/%s", study_id, output.output_id)
+                errors.append(f"{study_id}/{output.output_id}: {e}")
+    return archived_count, preserved_studies, errors
 
 
 def _archive_study(
@@ -138,7 +145,7 @@ def _archive_study(
 ) -> ArchiveStudyResult:
     """Archive an inactive raw study after its outputs have been handled."""
     try:
-        if output_service.has_outputs_to_preserve(study_id, output_cutoff):
+        if not dry_run and output_service.has_outputs_to_preserve(study_id, output_cutoff):
             return ArchiveStudyResult(0)
         logger.info(f"Archiving raw study {study_id}" + (" [dry-run]" if dry_run else ""))
         if not dry_run:
@@ -190,13 +197,15 @@ def archive_old_studies(
     try:
         with db():
             with create_file_lock(lock_id=LockId.AUTO_ARCHIVE, lock_folder=lock_folder):
-                if not dry_run:
-                    _initialize_outputs_metadata(study_service, output_service)
-                archived_outputs, errors = _archive_old_outputs(study_service, output_service, output_cutoff, dry_run)
+                archived_outputs, preserved_studies, errors = _archive_old_outputs(
+                    study_service, output_service, output_cutoff, dry_run
+                )
                 to_archive = _get_studies_to_archive(study_service, threshold_days)
                 logger.info(f"Found {len(to_archive)} studies to archive")
 
                 for study_id in to_archive:
+                    if study_id in preserved_studies:
+                        continue
                     result = _archive_study(
                         study_id, study_service, output_service, dry_run, study_cutoff, output_cutoff
                     )

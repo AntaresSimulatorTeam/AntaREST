@@ -96,15 +96,6 @@ class OutputRepository:
         )
         self.session.commit()
 
-    def get_outputs_to_archive(self, study_id: str, cutoff: datetime) -> list[Output]:
-        stmt = (
-            select(Output)
-            .where(Output.study_id == study_id, Output.archived.is_(False), Output.last_access <= cutoff)
-            .order_by(Output.output_id)
-            .execution_options(populate_existing=True)
-        )
-        return list(self.session.scalars(stmt))
-
     def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
         stmt = (
             select(Output.output_id)
