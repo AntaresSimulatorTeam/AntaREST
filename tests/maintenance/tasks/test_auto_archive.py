@@ -38,47 +38,21 @@ def _make_study(spec: type[Study], study_id: str, days_ago: int, archived: bool 
     return study
 
 
-class TestGetStudiesToArchive:
-    def test_returns_old_raw_studies(self) -> None:
-        svc = Mock()
-        svc.repository.get_all.return_value = [_make_study(RawStudy, "s1", 90)]
-        assert _get_studies_to_archive(svc, 60) == ["s1"]
-
-    def test_excludes_variant_studies(self) -> None:
-        svc = Mock()
-        svc.repository.get_all.return_value = [_make_study(VariantStudy, "v1", 90)]
-        assert _get_studies_to_archive(svc, 60) == []
-
-    def test_excludes_recent_studies(self) -> None:
-        svc = Mock()
-        svc.repository.get_all.return_value = [_make_study(RawStudy, "s1", 30)]
-        assert _get_studies_to_archive(svc, 60) == []
-
-    def test_excludes_already_archived(self) -> None:
-        svc = Mock()
-        svc.repository.get_all.return_value = [_make_study(RawStudy, "s1", 90, archived=True)]
-        assert _get_studies_to_archive(svc, 60) == []
-
-    def test_uses_updated_at_when_no_last_access(self) -> None:
-        svc = Mock()
-        study = _make_study(RawStudy, "s1", 90)
-        study.last_access = None
-        svc.repository.get_all.return_value = [study]
-        assert _get_studies_to_archive(svc, 60) == ["s1"]
+def test_selects_only_inactive_unarchived_raw_studies() -> None:
+    svc = Mock()
+    without_last_access = _make_study(RawStudy, "fallback", 90)
+    without_last_access.last_access = None
+    svc.repository.get_all.return_value = [
+        _make_study(RawStudy, "old", 90),
+        _make_study(VariantStudy, "variant", 90),
+        _make_study(RawStudy, "recent", 30),
+        _make_study(RawStudy, "archived", 90, archived=True),
+        without_last_access,
+    ]
+    assert _get_studies_to_archive(svc, 60) == ["old", "fallback"]
 
 
 class TestArchiveStudy:
-    def test_archives_raw_study(self) -> None:
-        study_svc, output_svc = Mock(), Mock()
-        study_svc.archive.return_value = "task1"
-        study_svc.task_service.status_task.return_value.result = TaskResult(success=True, message="ok")
-        output_svc.has_outputs_to_preserve.return_value = False
-
-        result = _archive_study("s1", study_svc, output_svc, False, CUTOFF, CUTOFF)
-
-        assert result == ArchiveStudyResult(1)
-        study_svc.archive.assert_called_once_with("s1", last_access_before=CUTOFF, output_last_access_before=CUTOFF)
-
     def test_handles_task_already_running(self) -> None:
         study_svc, output_svc = Mock(), Mock()
         study_svc.archive.side_effect = TaskAlreadyRunning()

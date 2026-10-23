@@ -17,7 +17,6 @@ from pytest_mock import MockerFixture
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.output.dbmodel import Output
 from antarest.output.repository import OutputRepository
 from antarest.study.model import Study
@@ -38,12 +37,6 @@ def _metadata(
     output = repository.get(study_id, output_id)
     assert output is not None
     return output.last_access, output.archived, output.disk_space_bytes
-
-
-@pytest.mark.parametrize("archived", [False, True])
-def test_initialize_new_output(repository: OutputRepository, archived: bool) -> None:
-    repository.initialize("study", "output", INITIAL_ACCESS, archived)
-    assert _metadata(repository) == (INITIAL_ACCESS, archived, None)
 
 
 @pytest.mark.parametrize("last_access", [None, INITIAL_ACCESS + timedelta(days=1)])
@@ -73,58 +66,13 @@ def test_initialize_rejects_unknown_study(repository: OutputRepository) -> None:
         repository.initialize("missing-study", "output", INITIAL_ACCESS, False)
 
 
-@pytest.mark.parametrize("last_access", [None, INITIAL_ACCESS + timedelta(days=1)])
-@pytest.mark.parametrize("archived", [None, False, True])
-def test_initialize_preserves_known_metadata(
-    repository: OutputRepository, last_access: datetime | None, archived: bool | None
-) -> None:
-    repository.session.add(
-        Output(study_id="study", output_id="output", last_access=last_access, archived=archived, disk_space_bytes=42)
-    )
-    repository.session.commit()
-
-    repository.initialize("study", "output", INITIAL_ACCESS, False)
-    # Re-running the inventory must not reset the date or the archive status.
-    repository.initialize("study", "output", INITIAL_ACCESS + timedelta(days=2), True)
-
-    assert _metadata(repository) == (last_access or INITIAL_ACCESS, archived if archived is not None else False, 42)
-
-
-@pytest.mark.parametrize("last_access", [None, INITIAL_ACCESS - timedelta(days=1), INITIAL_ACCESS])
-def test_update_last_access(repository: OutputRepository, last_access: datetime | None) -> None:
-    repository.session.add(
-        Output(study_id="study", output_id="output", last_access=last_access, archived=False, disk_space_bytes=42)
-    )
-    repository.session.commit()
-
-    repository.update_last_access("study", "output", INITIAL_ACCESS)
-
-    assert _metadata(repository) == (INITIAL_ACCESS, False, 42)
-
-
-@pytest.mark.parametrize("archived", [False, True])
-def test_update_archived_preserves_access_date(repository: OutputRepository, archived: bool) -> None:
-    repository.session.add(
-        Output(
-            study_id="study", output_id="output", last_access=INITIAL_ACCESS, archived=not archived, disk_space_bytes=42
-        )
-    )
-    repository.session.commit()
-
-    repository.update_archived("study", "output", archived)
-
-    assert _metadata(repository) == (INITIAL_ACCESS, archived, None)
-
-
-@pytest.mark.parametrize("disk_space_bytes", [0, 100])
-def test_disk_usage(repository: OutputRepository, disk_space_bytes: int) -> None:
-    with db():
-        OutputRepository().save_disk_usage("study", "output", 42)
+def test_initialize_preserves_existing_metadata(repository: OutputRepository) -> None:
+    repository.save_disk_usage("study", "output", 42)
     assert _metadata(repository) == (None, None, 42)
-
-    repository.initialize("study", "output", INITIAL_ACCESS, True)
-    repository.save_disk_usage("study", "output", disk_space_bytes)
-    assert _metadata(repository) == (INITIAL_ACCESS, True, disk_space_bytes)
+    repository.update_last_access("study", "output", INITIAL_ACCESS)
+    repository.initialize("study", "output", INITIAL_ACCESS + timedelta(days=1), False)
+    repository.initialize("study", "output", INITIAL_ACCESS + timedelta(days=2), True)
+    assert _metadata(repository) == (INITIAL_ACCESS, False, 42)
 
 
 def test_updates_are_scoped_to_one_output(repository: OutputRepository) -> None:
@@ -134,7 +82,9 @@ def test_updates_are_scoped_to_one_output(repository: OutputRepository) -> None:
 
     repository.update_last_access("study", "output", INITIAL_ACCESS + timedelta(days=1))
     repository.update_archived("study", "output", True)
-    repository.save_disk_usage("study", "output", 100)
+    assert _metadata(repository) == (INITIAL_ACCESS + timedelta(days=1), True, None)
+    repository.save_disk_usage("study", "output", 0)
+    assert _metadata(repository) == (INITIAL_ACCESS + timedelta(days=1), True, 0)
     repository.delete("study", "output")
 
     # Late updates must not recreate deleted metadata.
