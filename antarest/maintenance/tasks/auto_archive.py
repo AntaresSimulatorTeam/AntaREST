@@ -20,8 +20,6 @@ from typing import NamedTuple
 
 from pydantic import BaseModel
 
-from antarest.core.configdata.model import ConfigDataAppKeys
-from antarest.core.configdata.repository import ConfigDataRepository
 from antarest.core.exceptions import OutputAlreadyArchived, TaskAlreadyRunning
 from antarest.core.tasks.model import TaskResult
 from antarest.core.tasks.service import ITaskService
@@ -94,14 +92,9 @@ def _archive_old_outputs(
     if not studies:
         return archived_count, preserved_studies, errors
 
-    reference = ConfigDataRepository().get(ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE)
-    if reference is None or reference.value is None:
-        raise RuntimeError("Output archiving reference date is missing; database migrations must be applied")
-    reference_date = datetime.datetime.fromisoformat(reference.value)
-
     for study_id in [study.id for study in studies]:
         try:
-            outputs = output_service.initialize_outputs_metadata(study_id, reference_date, dry_run=dry_run)
+            outputs = output_service.initialize_outputs_metadata(study_id, dry_run=dry_run)
         except Exception as e:
             db.session.rollback()
             logger.exception("Failed to inventory outputs of study %s", study_id)

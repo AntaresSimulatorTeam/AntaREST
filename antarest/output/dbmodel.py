@@ -24,7 +24,7 @@ class Output(Base):
     Attributes:
         study_id: ID of the study to which the output belongs.
         output_id: ID of the output.
-        last_access: Last consultation date in naive UTC. The deployment inventory initializes existing outputs.
+        last_access: Last consultation date in naive UTC. The first inventory initializes existing outputs.
                      None means that the date has not been initialized yet.
         archived: Whether the output is archived. None until its storage state has been inventoried.
         disk_space_bytes: Disk space used by the output, in bytes. Used as a cached value, should be invalidated

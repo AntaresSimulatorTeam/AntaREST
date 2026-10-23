@@ -274,15 +274,11 @@ class OutputService:
                 return storage
         raise ValueError(f"Output storage {storage_type} does not exist.")
 
-    def initialize_outputs_metadata(
-        self, study_id: str, reference_date: datetime, *, dry_run: bool = False
-    ) -> list[Output]:
+    def initialize_outputs_metadata(self, study_id: str, *, dry_run: bool = False) -> list[Output]:
         """Inventory file outputs, initializing missing metadata unless running a read-only preview."""
         outputs = []
         for storage in self._storages:
-            outputs.extend(
-                self._initialize_output_metadata(study_id, storage, last_access=reference_date, dry_run=dry_run)
-            )
+            outputs.extend(self._initialize_output_metadata(study_id, storage, dry_run=dry_run))
         return outputs
 
     def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
@@ -295,13 +291,12 @@ class OutputService:
         storage: IOutputStorage,
         output_id: str | None = None,
         *,
-        last_access: datetime | None = None,
         dry_run: bool = False,
     ) -> list[Output]:
         if storage.storage_type == OutputStorageType.V2:
             return []
 
-        last_access = last_access or current_time()
+        last_access = current_time()
         output_ids = [output_id] if output_id is not None else [output.id for output in storage.list_outputs(study_id)]
         outputs = []
         for output_id in output_ids:

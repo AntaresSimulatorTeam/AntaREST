@@ -21,15 +21,13 @@ import jinja2
 import pytest
 from _pytest.tmpdir import TempPathFactory
 from fastapi import FastAPI
-from sqlalchemy import create_engine, insert
+from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config
-from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.utils.archives import archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
 from antarest.login.model import init_admin_user
 from antarest.main import (
@@ -100,15 +98,6 @@ def initial_db_file(tmp_path_factory: TempPathFactory) -> Path:
     Base.metadata.create_all(engine)
 
     init_admin_user(engine, {}, "admin")
-    with engine.begin() as connection:
-        connection.execute(
-            insert(ConfigData).values(
-                owner=DEFAULT_ADMIN_USER.id,
-                key=ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE,
-                value=current_time().isoformat(),
-            )
-        )
-
     return db_path
 
 

@@ -14,8 +14,6 @@ import datetime
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
-from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
@@ -31,11 +29,6 @@ def test_output_archival_includes_variants_but_excludes_external_and_archived_st
     repository = StudyMetadataRepository()
     repository.session.add_all(
         [
-            ConfigData(
-                owner=DEFAULT_ADMIN_USER.id,
-                key=ConfigDataAppKeys.OUTPUT_ARCHIVING_REFERENCE_DATE,
-                value=now.isoformat(),
-            ),
             create_raw_study(id="external", workspace="external", updated_at=now),
             create_raw_study(id="archived", workspace=DEFAULT_WORKSPACE_NAME, archived=True, updated_at=now),
             create_variant_study(id="variant", updated_at=now),
@@ -52,4 +45,4 @@ def test_output_archival_includes_variants_but_excludes_external_and_archived_st
     assert result.status == BackGroundTaskStatus.SUCCESS
     assert result.archived_outputs == 1
     assert result.archived_studies == 0
-    output_service.initialize_outputs_metadata.assert_called_once_with("variant", now, dry_run=True)
+    output_service.initialize_outputs_metadata.assert_called_once_with("variant", dry_run=True)
