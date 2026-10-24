@@ -13,246 +13,245 @@
 """Integration tests for the auto-archive task."""
 
 import datetime
-import tempfile
 import threading
-import time
-from collections.abc import Callable
-from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import pytest
+from pytest_mock import MockerFixture
+
+from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
-from antarest.maintenance.tasks.auto_archive import AutoArchiveTaskResult, StudyToArchive, archive_old_studies
+from antarest.launcher.model import LogType
+from antarest.login.utils import current_user_context
+from antarest.maintenance.tasks.auto_archive import AutoArchiveTaskResult, archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
-from antarest.output.service import OutputService
-from antarest.study.model import DEFAULT_WORKSPACE_NAME
-from antarest.study.repository import StudyMetadataRepository
+from antarest.output.repository import OutputRepository
+from antarest.service_creator import Services
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
 from antarest.study.service import StudyService
-from tests.helpers import create_raw_study, create_variant_study
-
-
-def _run_concurrent_archive(
-    second_side_effect: Callable[[StudyService, int], list[StudyToArchive]] | None = None,
-) -> dict[str, AutoArchiveTaskResult]:
-    """Run archive_old_studies in two threads concurrently.
-
-    The first thread holds the file lock while executing; the second thread
-    attempts to acquire the same lock while it is held.
-
-    Returns a dict with keys "first" and "second" containing the task results.
-    """
-    lock_acquired = threading.Event()
-
-    mock_study_service = Mock()
-    mock_output_service = Mock()
-    mock_study_service.repository.get_all.return_value = []
-    mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
-    mock_study_service.task_service = Mock()
-
-    results: dict[str, AutoArchiveTaskResult] = {}
-
-    def slow_get_studies(study_service: StudyService, threshold_days: int) -> list[StudyToArchive]:
-        lock_acquired.set()
-        time.sleep(0.05)
-        return []
-
-    def run_first() -> None:
-        with patch(
-            "antarest.maintenance.tasks.auto_archive._get_studies_to_archive",
-            side_effect=slow_get_studies,
-        ):
-            results["first"] = archive_old_studies(
-                mock_study_service, mock_output_service, 60, 7, dry_run=True, lock_folder=Path(tempfile.gettempdir())
-            )
-
-    def run_second() -> None:
-        lock_acquired.wait(timeout=2)
-        ctx = (
-            patch(
-                "antarest.maintenance.tasks.auto_archive._get_studies_to_archive",
-                side_effect=second_side_effect,
-            )
-            if second_side_effect is not None
-            else nullcontext()
-        )
-        with ctx:
-            results["second"] = archive_old_studies(
-                mock_study_service, mock_output_service, 60, 7, dry_run=True, lock_folder=Path(tempfile.gettempdir())
-            )
-
-    t1 = threading.Thread(target=run_first)
-    t2 = threading.Thread(target=run_second)
-    t1.start()
-    t2.start()
-    t1.join(timeout=2)
-    t2.join(timeout=2)
-
-    return results
+from tests.helpers import create_raw_study
 
 
 class TestArchiveOldStudiesIntegration:
-    def test_archives_old_studies_dry_run(self) -> None:
-        mock_study_service = Mock(spec=StudyService)
-        mock_output_service = Mock(spec=OutputService)
-
+    @pytest.mark.parametrize("initialized", [False, True])
+    def test_unarchived_output_gets_a_new_grace_period(
+        self, services: Services, internal_study_id: str, tmp_path: Path, initialized: bool
+    ) -> None:
         now = current_time()
+        with current_user_context(DEFAULT_ADMIN_USER):
+            with db():
+                study = services.study.get_study(internal_study_id)
+                assert isinstance(study, RawStudy) and study.path is not None
+                study.workspace = DEFAULT_WORKSPACE_NAME
+                study.last_access = now - datetime.timedelta(days=90)
+                db.session.commit()
+                output_id = next(o.id for o in services.output_service.list_outputs(study.id) if not o.archived)
+                output_dir = Path(study.path) / "output" / output_id
+                repository = OutputRepository()
+                repository.delete(study.id, output_id)
+                if initialized:
+                    repository.initialize(study.id, output_id, now - datetime.timedelta(days=90), archived=False)
 
-        with db():
-            repository = StudyMetadataRepository()
-            db_session = repository.session
+            for action in (services.output_service.archive_output, services.output_service.unarchive_output):
+                with db():
+                    task_id = action(internal_study_id, output_id)
+                assert task_id is not None
+                services.task_service.await_task(task_id)
+                with db():
+                    assert services.task_service.status_task(task_id).status == TaskStatus.COMPLETED
 
-            # Create old studies that should be archived
-            db_session.add_all(
-                [
-                    create_raw_study(
-                        id="old_raw",
-                        workspace=DEFAULT_WORKSPACE_NAME,
-                        updated_at=now - datetime.timedelta(days=90),
-                        archived=False,
-                    ),
-                    create_variant_study(
-                        id="old_variant",
-                        updated_at=now - datetime.timedelta(days=90),
-                    ),
-                    create_raw_study(
-                        id="recent_raw",
-                        workspace=DEFAULT_WORKSPACE_NAME,
-                        updated_at=now - datetime.timedelta(days=30),
-                        archived=False,
-                    ),
-                ]
-            )
-            db_session.commit()
+            with db():
+                stored = OutputRepository().get(internal_study_id, output_id)
+                assert stored is not None and stored.archived is False
+                assert stored.last_access is not None and stored.last_access >= now
+                study = services.study.get_study(internal_study_id)
+                assert study.last_access is not None and study.last_access >= now
 
-            mock_study_service.repository = repository
-            mock_study_service.storage_service = Mock()
-            mock_study_service.storage_service.variant_study_service = Mock()
-            mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
+                result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+                assert result.status == BackGroundTaskStatus.SUCCESS
+                assert result.archived_outputs == result.archived_studies == 0
+                assert output_dir.is_dir()
+                assert not output_dir.with_name(output_dir.name + ".zip").exists()
 
-        result = archive_old_studies(
-            study_service=mock_study_service,
-            output_service=mock_output_service,
-            threshold_days=60,
-            snapshot_retention_days=7,
-            dry_run=True,
-            lock_folder=Path(tempfile.gettempdir()),
-        )
-
-        assert result.status == BackGroundTaskStatus.SUCCESS
-        assert result.dry_run is True
-        # In dry_run, we still count what would be archived (old_raw + old_variant)
-        assert result.archived_studies == 2
-
-        # But no actual archive calls should be made
-        mock_study_service.archive.assert_not_called()
-        mock_output_service.archive_outputs.assert_not_called()
-
-    def test_returns_success_with_no_old_studies(self) -> None:
-        mock_study_service = Mock(spec=StudyService)
-        mock_output_service = Mock(spec=OutputService)
-
+    def test_archives_inactive_outputs_of_active_study(
+        self, services: Services, internal_study_id: str, tmp_path: Path
+    ) -> None:
         now = current_time()
+        with current_user_context(DEFAULT_ADMIN_USER), db():
+            study = services.study.get_study(internal_study_id)
+            assert isinstance(study, RawStudy) and study.path is not None
+            study.workspace = DEFAULT_WORKSPACE_NAME
+            study.last_access = now
+            db.session.commit()
+            outputs = [o for o in services.output_service.list_outputs(study.id) if not o.archived]
+            output_dir = Path(study.path) / "output" / outputs[1].id
 
-        with db():
-            repository = StudyMetadataRepository()
-            db_session = repository.session
+            for output in outputs:
+                OutputRepository().initialize(study.id, output.id, now - datetime.timedelta(days=61), output.archived)
+            services.output_service.get_logs(study.id, outputs[0].id, LogType.STDOUT)
 
-            # Create only recent studies
-            db_session.add_all(
-                [
-                    create_raw_study(
-                        id="recent1",
-                        workspace=DEFAULT_WORKSPACE_NAME,
-                        updated_at=now - datetime.timedelta(days=30),
-                        archived=False,
-                    ),
-                    create_raw_study(
-                        id="recent2",
-                        workspace=DEFAULT_WORKSPACE_NAME,
-                        updated_at=now - datetime.timedelta(days=10),
-                        archived=False,
-                    ),
-                ]
-            )
-            db_session.commit()
+            result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
 
-            mock_study_service.repository = repository
-            mock_study_service.storage_service = Mock()
-            mock_study_service.storage_service.variant_study_service = Mock()
-            mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = "snapshot_task"
-            mock_study_service.task_service = Mock()
+            assert result.status == BackGroundTaskStatus.SUCCESS
+            assert result.archived_outputs == len(outputs) - 1
+            assert result.archived_studies == 0
+            assert (Path(study.path) / "output" / outputs[0].id).is_dir()
+            assert not output_dir.exists()
+            assert output_dir.with_name(output_dir.name + ".zip").is_file()
 
-        result = archive_old_studies(
-            study_service=mock_study_service,
-            output_service=mock_output_service,
-            threshold_days=60,
-            snapshot_retention_days=7,
-            dry_run=False,
-            lock_folder=Path(tempfile.gettempdir()),
-        )
+    @pytest.mark.parametrize("dry_run", [False, True])
+    def test_inventory_repairs_archive_status(self, services: Services, internal_study_id: str, dry_run: bool) -> None:
+        last_access = current_time() - datetime.timedelta(days=90)
+        with current_user_context(DEFAULT_ADMIN_USER), db():
+            output_id = next(o.id for o in services.output_service.list_outputs(internal_study_id) if not o.archived)
+            repository = OutputRepository()
+            repository.initialize(internal_study_id, output_id, last_access, archived=True)
+            repository.save_disk_usage(internal_study_id, output_id, 42)
 
-        assert result.status == BackGroundTaskStatus.SUCCESS
-        assert result.archived_studies == 0
-        mock_study_service.task_service.await_task.assert_called_once_with("snapshot_task")
-        assert result.duration_seconds >= 0
+            inventory = services.output_service.initialize_outputs_metadata(internal_study_id, dry_run=dry_run)
+            assert next(output for output in inventory if output.output_id == output_id).archived is False
 
-    def test_excludes_already_archived_studies(self) -> None:
-        mock_study_service = Mock(spec=StudyService)
-        mock_output_service = Mock(spec=OutputService)
+            stored = repository.get(internal_study_id, output_id)
+            assert stored is not None
+            assert stored.archived is dry_run
+            assert stored.last_access == last_access
+            assert stored.disk_space_bytes == (42 if dry_run else None)
 
+    def test_inventory_failure_does_not_stop_other_studies(
+        self, services: Services, internal_study_id: str, tmp_path: Path, mocker: MockerFixture
+    ) -> None:
         now = current_time()
-
-        with db():
-            repository = StudyMetadataRepository()
-            db_session = repository.session
-
-            # Create an old but already archived study
-            db_session.add(
-                create_raw_study(
-                    id="already_archived",
-                    workspace=DEFAULT_WORKSPACE_NAME,
-                    updated_at=now - datetime.timedelta(days=90),
-                    archived=True,
-                ),
+        clear_snapshots = mocker.spy(services.study.storage_service.variant_study_service, "clear_all_snapshots")
+        with current_user_context(DEFAULT_ADMIN_USER), db():
+            study = services.study.get_study(internal_study_id)
+            assert isinstance(study, RawStudy)
+            study.workspace = DEFAULT_WORKSPACE_NAME
+            study.last_access = now
+            broken_path = tmp_path / "broken"
+            parameters = broken_path / "output" / "20260101-0000eco" / "about-the-study" / "parameters.ini"
+            parameters.parent.mkdir(parents=True)
+            parameters.write_text("[general]\nnbyears = 1\nyear-by-year = true\n[output]\n")
+            broken = create_raw_study(
+                id="broken",
+                path=str(broken_path),
+                workspace=DEFAULT_WORKSPACE_NAME,
+                last_access=now - datetime.timedelta(days=90),
             )
-            db_session.commit()
+            db.session.add(broken)
+            db.session.commit()
+            for output in services.output_service.list_outputs(study.id):
+                OutputRepository().initialize(study.id, output.id, now - datetime.timedelta(days=90), output.archived)
+            output_count = sum(not output.archived for output in services.output_service.list_outputs(study.id))
 
-            mock_study_service.repository = repository
-            mock_study_service.storage_service = Mock()
-            mock_study_service.storage_service.variant_study_service = Mock()
-            mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
+            result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
 
-        result = archive_old_studies(
-            study_service=mock_study_service,
-            output_service=mock_output_service,
-            threshold_days=60,
-            snapshot_retention_days=7,
-            dry_run=True,
-            lock_folder=Path(tempfile.gettempdir()),
-        )
+            assert result.status == BackGroundTaskStatus.PARTIAL_SUCCESS
+            assert result.archived_outputs == output_count > 0
+            assert len(result.errors) == 1 and "broken" in result.errors[0]
+            assert services.study.get_study(broken.id).archived is False
+            clear_snapshots.assert_called_once()
 
-        assert result.status == BackGroundTaskStatus.SUCCESS
-        assert result.archived_studies == 0
+    @pytest.mark.parametrize("initialized", [False, True])
+    def test_dry_run_matches_archival_without_writing_metadata(
+        self, services: Services, internal_study_id: str, tmp_path: Path, initialized: bool
+    ) -> None:
+        now = current_time()
+        with current_user_context(DEFAULT_ADMIN_USER), db():
+            study = services.study.get_study(internal_study_id)
+            assert isinstance(study, RawStudy)
+            study.workspace = DEFAULT_WORKSPACE_NAME
+            study.last_access = now - datetime.timedelta(days=90)
+            db.session.commit()
+            outputs = list(services.output_service.list_outputs(study.id))
+            repository = OutputRepository()
+            for output in outputs:
+                repository.delete(study.id, output.id)
+            if initialized:
+                for output in outputs:
+                    repository.initialize(study.id, output.id, now - datetime.timedelta(days=90), output.archived)
 
-    def test_concurrent_archive_old_studies_is_skipped(self, db_middleware: None) -> None:
-        results = _run_concurrent_archive()
+            preview = archive_old_studies(services.study, services.output_service, 60, 7, True, tmp_path)
+            for output in outputs:
+                stored = repository.get(study.id, output.id)
+                if initialized:
+                    assert stored is not None and stored.archived == output.archived
+                    assert stored.last_access == now - datetime.timedelta(days=90)
+                else:
+                    assert stored is None
+            assert list(services.output_service.list_outputs(study.id)) == outputs
+            assert services.study.get_study(study.id).archived is False
 
-        assert results["first"].status == BackGroundTaskStatus.SUCCESS
-        assert results["second"].status == BackGroundTaskStatus.SKIPPED
-        assert results["second"].reason == "lock_not_acquired"
-        assert results["second"].archived_studies == 0
+            result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+            assert preview.status == result.status == BackGroundTaskStatus.SUCCESS
+            assert preview.archived_studies == result.archived_studies == int(initialized)
+            assert preview.archived_outputs == result.archived_outputs
 
-    def test_blocked_archive_is_not_run_after_lock_release(self, db_middleware: None) -> None:
-        """Verify the second concurrent run is truly skipped, not just reported as skipped."""
-        second_body_called = []
+    def test_restored_outputs_without_metadata_get_a_new_grace_period(
+        self, services: Services, internal_study_id: str, tmp_path: Path
+    ) -> None:
+        now = current_time()
+        with current_user_context(DEFAULT_ADMIN_USER):
+            with db():
+                study = services.study.get_study(internal_study_id)
+                assert isinstance(study, RawStudy)
+                study.workspace = DEFAULT_WORKSPACE_NAME
+                study.last_access = now
+                db.session.commit()
+                output_ids = [o.id for o in services.output_service.list_outputs(study.id) if not o.archived]
+                for output_id in output_ids:
+                    OutputRepository().delete(study.id, output_id)
 
-        def second_side_effect(study_service: StudyService, threshold_days: int) -> list[StudyToArchive]:
-            second_body_called.append(True)
+            # Restore a legacy study whose outputs have never been inventoried.
+            for action in (services.study.archive, services.study.unarchive):
+                with db():
+                    task_id = action(internal_study_id)
+                services.task_service.await_task(task_id)
+                with db():
+                    assert services.task_service.status_task(task_id).status == TaskStatus.COMPLETED
+
+            with db():
+                result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+                assert result.status == BackGroundTaskStatus.SUCCESS
+                assert result.archived_studies == 0
+                assert result.archived_outputs == 0
+                for output_id in output_ids:
+                    stored = OutputRepository().get(internal_study_id, output_id)
+                    assert stored is not None
+                    assert stored.archived is False
+                    assert stored.last_access is not None and stored.last_access >= now
+
+    def test_concurrent_archive_is_skipped_without_running_after_lock_release(
+        self, db_middleware: None, tmp_path: Path
+    ) -> None:
+        lock_acquired, release_lock = threading.Event(), threading.Event()
+        study_service, output_service = Mock(), Mock()
+        study_service.repository.get_all.return_value = []
+        results: list[AutoArchiveTaskResult] = []
+
+        def hold_lock(study_service: StudyService, threshold_days: int) -> list[str]:
+            lock_acquired.set()
+            assert release_lock.wait(timeout=5)
             return []
 
-        results = _run_concurrent_archive(second_side_effect=second_side_effect)
+        def run_first() -> None:
+            results.append(archive_old_studies(study_service, output_service, 60, 7, True, tmp_path))
 
-        assert results["first"].status == BackGroundTaskStatus.SUCCESS
-        assert results["second"].status == BackGroundTaskStatus.SKIPPED
-        assert not second_body_called
+        with patch("antarest.maintenance.tasks.auto_archive._get_studies_to_archive", side_effect=hold_lock) as body:
+            first = threading.Thread(target=run_first)
+            first.start()
+            try:
+                assert lock_acquired.wait(timeout=5)
+                second = archive_old_studies(study_service, output_service, 60, 7, True, tmp_path)
+            finally:
+                release_lock.set()
+                first.join(timeout=5)
+            assert not first.is_alive()
+            body.assert_called_once()
+
+        assert results[0].status == BackGroundTaskStatus.SUCCESS
+        assert second.status == BackGroundTaskStatus.SKIPPED
+        assert second.reason == "lock_not_acquired"
+        assert second.archived_studies == second.archived_outputs == 0

@@ -11,9 +11,11 @@
 # This file is part of the Antares project.
 import logging
 import shutil
+import tempfile
 import zipfile
 from abc import ABC, abstractmethod
-from collections.abc import Iterator, Sequence
+from collections.abc import Callable, Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
@@ -428,28 +430,37 @@ class AbstractFileOutputStorage(IOutputStorage):
     @override
     def archive_study_output(self, study_id: str, output_id: str) -> None:
         """Archive a study output."""
+        with self.prepare_output_archive(study_id, output_id) as finalize:
+            finalize()
+
+    @override
+    @contextmanager
+    def prepare_output_archive(self, study_id: str, output_id: str) -> Iterator[Callable[[], None]]:
+        """Compress to a temporary ZIP, keeping the source available until finalization."""
         study_outputs = self._outputs_provider.get_outputs(study_id)
         if _is_output_archived(study_outputs.outputs_path, output_id):
             raise OutputAlreadyArchived(output_id)
 
         output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
-        # If exists, we assume it's a valid archive.
-        if not archived_output_path.is_file():
-            archive_dir(
-                output_path,
-                archived_output_path,
-                archive_format=ArchiveFormat.ZIP,
-            )
-        shutil.rmtree(output_path)
+        with tempfile.TemporaryDirectory(dir=output_path.parent, prefix="~archive-", suffix=".tmp") as tmp_dir:
+            tmp_archive = Path(tmp_dir) / "output.zip"
+            archive_dir(output_path, tmp_archive, archive_format=ArchiveFormat.ZIP)
 
-        remove_from_cache(self._cache, study_id)
+            def finalize() -> None:
+                tmp_archive.replace(archived_output_path)
+                output_path.rename(Path(tmp_dir) / "source")
+                remove_from_cache(self._cache, study_id)
+
+            yield finalize
 
     def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
         dest, src = _output_paths(study_outputs.outputs_path, output_id)
-        self._remote_executor.execute_remote_task(
+        result = self._remote_executor.execute_remote_task(
             f"unarchive_{study_outputs.study_workspace}",
             ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
         )
+        if not result.success:
+            raise RuntimeError(result.message)
 
     # noinspection SpellCheckingInspection
     @override
@@ -469,8 +480,6 @@ class AbstractFileOutputStorage(IOutputStorage):
             study_outputs = self._outputs_provider.get_outputs(study_id)
             output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
             try:
-                # Note: here we don't remove the archived version, allows to speed up a subsequent archival,
-                #       but at some disk usage cost for unarchived studies.
                 unzip(output_path, archived_output_path)
                 remove_from_cache(self._cache, study_id)
             except Exception as e:
@@ -478,8 +487,6 @@ class AbstractFileOutputStorage(IOutputStorage):
                     f"Failed to unarchive study {study_id} output {output_id}",
                     exc_info=e,
                 )
-                if output_path.exists() and output_path.is_dir():
-                    shutil.rmtree(output_path, ignore_errors=True)
                 raise
 
     @override

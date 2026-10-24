@@ -16,6 +16,9 @@ from pathlib import Path
 import pytest
 from starlette.testclient import TestClient
 
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
+from antarest.output.repository import OutputRepository
 from tests.integration.studies_blueprint.utils import check_exported_study_integrity, create_minimal_study
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.download import download_to_file
@@ -62,7 +65,8 @@ def test_export_study_outputs(admin_client: TestClient, tmp_path: Path) -> None:
 
 def export_with_output_test(client: TestClient, study_id: str, tmp_path: Path) -> None:
     # Create 3 outputs in provided study
-    for output_name in ["20201002-1023eco-output1", "20210716-1815adq-output2", "20231002-1023eco"]:
+    output_names = ["20201002-1023eco-output1", "20210716-1815adq-output2", "20231002-1023eco"]
+    for output_name in output_names:
         buffer = BytesIO()
         create_minimal_output_zip_from_name(buffer, output_name)
         upload = client.post(f"/v1/studies/{study_id}/output", files={"output": (f"{output_name}.zip", buffer)})
@@ -99,6 +103,7 @@ def export_with_output_test(client: TestClient, study_id: str, tmp_path: Path) -
     assert not any(name.startswith("output") for name in namelist)
 
     # Export the study with outputs
+    before_export = current_time()
     res = client.get(
         f"/v1/studies/{study_id}/export",
         params={
@@ -114,6 +119,11 @@ def export_with_output_test(client: TestClient, study_id: str, tmp_path: Path) -
     assert "output/20201002-1023eco-output1/info.antares-output" in namelist
     assert "output/20210716-1815adq-output2/info.antares-output" in namelist
     assert "output/20231002-1023eco/info.antares-output" in namelist
+    with db():
+        for output_name in output_names:
+            stored = OutputRepository().get(study_id, output_name)
+            assert stored is not None and stored.last_access is not None
+            assert stored.last_access >= before_export
 
 
 @pytest.mark.parametrize("storage_mode", ["filesystem", "database"])

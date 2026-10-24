@@ -14,6 +14,7 @@ Adapts other packages components to provide the necessary interface for the outp
 """
 
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 from typing_extensions import override
@@ -81,5 +82,9 @@ def study_service_as_studies_repository(study_service: StudyService) -> IStudyMe
             study = study_service.get_study(study_id)
             assert_permission(study, permission)
             study_service.assert_study_unarchived(study)
+
+        @override
+        def update_last_access(self, study_id: str, last_access: datetime) -> None:
+            study_service.repository.update_last_access(study_id, last_access)
 
     return StudyServiceAdapter()

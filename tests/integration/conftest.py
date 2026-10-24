@@ -98,7 +98,6 @@ def initial_db_file(tmp_path_factory: TempPathFactory) -> Path:
     Base.metadata.create_all(engine)
 
     init_admin_user(engine, {}, "admin")
-
     return db_path
 
 

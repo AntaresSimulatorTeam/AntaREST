@@ -15,7 +15,7 @@ import os
 import textwrap
 import typing as t
 import uuid
-from datetime import timedelta
+from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
 from unittest.mock import ANY, Mock, patch, seal
@@ -179,6 +179,10 @@ def build_study_service(
         @override
         def archive_output(self, study_id: str, output_id: str) -> None:
             pass
+
+        @override
+        def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
+            return False
 
         @override
         def get_disk_usage(self, study_id: str, output_id: str) -> int:

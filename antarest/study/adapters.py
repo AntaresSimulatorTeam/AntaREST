@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -52,6 +53,10 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
         @override
         def archive_output(self, study_id: str, output_id: str) -> None:
             output_service.archive_output(study_id, output_id)
+
+        @override
+        def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
+            return output_service.has_outputs_to_preserve(study_id, cutoff)
 
         @override
         def get_disk_usage(self, study_id: str, output_id: str) -> int:

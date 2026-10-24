@@ -9,18 +9,21 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import hashlib
 import itertools
 import logging
 import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, BinaryIO
 
 import pandas as pd
 import polars as pl
 from fastapi import HTTPException
+from filelock import FileLock
 from starlette.responses import FileResponse
 
 from antarest.core.exceptions import (
@@ -100,7 +103,7 @@ class StudyMetadata:
 
 class IStudyMetadataProvider(ABC):
     """
-    Provides a lightweigth, read only, access to studies metadata.
+    Provides access to studies metadata and access dates.
     """
 
     @abstractmethod
@@ -116,6 +119,10 @@ class IStudyMetadataProvider(ABC):
             UserHasNotPermissionError: if the user does not have the permission
             UnsupportedOperationOnArchivedStudy: if the study is archived
         """
+
+    @abstractmethod
+    def update_last_access(self, study_id: str, last_access: datetime) -> None:
+        """Record a consultation of the study's outputs."""
 
 
 class OutputVariablesViewMaterializationTask:
@@ -237,6 +244,25 @@ class OutputService:
                 return storage
         raise OutputNotFound(output_id)
 
+    def _output_access_lock(self, study_id: str, output_id: str) -> FileLock:
+        """Coordinate consultations and archive finalization across threads and processes."""
+        key = hashlib.sha256(f"{study_id}/{output_id}".encode()).hexdigest()
+        return FileLock(self._tmp_dir / f"output-access-{key}.lock")
+
+    def _get_output_storage_for_read(self, study_id: str, output_id: str) -> IOutputStorage:
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        with self._output_access_lock(study_id, output_id):
+            storage = self._find_output_storage(study_id, output_id)
+            if storage.storage_type != OutputStorageType.V2:
+                last_access = current_time()
+                if self._output_repository.get(study_id, output_id) is None:
+                    self._output_repository.initialize(
+                        study_id, output_id, last_access, storage.is_output_archived(study_id, output_id)
+                    )
+                self._output_repository.update_last_access(study_id, output_id, last_access)
+                self._studies_repository.update_last_access(study_id, last_access)
+        return storage
+
     def _get_storage_based_on_type(self, storage_type: OutputStorageType | None) -> IOutputStorage:
         """
         Returns the storage for the specified type, or the first one (which is then the default one).
@@ -248,9 +274,64 @@ class OutputService:
                 return storage
         raise ValueError(f"Output storage {storage_type} does not exist.")
 
+    def initialize_outputs_metadata(self, study_id: str, *, dry_run: bool = False) -> list[Output]:
+        """Inventory file outputs, initializing missing metadata unless running a read-only preview."""
+        outputs = []
+        for storage in self._storages:
+            outputs.extend(self._initialize_output_metadata(study_id, storage, dry_run=dry_run))
+        return outputs
+
+    def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
+        """Keep the study available while file outputs are unarchived or recently accessed."""
+        return self._output_repository.has_outputs_to_preserve(study_id, cutoff)
+
+    def _initialize_output_metadata(
+        self,
+        study_id: str,
+        storage: IOutputStorage,
+        output_id: str | None = None,
+        *,
+        dry_run: bool = False,
+    ) -> list[Output]:
+        if storage.storage_type == OutputStorageType.V2:
+            return []
+
+        last_access = current_time()
+        output_ids = [output_id] if output_id is not None else [output.id for output in storage.list_outputs(study_id)]
+        outputs = []
+        for output_id in output_ids:
+            with self._output_access_lock(study_id, output_id):
+                archived = storage.is_output_archived(study_id, output_id)
+                metadata = self._output_repository.get(study_id, output_id)
+                if not dry_run:
+                    if metadata is None or metadata.last_access is None or metadata.archived is None:
+                        self._output_repository.initialize(study_id, output_id, last_access, archived)
+                    if metadata is not None and metadata.archived != archived:
+                        logger.info("Reconciling output %s/%s: archived=%s", study_id, output_id, archived)
+                        self._update_output_metadata(study_id, storage, output_id, archived=archived)
+                # Return a snapshot without attaching or changing ORM objects in dry-run mode.
+                outputs.append(
+                    Output(
+                        study_id=study_id,
+                        output_id=output_id,
+                        last_access=(metadata.last_access if metadata is not None else None) or last_access,
+                        archived=archived,
+                    )
+                )
+        return outputs
+
+    def _update_output_metadata(
+        self, study_id: str, storage: IOutputStorage, output_id: str, archived: bool | None = None
+    ) -> None:
+        if storage.storage_type == OutputStorageType.V2:
+            self._output_repository.delete(study_id, output_id)
+        else:
+            if archived is None:
+                archived = storage.is_output_archived(study_id, output_id)
+            self._output_repository.update_archived(study_id, output_id, archived)
+
     def get_digest_file(self, study_id: str, output_id: str) -> DigestUI:
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        return self._find_output_storage(study_id, output_id).get_digest(study_id, output_id)
+        return self._get_output_storage_for_read(study_id, output_id).get_digest(study_id, output_id)
 
     def _get_ongoing_variables_view_materialization_task(
         self, item_identifier: OutputItemId, study_id: str, output_id: str, frequency: MatrixFrequency
@@ -305,9 +386,15 @@ class OutputService:
         def unarchive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 stopwatch = StopWatch()
-                storage.unarchive_study_output(study_id, output_id)
+                with self._output_access_lock(study_id, output_id):
+                    storage.unarchive_study_output(study_id, output_id)
+                    if storage.storage_type != OutputStorageType.V2:
+                        last_access = current_time()
+                        self._output_repository.initialize(study_id, output_id, last_access, archived=False)
+                        self._output_repository.update_last_access(study_id, output_id, last_access)
+                        self._studies_repository.update_last_access(study_id, last_access)
+                    self._update_output_metadata(study_id, storage, output_id, archived=False)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
-                self._output_repository.delete(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -357,6 +444,7 @@ class OutputService:
         storage = self._get_storage(uuid)
 
         storage.import_outputs(uuid, outputs_dir)
+        self._initialize_output_metadata(uuid, storage)
 
     def _get_storage(self, study_id: str, storage_type: OutputStorageType | None = None) -> IOutputStorage:
         storage = self._get_storage_based_on_type(storage_type)
@@ -408,6 +496,8 @@ class OutputService:
                 storage.delete_output(uuid, output_id)
                 raise OutputAlreadyExists(output_id)
 
+        self._initialize_output_metadata(uuid, storage, output_id)
+
         logger.info(f"output added to study {uuid}")
 
         # TODO: as commented elsewhere, that workflow should be refactored to not span multiple files
@@ -428,8 +518,9 @@ class OutputService:
         Returns:
             MatrixIndex with start_date, steps, first_week_size and level
         """
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        return self._find_output_storage(study_id, output_id).get_output_time_index(study_id, output_id, frequency)
+        return self._get_output_storage_for_read(study_id, output_id).get_output_time_index(
+            study_id, output_id, frequency
+        )
 
     def export_output(self, study_uuid: str, output_uuid: str) -> FileDownloadTaskDTO:
         """
@@ -451,7 +542,7 @@ class OutputService:
 
         def export_task(notifier: ITaskNotifier) -> TaskResult:
             try:
-                self._find_output_storage(study_uuid, output_uuid).export_output(
+                self._get_output_storage_for_read(study_uuid, output_uuid).export_output(
                     study_id=study_uuid,
                     output_id=output_uuid,
                     target=export_path,
@@ -487,10 +578,8 @@ class OutputService:
         Returns: FileResponse containing the asked data.
 
         """
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._get_output_storage_for_read(study_id, output_id)
         logger.info(f"Study {study_id} output download asked by {get_user_id()}")
-
-        storage = self._find_output_storage(study_id, output_id)
 
         result = storage.get_matrix_aggregation_result(study_id, output_id, data)
         with open(tmp_file, "w", encoding="utf-8") as fh:
@@ -516,24 +605,12 @@ class OutputService:
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
-    def archive_outputs(self, study_id: str) -> list[str]:
-        logger.info(f"Archiving all outputs for study {study_id}")
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
-
-        outputs = self.list_outputs(study_id)
-        task_ids = []
-        for output in outputs:
-            if not output.archived:
-                task_id = self.archive_output(study_id, output.id)
-                if task_id:
-                    task_ids.append(task_id)
-        return task_ids
-
     def archive_output(
         self,
         study_id: str,
         output_id: str,
         force: bool = False,
+        last_access_before: datetime | None = None,
     ) -> str | None:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
         metadata = self._studies_repository.get_study_metadata(study_id)
@@ -549,20 +626,39 @@ class OutputService:
             study_tasks = self._task_service.list_tasks(
                 TaskListFilter(
                     ref_id=study_id,
-                    name=task_name,
                     type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                     status=[TaskStatus.RUNNING, TaskStatus.PENDING],
                 )
             )
-            if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
+            if (last_access_before is not None and study_tasks) or any(
+                task.name in archive_task_names for task in study_tasks
+            ):
                 raise TaskAlreadyRunning()
+
+        def is_eligible_for_archive() -> bool:
+            if last_access_before is None:
+                return True
+            output = self._output_repository.get(study_id, output_id)
+            return (
+                output is not None
+                and output.archived is False
+                and output.last_access is not None
+                and output.last_access <= last_access_before
+            )
 
         def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
+                skipped = TaskResult(success=True, message=f"Output {study_id}/{output_id} no longer eligible")
+                if not is_eligible_for_archive():
+                    return skipped
                 stopwatch = StopWatch()
-                storage.archive_study_output(study_id, output_id)
+                with storage.prepare_output_archive(study_id, output_id) as finalize:
+                    with self._output_access_lock(study_id, output_id):
+                        if not is_eligible_for_archive():
+                            return skipped
+                        finalize()
+                        self._update_output_metadata(study_id, storage, output_id, archived=True)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
-                self._output_repository.delete(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
@@ -672,7 +768,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 logger.info(f"Launch aggregation step for output '{output_id}' of study '{uuid}'.")
 
-                results = self._find_output_storage(uuid, output_id).aggregate_output_data(
+                results = self._get_output_storage_for_read(uuid, output_id).aggregate_output_data(
                     uuid,
                     output_id,
                     query_file,
@@ -715,9 +811,7 @@ class OutputService:
         """
         Returns the list of variables concerning a given output.
         """
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-
-        storage = self._find_output_storage(study_id, output_id)
+        storage = self._get_output_storage_for_read(study_id, output_id)
         return storage.get_variables_list(study_id, output_id)
 
     def get_output_variables_information(self, study_id: str, output_id: str) -> OutputVariablesInformation:
@@ -742,8 +836,7 @@ class OutputService:
         If the view is already registered in DB, updates its `last_read` value and returns it.
         Else, returns a pydantic model specifying if the view materialization is in progress or not.
         """
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-
+        storage = self._get_output_storage_for_read(study_id, output_id)
         db_model = get_output_view_inside_db(study_id, output_id, variable_name, frequency, output_item_id)
         if db_model is not None:
             # Update `last_read` value inside DB
@@ -758,12 +851,12 @@ class OutputService:
                 polars_df = polars_df.with_columns(pl.all().cast(pl.Float64))
             df = polars_df.to_pandas()
             if with_index:
-                matrix_index = self.get_output_time_index(study_id, output_id, frequency)
+                matrix_index = storage.get_output_time_index(study_id, output_id, frequency)
                 matrix_index.set_as_df_index(df)
             return df
 
         # Checks if the asked couple `variable name` / `output_identifier` exists for the output
-        available_variables = self.get_output_variables_list(study_id, output_id)
+        available_variables = storage.get_variables_list(study_id, output_id)
         check_output_variable_exists(output_id, variable_name, available_variables, output_item_id)
 
         # Return a 404 Response with a body specifying if the materialization is in progress or not.
@@ -820,20 +913,19 @@ class OutputService:
         """
         Copies one output from src_study_id to target_study_id.
         """
-        self._studies_repository.assert_permission(src_study_id, StudyPermissionType.READ)
         self._studies_repository.assert_permission(target_study_id, StudyPermissionType.WRITE)
-        self._find_output_storage(src_study_id, output_name).copy_output(src_study_id, target_study_id, output_name)
+        storage = self._get_output_storage_for_read(src_study_id, output_name)
+        storage.copy_output(src_study_id, target_study_id, output_name)
+        self._initialize_output_metadata(target_study_id, storage, output_name)
 
     def write_output_to_dir(self, study_id: str, output_id: str, outputs_dir: Path) -> None:
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        self._find_output_storage(study_id, output_id).write_output_to_dir(study_id, output_id, outputs_dir)
+        self._get_output_storage_for_read(study_id, output_id).write_output_to_dir(study_id, output_id, outputs_dir)
 
     def list_outputs(self, study_id: str) -> Iterable[OutputMetadata]:
         return itertools.chain(*(s.list_outputs(study_id) for s in self._storages))
 
     def get_logs(self, study_id: str, output_id: str, log_type: LogType) -> str:
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        return self._find_output_storage(study_id, output_id).get_logs(study_id, output_id, log_type)
+        return self._get_output_storage_for_read(study_id, output_id).get_logs(study_id, output_id, log_type)
 
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         output = self._output_repository.get(study_id, output_id)
@@ -841,7 +933,7 @@ class OutputService:
             return output.disk_space_bytes
         else:
             disk_usage = self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
-            self._output_repository.save(Output(study_id=study_id, output_id=output_id, disk_space_bytes=disk_usage))
+            self._output_repository.save_disk_usage(study_id, output_id, disk_usage)
             return disk_usage
 
     def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
@@ -862,17 +954,23 @@ class OutputService:
             target_storage.import_output(study_id, tmp_zip)
             current_storage.delete_output(study_id, output_id)
 
-        self._output_repository.delete(study_id, output_id)
+        if current_storage.storage_type == OutputStorageType.V2:
+            self._output_repository.delete(study_id, output_id)
+            self._initialize_output_metadata(study_id, target_storage, output_id)
+        else:
+            self._update_output_metadata(study_id, target_storage, output_id)
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
-        return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)
+        return self._get_output_storage_for_read(study_id, output_id).get_raw_content(
+            study_id, output_id, url, formatted
+        )
 
     def get_matrix_as_dataframe(
         self, study_id: str, output_id: str, url: list[str], frequency: MatrixFrequency
     ) -> pd.DataFrame:
-        return self._find_output_storage(study_id, output_id).get_matrix_as_dataframe(
+        return self._get_output_storage_for_read(study_id, output_id).get_matrix_as_dataframe(
             study_id, output_id, url, frequency
         )
 
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
-        return self._find_output_storage(study_id, output_id).get_original_file(study_id, output_id, url)
+        return self._get_output_storage_for_read(study_id, output_id).get_original_file(study_id, output_id, url)

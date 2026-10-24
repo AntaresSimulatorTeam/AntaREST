@@ -20,16 +20,18 @@ from typing import NamedTuple
 
 from pydantic import BaseModel
 
-from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.exceptions import OutputAlreadyArchived, TaskAlreadyRunning
+from antarest.core.tasks.model import TaskResult
+from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
+from antarest.output.repository import OutputRepository
 from antarest.output.service import OutputService
 from antarest.study.model import RawStudy, Study
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -42,19 +44,15 @@ class ArchiveStudyResult(NamedTuple):
 class AutoArchiveTaskResult(BaseModel):
     status: BackGroundTaskStatus
     archived_studies: int
+    archived_outputs: int = 0
     duration_seconds: float
     dry_run: bool
     errors: list[str] = []
     reason: str | None = None
 
 
-class StudyToArchive(NamedTuple):
-    study_id: str
-    is_raw_study: bool
-
-
-def _get_studies_to_archive(study_service: StudyService, threshold_days: int) -> list[StudyToArchive]:
-    """Returns list of (study_id, is_raw_study) for studies inactive longer than threshold_days."""
+def _get_studies_to_archive(study_service: StudyService, threshold_days: int) -> list[str]:
+    """Return managed raw studies inactive longer than threshold_days."""
     old_date = current_time() - datetime.timedelta(days=threshold_days)
 
     studies: list[Study] = list(
@@ -64,33 +62,92 @@ def _get_studies_to_archive(study_service: StudyService, threshold_days: int) ->
     )
 
     return [
-        StudyToArchive(str(study.id), isinstance(study, RawStudy))
+        study.id
         for study in studies
-        if (last_activity := study.last_access or study.updated_at) is not None
+        if isinstance(study, RawStudy)
+        and (last_activity := study.last_access or study.updated_at) is not None
         and last_activity < old_date
-        and (isinstance(study, VariantStudy) or not study.archived)
+        and not study.archived
     ]
+
+
+def _await_archive_task(task_service: ITaskService, task_id: str) -> TaskResult:
+    task_service.await_task(task_id)
+    task = task_service.status_task(task_id)
+    if task.result is None or not task.result.success:
+        raise RuntimeError(task.result.message if task.result else f"Archive task {task_id} ended without a result")
+    return task.result
+
+
+def _archive_old_outputs(
+    study_service: StudyService, output_service: OutputService, cutoff: datetime.datetime, dry_run: bool
+) -> tuple[int, set[str], list[str]]:
+    repository = OutputRepository()
+    archived_count = 0
+    preserved_studies: set[str] = set()
+    errors: list[str] = []
+    studies = study_service.repository.get_all(
+        StudyFilter(managed=True, archived=False, access_permissions=AccessPermissions(is_admin=True))
+    )
+    if not studies:
+        return archived_count, preserved_studies, errors
+
+    for study_id in [study.id for study in studies]:
+        try:
+            outputs = output_service.initialize_outputs_metadata(study_id, dry_run=dry_run)
+        except Exception as e:
+            db.session.rollback()
+            logger.exception("Failed to inventory outputs of study %s", study_id)
+            errors.append(f"{study_id}: {e}")
+            preserved_studies.add(study_id)
+            continue
+
+        for output in outputs:
+            if output.last_access is None or output.last_access > cutoff:
+                preserved_studies.add(study_id)
+                continue
+            if output.archived:
+                continue
+            try:
+                logger.info("Archiving output %s/%s%s", study_id, output.output_id, " [dry-run]" if dry_run else "")
+                if dry_run:
+                    archived_count += 1
+                    continue
+                task_id = output_service.archive_output(study_id, output.output_id, last_access_before=cutoff)
+                if task_id:
+                    _await_archive_task(study_service.task_service, task_id)
+                    stored = repository.get(study_id, output.output_id)
+                    if stored is not None and stored.archived:
+                        archived_count += 1
+            except (TaskAlreadyRunning, OutputAlreadyArchived):
+                continue
+            except Exception as e:
+                db.session.rollback()
+                logger.exception("Failed to archive output %s/%s", study_id, output.output_id)
+                errors.append(f"{study_id}/{output.output_id}: {e}")
+    return archived_count, preserved_studies, errors
 
 
 def _archive_study(
     study_id: str,
-    is_raw_study: bool,
     study_service: StudyService,
     output_service: OutputService,
     dry_run: bool,
+    study_cutoff: datetime.datetime,
+    output_cutoff: datetime.datetime,
 ) -> ArchiveStudyResult:
-    """Archive a study (raw) or its outputs (variant)."""
+    """Archive an inactive raw study after its outputs have been handled."""
     try:
-        if is_raw_study:
-            logger.info(f"Archiving raw study {study_id}" + (" [dry-run]" if dry_run else ""))
-            if not dry_run:
-                task_id = study_service.archive(study_id)
-                study_service.task_service.await_task(task_id)
-        else:
-            logger.info(f"Archiving variant outputs {study_id}" + (" [dry-run]" if dry_run else ""))
-            if not dry_run:
-                for task_id in output_service.archive_outputs(study_id):
-                    study_service.task_service.await_task(task_id)
+        if not dry_run and output_service.has_outputs_to_preserve(study_id, output_cutoff):
+            return ArchiveStudyResult(0)
+        logger.info(f"Archiving raw study {study_id}" + (" [dry-run]" if dry_run else ""))
+        if not dry_run:
+            task_id = study_service.archive(
+                study_id, last_access_before=study_cutoff, output_last_access_before=output_cutoff
+            )
+            result = _await_archive_task(study_service.task_service, task_id)
+            if result.return_value == "skipped":
+                return ArchiveStudyResult(0)
         return ArchiveStudyResult(1)
     except TaskAlreadyRunning:
         return ArchiveStudyResult(0)
@@ -118,22 +175,33 @@ def archive_old_studies(
     lock_folder: Path,
 ) -> AutoArchiveTaskResult:
     """
-    Archive studies inactive for more than threshold_days and clean old snapshots.
+    Archive file outputs and studies inactive for threshold_days, and clean old snapshots.
     """
     start_time = time.time()
     archived_count = 0
+    archived_outputs = 0
     errors: list[str] = []
+    now = current_time()
+    study_cutoff = now - datetime.timedelta(days=threshold_days)
+    output_cutoff = now - datetime.timedelta(days=threshold_days)
 
     logger.info(f"Starting auto-archive (dry_run={dry_run}, threshold={threshold_days}d)")
 
     try:
         with db():
             with create_file_lock(lock_id=LockId.AUTO_ARCHIVE, lock_folder=lock_folder):
+                archived_outputs, preserved_studies, errors = _archive_old_outputs(
+                    study_service, output_service, output_cutoff, dry_run
+                )
                 to_archive = _get_studies_to_archive(study_service, threshold_days)
                 logger.info(f"Found {len(to_archive)} studies to archive")
 
-                for study_id, is_raw in to_archive:
-                    result = _archive_study(study_id, is_raw, study_service, output_service, dry_run)
+                for study_id in to_archive:
+                    if study_id in preserved_studies:
+                        continue
+                    result = _archive_study(
+                        study_id, study_service, output_service, dry_run, study_cutoff, output_cutoff
+                    )
                     archived_count += result.archived_studies
                     if result.error:
                         errors.append(result.error)
@@ -154,18 +222,22 @@ def archive_old_studies(
         return AutoArchiveTaskResult(
             status=BackGroundTaskStatus.ERROR,
             archived_studies=archived_count,
+            archived_outputs=archived_outputs,
             duration_seconds=time.time() - start_time,
             dry_run=dry_run,
-            errors=[str(e)],
+            errors=[*errors, str(e)],
         )
 
     duration = time.time() - start_time
     status = BackGroundTaskStatus.PARTIAL_SUCCESS if errors else BackGroundTaskStatus.SUCCESS
-    logger.info(f"Auto-archive done in {duration:.1f}s: {archived_count} archived, {len(errors)} errors")
+    logger.info(
+        f"Auto-archive done in {duration:.1f}s: {archived_count} studies, {archived_outputs} outputs, {len(errors)} errors"
+    )
 
     return AutoArchiveTaskResult(
         status=status,
         archived_studies=archived_count,
+        archived_outputs=archived_outputs,
         duration_seconds=duration,
         dry_run=dry_run,
         errors=errors,
