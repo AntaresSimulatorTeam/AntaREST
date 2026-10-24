@@ -36,6 +36,46 @@ from tests.helpers import create_raw_study
 
 
 class TestArchiveOldStudiesIntegration:
+    @pytest.mark.parametrize("initialized", [False, True])
+    def test_unarchived_output_gets_a_new_grace_period(
+        self, services: Services, internal_study_id: str, tmp_path: Path, initialized: bool
+    ) -> None:
+        now = current_time()
+        with current_user_context(DEFAULT_ADMIN_USER):
+            with db():
+                study = services.study.get_study(internal_study_id)
+                assert isinstance(study, RawStudy) and study.path is not None
+                study.workspace = DEFAULT_WORKSPACE_NAME
+                study.last_access = now - datetime.timedelta(days=90)
+                db.session.commit()
+                output_id = next(o.id for o in services.output_service.list_outputs(study.id) if not o.archived)
+                output_dir = Path(study.path) / "output" / output_id
+                repository = OutputRepository()
+                repository.delete(study.id, output_id)
+                if initialized:
+                    repository.initialize(study.id, output_id, now - datetime.timedelta(days=90), archived=False)
+
+            for action in (services.output_service.archive_output, services.output_service.unarchive_output):
+                with db():
+                    task_id = action(internal_study_id, output_id)
+                assert task_id is not None
+                services.task_service.await_task(task_id)
+                with db():
+                    assert services.task_service.status_task(task_id).status == TaskStatus.COMPLETED
+
+            with db():
+                stored = OutputRepository().get(internal_study_id, output_id)
+                assert stored is not None and stored.archived is False
+                assert stored.last_access is not None and stored.last_access >= now
+                study = services.study.get_study(internal_study_id)
+                assert study.last_access is not None and study.last_access >= now
+
+                result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+                assert result.status == BackGroundTaskStatus.SUCCESS
+                assert result.archived_outputs == result.archived_studies == 0
+                assert output_dir.is_dir()
+                assert not output_dir.with_name(output_dir.name + ".zip").exists()
+
     def test_archives_inactive_outputs_of_active_study(
         self, services: Services, internal_study_id: str, tmp_path: Path
     ) -> None:

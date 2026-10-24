@@ -388,6 +388,11 @@ class OutputService:
                 stopwatch = StopWatch()
                 with self._output_access_lock(study_id, output_id):
                     storage.unarchive_study_output(study_id, output_id)
+                    if storage.storage_type != OutputStorageType.V2:
+                        last_access = current_time()
+                        self._output_repository.initialize(study_id, output_id, last_access, archived=False)
+                        self._output_repository.update_last_access(study_id, output_id, last_access)
+                        self._studies_repository.update_last_access(study_id, last_access)
                     self._update_output_metadata(study_id, storage, output_id, archived=False)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
                 return TaskResult(
