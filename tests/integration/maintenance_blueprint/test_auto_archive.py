@@ -30,8 +30,8 @@ from antarest.maintenance.tasks.auto_archive import AutoArchiveTaskResult, archi
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.output.repository import OutputRepository
 from antarest.service_creator import Services
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy
-from antarest.study.service import StudyService
+from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
+from antarest.study.repository import StudyFilter
 from tests.helpers import create_raw_study
 
 
@@ -138,7 +138,7 @@ class TestArchiveOldStudiesIntegration:
                 id="broken",
                 path=str(broken_path),
                 workspace=DEFAULT_WORKSPACE_NAME,
-                last_access=now - datetime.timedelta(days=90),
+                last_access=now,
             )
             db.session.add(broken)
             db.session.commit()
@@ -156,8 +156,9 @@ class TestArchiveOldStudiesIntegration:
 
     @pytest.mark.parametrize("initialized", [False, True])
     def test_dry_run_matches_archival_without_writing_metadata(
-        self, services: Services, internal_study_id: str, tmp_path: Path, initialized: bool
+        self, services: Services, internal_study_id: str, tmp_path: Path, initialized: bool, mocker: MockerFixture
     ) -> None:
+        archive_output = mocker.spy(services.output_service, "archive_output")
         now = current_time()
         with current_user_context(DEFAULT_ADMIN_USER), db():
             study = services.study.get_study(internal_study_id)
@@ -186,8 +187,9 @@ class TestArchiveOldStudiesIntegration:
 
             result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
             assert preview.status == result.status == BackGroundTaskStatus.SUCCESS
-            assert preview.archived_studies == result.archived_studies == int(initialized)
-            assert preview.archived_outputs == result.archived_outputs
+            assert preview.archived_studies == result.archived_studies == 1
+            assert preview.archived_outputs == result.archived_outputs == 0
+            archive_output.assert_not_called()
 
     def test_restored_outputs_without_metadata_get_a_new_grace_period(
         self, services: Services, internal_study_id: str, tmp_path: Path
@@ -231,7 +233,7 @@ class TestArchiveOldStudiesIntegration:
         study_service.repository.get_all.return_value = []
         results: list[AutoArchiveTaskResult] = []
 
-        def hold_lock(study_service: StudyService, threshold_days: int) -> list[str]:
+        def hold_lock(study_filter: StudyFilter) -> list[Study]:
             lock_acquired.set()
             assert release_lock.wait(timeout=5)
             return []
@@ -239,7 +241,7 @@ class TestArchiveOldStudiesIntegration:
         def run_first() -> None:
             results.append(archive_old_studies(study_service, output_service, 60, 7, True, tmp_path))
 
-        with patch("antarest.maintenance.tasks.auto_archive._get_studies_to_archive", side_effect=hold_lock) as body:
+        with patch.object(study_service.repository, "get_all", side_effect=hold_lock) as body:
             first = threading.Thread(target=run_first)
             first.start()
             try:

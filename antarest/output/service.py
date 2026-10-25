@@ -281,10 +281,6 @@ class OutputService:
             outputs.extend(self._initialize_output_metadata(study_id, storage, dry_run=dry_run))
         return outputs
 
-    def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
-        """Keep the study available while file outputs are unarchived or recently accessed."""
-        return self._output_repository.has_outputs_to_preserve(study_id, cutoff)
-
     def _initialize_output_metadata(
         self,
         study_id: str,

@@ -582,10 +582,6 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def has_outputs_to_preserve(self, study_id: str, cutoff: datetime) -> bool:
-        raise NotImplementedError()
-
-    @abstractmethod
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         raise NotImplementedError()
 
@@ -1997,7 +1993,6 @@ class StudyService:
         self,
         uuid: str,
         last_access_before: datetime | None = None,
-        output_last_access_before: datetime | None = None,
     ) -> str:
         logger.info(f"Archiving study {uuid}")
         study = self.get_study(uuid)
@@ -2024,12 +2019,7 @@ class StudyService:
             with db():
                 study_to_archive = clone_raw_study(assert_raw(self.get_study(uuid)))
                 last_activity = study_to_archive.last_access or study_to_archive.updated_at
-                if (
-                    last_access_before is not None and (last_activity is None or last_activity > last_access_before)
-                ) or (
-                    output_last_access_before is not None
-                    and self._get_outputs_access().has_outputs_to_preserve(uuid, output_last_access_before)
-                ):
+                if last_access_before is not None and (last_activity is None or last_activity > last_access_before):
                     return TaskResult(
                         success=True, message="Study no longer eligible for archiving", return_value="skipped"
                     )

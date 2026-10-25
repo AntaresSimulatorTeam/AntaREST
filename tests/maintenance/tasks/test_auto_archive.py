@@ -13,13 +13,17 @@
 """Tests for auto-archive task."""
 
 import datetime
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 
 from antarest.core.exceptions import TaskAlreadyRunning
 from antarest.core.tasks.model import TaskResult
-from antarest.maintenance.tasks.auto_archive import ArchiveStudyResult, _archive_study, _get_studies_to_archive
+from antarest.maintenance.tasks.auto_archive import (
+    ArchiveStudyResult,
+    _archive_inactive_studies_and_outputs,
+    _archive_study,
+)
 from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
@@ -38,7 +42,7 @@ def _make_study(spec: type[Study], study_id: str, days_ago: int, archived: bool 
     return study
 
 
-def test_selects_only_inactive_unarchived_raw_studies() -> None:
+def test_selects_inactive_raw_studies_in_a_single_pass() -> None:
     svc = Mock()
     without_last_access = _make_study(RawStudy, "fallback", 90)
     without_last_access.last_access = None
@@ -46,28 +50,34 @@ def test_selects_only_inactive_unarchived_raw_studies() -> None:
         _make_study(RawStudy, "old", 90),
         _make_study(VariantStudy, "variant", 90),
         _make_study(RawStudy, "recent", 30),
-        _make_study(RawStudy, "archived", 90, archived=True),
         without_last_access,
     ]
-    assert _get_studies_to_archive(svc, 60) == ["old", "fallback"]
+    outputs = Mock()
+    outputs.initialize_outputs_metadata.return_value = []
+    cutoff = datetime.datetime.now() - datetime.timedelta(days=60)
+
+    assert _archive_inactive_studies_and_outputs(svc, outputs, cutoff, True) == (2, 0, [])
+    svc.repository.get_all.assert_called_once()
+    assert outputs.initialize_outputs_metadata.call_args_list == [
+        call("variant", dry_run=True),
+        call("recent", dry_run=True),
+    ]
 
 
 class TestArchiveStudy:
     def test_handles_task_already_running(self) -> None:
-        study_svc, output_svc = Mock(), Mock()
+        study_svc = Mock()
         study_svc.archive.side_effect = TaskAlreadyRunning()
-        output_svc.has_outputs_to_preserve.return_value = False
 
-        result = _archive_study("s1", study_svc, output_svc, False, CUTOFF, CUTOFF)
+        result = _archive_study("s1", study_svc, False, CUTOFF)
         assert result == ArchiveStudyResult(0)
 
     def test_returns_error_on_exception(self) -> None:
-        study_svc, output_svc = Mock(), Mock()
+        study_svc = Mock()
         study_svc.archive.return_value = "task1"
         study_svc.task_service.status_task.return_value.result = TaskResult(success=False, message="fail")
-        output_svc.has_outputs_to_preserve.return_value = False
 
-        result = _archive_study("s1", study_svc, output_svc, False, CUTOFF, CUTOFF)
+        result = _archive_study("s1", study_svc, False, CUTOFF)
         assert result.archived_studies == 0
         assert result.error is not None
         assert "fail" in result.error
