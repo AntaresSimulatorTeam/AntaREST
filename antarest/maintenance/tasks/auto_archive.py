@@ -44,7 +44,7 @@ class ArchiveStudyResult(NamedTuple):
 class AutoArchiveTaskResult(BaseModel):
     status: BackGroundTaskStatus
     archived_studies: int
-    archived_outputs: int = 0
+    archived_outputs: int
     duration_seconds: float
     dry_run: bool
     errors: list[str] = []
@@ -214,6 +214,7 @@ def archive_old_studies(
             status=BackGroundTaskStatus.SKIPPED,
             reason="lock_not_acquired",
             archived_studies=0,
+            archived_outputs=0,
             duration_seconds=time.time() - start_time,
             dry_run=dry_run,
         )

@@ -15,12 +15,6 @@ down_revision = "b60aab4df757"
 branch_labels = None
 depends_on = None
 
-OUTPUT = sa.table(
-    "output",
-    sa.column("disk_space_bytes", sa.BigInteger()),
-)
-
-
 def upgrade() -> None:
     with op.batch_alter_table("output") as batch_op:
         batch_op.add_column(sa.Column("last_access", sa.DateTime(), nullable=True))
@@ -30,7 +24,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     # Drop cache entries with unknown sizes before restoring the NOT NULL constraint.
-    op.execute(OUTPUT.delete().where(OUTPUT.c.disk_space_bytes.is_(None)))
+    op.execute("DELETE FROM output WHERE disk_space_bytes IS NULL")
 
     with op.batch_alter_table("output") as batch_op:
         batch_op.drop_column("archived")
