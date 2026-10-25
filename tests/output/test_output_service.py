@@ -272,14 +272,13 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
     task_service.list_tasks.return_value = []
     cutoff = current_time()
     recent_access = cutoff + timedelta(seconds=1)
-    # Consultations before execution and during compression must both cancel finalization.
-    for access_dates in ([recent_access], [cutoff, recent_access]):
-        output_service.archive_output(study_id, output_unzipped, last_access_before=cutoff)
-        output_repository.get.side_effect = [Mock(archived=False, last_access=date) for date in access_dates]
-        task_service.add_task.call_args.args[0](Mock())
-        assert (tmp_path / "output" / output_unzipped).is_dir()
-        assert not (tmp_path / "output" / f"{output_unzipped}.zip").exists()
-        assert not list((tmp_path / "output").glob("~archive-*.tmp"))
+    # A consultation before task execution cancels automatic archiving.
+    output_service.archive_output(study_id, output_unzipped, last_access_before=cutoff)
+    output_repository.get.side_effect = [Mock(archived=False, last_access=recent_access)]
+    task_service.add_task.call_args.args[0](Mock())
+    assert (tmp_path / "output" / output_unzipped).is_dir()
+    assert not (tmp_path / "output" / f"{output_unzipped}.zip").exists()
+    assert not list((tmp_path / "output").glob("~archive-*.tmp"))
     output_repository.update_archived.assert_not_called()
 
     # Maintenance must also leave outputs alone while their whole study is being archived.
@@ -295,6 +294,18 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
     ]
     with pytest.raises(TaskAlreadyRunning):
         output_service.archive_output(study_id, output_unzipped, last_access_before=cutoff)
+
+    # Once eligible at task start, archive without a second access-date check.
+    task_service.list_tasks.return_value = []
+    output_repository.get.reset_mock()
+    output_repository.get.side_effect = [Mock(archived=False, last_access=cutoff)]
+    output_service.archive_output(study_id, output_unzipped, last_access_before=cutoff)
+    task_service.add_task.call_args.args[0](Mock())
+    output_repository.get.assert_called_once_with(study_id, output_unzipped)
+    assert not (tmp_path / "output" / output_unzipped).exists()
+    assert (tmp_path / "output" / f"{output_unzipped}.zip").is_file()
+    assert not list((tmp_path / "output").glob("~archive-*.tmp"))
+    output_repository.update_archived.assert_called_once_with(study_id, output_unzipped, True)
 
 
 def test_already_existing_study_raises_error_and_deletes_output() -> None:

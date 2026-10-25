@@ -14,8 +14,7 @@ import shutil
 import tempfile
 import zipfile
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterator, Sequence
-from contextlib import contextmanager
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
@@ -429,14 +428,7 @@ class AbstractFileOutputStorage(IOutputStorage):
 
     @override
     def archive_study_output(self, study_id: str, output_id: str) -> None:
-        """Archive a study output."""
-        with self.prepare_output_archive(study_id, output_id) as finalize:
-            finalize()
-
-    @override
-    @contextmanager
-    def prepare_output_archive(self, study_id: str, output_id: str) -> Iterator[Callable[[], None]]:
-        """Compress to a temporary ZIP, keeping the source available until finalization."""
+        """Compress to a temporary ZIP before replacing the source with the archive."""
         study_outputs = self._outputs_provider.get_outputs(study_id)
         if _is_output_archived(study_outputs.outputs_path, output_id):
             raise OutputAlreadyArchived(output_id)
@@ -446,12 +438,9 @@ class AbstractFileOutputStorage(IOutputStorage):
             tmp_archive = Path(tmp_dir) / "output.zip"
             archive_dir(output_path, tmp_archive, archive_format=ArchiveFormat.ZIP)
 
-            def finalize() -> None:
-                tmp_archive.replace(archived_output_path)
-                output_path.rename(Path(tmp_dir) / "source")
-                remove_from_cache(self._cache, study_id)
-
-            yield finalize
+            tmp_archive.replace(archived_output_path)
+            output_path.rename(Path(tmp_dir) / "source")
+            remove_from_cache(self._cache, study_id)
 
     def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
         dest, src = _output_paths(study_outputs.outputs_path, output_id)

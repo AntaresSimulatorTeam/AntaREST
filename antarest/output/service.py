@@ -245,22 +245,21 @@ class OutputService:
         raise OutputNotFound(output_id)
 
     def _output_access_lock(self, study_id: str, output_id: str) -> FileLock:
-        """Coordinate consultations and archive finalization across threads and processes."""
+        """Coordinate output inventory and unarchiving across threads and processes."""
         key = hashlib.sha256(f"{study_id}/{output_id}".encode()).hexdigest()
         return FileLock(self._tmp_dir / f"output-access-{key}.lock")
 
     def _get_output_storage_for_read(self, study_id: str, output_id: str) -> IOutputStorage:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        with self._output_access_lock(study_id, output_id):
-            storage = self._find_output_storage(study_id, output_id)
-            if storage.storage_type != OutputStorageType.V2:
-                last_access = current_time()
-                if self._output_repository.get(study_id, output_id) is None:
-                    self._output_repository.initialize(
-                        study_id, output_id, last_access, storage.is_output_archived(study_id, output_id)
-                    )
-                self._output_repository.update_last_access(study_id, output_id, last_access)
-                self._studies_repository.update_last_access(study_id, last_access)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.storage_type != OutputStorageType.V2:
+            last_access = current_time()
+            if self._output_repository.get(study_id, output_id) is None:
+                self._output_repository.initialize(
+                    study_id, output_id, last_access, storage.is_output_archived(study_id, output_id)
+                )
+            self._output_repository.update_last_access(study_id, output_id, last_access)
+            self._studies_repository.update_last_access(study_id, last_access)
         return storage
 
     def _get_storage_based_on_type(self, storage_type: OutputStorageType | None) -> IOutputStorage:
@@ -648,12 +647,8 @@ class OutputService:
                 if not is_eligible_for_archive():
                     return skipped
                 stopwatch = StopWatch()
-                with storage.prepare_output_archive(study_id, output_id) as finalize:
-                    with self._output_access_lock(study_id, output_id):
-                        if not is_eligible_for_archive():
-                            return skipped
-                        finalize()
-                        self._update_output_metadata(study_id, storage, output_id, archived=True)
+                storage.archive_study_output(study_id, output_id)
+                self._update_output_metadata(study_id, storage, output_id, archived=True)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
                 return TaskResult(
                     success=True,
