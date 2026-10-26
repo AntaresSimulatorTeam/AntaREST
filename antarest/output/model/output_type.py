@@ -12,6 +12,8 @@
 from enum import StrEnum
 from pathlib import Path
 
+GEMS_VIEWS_DIR = "gems-views"
+
 
 class OutputType(StrEnum):
     LEGACY = "LEGACY"
@@ -19,6 +21,6 @@ class OutputType(StrEnum):
 
     @staticmethod
     def from_output_dir(output_dir: Path) -> "OutputType":
-        if (output_dir / "gems-views").is_dir():
+        if (output_dir / GEMS_VIEWS_DIR).is_dir():
             return OutputType.GEMS_VIEWS  # implicit interface agreement with the Simulator
         return OutputType.LEGACY

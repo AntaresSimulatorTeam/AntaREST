@@ -28,7 +28,7 @@ from antarest.core.serde.ini_common import DUPLICATE_KEYS
 from antarest.core.serde.ini_reader import IniReader, IReader
 from antarest.core.serde.json import from_json
 from antarest.core.utils.archives import extract_lines_from_archive, is_archive_format, read_file_from_archive
-from antarest.output.model.output_type import OutputType
+from antarest.output.model.output_type import GEMS_VIEWS_DIR, OutputType
 from antarest.study.business.model.binding_constraint_model import BindingConstraint
 from antarest.study.business.model.common import FILTER_VALUES
 from antarest.study.business.model.config.general_model import Mode
@@ -292,24 +292,35 @@ def parse_simulation_zip(path: Path) -> Simulation:
     xpansion_path = "expansion/out.json"
     ini_path = "about-the-study/parameters.ini"
     integrity_path = "checkIntegrity.txt"
+    execution_info_path = "execution_info.ini"
+
     with tempfile.TemporaryDirectory(dir=path.parent, prefix=f"~{path.stem}-", suffix=".tmp") as output_dir:
         try:
             with zipfile.ZipFile(path) as zf:
                 try:
                     zf.extract(ini_path, output_dir)
                 except KeyError:
-                    raise SimulationParsingError(
-                        path,
-                        f"Parameters file '{ini_path}' not found",
-                    ) from None
-                if xpansion_path in zf.namelist():
-                    zf.extract(xpansion_path, output_dir)
-                if integrity_path in zf.namelist():
-                    zf.extract(integrity_path, output_dir)
+                    raise SimulationParsingError(path, f"Parameters file '{ini_path}' not found") from None
+
+                # Extract files that are needed by the `parse_simulation` method
+                existing_files = zf.namelist()
+                for res_path in [xpansion_path, integrity_path, execution_info_path]:
+                    if res_path in existing_files:
+                        zf.extract(res_path, output_dir)
+
+                # Determine the output type without having to extract the whole data
+                output_type = OutputType.LEGACY
+                for file in existing_files:
+                    if file.startswith(GEMS_VIEWS_DIR):
+                        output_type = OutputType.GEMS_VIEWS
+                        break
+
         except zipfile.BadZipFile as exc:
             raise SimulationParsingError(path, f"Bad ZIP file: {exc}") from exc
+
         simulation = parse_simulation(Path(output_dir), canonical_name=path.stem)
         simulation.archived = True
+        simulation.output_type = output_type
         return simulation
 
 
