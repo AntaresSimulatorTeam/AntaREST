@@ -18,6 +18,8 @@ const modeSchema = z.enum(["Economy", "Adequacy", "Expansion"]);
 
 const storageTypeSchema = z.enum(["IN_STUDY_FILE_TREE", "OUT_OF_STUDY_FILE_TREE", "V2"]);
 
+const outputTypeSchema = z.enum(["LEGACY", "GEMS_VIEWS"]);
+
 export const outputSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -27,4 +29,5 @@ export const outputSchema = z.object({
   nbYears: z.number(),
   archived: z.boolean(),
   storageType: storageTypeSchema,
+  outputType: outputTypeSchema,
 });
