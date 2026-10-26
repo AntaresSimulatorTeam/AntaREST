@@ -884,6 +884,7 @@
   "studies.warning.moveStudiesPartial_other": "{{failed}} études sur {{total}} n'ont pas pu être déplacées",
   "studies.moveStudies_one": "Déplacer {{count}} étude",
   "studies.moveStudies_other": "Déplacer {{count}} études",
+  "studies.destination": "Répertoire de destination",
   "studies.destination.newDirectoryPath": "nouveau répertoire",
   "studies.destination.goUp": "Remonter d'un niveau (Retour arrière)",
   "studies.destination.noSubDirectories": "Aucun sous-répertoire",
