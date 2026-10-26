@@ -46,11 +46,15 @@ const logInfo = debug("antares:websocket:info");
 const logError = debug("antares:websocket:error");
 
 const RECONNECTION_DEFAULT_DELAY = 3000;
+
+// TODO: Revisit the timer map and hasEditEvent after creation sets publicMode/tags
+// before emitting StudyCreated. Remove them only once the TanStack Query integration
+// also avoids duplicate refreshes between mutation responses and WebSocket events.
 const STUDY_REFRESH_DELAY = 100;
 
 const pendingStudyRefreshes = new Map<
   string,
-  { timer: ReturnType<typeof setTimeout>; edited: boolean }
+  { timer: ReturnType<typeof setTimeout>; hasEditEvent: boolean }
 >();
 
 let webSocket: WebSocket | null;
@@ -224,18 +228,21 @@ function makeStudyListener(dispatch: AppDispatch): WsEventListener {
       case WsEventType.StudyEdited: {
         const studyId = e.payload.id;
         const pending = pendingStudyRefreshes.get(studyId);
-        const edited = e.type === WsEventType.StudyEdited || !!pending?.edited;
+
+        // Group nearby events for this study to avoid repeated GETs.
+        // If Redux already has the study (e.g. added by the create request),
+        // StudyCreated needs no refresh. StudyEdited means that data may be outdated,
+        // so remember the edit and refresh even if a later creation event resets the timer.
+        const hasEditEvent = e.type === WsEventType.StudyEdited || !!pending?.hasEditEvent;
         clearTimeout(pending?.timer);
 
-        // Creation can emit several edits (permissions, tags). Refresh once per burst,
-        // but always refresh for later edits, which may come from another user.
         const timer = setTimeout(() => {
           pendingStudyRefreshes.delete(studyId);
-          if (edited || !getStudy(store.getState(), studyId)) {
+          if (hasEditEvent || !getStudy(store.getState(), studyId)) {
             dispatch(setStudy(studyId));
           }
         }, STUDY_REFRESH_DELAY);
-        pendingStudyRefreshes.set(studyId, { timer, edited });
+        pendingStudyRefreshes.set(studyId, { timer, hasEditEvent });
         break;
       }
       case WsEventType.StudyDeleted:

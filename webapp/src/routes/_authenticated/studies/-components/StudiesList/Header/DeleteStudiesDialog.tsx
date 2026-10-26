@@ -34,9 +34,15 @@ function DeleteStudiesDialog({ studyIds, open, onClose, onRun }: Props) {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleConfirm = () => {
-    deleteStudies.mutate({ studyIds }, { onSuccess: onClose });
-    onRun?.();
+  const handleConfirm = async () => {
+    try {
+      const deletion = deleteStudies.mutateAsync({ studyIds });
+      onRun?.();
+      await deletion;
+      onClose();
+    } catch {
+      // The mutation hook already reports deletion errors.
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -51,7 +57,6 @@ function DeleteStudiesDialog({ studyIds, open, onClose, onRun }: Props) {
       maxWidth="xs"
       onConfirm={handleConfirm}
       onCancel={onClose}
-      loading={deleteStudies.isPending}
     >
       <Typography>{t("studies.question.deleteMany", { count: studyIds.length })}</Typography>
     </ConfirmationDialog>

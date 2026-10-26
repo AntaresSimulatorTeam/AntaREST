@@ -189,6 +189,7 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
       // StudyCreator
       const { name, version, groups, publicMode, tags, storageMode, directory } = arg;
 
+      // TODO: Accept publicMode and tags in the creation API to avoid follow-up edit events.
       const studyId = await api.createStudy(name, version, groups, storageMode, directory);
 
       // New studies already use NONE, writing it again emits an unnecessary edit event.
@@ -198,7 +199,7 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
 
       if (tags && tags.length > 0) {
         // The update response includes the final metadata, including the public mode above.
-        return api.updateStudyMetadata(studyId, { tags });
+        return api.updateStudy(studyId, { tags });
       }
 
       return api.getStudyMetadata(studyId);

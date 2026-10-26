@@ -13,16 +13,16 @@
  */
 
 import { Button } from "@mui/material";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
 
 export interface ConfirmationDialogProps extends Omit<BasicDialogProps, "actions"> {
   cancelButtonText?: string;
   confirmButtonText?: string;
-  onConfirm: VoidFunction;
+  onConfirm: () => void | Promise<unknown>;
   onCancel: VoidFunction;
   disableConfirm?: boolean;
-  loading?: boolean;
   onlyCloseOnCancel?: boolean;
 }
 
@@ -33,16 +33,26 @@ function ConfirmationDialog({
   onCancel,
   onClose,
   disableConfirm,
-  loading = false,
   onlyCloseOnCancel,
   ...basicDialogProps
 }: ConfirmationDialogProps) {
   const { t } = useTranslation();
   const { alert } = basicDialogProps;
+  const [loading, setLoading] = useState(false);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
+
+  const handleConfirm = async () => {
+    setLoading(true);
+
+    try {
+      await onConfirm();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleClose = (...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>) => {
     if (loading) {
@@ -68,7 +78,7 @@ function ConfirmationDialog({
             {cancelButtonText || t("global.cancel")}
           </Button>
           <Button
-            onClick={onConfirm}
+            onClick={handleConfirm}
             variant="contained"
             disabled={disableConfirm}
             loading={loading}

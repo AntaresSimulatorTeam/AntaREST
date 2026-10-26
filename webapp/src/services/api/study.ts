@@ -32,8 +32,8 @@ import {
 import { convertStudyDtoToMetadata } from "../utils";
 import client from "./client";
 import type { FileDownloadTask } from "./downloads";
-import { studyMetadataPatchSchema, studySchema } from "./studies/schemas";
-import type { StudyMetadataPatch } from "./studies/types";
+import { studySchema, studyUpdateSchema } from "./studies/schemas";
+import type { Study, StudyUpdate } from "./studies/types";
 
 const getStudiesRaw = async (): Promise<Record<string, StudyMetadataDTO>> => {
   const res = await client.get(`/v1/studies?exists=True`);
@@ -311,18 +311,21 @@ export const renameStudy = async (studyId: string, name: string): Promise<void> 
 };
 
 /**
- * Updates study metadata with PUT /v1/studies/{studyId}.
+ * Updates study information with PUT /v1/studies/{studyId}.
+ *
+ * TODO: When study server state moves to TanStack Query, return Promise<Study>
+ * via studySchema.parse and remove the legacy converter here.
  *
  * @param studyId - ID of the study to update.
  * @param data - Metadata fields to update.
  * @returns The complete updated metadata, including unchanged fields.
  * @throws {z.ZodError} If the request or response does not match its schema.
  */
-export const updateStudyMetadata = async (
-  studyId: string,
-  data: StudyMetadataPatch,
+export const updateStudy = async (
+  studyId: Study["id"],
+  data: StudyUpdate,
 ): Promise<StudyMetadata> => {
-  const res = await client.put(`/v1/studies/${studyId}`, studyMetadataPatchSchema.parse(data));
+  const res = await client.put(`/v1/studies/${studyId}`, studyUpdateSchema.parse(data));
   // Validate the wire response while preserving the legacy Redux model's conversion.
   studySchema.in.parse(res.data);
   return convertStudyDtoToMetadata(studyId, res.data);
