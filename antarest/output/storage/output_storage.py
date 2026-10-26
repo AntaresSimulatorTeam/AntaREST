@@ -12,7 +12,6 @@
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
-from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from enum import StrEnum
 from http import HTTPStatus
@@ -231,13 +230,8 @@ class IOutputStorage(ABC):
         """Check if a study output is archived."""
 
     @abstractmethod
-    def archive_study_output(
-        self, study_id: str, output_id: str, *, archive_guard: AbstractContextManager[bool] | None = None
-    ) -> bool:
-        """Archive an output, returning False if the guard cancels it.
-
-        Enter the guard after compression to check eligibility and protect source removal.
-        """
+    def archive_study_output(self, study_id: str, output_id: str) -> None:
+        """Archive a study output."""
 
     # noinspection SpellCheckingInspection
     @abstractmethod

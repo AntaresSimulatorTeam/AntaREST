@@ -53,14 +53,14 @@ def test_selects_inactive_raw_studies_in_a_single_pass() -> None:
         without_last_access,
     ]
     outputs = Mock()
-    outputs.initialize_outputs_metadata.return_value = []
+    outputs.get_outputs_to_archive.return_value = []
     cutoff = datetime.datetime.now() - datetime.timedelta(days=60)
 
     assert _archive_inactive_studies_and_outputs(svc, outputs, cutoff, True) == (2, 0, [])
     svc.repository.get_all.assert_called_once()
-    assert outputs.initialize_outputs_metadata.call_args_list == [
-        call("variant", dry_run=True),
-        call("recent", dry_run=True),
+    assert outputs.get_outputs_to_archive.call_args_list == [
+        call("variant", cutoff),
+        call("recent", cutoff),
     ]
 
 

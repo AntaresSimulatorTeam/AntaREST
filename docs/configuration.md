@@ -290,13 +290,13 @@ default:
 
 - **Type:** Integer
 - **Default value:** 3600 (corresponds to 1 hour)
-- **Description:** Time in seconds between maintenance passes archiving inactive studies and file outputs.
+- **Description:** Time in seconds between maintenance passes archiving inactive studies and old file outputs.
 
 ## **auto_archive_dry_run**
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** If `true`, report eligible studies and file outputs without archiving them or initializing output metadata.
+- **Description:** If `true`, report eligible studies and file outputs without archiving them.
 
 ## **auto_archive_threshold_days**
 
@@ -304,15 +304,12 @@ default:
 - **Default value:** 60
 - **Description:** Number of days after the last study access date before it should be archived.
 
-File outputs of managed studies are archived independently after **60 days without consultation**,
-even when their study is still active. Reading output data or logs resets that output's access date;
-listing outputs and computing disk usage do not. Parquet outputs are not included.
-
-At deployment, the database migration saves a fixed reference date. The first maintenance pass outside
-dry-run mode initializes existing file outputs from this date, preserving recorded consultations.
-Initialization resumes automatically after failure and subsequent restarts do not reset the reference date.
-Outputs of restored studies are initialized on their first consultation or the next maintenance pass.
-Automatic archival of an entire study waits until its file outputs are already archived and none was accessed within 60 days.
+File outputs of managed studies are archived independently using the same threshold, even when their
+study is still active. The reference date is the last successful unarchiving date, when available;
+otherwise it is the date in the output ID (`YYYYMMDD-HHMM`). Reading an output does not reset this date.
+Old imported or copied outputs are therefore eligible immediately unless they have been unarchived recently.
+Outputs with an invalid date are skipped if no unarchiving date is available. Parquet outputs are excluded.
+Entire raw studies are still archived based on their last access date.
 
 ## **snapshot_retention_days**
 

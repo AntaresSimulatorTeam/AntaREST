@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 
 import enum
-from datetime import datetime
 from typing import Optional, Sequence, cast
 
 from pydantic import NonNegativeInt
@@ -191,15 +190,6 @@ class StudyMetadataRepository:
 
     def refresh(self, metadata: Study) -> None:
         self.session.refresh(metadata)
-
-    def update_last_access(self, study_id: str, last_access: datetime) -> None:
-        stmt = (
-            update(Study)
-            .where(Study.id == study_id, (Study.last_access.is_(None)) | (Study.last_access < last_access))
-            .values(last_access=last_access)
-        )
-        self.session.execute(stmt)
-        self.session.commit()
 
     def get(self, study_id: str) -> Study | None:
         """Get the study by ID or return `None` if not found in database."""

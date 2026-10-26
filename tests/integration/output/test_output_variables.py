@@ -21,12 +21,9 @@ from starlette.testclient import TestClient
 from antarest.core.serde.json import from_json
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
-from antarest.output.repository import OutputRepository
 from antarest.output.storage.file.repository import DbOutputVariables
 from antarest.output.variable_view.db import OutputVariablesViewsModel
 from antarest.study.model import MatrixFrequency
-from antarest.study.repository import StudyMetadataRepository
 from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
 from tests.integration.raw_studies_blueprint.assets import ASSETS_DIR as assets_dir
 from tests.integration.utils import wait_task_completion
@@ -190,14 +187,8 @@ def test_get_output_variables_view(client: TestClient, user_access_token: str, i
     task = wait_task_completion(client, user_access_token, task_id)
     assert task.status == TaskStatus.COMPLETED
     # Asks for the data. This time, it should succeed.
-    before_read = current_time()
     res = client.get(f"{url}/data", params=query_params)
     assert res.json() == {"data": [[46452000.0, 46452000.0], [46452000.0, 46452000.0]], "columns": ["1", "2"]}
-    with db():
-        output = OutputRepository().get(internal_study_id, output_id)
-        assert output is not None and output.last_access is not None
-        assert before_read <= output.last_access <= current_time()
-        assert StudyMetadataRepository().one(internal_study_id).last_access == output.last_access
     # Try to materialize even if the view is already in the database. Should raise an exception
     res = client.post(f"{url}/materialize", params=query_params)
     assert res.json() == {

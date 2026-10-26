@@ -27,7 +27,6 @@ from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.lock import LockNotAcquired, create_file_lock
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.common import BackGroundTaskStatus, LockId
-from antarest.output.repository import OutputRepository
 from antarest.output.service import OutputService
 from antarest.study.model import RawStudy
 from antarest.study.repository import AccessPermissions, StudyFilter
@@ -65,7 +64,6 @@ def _archive_inactive_studies_and_outputs(
     cutoff: datetime.datetime,
     dry_run: bool,
 ) -> tuple[int, int, list[str]]:
-    repository = OutputRepository()
     archived_count = 0
     archived_studies = 0
     errors: list[str] = []
@@ -83,35 +81,30 @@ def _archive_inactive_studies_and_outputs(
             continue
 
         try:
-            outputs = output_service.initialize_outputs_metadata(study_id, dry_run=dry_run)
+            outputs = output_service.get_outputs_to_archive(study_id, cutoff)
         except Exception as e:
             db.session.rollback()
             logger.exception("Failed to inventory outputs of study %s", study_id)
             errors.append(f"{study_id}: {e}")
             continue
 
-        for output in outputs:
-            if output.last_access is None or output.last_access > cutoff:
-                continue
-            if output.archived:
-                continue
+        for output_id in outputs:
             try:
-                logger.info("Archiving output %s/%s%s", study_id, output.output_id, " [dry-run]" if dry_run else "")
+                logger.info("Archiving output %s/%s%s", study_id, output_id, " [dry-run]" if dry_run else "")
                 if dry_run:
                     archived_count += 1
                     continue
-                task_id = output_service.archive_output(study_id, output.output_id, last_access_before=cutoff)
+                task_id = output_service.archive_output(study_id, output_id, archive_before=cutoff)
                 if task_id:
-                    _await_archive_task(study_service.task_service, task_id)
-                    stored = repository.get(study_id, output.output_id)
-                    if stored is not None and stored.archived:
+                    task_result = _await_archive_task(study_service.task_service, task_id)
+                    if task_result.return_value != "skipped":
                         archived_count += 1
             except (TaskAlreadyRunning, OutputAlreadyArchived):
                 continue
             except Exception as e:
                 db.session.rollback()
-                logger.exception("Failed to archive output %s/%s", study_id, output.output_id)
-                errors.append(f"{study_id}/{output.output_id}: {e}")
+                logger.exception("Failed to archive output %s/%s", study_id, output_id)
+                errors.append(f"{study_id}/{output_id}: {e}")
     return archived_studies, archived_count, errors
 
 
@@ -156,7 +149,7 @@ def archive_old_studies(
     lock_folder: Path,
 ) -> AutoArchiveTaskResult:
     """
-    Archive file outputs and studies inactive for threshold_days, and clean old snapshots.
+    Archive old file outputs and inactive studies after threshold_days, and clean old snapshots.
     """
     start_time = time.time()
     archived_count = 0

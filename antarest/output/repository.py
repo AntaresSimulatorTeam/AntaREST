@@ -13,8 +13,7 @@
 from datetime import datetime
 from typing import cast
 
-from sqlalchemy import Table, delete, func, select, update
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import Table, delete, select, update
 from sqlalchemy.orm import Session
 
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -37,55 +36,20 @@ class OutputRepository:
         result = self.session.execute(stmt.execution_options(populate_existing=True))
         return result.unique().scalar_one_or_none()
 
-    def initialize(self, study_id: str, output_id: str, last_access: datetime, archived: bool) -> None:
-        session = self.session
-        metadata = self.get(study_id, output_id)
-        if metadata is None:
-            try:
-                session.add(Output(study_id=study_id, output_id=output_id, last_access=last_access, archived=archived))
-                session.commit()
-                return
-            except IntegrityError:
-                session.rollback()
-                # Another session may have created the output since the lookup.
-                metadata = self.get(study_id, output_id)
-                if metadata is None:
-                    raise
-
-        if metadata.last_access is not None and metadata.archived is not None:
-            return
-
-        stmt = (
-            update(Output)
-            .where(Output.study_id == study_id, Output.output_id == output_id)
-            .values(
-                last_access=func.coalesce(Output.last_access, last_access),
-                archived=func.coalesce(Output.archived, archived),
-            )
+    def save_unarchiving_date(self, study_id: str, output_id: str, date: datetime) -> None:
+        upsert_one(
+            self.session,
+            cast(Table, Output.__table__),
+            {"study_id": study_id, "output_id": output_id, "last_unarchiving_date": date, "disk_space_bytes": None},
         )
-        session.execute(stmt)
-        session.commit()
-
-    def update_last_access(self, study_id: str, output_id: str, last_access: datetime) -> None:
-        stmt = (
-            update(Output)
-            .where(
-                Output.study_id == study_id,
-                Output.output_id == output_id,
-                (Output.last_access.is_(None)) | (Output.last_access < last_access),
-            )
-            .values(last_access=last_access)
-        )
-        self.session.execute(stmt)
         self.session.commit()
 
-    def update_archived(self, study_id: str, output_id: str, archived: bool) -> None:
-        stmt = (
+    def invalidate_disk_usage(self, study_id: str, output_id: str) -> None:
+        self.session.execute(
             update(Output)
             .where(Output.study_id == study_id, Output.output_id == output_id)
-            .values(archived=archived, disk_space_bytes=None)
+            .values(disk_space_bytes=None)
         )
-        self.session.execute(stmt)
         self.session.commit()
 
     def save_disk_usage(self, study_id: str, output_id: str, disk_space_bytes: int) -> None:

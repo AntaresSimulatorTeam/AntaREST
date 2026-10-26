@@ -14,7 +14,6 @@ import shutil
 import tempfile
 import uuid
 from collections.abc import Iterator, Sequence
-from contextlib import AbstractContextManager, nullcontext
 from pathlib import Path
 from typing import Any, BinaryIO
 
@@ -340,21 +339,15 @@ class V2OutputStorage(IOutputStorage):
         return metadata.archived
 
     @override
-    def archive_study_output(
-        self, study_id: str, output_id: str, *, archive_guard: AbstractContextManager[bool] | None = None
-    ) -> bool:
-        with archive_guard or nullcontext(True) as should_archive:
-            if not should_archive:
-                return False
-            logger.info(f"Archiving output {study_id}/{output_id} in internal storage.")
-            metadata = self._require_metadata(study_id, output_id)
-            metadata.archived = True
-            self._repository.save_output_metadata(metadata)
+    def archive_study_output(self, study_id: str, output_id: str) -> None:
+        logger.info(f"Archiving output {study_id}/{output_id} in internal storage.")
+        metadata = self._require_metadata(study_id, output_id)
+        metadata.archived = True
+        self._repository.save_output_metadata(metadata)
 
-            # Delete the parquet directory to free disk space
-            variables_target = parquet_output_dir(self._variables_dir, study_id, output_id)
-            shutil.rmtree(variables_target, ignore_errors=True)
-        return True
+        # Delete the parquet directory to free disk space
+        variables_target = parquet_output_dir(self._variables_dir, study_id, output_id)
+        shutil.rmtree(variables_target, ignore_errors=True)
 
     @override
     def unarchive_study_output(self, study_id: str, output_id: str) -> None:

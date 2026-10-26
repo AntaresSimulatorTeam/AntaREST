@@ -17,7 +17,6 @@ from pathlib import Path
 from subprocess import run
 from unittest.mock import Mock
 
-import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
@@ -121,7 +120,6 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
 
 
 @with_admin_user
-@pytest.mark.usefixtures("mock_output_repository")
 def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path, sta_mini_seven_zip_path: Path) -> None:
     # test with zip file
     data = assert_url_content(
@@ -137,7 +135,6 @@ def test_exporter_file(tmp_path: Path, sta_mini_zip_path: Path, sta_mini_seven_z
 
 
 @with_admin_user
-@pytest.mark.usefixtures("mock_output_repository")
 def test_exporter_file_no_output(tmp_path: Path, sta_mini_zip_path: Path, sta_mini_seven_zip_path: Path) -> None:
     # test with zip file
     data = assert_url_content(

@@ -22,8 +22,6 @@ from starlette.testclient import TestClient
 from antarest.core.serde.ini_reader import read_ini
 from antarest.core.serde.ini_writer import write_ini_file
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.utils import current_time
-from antarest.output.repository import OutputRepository
 from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.studies_blueprint.utils import check_minimal_study_integrity, create_minimal_study
@@ -290,7 +288,6 @@ def test_import_with_both_storage_modes(client: TestClient, user_access_token: s
     for storage_mode in ["filesystem", "database"]:
         content = {"study": (f"{study_name}.zip", study_zip_data, "application/zip")}
 
-        before_import = current_time()
         res_import = client.post(f"/v1/studies/_import?storage_mode={storage_mode}", files=content)
         res_import.raise_for_status()
         imported_study_id = res_import.json()
@@ -301,8 +298,3 @@ def test_import_with_both_storage_modes(client: TestClient, user_access_token: s
         # Checks the output that was inside the zip was also imported
         res_outputs = client.get(f"/v1/studies/{imported_study_id}/outputs")
         assert len(res_outputs.json()) == 1
-        with db():
-            output = OutputRepository().get(imported_study_id, res_outputs.json()[0]["id"])
-            assert output is not None
-            assert output.last_access is not None and before_import <= output.last_access <= current_time()
-            assert output.archived is False
