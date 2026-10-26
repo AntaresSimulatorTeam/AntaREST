@@ -21,7 +21,7 @@ from typing_extensions import override
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
-from antarest.output.model.data_type import OutputDataType
+from antarest.output.model.output_type import OutputType
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -107,7 +107,7 @@ class Simulation(AntaresBaseModel):
     playlist: list[int] | None
     archived: bool = False
     xpansion: str
-    data_type: OutputDataType
+    output_type: OutputType
 
     def get_file(self) -> str:
         dash = "-" if self.name else ""

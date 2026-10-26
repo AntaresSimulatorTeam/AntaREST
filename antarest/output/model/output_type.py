@@ -13,12 +13,12 @@ from enum import StrEnum
 from pathlib import Path
 
 
-class OutputDataType(StrEnum):
-    LEGACY = "Legacy"
-    GEMS_VIEWS = "GemsViews"
+class OutputType(StrEnum):
+    LEGACY = "LEGACY"
+    GEMS_VIEWS = "GEMS_VIEWS"
 
     @staticmethod
-    def from_output_dir(output_dir: Path) -> "OutputDataType":
+    def from_output_dir(output_dir: Path) -> "OutputType":
         if (output_dir / "gems-views").is_dir():
-            return OutputDataType.GEMS_VIEWS  # implicit interface agreement with the Simulator
-        return OutputDataType.LEGACY
+            return OutputType.GEMS_VIEWS  # implicit interface agreement with the Simulator
+        return OutputType.LEGACY

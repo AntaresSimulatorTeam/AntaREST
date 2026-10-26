@@ -23,7 +23,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde.ini_writer import write_ini_file
-from antarest.output.model.data_type import OutputDataType
+from antarest.output.model.output_type import OutputType
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
@@ -211,7 +211,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 error=False,
                 playlist=[1],
                 xpansion="",
-                data_type=OutputDataType.LEGACY,
+                output_type=OutputType.LEGACY,
             )
         },
     )
@@ -235,7 +235,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="",
-                    data_type=OutputDataType.LEGACY,
+                    output_type=OutputType.LEGACY,
                 ),
                 "20230203-1530eco": Simulation(
                     name="",
@@ -248,7 +248,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="1.0.2",
-                    data_type=OutputDataType.LEGACY,
+                    output_type=OutputType.LEGACY,
                 ),
                 "20230203-1531eco": Simulation(
                     name="",
@@ -261,7 +261,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=True,
                     xpansion="",
-                    data_type=OutputDataType.LEGACY,
+                    output_type=OutputType.LEGACY,
                 ),
                 "20230203-1600eco": Simulation(
                     name="",
@@ -274,7 +274,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="",
-                    data_type=OutputDataType.LEGACY,
+                    output_type=OutputType.LEGACY,
                 ),
             },
         ),
@@ -952,7 +952,7 @@ def test_parse_simulation_error_parameter(empty_study_880: FileStudy) -> None:
     assert not simulation.error
 
 
-def test_parse_simulation_data_type(empty_study_880: FileStudy) -> None:
+def test_parse_simulation_output_type(empty_study_880: FileStudy) -> None:
     output_id = "20250521-1009eco-fake_output"
     study_path = empty_study_880.config.path
     _set_up_output(study_path, output_id)
@@ -961,12 +961,12 @@ def test_parse_simulation_data_type(empty_study_880: FileStudy) -> None:
 
     # 1st case: No `gems-views` folder -> Should be seen as Legacy
     simulation = parse_simulation(output_path, output_id)
-    assert simulation.data_type == OutputDataType.LEGACY
+    assert simulation.output_type == OutputType.LEGACY
 
     # 2nd case: The folder exists -> Should be seen as GemsViews
     (output_path / "gems-views").mkdir()
     simulation = parse_simulation(output_path, output_id)
-    assert simulation.data_type == OutputDataType.GEMS_VIEWS
+    assert simulation.output_type == OutputType.GEMS_VIEWS
 
 
 def test_parse_xpansion_simulation(empty_study_880: FileStudy) -> None:

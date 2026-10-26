@@ -31,7 +31,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str) -> None:
             "mode": "Economy",
             "nbYears": 1,
             "storageType": "IN_STUDY_FILE_TREE",
-            "dataType": "Legacy",
+            "outputType": "LEGACY",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",
@@ -59,7 +59,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str) -> None:
             "mode": "Economy",
             "nbYears": 2,
             "storageType": "IN_STUDY_FILE_TREE",
-            "dataType": "Legacy",
+            "outputType": "LEGACY",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",
@@ -87,7 +87,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str) -> None:
             "mode": "Economy",
             "nbYears": 1,
             "storageType": "IN_STUDY_FILE_TREE",
-            "dataType": "Legacy",
+            "outputType": "LEGACY",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",
@@ -115,7 +115,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str) -> None:
             "mode": "Adequacy",
             "nbYears": 1,
             "storageType": "IN_STUDY_FILE_TREE",
-            "dataType": "Legacy",
+            "outputType": "LEGACY",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",
@@ -143,7 +143,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str) -> None:
             "mode": "Adequacy",
             "nbYears": 1,
             "storageType": "IN_STUDY_FILE_TREE",
-            "dataType": "Legacy",
+            "outputType": "LEGACY",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",
@@ -171,7 +171,7 @@ def test_list_outputs(admin_client: TestClient, internal_study_id: str) -> None:
             "mode": "Economy",
             "nbYears": 1,
             "storageType": "IN_STUDY_FILE_TREE",
-            "dataType": "Legacy",
+            "outputType": "LEGACY",
             "settings": {
                 "general": {
                     "first-month-in-year": "january",

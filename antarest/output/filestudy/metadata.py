@@ -16,7 +16,7 @@ from antarest.core.model import JSON
 from antarest.core.serde.ini_common import DUPLICATE_KEYS
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import read_original_file_in_archive
-from antarest.output.model.data_type import OutputDataType
+from antarest.output.model.output_type import OutputType
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.study.business.model.config.general_model import Mode
 
@@ -46,5 +46,5 @@ def extract_output_details(output_path: Path) -> OutputDetails:
         nb_years=general["nbyears"],
         archived=False,
         storage_type=OutputStorageType.IN_STUDY_FILE_TREE,
-        data_type=OutputDataType.from_output_dir(output_path),
+        output_type=OutputType.from_output_dir(output_path),
     )
