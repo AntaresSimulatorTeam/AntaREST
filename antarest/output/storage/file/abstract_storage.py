@@ -327,6 +327,7 @@ class AbstractFileOutputStorage(IOutputStorage):
                 nb_years=output_data.nbyears,
                 archived=output_data.archived,
                 storage_type=self._storage_type,
+                output_type=output_data.output_type,
                 settings=settings,
             )
             result.append(output_details)
