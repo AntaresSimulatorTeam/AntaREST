@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+import shutil
 import textwrap
 import typing as t
 from collections.abc import Iterable, Mapping
@@ -66,6 +67,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     parse_area,
     parse_outputs,
     parse_simulation,
+    parse_simulation_zip,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
@@ -957,15 +959,33 @@ def test_parse_simulation_output_type(empty_study_880: FileStudy) -> None:
     study_path = empty_study_880.config.path
     _set_up_output(study_path, output_id)
 
-    output_path = study_path / "output" / output_id
+    output_folder = study_path / "output"
+    output_path = output_folder / output_id
+
+    # Creates ZIP to test it too
+    zipped_id = "20250522-1009eco"
+    shutil.make_archive(str(output_folder / zipped_id), "zip", root_dir=output_folder / output_id)
+    output_archived_path = output_folder / f"{zipped_id}.zip"
 
     # 1st case: No `gems-views` folder -> Should be seen as Legacy
     simulation = parse_simulation(output_path, output_id)
     assert simulation.output_type == OutputType.LEGACY
 
+    simulation = parse_simulation_zip(output_archived_path)
+    assert simulation.output_type == OutputType.LEGACY
+
     # 2nd case: The folder exists -> Should be seen as GemsViews
     (output_path / "gems-views").mkdir()
     simulation = parse_simulation(output_path, output_id)
+    assert simulation.output_type == OutputType.GEMS_VIEWS
+
+    # Recreates ZIP to test it too
+    output_archived_path.unlink()
+    zipped_id = "20250522-1009eco"
+    shutil.make_archive(str(output_folder / zipped_id), "zip", root_dir=output_folder / output_id)
+    output_archived_path = output_folder / f"{zipped_id}.zip"
+
+    simulation = parse_simulation_zip(output_archived_path)
     assert simulation.output_type == OutputType.GEMS_VIEWS
 
 
