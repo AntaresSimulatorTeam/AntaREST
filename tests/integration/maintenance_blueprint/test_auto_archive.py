@@ -22,6 +22,7 @@ from pytest_mock import MockerFixture
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.tasks.model import TaskStatus
+from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.launcher.model import LogType
@@ -119,6 +120,42 @@ class TestArchiveOldStudiesIntegration:
             assert stored.archived is dry_run
             assert stored.last_access == last_access
             assert stored.disk_space_bytes == (42 if dry_run else None)
+
+    def test_consultation_during_compression_cancels_archival(
+        self, services: Services, internal_study_id: str, tmp_path: Path, mocker: MockerFixture
+    ) -> None:
+        now = current_time()
+        with current_user_context(DEFAULT_ADMIN_USER), db():
+            study = services.study.get_study(internal_study_id)
+            assert isinstance(study, RawStudy) and study.path is not None
+            study.workspace = DEFAULT_WORKSPACE_NAME
+            study.last_access = now
+            db.session.commit()
+            output_id = next(o.id for o in services.output_service.list_outputs(study.id) if not o.archived)
+            output_dir = Path(study.path) / "output" / output_id
+            log_text = "Simulation completed successfully"
+            (output_dir / "antares-out.log").write_text(log_text)
+            repository = OutputRepository()
+            repository.initialize(study.id, output_id, now - datetime.timedelta(days=90), archived=False)
+
+            def compress_and_read(src: Path, target: Path, *, archive_format: ArchiveFormat) -> None:
+                archive_dir(src, target, archive_format=archive_format)
+                # A separate session records a consultation after the task's initial eligibility check.
+                with db():
+                    assert services.output_service.get_logs(study.id, output_id, LogType.STDOUT) == log_text
+
+            mocker.patch("antarest.output.storage.file.abstract_storage.archive_dir", side_effect=compress_and_read)
+
+            result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+
+            assert result.status == BackGroundTaskStatus.SUCCESS
+            assert result.archived_outputs == result.archived_studies == 0
+            stored = repository.get(study.id, output_id)
+            assert stored is not None and stored.archived is False
+            assert stored.last_access is not None and stored.last_access >= now
+            assert (output_dir / "antares-out.log").read_text() == log_text
+            assert not output_dir.with_name(output_dir.name + ".zip").exists()
+            assert not list(output_dir.parent.glob("~archive-*.tmp"))
 
     def test_inventory_failure_does_not_stop_other_studies(
         self, services: Services, internal_study_id: str, tmp_path: Path, mocker: MockerFixture

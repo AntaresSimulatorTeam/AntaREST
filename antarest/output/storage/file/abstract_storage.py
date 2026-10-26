@@ -15,6 +15,7 @@ import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
+from contextlib import AbstractContextManager, nullcontext
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
@@ -427,7 +428,9 @@ class AbstractFileOutputStorage(IOutputStorage):
         return _is_output_archived(study_outputs.outputs_path, output_id)
 
     @override
-    def archive_study_output(self, study_id: str, output_id: str) -> None:
+    def archive_study_output(
+        self, study_id: str, output_id: str, *, archive_guard: AbstractContextManager[bool] | None = None
+    ) -> bool:
         """Compress to a temporary ZIP before replacing the source with the archive."""
         study_outputs = self._outputs_provider.get_outputs(study_id)
         if _is_output_archived(study_outputs.outputs_path, output_id):
@@ -438,9 +441,15 @@ class AbstractFileOutputStorage(IOutputStorage):
             tmp_archive = Path(tmp_dir) / "output.zip"
             archive_dir(output_path, tmp_archive, archive_format=ArchiveFormat.ZIP)
 
-            tmp_archive.replace(archived_output_path)
-            output_path.rename(Path(tmp_dir) / "source")
-            remove_from_cache(self._cache, study_id)
+            guard = archive_guard if archive_guard is not None else nullcontext(True)
+
+            with guard as should_archive:
+                if not should_archive:
+                    return False
+                tmp_archive.replace(archived_output_path)
+                output_path.rename(Path(tmp_dir) / "source")
+                remove_from_cache(self._cache, study_id)
+        return True
 
     def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
         dest, src = _output_paths(study_outputs.outputs_path, output_id)
