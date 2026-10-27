@@ -158,6 +158,39 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     )
 
 
+@pytest.mark.parametrize("storage_type", list(OutputStorageType))
+@pytest.mark.parametrize("success", [False, True])
+def test_unarchiving_date_is_saved_only_after_success_for_all_storages(
+    storage_type: OutputStorageType, success: bool
+) -> None:
+    storage = Mock(spec=IOutputStorage, storage_type=storage_type)
+    storage.output_exists.return_value = True
+    storage.is_output_archived.return_value = True
+    if not success:
+        storage.unarchive_study_output.side_effect = RuntimeError("Unarchiving failed")
+    repository = Mock()
+    service = OutputService(
+        matrix_service=Mock(),
+        file_transfer_manager=Mock(),
+        tmp_dir=Mock(),
+        studies_repository=Mock(spec=IStudyMetadataProvider),
+        storages=[storage],
+        task_service=SimpleSyncTaskService(),
+        output_repository=repository,
+    )
+
+    if success:
+        before = current_time()
+        service.unarchive_output("study", "output")
+        repository.save_unarchiving_date.assert_called_once_with("study", "output", ANY)
+        assert before <= repository.save_unarchiving_date.call_args.args[2] <= current_time()
+    else:
+        with pytest.raises(RuntimeError, match="Unarchiving failed"):
+            service.unarchive_output("study", "output")
+        repository.save_unarchiving_date.assert_not_called()
+    repository.delete.assert_not_called()
+
+
 @with_admin_user
 def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -> None:
     study_id = str(uuid.uuid4())

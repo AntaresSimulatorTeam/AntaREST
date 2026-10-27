@@ -31,6 +31,7 @@ from antarest.output.service import OutputService
 from antarest.study.model import RawStudy
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
+from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,12 @@ logger = logging.getLogger(__name__)
 class ArchiveStudyResult(NamedTuple):
     archived_studies: int
     error: str | None = None
+
+
+class ArchiveStudiesAndOutputsResult(NamedTuple):
+    archived_studies: int
+    archived_outputs: int
+    errors: list[str]
 
 
 class AutoArchiveTaskResult(BaseModel):
@@ -63,7 +70,7 @@ def _archive_inactive_studies_and_outputs(
     output_service: OutputService,
     cutoff: datetime.datetime,
     dry_run: bool,
-) -> tuple[int, int, list[str]]:
+) -> ArchiveStudiesAndOutputsResult:
     archived_outputs = 0
     archived_studies = 0
     errors: list[str] = []
@@ -80,8 +87,13 @@ def _archive_inactive_studies_and_outputs(
                 errors.append(result.error)
             continue
 
+        inactive_variant = isinstance(study, VariantStudy) and last_activity is not None and last_activity < cutoff
         try:
-            outputs = output_service.get_outputs_to_archive(study_id, cutoff)
+            if inactive_variant:
+                # Inactive variants archive all outputs, including recently unarchived outputs and all storage types.
+                outputs = [output.id for output in output_service.list_outputs(study_id) if not output.archived]
+            else:
+                outputs = output_service.get_outputs_to_archive(study_id, cutoff)
         except Exception as e:
             db.session.rollback()
             logger.exception("Failed to inventory outputs of study %s", study_id)
@@ -94,7 +106,9 @@ def _archive_inactive_studies_and_outputs(
                 if dry_run:
                     archived_outputs += 1
                     continue
-                task_id = output_service.archive_output(study_id, output_id, archive_before=cutoff)
+                task_id = output_service.archive_output(
+                    study_id, output_id, archive_before=None if inactive_variant else cutoff
+                )
                 if task_id:
                     task_result = _await_archive_task(study_service.task_service, task_id)
                     if task_result.return_value != "skipped":
@@ -105,7 +119,11 @@ def _archive_inactive_studies_and_outputs(
                 db.session.rollback()
                 logger.exception("Failed to archive output %s/%s", study_id, output_id)
                 errors.append(f"{study_id}/{output_id}: {e}")
-    return archived_studies, archived_outputs, errors
+    return ArchiveStudiesAndOutputsResult(
+        archived_studies=archived_studies,
+        archived_outputs=archived_outputs,
+        errors=errors,
+    )
 
 
 def _archive_study(
@@ -163,9 +181,10 @@ def archive_old_studies(
     try:
         with db():
             with create_file_lock(lock_id=LockId.AUTO_ARCHIVE, lock_folder=lock_folder):
-                archived_count, archived_outputs, errors = _archive_inactive_studies_and_outputs(
-                    study_service, output_service, cutoff, dry_run
-                )
+                result = _archive_inactive_studies_and_outputs(study_service, output_service, cutoff, dry_run)
+                archived_count = result.archived_studies
+                archived_outputs = result.archived_outputs
+                errors = result.errors
 
                 _clear_old_snapshots(study_service, snapshot_retention_days, dry_run)
 

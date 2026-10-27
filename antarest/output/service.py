@@ -307,10 +307,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.unarchive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
-                if storage.storage_type != OutputStorageType.V2:
-                    self._output_repository.save_unarchiving_date(study_id, output_id, current_time())
-                else:
-                    self._output_repository.delete(study_id, output_id)
+                self._output_repository.save_unarchiving_date(study_id, output_id, current_time())
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",

@@ -19,6 +19,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from pytest_mock import MockerFixture
+from starlette.testclient import TestClient
 
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.tasks.model import TaskStatus
@@ -29,6 +30,7 @@ from antarest.login.utils import current_user_context
 from antarest.maintenance.tasks.auto_archive import AutoArchiveTaskResult, archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.output.repository import OutputRepository
+from antarest.output.storage.output_storage import OutputStorageType
 from antarest.service_creator import Services
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
 from antarest.study.repository import StudyFilter
@@ -36,6 +38,52 @@ from tests.helpers import create_raw_study
 
 
 class TestArchiveOldStudiesIntegration:
+    @pytest.mark.parametrize("storage_type", [OutputStorageType.OUT_OF_STUDY_FILE_TREE, OutputStorageType.V2])
+    @pytest.mark.parametrize("dry_run", [False, True])
+    def test_inactive_variant_rearchives_recently_unarchived_outputs(
+        self,
+        admin_client: TestClient,
+        services: Services,
+        output_zip: Path,
+        tmp_path: Path,
+        storage_type: OutputStorageType,
+        dry_run: bool,
+    ) -> None:
+        response = admin_client.post("/v1/studies", params={"name": "Parent study"})
+        assert response.status_code == 201, response.text
+        parent_id = response.json()
+        response = admin_client.post(f"/v1/studies/{parent_id}/variants", params={"name": "Inactive variant"})
+        assert response.status_code == 200, response.text
+        variant_id = response.json()
+        with current_user_context(DEFAULT_ADMIN_USER):
+            with db(), output_zip.open("rb") as output_file:
+                output_id = services.output_service.import_output(variant_id, output_file, storage_type=storage_type)
+            assert output_id is not None
+            for action in (services.output_service.archive_output, services.output_service.unarchive_output):
+                with db():
+                    task_id = action(variant_id, output_id)
+                assert task_id is not None
+                services.task_service.await_task(task_id)
+                with db():
+                    assert services.task_service.status_task(task_id).status == TaskStatus.COMPLETED
+
+            now = current_time()
+            with db():
+                variant = services.study.get_study(variant_id)
+                variant.last_access = now - datetime.timedelta(days=90)
+                db.session.commit()
+                stored = OutputRepository().get(variant_id, output_id)
+                assert stored is not None and stored.last_unarchiving_date is not None
+                assert stored.last_unarchiving_date > now - datetime.timedelta(days=1)
+
+            result = archive_old_studies(services.study, services.output_service, 60, 7, dry_run, tmp_path)
+
+            assert result.status == BackGroundTaskStatus.SUCCESS
+            assert result.archived_outputs >= 1
+            with db():
+                output = next(o for o in services.output_service.list_outputs(variant_id) if o.id == output_id)
+                assert output.archived is not dry_run
+
     def test_unarchived_output_gets_a_new_grace_period(self, services: Services, internal_study_id: str) -> None:
         now = current_time()
         with current_user_context(DEFAULT_ADMIN_USER):

@@ -25,6 +25,7 @@ from antarest.maintenance.tasks.auto_archive import (
     _archive_study,
 )
 from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
+from antarest.output.storage.output_storage import OutputMetadata
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
@@ -54,14 +55,53 @@ def test_selects_inactive_raw_studies_in_a_single_pass() -> None:
     ]
     outputs = Mock()
     outputs.get_outputs_to_archive.return_value = []
+    outputs.list_outputs.return_value = []
     cutoff = datetime.datetime.now() - datetime.timedelta(days=60)
 
-    assert _archive_inactive_studies_and_outputs(svc, outputs, cutoff, True) == (2, 0, [])
+    result = _archive_inactive_studies_and_outputs(svc, outputs, cutoff, True)
+    assert result.archived_studies == 2
+    assert result.archived_outputs == 0
+    assert result.errors == []
     svc.repository.get_all.assert_called_once()
     assert outputs.get_outputs_to_archive.call_args_list == [
-        call("variant", cutoff),
         call("recent", cutoff),
     ]
+    outputs.list_outputs.assert_called_once_with("variant")
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+@pytest.mark.parametrize("inactive", [False, True])
+@pytest.mark.parametrize("has_last_access", [False, True])
+def test_variant_archival_depends_on_study_activity(dry_run: bool, inactive: bool, has_last_access: bool) -> None:
+    study = _make_study(VariantStudy, "variant", 90 if inactive else 30)
+    if not has_last_access:
+        study.last_access = None
+    study_service, output_service = Mock(), Mock()
+    study_service.repository.get_all.return_value = [study]
+    study_service.task_service.status_task.return_value.result = TaskResult(success=True, message="ok")
+    output_service.list_outputs.return_value = [
+        OutputMetadata("recent-output", in_study=False, archived=False),
+        OutputMetadata("already-archived", in_study=False, archived=True),
+    ]
+    output_service.get_outputs_to_archive.return_value = []
+    cutoff = datetime.datetime.now() - datetime.timedelta(days=60)
+
+    result = _archive_inactive_studies_and_outputs(study_service, output_service, cutoff, dry_run)
+
+    assert result.archived_studies == 0
+    assert result.archived_outputs == int(inactive)
+    assert result.errors == []
+    study_service.archive.assert_not_called()
+    if inactive:
+        output_service.get_outputs_to_archive.assert_not_called()
+    else:
+        output_service.list_outputs.assert_not_called()
+        output_service.get_outputs_to_archive.assert_called_once_with("variant", cutoff)
+    if inactive and not dry_run:
+        output_service.archive_output.assert_called_once_with("variant", "recent-output", archive_before=None)
+        study_service.task_service.await_task.assert_called_once()
+    else:
+        output_service.archive_output.assert_not_called()
 
 
 class TestArchiveStudy:
