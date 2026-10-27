@@ -1,7 +1,7 @@
 """Track the last output unarchiving date.
 
 Revision ID: 193aa1d7b5ad
-Revises: b60aab4df757
+Revises: 4b74045877f5
 Create Date: 2026-10-21 10:22:29.967599
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "193aa1d7b5ad"
-down_revision = "b60aab4df757"
+down_revision = "4b74045877f5"
 branch_labels = None
 depends_on = None
 
