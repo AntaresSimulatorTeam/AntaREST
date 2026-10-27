@@ -16,7 +16,7 @@ import client from "@/services/api/client";
 import { ZodError } from "zod";
 import * as api from "..";
 import { storageCreationSchema, storageUpdateSchema } from "../schemas";
-import type { StorageResponse } from "../types";
+import type { Storage } from "../types";
 
 vi.mock("@/services/api/client", () => ({
   default: { get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() },
@@ -27,7 +27,7 @@ const areaId = "area-1";
 const storageId = "Battery A";
 const params = { studyId, areaId, storageId };
 const listUrl = `/v1/studies/${studyId}/areas/${areaId}/storages`;
-const storage: StorageResponse = {
+const storage: Storage = {
   id: storageId,
   name: "Battery A",
   group: "custom battery",
@@ -59,13 +59,10 @@ test("returns complete list and detail properties with unchanged server IDs", as
   expect(client.get).toHaveBeenNthCalledWith(2, `${listUrl}/${storageId}`);
 });
 
-test.each(["battery", "custom group", "", null])(
-  "preserves the response group %s",
-  async (group) => {
-    vi.mocked(client.get).mockResolvedValue({ data: { ...storage, group } });
-    expect(await api.getStorage(params)).toEqual({ ...storage, group });
-  },
-);
+test.each(["battery", "custom group", ""])("preserves the response group '%s'", async (group) => {
+  vi.mocked(client.get).mockResolvedValue({ data: { ...storage, group } });
+  expect(await api.getStorage(params)).toEqual({ ...storage, group });
+});
 
 test.each([null, undefined])(
   "normalizes absent version-specific fields (%s) without UI defaults",
@@ -116,7 +113,7 @@ test("creates from a name-only payload and validates the response", async () => 
 });
 
 test("updates only supplied fields and retains zero, false and an explicit empty group", async () => {
-  vi.mocked(client.patch).mockResolvedValue({ data: { ...storage, group: null } });
+  vi.mocked(client.patch).mockResolvedValue({ data: { ...storage, group: "" } });
 
   const result = await api.updateStorage({
     ...params,
@@ -130,7 +127,7 @@ test("updates only supplied fields and retains zero, false and an explicit empty
   const [url, body] = vi.mocked(client.patch).mock.calls[0];
   expect(url).toBe(`${listUrl}/${storageId}`);
   expect(JSON.parse(JSON.stringify(body))).toEqual({ enabled: false, initialLevel: 0, group: "" });
-  expect(result.group).toBeNull();
+  expect(result.group).toBe("");
 });
 
 test("accepts omitted fields but rejects null for non-nullable creation and update fields", () => {
@@ -142,7 +139,7 @@ test("accepts omitted fields but rejects null for non-nullable creation and upda
 test("strips identifiers and ignored names from write bodies without mutating the input", async () => {
   vi.mocked(client.post).mockResolvedValue({ data: storage });
   vi.mocked(client.patch).mockResolvedValue({ data: storage });
-  const values = { ...storage, name: "New name", group: null };
+  const values = { ...storage, name: "New name", group: "" };
 
   await api.createStorage({ studyId, areaId, values });
   await api.updateStorage({ ...params, values });
@@ -151,8 +148,8 @@ test("strips identifiers and ignored names from write bodies without mutating th
   expect(vi.mocked(client.post).mock.calls[0][1]).toHaveProperty("name", "New name");
   expect(vi.mocked(client.patch).mock.calls[0][1]).not.toHaveProperty("id");
   expect(vi.mocked(client.patch).mock.calls[0][1]).not.toHaveProperty("name");
-  expect(vi.mocked(client.patch).mock.calls[0][1]).toHaveProperty("group", null);
-  expect(values).toEqual({ ...storage, name: "New name", group: null });
+  expect(vi.mocked(client.patch).mock.calls[0][1]).toHaveProperty("group", "");
+  expect(values).toEqual({ ...storage, name: "New name", group: "" });
 });
 
 test.each([

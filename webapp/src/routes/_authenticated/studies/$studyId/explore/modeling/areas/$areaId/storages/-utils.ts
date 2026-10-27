@@ -12,26 +12,9 @@
  * This file is part of the Antares project.
  */
 
-import * as storageApi from "@/services/api/studies/areas/storages";
-import type { StorageGroup, StorageResponse } from "@/services/api/studies/areas/storages/types";
-import type { Area } from "@/types/types";
-import type { PartialExceptFor } from "@/utils/tsUtils";
+import type { Storage } from "@/services/api/studies/areas/storages/types";
 import * as RA from "ramda-adjunct";
 import { adaptStorageToView } from "./-adapters";
-import type { Study } from "@/services/api/studies/types";
-
-// TODO(PR2): remove compatibility exports and wrappers once consumers use the Storage data layer.
-export { STORAGE_GROUPS } from "@/services/api/studies/areas/storages/constants";
-export type { StorageGroup } from "@/services/api/studies/areas/storages/types";
-
-export type Storage<LegacyGroup extends boolean = false> = Omit<
-  Required<StorageResponse>,
-  "group"
-> & {
-  group: LegacyGroup extends true ? StorageGroup : string;
-};
-
-export type FormalizedStorage = ReturnType<typeof adaptStorageToView>;
 
 export function getStoragesTotals(storages: Storage[]) {
   return storages.reduce(
@@ -45,62 +28,6 @@ export function getStoragesTotals(storages: Storage[]) {
       totalInjectionNominalCapacity: 0,
     },
   );
-}
-
-export async function getStorages(studyId: Study["id"], areaId: Area["name"]) {
-  const storages = await storageApi.getStorages({ studyId, areaId });
-  return storages.map(adaptStorageToView);
-}
-
-export async function getStorage(
-  studyId: Study["id"],
-  areaId: Area["name"],
-  storageId: Storage["id"],
-) {
-  const storage = await storageApi.getStorage({ studyId, areaId, storageId });
-  return adaptStorageToView(storage);
-}
-
-export async function updateStorage(
-  studyId: Study["id"],
-  areaId: Area["name"],
-  storageId: Storage["id"],
-  data: Partial<Storage>,
-) {
-  const storage = await storageApi.updateStorage({ studyId, areaId, storageId, values: data });
-  return adaptStorageToView(storage);
-}
-
-export async function createStorage(
-  studyId: Study["id"],
-  areaId: Area["name"],
-  data: PartialExceptFor<Storage, "name">,
-) {
-  const storage = await storageApi.createStorage({ studyId, areaId, values: data });
-  return adaptStorageToView(storage);
-}
-
-export async function duplicateStorage(
-  studyId: Study["id"],
-  areaId: Area["name"],
-  sourceClusterId: Storage["id"],
-  newName: Storage["name"],
-) {
-  const storage = await storageApi.duplicateStorage({
-    studyId,
-    areaId,
-    storageId: sourceClusterId,
-    newName,
-  });
-  return adaptStorageToView(storage);
-}
-
-export function deleteStorages(
-  studyId: Study["id"],
-  areaId: Area["name"],
-  storageIds: Array<Storage["id"]>,
-) {
-  return storageApi.deleteStorages({ studyId, areaId, storageIds });
 }
 
 export function convertRatioToPercentage<T extends Partial<Storage>>(storage: T): T {
@@ -135,4 +62,23 @@ export function convertPercentageToRatio(storage: Partial<Storage>): Partial<Sto
   }
 
   return values;
+}
+
+/**
+ * Transforms a list of storages into enriched data for display.
+ *
+ * Totals are computed across all storages.
+ *
+ * Intended for use as the `select` option of a Tanstack Query hook.
+ *
+ * @see getStoragesTotals
+ *
+ * @param storages - The storages to select data for.
+ * @returns An object containing the storages and their totals.
+ */
+export function selectStoragesData(storages: Storage[]) {
+  return {
+    formalizedStorages: storages.map(adaptStorageToView),
+    totals: getStoragesTotals(storages),
+  };
 }

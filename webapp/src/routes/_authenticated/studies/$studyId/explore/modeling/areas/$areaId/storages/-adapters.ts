@@ -13,6 +13,7 @@
  */
 
 import type { Storage } from "@/services/api/studies/areas/storages/types";
+import type { FormalizedStorage } from "./-types";
 
 /**
  * Keeps legacy table/form defaults out of the API cache.
@@ -20,10 +21,9 @@ import type { Storage } from "@/services/api/studies/areas/storages/types";
  * @param storage - Validated storage from the API.
  * @returns Storage with defaults for table and form fields.
  */
-export function adaptStorageToView(storage: Storage) {
+export function adaptStorageToView(storage: Storage): FormalizedStorage {
   return {
     ...storage,
-    group: storage.group ?? "",
     enabled: storage.enabled ?? false,
     efficiencyWithdrawal: storage.efficiencyWithdrawal ?? -1,
     penalizeVariationInjection: storage.penalizeVariationInjection ?? false,

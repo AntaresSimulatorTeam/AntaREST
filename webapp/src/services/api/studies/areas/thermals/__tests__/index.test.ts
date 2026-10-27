@@ -63,7 +63,7 @@ afterEach(() => {
 test("caches complete cluster properties so consumers can select without a detail request", async () => {
   const response = {
     ...cluster,
-    group: null,
+    group: "",
     so2: null,
     nh3: 0,
     costGeneration: "useCostTimeseries",

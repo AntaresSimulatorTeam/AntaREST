@@ -102,7 +102,7 @@ export function getClustersWithCapacityTotals<T extends BaseCluster>(
 }
 
 /**
- * Transforms a list of base clusters into enriched data for display.
+ * Transforms a list of clusters into enriched data for display.
  *
  * Each cluster is augmented with its capacity information, and aggregated
  * totals are computed across all clusters.
@@ -112,7 +112,7 @@ export function getClustersWithCapacityTotals<T extends BaseCluster>(
  * @see addClusterCapacity
  * @see getClustersWithCapacityTotals
  *
- * @param clusters - The base clusters to select data for.
+ * @param clusters - The clusters to select data for.
  * @returns An object containing the clusters with capacity and their totals.
  */
 export function selectClustersData<T extends BaseCluster>(clusters: T[]) {
