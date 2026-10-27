@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import CustomScrollbar from "@/components/CustomScrollbar";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import FolderIcon from "@mui/icons-material/Folder";
 import { Box, Typography } from "@mui/material";
@@ -44,38 +45,51 @@ function DirectoryList({
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box component="ul" role="listbox" sx={getDirectoryListSx(listHeight, fillHeight)}>
-      {childDirectories.length === 0 ? (
-        <Box sx={emptyStateSx}>
-          <Typography variant="body2" color="text.disabled" fontStyle="italic">
-            {t("studies.destination.noSubDirectories")}
-          </Typography>
-        </Box>
-      ) : (
-        childDirectories.map((directory) => {
-          const hasChildren = allDirectories.some((child) => child.parentId === directory.id);
+    <Box component={CustomScrollbar} sx={getDirectoryListSx(listHeight, fillHeight)}>
+      <Box
+        component="ul"
+        role="listbox"
+        sx={{
+          m: 0,
+          p: 0,
+          listStyle: "none",
+          minHeight: 1,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {childDirectories.length === 0 ? (
+          <Box sx={emptyStateSx}>
+            <Typography variant="body2" color="text.disabled" fontStyle="italic">
+              {t("studies.destination.noSubDirectories")}
+            </Typography>
+          </Box>
+        ) : (
+          childDirectories.map((directory) => {
+            const hasChildren = allDirectories.some((child) => child.parentId === directory.id);
 
-          return (
-            <Box
-              component="li"
-              key={directory.id}
-              role="option"
-              aria-selected={false}
-              aria-label={directory.name}
-              onClick={() => onDirectoryClick(directory)}
-              sx={getDirectoryRowSx}
-            >
-              <FolderIcon sx={{ fontSize: 18, color: "info.main", flexShrink: 0 }} />
+            return (
+              <Box
+                component="li"
+                key={directory.id}
+                role="option"
+                aria-selected={false}
+                aria-label={directory.name}
+                onClick={() => onDirectoryClick(directory)}
+                sx={getDirectoryRowSx}
+              >
+                <FolderIcon sx={{ fontSize: 18, color: "info.main", flexShrink: 0 }} />
 
-              <Typography variant="body2" noWrap sx={{ flex: 1 }}>
-                {directory.name}
-              </Typography>
+                <Typography variant="body2" noWrap sx={{ flex: 1 }}>
+                  {directory.name}
+                </Typography>
 
-              {hasChildren && <ChevronRightIcon sx={{ fontSize: 18 }} />}
-            </Box>
-          );
-        })
-      )}
+                {hasChildren && <ChevronRightIcon sx={{ fontSize: 18 }} />}
+              </Box>
+            );
+          })
+        )}
+      </Box>
     </Box>
   );
 }
