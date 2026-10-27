@@ -9,7 +9,18 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, CheckConstraint, Column, Float, ForeignKeyConstraint, Index, String, Table, text
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    Float,
+    ForeignKeyConstraint,
+    Index,
+    PrimaryKeyConstraint,
+    String,
+    Table,
+    text,
+)
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
@@ -123,4 +134,51 @@ GEMS_COMPONENT_CONNECTIONS_TABLE = Table(
         text("(CASE WHEN port1 >= port2 THEN port1 ELSE port2 END)"),
         unique=True,
     ),
+)
+
+
+# Antares Simulator allows a single connection of each kind per port, hence the primary keys.
+GEMS_AREA_CONNECTIONS_TABLE = Table(
+    "gems_area_connections",
+    metadata,
+    study_data_id_col(primary_key=False),
+    Column("component_id", String(255), nullable=False),
+    Column("port_id", String(255), nullable=False),
+    Column("area_id", String(255), nullable=False),
+    ForeignKeyConstraint(
+        ["study_data_id", "component_id"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
+        name="fk_gems_area_connections_component",
+        ondelete="CASCADE",
+    ),
+    ForeignKeyConstraint(
+        ["study_data_id", "area_id"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_gems_area_connections_area",
+        ondelete="CASCADE",
+    ),
+    PrimaryKeyConstraint("study_data_id", "component_id", "port_id", name="pk_gems_area_connections"),
+)
+
+GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE = Table(
+    "gems_thermal_capacity_connections",
+    metadata,
+    study_data_id_col(primary_key=False),
+    Column("component_id", String(255), nullable=False),
+    Column("port_id", String(255), nullable=False),
+    Column("area_id", String(255), nullable=False),
+    Column("cluster_id", String(255), nullable=False),
+    ForeignKeyConstraint(
+        ["study_data_id", "component_id"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
+        name="fk_gems_thermal_capacity_connections_component",
+        ondelete="CASCADE",
+    ),
+    ForeignKeyConstraint(
+        ["study_data_id", "area_id", "cluster_id"],
+        ["thermal_cluster.study_data_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
+        name="fk_gems_thermal_capacity_connections_cluster",
+        ondelete="CASCADE",
+    ),
+    PrimaryKeyConstraint("study_data_id", "component_id", "port_id", name="pk_gems_thermal_capacity_connections"),
 )
