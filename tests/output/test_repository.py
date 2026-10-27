@@ -45,3 +45,21 @@ def test_disk_usage_updates_preserve_unarchiving_date(db_session: Session) -> No
     output = repository.get("study", "other-output")
     assert output is not None
     assert (output.last_unarchiving_date, output.disk_space_bytes) == (None, 0)
+
+
+def test_get_all(db_session: Session) -> None:
+    db_session.add_all([Study(id="study", version="9.2"), Study(id="other-study", version="9.2")])
+    db_session.commit()
+    repository = OutputRepository(db_session)
+    date = datetime(2026, 1, 1)
+
+    repository.save_unarchiving_date("study", "unarchived", date)
+    repository.save_disk_usage("study", "never-unarchived", 42)
+    repository.save_unarchiving_date("other-study", "unarchived", date + timedelta(days=1))
+
+    outputs = repository.get_all("study")
+    assert sorted((o.output_id, o.last_unarchiving_date, o.disk_space_bytes) for o in outputs) == [
+        ("never-unarchived", None, 42),
+        ("unarchived", date, None),
+    ]
+    assert repository.get_all("unknown") == []

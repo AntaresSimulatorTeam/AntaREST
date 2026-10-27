@@ -36,6 +36,11 @@ class OutputRepository:
         result = self.session.execute(stmt.execution_options(populate_existing=True))
         return result.unique().scalar_one_or_none()
 
+    def get_all(self, study_id: str) -> list[Output]:
+        stmt = select(Output).where(Output.study_id == study_id)
+        result = self.session.execute(stmt.execution_options(populate_existing=True))
+        return list(result.scalars().all())
+
     def save_unarchiving_date(self, study_id: str, output_id: str, date: datetime) -> None:
         upsert_one(
             self.session,

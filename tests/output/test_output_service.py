@@ -397,11 +397,10 @@ def test_select_outputs_by_creation_or_unarchiving_date(
     output_id: str, unarchiving_date: datetime | None, eligible: bool
 ) -> None:
     repository = Mock()
-    repository.get.return_value = (
-        Output(study_id="study", output_id=output_id, last_unarchiving_date=unarchiving_date)
-        if unarchiving_date
-        else None
-    )
+    repository.get_all.return_value = [
+        Output(study_id="study", output_id=output_id, last_unarchiving_date=unarchiving_date),
+        Output(study_id="study", output_id="other-output", last_unarchiving_date=datetime(2020, 1, 1)),
+    ]
     storage = Mock(storage_type=OutputStorageType.IN_STUDY_FILE_TREE)
     storage.list_outputs.return_value = [
         OutputMetadata(output_id, in_study=True, archived=False),
@@ -420,3 +419,5 @@ def test_select_outputs_by_creation_or_unarchiving_date(
 
     assert service.get_outputs_to_archive("study", datetime(2026, 1, 1)) == ([output_id] if eligible else [])
     parquet_storage.list_outputs.assert_not_called()
+    repository.get_all.assert_called_once_with("study")
+    repository.get.assert_not_called()
