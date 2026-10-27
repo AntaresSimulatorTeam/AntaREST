@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.output.model.output_type import GEMS_VIEWS_DIR
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
@@ -57,14 +58,14 @@ class OutputSimulation(FolderNode):
         }
 
         if not self.simulation.error:
-            for file in self.config.path.glob("*.txt"):
-                file_name = file.name
-                if (self.config.path / file_name).exists():
-                    children[file.stem] = RawFileNode(self.config.next_file(file_name))
-
-            file_name = "execution_info"
-            if (self.config.path / f"{file_name}.ini").exists():
-                children[file_name] = IniFileNode(self.config.next_file(f"{file_name}.ini"))
+            for resource in self.config.path.iterdir():
+                if resource.is_file():
+                    file_name = resource.name
+                    file_extension = resource.suffix
+                    if file_extension == ".ini":
+                        children[file_name] = IniFileNode(self.config.next_file(file_name))
+                    elif file_extension in {".txt", ".csv"}:
+                        children[file_name] = RawFileNode(self.config.next_file(file_name))
 
             if (self.config.path / "ts-numbers").exists():
                 children["ts-numbers"] = OutputSimulationTsNumbers(
@@ -75,6 +76,11 @@ class OutputSimulation(FolderNode):
                 children["ts-generator"] = OutputSimulationTsGenerator(
                     self.matrix_storage_context, self.config.next_file("ts-generator")
                 )
+
+            if (self.config.path / GEMS_VIEWS_DIR).exists():
+                for resource in (self.config.path / GEMS_VIEWS_DIR).iterdir():
+                    if resource.is_file():
+                        children[resource.name] = RawFileNode(self.config.next_file(resource.name))
 
             if self.simulation.mode in {Mode.ECONOMY, Mode.EXPANSION}:
                 children["economy"] = OutputSimulationMode(
