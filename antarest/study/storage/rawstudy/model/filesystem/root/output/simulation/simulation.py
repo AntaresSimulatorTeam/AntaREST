@@ -57,7 +57,7 @@ class OutputSimulation(FolderNode):
             "antares-err": RawFileNode(self.config.next_file("antares-err.log")),
         }
 
-        if not self.simulation.error:
+        if not self.simulation.error and self.config.path.exists():
             for resource in self.config.path.iterdir():
                 if resource.is_file():
                     file_name = resource.name
