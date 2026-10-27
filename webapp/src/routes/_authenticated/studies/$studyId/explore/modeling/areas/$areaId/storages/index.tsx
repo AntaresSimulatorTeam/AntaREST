@@ -203,7 +203,7 @@ function Storages() {
           })
         }
         deleteConfirmationMessage={(rows) => {
-          return t("studies.modeling.clusters.question.delete", {
+          return t("study.modeling.storages.question.delete", {
             count: rows.length,
             names: rows.map((row) => row.name),
           });

@@ -55,7 +55,7 @@ function useDuplicateStorage({ studyId, areaId }: StoragesParams) {
     },
     onError: (error, variables, tempStorageId) => {
       enqueueErrorSnackbar(
-        t("study.modeling.clusters.duplicate.error", { name: variables.newName }),
+        t("study.modeling.storages.duplicate.error", { name: variables.newName }),
         error,
       );
 

@@ -15,13 +15,14 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { storageMutations } from "@/queries/storages/mutations";
 import { storageQueries } from "@/queries/storages/queries";
+import type { StorageParams } from "@/services/api/studies/areas/storages/types";
 import { getNextItemAfterDeletion } from "@/utils/arrayUtils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams, useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { constraintsToList } from "../-utils";
 
-function useDeleteStorageConstraint() {
+function useDeleteStorageConstraint({ studyId, areaId, storageId }: StorageParams) {
   const params = useParams({
     from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
   });
@@ -30,7 +31,6 @@ function useDeleteStorageConstraint() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
 
-  const { studyId, areaId, storageId } = params;
   const { queryKey: queryListKey } = storageQueries.constraintList(studyId, areaId, storageId);
 
   const mutation = useMutation({

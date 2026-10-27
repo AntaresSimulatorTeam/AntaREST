@@ -50,7 +50,7 @@ function useDeleteStorages({ studyId, areaId }: StoragesParams) {
       const { storagesToDelete } = onMutateResult || {};
 
       enqueueErrorSnackbar(
-        t("study.modeling.clusters.delete.error", {
+        t("study.modeling.storages.delete.error", {
           count: storageIds.length,
           names: storagesToDelete?.map((t) => t.name) || storageIds,
         }),
