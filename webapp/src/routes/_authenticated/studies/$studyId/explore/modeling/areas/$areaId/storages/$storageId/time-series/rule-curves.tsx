@@ -14,6 +14,7 @@
 
 import Matrix from "@/components/Matrix";
 import SplitView from "@/components/page/SplitView";
+import { buildKey } from "@/utils/reactUtils";
 import { Box } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -25,15 +26,19 @@ export const Route = createFileRoute(
 });
 
 function RuleCurves() {
-  const { studyId, areaId, storageId } = Route.useParams();
+  const params = Route.useParams();
   const { t } = useTranslation();
+  const { studyId, areaId, storageId } = params;
 
   return (
-    <SplitView splitId="storage-lowerRuleCurve-upperRuleCurve" sizes={[50, 50]}>
+    <SplitView
+      splitId="storage-lowerRuleCurve-upperRuleCurve"
+      sizes={[50, 50]}
+      key={buildKey(params)}
+    >
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
-          key={storageId}
           studyId={studyId}
           title={t("study.modeling.storages.lowerRuleCurve")}
           url={`input/st-storage/series/${areaId}/${storageId}/lower_rule_curve`}
@@ -46,7 +51,6 @@ function RuleCurves() {
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
-          key={storageId}
           studyId={studyId}
           title={t("study.modeling.storages.upperRuleCurve")}
           url={`input/st-storage/series/${areaId}/${storageId}/upper_rule_curve`}

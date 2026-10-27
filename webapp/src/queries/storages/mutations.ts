@@ -21,35 +21,49 @@ import {
   updateStorage,
   updateStorageConstraint,
 } from "@/services/api/studies/areas/storages";
-import type { StorageParams } from "@/services/api/studies/areas/storages/types";
+import type {
+  CreateStorageParams,
+  DeleteStoragesParams,
+  DuplicateStorageParams,
+  StorageParams,
+  UpdateStorageParams,
+} from "@/services/api/studies/areas/storages/types";
+import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { mutationOptions } from "@tanstack/react-query";
 import { storageKeys } from "./keys";
-import type { Study } from "@/services/api/studies/types";
 
 export const storageMutations = {
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: storageKeys.create(studyId, areaId),
-      mutationFn: createStorage,
+      mutationFn: (params: Omit<CreateStorageParams, "studyId" | "areaId">) => {
+        return createStorage({ ...params, studyId, areaId });
+      },
     });
   },
   update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: storageKeys.update(studyId, areaId),
-      mutationFn: updateStorage,
+      mutationFn: (params: Omit<UpdateStorageParams, "studyId" | "areaId">) => {
+        return updateStorage({ ...params, studyId, areaId });
+      },
     });
   },
   duplicate: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: storageKeys.duplicate(studyId, areaId),
-      mutationFn: duplicateStorage,
+      mutationFn: (params: Omit<DuplicateStorageParams, "studyId" | "areaId">) => {
+        return duplicateStorage({ ...params, studyId, areaId });
+      },
     });
   },
   delete: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: storageKeys.delete(studyId, areaId),
-      mutationFn: deleteStorages,
+      mutationFn: (params: Omit<DeleteStoragesParams, "studyId" | "areaId">) => {
+        return deleteStorages({ ...params, studyId, areaId });
+      },
     });
   },
   createConstraint: (

@@ -15,28 +15,32 @@
 import DataTable from "@/components/DataTable";
 import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
 import type { RowData } from "@/components/DataTable/types";
+import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
+import { storageKeys } from "@/queries/storages/keys";
+import { storageQueries } from "@/queries/storages/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { STORAGE_GROUPS } from "@/services/api/studies/areas/storages/constants";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { Box, Tooltip } from "@mui/material";
+import { useIsMutating } from "@tanstack/react-query";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import usePromiseWithSnackbarError from "../../../../../../../../../hooks/usePromiseWithSnackbarError";
-import {
-  createStorage,
-  deleteStorages,
-  duplicateStorage,
-  getStorages,
-  getStoragesTotals,
-  STORAGE_GROUPS,
-  type FormalizedStorage,
-} from "./-utils";
+import useCreateStorage from "./-hooks/useCreateStorage";
+import useDeleteStorages from "./-hooks/useDeleteStorages";
+import useDuplicateStorage from "./-hooks/useDuplicateStorage";
+import useStorages from "./-hooks/useStorages";
+import type { FormalizedStorage } from "./-types";
+import { selectStoragesData } from "./-utils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/",
 )({
+  loader: async ({ context, params: { studyId, areaId } }) => {
+    await context.queryClient.ensureQueryData(storageQueries.list(studyId, areaId));
+  },
   component: Storages,
 });
 
@@ -44,20 +48,23 @@ const columnHelper = createMRTColumnHelper<FormalizedStorage>();
 
 function Storages() {
   const study = useStudy();
-  const { areaId } = Route.useParams();
+  const params = Route.useParams();
   const { t } = useTranslation();
+  const createStorage = useCreateStorage(params);
+  const duplicateStorage = useDuplicateStorage(params);
+  const deleteStorages = useDeleteStorages(params);
+  const { areaId } = params;
 
   const {
-    data: storages = [],
-    isLoading,
-    status,
-  } = usePromiseWithSnackbarError(() => getStorages(study.id, areaId), {
-    resetDataOnReload: true,
-    errorMessage: t("studies.error.retrieveData"),
-    deps: [study.id, areaId],
-  });
+    data: { formalizedStorages, totals },
+    error,
+    isRefetchError,
+  } = useStorages({ ...params, select: selectStoragesData });
 
-  const [totals, setTotals] = useState(() => getStoragesTotals(storages));
+  const isSaving =
+    useIsMutating({
+      mutationKey: storageKeys.list(study.id, areaId),
+    }) !== 0;
 
   const columns = useMemo(() => {
     const { totalInjectionNominalCapacity, totalWithdrawalNominalCapacity } = totals;
@@ -155,16 +162,15 @@ function Storages() {
   ////////////////////////////////////////////////////////////////
 
   const handleCreate = (values: RowData) => {
-    return createStorage(study.id, areaId, values);
+    createStorage.mutate({ values });
   };
 
   const handleDuplicate = (row: FormalizedStorage, newName: string) => {
-    return duplicateStorage(study.id, areaId, row.id, newName);
+    duplicateStorage.mutate({ storageId: row.id, newName });
   };
 
   const handleDelete = (rows: FormalizedStorage[]) => {
-    const ids = rows.map((row) => row.id);
-    return deleteStorages(study.id, areaId, ids);
+    deleteStorages.mutate({ storageIds: rows.map((row) => row.id) });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -178,40 +184,31 @@ function Storages() {
   });
 
   return (
-    <DataTable
-      key={status}
-      isLoading={isLoading}
-      data={storages}
-      columns={columns}
-      groups={[...STORAGE_GROUPS] as string[]}
-      allowNewGroups={semver.gte(study.version, "9.2.0")}
-      onCreate={handleCreate}
-      onDuplicate={handleDuplicate}
-      onDelete={handleDelete}
-      nameLinkOptions={(row) =>
-        linkOptions({
-          to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
-          params: {
-            studyId: study.id,
-            areaId,
-            storageId: row.id,
-          },
-        })
-      }
-      deleteConfirmationMessage={(rows) => {
-        return t("studies.modeling.clusters.question.delete", {
-          count: rows.length,
-          clusterNames: rows.map((row) => row.name),
-        });
-      }}
-      fillPendingRow={(row) => ({
-        withdrawalNominalCapacity: 0,
-        injectionNominalCapacity: 0,
-        ...row,
-      })}
-      onDataChange={(data) => {
-        setTotals(getStoragesTotals(data));
-      }}
-    />
+    <>
+      <RefetchErrorAlert isRefetchError={isRefetchError} error={error} />
+      <DataTable
+        key={areaId}
+        data={formalizedStorages}
+        columns={columns}
+        groups={[...STORAGE_GROUPS]}
+        allowNewGroups={semver.gte(study.version, "9.2.0")}
+        onCreate={handleCreate}
+        onDuplicate={handleDuplicate}
+        onDelete={handleDelete}
+        isSaving={isSaving}
+        nameLinkOptions={(row) =>
+          linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
+            params: { ...params, storageId: row.id },
+          })
+        }
+        deleteConfirmationMessage={(rows) => {
+          return t("studies.modeling.clusters.question.delete", {
+            count: rows.length,
+            names: rows.map((row) => row.name),
+          });
+        }}
+      />
+    </>
   );
 }

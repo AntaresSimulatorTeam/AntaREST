@@ -26,7 +26,7 @@ import {
 } from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-clustersUtils";
 import { THERMAL_GROUPS } from "@/services/api/studies/areas/thermals/constants";
 import { Box } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useIsMutating } from "@tanstack/react-query";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useMemo } from "react";
@@ -53,7 +53,6 @@ function Thermals() {
   const study = useStudy();
   const params = Route.useParams();
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const createThermalCluster = useCreateThermalCluster(params);
   const duplicateThermalCluster = useDuplicateThermalCluster(params);
   const deleteThermalClusters = useDeleteThermalClusters(params);
@@ -65,7 +64,10 @@ function Thermals() {
     isRefetchError,
   } = useThermalClusters({ ...params, select: selectClustersData });
 
-  const isSaving = queryClient.isMutating({ mutationKey: thermalKeys.list(study.id, areaId) }) > 0;
+  const isSaving =
+    useIsMutating({
+      mutationKey: thermalKeys.list(study.id, areaId),
+    }) !== 0;
 
   const columns = useMemo(() => {
     const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } = totals;

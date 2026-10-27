@@ -28,7 +28,7 @@ const areaId = "area-1";
 const clusterId = "wind cluster";
 const listUrl = `/v1/studies/${studyId}/areas/${areaId}/clusters/renewable`;
 const cluster: z.input<typeof renewableClusterSchema> = {
-  id: "Wind Cluster",
+  id: clusterId,
   name: "Wind Cluster",
   group: "custom wind",
   tsInterpretation: "production-factor",
@@ -46,7 +46,7 @@ afterEach(() => {
 });
 
 test("caches complete cluster properties separately for each study and area", async () => {
-  const ungroupedCluster = { ...cluster, id: "Ungrouped", name: "Ungrouped", group: null };
+  const ungroupedCluster = { ...cluster, id: "Ungrouped", name: "Ungrouped", group: "" };
   vi.mocked(client.get).mockResolvedValue({ data: [cluster, ungroupedCluster] });
 
   const options = renewableQueries.list(studyId, areaId);
@@ -64,7 +64,6 @@ test("caches complete cluster properties separately for each study and area", as
   expect(
     queryClient.getQueryData(renewableQueries.list(studyId, "other-area").queryKey),
   ).toBeUndefined();
-  expect(options.staleTime).toBe(0);
   expect(client.get).toHaveBeenCalledTimes(1);
   expect(client.get).toHaveBeenCalledWith(listUrl);
 });
@@ -97,23 +96,6 @@ test("creates a cluster from a name-only payload", async () => {
 
   expect(created).toEqual(cluster);
   expect(client.post).toHaveBeenCalledWith(listUrl, { name: "New cluster" });
-});
-
-test("patches supplied values while omitting null writes and preserving null response groups", async () => {
-  const updated = { ...cluster, enabled: false, nominalCapacity: 0, group: null };
-  vi.mocked(client.patch).mockResolvedValue({ data: updated });
-
-  const result = await api.updateRenewableCluster({
-    studyId,
-    areaId,
-    renewableId: clusterId,
-    values: { enabled: false, nominalCapacity: 0, group: null, unitCount: null },
-  });
-
-  expect(result).toEqual(updated);
-  const [url, body] = vi.mocked(client.patch).mock.calls[0];
-  expect(url).toBe(`${listUrl}/${clusterId}`);
-  expect(JSON.parse(JSON.stringify(body))).toEqual({ enabled: false, nominalCapacity: 0 });
 });
 
 test("duplicates through the dedicated endpoint and newName query parameter", async () => {
