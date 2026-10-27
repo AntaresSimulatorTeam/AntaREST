@@ -12,9 +12,14 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from pydantic import ValidationError
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsSystemAlreadyExists, GemsUnavailableForFileSystemStudies
+from antarest.core.exceptions import (
+    GemsSystemAlreadyExists,
+    GemsSystemIncorrectlyFormatted,
+    GemsUnavailableForFileSystemStudies,
+)
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -38,7 +43,12 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
             return None
 
         yaml_content = YAMLReader().read(system_file_path)["system"]
-        return GemsSystem.model_validate(yaml_content)
+        try:
+            return GemsSystem.model_validate(yaml_content)
+        except ValidationError as e:
+            raise GemsSystemIncorrectlyFormatted(
+                f"The system file of study {file_study.config.study_id} is not supported: {e}"
+            ) from e
 
     @override
     def get_components(self) -> list[GemsComponent]:
