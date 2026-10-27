@@ -12,7 +12,7 @@
 from enum import StrEnum
 from pathlib import Path
 
-GEMS_VIEWS_DIR = "gems_views"
+GEMS_VIEWS_DIR = "gems-views"
 
 
 class OutputType(StrEnum):
