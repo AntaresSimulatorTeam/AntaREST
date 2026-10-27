@@ -29,5 +29,6 @@ export const outputSchema = z.object({
   nbYears: z.number(),
   archived: z.boolean(),
   storageType: storageTypeSchema,
-  outputType: outputTypeSchema,
+  // Design-worktree compatibility: the running local API predates outputType.
+  outputType: import.meta.env.DEV ? outputTypeSchema.optional() : outputTypeSchema,
 });

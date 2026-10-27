@@ -41,7 +41,7 @@ let config: Config = {
 if (import.meta.env.DEV) {
   config = {
     ...config,
-    baseUrl: "http://localhost:3000",
+    baseUrl: window.location.origin,
     wsUrl: "ws://localhost:8080",
     downloadHostUrl: "http://localhost:8080",
   };

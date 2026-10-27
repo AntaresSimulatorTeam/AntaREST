@@ -13,6 +13,7 @@
  */
 
 import path from "node:path";
+import { realpathSync } from "node:fs";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig } from "vite";
@@ -25,6 +26,8 @@ export default defineConfig(({ mode }) => {
   const isDesktopMode = mode === "desktop";
 
   return {
+    // Isolated preview cache; installed dependencies are shared with the main checkout.
+    cacheDir: "/tmp/antarest-output-design-vite",
     // Serve the web app at the `/static` entry point on Desktop mode (cf. 'antarest/main.py')
     base: isDesktopMode ? "/static/" : "/",
     // Entries will be defined as globals during dev and statically replaced during build
@@ -58,6 +61,7 @@ export default defineConfig(({ mode }) => {
       react({ devTarget: "es2022" }),
     ],
     server: {
+      fs: { allow: [__dirname, realpathSync(path.resolve(__dirname, "node_modules"))] },
       port: 3000,
       strictPort: true,
       proxy: {
