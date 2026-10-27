@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+import shutil
 import textwrap
 import typing as t
 from collections.abc import Iterable, Mapping
@@ -23,6 +24,7 @@ from antares.study.version import StudyVersion
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde.ini_writer import write_ini_file
+from antarest.output.model.output_type import OutputType
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
@@ -65,6 +67,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     parse_area,
     parse_outputs,
     parse_simulation,
+    parse_simulation_zip,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
@@ -210,6 +213,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 error=False,
                 playlist=[1],
                 xpansion="",
+                output_type=OutputType.LEGACY,
             )
         },
     )
@@ -233,6 +237,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="",
+                    output_type=OutputType.LEGACY,
                 ),
                 "20230203-1530eco": Simulation(
                     name="",
@@ -245,6 +250,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="1.0.2",
+                    output_type=OutputType.LEGACY,
                 ),
                 "20230203-1531eco": Simulation(
                     name="",
@@ -257,6 +263,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=True,
                     xpansion="",
+                    output_type=OutputType.LEGACY,
                 ),
                 "20230203-1600eco": Simulation(
                     name="",
@@ -269,6 +276,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="",
+                    output_type=OutputType.LEGACY,
                 ),
             },
         ),
@@ -921,6 +929,64 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     assert "file_3" not in output_tree[output_id]
     # Asserts the `economy` folder is scanned
     assert "economy" in output_tree[output_id]
+
+
+def test_parse_simulation_error_parameter(empty_study_880: FileStudy) -> None:
+    output_id = "20250521-1009eco-fake_output"
+    study_path = empty_study_880.config.path
+    _set_up_output(study_path, output_id)
+
+    output_path = study_path / "output" / output_id
+
+    # 1st case: no `checkIntegrity.txt`, no `execution_info.ini` -> Simulation in error
+    simulation = parse_simulation(output_path, output_id)
+    assert simulation.error is True
+
+    # 2nd case: add a `checkIntegrity.txt` file -> Simulation succeeded
+    (output_path / "checkIntegrity.txt").touch()
+    simulation = parse_simulation(output_path, output_id)
+    assert not simulation.error
+
+    # 3rd case: Only a `execution_info.ini` file -> Simulation succeeded
+    (output_path / "checkIntegrity.txt").unlink()
+    (output_path / "execution_info.ini").touch()
+    simulation = parse_simulation(output_path, output_id)
+    assert not simulation.error
+
+
+def test_parse_simulation_output_type(empty_study_880: FileStudy) -> None:
+    output_id = "20250521-1009eco-fake_output"
+    study_path = empty_study_880.config.path
+    _set_up_output(study_path, output_id)
+
+    output_folder = study_path / "output"
+    output_path = output_folder / output_id
+
+    # Creates ZIP to test it too
+    zipped_id = "20250522-1009eco"
+    shutil.make_archive(str(output_folder / zipped_id), "zip", root_dir=output_folder / output_id)
+    output_archived_path = output_folder / f"{zipped_id}.zip"
+
+    # 1st case: No `gems-views` folder -> Should be seen as Legacy
+    simulation = parse_simulation(output_path, output_id)
+    assert simulation.output_type == OutputType.LEGACY
+
+    simulation = parse_simulation_zip(output_archived_path)
+    assert simulation.output_type == OutputType.LEGACY
+
+    # 2nd case: The folder exists -> Should be seen as GemsViews
+    (output_path / "gems-views").mkdir()
+    simulation = parse_simulation(output_path, output_id)
+    assert simulation.output_type == OutputType.GEMS_VIEWS
+
+    # Recreates ZIP to test it too
+    output_archived_path.unlink()
+    zipped_id = "20250522-1009eco"
+    shutil.make_archive(str(output_folder / zipped_id), "zip", root_dir=output_folder / output_id)
+    output_archived_path = output_folder / f"{zipped_id}.zip"
+
+    simulation = parse_simulation_zip(output_archived_path)
+    assert simulation.output_type == OutputType.GEMS_VIEWS
 
 
 def test_parse_xpansion_simulation(empty_study_880: FileStudy) -> None:

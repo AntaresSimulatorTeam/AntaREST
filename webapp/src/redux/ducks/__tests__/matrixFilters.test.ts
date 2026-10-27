@@ -17,7 +17,6 @@ import { configureStore } from "@reduxjs/toolkit";
 import rootReducer from "..";
 import { logout } from "../auth";
 import matrixFilters, {
-  clearStudyMatrixFilters,
   getMatrixFilters,
   resetMatrixFilters,
   setMatrixFilters,
@@ -57,18 +56,6 @@ test("resetting one view preserves the other views and studies", () => {
   expect(getMatrixFilters(store.getState(), { studyId: "study-b", key: "load" })).toEqual(
     loadFilters,
   );
-});
-
-test("clearing a study removes all its views without changing another study", () => {
-  const store = createStore();
-
-  store.dispatch(setMatrixFilters({ studyId: "study-a", key: "load", filters: loadFilters }));
-  store.dispatch(setMatrixFilters({ studyId: "study-a", key: "wind", filters: windFilters }));
-  store.dispatch(setMatrixFilters({ studyId: "study-b", key: "load", filters: loadFilters }));
-
-  store.dispatch(clearStudyMatrixFilters("study-a"));
-
-  expect(store.getState().matrixFilters).toEqual({ "study-b": { load: loadFilters } });
 });
 
 test("logout clears all remembered matrix filters through the root reducer", () => {

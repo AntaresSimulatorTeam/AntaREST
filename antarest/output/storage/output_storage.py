@@ -30,6 +30,7 @@ from antarest.launcher.model import LogType
 from antarest.output.filestudy.model import QueryFileType
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
+from antarest.output.model.output_type import OutputType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -121,6 +122,7 @@ class OutputDetails(AntaresBaseModel):
     nb_years: int
     archived: bool
     storage_type: OutputStorageType
+    output_type: OutputType
 
     settings: OutputSettings | None = Field(deprecated=True, default=None)
 
