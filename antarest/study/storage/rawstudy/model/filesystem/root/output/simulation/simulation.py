@@ -33,6 +33,7 @@ from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.ts_
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.lp import Lp
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.sensitivity import Sensitivity
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.xpansion.xpansion import Xpansion
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLFileNode
 
 
 class OutputSimulation(FolderNode):
@@ -51,10 +52,7 @@ class OutputSimulation(FolderNode):
             "about-the-study": OutputSimulationAbout(
                 self.matrix_storage_context, self.config.next_file("about-the-study")
             ),
-            "simulation": RawFileNode(self.config.next_file("simulation.log")),
             "info": OutputSimulationInfoAntaresOutput(self.config.next_file("info.antares-output")),
-            "antares-out": RawFileNode(self.config.next_file("antares-out.log")),
-            "antares-err": RawFileNode(self.config.next_file("antares-err.log")),
         }
 
         if not self.simulation.error and self.config.path.exists():
@@ -63,9 +61,11 @@ class OutputSimulation(FolderNode):
                     file_name = resource.name
                     file_extension = resource.suffix
                     if file_extension == ".ini":
-                        children[file_name] = IniFileNode(self.config.next_file(file_name))
-                    elif file_extension in {".txt", ".csv"}:
-                        children[file_name] = RawFileNode(self.config.next_file(file_name))
+                        children[resource.stem] = IniFileNode(self.config.next_file(file_name))
+                    elif file_extension in {".yml", ".yaml"}:
+                        children[resource.stem] = YAMLFileNode(self.config.next_file(file_name))
+                    elif file_extension in {".txt", ".csv", ".log"}:
+                        children[resource.stem] = RawFileNode(self.config.next_file(file_name))
 
             if (self.config.path / "ts-numbers").exists():
                 children["ts-numbers"] = OutputSimulationTsNumbers(
