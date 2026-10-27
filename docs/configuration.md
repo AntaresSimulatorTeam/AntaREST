@@ -306,10 +306,12 @@ default:
 
 File outputs of managed studies are archived independently using the same threshold, even when their
 study is still active. The reference date is the last successful unarchiving date, when available;
-otherwise it is the date in the output ID (`YYYYMMDD-HHMM`). Reading an output does not reset this date.
-Old imported or copied outputs are therefore eligible immediately unless they have been unarchived recently.
-Outputs with an invalid date are skipped if no unarchiving date is available. Parquet outputs are excluded.
+otherwise the first maintenance pass records the current date and starts a full grace period.
+This also applies to old imported or copied outputs. Reading an output does not reset this date.
+Dry runs do not initialize dates. Parquet outputs are excluded from this independent archival.
 Entire raw studies are still archived based on their last access date.
+Unarchiving a whole study renews its last access date and the grace period of its restored,
+uncompressed in-study outputs. Outputs that remain zipped or are stored outside the study are unaffected.
 
 ## **snapshot_retention_days**
 

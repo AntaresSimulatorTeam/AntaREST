@@ -64,7 +64,7 @@ def test_selects_inactive_raw_studies_in_a_single_pass() -> None:
     assert result.errors == []
     svc.repository.get_all.assert_called_once()
     assert outputs.get_outputs_to_archive.call_args_list == [
-        call("recent", cutoff),
+        call("recent", cutoff, dry_run=True),
     ]
     outputs.list_outputs.assert_called_once_with("variant")
 
@@ -96,7 +96,7 @@ def test_variant_archival_depends_on_study_activity(dry_run: bool, inactive: boo
         output_service.get_outputs_to_archive.assert_not_called()
     else:
         output_service.list_outputs.assert_not_called()
-        output_service.get_outputs_to_archive.assert_called_once_with("variant", cutoff)
+        output_service.get_outputs_to_archive.assert_called_once_with("variant", cutoff, dry_run=dry_run)
     if inactive and not dry_run:
         output_service.archive_output.assert_called_once_with("variant", "recent-output", archive_before=None)
         study_service.task_service.await_task.assert_called_once()

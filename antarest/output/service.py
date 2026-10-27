@@ -517,19 +517,33 @@ class OutputService:
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
-    def get_outputs_to_archive(self, study_id: str, cutoff: datetime) -> list[str]:
-        """Select old file outputs, using their last unarchiving date when available."""
+    def on_study_unarchived(self, study_id: str) -> None:
+        """Renew the grace period of outputs restored with the study."""
+        now = current_time()
+        for storage in self._storages:
+            if storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+                for output in storage.list_outputs(study_id):
+                    if not output.archived:
+                        self._output_repository.save_unarchiving_date(study_id, output.id, now)
+
+    def get_outputs_to_archive(self, study_id: str, cutoff: datetime, dry_run: bool = False) -> list[str]:
+        """Select old file outputs, starting a grace period when no unarchiving date is recorded."""
         db_outputs = {o.output_id: o for o in self._output_repository.get_all(study_id)}
-        return [
-            output.id
-            for storage in self._storages
-            if storage.storage_type != OutputStorageType.V2
-            for output in storage.list_outputs(study_id)
-            if not output.archived
-            and self._is_output_older_than(
-                db_outputs.get(output.id) or Output(study_id=study_id, output_id=output.id), cutoff
-            )
-        ]
+        now = current_time()
+        outputs = []
+        for storage in self._storages:
+            if storage.storage_type == OutputStorageType.V2:
+                continue
+            for output in storage.list_outputs(study_id):
+                if output.archived:
+                    continue
+                metadata = db_outputs.get(output.id)
+                if metadata is None or metadata.last_unarchiving_date is None:
+                    if not dry_run:
+                        self._output_repository.save_unarchiving_date(study_id, output.id, now)
+                elif self._is_output_older_than(metadata, cutoff):
+                    outputs.append(output.id)
+        return outputs
 
     def _get_and_check_output_older_than(self, study_id: str, output_id: str, cutoff: datetime) -> bool:
         output = self._output_repository.get(study_id, output_id) or Output(study_id=study_id, output_id=output_id)
@@ -537,15 +551,7 @@ class OutputService:
 
     @staticmethod
     def _is_output_older_than(output: Output, cutoff: datetime) -> bool:
-        if output.last_unarchiving_date is not None:
-            return output.last_unarchiving_date <= cutoff
-        try:
-            return datetime.strptime(output.output_id[:13], "%Y%m%d-%H%M") <= cutoff
-        except ValueError:
-            logger.warning(
-                "Skipping automatic archival of output %s/%s: invalid date", output.study_id, output.output_id
-            )
-            return False
+        return output.last_unarchiving_date is not None and output.last_unarchiving_date <= cutoff
 
     def archive_output(
         self,

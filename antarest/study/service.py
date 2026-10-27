@@ -582,6 +582,10 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def on_study_unarchived(self, study_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         raise NotImplementedError()
 
@@ -2081,8 +2085,10 @@ class StudyService:
                 if study_db is None:
                     raise StudyNotFoundError(uuid)
                 study_db.archived = False
+                study_db.last_access = current_time()
                 self.repository.save(study_db)
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
+                self._get_outputs_access().on_study_unarchived(uuid)
                 notify_study_edition(self.event_bus, study_db)
 
             return TaskResult(success=True, message="ok")

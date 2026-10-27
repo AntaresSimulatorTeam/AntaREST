@@ -35,9 +35,37 @@ from antarest.service_creator import Services
 from antarest.study.model import DEFAULT_WORKSPACE_NAME, RawStudy, Study
 from antarest.study.repository import StudyFilter
 from tests.helpers import create_raw_study
+from tests.integration.utils import wait_task_completion
 
 
 class TestArchiveOldStudiesIntegration:
+    def test_unarchiving_study_renews_restored_outputs_grace_period(
+        self, admin_client: TestClient, services: Services, output_zip: Path, tmp_path: Path
+    ) -> None:
+        response = admin_client.post("/v1/studies", params={"name": "Study to restore"})
+        assert response.status_code == 201, response.text
+        study_id = response.json()
+        with current_user_context(DEFAULT_ADMIN_USER), db(), output_zip.open("rb") as output_file:
+            output_id = services.output_service.import_output(
+                study_id, output_file, storage_type=OutputStorageType.IN_STUDY_FILE_TREE
+            )
+            services.study.get_study(study_id).last_access = current_time() - datetime.timedelta(days=90)
+            db.session.commit()
+
+        for action in ("archive", "unarchive"):
+            response = admin_client.put(f"/v1/studies/{study_id}/{action}")
+            assert response.status_code == 200, response.text
+            assert wait_task_completion(admin_client, None, response.json()).status == TaskStatus.COMPLETED
+
+        # No study GET before maintenance: restoration itself must renew the grace period.
+        with current_user_context(DEFAULT_ADMIN_USER):
+            result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+            assert result.status == BackGroundTaskStatus.SUCCESS
+            assert result.archived_studies == result.archived_outputs == 0
+            with db():
+                output = next(o for o in services.output_service.list_outputs(study_id) if o.id == output_id)
+                assert not output.archived
+
     @pytest.mark.parametrize("storage_type", [OutputStorageType.OUT_OF_STUDY_FILE_TREE, OutputStorageType.V2])
     @pytest.mark.parametrize("dry_run", [False, True])
     def test_inactive_variant_rearchives_recently_unarchived_outputs(
@@ -116,7 +144,7 @@ class TestArchiveOldStudiesIntegration:
                 )
 
     @pytest.mark.parametrize("dry_run", [False, True])
-    def test_archives_old_outputs_even_after_consultation(
+    def test_outputs_are_archived_only_after_the_grace_period(
         self, services: Services, internal_study_id: str, tmp_path: Path, dry_run: bool
     ) -> None:
         now = current_time()
@@ -126,14 +154,22 @@ class TestArchiveOldStudiesIntegration:
             study.workspace = DEFAULT_WORKSPACE_NAME
             study.last_access = now
             db.session.commit()
-            invalid_output_id = "20241807-1540eco-extra-outputs"
-            outputs = [
-                o
-                for o in services.output_service.list_outputs(study.id)
-                if not o.archived and o.id != invalid_output_id
-            ]
+            outputs = [o for o in services.output_service.list_outputs(study.id) if not o.archived]
             for output in outputs:
                 OutputRepository().delete(study.id, output.id)
+
+            result = archive_old_studies(services.study, services.output_service, 60, 7, dry_run, tmp_path)
+            assert result.status == BackGroundTaskStatus.SUCCESS
+            assert result.archived_outputs == 0
+            if dry_run:
+                assert OutputRepository().get_all(study.id) == []
+            assert services.output_service.get_outputs_to_archive(study.id, now) == []
+            for output in outputs:
+                stored = OutputRepository().get(study.id, output.id)
+                assert stored is not None and stored.last_unarchiving_date is not None
+                assert stored.last_unarchiving_date >= now
+                # Simulate expiration of the grace period.
+                OutputRepository().save_unarchiving_date(study.id, output.id, now - datetime.timedelta(days=61))
             services.output_service.get_logs(study.id, outputs[0].id, LogType.STDOUT)
 
             result = archive_old_studies(services.study, services.output_service, 60, 7, dry_run, tmp_path)
@@ -141,9 +177,7 @@ class TestArchiveOldStudiesIntegration:
             assert result.status == BackGroundTaskStatus.SUCCESS
             assert result.archived_outputs == len(outputs) > 0
             assert result.archived_studies == 0
-            assert (Path(study.path) / "output" / invalid_output_id).is_dir()
             for output in outputs:
-                assert OutputRepository().get(study.id, output.id) is None
                 output_dir = Path(study.path) / "output" / output.id
                 assert output_dir.is_dir() is dry_run
                 assert output_dir.with_name(output_dir.name + ".zip").is_file() is not dry_run
@@ -170,11 +204,14 @@ class TestArchiveOldStudiesIntegration:
             )
             db.session.add(broken)
             db.session.commit()
+            outputs = [o for o in services.output_service.list_outputs(study.id) if not o.archived]
+            for output in outputs:
+                OutputRepository().save_unarchiving_date(study.id, output.id, now - datetime.timedelta(days=61))
 
             result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
 
             assert result.status == BackGroundTaskStatus.PARTIAL_SUCCESS
-            assert result.archived_outputs == 4
+            assert result.archived_outputs == len(outputs)
             assert len(result.errors) == 1 and "broken" in result.errors[0]
             assert services.study.get_study(broken.id).archived is False
             clear_snapshots.assert_called_once()

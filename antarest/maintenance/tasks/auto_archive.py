@@ -93,7 +93,7 @@ def _archive_inactive_studies_and_outputs(
                 # Inactive variants archive all outputs, including recently unarchived outputs and all storage types.
                 outputs = [output.id for output in output_service.list_outputs(study_id) if not output.archived]
             else:
-                outputs = output_service.get_outputs_to_archive(study_id, cutoff)
+                outputs = output_service.get_outputs_to_archive(study_id, cutoff, dry_run=dry_run)
         except Exception as e:
             db.session.rollback()
             logger.exception("Failed to inventory outputs of study %s", study_id)

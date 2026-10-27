@@ -181,6 +181,10 @@ def build_study_service(
             pass
 
         @override
+        def on_study_unarchived(self, study_id: str) -> None:
+            pass
+
+        @override
         def get_disk_usage(self, study_id: str, output_id: str) -> int:
             return 0
 

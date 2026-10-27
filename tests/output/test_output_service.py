@@ -384,18 +384,16 @@ def test_already_existing_study_raises_error_and_deletes_output() -> None:
 @pytest.mark.parametrize(
     "output_id, unarchiving_date, eligible",
     [
-        ("20251001-1200eco", None, True),
+        ("20251001-1200eco", None, False),
         ("20260102-1200eco", None, False),
-        ("20260101-0000eco", None, True),
+        ("20260101-0000eco", None, False),
         ("20251001-1200eco", datetime(2026, 1, 2), False),
         ("20251001-1200eco", datetime(2025, 12, 31), True),
         ("invalid", None, False),
         ("20261301-1200eco", None, False),
     ],
 )
-def test_select_outputs_by_creation_or_unarchiving_date(
-    output_id: str, unarchiving_date: datetime | None, eligible: bool
-) -> None:
+def test_select_outputs_by_unarchiving_date(output_id: str, unarchiving_date: datetime | None, eligible: bool) -> None:
     repository = Mock()
     repository.get_all.return_value = [
         Output(study_id="study", output_id=output_id, last_unarchiving_date=unarchiving_date),
@@ -421,3 +419,7 @@ def test_select_outputs_by_creation_or_unarchiving_date(
     parquet_storage.list_outputs.assert_not_called()
     repository.get_all.assert_called_once_with("study")
     repository.get.assert_not_called()
+    if unarchiving_date is None:
+        repository.save_unarchiving_date.assert_called_once_with("study", output_id, ANY)
+    else:
+        repository.save_unarchiving_date.assert_not_called()
