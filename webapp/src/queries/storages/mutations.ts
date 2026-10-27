@@ -22,10 +22,13 @@ import {
   updateStorageConstraint,
 } from "@/services/api/studies/areas/storages";
 import type {
+  CreateStorageConstraintParams,
   CreateStorageParams,
+  DeleteStorageConstraintParams,
   DeleteStoragesParams,
   DuplicateStorageParams,
   StorageParams,
+  UpdateStorageConstraintParams,
   UpdateStorageParams,
 } from "@/services/api/studies/areas/storages/types";
 import type { Study } from "@/services/api/studies/types";
@@ -73,7 +76,11 @@ export const storageMutations = {
   ) => {
     return mutationOptions({
       mutationKey: storageKeys.createConstraint(studyId, areaId, storageId),
-      mutationFn: createStorageConstraint,
+      mutationFn: (
+        params: Omit<CreateStorageConstraintParams, "studyId" | "areaId" | "storageId">,
+      ) => {
+        return createStorageConstraint({ ...params, studyId, areaId, storageId });
+      },
     });
   },
   updateConstraint: (
@@ -83,7 +90,11 @@ export const storageMutations = {
   ) => {
     return mutationOptions({
       mutationKey: storageKeys.updateConstraint(studyId, areaId, storageId),
-      mutationFn: updateStorageConstraint,
+      mutationFn: (
+        params: Omit<UpdateStorageConstraintParams, "studyId" | "areaId" | "storageId">,
+      ) => {
+        return updateStorageConstraint({ ...params, studyId, areaId, storageId });
+      },
     });
   },
   deleteConstraint: (
@@ -93,7 +104,11 @@ export const storageMutations = {
   ) => {
     return mutationOptions({
       mutationKey: storageKeys.deleteConstraint(studyId, areaId, storageId),
-      mutationFn: deleteStorageConstraint,
+      mutationFn: (
+        params: Omit<DeleteStorageConstraintParams, "studyId" | "areaId" | "storageId">,
+      ) => {
+        return deleteStorageConstraint({ ...params, studyId, areaId, storageId });
+      },
     });
   },
 };

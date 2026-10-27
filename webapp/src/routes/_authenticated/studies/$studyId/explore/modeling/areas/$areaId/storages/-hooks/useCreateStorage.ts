@@ -52,7 +52,7 @@ function useCreateStorage({ studyId, areaId }: StoragesParams) {
     },
     onError: (error, variables, tempStorageId) => {
       enqueueErrorSnackbar(
-        t("study.modeling.clusters.create.error", { name: variables.values.name }),
+        t("study.modeling.storages.create.error", { name: variables.values.name }),
         error,
       );
 

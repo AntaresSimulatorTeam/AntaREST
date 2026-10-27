@@ -14,13 +14,10 @@
 
 import { storageMutations } from "@/queries/storages/mutations";
 import { storageQueries } from "@/queries/storages/queries";
+import type { StorageParams } from "@/services/api/studies/areas/storages/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "@tanstack/react-router";
 
-function useUpdateStorageConstraint() {
-  const { studyId, areaId, storageId } = useParams({
-    from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
-  });
+function useUpdateStorageConstraint({ studyId, areaId, storageId }: StorageParams) {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({

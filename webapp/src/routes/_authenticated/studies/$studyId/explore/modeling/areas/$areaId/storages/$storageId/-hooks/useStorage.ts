@@ -41,7 +41,7 @@ function useStorage<TData>({ studyId, areaId, storageId, select }: UseStoragePar
       }
 
       if (!storage) {
-        throw new Error(t("study.modeling.clusters.notFound", { id: storageId }));
+        throw new Error(t("study.modeling.storages.notFound", { id: storageId }));
       }
 
       return select ? select(storage) : storage;
