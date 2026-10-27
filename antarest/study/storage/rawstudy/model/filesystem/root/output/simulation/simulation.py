@@ -20,6 +20,7 @@ from antarest.study.storage.rawstudy.model.filesystem.inode import TREE
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.about.about import OutputSimulationAbout
+from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.gems_views import GemsViewsFolderNode
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.info_antares_output import (
     OutputSimulationInfoAntaresOutput,
 )
@@ -78,9 +79,9 @@ class OutputSimulation(FolderNode):
                 )
 
             if (self.config.path / GEMS_VIEWS_DIR).exists():
-                for resource in (self.config.path / GEMS_VIEWS_DIR).iterdir():
-                    if resource.is_file():
-                        children[resource.name] = RawFileNode(self.config.next_file(resource.name))
+                children[GEMS_VIEWS_DIR] = GemsViewsFolderNode(
+                    self.matrix_storage_context, self.config.next_file(GEMS_VIEWS_DIR)
+                )
 
             if self.simulation.mode in {Mode.ECONOMY, Mode.EXPANSION}:
                 children["economy"] = OutputSimulationMode(

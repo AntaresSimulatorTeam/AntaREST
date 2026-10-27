@@ -907,8 +907,25 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     _set_up_output(study_path, output_id)
 
     output = study_path / "output" / output_id
-    for file in ["file_1.txt", "file_2.txt", "file_3.mps", "checkIntegrity.txt"]:
+    for file in [
+        "file_1.txt",
+        "file_2.txt",
+        "file_3.mps",
+        "checkIntegrity.txt",
+        # Other extensions that we should support
+        "file_4.ini",
+        "file_5.yml",
+        "file_6.yaml",
+        "file_7.csv",
+        "file_8.log",
+    ]:
         (output / file).touch()
+
+    # Create a `gems_views` folder to ensure we see it in the output tree
+    gems_folder = output / "gems_views"
+    gems_folder.mkdir()
+    for file in ["view.parquet", "view_config.yml"]:
+        (gems_folder / file).touch()
 
     simulation = parse_simulation(output, output_id)
 
@@ -927,8 +944,17 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     assert "file_2" in output_tree[output_id]
     assert "checkIntegrity" in output_tree[output_id]
     assert "file_3" not in output_tree[output_id]
+    assert "file_4" in output_tree[output_id]
+    assert "file_5" in output_tree[output_id]
+    assert "file_6" in output_tree[output_id]
+    assert "file_7" in output_tree[output_id]
+    assert "file_8" in output_tree[output_id]
     # Asserts the `economy` folder is scanned
     assert "economy" in output_tree[output_id]
+    # Asserts the GEMS folder is scanned
+    assert "gems_views" in output_tree[output_id]
+    assert "view" in output_tree[output_id]["gems_views"]
+    assert "view_config" in output_tree[output_id]["gems_views"]
 
 
 def test_parse_simulation_error_parameter(empty_study_880: FileStudy) -> None:
@@ -967,7 +993,7 @@ def test_parse_simulation_output_type(empty_study_880: FileStudy) -> None:
     shutil.make_archive(str(output_folder / zipped_id), "zip", root_dir=output_folder / output_id)
     output_archived_path = output_folder / f"{zipped_id}.zip"
 
-    # 1st case: No `gems-views` folder -> Should be seen as Legacy
+    # 1st case: No `gems_views` folder -> Should be seen as Legacy
     simulation = parse_simulation(output_path, output_id)
     assert simulation.output_type == OutputType.LEGACY
 
@@ -975,7 +1001,7 @@ def test_parse_simulation_output_type(empty_study_880: FileStudy) -> None:
     assert simulation.output_type == OutputType.LEGACY
 
     # 2nd case: The folder exists -> Should be seen as GemsViews
-    (output_path / "gems-views").mkdir()
+    (output_path / "gems_views").mkdir()
     simulation = parse_simulation(output_path, output_id)
     assert simulation.output_type == OutputType.GEMS_VIEWS
 
