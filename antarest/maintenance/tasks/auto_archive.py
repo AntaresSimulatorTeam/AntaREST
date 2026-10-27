@@ -64,7 +64,7 @@ def _archive_inactive_studies_and_outputs(
     cutoff: datetime.datetime,
     dry_run: bool,
 ) -> tuple[int, int, list[str]]:
-    archived_count = 0
+    archived_outputs = 0
     archived_studies = 0
     errors: list[str] = []
     studies = study_service.repository.get_all(
@@ -92,20 +92,20 @@ def _archive_inactive_studies_and_outputs(
             try:
                 logger.info("Archiving output %s/%s%s", study_id, output_id, " [dry-run]" if dry_run else "")
                 if dry_run:
-                    archived_count += 1
+                    archived_outputs += 1
                     continue
                 task_id = output_service.archive_output(study_id, output_id, archive_before=cutoff)
                 if task_id:
                     task_result = _await_archive_task(study_service.task_service, task_id)
                     if task_result.return_value != "skipped":
-                        archived_count += 1
+                        archived_outputs += 1
             except (TaskAlreadyRunning, OutputAlreadyArchived):
                 continue
             except Exception as e:
                 db.session.rollback()
                 logger.exception("Failed to archive output %s/%s", study_id, output_id)
                 errors.append(f"{study_id}/{output_id}: {e}")
-    return archived_studies, archived_count, errors
+    return archived_studies, archived_outputs, errors
 
 
 def _archive_study(

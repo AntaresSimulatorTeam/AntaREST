@@ -571,9 +571,12 @@ class OutputService:
 
         def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
+                # For automatic archiving, recheck eligibility in case the output was unarchived after selection.
                 if archive_before is not None and not self._is_output_older_than(study_id, output_id, archive_before):
                     return TaskResult(
-                        success=True, message="Output no longer eligible for archiving", return_value="skipped"
+                        success=True,
+                        message="Automatic archiving skipped: output no longer eligible",
+                        return_value="skipped",
                     )
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)

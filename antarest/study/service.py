@@ -2019,9 +2019,12 @@ class StudyService:
             with db():
                 study_to_archive = clone_raw_study(assert_raw(self.get_study(uuid)))
                 last_activity = study_to_archive.last_access or study_to_archive.updated_at
+                # For automatic archiving, recheck eligibility in case the study was accessed after selection.
                 if last_access_before is not None and (last_activity is None or last_activity > last_access_before):
                     return TaskResult(
-                        success=True, message="Study no longer eligible for archiving", return_value="skipped"
+                        success=True,
+                        message="Automatic archiving skipped: study no longer eligible",
+                        return_value="skipped",
                     )
 
             for output in self._get_outputs_access().list_outputs(study_to_archive.id):
