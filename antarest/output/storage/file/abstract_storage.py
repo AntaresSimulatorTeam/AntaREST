@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import shutil
+import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
@@ -23,6 +24,7 @@ import pandas as pd
 import polars as pl
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyExists,
@@ -220,12 +222,14 @@ class AbstractFileOutputStorage(IOutputStorage):
         self,
         outputs_provider: IFileOutputsProvider,
         cache: ICache,
+        config: Config,
         remote_executor: IRemoteExecutor,
         repository: FileOutputRepository,
         storage_type: OutputStorageType,
     ) -> None:
         self._outputs_provider = outputs_provider
         self._cache = cache
+        self._config = config
         self._remote_executor = remote_executor
         self._repository = repository
         self._storage_type = storage_type
@@ -488,7 +492,15 @@ class AbstractFileOutputStorage(IOutputStorage):
         """
         Digest of the output.
         """
-        output_path = self._outputs_provider.get_outputs(study_id).outputs_path / output_id
+        outputs_root = self._outputs_provider.get_outputs(study_id).outputs_path
+        if _is_output_archived(outputs_root, output_id):
+            archive_path = _archived_output_path(outputs_root, output_id)
+            with tempfile.TemporaryDirectory(dir=self._config.storage.tmp_dir) as tmpdir:
+                # todo: unarchive the digest file alone in a tmp path
+                print(archive_path)
+                print(tmpdir)
+
+        output_path = outputs_root / output_id
         mode_dir = find_mode_dir(output_path)
         file_path = mode_dir / "mc-all" / "grid" / "digest.txt"
         if not file_path.exists():

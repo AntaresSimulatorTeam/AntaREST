@@ -112,6 +112,7 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     file_outputs_provider = _file_outputs_provider(study_mock)
     output_storage = InStudyFileOutputStorage(
         cache=cache_mock,
+        config=Mock(),
         outputs_provider=file_outputs_provider,
         remote_executor=remote_executor,
         repository=Mock(),
@@ -171,7 +172,11 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
     task_service = Mock(spec=ITaskService)
     file_outputs_provider = _file_outputs_provider(study_mock)
     output_storage = InStudyFileOutputStorage(
-        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock(), repository=Mock()
+        cache=cache_mock,
+        config=Mock(),
+        outputs_provider=file_outputs_provider,
+        remote_executor=Mock(),
+        repository=Mock(),
     )
 
     studies_metadata_repository = _studies_repository(study_mock)
