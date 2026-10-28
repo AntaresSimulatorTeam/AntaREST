@@ -323,7 +323,7 @@ timestamp = 1599488150
             return FileStudyOutputs(outputs_path=study_path / "output", study_workspace=DEFAULT_WORKSPACE_NAME)
 
     output_storage = InStudyFileOutputStorage(
-        OutputsProvider(), cache=Mock(), remote_executor=Mock(), repository=Mock()
+        OutputsProvider(), cache=Mock(), config=Mock(), remote_executor=Mock(), repository=Mock()
     )
 
     # Test

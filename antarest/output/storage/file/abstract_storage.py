@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import shutil
+import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
@@ -23,6 +24,7 @@ import pandas as pd
 import polars as pl
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyExists,
@@ -67,6 +69,7 @@ from antarest.output.storage.output_storage import (
     OutputSettings,
     OutputStorageType,
 )
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8,
@@ -220,12 +223,14 @@ class AbstractFileOutputStorage(IOutputStorage):
         self,
         outputs_provider: IFileOutputsProvider,
         cache: ICache,
+        config: Config,
         remote_executor: IRemoteExecutor,
         repository: FileOutputRepository,
         storage_type: OutputStorageType,
     ) -> None:
         self._outputs_provider = outputs_provider
         self._cache = cache
+        self._config = config
         self._remote_executor = remote_executor
         self._repository = repository
         self._storage_type = storage_type
@@ -488,7 +493,27 @@ class AbstractFileOutputStorage(IOutputStorage):
         """
         Digest of the output.
         """
-        output_path = self._outputs_provider.get_outputs(study_id).outputs_path / output_id
+        outputs_root = self._outputs_provider.get_outputs(study_id).outputs_path
+
+        # First, handle the case where the output is archived
+        if _is_output_archived(outputs_root, output_id):
+            output = parse_single_output(outputs_root, output_id)
+            if not output.synthesis:
+                raise DigestNotFoundError(study_id, output_id)
+            mode_dir_name = "adequacy" if output.mode == Mode.ADEQUACY else "economy"
+            archive_path = _archived_output_path(outputs_root, output_id)
+            with tempfile.TemporaryDirectory(dir=self._config.storage.tmp_dir) as tmpdir:
+                tmp_dir = Path(tmpdir)
+                with zipfile.ZipFile(archive_path) as zip_obj:
+                    try:
+                        zip_obj.extract(f"{mode_dir_name}/mc-all/grid/digest.txt", tmp_dir)
+                    except KeyError:
+                        raise DigestNotFoundError(study_id, output_id)
+
+                return DigestSynthesis.parse_file_for_ui(tmp_dir / mode_dir_name / "mc-all" / "grid" / "digest.txt")
+
+        # Then handle the nominal case where the output is not archived
+        output_path = outputs_root / output_id
         mode_dir = find_mode_dir(output_path)
         file_path = mode_dir / "mc-all" / "grid" / "digest.txt"
         if not file_path.exists():
