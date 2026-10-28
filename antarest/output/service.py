@@ -46,7 +46,6 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.dbmodel import Output
 from antarest.output.filestudy.aggregation import (
     CLUSTER_ID_COL,
 )
@@ -526,32 +525,26 @@ class OutputService:
                     if not output.archived:
                         self._output_repository.save_unarchiving_date(study_id, output.id, now)
 
-    def get_outputs_to_archive(self, study_id: str, cutoff: datetime, dry_run: bool = False) -> list[str]:
-        """Select old file outputs, starting a grace period when no unarchiving date is recorded."""
-        db_outputs = {o.output_id: o for o in self._output_repository.get_all(study_id)}
-        now = current_time()
-        outputs = []
-        for storage in self._storages:
-            if storage.storage_type == OutputStorageType.V2:
-                continue
-            for output in storage.list_outputs(study_id):
-                if output.archived:
-                    continue
-                metadata = db_outputs.get(output.id)
-                if metadata is None or metadata.last_unarchiving_date is None:
-                    if not dry_run:
-                        self._output_repository.save_unarchiving_date(study_id, output.id, now)
-                elif self._is_output_older_than(metadata, cutoff):
-                    outputs.append(output.id)
-        return outputs
-
-    def _get_and_check_output_older_than(self, study_id: str, output_id: str, cutoff: datetime) -> bool:
-        output = self._output_repository.get(study_id, output_id) or Output(study_id=study_id, output_id=output_id)
-        return self._is_output_older_than(output, cutoff)
+    def get_outputs_to_archive(self, study_id: str, cutoff: datetime) -> list[str]:
+        """Select file outputs with an old ID date and no recent unarchiving."""
+        unarchiving_dates = {o.output_id: o.last_unarchiving_date for o in self._output_repository.get_all(study_id)}
+        return [
+            output.id
+            for storage in self._storages
+            if storage.storage_type != OutputStorageType.V2
+            for output in storage.list_outputs(study_id)
+            if not output.archived and self._is_output_older_than(output.id, unarchiving_dates.get(output.id), cutoff)
+        ]
 
     @staticmethod
-    def _is_output_older_than(output: Output, cutoff: datetime) -> bool:
-        return output.last_unarchiving_date is not None and output.last_unarchiving_date <= cutoff
+    def _is_output_older_than(output_id: str, last_unarchiving_date: datetime | None, cutoff: datetime) -> bool:
+        if last_unarchiving_date is not None and last_unarchiving_date > cutoff:
+            return False
+        try:
+            return datetime.strptime(output_id[:13], "%Y%m%d-%H%M") <= cutoff
+        except ValueError:
+            logger.warning("Skipping automatic archival of output %s: invalid date in output ID", output_id)
+            return False
 
     def archive_output(
         self,
@@ -586,14 +579,15 @@ class OutputService:
         def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
                 # For automatic archiving, recheck eligibility in case the output was unarchived after selection.
-                if archive_before is not None and not self._get_and_check_output_older_than(
-                    study_id, output_id, archive_before
-                ):
-                    return TaskResult(
-                        success=True,
-                        message="Automatic archiving skipped: output no longer eligible",
-                        return_value="skipped",
-                    )
+                if archive_before is not None:
+                    output = self._output_repository.get(study_id, output_id)
+                    last_unarchiving_date = output.last_unarchiving_date if output else None
+                    if not self._is_output_older_than(output_id, last_unarchiving_date, archive_before):
+                        return TaskResult(
+                            success=True,
+                            message="Automatic archiving skipped: output no longer eligible",
+                            return_value="skipped",
+                        )
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")

@@ -21,6 +21,8 @@ import pytest
 from pytest_mock import MockerFixture
 from starlette.testclient import TestClient
 
+from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
+from antarest.core.configdata.repository import ConfigDataRepository
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -97,6 +99,13 @@ class TestArchiveOldStudiesIntegration:
 
             now = current_time()
             with db():
+                ConfigDataRepository().save(
+                    ConfigData(
+                        owner=DEFAULT_ADMIN_USER.id,
+                        key=ConfigDataAppKeys.OUTPUT_AUTO_ARCHIVE_MIGRATION_DATE,
+                        value=now.isoformat(),
+                    )
+                )
                 variant = services.study.get_study(variant_id)
                 variant.last_access = now - datetime.timedelta(days=90)
                 db.session.commit()
@@ -144,7 +153,7 @@ class TestArchiveOldStudiesIntegration:
                 )
 
     @pytest.mark.parametrize("dry_run", [False, True])
-    def test_outputs_are_archived_only_after_the_grace_period(
+    def test_outputs_are_archived_by_id_after_the_deployment_grace_period(
         self, services: Services, internal_study_id: str, tmp_path: Path, dry_run: bool
     ) -> None:
         now = current_time()
@@ -155,32 +164,37 @@ class TestArchiveOldStudiesIntegration:
             study.last_access = now
             db.session.commit()
             outputs = [o for o in services.output_service.list_outputs(study.id) if not o.archived]
+            invalid_output_id = "20241807-1540eco-extra-outputs"
+            eligible_outputs = [o for o in outputs if o.id != invalid_output_id]
             for output in outputs:
                 OutputRepository().delete(study.id, output.id)
+            migration = ConfigData(
+                owner=DEFAULT_ADMIN_USER.id,
+                key=ConfigDataAppKeys.OUTPUT_AUTO_ARCHIVE_MIGRATION_DATE,
+                value=now.isoformat(),
+            )
+            ConfigDataRepository().save(migration)
 
             result = archive_old_studies(services.study, services.output_service, 60, 7, dry_run, tmp_path)
             assert result.status == BackGroundTaskStatus.SUCCESS
             assert result.archived_outputs == 0
-            if dry_run:
-                assert OutputRepository().get_all(study.id) == []
-            assert services.output_service.get_outputs_to_archive(study.id, now) == []
-            for output in outputs:
-                stored = OutputRepository().get(study.id, output.id)
-                assert stored is not None and stored.last_unarchiving_date is not None
-                assert stored.last_unarchiving_date >= now
-                # Simulate expiration of the grace period.
-                OutputRepository().save_unarchiving_date(study.id, output.id, now - datetime.timedelta(days=61))
+            assert OutputRepository().get_all(study.id) == []
+            # Once the deployment grace period expires, old IDs are eligible even without database metadata.
+            migration.value = (now - datetime.timedelta(days=61)).isoformat()
+            ConfigDataRepository().save(migration)
             services.output_service.get_logs(study.id, outputs[0].id, LogType.STDOUT)
 
             result = archive_old_studies(services.study, services.output_service, 60, 7, dry_run, tmp_path)
 
             assert result.status == BackGroundTaskStatus.SUCCESS
-            assert result.archived_outputs == len(outputs) > 0
+            assert result.archived_outputs == len(eligible_outputs) > 0
             assert result.archived_studies == 0
+            assert OutputRepository().get_all(study.id) == []
             for output in outputs:
                 output_dir = Path(study.path) / "output" / output.id
-                assert output_dir.is_dir() is dry_run
-                assert output_dir.with_name(output_dir.name + ".zip").is_file() is not dry_run
+                archived = not dry_run and output.id != invalid_output_id
+                assert output_dir.is_dir() is not archived
+                assert output_dir.with_name(output_dir.name + ".zip").is_file() is archived
 
     def test_inventory_failure_does_not_stop_other_studies(
         self, services: Services, internal_study_id: str, tmp_path: Path, mocker: MockerFixture
@@ -211,7 +225,7 @@ class TestArchiveOldStudiesIntegration:
             result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
 
             assert result.status == BackGroundTaskStatus.PARTIAL_SUCCESS
-            assert result.archived_outputs == len(outputs)
+            assert result.archived_outputs == len([o for o in outputs if o.id != "20241807-1540eco-extra-outputs"])
             assert len(result.errors) == 1 and "broken" in result.errors[0]
             assert services.study.get_study(broken.id).archived is False
             clear_snapshots.assert_called_once()

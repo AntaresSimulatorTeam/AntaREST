@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,7 @@ from sqlalchemy import create_engine, text
 from testcontainers.postgres import PostgresContainer
 
 from antarest.core.persistence import upgrade_db
+from antarest.core.utils.utils import current_time
 from tests.integration.conftest import RUN_ON_WINDOWS
 
 
@@ -27,12 +29,17 @@ def _checks_migration(tmp_path: Path, db_url: str) -> None:
         yaml.safe_dump({"db": {"url": db_url}}, f)
 
     # This will fail if there's an issue inside our alembic migrations
+    before_upgrade = current_time()
     upgrade_db(config_file)
 
     engine = create_engine(db_url)
     with engine.connect() as connection:
         # this would throw if the migration is not executed
         connection.execute(text("SELECT * FROM study"))
+        migration_date = connection.execute(
+            text("SELECT value FROM configdata WHERE owner = 1 AND key = 'OUTPUT_AUTO_ARCHIVE_MIGRATION_DATE'")
+        ).scalar_one()
+        assert before_upgrade <= datetime.fromisoformat(migration_date) <= current_time()
 
 
 def test_alembic_migration(tmp_path: Path) -> None:

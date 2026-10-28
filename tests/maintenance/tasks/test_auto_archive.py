@@ -13,11 +13,14 @@
 """Tests for auto-archive task."""
 
 import datetime
-from unittest.mock import Mock, call
+from unittest.mock import Mock
 
 import pytest
 
+from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
+from antarest.core.configdata.repository import ConfigDataRepository
 from antarest.core.exceptions import TaskAlreadyRunning
+from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.tasks.model import TaskResult
 from antarest.maintenance.tasks.auto_archive import (
     ArchiveStudyResult,
@@ -28,6 +31,7 @@ from antarest.maintenance.tasks.auto_archive_task import auto_archive_task
 from antarest.output.storage.output_storage import OutputMetadata
 from antarest.study.model import RawStudy, Study
 from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
+from tests.helpers import with_db_context
 
 CUTOFF = datetime.datetime(2026, 1, 1)
 
@@ -43,7 +47,15 @@ def _make_study(spec: type[Study], study_id: str, days_ago: int, archived: bool 
     return study
 
 
+@with_db_context
 def test_selects_inactive_raw_studies_in_a_single_pass() -> None:
+    ConfigDataRepository().save(
+        ConfigData(
+            owner=DEFAULT_ADMIN_USER.id,
+            key=ConfigDataAppKeys.OUTPUT_AUTO_ARCHIVE_MIGRATION_DATE,
+            value=datetime.datetime.now().isoformat(),
+        )
+    )
     svc = Mock()
     without_last_access = _make_study(RawStudy, "fallback", 90)
     without_last_access.last_access = None
@@ -63,15 +75,14 @@ def test_selects_inactive_raw_studies_in_a_single_pass() -> None:
     assert result.archived_outputs == 0
     assert result.errors == []
     svc.repository.get_all.assert_called_once()
-    assert outputs.get_outputs_to_archive.call_args_list == [
-        call("recent", cutoff, dry_run=True),
-    ]
+    outputs.get_outputs_to_archive.assert_not_called()
     outputs.list_outputs.assert_called_once_with("variant")
 
 
 @pytest.mark.parametrize("dry_run", [False, True])
 @pytest.mark.parametrize("inactive", [False, True])
 @pytest.mark.parametrize("has_last_access", [False, True])
+@with_db_context
 def test_variant_archival_depends_on_study_activity(dry_run: bool, inactive: bool, has_last_access: bool) -> None:
     study = _make_study(VariantStudy, "variant", 90 if inactive else 30)
     if not has_last_access:
@@ -96,7 +107,7 @@ def test_variant_archival_depends_on_study_activity(dry_run: bool, inactive: boo
         output_service.get_outputs_to_archive.assert_not_called()
     else:
         output_service.list_outputs.assert_not_called()
-        output_service.get_outputs_to_archive.assert_called_once_with("variant", cutoff, dry_run=dry_run)
+        output_service.get_outputs_to_archive.assert_called_once_with("variant", cutoff)
     if inactive and not dry_run:
         output_service.archive_output.assert_called_once_with("variant", "recent-output", archive_before=None)
         study_service.task_service.await_task.assert_called_once()
