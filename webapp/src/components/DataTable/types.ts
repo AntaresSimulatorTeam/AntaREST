@@ -13,6 +13,7 @@
  */
 
 export interface RowData {
+  id: string;
   name: string;
   group?: string;
 }

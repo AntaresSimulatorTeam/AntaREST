@@ -17,6 +17,7 @@ import { createMRTColumnHelper } from "material-react-table";
 import DataTable from ".";
 
 interface Row {
+  id: string;
   name: string;
   value: number;
 }
@@ -26,12 +27,14 @@ const columns = [columnHelper.accessor("value", { header: "Value" })];
 
 test("reflects updates coming from the `data` prop after mount (e.g. edited via an external drawer)", () => {
   const { rerender } = render(
-    <DataTable data={[{ name: "Reserve A", value: 1 }]} columns={columns} />,
+    <DataTable data={[{ id: "reserve a", name: "Reserve A", value: 1 }]} columns={columns} />,
   );
 
   expect(screen.getByText("1")).toBeInTheDocument();
 
-  rerender(<DataTable data={[{ name: "Reserve A", value: 2 }]} columns={columns} />);
+  rerender(
+    <DataTable data={[{ id: "reserve a", name: "Reserve A", value: 2 }]} columns={columns} />,
+  );
 
   expect(screen.queryByText("1")).not.toBeInTheDocument();
   expect(screen.getByText("2")).toBeInTheDocument();
