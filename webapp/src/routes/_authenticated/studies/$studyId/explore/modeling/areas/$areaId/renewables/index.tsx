@@ -23,7 +23,7 @@ import { getStudySynthesis } from "@/redux/selectors";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { RENEWABLE_GROUPS } from "@/services/api/studies/areas/renewables/constants";
 import { Box } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { useIsMutating } from "@tanstack/react-query";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useMemo } from "react";
@@ -51,7 +51,6 @@ function Renewables() {
   const study = useStudy();
   const params = Route.useParams();
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const createRenewableCluster = useCreateRenewableCluster(params);
   const duplicateRenewableCluster = useDuplicateRenewableCluster(params);
   const deleteRenewableClusters = useDeleteRenewableClusters(params);
@@ -65,7 +64,9 @@ function Renewables() {
   } = useRenewableClusters({ ...params, select: selectClustersData });
 
   const isSaving =
-    queryClient.isMutating({ mutationKey: renewableKeys.list(study.id, areaId) }) > 0;
+    useIsMutating({
+      mutationKey: renewableKeys.list(study.id, areaId),
+    }) !== 0;
 
   const columns = useMemo(() => {
     const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } = totals;
