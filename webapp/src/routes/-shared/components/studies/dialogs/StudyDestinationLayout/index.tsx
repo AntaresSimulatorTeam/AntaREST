@@ -15,6 +15,7 @@
 import CustomScrollbar from "@/components/CustomScrollbar";
 import { Box, Stack, Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
+import { destinationPanelSx, fieldsPanelSx } from "./styles";
 
 interface Props {
   children: React.ReactNode;
@@ -27,33 +28,12 @@ function StudyDestinationLayout({ children, destination }: Props) {
   return (
     <CustomScrollbar style={{ flex: 1, minHeight: 0 }}>
       <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ height: { md: 1 } }}>
-        <Box
-          component={CustomScrollbar}
-          sx={{ minHeight: 0, minWidth: 0, width: 1, flex: { md: 9 } }}
-        >
+        <Box component={CustomScrollbar} sx={fieldsPanelSx}>
           <Stack direction="column" spacing={2} sx={{ p: 1 }}>
             {children}
           </Stack>
         </Box>
-        <Stack
-          direction="column"
-          spacing={2}
-          sx={{
-            p: 1,
-            pt: { xs: 3, md: 1 },
-            pl: { xs: 1, md: 3 },
-            borderTopWidth: { xs: 1, md: 0 },
-            borderTopStyle: "solid",
-            borderLeftWidth: { xs: 0, md: 1 },
-            borderLeftStyle: "solid",
-            borderColor: "divider",
-            minWidth: 0,
-            minHeight: 0,
-            height: { xs: "clamp(320px, 50dvh, 480px)", md: 1 },
-            // Give the directory explorer slightly more room than the form fields.
-            flex: { md: 11 },
-          }}
-        >
+        <Stack direction="column" spacing={2} sx={destinationPanelSx}>
           <Typography component="h3" variant="subtitle2">
             {t("studies.destination")}
           </Typography>

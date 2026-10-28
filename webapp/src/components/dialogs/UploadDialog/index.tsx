@@ -17,12 +17,13 @@ import { toError } from "@/utils/fnUtils";
 import type { PromiseAny } from "@/utils/tsUtils";
 import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
-import { Box, Button, LinearProgress, Paper, Typography } from "@mui/material";
+import { Button, LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 import { useDropzone, type Accept, type FileRejection } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
+import BasicDialog, { type BasicDialogProps } from "../BasicDialog";
+import { dropzoneSx, uploadProgressSx } from "./styles";
 
 export interface UploadImportResult {
   success: number;
@@ -177,21 +178,8 @@ function UploadDialog({
   const uploadStatus = uploadStatusText || t("common.dialog.import.importing");
 
   const uploadArea = isUploading ? (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        minHeight: 192,
-        gap: 2,
-        p: { xs: 2, sm: 3 },
-        border: 1,
-        borderColor: "divider",
-        borderRadius: 1,
-        bgcolor: "action.hover",
-      }}
-    >
-      <Typography role="status" variant="body2" sx={{ textAlign: "center" }}>
+    <Stack direction="column" spacing={2} justifyContent="center" sx={uploadProgressSx}>
+      <Typography role="status" variant="body2" align="center">
         {uploadStatus}
       </Typography>
       <LinearProgress
@@ -199,36 +187,24 @@ function UploadDialog({
         variant={uploadProgress > 2 && uploadProgress < 98 ? "determinate" : "indeterminate"}
         value={Math.max(0, Math.min(100, uploadProgress))}
       />
-    </Box>
+    </Stack>
   ) : (
     <>
-      <Paper
+      <Stack
+        component={Paper}
         {...getRootProps({ role: "button" })}
         elevation={0}
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: 192,
-          gap: 1,
-          borderWidth: 1,
-          borderStyle: "dashed",
-          borderColor: isDragActive ? "primary.main" : "divider",
-          p: { xs: 2, sm: 3 },
-          cursor: "pointer",
-          textAlign: "center",
-          bgcolor: isDragActive ? "action.selected" : "transparent",
-          "&:hover": {
+        direction="column"
+        spacing={1}
+        alignItems="center"
+        justifyContent="center"
+        sx={[
+          dropzoneSx,
+          isDragActive && {
             borderColor: "primary.main",
-            bgcolor: "action.hover",
+            bgcolor: "action.selected",
           },
-          "&:focus-visible": {
-            outline: "2px solid",
-            outlineColor: "primary.main",
-            outlineOffset: 3,
-          },
-        }}
+        ]}
       >
         <input {...getInputProps()} />
         <CloudUploadOutlinedIcon
@@ -242,16 +218,9 @@ function UploadDialog({
         >
           {t("common.dialog.import.browseFiles")}
         </Typography>
-      </Paper>
+      </Stack>
       {invalidText && (
-        <Typography
-          role="alert"
-          sx={{
-            textAlign: "center",
-            color: "error.main",
-            pt: 1,
-          }}
-        >
+        <Typography role="alert" align="center" color="error.main" sx={{ pt: 1 }}>
           {invalidText}
         </Typography>
       )}
@@ -273,16 +242,9 @@ function UploadDialog({
       {children ? (
         children(uploadArea)
       ) : (
-        <Box
-          sx={{
-            pt: 1,
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
-        >
+        <Stack direction="column" spacing={2} sx={{ pt: 1 }}>
           {uploadArea}
-        </Box>
+        </Stack>
       )}
     </BasicDialog>
   );
