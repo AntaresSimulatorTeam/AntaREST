@@ -22,7 +22,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
     default_scenario_daily,
     default_scenario_daily_half,
     default_scenario_daily_ones,
-    default_scenario_daily_zeros,
     default_scenario_hourly,
     default_scenario_monthly,
 )
@@ -77,7 +76,7 @@ class InputHydroSeriesArea(FolderNode):
             hydro_series_matrices["minDailyReservoirLevels"] = InputSeriesMatrix(
                 self.matrix_storage_context,
                 self.config.next_file("minDailyReservoirLevels.txt"),
-                default_empty=default_scenario_daily_zeros,
+                default_empty=default_scenario_daily,
                 should_exist=False,
             )
             hydro_series_matrices["avgDailyReservoirLevels"] = InputSeriesMatrix(
