@@ -290,7 +290,16 @@ class AbstractFileOutputStorage(IOutputStorage):
 
             # Moving temporary directory to actual directory
             output_name = extract_output_name(tmp_output_dir, output_name_suffix)
-            tmp_output_dir.rename(_output_path(study_outputs.outputs_path, output_name))
+            try:
+                tmp_output_dir.rename(_output_path(study_outputs.outputs_path, output_name))
+            except OSError as e:
+                # Happens for Xpansion sensitivity simulation
+                if (tmp_output_dir / "sensitivity").is_dir():
+                    # Note: This fix only works for 1 sensitivity run on the same output which will cover 99% of cases
+                    output_name = f"{output_name}-sensitivity"
+                    tmp_output_dir.rename(_output_path(study_outputs.outputs_path, output_name))
+                else:
+                    raise e
 
             remove_from_cache(self._cache, study_id)
 
