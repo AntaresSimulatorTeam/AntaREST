@@ -20,6 +20,7 @@ from antarest.core.exceptions import AreaNotFound
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
+    HydroRuleCurves,
 )
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import (
@@ -31,6 +32,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
+    HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE,
     HYDRO_CORRELATION_TABLE,
     HYDRO_CREDIT_MODULATIONS_TABLE,
     HYDRO_ENERGY_TABLE,
@@ -39,9 +41,11 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_MANAGEMENT_TABLE,
     HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
     HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+    HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE,
     HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
     HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
     HYDRO_MAXPOWER_TABLE,
+    HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE,
     HYDRO_MINGEN_TABLE,
     HYDRO_MODULATION_TABLE,
     HYDRO_RESERVOIR_TABLE,
@@ -570,6 +574,9 @@ _ALL_HYDRO_MATRIX_TABLES = [
     HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
     HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
     HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+    HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE,
+    HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE,
+    HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE,
 ]
 
 
@@ -665,6 +672,9 @@ class TestHydroMatrices:
             dao.get_hydro_max_hourly_pump_power,
             dao.get_hydro_max_daily_gen_energy,
             dao.get_hydro_max_daily_pump_energy,
+            dao.get_hydro_max_daily_reservoir_levels,
+            dao.get_hydro_min_daily_reservoir_levels,
+            dao.get_hydro_avg_daily_reservoir_levels,
         ]
         for getter in getters:
             # raise because no matrix is saved for area
@@ -688,6 +698,9 @@ class TestHydroMatrices:
             dao.save_hydro_max_hourly_pump_power,
             dao.save_hydro_max_daily_gen_energy,
             dao.save_hydro_max_daily_pump_energy,
+            dao.save_hydro_max_daily_reservoir_levels,
+            dao.save_hydro_min_daily_reservoir_levels,
+            dao.save_hydro_avg_daily_reservoir_levels,
         ]
         for saver in savers:
             with pytest.raises(AreaNotFound):
@@ -715,6 +728,9 @@ class TestHydroMatrices:
         dao.save_hydro_max_hourly_pump_power({"paris": series_id})
         dao.save_hydro_max_daily_gen_energy({"paris": series_id})
         dao.save_hydro_max_daily_pump_energy({"paris": series_id})
+        dao.save_hydro_max_daily_reservoir_levels({"paris": series_id})
+        dao.save_hydro_min_daily_reservoir_levels({"paris": series_id})
+        dao.save_hydro_avg_daily_reservoir_levels({"paris": series_id})
 
         dao.delete_area("paris")
 
@@ -823,6 +839,47 @@ class TestConvertHydroPmax:
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.HOURLY
         dao.convert_hydro_pmax(HydroPmax.DAILY)
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
+
+
+def test_convert_hydro_rule_curves(db_dao_920: DatabaseStudyDao) -> None:
+    dao = db_dao_920
+    assert dao.get_compatibility_parameters().hydro_rule_curves == HydroRuleCurves.SINGLE
+
+    dao.convert_hydro_rule_curves(HydroRuleCurves.SINGLE)
+    assert dao.get_compatibility_parameters().hydro_rule_curves == HydroRuleCurves.SINGLE
+
+    dao.convert_hydro_rule_curves(HydroRuleCurves.SCENARIZED)
+    assert dao.get_compatibility_parameters().hydro_rule_curves == HydroRuleCurves.SCENARIZED
+
+    dao.convert_hydro_rule_curves(HydroRuleCurves.SINGLE)
+    assert dao.get_compatibility_parameters().hydro_rule_curves == HydroRuleCurves.SINGLE
+
+
+def test_convert_hydro_rule_curves_creates_reservoir_levels(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    save_area(dao, "Paris")
+
+    dao.convert_hydro_rule_curves(HydroRuleCurves.SCENARIZED)
+
+    min_levels = dao.get_hydro_min_daily_reservoir_levels("paris")
+    max_levels = dao.get_hydro_max_daily_reservoir_levels("paris")
+    avg_levels = dao.get_hydro_avg_daily_reservoir_levels("paris")
+    assert min_levels.shape == (365, 1)
+    assert max_levels.shape == (365, 1)
+    assert avg_levels.shape == (365, 1)
+    assert (min_levels.to_numpy() == 0).all()
+    assert (max_levels.to_numpy() == 1).all()
+    assert (avg_levels.to_numpy() == 0.5).all()
+
+    custom = pl.DataFrame({"0": [0.2] * 365})
+    dao.save_hydro_min_daily_reservoir_levels({"paris": dao.matrix_service.create(custom)})
+    dao.convert_hydro_rule_curves(HydroRuleCurves.SCENARIZED)
+    pl.testing.assert_frame_equal(dao.get_hydro_min_daily_reservoir_levels("paris"), custom, check_dtypes=False)
+
+    dao.convert_hydro_rule_curves(HydroRuleCurves.SINGLE)
+    assert dao.get_all_hydro_min_daily_reservoir_levels() == {}
+    assert dao.get_all_hydro_max_daily_reservoir_levels() == {}
+    assert dao.get_all_hydro_avg_daily_reservoir_levels() == {}
 
 
 def test_hydro_correlation(dao: StudyDao) -> None:
