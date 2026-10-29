@@ -20,7 +20,7 @@ import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO, Literal, TypeAlias, cast
 from uuid import uuid4
@@ -579,6 +579,10 @@ class IOutputsAccess(ABC):
 
     @abstractmethod
     def archive_output(self, study_id: str, output_id: str) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def on_study_unarchived(self, study_id: str) -> None:
         raise NotImplementedError()
 
     @abstractmethod
@@ -1989,7 +1993,11 @@ class StudyService:
         self.links_manager.delete_link(study_interface, area_from, area_to)
         notify_study_map_edition(self.event_bus, study)
 
-    def archive(self, uuid: str) -> str:
+    def archive(
+        self,
+        uuid: str,
+        last_access_before: datetime | None = None,
+    ) -> str:
         logger.info(f"Archiving study {uuid}")
         study = self.get_study(uuid)
         assert_permission(study, StudyPermissionType.WRITE)
@@ -2014,6 +2022,14 @@ class StudyService:
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
             with db():
                 study_to_archive = clone_raw_study(assert_raw(self.get_study(uuid)))
+                last_activity = study_to_archive.last_access or study_to_archive.updated_at
+                # For automatic archiving, recheck eligibility in case the study was accessed after selection.
+                if last_access_before is not None and (last_activity is None or last_activity > last_access_before):
+                    return TaskResult(
+                        success=True,
+                        message="Automatic archiving skipped: study no longer eligible",
+                        return_value="skipped",
+                    )
 
             for output in self._get_outputs_access().list_outputs(study_to_archive.id):
                 if not output.in_study and not output.archived:
@@ -2069,9 +2085,11 @@ class StudyService:
                 if study_db is None:
                     raise StudyNotFoundError(uuid)
                 study_db.archived = False
+                study_db.last_access = current_time()
                 self.repository.save(study_db)
-                notify_study_edition(self.event_bus, study_db)
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
+                self._get_outputs_access().on_study_unarchived(uuid)
+                notify_study_edition(self.event_bus, study_db)
 
             return TaskResult(success=True, message="ok")
 

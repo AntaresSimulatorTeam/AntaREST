@@ -11,89 +11,72 @@
 # This file is part of the Antares project.
 
 import datetime
-import tempfile
 from pathlib import Path
 from unittest.mock import Mock
 
-from antarest.core.exceptions import TaskAlreadyRunning
+import pytest
+
+from antarest.core.tasks.model import TaskResult
 from antarest.core.utils.utils import current_time
 from antarest.maintenance.tasks.auto_archive import archive_old_studies
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
-from antarest.output.service import OutputService
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
 from antarest.study.repository import StudyMetadataRepository
-from antarest.study.service import StudyService
 from tests.helpers import create_raw_study, create_variant_study, with_db_context
 
 
 @with_db_context
-def test_auto_archival() -> None:
-    mock_study_service = Mock(spec=StudyService)
-    mock_output_service = Mock(spec=OutputService)
-
+def test_output_archival_includes_variants_but_excludes_external_and_archived_studies(tmp_path: Path) -> None:
     now = current_time()
-
     repository = StudyMetadataRepository()
-
-    # Add some studies in the database
-    db_session = repository.session
-    db_session.add_all(
+    repository.session.add_all(
         [
-            create_raw_study(
-                id="a",
-                workspace="not default",
-                updated_at=now - datetime.timedelta(days=61),
-            ),
-            create_raw_study(
-                id="b",
-                workspace=DEFAULT_WORKSPACE_NAME,
-                updated_at=now - datetime.timedelta(days=59),
-            ),
-            create_raw_study(
-                id="c",
-                workspace=DEFAULT_WORKSPACE_NAME,
-                updated_at=now - datetime.timedelta(days=61),
-                archived=True,
-            ),
-            create_raw_study(
-                id="d",
-                workspace=DEFAULT_WORKSPACE_NAME,
-                updated_at=now - datetime.timedelta(days=61),
-                archived=False,
-            ),
-            create_variant_study(
-                id="e",
-                updated_at=now - datetime.timedelta(days=61),
-            ),
-            create_variant_study(
-                id="f",
-                updated_at=now - datetime.timedelta(days=1),
-            ),
+            create_raw_study(id="external", workspace="external", updated_at=now),
+            create_raw_study(id="archived", workspace=DEFAULT_WORKSPACE_NAME, archived=True, updated_at=now),
+            create_variant_study(id="variant", updated_at=now),
         ]
     )
-    db_session.commit()
+    repository.session.commit()
+    study_service, output_service = Mock(repository=repository), Mock()
+    output_service.get_outputs_to_archive.return_value = ["output"]
 
-    mock_study_service.repository = repository
-    mock_study_service.storage_service = Mock()
-    mock_study_service.storage_service.variant_study_service = Mock()
-    mock_study_service.storage_service.variant_study_service.clear_all_snapshots.return_value = 0
-    mock_study_service.task_service = Mock()
-    mock_study_service.archive.side_effect = TaskAlreadyRunning
-    mock_study_service.get_study = repository.get
-    mock_output_service.archive_outputs.return_value = ["task1"]
-
-    result = archive_old_studies(
-        study_service=mock_study_service,
-        output_service=mock_output_service,
-        threshold_days=60,
-        snapshot_retention_days=7,
-        dry_run=False,
-        lock_folder=Path(tempfile.gettempdir()),
-    )
+    result = archive_old_studies(study_service, output_service, 60, 7, True, tmp_path)
 
     assert result.status == BackGroundTaskStatus.SUCCESS
-    mock_study_service.archive.assert_called_once_with("d")
-    mock_output_service.archive_outputs.assert_called_once_with("e")
-    mock_study_service.storage_service.variant_study_service.clear_all_snapshots.assert_called_once_with(
-        datetime.timedelta(days=7)
+    assert result.archived_outputs == 1
+    assert result.archived_studies == 0
+    assert output_service.get_outputs_to_archive.call_args.args[0] == "variant"
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+@pytest.mark.parametrize("active_study", [False, True])
+@with_db_context
+def test_archives_study_based_on_its_access_date(tmp_path: Path, dry_run: bool, active_study: bool) -> None:
+    now = current_time()
+    old = now - datetime.timedelta(days=90)
+    repository = StudyMetadataRepository()
+    repository.session.add(
+        create_raw_study(id="study", workspace=DEFAULT_WORKSPACE_NAME, last_access=now if active_study else old)
     )
+    repository.session.commit()
+    study_service, output_service = Mock(repository=repository), Mock()
+    output_service.get_outputs_to_archive.return_value = ["old"]
+    study_service.task_service.status_task.return_value.result = TaskResult(success=True, message="ok")
+
+    result = archive_old_studies(study_service, output_service, 60, 7, dry_run, tmp_path)
+
+    assert result.status == BackGroundTaskStatus.SUCCESS
+    assert result.archived_studies == int(not active_study)
+    assert result.archived_outputs == int(active_study)
+    if not active_study:
+        output_service.get_outputs_to_archive.assert_not_called()
+    if dry_run:
+        study_service.archive.assert_not_called()
+        output_service.archive_output.assert_not_called()
+    elif active_study:
+        study_service.archive.assert_not_called()
+        output_service.archive_output.assert_called_once()
+        assert output_service.archive_output.call_args.args == ("study", "old")
+    else:
+        study_service.archive.assert_called_once()
+        output_service.archive_output.assert_not_called()

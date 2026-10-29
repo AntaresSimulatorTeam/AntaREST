@@ -15,6 +15,7 @@ import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, BinaryIO
 
@@ -45,7 +46,6 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.dbmodel import Output
 from antarest.output.filestudy.aggregation import (
     CLUSTER_ID_COL,
 )
@@ -307,7 +307,7 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.unarchive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
-                self._output_repository.delete(study_id, output_id)
+                self._output_repository.save_unarchiving_date(study_id, output_id, current_time())
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -516,24 +516,42 @@ class OutputService:
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
-    def archive_outputs(self, study_id: str) -> list[str]:
-        logger.info(f"Archiving all outputs for study {study_id}")
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
+    def on_study_unarchived(self, study_id: str) -> None:
+        """Renew the grace period of outputs restored with the study."""
+        now = current_time()
+        for storage in self._storages:
+            if storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+                for output in storage.list_outputs(study_id):
+                    if not output.archived:
+                        self._output_repository.save_unarchiving_date(study_id, output.id, now)
 
-        outputs = self.list_outputs(study_id)
-        task_ids = []
-        for output in outputs:
-            if not output.archived:
-                task_id = self.archive_output(study_id, output.id)
-                if task_id:
-                    task_ids.append(task_id)
-        return task_ids
+    def get_outputs_to_archive(self, study_id: str, cutoff: datetime) -> list[str]:
+        """Select file outputs by their last unarchiving date, falling back to their ID date."""
+        unarchiving_dates = {o.output_id: o.last_unarchiving_date for o in self._output_repository.get_all(study_id)}
+        return [
+            output.id
+            for storage in self._storages
+            if storage.storage_type != OutputStorageType.V2
+            for output in storage.list_outputs(study_id)
+            if not output.archived and self._is_output_older_than(output.id, unarchiving_dates.get(output.id), cutoff)
+        ]
+
+    @staticmethod
+    def _is_output_older_than(output_id: str, last_unarchiving_date: datetime | None, cutoff: datetime) -> bool:
+        if last_unarchiving_date is not None:
+            return last_unarchiving_date <= cutoff
+        try:
+            return datetime.strptime(output_id[:13], "%Y%m%d-%H%M") <= cutoff
+        except ValueError:
+            logger.warning("Skipping automatic archival of output %s: invalid date in output ID", output_id)
+            return False
 
     def archive_output(
         self,
         study_id: str,
         output_id: str,
         force: bool = False,
+        archive_before: datetime | None = None,
     ) -> str | None:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
         metadata = self._studies_repository.get_study_metadata(study_id)
@@ -549,20 +567,31 @@ class OutputService:
             study_tasks = self._task_service.list_tasks(
                 TaskListFilter(
                     ref_id=study_id,
-                    name=task_name,
                     type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                     status=[TaskStatus.RUNNING, TaskStatus.PENDING],
                 )
             )
-            if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
+            if (archive_before is not None and study_tasks) or any(
+                task.name in archive_task_names for task in study_tasks
+            ):
                 raise TaskAlreadyRunning()
 
         def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
+                # For automatic archiving, recheck eligibility in case the output was unarchived after selection.
+                if archive_before is not None:
+                    output = self._output_repository.get(study_id, output_id)
+                    last_unarchiving_date = output.last_unarchiving_date if output else None
+                    if not self._is_output_older_than(output_id, last_unarchiving_date, archive_before):
+                        return TaskResult(
+                            success=True,
+                            message="Automatic archiving skipped: output no longer eligible",
+                            return_value="skipped",
+                        )
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
-                self._output_repository.delete(study_id, output_id)
+                self._output_repository.invalidate_disk_usage(study_id, output_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
@@ -841,7 +870,7 @@ class OutputService:
             return output.disk_space_bytes
         else:
             disk_usage = self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
-            self._output_repository.save(Output(study_id=study_id, output_id=output_id, disk_space_bytes=disk_usage))
+            self._output_repository.save_disk_usage(study_id, output_id, disk_usage)
             return disk_usage
 
     def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
@@ -862,7 +891,7 @@ class OutputService:
             target_storage.import_output(study_id, tmp_zip)
             current_storage.delete_output(study_id, output_id)
 
-        self._output_repository.delete(study_id, output_id)
+        self._output_repository.invalidate_disk_usage(study_id, output_id)
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)

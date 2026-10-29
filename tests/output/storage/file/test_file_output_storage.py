@@ -13,7 +13,7 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from typing_extensions import override
@@ -334,6 +334,31 @@ def test_output_deletion(output_storage: IOutputStorage, tmp_path: Path) -> None
     outputs = output_storage.list_outputs("STA-mini")
     assert len(outputs) == 4
     assert "20201014-1422eco-hello" not in [o.id for o in outputs]
+
+
+def test_failed_compression_preserves_source_and_cleans_temporary_zip(
+    output_storage: IOutputStorage, tmp_path: Path
+) -> None:
+    output_id = "20201014-1422eco-hello"
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        output_folder = tmp_path / "studies" / "STA-mini" / "output"
+    else:
+        output_folder = tmp_path / "outputs" / "STA-mini"
+    source = output_folder / output_id
+    original_files = {p.relative_to(source): p.read_bytes() for p in source.rglob("*") if p.is_file()}
+
+    def fail_compression(src: Path, target: Path, **kwargs: object) -> None:
+        target.write_bytes(b"partial ZIP")
+        raise OSError("Compression failed")
+
+    with patch("antarest.output.storage.file.abstract_storage.archive_dir", side_effect=fail_compression):
+        with pytest.raises(OSError, match="Compression failed"):
+            output_storage.archive_study_output("STA-mini", output_id)
+
+    assert source.is_dir()
+    assert {p.relative_to(source): p.read_bytes() for p in source.rglob("*") if p.is_file()} == original_files
+    assert not (output_folder / f"{output_id}.zip").exists()
+    assert not list(output_folder.glob("~archive-*.tmp"))
 
 
 def test_output_archival(output_storage: IOutputStorage, tmp_path: Path) -> None:
