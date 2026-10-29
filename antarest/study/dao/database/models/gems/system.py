@@ -70,31 +70,22 @@ GEMS_COMPONENT_PARAMETERS_TABLE = Table(
     Column("parameter_id", String(255), primary_key=True),
     Column("time_dependent", Boolean, nullable=False),
     Column("scenario_dependent", Boolean, nullable=False),
-    # Either a fixed numeric value (e.g. "3.14") or the `id` of a data series (e.g. "demand_profile")
-    Column("value", String(255), nullable=False),
-    # Mirrors `value` whenever it holds a data series reference, and is left NULL for fixed numeric
-    # values. Foreign keys are not checked on NULL
-    Column("dataseries_id", String(255), nullable=True),
+    # Contains the value of the float constant in case
+    Column("value", Float, nullable=True),
+    # Contains the id of the matrix in the matrix store in case (time_dependent, scenario_dependent) != (False, False)
+    Column("matrix_id", String(64), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id", "component_id"],
         ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
     ),
-    ForeignKeyConstraint(
-        ["study_data_id", "dataseries_id"],
-        ["gems_data_series.study_data_id", "gems_data_series.id"],
-        name="fk_gems_component_parameters_dataseries_id",
-    ),
-    # `dataseries_id` is NULL exactly when `value` is a fixed numeric value (see DAO), so this
-    # encodes: value must be a plain float if and only if the parameter is neither time- nor
-    # scenario-dependent; otherwise it must reference a data series.
     CheckConstraint(
-        "(dataseries_id IS NULL) = (NOT time_dependent AND NOT scenario_dependent)",
-        name="ck_gems_component_parameters_value_type_matches_dependency",
+        "(matrix_id IS NULL) = (NOT time_dependent AND NOT scenario_dependent)",
+        name="ck_gems_component_parameters_matrix_id_matches_dependent",
     ),
     CheckConstraint(
-        "dataseries_id IS NULL OR dataseries_id = value",
-        name="ck_gems_component_parameters_dataseries_id_matches_value",
+        "(value IS NULL) =  (time_dependent OR scenario_dependent)",
+        name="ck_gems_component_parameters_value_matches_dependent",
     ),
 )
 

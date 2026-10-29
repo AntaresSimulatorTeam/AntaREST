@@ -40,8 +40,8 @@ class GemsComponent(AntaresBaseModel):
     id: str
     model: str
     scenario_group: str | None = None
-    parameters: List[_GemsParameters] | None = None
-    properties: List[_GemsProperties] | None = None
+    parameters: List[_GemsParameters] = []
+    properties: List[_GemsProperties] = []
 
 
 class GemsComponentConnection(AntaresBaseModel):

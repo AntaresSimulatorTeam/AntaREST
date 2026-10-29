@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import Mock
 
+import numpy as np
 import polars as pl
 import pytest
 from antares.study.version import StudyVersion
@@ -458,7 +459,11 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert second_model.ports[1].type == "flow"
 
 
-def check_gems_system_integrity(system: GemsSystem) -> None:
+def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatrixService | None = None) -> None:
+    """
+    If `matrix_service` is given, time-dependent parameter values are expected to be matrix ids
+    and their content is checked. Otherwise, they are expected to be data series ids.
+    """
     assert system is not None
     assert system.id == "System 8_1"
     assert system.description == "Electrolyser - V8.6"
@@ -476,7 +481,14 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert first_component.parameters[1].id == "max_load"
     assert first_component.parameters[1].time_dependent is True
     assert first_component.parameters[1].scenario_dependent is False
-    assert first_component.parameters[1].value == "max_load_values"
+
+    if matrix_service is None:
+        assert first_component.parameters[1].value == "max_load_values"
+    else:
+        first_component_value = matrix_service.get(str(first_component.parameters[1].value))
+        assert first_component_value is not None
+        expected = [[float(v)] for v in range(10, 58, 2)]
+        assert np.array_equal(first_component_value.to_numpy(), expected)
 
     second_component = system.components[1]
     assert second_component.id == "electrolyser"
@@ -491,7 +503,18 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert second_component.parameters[1].id == "p_max"
     assert second_component.parameters[1].time_dependent is True
     assert second_component.parameters[1].scenario_dependent is True
-    assert second_component.parameters[1].value == "time-and-scenario-dependent-example"
+
+    if matrix_service is None:
+        assert second_component.parameters[1].value == "time-and-scenario-dependent-example"
+    else:
+        second_component_value = matrix_service.get(str(second_component.parameters[1].value))
+        assert second_component_value is not None
+        expected = [
+            [2, 4, 6, 8, 10, 12, 14, 16],
+            [3, 6, 9, 12, 15, 18, 21, 24],
+            [4, 8, 12, 16, 20, 24, 28, 32],
+        ]
+        assert np.array_equal(second_component_value.to_numpy(), expected)
 
     assert system.connections is not None
     assert len(system.connections) == 1

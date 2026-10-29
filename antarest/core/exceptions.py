@@ -952,6 +952,6 @@ class GemsInvalidParameterValue(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
-class GemsDuplicatedDataSeriesId(HTTPException):
+class GemsParameterNotFound(HTTPException):
     def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.CONFLICT, message)
+        super().__init__(HTTPStatus.NOT_FOUND, message)

@@ -9,60 +9,36 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import csv
 from pathlib import Path
 from typing import Any
 
-from typing_extensions import override
-
-from antarest.core.serde.ini_reader import IReader
-from antarest.core.serde.ini_writer import IniWriter
-from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
-from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
+import polars as pl
 
 
-class CsvReader(IReader):
+class CsvReader:
     """
     CSV file reader.
     """
 
-    @override
-    def read(self, path: Any, **kwargs: Any) -> Any:
-        rows: list[Any]
+    @staticmethod
+    def read(path: Any) -> pl.DataFrame:
 
         if isinstance(path, (Path, str)):
             try:
-                with Path(path).open(encoding="utf-8", newline="") as f:
-                    reader = csv.reader(f)
-                    rows = list(reader)
+                return pl.read_csv(path)
+
             except FileNotFoundError:
-                # If the file is missing, an empty list is returned,
-                # to mimic the behavior of `configparser.ConfigParser`.
-                return []
+                return pl.DataFrame()
 
         else:  # pragma: no cover
             raise TypeError(repr(type(path)))
 
-        return rows
 
-
-class CsvWriter(IniWriter):
+class CsvWriter:
     """
     CSV file writer.
     """
 
-    @override
-    def write(self, data: dict[str, Any], path: Path) -> None:
-        rows = [list(data.keys())] + list(zip(*data.values()))
-        self.write_rows(rows, path)
-
     @staticmethod
-    def write_rows(data: list[Any], path: Path) -> None:
-        with path.open("w", encoding="utf-8", newline="") as fh:
-            writer = csv.writer(fh)
-            writer.writerows(data)
-
-
-class CsvFileNode(IniFileNode):
-    def __init__(self, config: FileStudyTreeConfig) -> None:
-        super().__init__(config, CsvReader(), CsvWriter())
+    def write(data: pl.DataFrame, path: Path) -> None:
+        data.write_csv(path)

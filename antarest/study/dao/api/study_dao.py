@@ -18,6 +18,7 @@ import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
@@ -30,7 +31,6 @@ from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.gems.catalog import GemsCatalog
-from antarest.study.business.model.gems.data_series import GemsDataSeries
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
@@ -79,7 +79,6 @@ from antarest.study.dao.api.compatibility_parameters_dao import (
 )
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.gems_catalog_dao import GemsCatalogDao, ReadOnlyGemsCatalogDao
-from antarest.study.dao.api.gems_data_series import GemsDataSeriesDao, ReadOnlyGemsDataSeriesDao
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao, ReadOnlyGemsScenarioBuilderDao
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao, ReadOnlyGemsSystemDao
@@ -177,7 +176,6 @@ class ReadOnlyStudyDao(
     ReadOnlyGemsCatalogDao,
     ReadOnlyGemsTaxonomyDao,
     ReadOnlyGemsScenarioBuilderDao,
-    ReadOnlyGemsDataSeriesDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -234,7 +232,6 @@ class StudyDao(
     GemsLibraryDao,
     GemsSystemDao,
     GemsCatalogDao,
-    GemsDataSeriesDao,
     GemsTaxonomyDao,
     GemsScenarioBuilderDao,
 ):
@@ -994,6 +991,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_components()
 
     @override
+    def get_parameter_value(self, component_id: str, parameter_id: str) -> NpArray:
+        return self._adaptee.get_parameter_value(component_id, parameter_id)
+
+    @override
     def get_system(self) -> GemsSystem | None:
         return self._adaptee.get_system()
 
@@ -1008,7 +1009,3 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_catalogs(self) -> list[GemsCatalog]:
         return self._adaptee.get_catalogs()
-
-    @override
-    def get_data_series(self) -> list[GemsDataSeries]:
-        return self._adaptee.get_data_series()

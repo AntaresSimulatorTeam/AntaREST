@@ -21,7 +21,6 @@ Create Date: 2026-10-08 16:00:00.000000
 import sqlalchemy as sa
 
 from alembic import op
-from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = "f2e3f7ba9896"
@@ -31,57 +30,33 @@ depends_on = None
 
 
 def upgrade():
-    # Data series must exist before `gems_component_parameters.dataseries_id` can reference them.
-    op.create_table(
-        "gems_data_series",
-        study_data_id_col(primary_key=False),
-        sa.Column("id", sa.String(length=255), nullable=False),
-        sa.Column("values", sa.Text(), nullable=False),
-        sa.ForeignKeyConstraint(
-            ["study_data_id"], ["study_data.study_data_id"], name="fk_gems_data_series_study_data", ondelete="CASCADE"
-        ),
-        sa.PrimaryKeyConstraint("study_data_id", "id", name="pk_gems_data_series"),
-    )
 
-    # `value` now stores either a fixed numeric value or the `id` of a data series (e.g.
-    # "demand_profile") as text, since a GEMS parameter can be assigned either kind of value.
+    # `value` only holds the float for constant parameters; for time-/scenario-dependent parameters
+    # it is NULL and `matrix_id` references the matrix in the matrix store instead.
     with op.batch_alter_table("gems_component_parameters", schema=None) as batch_op:
         batch_op.alter_column(
             "value",
             existing_type=sa.Float(),
-            type_=sa.String(length=255),
-            existing_nullable=False,
-            postgresql_using="value::varchar(255)",
+            nullable=True,
         )
-        batch_op.add_column(sa.Column("dataseries_id", sa.String(length=255), nullable=True))
+        batch_op.add_column(sa.Column("matrix_id", sa.String(length=64), nullable=True))
         batch_op.create_check_constraint(
-            "ck_gems_component_parameters_dataseries_id_matches_value",
-            "dataseries_id IS NULL OR dataseries_id = value",
+            "ck_gems_component_parameters_matrix_id_matches_dependent",
+            "(matrix_id IS NULL) = (NOT time_dependent AND NOT scenario_dependent)",
         )
         batch_op.create_check_constraint(
-            "ck_gems_component_parameters_value_type_matches_dependency",
-            "(dataseries_id IS NULL) = (NOT time_dependent AND NOT scenario_dependent)",
-        )
-        batch_op.create_foreign_key(
-            "fk_gems_component_parameters_dataseries_id",
-            "gems_data_series",
-            ["study_data_id", "dataseries_id"],
-            ["study_data_id", "id"],
+            "ck_gems_component_parameters_value_matches_dependent",
+            "(value IS NULL) =  (time_dependent OR scenario_dependent)",
         )
 
 
 def downgrade():
     with op.batch_alter_table("gems_component_parameters", schema=None) as batch_op:
-        batch_op.drop_constraint("fk_gems_component_parameters_dataseries_id", type_="foreignkey")
-        batch_op.drop_constraint("ck_gems_component_parameters_value_type_matches_dependency", type_="check")
-        batch_op.drop_constraint("ck_gems_component_parameters_dataseries_id_matches_value", type_="check")
-        batch_op.drop_column("dataseries_id")
+        batch_op.drop_constraint("ck_gems_component_parameters_value_matches_dependent", type_="check")
+        batch_op.drop_constraint("ck_gems_component_parameters_matrix_id_matches_dependent", type_="check")
+        batch_op.drop_column("matrix_id")
         batch_op.alter_column(
             "value",
-            existing_type=sa.String(length=255),
-            type_=sa.Float(),
-            existing_nullable=False,
-            postgresql_using="value::double precision",
+            existing_type=sa.Float(),
+            nullable=False,
         )
-
-    op.drop_table("gems_data_series")
