@@ -20,8 +20,6 @@ from typing import NamedTuple
 
 from pydantic import BaseModel
 
-from antarest.core.configdata.model import ConfigDataAppKeys
-from antarest.core.configdata.repository import ConfigDataRepository
 from antarest.core.exceptions import OutputAlreadyArchived, TaskAlreadyRunning
 from antarest.core.tasks.model import TaskResult
 from antarest.core.tasks.service import ITaskService
@@ -33,7 +31,6 @@ from antarest.output.service import OutputService
 from antarest.study.model import RawStudy
 from antarest.study.repository import AccessPermissions, StudyFilter
 from antarest.study.service import StudyService
-from antarest.study.storage.variantstudy.model.dbmodel import VariantStudy
 
 logger = logging.getLogger(__name__)
 
@@ -76,13 +73,6 @@ def _archive_inactive_studies_and_outputs(
     archived_outputs = 0
     archived_studies = 0
     errors: list[str] = []
-    migration = ConfigDataRepository().get(ConfigDataAppKeys.OUTPUT_AUTO_ARCHIVE_MIGRATION_DATE)
-    # Allow one full retention period after deployment before archiving outputs of active studies.
-    deployment_grace_period = (
-        migration is not None
-        and migration.value is not None
-        and datetime.datetime.fromisoformat(migration.value) > cutoff
-    )
     studies = study_service.repository.get_all(
         StudyFilter(managed=True, archived=False, access_permissions=AccessPermissions(is_admin=True))
     )
@@ -96,15 +86,8 @@ def _archive_inactive_studies_and_outputs(
                 errors.append(result.error)
             continue
 
-        inactive_variant = isinstance(study, VariantStudy) and last_activity is not None and last_activity < cutoff
         try:
-            if inactive_variant:
-                # Inactive variants archive all outputs, including recently unarchived outputs and all storage types.
-                outputs = [output.id for output in output_service.list_outputs(study_id) if not output.archived]
-            else:
-                if deployment_grace_period:
-                    continue
-                outputs = output_service.get_outputs_to_archive(study_id, cutoff)
+            outputs = output_service.get_outputs_to_archive(study_id, cutoff)
         except Exception as e:
             db.session.rollback()
             logger.exception("Failed to inventory outputs of study %s", study_id)
@@ -117,9 +100,7 @@ def _archive_inactive_studies_and_outputs(
                 if dry_run:
                     archived_outputs += 1
                     continue
-                task_id = output_service.archive_output(
-                    study_id, output_id, archive_before=None if inactive_variant else cutoff
-                )
+                task_id = output_service.archive_output(study_id, output_id, archive_before=cutoff)
                 if task_id:
                     task_result = _await_archive_task(study_service.task_service, task_id)
                     if task_result.return_value != "skipped":

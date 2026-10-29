@@ -526,7 +526,7 @@ class OutputService:
                         self._output_repository.save_unarchiving_date(study_id, output.id, now)
 
     def get_outputs_to_archive(self, study_id: str, cutoff: datetime) -> list[str]:
-        """Select file outputs with an old ID date and no recent unarchiving."""
+        """Select file outputs by their last unarchiving date, falling back to their ID date."""
         unarchiving_dates = {o.output_id: o.last_unarchiving_date for o in self._output_repository.get_all(study_id)}
         return [
             output.id
@@ -538,8 +538,8 @@ class OutputService:
 
     @staticmethod
     def _is_output_older_than(output_id: str, last_unarchiving_date: datetime | None, cutoff: datetime) -> bool:
-        if last_unarchiving_date is not None and last_unarchiving_date > cutoff:
-            return False
+        if last_unarchiving_date is not None:
+            return last_unarchiving_date <= cutoff
         try:
             return datetime.strptime(output_id[:13], "%Y%m%d-%H%M") <= cutoff
         except ValueError:

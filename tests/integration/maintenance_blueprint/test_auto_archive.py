@@ -21,8 +21,6 @@ import pytest
 from pytest_mock import MockerFixture
 from starlette.testclient import TestClient
 
-from antarest.core.configdata.model import ConfigData, ConfigDataAppKeys
-from antarest.core.configdata.repository import ConfigDataRepository
 from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
@@ -70,7 +68,7 @@ class TestArchiveOldStudiesIntegration:
 
     @pytest.mark.parametrize("storage_type", [OutputStorageType.OUT_OF_STUDY_FILE_TREE, OutputStorageType.V2])
     @pytest.mark.parametrize("dry_run", [False, True])
-    def test_inactive_variant_rearchives_recently_unarchived_outputs(
+    def test_inactive_variant_preserves_outputs_until_the_unarchiving_threshold(
         self,
         admin_client: TestClient,
         services: Services,
@@ -99,13 +97,6 @@ class TestArchiveOldStudiesIntegration:
 
             now = current_time()
             with db():
-                ConfigDataRepository().save(
-                    ConfigData(
-                        owner=DEFAULT_ADMIN_USER.id,
-                        key=ConfigDataAppKeys.OUTPUT_AUTO_ARCHIVE_MIGRATION_DATE,
-                        value=now.isoformat(),
-                    )
-                )
                 variant = services.study.get_study(variant_id)
                 variant.last_access = now - datetime.timedelta(days=90)
                 db.session.commit()
@@ -116,10 +107,20 @@ class TestArchiveOldStudiesIntegration:
             result = archive_old_studies(services.study, services.output_service, 60, 7, dry_run, tmp_path)
 
             assert result.status == BackGroundTaskStatus.SUCCESS
-            assert result.archived_outputs >= 1
+            assert result.archived_outputs == 0
             with db():
                 output = next(o for o in services.output_service.list_outputs(variant_id) if o.id == output_id)
-                assert output.archived is not dry_run
+                assert not output.archived
+                OutputRepository().save_unarchiving_date(variant_id, output_id, now - datetime.timedelta(days=61))
+
+            result = archive_old_studies(services.study, services.output_service, 60, 7, dry_run, tmp_path)
+
+            assert result.status == BackGroundTaskStatus.SUCCESS
+            eligible = storage_type != OutputStorageType.V2
+            assert result.archived_outputs == int(eligible)
+            with db():
+                output = next(o for o in services.output_service.list_outputs(variant_id) if o.id == output_id)
+                assert output.archived is (eligible and not dry_run)
 
     def test_unarchived_output_gets_a_new_grace_period(self, services: Services, internal_study_id: str) -> None:
         now = current_time()
@@ -153,7 +154,7 @@ class TestArchiveOldStudiesIntegration:
                 )
 
     @pytest.mark.parametrize("dry_run", [False, True])
-    def test_outputs_are_archived_by_id_after_the_deployment_grace_period(
+    def test_old_outputs_without_metadata_are_archived_on_the_first_pass(
         self, services: Services, internal_study_id: str, tmp_path: Path, dry_run: bool
     ) -> None:
         now = current_time()
@@ -168,20 +169,8 @@ class TestArchiveOldStudiesIntegration:
             eligible_outputs = [o for o in outputs if o.id != invalid_output_id]
             for output in outputs:
                 OutputRepository().delete(study.id, output.id)
-            migration = ConfigData(
-                owner=DEFAULT_ADMIN_USER.id,
-                key=ConfigDataAppKeys.OUTPUT_AUTO_ARCHIVE_MIGRATION_DATE,
-                value=now.isoformat(),
-            )
-            ConfigDataRepository().save(migration)
-
-            result = archive_old_studies(services.study, services.output_service, 60, 7, dry_run, tmp_path)
-            assert result.status == BackGroundTaskStatus.SUCCESS
-            assert result.archived_outputs == 0
             assert OutputRepository().get_all(study.id) == []
-            # Once the deployment grace period expires, old IDs are eligible even without database metadata.
-            migration.value = (now - datetime.timedelta(days=61)).isoformat()
-            ConfigDataRepository().save(migration)
+            # Reading an old output does not postpone its archiving or populate unarchiving dates.
             services.output_service.get_logs(study.id, outputs[0].id, LogType.STDOUT)
 
             result = archive_old_studies(services.study, services.output_service, 60, 7, dry_run, tmp_path)
@@ -225,7 +214,7 @@ class TestArchiveOldStudiesIntegration:
             result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
 
             assert result.status == BackGroundTaskStatus.PARTIAL_SUCCESS
-            assert result.archived_outputs == len([o for o in outputs if o.id != "20241807-1540eco-extra-outputs"])
+            assert result.archived_outputs == len(outputs)
             assert len(result.errors) == 1 and "broken" in result.errors[0]
             assert services.study.get_study(broken.id).archived is False
             clear_snapshots.assert_called_once()

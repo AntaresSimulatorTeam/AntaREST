@@ -304,14 +304,13 @@ default:
 - **Default value:** 60
 - **Description:** Number of days after the last study access date before it should be archived.
 
-File outputs of active managed studies are archived when the date in their output ID exceeds this
-threshold and they have not been successfully unarchived within the same period.
-Reading or discovering an output does not change its unarchiving date. Outputs with an invalid ID date
-and Parquet outputs are excluded from this independent archival.
-The deployment migration starts one global grace period of **auto_archive_threshold_days** days
-before this independent archival begins. It does not populate output unarchiving dates.
-Inactive raw studies are archived as a whole, and inactive variants archive all their outputs,
-regardless of output age or the deployment grace period.
+File outputs of managed studies are archived after this threshold (60 days by default),
+measured from their last successful unarchiving date when present, or otherwise from the date in their output ID.
+The unarchiving date is recorded only after successful unarchiving; reading or discovering an output does not change it.
+Old outputs without an unarchiving date are eligible from the first maintenance pass, with no deployment grace period.
+Outputs with neither an unarchiving date nor a valid ID date, and Parquet outputs, are excluded from this independent archival.
+Inactive raw studies are archived as a whole. Outputs of variants follow the same date rule,
+regardless of study activity.
 Unarchiving a whole study renews its last access date and the grace period of its restored,
 uncompressed in-study outputs. Outputs that remain zipped or are stored outside the study are unaffected.
 
