@@ -927,6 +927,9 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     for file in ["view.parquet", "view_config.yml"]:
         (gems_folder / file).touch()
 
+    # Also create an `economy` folder to ensure we see it
+    (output / "economy").mkdir()
+
     simulation = parse_simulation(output, output_id)
 
     # Check the simulation object
@@ -951,6 +954,7 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     assert "file_8" in output_tree[output_id]
     # Asserts the `economy` folder is scanned
     assert "economy" in output_tree[output_id]
+    assert "adequacy" not in output_tree[output_id]
     # Asserts the GEMS folder is scanned
     assert "gems-views" in output_tree[output_id]
     assert "view" in output_tree[output_id]["gems-views"]
