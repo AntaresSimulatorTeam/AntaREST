@@ -39,16 +39,24 @@ class CompatibilityParamsManager:
         validate_compatibility_parameters_against_version(study.version, parameters)
 
         if parameters.hydro_pmax is not None:
-            command = ConvertHydroPmax(
-                hydro_pmax=parameters.hydro_pmax, command_context=self._command_context, study_version=study.version
+            study.add_commands(
+                [
+                    ConvertHydroPmax(
+                        hydro_pmax=parameters.hydro_pmax,
+                        command_context=self._command_context,
+                        study_version=study.version,
+                    )
+                ]
             )
-            study.add_commands([command])
 
         if parameters.hydro_rule_curves is not None:
-            command = ConvertHydroRuleCurves(
-                hydro_rule_curves=parameters.hydro_rule_curves,
-                command_context=self._command_context,
-                study_version=study.version,
+            study.add_commands(
+                [
+                    ConvertHydroRuleCurves(
+                        hydro_rule_curves=parameters.hydro_rule_curves,
+                        command_context=self._command_context,
+                        study_version=study.version,
+                    )
+                ]
             )
-            study.add_commands([command])
         return self.get_compatibility_parameters(study)
