@@ -15,13 +15,18 @@ from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParameters,
+    HydroPmax,
+    HydroRuleCurves,
+)
 
 
 class CompatibilityParametersFileData(AntaresBaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
 
     hydro_pmax: HydroPmax | None = None
+    hydro_rule_curves: HydroRuleCurves | None = None
 
     def to_model(self) -> CompatibilityParameters:
         return CompatibilityParameters.model_validate(self.model_dump(exclude_none=True))

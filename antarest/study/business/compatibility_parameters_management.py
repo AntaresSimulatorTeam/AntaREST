@@ -12,6 +12,7 @@
 from antarest.study.business.model.config.compatibility_parameters_model import (
     CompatibilityParameters,
     CompatibilityParametersUpdate,
+    validate_compatibility_parameters_against_version,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
@@ -34,6 +35,7 @@ class CompatibilityParamsManager:
         """
         Update Compatibility parameters values from the webapp form
         """
+        validate_compatibility_parameters_against_version(study.version, parameters)
 
         if parameters.hydro_pmax is not None:
             command = ConvertHydroPmax(

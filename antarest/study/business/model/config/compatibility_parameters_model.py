@@ -18,7 +18,7 @@ from pydantic.alias_generators import to_camel
 
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
-from antarest.study.model import STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_9_2, STUDY_VERSION_10_2
 
 
 class HydroPmax(StrEnum):
@@ -26,16 +26,23 @@ class HydroPmax(StrEnum):
     HOURLY = "hourly"
 
 
+class HydroRuleCurves(StrEnum):
+    SCENARIZED = "scenarized"
+    SINGLE = "single"
+
+
 class CompatibilityParameters(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     hydro_pmax: HydroPmax = HydroPmax.DAILY
+    hydro_rule_curves: HydroRuleCurves = HydroRuleCurves.SINGLE
 
 
 class CompatibilityParametersUpdate(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
     hydro_pmax: HydroPmax | None = None
+    hydro_rule_curves: HydroRuleCurves | None = None
 
 
 def update_compatibility_parameters(
@@ -47,6 +54,10 @@ def update_compatibility_parameters(
     return CompatibilityParameters.model_validate(current_properties)
 
 
-def validate_compatibility_parameters_against_version(version: StudyVersion) -> None:
-    if version < STUDY_VERSION_9_2:
+def validate_compatibility_parameters_against_version(
+    version: StudyVersion, parameters: CompatibilityParametersUpdate
+) -> None:
+    if parameters.hydro_pmax is not None and version < STUDY_VERSION_9_2:
         raise InvalidFieldForVersionError("Hydro pmax cannot be set to hourly before study version 9.2")
+    if parameters.hydro_rule_curves is not None and version < STUDY_VERSION_10_2:
+        raise InvalidFieldForVersionError("Hydro rule curves cannot be set to scenarized before study version 10.2")
