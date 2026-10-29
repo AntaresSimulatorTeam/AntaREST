@@ -25,7 +25,11 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     SimulationCore,
     UnitCommitmentMode,
 )
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParameters,
+    HydroPmax,
+    HydroRuleCurves,
+)
 from antarest.study.business.model.config.general_model import BuildingMode, GeneralConfig, Mode, Month, WeekDay
 from antarest.study.business.model.config.optimization_config_model import (
     ExportMPS,
@@ -39,7 +43,7 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import STUDY_VERSION_9_3
+from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from tests.conftest import build_db_dao
 
 
@@ -159,6 +163,14 @@ def test_compatibility_parameters(db_session: Session, matrix_service: ISimpleMa
     dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
     assert dao.get_compatibility_parameters() == CompatibilityParameters()
     new_parameters = CompatibilityParameters(hydro_pmax=HydroPmax.HOURLY)
+    dao.save_compatibility_parameters(new_parameters)
+    assert dao.get_compatibility_parameters() == new_parameters
+
+
+def test_compatibility_parameters_study_version_10_2(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
+    dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_10_2)
+    assert dao.get_compatibility_parameters() == CompatibilityParameters()
+    new_parameters = CompatibilityParameters(hydro_pmax=HydroPmax.HOURLY, hydro_rule_curves=HydroRuleCurves.SCENARIZED)
     dao.save_compatibility_parameters(new_parameters)
     assert dao.get_compatibility_parameters() == new_parameters
 

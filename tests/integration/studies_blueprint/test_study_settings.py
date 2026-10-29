@@ -495,7 +495,7 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
 
     res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
     assert res.status_code == 200
-    assert res.json() == {"hydroPmax": "daily"}
+    assert res.json() == {"hydroPmax": "daily", "hydroRuleCurves": "single"}
 
     res = client.put(
         f"/v1/studies/{study_id}/config/compatibility/form",
@@ -504,7 +504,7 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
     assert res.status_code == 200
     res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
     assert res.status_code == 200
-    assert res.json() == {"hydroPmax": "hourly"}
+    assert res.json() == {"hydroPmax": "hourly", "hydroRuleCurves": "single"}
 
     # reserves_enabled should be rejected on a study < 10.2
     res = client.put(
@@ -512,6 +512,35 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
         json={"reservesEnabled": True},
     )
     assert res.status_code == 422
+
+    # scenarized should be rejected on a study < 10.2
+    res = client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={"hydroRuleCurves": "scenarized"},
+    )
+    assert res.status_code == 422
+    assert res.json()["description"] == "Hydro rule curves cannot be set to scenarized before study version 10.2"
+
+
+def test_compatibility_settings_10_2_study(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    # Test hydro_pmax on a 9.3 study
+    created = client.post("/v1/studies", params={"name": "foo", "version": 1020})
+    study_id = created.json()
+
+    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
+    assert res.status_code == 200
+    assert res.json() == {"hydroPmax": "daily", "hydroRuleCurves": "single"}
+
+    res = client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={"hydroPmax": "hourly", "hydroRuleCurves": "scenarized"},
+    )
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
+    assert res.status_code == 200
+    assert res.json() == {"hydroPmax": "hourly", "hydroRuleCurves": "scenarized"}
 
 
 @pytest.mark.parametrize("field, min_version", [("includeReserves", "10.2"), ("includeThermalClusterRamping", "10.3")])
