@@ -17,7 +17,7 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
-
+from antarest.study.storage.variantstudy.model.command.convert_hydro_rule_curves import ConvertHydroRuleCurves
 
 class CompatibilityParamsManager:
     def __init__(self, command_context: CommandContext) -> None:
@@ -43,4 +43,9 @@ class CompatibilityParamsManager:
             )
             study.add_commands([command])
 
+        if parameters.hydro_rule_curves is not None:
+            command = ConvertHydroRuleCurves(
+                hydro_rule_curves=parameters.hydro_rule_curves, command_context=self._command_context, study_version=study.version
+            )
+            study.add_commands([command])
         return self.get_compatibility_parameters(study)

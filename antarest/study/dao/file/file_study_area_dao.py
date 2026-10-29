@@ -442,6 +442,12 @@ class FileStudyAreaDao(AreaDao):
                 study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
                 study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
 
+        if study_version >= STUDY_VERSION_10_2:
+            with contextlib.suppress(ChildNotFoundError):
+                study_data.tree.delete(["input", "hydro", "series", area_id, "maxDailyReservoirLevels"])
+                study_data.tree.delete(["input", "hydro", "series", area_id, "minDailyReservoirLevels"])
+                study_data.tree.delete(["input", "hydro", "series", area_id, "avgDailyReservoirLevels"])
+
     def _remove_area_from_links(self, area_id: str, study_data: Any, logger: Any) -> None:
         """Remove all links associated with the area."""
 

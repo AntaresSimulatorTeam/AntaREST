@@ -14,8 +14,14 @@
 import polars as pl
 from antares.study.version import StudyVersion
 
+from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_2
+from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_scenario_daily_half,
+    default_scenario_daily_ones,
+    default_scenario_daily_zeros,
+)
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
     fixed_4_columns,
@@ -58,6 +64,9 @@ HYDRO_COMMON_CAPACITY_MAX_DAILY_GEN_ENERGY = NULL_MATRIX_NAME
 HYDRO_COMMON_CAPACITY_MAX_DAILY_PUMP_ENERGY = NULL_MATRIX_NAME
 HYDRO_SERIES_MAX_HOURLY_GEN_POWER = NULL_MATRIX_NAME
 HYDRO_SERIES_MAX_HOURLY_PUMP_POWER = NULL_MATRIX_NAME
+HYDRO_SERIES_MAX_DAILY_RESERVOIR_LEVELS = "hydro/series/max_daily_reservoir_levels"
+HYDRO_SERIES_MIN_DAILY_RESERVOIR_LEVELS = "hydro/series/min_daily_reservoir_levels"
+HYDRO_SERIES_AVG_DAILY_RESERVOIR_LEVELS = "hydro/series/avg_daily_reservoir_levels"
 
 # Binding constraint aliases
 BINDING_CONSTRAINT_HOURLY_v86 = "empty_2nd_member_hourly_v86"
@@ -139,6 +148,16 @@ class GeneratorMatrixConstants:
 
         # Some short-term storage matrices use np.ones((8760, 1))
         self.hashes[ONES_SCENARIO_MATRIX] = self.matrix_service.add_predefined_matrix(ones_scenario_matrix)
+
+        self.hashes[HYDRO_SERIES_MAX_DAILY_RESERVOIR_LEVELS] = self.matrix_service.add_predefined_matrix(
+            lambda: create_polars_dataframe(default_scenario_daily_ones())
+        )
+        self.hashes[HYDRO_SERIES_MIN_DAILY_RESERVOIR_LEVELS] = self.matrix_service.add_predefined_matrix(
+            lambda: create_polars_dataframe(default_scenario_daily_zeros())
+        )
+        self.hashes[HYDRO_SERIES_AVG_DAILY_RESERVOIR_LEVELS] = self.matrix_service.add_predefined_matrix(
+            lambda: create_polars_dataframe(default_scenario_daily_half())
+        )
 
     def get_hydro_max_power(self, version: StudyVersion) -> str:
         if version > STUDY_VERSION_6_5:
@@ -240,3 +259,15 @@ class GeneratorMatrixConstants:
 
     def get_hydro_max_daily_pump_energy(self) -> str:
         return self.hashes[HYDRO_COMMON_CAPACITY_MAX_DAILY_PUMP_ENERGY]
+
+    def get_hydro_max_daily_reservoir_levels(self) -> str:
+        """2D-matrix of shape (365, 1), filled-in with ones."""
+        return self.hashes[HYDRO_SERIES_MAX_DAILY_RESERVOIR_LEVELS]
+
+    def get_hydro_min_daily_reservoir_levels(self) -> str:
+        """2D-matrix of shape (365, 1), filled-in with zeros."""
+        return self.hashes[HYDRO_SERIES_MIN_DAILY_RESERVOIR_LEVELS]
+
+    def get_hydro_avg_daily_reservoir_levels(self) -> str:
+        """2D-matrix of shape (365, 1), filled-in with 0.5."""
+        return self.hashes[HYDRO_SERIES_AVG_DAILY_RESERVOIR_LEVELS]

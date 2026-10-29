@@ -31,6 +31,7 @@ from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.config.compatibility_parameters_model import (
     HydroPmax,
+    HydroRuleCurves,
 )
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import (
@@ -49,6 +50,7 @@ from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.area import AREA_TABLE
 from antarest.study.dao.database.models.hydro import (
     HYDRO_ALLOCATION_TABLE,
+    HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE,
     HYDRO_CORRELATION_TABLE,
     HYDRO_CREDIT_MODULATIONS_TABLE,
     HYDRO_ENERGY_TABLE,
@@ -57,9 +59,11 @@ from antarest.study.dao.database.models.hydro import (
     HYDRO_MANAGEMENT_TABLE,
     HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
     HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+    HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE,
     HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
     HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
     HYDRO_MAXPOWER_TABLE,
+    HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE,
     HYDRO_MINGEN_TABLE,
     HYDRO_MODULATION_TABLE,
     HYDRO_RESERVOIR_TABLE,
@@ -73,6 +77,9 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
     default_maxpower,
     default_reservoir,
     default_scenario_daily,
+    default_scenario_daily_half,
+    default_scenario_daily_ones,
+    default_scenario_daily_zeros,
     default_scenario_hourly,
     default_scenario_monthly,
     default_water_values,
@@ -559,6 +566,21 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
         return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_daily)
 
     @override
+    def get_hydro_max_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_daily_ones)
+
+    @override
+    def get_hydro_min_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_daily_zeros)
+
+    @override
+    def get_hydro_avg_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        matrix_id = self._get_hydro_matrix(area_id, HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_daily_half)
+
+    @override
     def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
         return get_all_area_matrices(self._study_data_id, self._db_session, HYDRO_MAXPOWER_TABLE)
 
@@ -611,6 +633,18 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
         return get_all_area_matrices(self._study_data_id, self._db_session, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE)
 
     @override
+    def get_all_hydro_max_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_data_id, self._db_session, HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE)
+
+    @override
+    def get_all_hydro_min_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_data_id, self._db_session, HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE)
+
+    @override
+    def get_all_hydro_avg_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        return get_all_area_matrices(self._study_data_id, self._db_session, HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE)
+
+    @override
     def save_hydro_maxpower(self, series: AreaSeriesMapping) -> None:
         save_area_matrix(self.get_impl(), series, HYDRO_MAXPOWER_TABLE)
 
@@ -661,6 +695,18 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
     @override
     def save_hydro_max_daily_pump_energy(self, series: AreaSeriesMapping) -> None:
         save_area_matrix(self.get_impl(), series, HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE)
+
+    @override
+    def save_hydro_max_daily_reservoir_levels(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE)
+
+    @override
+    def save_hydro_min_daily_reservoir_levels(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE)
+
+    @override
+    def save_hydro_avg_daily_reservoir_levels(self, series: AreaSeriesMapping) -> None:
+        save_area_matrix(self.get_impl(), series, HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE)
 
     @override
     def convert_hydro_pmax(self, hydro_pmax: HydroPmax) -> None:
@@ -719,4 +765,52 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
             session.commit()
 
         compatibility_data.hydro_pmax = hydro_pmax
+        self.get_impl().save_compatibility_parameters(compatibility_data)
+
+    @override
+    def convert_hydro_rule_curves(self, hydro_rule_curves: HydroRuleCurves) -> None:
+        compatibility_data = self.get_impl().get_compatibility_parameters()
+        if compatibility_data.hydro_rule_curves == hydro_rule_curves:
+            return
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        if hydro_rule_curves == HydroRuleCurves.SCENARIZED:
+            area_ids = self.get_impl().get_all_area_ids()
+            generator = self.get_impl().generator_matrix_constants
+            min_id = generator.get_hydro_min_daily_reservoir_levels()
+            max_id = generator.get_hydro_max_daily_reservoir_levels()
+            avg_id = generator.get_hydro_avg_daily_reservoir_levels()
+            try:
+                upsert_multiple(
+                    session,
+                    HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE,
+                    [{"study_data_id": study_data_id, "area_id": area_id, "matrix_id": min_id} for area_id in area_ids],
+                )
+                upsert_multiple(
+                    session,
+                    HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE,
+                    [{"study_data_id": study_data_id, "area_id": area_id, "matrix_id": max_id} for area_id in area_ids],
+                )
+                upsert_multiple(
+                    session,
+                    HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE,
+                    [{"study_data_id": study_data_id, "area_id": area_id, "matrix_id": avg_id} for area_id in area_ids],
+                )
+                session.commit()
+            except IntegrityError as e:
+                session.rollback()
+                invalid = self.get_impl().get_invalid_area_ids(area_ids)
+                raise AreaNotFound(*invalid) from e
+        else:
+            for table in [
+                HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE,
+                HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE,
+                HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE,
+            ]:
+                session.execute(delete(table).where(table.c.study_data_id == study_data_id))
+            session.commit()
+
+        compatibility_data.hydro_rule_curves = hydro_rule_curves
         self.get_impl().save_compatibility_parameters(compatibility_data)

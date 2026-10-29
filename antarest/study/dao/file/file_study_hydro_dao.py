@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 from typing_extensions import override
 
 from antarest.core.utils.polars import create_polars_dataframe
-from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax, HydroRuleCurves
 from antarest.study.business.model.hydro_model import HydroManagement, HydroProperties, InflowStructure
 from antarest.study.dao.api.hydro_dao import HydroDao
 from antarest.study.storage.rawstudy.model.filesystem.config.hydro import (
@@ -70,6 +70,18 @@ def _get_max_hourly_gen_power_path(area_id: AreaId) -> list[str]:
 
 def _get_max_hourly_pump_power_path(area_id: AreaId) -> list[str]:
     return ["input", "hydro", "series", area_id, "maxHourlyPumpPower"]
+
+
+def _get_max_daily_reservoir_levels_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "series", area_id, "maxDailyReservoirLevels"]
+
+
+def _get_min_daily_reservoir_levels_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "series", area_id, "minDailyReservoirLevels"]
+
+
+def _get_avg_daily_reservoir_levels_path(area_id: AreaId) -> list[str]:
+    return ["input", "hydro", "series", area_id, "avgDailyReservoirLevels"]
 
 
 def _get_max_power_path(area_id: AreaId) -> list[str]:
@@ -339,6 +351,21 @@ class FileStudyHydroDao(HydroDao):
         return self.get_impl().get_matrix(url)
 
     @override
+    def get_hydro_max_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        url = _get_max_daily_reservoir_levels_path(area_id)
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def get_hydro_min_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        url = _get_min_daily_reservoir_levels_path(area_id)
+        return self.get_impl().get_matrix(url)
+
+    @override
+    def get_hydro_avg_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        url = _get_avg_daily_reservoir_levels_path(area_id)
+        return self.get_impl().get_matrix(url)
+
+    @override
     def save_hydro_maxpower(self, series: AreaSeriesMapping) -> None:
         self._save_all_capacity_matrices(series, "maxpower")
 
@@ -389,6 +416,18 @@ class FileStudyHydroDao(HydroDao):
     @override
     def save_hydro_max_daily_pump_energy(self, series: AreaSeriesMapping) -> None:
         self._save_all_capacity_matrices(series, "maxDailyPumpEnergy")
+
+    @override
+    def save_hydro_max_daily_reservoir_levels(self, series: AreaSeriesMapping) -> None:
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_max_daily_reservoir_levels_path)
+
+    @override
+    def save_hydro_min_daily_reservoir_levels(self, series: AreaSeriesMapping) -> None:
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_min_daily_reservoir_levels_path)
+
+    @override
+    def save_hydro_avg_daily_reservoir_levels(self, series: AreaSeriesMapping) -> None:
+        save_area_matrices(self.get_impl(), self.get_file_study(), series, _get_avg_daily_reservoir_levels_path)
 
     def _get_all_capacity_matrices(self, prefix: str) -> AreaSeriesMapping:
         matrix_nodes = self._get_nodes_with_their_area_id(prefix)
@@ -493,6 +532,21 @@ class FileStudyHydroDao(HydroDao):
         return self._get_all_capacity_matrices("maxDailyPumpEnergy")
 
     @override
+    def get_all_hydro_max_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_max_daily_reservoir_levels_path)
+
+    @override
+    def get_all_hydro_min_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_min_daily_reservoir_levels_path)
+
+    @override
+    def get_all_hydro_avg_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        study_data = self.get_file_study()
+        return get_all_area_matrices(self.get_impl(), study_data, _get_avg_daily_reservoir_levels_path)
+
+    @override
     def convert_hydro_pmax(
         self,
         hydro_pmax: HydroPmax,
@@ -538,4 +592,30 @@ class FileStudyHydroDao(HydroDao):
                 file_study.tree.delete(_get_max_daily_pump_energy_path(area_id))
         # Update compatibility_data object and save it
         compatibility_data.hydro_pmax = hydro_pmax
+        self.get_impl().save_compatibility_parameters(compatibility_data)
+
+    @override
+    def convert_hydro_rule_curves(self, hydro_rule_curves: HydroRuleCurves) -> None:
+        compatibility_data = self.get_impl().get_compatibility_parameters()
+        if compatibility_data.hydro_rule_curves == hydro_rule_curves:
+            return
+
+        file_study = self.get_file_study()
+        areas = file_study.config.areas.keys()
+
+        if hydro_rule_curves == HydroRuleCurves.SCENARIZED:
+            constants = self.get_impl().generator_matrix_constants
+            min_id = constants.get_hydro_min_daily_reservoir_levels()
+            max_id = constants.get_hydro_max_daily_reservoir_levels()
+            avg_id = constants.get_hydro_avg_daily_reservoir_levels()
+            self.save_hydro_min_daily_reservoir_levels({area_id: min_id for area_id in areas})
+            self.save_hydro_max_daily_reservoir_levels({area_id: max_id for area_id in areas})
+            self.save_hydro_avg_daily_reservoir_levels({area_id: avg_id for area_id in areas})
+        else:
+            for area_id in areas:
+                file_study.tree.delete(_get_min_daily_reservoir_levels_path(area_id))
+                file_study.tree.delete(_get_max_daily_reservoir_levels_path(area_id))
+                file_study.tree.delete(_get_avg_daily_reservoir_levels_path(area_id))
+
+        compatibility_data.hydro_rule_curves = hydro_rule_curves
         self.get_impl().save_compatibility_parameters(compatibility_data)

@@ -13,7 +13,7 @@ from abc import ABC, abstractmethod
 
 import polars as pl
 
-from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax, HydroRuleCurves
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
 from antarest.study.business.model.hydro_model import (
@@ -106,6 +106,18 @@ class ReadOnlyHydroDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def get_hydro_max_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_min_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_hydro_avg_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        raise NotImplementedError()
+
+    @abstractmethod
     def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
         raise NotImplementedError()
 
@@ -155,6 +167,18 @@ class ReadOnlyHydroDao(ABC):
 
     @abstractmethod
     def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_max_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_min_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_all_hydro_avg_daily_reservoir_levels(self) -> AreaSeriesMapping:
         raise NotImplementedError()
 
 
@@ -228,8 +252,24 @@ class HydroDao(ReadOnlyHydroDao):
         raise NotImplementedError()
 
     @abstractmethod
+    def save_hydro_max_daily_reservoir_levels(self, series: AreaSeriesMapping) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_min_daily_reservoir_levels(self, series: AreaSeriesMapping) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def save_hydro_avg_daily_reservoir_levels(self, series: AreaSeriesMapping) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
     def convert_hydro_pmax(
         self,
         hydro_pmax: HydroPmax,
     ) -> None:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def convert_hydro_rule_curves(self, hydro_rule_curves: HydroRuleCurves) -> None:
         raise NotImplementedError()
