@@ -20,6 +20,7 @@ from antarest.core.exceptions import (
     GemsSystemIncorrectlyFormatted,
     GemsUnavailableForFileSystemStudies,
 )
+from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -52,6 +53,10 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
 
     @override
     def get_components(self) -> list[GemsComponent]:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
+    def get_parameter_value(self, component_id: str, parameter_id: str) -> NpArray:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override

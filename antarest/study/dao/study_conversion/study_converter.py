@@ -100,7 +100,6 @@ class StudyConverter:
             if scenario_builder is not None:
                 self._new_dao.save_gems_scenario_builder(scenario_builder)
 
-            self._new_dao.save_data_series(self._source_dao.get_data_series())
             system = self._source_dao.get_system()
             if system is not None:
                 self._new_dao.save_system(system)
