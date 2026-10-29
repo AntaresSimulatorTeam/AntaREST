@@ -30,10 +30,6 @@ def default_scenario_daily() -> np.ndarray:
     return np.zeros((365, 1), dtype=np.float64)
 
 
-def default_scenario_daily_zeros() -> np.ndarray:
-    return np.zeros((365, 1), dtype=np.float64)
-
-
 def default_scenario_daily_ones() -> np.ndarray:
     return np.ones((365, 1), dtype=np.float64)
 

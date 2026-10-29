@@ -18,9 +18,9 @@ from antarest.core.utils.polars import create_polars_dataframe
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_2
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
+    default_scenario_daily,
     default_scenario_daily_half,
     default_scenario_daily_ones,
-    default_scenario_daily_zeros,
 )
 from antarest.study.storage.variantstudy.business import matrix_constants
 from antarest.study.storage.variantstudy.business.matrix_constants.common import (
@@ -153,7 +153,7 @@ class GeneratorMatrixConstants:
             lambda: create_polars_dataframe(default_scenario_daily_ones())
         )
         self.hashes[HYDRO_SERIES_MIN_DAILY_RESERVOIR_LEVELS] = self.matrix_service.add_predefined_matrix(
-            lambda: create_polars_dataframe(default_scenario_daily_zeros())
+            lambda: create_polars_dataframe(default_scenario_daily())
         )
         self.hashes[HYDRO_SERIES_AVG_DAILY_RESERVOIR_LEVELS] = self.matrix_service.add_predefined_matrix(
             lambda: create_polars_dataframe(default_scenario_daily_half())

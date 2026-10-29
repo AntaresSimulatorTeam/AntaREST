@@ -79,7 +79,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
     default_scenario_daily,
     default_scenario_daily_half,
     default_scenario_daily_ones,
-    default_scenario_daily_zeros,
     default_scenario_hourly,
     default_scenario_monthly,
     default_water_values,
@@ -573,7 +572,7 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
     @override
     def get_hydro_min_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
         matrix_id = self._get_hydro_matrix(area_id, HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE)
-        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_daily_zeros)
+        return self.get_impl().get_matrix(matrix_id, default_empty_supplier=default_scenario_daily)
 
     @override
     def get_hydro_avg_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:

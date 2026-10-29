@@ -16,7 +16,7 @@ from typing_extensions import override
 
 from antarest.study.business.model.config.compatibility_parameters_model import (
     CompatibilityParametersUpdate,
-    HydroPmax,
+    HydroRuleCurves,
     validate_compatibility_parameters_against_version,
 )
 from antarest.study.dao.api.study_dao import StudyDao
@@ -28,7 +28,7 @@ from antarest.study.storage.variantstudy.model.command.common import (
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_listener.command_listener import ICommandListener
 from antarest.study.storage.variantstudy.model.model import CommandDTO
-from antarest.study.business.model.config.compatibility_parameters_model import HydroRuleCurves
+
 
 class ConvertHydroRuleCurves(ICommand):
     """
@@ -47,7 +47,9 @@ class ConvertHydroRuleCurves(ICommand):
         return self
 
     @override
-    def _apply_dao(self, study_data: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[HydroRuleCurves]:
+    def _apply_dao(
+        self, study_data: StudyDao, listener: ICommandListener | None = None
+    ) -> CommandOutput[HydroRuleCurves]:
         study_data.convert_hydro_rule_curves(self.hydro_rule_curves)
         return command_succeeded(message="Hydro rule curves converted successfully.", result=self.hydro_rule_curves)
 

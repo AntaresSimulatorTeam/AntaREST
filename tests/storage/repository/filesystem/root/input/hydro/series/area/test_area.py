@@ -25,7 +25,6 @@ from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default i
     default_scenario_daily,
     default_scenario_daily_half,
     default_scenario_daily_ones,
-    default_scenario_daily_zeros,
     default_scenario_hourly,
     default_scenario_monthly,
 )
@@ -87,7 +86,7 @@ AFTER_1020 = {
         "nb_columns": None,
     },
     "minDailyReservoirLevels": {
-        "default_empty": default_scenario_daily_zeros().tolist(),
+        "default_empty": default_scenario_daily().tolist(),
         "nb_columns": None,
     },
     "avgDailyReservoirLevels": {
