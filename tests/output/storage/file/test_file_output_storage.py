@@ -104,7 +104,13 @@ def output_storage(request: pytest.FixtureRequest, tmp_path: Path, sta_mini_zip_
         (studies_dir / "STA-mini" / "output").rename(outputs_dir / "STA-mini")
         shutil.rmtree(studies_dir)
 
-    return klass(outputs_provider=outputs_provider, cache=LocalCache(), remote_executor=executor, repository=Mock())
+    return klass(
+        outputs_provider=outputs_provider,
+        cache=LocalCache(),
+        config=Mock(),
+        remote_executor=executor,
+        repository=Mock(),
+    )
 
 
 def test_file_output_storage(output_storage: IOutputStorage) -> None:

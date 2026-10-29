@@ -104,3 +104,10 @@ def test_get_digest_endpoint(
     res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_id}/digest-ui")
     assert res.status_code == 404
     assert res.json()["exception"] == "OutputSubFolderNotFound"
+
+    # Test that we're able to retrieve the digest for archived outputs
+    output_id = "20201014-1430adq-2"
+    res = client.get(f"/v1/private/studies/{internal_study_id}/outputs/{output_id}/digest-ui")
+    assert res.status_code == 200
+    digest = res.json()
+    assert list(digest.keys()) == ["area", "districts", "flowLinear", "flowQuadratic"]
