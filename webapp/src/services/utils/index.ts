@@ -220,7 +220,7 @@ export function getParentNode(tree: VariantTree, studyId: string): Study | undef
   return undefined;
 }
 
-function getSubTree(tree: VariantTree, studyId: string): VariantTree | undefined {
+export function getSubTree(tree: VariantTree, studyId: string): VariantTree | undefined {
   if (studyId === tree.node.id) {
     return tree;
   }

@@ -21,7 +21,7 @@ import { setStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { createVariant } from "@/services/api/studies/variants";
 import type { VariantTree } from "@/services/api/studies/variants/types";
-import { createListFromTree } from "@/services/utils";
+import { createListFromTree, getSubTree, sortByName } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useNavigate } from "@tanstack/react-router";
@@ -34,20 +34,21 @@ interface Props {
   onClose: () => void;
 }
 
-function CreateVariantDialog({ parentId, variantTree, onClose }: Props) {
+function CreateStudyVariantDialog({ parentId, variantTree, onClose }: Props) {
   const [t] = useTranslation();
   const navigate = useNavigate();
   const defaultValues = { name: "", sourceId: parentId };
   const dispatch = useAppDispatch();
 
-  const studiesSource = useMemo(() => createListFromTree(variantTree), [variantTree]);
+  const studySourceOptions = useMemo(() => {
+    const studiesSource = createListFromTree(variantTree);
+    return sortByName(studiesSource).map(({ id, name }) => ({ value: id, label: name }));
+  }, [variantTree]);
 
-  const studySourceOptions = useMemo(
-    () => studiesSource.map(({ id, name }) => ({ value: id, label: name })),
-    [studiesSource],
-  );
-
-  const existingNames = useMemo(() => studiesSource.map(({ name }) => name), [studiesSource]);
+  const existingNames = useMemo(() => {
+    const subTree = getSubTree(variantTree, parentId);
+    return subTree ? subTree.children.map(({ node }) => node.name) : [];
+  }, [variantTree, parentId]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -107,4 +108,4 @@ function CreateVariantDialog({ parentId, variantTree, onClose }: Props) {
   );
 }
 
-export default CreateVariantDialog;
+export default CreateStudyVariantDialog;

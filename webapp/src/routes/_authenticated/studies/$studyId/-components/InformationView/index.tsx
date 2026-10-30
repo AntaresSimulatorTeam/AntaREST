@@ -27,7 +27,7 @@ import { Box, Button, Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
 import LaunchStudiesDialog from "../../../../../-shared/components/studies/dialogs/LaunchStudiesDialog";
-import CreateVariantDialog from "./CreateVariantDialog";
+import CreateStudyVariantDialog from "./CreateStudyVariantDialog";
 import DetailsList from "./DetailsList";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
@@ -68,7 +68,7 @@ function InformationView({ variantTree }: Props) {
 
   const handleCreateVariant = () => {
     openDialog(({ onClose }) => (
-      <CreateVariantDialog parentId={study.id} variantTree={variantTree} onClose={onClose} />
+      <CreateStudyVariantDialog parentId={study.id} variantTree={variantTree} onClose={onClose} />
     ));
   };
 
