@@ -943,5 +943,12 @@ class GemsInvalidConnection(HTTPException):
 
 
 class GemsScenarioNotFound(HTTPException):
-    def __init__(self, message: str) -> None:
+    def __init__(self, scenario_name: str, study_id: str) -> None:
+        message = f"Could not find scenario {scenario_name} inside gems scenario builder for study {study_id}"
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsScenarioAlreadyExists(HTTPException):
+    def __init__(self, scenario_name: str, study_id: str) -> None:
+        message = f"Scenario '{scenario_name}' already exists in the gems scenario builder of study {study_id}"
+        super().__init__(HTTPStatus.CONFLICT, message)

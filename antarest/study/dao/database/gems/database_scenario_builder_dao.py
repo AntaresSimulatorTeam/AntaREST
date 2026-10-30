@@ -12,11 +12,11 @@
 
 import json
 
-from sqlalchemy import CursorResult, delete, select
+from sqlalchemy import CursorResult, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsScenarioNotFound
+from antarest.core.exceptions import GemsScenarioAlreadyExists, GemsScenarioNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder, ScenarioBuilderMapping
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
@@ -38,6 +38,7 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
         groups = scenario_builder.model_dump(mode="json")["scenarios"]
+        # todo: we should fill the default value before saving in DB
         try:
             upsert_multiple(
                 session,
@@ -61,7 +62,21 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
     def add_scenario_to_gems_scenario_builder(
         self, scenario_name: str, mapping: ScenarioBuilderMapping
     ) -> ScenarioBuilderMapping:
-        # todo
+        # todo: We should fill the missing values as GEMS scenario-builder has default values
+        table = GEMS_SCENARIO_BUILDER_TABLE
+        session = self._db_session
+        values = [{"study_data_id": self._study_data_id, "scenario_group": scenario_name, "data": json.dumps(mapping)}]
+
+        stmt = insert(table).values(values)
+        try:
+            session.execute(stmt)
+            session.commit()
+        except IntegrityError as e:
+            # Means the scenario already existed
+            session.rollback()
+            raise GemsScenarioAlreadyExists(scenario_name, self._study_id) from e
+
+        # todo: return the full scenario
         raise NotImplementedError("")
 
     @override
@@ -76,7 +91,6 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect, so the scenario group did not exist
-            msg = f"Could not find scenario {scenario_name} inside gems scenario builder for study {self._study_id}"
-            raise GemsScenarioNotFound(msg)
+            raise GemsScenarioNotFound(scenario_name, self._study_id)
 
         session.commit()
