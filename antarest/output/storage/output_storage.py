@@ -15,7 +15,7 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from http import HTTPStatus
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 
 import pandas as pd
@@ -313,6 +313,29 @@ class IOutputStorage(ABC):
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         """
         Retrieves the original file as it exists on the file system
+        """
+
+    @abstractmethod
+    def list_raw_files(self, study_id: str, output_id: str) -> list[PurePosixPath]:
+        """
+        Lists all the files of the output, as written by the simulator, relative to the output root.
+        The output must not be archived.
+
+        Raises:
+            OutputNotFound: if the unarchived output does not exist.
+            UnsupportedOperationOnOutputStorage: if the storage does not give access to raw files.
+        """
+
+    @abstractmethod
+    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath, target: Path) -> None:
+        """
+        Reads the output file located at `path` (relative to the output root) and saves it to `target`.
+        The output must not be archived.
+
+        Raises:
+            OutputNotFound: if the unarchived output does not exist.
+            OutputFileNotFound: if the file does not exist in the output.
+            UnsupportedOperationOnOutputStorage: if the storage does not give access to raw files.
         """
 
     @abstractmethod

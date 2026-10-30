@@ -12,7 +12,7 @@
 import os
 import shutil
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from unittest.mock import Mock, patch
 
 import pytest
@@ -23,6 +23,7 @@ from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
+    OutputFileNotFound,
     OutputNotFound,
     StudyNotFoundError,
 )
@@ -532,6 +533,41 @@ def test_write_output_to_dir(output_storage: IOutputStorage, tmp_path: Path) -> 
         output_storage.write_output_to_dir("non-existent", "20201014-1427eco", export_path)
     with pytest.raises(OutputNotFound):
         output_storage.write_output_to_dir("STA-mini", "non-existent", export_path)
+
+
+def test_raw_files(output_storage: IOutputStorage, tmp_path: Path) -> None:
+    files = output_storage.list_raw_files("STA-mini", "20201014-1427eco")
+    assert len(files) == 79
+    assert files[:3] == [
+        PurePosixPath("about-the-study/areas.txt"),
+        PurePosixPath("about-the-study/comments.txt"),
+        PurePosixPath("about-the-study/links.txt"),
+    ]
+
+    target = tmp_path / "areas.txt"
+    output_storage.read_raw_file("STA-mini", "20201014-1427eco", PurePosixPath("about-the-study/areas.txt"), target)
+    assert target.read_bytes() == b"DE\r\nES\r\nFR\r\nIT\r\n"
+
+    # Missing file, directory, file outside the output
+    for path in ["unknown.txt", "about-the-study", "../20201014-1422eco-hello/info.antares-output"]:
+        with pytest.raises(OutputFileNotFound):
+            output_storage.read_raw_file("STA-mini", "20201014-1427eco", PurePosixPath(path), target)
+
+    with pytest.raises(StudyNotFoundError):
+        output_storage.list_raw_files("non-existent", "20201014-1427eco")
+    with pytest.raises(OutputNotFound):
+        output_storage.list_raw_files("STA-mini", "non-existent")
+    with pytest.raises(OutputNotFound):
+        output_storage.read_raw_file("STA-mini", "non-existent", PurePosixPath("about-the-study/areas.txt"), target)
+
+    # Output ids that are not a direct child of the study outputs folder
+    for output_id in ["..", ".", ""]:
+        with pytest.raises(OutputNotFound):
+            output_storage.list_raw_files("STA-mini", output_id)
+        with pytest.raises(OutputNotFound):
+            output_storage.read_raw_file(
+                "STA-mini", output_id, PurePosixPath("20201014-1427eco/info.antares-output"), target
+            )
 
 
 def test_get_logs(output_storage: IOutputStorage, tmp_path: Path) -> None:

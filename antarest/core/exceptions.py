@@ -412,6 +412,28 @@ class OutputAlreadyArchived(HTTPException):
         super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
 
 
+class UnsupportedOperationOnArchivedOutput(HTTPException):
+    """
+    Exception raised when a user wants to access the content of an archived output.
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"Output '{output_id}' is archived"
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class UnsupportedOperationOnOutputStorage(HTTPException):
+    """
+    Exception raised when an operation is not supported by the storage of an output.
+    """
+
+    def __init__(self, output_id: str, operation: str, storage_type: str) -> None:
+        message = (
+            f"You cannot {operation} of the output '{output_id}'. This is not supported for {storage_type} outputs."
+        )
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class OutputAlreadyUnarchived(HTTPException):
     """
     Exception raised when a user wants to unarchive an output which is already unarchived.
@@ -445,6 +467,16 @@ class OutputSubFolderNotFound(HTTPException):
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
+
+
+class OutputFileNotFound(HTTPException):
+    """
+    Exception raised when a file does not exist inside an output
+    """
+
+    def __init__(self, output_id: str, path: str) -> None:
+        message = f"The output '{output_id}' file '{path}' does not exist"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
 class InvalidOutputConversionRequest(HTTPException):

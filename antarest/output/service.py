@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 
 import pandas as pd
@@ -31,6 +31,7 @@ from antarest.core.exceptions import (
     OutputAlreadyUnarchived,
     OutputNotFound,
     TaskAlreadyRunning,
+    UnsupportedOperationOnArchivedOutput,
 )
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
@@ -63,6 +64,7 @@ from antarest.output.model import (
     OutputVariablesViewStatus,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
+from antarest.output.model.raw_files import OutputRawFilesTree, build_raw_files_tree
 from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -905,3 +907,23 @@ class OutputService:
 
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         return self._find_output_storage(study_id, output_id).get_original_file(study_id, output_id, url)
+
+    def get_raw_files_tree(self, study_id: str, output_id: str) -> OutputRawFilesTree:
+        """
+        Returns the tree structure of all the files of the output, as written by the simulator.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.is_output_archived(study_id, output_id):
+            raise UnsupportedOperationOnArchivedOutput(output_id)
+        return build_raw_files_tree(storage.list_raw_files(study_id, output_id))
+
+    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath, target: Path) -> None:
+        """
+        Reads the output file located at `path` (relative to the output root) and saves it to `target`.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.is_output_archived(study_id, output_id):
+            raise UnsupportedOperationOnArchivedOutput(output_id)
+        storage.read_raw_file(study_id, output_id, path, target)

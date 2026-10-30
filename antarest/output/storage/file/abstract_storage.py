@@ -29,6 +29,7 @@ from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
+    OutputFileNotFound,
     OutputNotFound,
 )
 from antarest.core.interfaces.cache import ICache
@@ -41,7 +42,7 @@ from antarest.core.utils.archives import (
     is_zip,
     unzip,
 )
-from antarest.core.utils.utils import StopWatch
+from antarest.core.utils.utils import StopWatch, is_path_safe
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
@@ -623,6 +624,29 @@ class AbstractFileOutputStorage(IOutputStorage):
         output_node = self._build_output_node(study_id, output_id)
         file_node = output_node.get_node([output_id] + url)
         return file_node.get_file_content()
+
+    def _require_unarchived_output_path(self, study_id: str, output_id: str) -> Path:
+        outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
+        output_path = _output_path(outputs_path, output_id)
+        # The output must be a direct child of the study outputs folder: rejects ids like "." or ".."
+        if output_id == ".." or output_path.parent != outputs_path or not output_path.is_dir():
+            raise OutputNotFound(output_id)
+        return output_path
+
+    @override
+    def list_raw_files(self, study_id: str, output_id: str) -> list[PurePosixPath]:
+        output_path = self._require_unarchived_output_path(study_id, output_id)
+        return sorted(
+            PurePosixPath(p.relative_to(output_path).as_posix()) for p in output_path.rglob("*") if p.is_file()
+        )
+
+    @override
+    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath, target: Path) -> None:
+        output_path = self._require_unarchived_output_path(study_id, output_id)
+        file_path = output_path / path
+        if not is_path_safe(output_path, path.as_posix()) or not file_path.is_file():
+            raise OutputFileNotFound(output_id, path.as_posix())
+        shutil.copyfile(file_path, target)
 
     def _build_output_node(self, study_id: str, output_id: str) -> Output:
         study_outputs = self._outputs_provider.get_outputs(study_id)
