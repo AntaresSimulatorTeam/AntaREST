@@ -31,11 +31,6 @@ def upgrade() -> None:
             study_data_id_col(),
             Column("area_id", String(255), nullable=False, primary_key=True),
             Column("matrix_id", String(64), nullable=False),
-            ForeignKeyConstraint(
-                ["study_data_id", "area_id"],
-                ["area.study_data_id", "area.area_id"],
-                ondelete="CASCADE",
-            ),
         )
 
 

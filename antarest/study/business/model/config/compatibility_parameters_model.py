@@ -61,7 +61,7 @@ def initialize_compatibility_parameters(parameters: CompatibilityParameters, ver
 
 
 def validate_compatibility_parameters_against_version(
-    version: StudyVersion, parameters: CompatibilityParametersUpdate
+    version: StudyVersion, parameters: CompatibilityParametersUpdate | CompatibilityParameters
 ) -> None:
     if parameters.hydro_pmax is not None and version < STUDY_VERSION_9_2:
         raise InvalidFieldForVersionError("Hydro pmax cannot be set to hourly before study version 9.2")
