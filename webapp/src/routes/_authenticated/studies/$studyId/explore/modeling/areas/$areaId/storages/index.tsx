@@ -26,7 +26,7 @@ import { Box, Tooltip } from "@mui/material";
 import { useIsMutating } from "@tanstack/react-query";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
-import { Fragment, useMemo } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import useCreateStorage from "./-hooks/useCreateStorage";
@@ -185,9 +185,10 @@ function Storages() {
   });
 
   return (
-    <Fragment key={buildKey(params)}>
+    <>
       <RefetchErrorAlert isRefetchError={isRefetchError} error={error} />
       <DataTable
+        key={buildKey(params)}
         data={formalizedStorages}
         columns={columns}
         groups={[...STORAGE_GROUPS]}
@@ -209,6 +210,6 @@ function Storages() {
           });
         }}
       />
-    </Fragment>
+    </>
   );
 }

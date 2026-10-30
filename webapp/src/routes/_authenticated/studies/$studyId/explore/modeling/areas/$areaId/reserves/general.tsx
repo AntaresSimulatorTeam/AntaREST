@@ -18,6 +18,7 @@ import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
 import { reserveKeys } from "@/queries/reserves/keys";
 import { reserveQueries } from "@/queries/reserves/queries";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
+import { buildKey } from "@/utils/reactUtils";
 import EditIcon from "@mui/icons-material/Edit";
 import { Button, Chip } from "@mui/material";
 import { useIsMutating, useSuspenseQueries } from "@tanstack/react-query";
@@ -114,6 +115,7 @@ function ReservesGeneral() {
     <>
       <RefetchErrorAlert isRefetchError={isRefetchError} error={error} />
       <DataTable
+        key={buildKey(params)}
         data={reserves}
         columns={columns}
         readOnly={!isReservesEnabled}
