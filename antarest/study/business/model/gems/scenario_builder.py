@@ -19,6 +19,8 @@ from antarest.core.serde import AntaresBaseModel
 Scenario: TypeAlias = Annotated[int, Field(ge=0)]
 TimeSerieIndex: TypeAlias = Annotated[int, Field(ge=1)]
 
+ScenarioBuilderMapping: TypeAlias = dict[Scenario, TimeSerieIndex]
+
 
 class GemsScBuilderMapping(AntaresBaseModel):
     """Associate a zero-based scenario with a one-based data-series column."""

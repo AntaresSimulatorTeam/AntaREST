@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 
-from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
+from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder, ScenarioBuilderMapping
 
 
 class ReadOnlyGemsScenarioBuilderDao(ABC):
@@ -26,4 +26,14 @@ class GemsScenarioBuilderDao(ReadOnlyGemsScenarioBuilderDao):
     @abstractmethod
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
         """Create or replace the complete builder, removing omitted groups. An empty builder clears it."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def add_scenario_to_gems_scenario_builder(
+        self, scenario_name: str, mapping: ScenarioBuilderMapping
+    ) -> ScenarioBuilderMapping:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def remove_scenario_from_gems_scenario_builder(self, scenario_name: str) -> None:
         raise NotImplementedError()

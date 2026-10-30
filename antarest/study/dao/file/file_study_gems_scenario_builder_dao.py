@@ -16,7 +16,12 @@ from pathlib import Path
 
 from typing_extensions import override
 
-from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
+from antarest.core.exceptions import GemsUnavailableForFileSystemStudies
+from antarest.study.business.model.gems.scenario_builder import (
+    GemsScBuilderMapping,
+    GemsScenarioBuilder,
+    ScenarioBuilderMapping,
+)
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
@@ -66,3 +71,13 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
             for group, scenarios in scenario_builder.scenarios.items():
                 for mapping in scenarios:
                     stream.write(f"{group}, {mapping.scenario} = {mapping.time_series_index}\n")
+
+    @override
+    def add_scenario_to_gems_scenario_builder(
+        self, scenario_name: str, mapping: ScenarioBuilderMapping
+    ) -> ScenarioBuilderMapping:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
+    def remove_scenario_from_gems_scenario_builder(self, scenario_name: str) -> None:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

@@ -12,12 +12,13 @@
 
 import json
 
-from sqlalchemy import delete, select
+from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
+from antarest.core.exceptions import GemsScenarioNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
-from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
+from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder, ScenarioBuilderMapping
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.scenario_builder import GEMS_SCENARIO_BUILDER_TABLE
@@ -55,3 +56,27 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         except IntegrityError:
             session.rollback()
             raise
+
+    @override
+    def add_scenario_to_gems_scenario_builder(
+        self, scenario_name: str, mapping: ScenarioBuilderMapping
+    ) -> ScenarioBuilderMapping:
+        # todo
+        raise NotImplementedError("")
+
+    @override
+    def remove_scenario_from_gems_scenario_builder(self, scenario_name: str) -> None:
+        table = GEMS_SCENARIO_BUILDER_TABLE
+        session = self._db_session
+        result = session.execute(
+            delete(table).where(
+                (table.c.study_data_id == self._study_data_id) & (table.c.scenario_group == scenario_name)
+            )
+        )
+        assert isinstance(result, CursorResult)
+        if result.rowcount == 0:
+            # Means the DELETE had no effect, so the scenario group did not exist
+            msg = f"Could not find scenario {scenario_name} inside gems scenario builder for study {self._study_id}"
+            raise GemsScenarioNotFound(msg)
+
+        session.commit()
