@@ -10,10 +10,10 @@
 #
 # This file is part of the Antares project.
 
-"""store_gems_parameter_value_as_string
+"""handle time and scenario-dependent GEMS parameters
 
 Revision ID: f2e3f7ba9896
-Revises: b60aab4df757
+Revises: 193aa1d7b5ad
 Create Date: 2026-10-08 16:00:00.000000
 
 """
@@ -24,7 +24,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "f2e3f7ba9896"
-down_revision = "b60aab4df757"
+down_revision = "193aa1d7b5ad"
 branch_labels = None
 depends_on = None
 
