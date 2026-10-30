@@ -601,7 +601,7 @@ class FileStudyHydroDao(HydroDao):
             return
 
         file_study = self.get_file_study()
-        areas = file_study.config.areas.keys()
+        areas = file_study.config.areas
 
         if hydro_rule_curves == HydroRuleCurves.SCENARIZED:
             constants = self.get_impl().generator_matrix_constants

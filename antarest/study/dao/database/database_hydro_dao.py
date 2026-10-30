@@ -801,7 +801,9 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
             except IntegrityError as e:
                 session.rollback()
                 invalid = self.get_impl().get_invalid_area_ids(area_ids)
-                raise AreaNotFound(*invalid) from e
+                if invalid:
+                    raise AreaNotFound(*invalid) from e
+                raise ValueError("One of the area hydro reservoir matrices table is not filled as it should") from e
         else:
             for table in [
                 HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE,

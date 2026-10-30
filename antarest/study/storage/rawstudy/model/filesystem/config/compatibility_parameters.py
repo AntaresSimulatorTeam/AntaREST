@@ -18,9 +18,11 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.config.compatibility_parameters_model import (
     CompatibilityParameters,
+    CompatibilityParametersUpdate,
     HydroPmax,
     HydroRuleCurves,
     initialize_compatibility_parameters,
+    validate_compatibility_parameters_against_version,
 )
 
 
@@ -41,8 +43,17 @@ class CompatibilityParametersFileData(AntaresBaseModel):
 def parse_compatibility_parameters(version: StudyVersion, data: dict[str, Any]) -> CompatibilityParameters:
     # Extract the compatibility section if it exists, otherwise use empty dict
     compatibility_data = data.get("compatibility", {})
-    parameters = CompatibilityParametersFileData.model_validate(compatibility_data).to_model()
+    file_data = CompatibilityParametersFileData.model_validate(compatibility_data)
+    parameters = file_data.to_model()
     initialize_compatibility_parameters(parameters, version)
+    # Validate only the keys present in the file. Model defaults are not an update.
+    validate_compatibility_parameters_against_version(
+        version,
+        CompatibilityParametersUpdate(
+            hydro_pmax=file_data.hydro_pmax,
+            hydro_rule_curves=file_data.hydro_rule_curves,
+        ),
+    )
     return parameters
 
 
