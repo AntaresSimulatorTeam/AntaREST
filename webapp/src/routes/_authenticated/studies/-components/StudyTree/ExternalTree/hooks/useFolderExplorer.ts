@@ -34,6 +34,13 @@ export function useFolderExplorer() {
   const [exploredFolders, setExploredFolders] = useState<string[]>([]);
   const [itemsLoading, setItemsLoading] = useState<string[]>([]);
 
+  // Only applied results count as explored. A cancelled reveal may discard fetched folders.
+  const markPathExplored = (itemId: string) => {
+    setExploredFolders((previous) =>
+      previous.includes(itemId) ? previous : [...previous, itemId],
+    );
+  };
+
   /**
    * Parses a path and extracts workspace and subpath components.
    * Validates that the path is absolute and has a valid workspace.
@@ -77,17 +84,7 @@ export function useFolderExplorer() {
     setItemsLoading((prev) => [...prev, itemId]);
 
     try {
-      const folders = await queryClient.fetchQuery(explorerQueries.folders(workspace, path));
-
-      // Mark this path as explored
-      setExploredFolders((prev) => {
-        if (prev.includes(itemId)) {
-          return prev;
-        }
-        return [...prev, itemId];
-      });
-
-      return folders;
+      return await queryClient.fetchQuery(explorerQueries.folders(workspace, path));
     } catch (err) {
       enqueueErrorSnackbar(
         t("studies.tree.error.failToFetchFolder", {
@@ -96,6 +93,7 @@ export function useFolderExplorer() {
         }),
         toError(err),
       );
+
       return null;
     } finally {
       setItemsLoading((prev) => prev.filter((id) => id !== itemId));
@@ -104,6 +102,7 @@ export function useFolderExplorer() {
 
   return {
     explorePath,
+    markPathExplored,
     exploredFolders,
     itemsLoading,
   };

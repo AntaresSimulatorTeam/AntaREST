@@ -18,6 +18,32 @@ import type { StudyMetadata } from "@/types/types";
 import * as R from "ramda";
 import type { ExternalTreeNodeMetadata } from "./types";
 
+/**
+ * Finds a folder or workspace in the currently loaded external hierarchy.
+ *
+ * @param tree - Loaded external hierarchy.
+ * @param path - Absolute workspace path to find.
+ * @returns The matching node, if it has been loaded.
+ */
+export function findNodeByPath(
+  tree: ExternalTreeNodeMetadata,
+  path: string,
+): ExternalTreeNodeMetadata | undefined {
+  if (tree.path === path) {
+    return tree;
+  }
+
+  for (const child of tree.children) {
+    const match = findNodeByPath(child, path);
+
+    if (match) {
+      return match;
+    }
+  }
+
+  return undefined;
+}
+
 // Builds the full path from a parent path and folder name
 const buildPath = (parentPath: string, folderName: string): string =>
   parentPath ? `${parentPath}/${folderName}` : `/${folderName}`;
