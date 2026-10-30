@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { SxProps, Theme } from "@mui/material";
+import { formControlLabelClasses, type SxProps, type Theme } from "@mui/material";
 
 /** Compact dialog height with consistent action spacing, capped to the viewport by MUI. */
 export const studyDestinationDialogPaperSx = {
@@ -33,3 +33,15 @@ export const studyDestinationDialogContentSx: SxProps<Theme> = {
     p: 0,
   },
 };
+
+/** Keeps the completion preference readable, including when its label wraps. */
+export const studyDestinationRedirectSx = {
+  width: 1,
+  flexShrink: 0,
+  px: 1,
+  py: 0.5,
+  borderRadius: 1,
+  bgcolor: "action.hover",
+  [`& .${formControlLabelClasses.root}`]: { m: 0, alignItems: "flex-start" },
+  [`& .${formControlLabelClasses.label}`]: { typography: "body2", py: 1 },
+} satisfies SxProps<Theme>;
