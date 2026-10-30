@@ -56,14 +56,12 @@ function Compatibility() {
       >
         {({ control }) => (
           <Fieldset legend={t("study.configuration.compatibility")}>
-            {semver.gte(study.version, "9.2.0") && (
-              <SelectFE
-                label={t("study.configuration.compatibility.hydroPmax")}
-                options={HYDRO_PMAX_OPTIONS}
-                name="hydroPmax"
-                control={control}
-              />
-            )}
+            <SelectFE
+              label={t("study.configuration.compatibility.hydroPmax")}
+              options={HYDRO_PMAX_OPTIONS}
+              name="hydroPmax"
+              control={control}
+            />
             {semver.gte(study.version, "10.2.0") && (
               <SelectFE
                 label={t("study.configuration.compatibility.hydroRuleCurves")}
