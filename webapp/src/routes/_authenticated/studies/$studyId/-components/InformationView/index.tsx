@@ -68,7 +68,11 @@ function InformationView({ variantTree }: Props) {
 
   const handleCreateVariant = () => {
     openDialog(({ onClose }) => (
-      <CreateStudyVariantDialog parentId={study.id} variantTree={variantTree} onClose={onClose} />
+      <CreateStudyVariantDialog
+        defaultParentId={study.id}
+        variantTree={variantTree}
+        onClose={onClose}
+      />
     ));
   };
 

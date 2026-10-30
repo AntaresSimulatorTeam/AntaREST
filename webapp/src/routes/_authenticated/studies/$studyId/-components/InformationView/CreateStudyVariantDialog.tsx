@@ -25,20 +25,21 @@ import { createListFromTree, getSubTree, sortByName } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
-  parentId: string;
+  defaultParentId: string;
   variantTree: VariantTree;
   onClose: () => void;
 }
 
-function CreateStudyVariantDialog({ parentId, variantTree, onClose }: Props) {
+function CreateStudyVariantDialog({ defaultParentId, variantTree, onClose }: Props) {
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const defaultValues = { name: "", sourceId: parentId };
+  const defaultValues = { name: "", parentId: defaultParentId };
   const dispatch = useAppDispatch();
+  const [parentId, setParentId] = useState(defaultParentId);
 
   const studySourceOptions = useMemo(() => {
     const studiesSource = createListFromTree(variantTree);
@@ -55,8 +56,8 @@ function CreateStudyVariantDialog({ parentId, variantTree, onClose }: Props) {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (data: SubmitHandlerPlus<typeof defaultValues>) => {
-    const { sourceId, name } = data.values;
-    const variantId = await createVariant({ studyId: sourceId, name });
+    const { parentId, name } = data.values;
+    const variantId = await createVariant({ studyId: parentId, name });
     await dispatch(setStudy(variantId)).unwrap();
     return variantId;
   };
@@ -96,11 +97,12 @@ function CreateStudyVariantDialog({ parentId, variantTree, onClose }: Props) {
           />
           <SelectFE
             label={t("study.versionSource")}
-            name="sourceId"
+            name="parentId"
             variant="outlined"
             options={studySourceOptions}
             control={control}
-            rules={{ required: true }}
+            rules={{ required: true, deps: ["name"] }}
+            onChange={(event) => setParentId(event.target.value)}
           />
         </Fieldset>
       )}
