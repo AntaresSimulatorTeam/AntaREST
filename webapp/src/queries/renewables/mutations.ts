@@ -22,6 +22,7 @@ import type {
   CreateRenewableClusterParams,
   DeleteRenewableClustersParams,
   DuplicateRenewableClusterParams,
+  RenewableCluster,
   UpdateRenewableClusterParams,
 } from "@/services/api/studies/areas/renewables/types";
 import type { Study } from "@/services/api/studies/types";
@@ -38,11 +39,13 @@ export const renewableMutations = {
       },
     });
   },
-  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+  update: (studyId: Study["id"], areaId: AreaWithId["id"], renewableId: RenewableCluster["id"]) => {
     return mutationOptions({
-      mutationKey: renewableKeys.update(studyId, areaId),
-      mutationFn: (params: Omit<UpdateRenewableClusterParams, "studyId" | "areaId">) => {
-        return updateRenewableCluster({ ...params, studyId, areaId });
+      mutationKey: renewableKeys.update(studyId, areaId, renewableId),
+      mutationFn: (
+        params: Omit<UpdateRenewableClusterParams, "studyId" | "areaId" | "renewableId">,
+      ) => {
+        return updateRenewableCluster({ ...params, studyId, areaId, renewableId });
       },
     });
   },

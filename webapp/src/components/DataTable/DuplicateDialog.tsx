@@ -12,7 +12,6 @@
  * This file is part of the Antares project.
  */
 
-import type { PromiseAny } from "@/utils/tsUtils";
 import { validateString } from "@/utils/validation/string";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
@@ -20,11 +19,12 @@ import Fieldset from "../Fieldset";
 import type { SubmitHandlerPlus } from "../Form/types";
 import FormDialog from "../dialogs/FormDialog";
 import StringFE from "../fieldEditors/StringFE";
+import type { RowData } from "./types";
 
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  onSubmit: (name: string) => PromiseAny | void;
+  onSubmit: (name: RowData["name"]) => void;
   existingNames: string[];
   defaultName: string;
 }
@@ -53,7 +53,6 @@ function DuplicateDialog(props: Props) {
       titleIcon={ContentCopyIcon}
       onCancel={onClose}
       onSubmit={handleSubmit}
-      onSubmitSuccessful={onClose}
       config={{ defaultValues }}
       allowSubmitOnPristine
     >

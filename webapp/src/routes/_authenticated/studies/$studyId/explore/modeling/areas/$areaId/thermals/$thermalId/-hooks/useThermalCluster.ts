@@ -30,7 +30,11 @@ function useThermalCluster({ studyId, areaId, thermalId }: ThermalClusterParams)
     [thermalId],
   );
 
-  const { data: thermal } = useThermalClusters({ studyId, areaId, select: getThermal });
+  const { data: thermal, ...restResult } = useThermalClusters({
+    studyId,
+    areaId,
+    select: getThermal,
+  });
 
   if (!thermalId) {
     throw new Error(t("route.noParameter", { param: "thermalId" }));
@@ -40,7 +44,7 @@ function useThermalCluster({ studyId, areaId, thermalId }: ThermalClusterParams)
     throw new Error(t("study.modeling.clusters.notFound", { id: thermalId }));
   }
 
-  return thermal;
+  return { data: thermal, ...restResult };
 }
 
 export default useThermalCluster;

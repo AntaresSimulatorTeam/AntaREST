@@ -13,9 +13,9 @@
  */
 
 import type { ProductionType, Reserve } from "@/services/api/studies/areas/reserves/types";
+import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { areaKeys } from "../areas/keys";
-import type { Study } from "@/services/api/studies/types";
 
 export const reserveKeys = {
   all: () => [...areaKeys.all(), "reserves"],
@@ -34,8 +34,8 @@ export const reserveKeys = {
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.list(studyId, areaId), "createReserve"];
   },
-  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
-    return [...reserveKeys.list(studyId, areaId), "updateReserve"];
+  update: (studyId: Study["id"], areaId: AreaWithId["id"], reserveId: Reserve["id"]) => {
+    return [...reserveKeys.list(studyId, areaId), "updateReserve", { reserveId }];
   },
   delete: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...reserveKeys.list(studyId, areaId), "deleteReserves"];

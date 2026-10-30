@@ -14,16 +14,16 @@
 
 import { thermalMutations } from "@/queries/thermals/mutations";
 import { thermalQueries } from "@/queries/thermals/queries";
-import type { ThermalClustersParams } from "@/services/api/studies/areas/thermals/types";
+import type { ThermalClusterParams } from "@/services/api/studies/areas/thermals/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-function useUpdateThermalCluster({ studyId, areaId }: ThermalClustersParams) {
+function useUpdateThermalCluster({ studyId, areaId, thermalId }: ThermalClusterParams) {
   const queryClient = useQueryClient();
 
   const { queryKey: queryListKey } = thermalQueries.list(studyId, areaId);
 
   return useMutation({
-    ...thermalMutations.update(studyId, areaId),
+    ...thermalMutations.update(studyId, areaId, thermalId),
     onSuccess: async (updatedThermal) => {
       await queryClient.cancelQueries({ queryKey: queryListKey });
 

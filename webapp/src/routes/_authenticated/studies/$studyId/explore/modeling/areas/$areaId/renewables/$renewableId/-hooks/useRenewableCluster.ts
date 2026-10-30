@@ -30,7 +30,11 @@ function useRenewableCluster({ studyId, areaId, renewableId }: RenewableClusterP
     [renewableId],
   );
 
-  const { data: renewable } = useRenewableClusters({ studyId, areaId, select: getRenewable });
+  const { data: renewable, ...restResult } = useRenewableClusters({
+    studyId,
+    areaId,
+    select: getRenewable,
+  });
 
   if (!renewableId) {
     throw new Error(t("route.noParameter", { param: "renewableId" }));
@@ -40,7 +44,7 @@ function useRenewableCluster({ studyId, areaId, renewableId }: RenewableClusterP
     throw new Error(t("study.modeling.clusters.notFound", { id: renewableId }));
   }
 
-  return renewable;
+  return { data: renewable, ...restResult };
 }
 
 export default useRenewableCluster;

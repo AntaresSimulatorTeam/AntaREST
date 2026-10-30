@@ -27,6 +27,7 @@ import type {
   DeleteStorageConstraintParams,
   DeleteStoragesParams,
   DuplicateStorageParams,
+  Storage,
   StorageParams,
   UpdateStorageConstraintParams,
   UpdateStorageParams,
@@ -45,11 +46,11 @@ export const storageMutations = {
       },
     });
   },
-  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+  update: (studyId: Study["id"], areaId: AreaWithId["id"], storageId: Storage["id"]) => {
     return mutationOptions({
-      mutationKey: storageKeys.update(studyId, areaId),
-      mutationFn: (params: Omit<UpdateStorageParams, "studyId" | "areaId">) => {
-        return updateStorage({ ...params, studyId, areaId });
+      mutationKey: storageKeys.update(studyId, areaId, storageId),
+      mutationFn: (params: Omit<UpdateStorageParams, "studyId" | "areaId" | "storageId">) => {
+        return updateStorage({ ...params, studyId, areaId, storageId });
       },
     });
   },

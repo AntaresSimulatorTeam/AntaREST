@@ -14,18 +14,19 @@
 
 import DataTable from "@/components/DataTable";
 import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
-import type { RowData } from "@/components/DataTable/types";
+import type { MainRowData } from "@/components/DataTable/types";
 import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
 import { storageKeys } from "@/queries/storages/keys";
 import { storageQueries } from "@/queries/storages/queries";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { STORAGE_GROUPS } from "@/services/api/studies/areas/storages/constants";
+import { buildKey } from "@/utils/reactUtils";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { Box, Tooltip } from "@mui/material";
 import { useIsMutating } from "@tanstack/react-query";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
 import useCreateStorage from "./-hooks/useCreateStorage";
@@ -161,7 +162,7 @@ function Storages() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = (values: RowData) => {
+  const handleCreate = (values: MainRowData) => {
     createStorage.mutate({ values });
   };
 
@@ -184,10 +185,9 @@ function Storages() {
   });
 
   return (
-    <>
+    <Fragment key={buildKey(params)}>
       <RefetchErrorAlert isRefetchError={isRefetchError} error={error} />
       <DataTable
-        key={areaId}
         data={formalizedStorages}
         columns={columns}
         groups={[...STORAGE_GROUPS]}
@@ -209,6 +209,6 @@ function Storages() {
           });
         }}
       />
-    </>
+    </Fragment>
   );
 }

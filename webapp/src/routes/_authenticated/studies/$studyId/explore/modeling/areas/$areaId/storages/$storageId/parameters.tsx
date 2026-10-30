@@ -55,7 +55,6 @@ function Parameters() {
 
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<FormalizedStorage>) => {
     const updatedStorage = await updateStorage.mutateAsync({
-      ...params,
       values: convertPercentageToRatio(dirtyValues),
     });
 

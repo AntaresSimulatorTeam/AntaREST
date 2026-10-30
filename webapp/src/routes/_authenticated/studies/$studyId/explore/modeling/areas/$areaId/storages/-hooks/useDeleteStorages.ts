@@ -64,7 +64,9 @@ function useDeleteStorages({ studyId, areaId }: StoragesParams) {
     onSuccess: (_, variables) => {
       const { storageIds } = variables;
 
-      // Remove constraint queries for each deleted storage
+      // Remove constraint queries for each deleted storage.
+      // Storage IDs are derived from the (normalized) name, so a re-created storage
+      // can reuse a deleted one's ID and would inherit its stale cached constraints.
       for (const storageId of storageIds) {
         queryClient.removeQueries({
           queryKey: storageKeys.constraintList(studyId, areaId, storageId),

@@ -14,7 +14,7 @@
 
 import DataTable from "@/components/DataTable";
 import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
-import type { RowData } from "@/components/DataTable/types";
+import type { MainRowData } from "@/components/DataTable/types";
 import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
 import { renewableKeys } from "@/queries/renewables/keys";
 import { renewableQueries } from "@/queries/renewables/queries";
@@ -116,7 +116,7 @@ function Renewables() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = (values: RowData) => {
+  const handleCreate = (values: MainRowData) => {
     createRenewableCluster.mutate({ values });
   };
 

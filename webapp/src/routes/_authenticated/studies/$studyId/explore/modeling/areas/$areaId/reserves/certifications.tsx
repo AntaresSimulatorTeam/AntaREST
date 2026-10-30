@@ -12,15 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import { reserveMutations } from "@/queries/reserves/mutations";
 import { reserveQueries } from "@/queries/reserves/queries";
 import type {
   ProductionType,
   Reserve,
   ReserveCertification,
 } from "@/services/api/studies/areas/reserves/types";
-import { Alert } from "@mui/material";
-import { useMutation, useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
+import { buildKey } from "@/utils/reactUtils";
+import { useSuspenseQueries } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useTransition } from "react";
 import { useTranslation } from "react-i18next";
@@ -31,6 +30,7 @@ import CertificationsTable, {
 import ProductionTypeSelect from "./-components/ProductionTypeSelect";
 import UpdateCertificationDrawer from "./-components/UpdateCertificationDrawer";
 import UpdateReserveAssetsDrawer from "./-components/UpdateReserveAssetsDrawer";
+import useUpdateReservesCertifications from "./-hooks/useUpdateReservesCertifications";
 import { DEFAULT_PRODUCTION_TYPE, PRODUCTION_TYPES } from "./-productionTypes";
 
 export const Route = createFileRoute(
@@ -42,7 +42,6 @@ export const Route = createFileRoute(
 function ReservesCertifications() {
   const { t } = useTranslation();
   const { studyId, areaId } = Route.useParams();
-  const queryClient = useQueryClient();
   const [productionType, setProductionType] = useState(DEFAULT_PRODUCTION_TYPE);
   // Switching type suspends on new queries: the transition keeps the current
   // table on screen (with its loading state) instead of the route fallback.
@@ -55,7 +54,7 @@ function ReservesCertifications() {
   const { labelKey, assetsQuery, defaultCertification } = PRODUCTION_TYPES[productionType];
 
   const [
-    { data: reservesEnabled },
+    { data: isReservesEnabled },
     { data: reserves, isFetching: isReservesFetching },
     { data: certifications },
     { data: assets },
@@ -68,15 +67,7 @@ function ReservesCertifications() {
     ],
   });
 
-  const updateMutation = useMutation({
-    ...reserveMutations.updateCertifications(studyId, areaId, productionType),
-    onSuccess: (updatedCertifications, { productionType }) => {
-      queryClient.setQueryData(
-        reserveQueries.certifications(studyId, areaId, productionType).queryKey,
-        updatedCertifications,
-      );
-    },
-  });
+  const updateCertifications = useUpdateReservesCertifications({ studyId, areaId, productionType });
 
   const rows = useMemo<ReserveRow[]>(() => {
     const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
@@ -149,12 +140,7 @@ function ReservesCertifications() {
       delete data[selectedReserve.id];
     }
 
-    const updatedCertifications = await updateMutation.mutateAsync({
-      studyId,
-      areaId,
-      productionType,
-      data,
-    });
+    const updatedCertifications = await updateCertifications.mutateAsync({ data });
 
     return Object.keys(updatedCertifications[selectedReserve.id] ?? {});
   };
@@ -174,12 +160,7 @@ function ReservesCertifications() {
       },
     };
 
-    const updatedCertifications = await updateMutation.mutateAsync({
-      studyId,
-      areaId,
-      productionType,
-      data,
-    });
+    const updatedCertifications = await updateCertifications.mutateAsync({ data });
 
     return updatedCertifications[reserveId]?.[assetId] ?? certification;
   };
@@ -190,25 +171,20 @@ function ReservesCertifications() {
 
   return (
     <>
-      {reservesEnabled === false && (
-        <Alert severity="warning" sx={{ mb: 1 }}>
-          {t("study.modeling.reserves.readOnly.alert")}
-        </Alert>
-      )}
       <CertificationsTable
         rows={rows}
         productionType={productionType}
         toolbarActions={
           <ProductionTypeSelect value={productionType} onChange={handleProductionTypeChange} />
         }
-        readOnly={!reservesEnabled}
+        readOnly={!isReservesEnabled}
         isLoading={isReservesFetching || isProductionTypePending}
         onReserveClick={handleReserveClick}
         onAssetClick={handleAssetClick}
       />
       {selectedReserve && (
         <UpdateReserveAssetsDrawer
-          key={`${productionType}/${selectedReserve.id}`}
+          key={buildKey(productionType, selectedReserve.id)}
           open={isAssetsDrawerOpen}
           reserveName={selectedReserve.name}
           label={t(labelKey)}
@@ -220,7 +196,7 @@ function ReservesCertifications() {
       )}
       {editingAsset && (
         <UpdateCertificationDrawer
-          key={`${productionType}/${editingAsset.id}`}
+          key={buildKey(productionType, editingAsset.id)}
           open={isUpdateDrawerOpen}
           productionType={productionType}
           assetName={editingAsset.name}

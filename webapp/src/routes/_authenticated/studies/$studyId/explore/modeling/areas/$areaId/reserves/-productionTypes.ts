@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { Options } from "@/components/fieldEditors/SelectFE";
 import i18n from "@/i18n";
 import { reserveKeys } from "@/queries/reserves/keys";
 import { storageQueries } from "@/queries/storages/queries";
@@ -28,7 +29,6 @@ import type {
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { queryOptions, type UseSuspenseQueryOptions } from "@tanstack/react-query";
-import type { TFunction } from "i18next";
 import StorageCertificationFields from "./-components/certificationFields/StorageCertificationFields";
 import ThermalCertificationFields from "./-components/certificationFields/ThermalCertificationFields";
 
@@ -170,7 +170,7 @@ export const PRODUCTION_TYPES: Record<ProductionType, ProductionTypeConfig> = {
 
 export const PRODUCTION_TYPE_OPTIONS = productionTypeSchema.options.map((value) => ({
   value,
-  label: (t: TFunction) => t(PRODUCTION_TYPES[value].labelKey),
-}));
+  label: (t) => t(PRODUCTION_TYPES[value].labelKey),
+})) satisfies Options<ProductionType>;
 
 export const DEFAULT_PRODUCTION_TYPE: ProductionType = "thermals";

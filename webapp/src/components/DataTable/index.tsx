@@ -20,7 +20,6 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import { Box, Button, Skeleton } from "@mui/material";
-import { type ToOptions } from "@tanstack/react-router";
 import {
   MaterialReactTable,
   MRT_ToggleFiltersButton,
@@ -37,43 +36,8 @@ import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import RouterLink from "../router/RouterLink";
 import CreateDialog from "./CreateDialog";
 import DuplicateDialog from "./DuplicateDialog";
-import type { RowData } from "./types";
+import type { DataTableProps, RowData } from "./types";
 import { generateUniqueValue, getDarkModeFixStyles, getTableOptionsForAlign } from "./utils";
-
-export interface DataTableProps<TData extends RowData> {
-  data: TData[];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  columns: Array<MRT_ColumnDef<TData, any>>;
-  /**
-   * Omit to disable grouping. When omitted, the group column and grouping
-   * behavior are removed and the create dialog skips the group field.
-   */
-  groups?: string[];
-  allowNewGroups?: boolean;
-  onCreate?: (values: RowData | (RowData & Partial<TData>)) => void;
-  /**
-   * Render a custom create dialog instead of the built-in one.
-   * Useful when creation requires fields the built-in dialog doesn't handle.
-   */
-  renderCreateDialog?: (props: {
-    open: boolean;
-    onClose: VoidFunction;
-    onSubmit: (values: RowData & Partial<TData>) => void;
-    existingNames: Array<RowData["name"]>;
-  }) => React.ReactNode;
-  onDuplicate?: (row: TData, newName: string) => void;
-  onDelete?: (rows: TData[]) => void;
-  onNameClick?: (row: TData) => void;
-  nameLinkOptions?: (row: TData) => ToOptions;
-  readOnly?: boolean;
-  isLoading?: boolean;
-  isSaving?: boolean;
-  deleteConfirmationMessage?: string | ((rows: TData[]) => string);
-  /**
-   * Extra actions rendered next to the built-in Add/Duplicate/Delete buttons.
-   */
-  toolbarActions?: React.ReactNode;
-}
 
 // Use ids to identify default columns (instead of `accessorKey`),
 // to have a unique identifier. It is more likely to have a duplicate
@@ -81,7 +45,7 @@ export interface DataTableProps<TData extends RowData> {
 const GROUP_COLUMN_ID = "_group";
 const NAME_COLUMN_ID = "_name";
 
-function DataTable<TData extends RowData>({
+function DataTable<TData extends RowData, TCreateSubmitData>({
   data,
   columns,
   groups,
@@ -97,7 +61,7 @@ function DataTable<TData extends RowData>({
   isSaving,
   deleteConfirmationMessage,
   toolbarActions,
-}: DataTableProps<TData>) {
+}: DataTableProps<TData, TCreateSubmitData>) {
   const { t } = useTranslation();
   const [openDialog, setOpenDialog] = useState<"add" | "duplicate" | "delete" | "">("");
   const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
@@ -152,7 +116,11 @@ function DataTable<TData extends RowData>({
                     textDecoration: "underline",
                   },
                 }}
-                onClick={() => onNameClick(row.original)}
+                onClick={(event) => {
+                  // Prevent row selection when clicking the name
+                  event.stopPropagation();
+                  onNameClick(row.original);
+                }}
               >
                 {renderedCellValue}
               </Box>
@@ -312,6 +280,11 @@ function DataTable<TData extends RowData>({
   const selectedRows = table.getSelectedRowModel().rows.map((row) => row.original);
   const selectedRow = selectedRows.length === 1 ? selectedRows[0] : null;
 
+  // Reset row selection if the table is read-only and there are selected rows
+  if (readOnly && selectedRows.length > 0) {
+    setRowSelection({});
+  }
+
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
@@ -321,10 +294,6 @@ function DataTable<TData extends RowData>({
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
-
-  const handleCreate = (values: RowData | (RowData & Partial<TData>)) => {
-    onCreate?.(values);
-  };
 
   const handleDuplicate = (newName: string) => {
     closeDialog();
@@ -358,11 +327,12 @@ function DataTable<TData extends RowData>({
     <>
       <MaterialReactTable table={table} />
       {openDialog === "add" &&
+        onCreate &&
         (renderCreateDialog ? (
           renderCreateDialog({
             open: true,
             onClose: closeDialog,
-            onSubmit: handleCreate,
+            onSubmit: onCreate,
             existingNames,
           })
         ) : (
@@ -372,7 +342,7 @@ function DataTable<TData extends RowData>({
             groups={groups}
             allowNewGroups={allowNewGroups}
             existingNames={existingNames}
-            onSubmit={handleCreate}
+            onSubmit={onCreate}
           />
         ))}
       {openDialog === "duplicate" && selectedRow && (
