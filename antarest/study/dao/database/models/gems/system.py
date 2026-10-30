@@ -70,11 +70,22 @@ GEMS_COMPONENT_PARAMETERS_TABLE = Table(
     Column("parameter_id", String(255), primary_key=True),
     Column("time_dependent", Boolean, nullable=False),
     Column("scenario_dependent", Boolean, nullable=False),
-    Column("value", Float, nullable=False),
+    # Contains the value of the float constant in case
+    Column("value", Float, nullable=True),
+    # Contains the id of the matrix in the matrix store in case (time_dependent, scenario_dependent) != (False, False)
+    Column("matrix_id", String(64), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id", "component_id"],
         ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
+    ),
+    CheckConstraint(
+        "(matrix_id IS NULL) = (NOT time_dependent AND NOT scenario_dependent)",
+        name="ck_gems_component_parameters_matrix_id_matches_dependent",
+    ),
+    CheckConstraint(
+        "(value IS NULL) =  (time_dependent OR scenario_dependent)",
+        name="ck_gems_component_parameters_value_matches_dependent",
     ),
 )
 

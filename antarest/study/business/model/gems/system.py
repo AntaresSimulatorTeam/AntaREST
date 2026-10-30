@@ -24,7 +24,7 @@ class _GemsParameters(AntaresBaseModel):
     id: str
     time_dependent: bool
     scenario_dependent: bool
-    value: float  # TODO: authorize string values when time_dependent and/or scenario_dependant is True
+    value: float | str
 
 
 class _GemsProperties(AntaresBaseModel):
@@ -40,8 +40,8 @@ class GemsComponent(AntaresBaseModel):
     id: str
     model: str
     scenario_group: str | None = None
-    parameters: List[_GemsParameters] | None = None
-    properties: List[_GemsProperties] | None = None
+    parameters: List[_GemsParameters] = []
+    properties: List[_GemsProperties] = []
 
 
 class GemsComponentConnection(AntaresBaseModel):
