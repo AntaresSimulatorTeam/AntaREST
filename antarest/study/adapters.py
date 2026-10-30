@@ -54,6 +54,10 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
             output_service.archive_output(study_id, output_id)
 
         @override
+        def on_study_unarchived(self, study_id: str) -> None:
+            output_service.on_study_unarchived(study_id)
+
+        @override
         def get_disk_usage(self, study_id: str, output_id: str) -> int:
             return output_service.get_disk_usage(study_id, output_id)
 

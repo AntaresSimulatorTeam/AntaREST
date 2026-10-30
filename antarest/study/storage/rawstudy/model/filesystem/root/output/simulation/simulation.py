@@ -12,7 +12,6 @@
 from typing_extensions import override
 
 from antarest.output.model.output_type import GEMS_VIEWS_DIR
-from antarest.study.business.model.config.general_model import Mode
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig, Simulation
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.ini_file_node import IniFileNode
@@ -83,24 +82,20 @@ class OutputSimulation(FolderNode):
                     self.matrix_storage_context, self.config.next_file(GEMS_VIEWS_DIR)
                 )
 
-            if self.simulation.mode in {Mode.ECONOMY, Mode.EXPANSION}:
-                children["economy"] = OutputSimulationMode(
-                    self.matrix_storage_context,
-                    self.config.next_file("economy"),
-                    self.simulation,
-                )
-            elif self.simulation.mode == Mode.ADEQUACY:
-                children["adequacy"] = OutputSimulationMode(
-                    self.matrix_storage_context,
-                    self.config.next_file("adequacy"),
-                    self.simulation,
-                )
-            else:
-                raise NotImplementedError(f"Unknown mode {self.simulation.mode}")
+            for simulation_mode in ["economy", "adequacy"]:
+                if (self.config.path / simulation_mode).exists():
+                    children[simulation_mode] = OutputSimulationMode(
+                        self.matrix_storage_context,
+                        self.config.next_file(simulation_mode),
+                        self.simulation,
+                    )
 
             if self.simulation.xpansion:
                 children["lp"] = Lp(self.matrix_storage_context, self.config.next_file("lp"))
                 children["expansion"] = Xpansion(self.matrix_storage_context, self.config.next_file("expansion"))
-                children["sensitivity"] = Sensitivity(self.matrix_storage_context, self.config.next_file("sensitivity"))
+                if (self.config.path / "sensitivity").exists():
+                    children["sensitivity"] = Sensitivity(
+                        self.matrix_storage_context, self.config.next_file("sensitivity")
+                    )
 
         return children

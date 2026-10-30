@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import logging
 import shutil
+import tempfile
 import zipfile
 from abc import ABC, abstractmethod
 from collections.abc import Iterator, Sequence
@@ -23,6 +24,7 @@ import pandas as pd
 import polars as pl
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyExists,
@@ -68,6 +70,7 @@ from antarest.output.storage.output_storage import (
     OutputSettings,
     OutputStorageType,
 )
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
     STUDY_VERSION_8,
@@ -221,12 +224,14 @@ class AbstractFileOutputStorage(IOutputStorage):
         self,
         outputs_provider: IFileOutputsProvider,
         cache: ICache,
+        config: Config,
         remote_executor: IRemoteExecutor,
         repository: FileOutputRepository,
         storage_type: OutputStorageType,
     ) -> None:
         self._outputs_provider = outputs_provider
         self._cache = cache
+        self._config = config
         self._remote_executor = remote_executor
         self._repository = repository
         self._storage_type = storage_type
@@ -286,7 +291,16 @@ class AbstractFileOutputStorage(IOutputStorage):
 
             # Moving temporary directory to actual directory
             output_name = extract_output_name(tmp_output_dir, output_name_suffix)
-            tmp_output_dir.rename(_output_path(study_outputs.outputs_path, output_name))
+            try:
+                tmp_output_dir.rename(_output_path(study_outputs.outputs_path, output_name))
+            except OSError as e:
+                # Happens for Xpansion sensitivity simulation
+                if (tmp_output_dir / "sensitivity").is_dir():
+                    # Note: This fix only works for 1 sensitivity run on the same output which will cover 99% of cases
+                    output_name = f"{output_name}-sensitivity"
+                    tmp_output_dir.rename(_output_path(study_outputs.outputs_path, output_name))
+                else:
+                    raise e
 
             remove_from_cache(self._cache, study_id)
 
@@ -429,29 +443,28 @@ class AbstractFileOutputStorage(IOutputStorage):
 
     @override
     def archive_study_output(self, study_id: str, output_id: str) -> None:
-        """Archive a study output."""
+        """Compress to a temporary ZIP before replacing the source with the archive."""
         study_outputs = self._outputs_provider.get_outputs(study_id)
         if _is_output_archived(study_outputs.outputs_path, output_id):
             raise OutputAlreadyArchived(output_id)
 
         output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
-        # If exists, we assume it's a valid archive.
-        if not archived_output_path.is_file():
-            archive_dir(
-                output_path,
-                archived_output_path,
-                archive_format=ArchiveFormat.ZIP,
-            )
-        shutil.rmtree(output_path)
+        with tempfile.TemporaryDirectory(dir=output_path.parent, prefix="~archive-", suffix=".tmp") as tmp_dir:
+            tmp_archive = Path(tmp_dir) / "output.zip"
+            archive_dir(output_path, tmp_archive, archive_format=ArchiveFormat.ZIP)
 
-        remove_from_cache(self._cache, study_id)
+            tmp_archive.replace(archived_output_path)
+            output_path.rename(Path(tmp_dir) / "source")
+            remove_from_cache(self._cache, study_id)
 
     def _remote_unarchive(self, output_id: str, study_outputs: FileStudyOutputs) -> None:
         dest, src = _output_paths(study_outputs.outputs_path, output_id)
-        self._remote_executor.execute_remote_task(
+        result = self._remote_executor.execute_remote_task(
             f"unarchive_{study_outputs.study_workspace}",
             ArchiveTaskArgs(src=str(src), dest=str(dest)).model_dump(mode="json"),
         )
+        if not result.success:
+            raise RuntimeError(result.message)
 
     # noinspection SpellCheckingInspection
     @override
@@ -471,8 +484,6 @@ class AbstractFileOutputStorage(IOutputStorage):
             study_outputs = self._outputs_provider.get_outputs(study_id)
             output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
             try:
-                # Note: here we don't remove the archived version, allows to speed up a subsequent archival,
-                #       but at some disk usage cost for unarchived studies.
                 unzip(output_path, archived_output_path)
                 remove_from_cache(self._cache, study_id)
             except Exception as e:
@@ -480,8 +491,6 @@ class AbstractFileOutputStorage(IOutputStorage):
                     f"Failed to unarchive study {study_id} output {output_id}",
                     exc_info=e,
                 )
-                if output_path.exists() and output_path.is_dir():
-                    shutil.rmtree(output_path, ignore_errors=True)
                 raise
 
     @override
@@ -489,7 +498,27 @@ class AbstractFileOutputStorage(IOutputStorage):
         """
         Digest of the output.
         """
-        output_path = self._outputs_provider.get_outputs(study_id).outputs_path / output_id
+        outputs_root = self._outputs_provider.get_outputs(study_id).outputs_path
+
+        # First, handle the case where the output is archived
+        if _is_output_archived(outputs_root, output_id):
+            output = parse_single_output(outputs_root, output_id)
+            if not output.synthesis:
+                raise DigestNotFoundError(study_id, output_id)
+            mode_dir_name = "adequacy" if output.mode == Mode.ADEQUACY else "economy"
+            archive_path = _archived_output_path(outputs_root, output_id)
+            with tempfile.TemporaryDirectory(dir=self._config.storage.tmp_dir) as tmpdir:
+                tmp_dir = Path(tmpdir)
+                with zipfile.ZipFile(archive_path) as zip_obj:
+                    try:
+                        zip_obj.extract(f"{mode_dir_name}/mc-all/grid/digest.txt", tmp_dir)
+                    except KeyError:
+                        raise DigestNotFoundError(study_id, output_id)
+
+                return DigestSynthesis.parse_file_for_ui(tmp_dir / mode_dir_name / "mc-all" / "grid" / "digest.txt")
+
+        # Then handle the nominal case where the output is not archived
+        output_path = outputs_root / output_id
         mode_dir = find_mode_dir(output_path)
         file_path = mode_dir / "mc-all" / "grid" / "digest.txt"
         if not file_path.exists():

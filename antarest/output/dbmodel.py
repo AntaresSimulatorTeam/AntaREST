@@ -9,7 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import BigInteger, ForeignKey, String
+from datetime import datetime
+
+from sqlalchemy import BigInteger, DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.persistence import Base
@@ -19,13 +21,12 @@ class Output(Base):
     """
     Metadata for one output.
 
-    Currently only used to cache the disk space used by the output, but usage may be extended in the future.
-
     Attributes:
         study_id: ID of the study to which the output belongs.
         output_id: ID of the output.
+        last_unarchiving_date: Last successful unarchiving date in naive UTC, if any.
         disk_space_bytes: Disk space used by the output, in bytes. Used as a cached value, should be invalidated
-                          when an operation changing the actual size is performed (archival ...)
+                          by setting it to None when the actual size changes (archival ...).
     """
 
     __tablename__ = "output"
@@ -37,4 +38,5 @@ class Output(Base):
         nullable=False,
     )
     output_id: Mapped[str] = mapped_column(String(), primary_key=True, nullable=False)
-    disk_space_bytes: Mapped[int] = mapped_column(BigInteger(), nullable=False)
+    last_unarchiving_date: Mapped[datetime | None] = mapped_column(DateTime(), nullable=True)
+    disk_space_bytes: Mapped[int | None] = mapped_column(BigInteger(), nullable=True)

@@ -112,7 +112,14 @@ def extract_archive_from_path(archive_path: Path, target_dir: Path) -> None:
 
 def unzip(dir_path: Path, zip_path: Path) -> None:
     """Extract an archive to ``dir_path`` and delete the archive file afterwards."""
-    extract_archive_from_path(zip_path, dir_path)
+    dir_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=dir_path.parent, prefix="~unarchive-", suffix=".tmp") as tmp_dir:
+        extracted_path = Path(tmp_dir) / "output"
+        extracted_path.mkdir()
+        extract_archive_from_path(zip_path, extracted_path)
+        if dir_path.exists():
+            dir_path.rmdir()
+        extracted_path.rename(dir_path)
     zip_path.unlink()
 
 

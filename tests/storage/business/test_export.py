@@ -223,7 +223,7 @@ def test_export_output(tmp_path: Path) -> None:
             return FileStudyOutputs(outputs_path=root / "output", study_workspace=DEFAULT_WORKSPACE_NAME)
 
     output_storage = InStudyFileOutputStorage(
-        OutputsProvider(), cache=Mock(), remote_executor=Mock(), repository=Mock()
+        OutputsProvider(), cache=Mock(), config=Mock(), remote_executor=Mock(), repository=Mock()
     )
 
     output_storage.export_output(study.id, output_id, export_path)
