@@ -18,10 +18,12 @@ import Fieldset from "@/components/Fieldset";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import semver from "semver";
 import {
   getCompatibilityParamsFormFields,
   setCompatibilityParamsFormFields,
   HYDRO_PMAX_OPTIONS,
+  HYDRO_RULE_CURVES_OPTIONS,
 } from "./-utils";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import useStudy from "../../../-hooks/useStudy";
@@ -54,12 +56,22 @@ function Compatibility() {
       >
         {({ control }) => (
           <Fieldset legend={t("study.configuration.compatibility")}>
-            <SelectFE
-              label={t("study.configuration.compatibility.hydroPmax")}
-              options={HYDRO_PMAX_OPTIONS}
-              name="hydroPmax"
-              control={control}
-            />
+            {semver.gte(study.version, "9.2.0") && (
+              <SelectFE
+                label={t("study.configuration.compatibility.hydroPmax")}
+                options={HYDRO_PMAX_OPTIONS}
+                name="hydroPmax"
+                control={control}
+              />
+            )}
+            {semver.gte(study.version, "10.2.0") && (
+              <SelectFE
+                label={t("study.configuration.compatibility.hydroRuleCurves")}
+                options={HYDRO_RULE_CURVES_OPTIONS}
+                name="hydroRuleCurves"
+                control={control}
+              />
+            )}
           </Fieldset>
         )}
       </Form>

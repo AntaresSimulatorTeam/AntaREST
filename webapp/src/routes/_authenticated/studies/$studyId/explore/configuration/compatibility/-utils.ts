@@ -26,12 +26,18 @@ export const HYDRO_PMAX_OPTIONS: Options<string> = ["hourly", "daily"].map((valu
   value,
 }));
 
+export const HYDRO_RULE_CURVES_OPTIONS: Options<string> = ["single", "scenarized"].map((value) => ({
+  label: (t) => t(`study.configuration.compatibility.hydroRuleCurves.${value}`),
+  value,
+}));
+
 ////////////////////////////////////////////////////////////////
 // Types
 ////////////////////////////////////////////////////////////////
 
 export interface CompatibilityParamsFormFields {
   hydroPmax?: string;
+  hydroRuleCurves?: string;
 }
 
 ////////////////////////////////////////////////////////////////
