@@ -9,11 +9,15 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Annotated, TypeAlias
 
 from pydantic import ConfigDict, Field
 
 from antarest.core.model import GemsId
 from antarest.core.serde import AntaresBaseModel
+
+Scenario: TypeAlias = Annotated[int, Field(ge=0)]
+TimeSerieIndex: TypeAlias = Annotated[int, Field(ge=1)]
 
 
 class GemsScBuilderMapping(AntaresBaseModel):
@@ -21,8 +25,8 @@ class GemsScBuilderMapping(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    scenario: int = Field(ge=0)
-    time_series_index: int = Field(ge=1)
+    scenario: Scenario
+    time_series_index: TimeSerieIndex
 
 
 class GemsScenarioBuilder(AntaresBaseModel):
