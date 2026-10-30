@@ -65,6 +65,13 @@ def test_output_raw_files(
         assert res.status_code == 404, res.json()
         assert res.json()["exception"] == "OutputFileNotFound"
 
+    # Path containing a new line, which could forge log entries
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/outputs/{output_id}/raw-files/content",
+        params={"path": "areas.txt\nINFO forged log entry"},
+    )
+    assert res.status_code == 422, res.json()
+
     # Unknown output
     res = client.get(f"/v1/studies/{internal_study_id}/outputs/unknown/raw-files")
     assert res.status_code == 404, res.json()

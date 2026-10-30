@@ -252,7 +252,7 @@ def create_output_routes() -> APIRouter:
         tmp_export_file: TmpExportFileDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
-        path: Annotated[str, Query(description="Path of the file, relative to the output root")],
+        path: Annotated[SanitizedStr, Query(description="Path of the file, relative to the output root")],
     ) -> FileResponse:
         logger.info(f"Fetching raw file '{path}' of the output {output_id} for study {uuid}")
         file_path = PurePosixPath(path)
