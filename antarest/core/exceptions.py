@@ -422,6 +422,18 @@ class UnsupportedOperationOnArchivedOutput(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
+class UnsupportedOperationOnOutputStorage(HTTPException):
+    """
+    Exception raised when an operation is not supported by the storage of an output.
+    """
+
+    def __init__(self, output_id: str, operation: str, storage_type: str) -> None:
+        message = (
+            f"You cannot {operation} of the output '{output_id}'. This is not supported for {storage_type} outputs."
+        )
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class OutputAlreadyUnarchived(HTTPException):
     """
     Exception raised when a user wants to unarchive an output which is already unarchived.

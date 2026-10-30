@@ -26,6 +26,7 @@ from antarest.core.exceptions import (
     OutputAlreadyExists,
     OutputNotFound,
     ShouldNotHappenException,
+    UnsupportedOperationOnOutputStorage,
 )
 from antarest.core.serde.ini_reader import IniReader
 from antarest.core.utils.archives import (
@@ -449,13 +450,11 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def list_raw_files(self, study_id: str, output_id: str) -> list[PurePosixPath]:
-        # todo: implement this
-        raise NotImplementedError()
+        raise UnsupportedOperationOnOutputStorage(output_id, "access the raw files", self.storage_type)
 
     @override
     def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath, target: Path) -> None:
-        # todo: implement this
-        raise NotImplementedError()
+        raise UnsupportedOperationOnOutputStorage(output_id, "access the raw files", self.storage_type)
 
     @override
     def get_matrix_aggregation_result(

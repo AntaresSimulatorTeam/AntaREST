@@ -560,6 +560,15 @@ def test_raw_files(output_storage: IOutputStorage, tmp_path: Path) -> None:
     with pytest.raises(OutputNotFound):
         output_storage.read_raw_file("STA-mini", "non-existent", PurePosixPath("about-the-study/areas.txt"), target)
 
+    # Output ids that are not a direct child of the study outputs folder
+    for output_id in ["..", ".", ""]:
+        with pytest.raises(OutputNotFound):
+            output_storage.list_raw_files("STA-mini", output_id)
+        with pytest.raises(OutputNotFound):
+            output_storage.read_raw_file(
+                "STA-mini", output_id, PurePosixPath("20201014-1427eco/info.antares-output"), target
+            )
+
 
 def test_get_logs(output_storage: IOutputStorage, tmp_path: Path) -> None:
     # Will write fake logs to underlying output dir

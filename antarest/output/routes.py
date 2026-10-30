@@ -236,6 +236,10 @@ def create_output_routes() -> APIRouter:
     @bp.get(
         "/studies/{uuid}/outputs/{output_id}/raw-files",
         summary="Fetches the tree structure of all the files of a given output",
+        responses={
+            400: {"description": "The output is archived, or its storage does not give access to raw files"},
+            404: {"description": "The output does not exist"},
+        },
     )
     def get_output_raw_files(
         output_service: OutputServiceDep, uuid: UuidStr, output_id: SanitizedStr
@@ -246,6 +250,10 @@ def create_output_routes() -> APIRouter:
     @bp.get(
         "/studies/{uuid}/outputs/{output_id}/raw-files/content",
         summary="Fetches the content of a given output file",
+        responses={
+            400: {"description": "The output is archived, or its storage does not give access to raw files"},
+            404: {"description": "The output or the file does not exist"},
+        },
     )
     def get_output_raw_file_content(
         output_service: OutputServiceDep,

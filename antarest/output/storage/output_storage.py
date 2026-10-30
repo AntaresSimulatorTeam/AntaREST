@@ -320,6 +320,10 @@ class IOutputStorage(ABC):
         """
         Lists all the files of the output, as written by the simulator, relative to the output root.
         The output must not be archived.
+
+        Raises:
+            OutputNotFound: if the unarchived output does not exist.
+            UnsupportedOperationOnOutputStorage: if the storage does not give access to raw files.
         """
 
     @abstractmethod
@@ -329,7 +333,9 @@ class IOutputStorage(ABC):
         The output must not be archived.
 
         Raises:
+            OutputNotFound: if the unarchived output does not exist.
             OutputFileNotFound: if the file does not exist in the output.
+            UnsupportedOperationOnOutputStorage: if the storage does not give access to raw files.
         """
 
     @abstractmethod
