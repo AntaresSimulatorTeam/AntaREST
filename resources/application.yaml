@@ -27,7 +27,7 @@ launcher:
       name: my_local
       type: local
       binaries:
-        700: /path/to/700
+        700: path/to/700
       enable_nb_cores_detection: true
 
 # See https://fastapi.tiangolo.com/advanced/behind-a-proxy/
