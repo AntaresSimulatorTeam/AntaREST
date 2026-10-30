@@ -102,7 +102,7 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
 
     def _fill_missing_years(self, mapping: ScenarioBuilderMapping) -> list[GemsScBuilderMapping]:
         """
-        GEMS scenario builder
+        GEMS scenario builder has default values for missing years, we should initialize them for the front-end
         """
         result = []
         simulation_nb_years = self.get_impl().get_general_config().nb_years
