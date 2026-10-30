@@ -22,6 +22,7 @@ import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudySynthesis } from "@/redux/selectors";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { RENEWABLE_GROUPS } from "@/services/api/studies/areas/renewables/constants";
+import { buildKey } from "@/utils/reactUtils";
 import { Box } from "@mui/material";
 import { useIsMutating } from "@tanstack/react-query";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
@@ -140,7 +141,7 @@ function Renewables() {
     <>
       <RefetchErrorAlert isRefetchError={isRefetchError} error={error} />
       <DataTable
-        key={areaId}
+        key={buildKey(params)}
         data={clustersWithCapacity}
         columns={columns}
         groups={[...RENEWABLE_GROUPS]}
