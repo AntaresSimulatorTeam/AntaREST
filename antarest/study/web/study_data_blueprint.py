@@ -2476,4 +2476,17 @@ def create_study_data_routes() -> APIRouter:
             study_interface, scenario_name, data
         )
 
+    @bp.delete(
+        "/studies/{uuid}/gems/scenario-builder",
+        summary="Deletes the given scenario from the gems scenario builder for a given study",
+    )
+    def delete_scenario_from_gems_scenario_builder(
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: SanitizedStr
+    ) -> None:
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        study_service.gems_scenario_builder_manager.delete_scenario_from_gems_scenario_builder(
+            study_interface, scenario_name
+        )
+
     return bp
