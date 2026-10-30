@@ -93,7 +93,9 @@ class InputHydroCommonCapacity(FolderNode):
             general_data = IniReader().read(
                 self.config.study_path / "settings/generaldata.ini", section="compatibility", option="hydro-pmax"
             )
-            hourly_pmax = parse_compatibility_parameters(general_data).hydro_pmax == HydroPmax.HOURLY
+            hourly_pmax = (
+                parse_compatibility_parameters(self.config.version, general_data).hydro_pmax == HydroPmax.HOURLY
+            )
 
         children: TREE = {}
         for info in MATRICES_INFO:
