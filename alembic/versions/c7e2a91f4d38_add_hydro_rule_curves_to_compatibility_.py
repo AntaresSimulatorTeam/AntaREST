@@ -1,7 +1,7 @@
 """add_hydro_rule_curves_to_compatibility_parameters
 
 Revision ID: c7e2a91f4d38
-Revises: b60aab4df757
+Revises: 193aa1d7b5ad
 Create Date: 2026-10-29 10:00:00.000000
 
 """
@@ -12,7 +12,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "c7e2a91f4d38"
-down_revision = "b60aab4df757"
+down_revision = "193aa1d7b5ad"
 branch_labels = None
 depends_on = None
 

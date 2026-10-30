@@ -841,8 +841,8 @@ class TestConvertHydroPmax:
         assert dao.get_compatibility_parameters().hydro_pmax == HydroPmax.DAILY
 
 
-def test_convert_hydro_rule_curves(db_dao_920: DatabaseStudyDao) -> None:
-    dao = db_dao_920
+def test_convert_hydro_rule_curves(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
     assert dao.get_compatibility_parameters().hydro_rule_curves == HydroRuleCurves.SINGLE
 
     dao.convert_hydro_rule_curves(HydroRuleCurves.SINGLE)

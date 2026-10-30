@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing import Any
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
@@ -19,6 +20,7 @@ from antarest.study.business.model.config.compatibility_parameters_model import 
     CompatibilityParameters,
     HydroPmax,
     HydroRuleCurves,
+    initialize_compatibility_parameters,
 )
 
 
@@ -36,10 +38,11 @@ class CompatibilityParametersFileData(AntaresBaseModel):
         return cls.model_validate(parameters.model_dump())
 
 
-def parse_compatibility_parameters(data: dict[str, Any]) -> CompatibilityParameters:
+def parse_compatibility_parameters(version: StudyVersion, data: dict[str, Any]) -> CompatibilityParameters:
     # Extract the compatibility section if it exists, otherwise use empty dict
     compatibility_data = data.get("compatibility", {})
     parameters = CompatibilityParametersFileData.model_validate(compatibility_data).to_model()
+    initialize_compatibility_parameters(parameters, version)
     return parameters
 
 
