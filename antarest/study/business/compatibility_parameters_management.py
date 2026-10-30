@@ -12,11 +12,11 @@
 from antarest.study.business.model.config.compatibility_parameters_model import (
     CompatibilityParameters,
     CompatibilityParametersUpdate,
-    validate_compatibility_parameters_against_version,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
 from antarest.study.storage.variantstudy.model.command.convert_hydro_rule_curves import ConvertHydroRuleCurves
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -36,27 +36,23 @@ class CompatibilityParamsManager:
         """
         Update Compatibility parameters values from the webapp form
         """
-        validate_compatibility_parameters_against_version(study.version, parameters)
-
+        compat_params_commands: list[ICommand] = []
         if parameters.hydro_pmax is not None:
-            study.add_commands(
-                [
-                    ConvertHydroPmax(
-                        hydro_pmax=parameters.hydro_pmax,
-                        command_context=self._command_context,
-                        study_version=study.version,
-                    )
-                ]
+            compat_params_commands.append(
+                ConvertHydroPmax(
+                    hydro_pmax=parameters.hydro_pmax,
+                    command_context=self._command_context,
+                    study_version=study.version,
+                )
             )
 
         if parameters.hydro_rule_curves is not None:
-            study.add_commands(
-                [
-                    ConvertHydroRuleCurves(
-                        hydro_rule_curves=parameters.hydro_rule_curves,
-                        command_context=self._command_context,
-                        study_version=study.version,
-                    )
-                ]
+            compat_params_commands.append(
+                ConvertHydroRuleCurves(
+                    hydro_rule_curves=parameters.hydro_rule_curves,
+                    command_context=self._command_context,
+                    study_version=study.version,
+                )
             )
+        study.add_commands(compat_params_commands)
         return self.get_compatibility_parameters(study)

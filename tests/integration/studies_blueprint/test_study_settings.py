@@ -519,7 +519,7 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
         json={"hydroRuleCurves": "scenarized"},
     )
     assert res.status_code == 422
-    assert res.json()["description"] == "Hydro rule curves cannot be set to scenarized before study version 10.2"
+    assert "Hydro rule curves cannot be set to scenarized before study version 10.2" in res.json()["description"]
 
 
 def test_compatibility_settings_10_2_study(client: TestClient, admin_access_token: str) -> None:

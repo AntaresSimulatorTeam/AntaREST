@@ -27,7 +27,7 @@ launcher:
       name: my_local
       type: local
       binaries:
-        1020: /home/rtei-beg-see-dp/ANTARES-DEV/simulator_binaries/antares-10.2.0-Ubuntu-22.04/bin/antares-solver
+        700: /path/to/700
       enable_nb_cores_detection: true
 
 # See https://fastapi.tiangolo.com/advanced/behind-a-proxy/

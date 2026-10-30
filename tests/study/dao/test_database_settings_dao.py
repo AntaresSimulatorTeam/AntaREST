@@ -169,7 +169,9 @@ def test_compatibility_parameters(db_session: Session, matrix_service: ISimpleMa
 
 def test_compatibility_parameters_study_version_10_2(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
     dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_10_2)
-    assert dao.get_compatibility_parameters() == CompatibilityParameters(hydro_rule_curves=HydroRuleCurves.SINGLE)
+    assert dao.get_compatibility_parameters() == CompatibilityParameters(
+        hydro_rule_curves=HydroRuleCurves.SINGLE, hydro_pmax=HydroPmax.DAILY
+    )
     new_parameters = CompatibilityParameters(hydro_pmax=HydroPmax.HOURLY, hydro_rule_curves=HydroRuleCurves.SCENARIZED)
     dao.save_compatibility_parameters(new_parameters)
     assert dao.get_compatibility_parameters() == new_parameters

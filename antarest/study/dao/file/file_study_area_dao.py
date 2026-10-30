@@ -441,9 +441,6 @@ class FileStudyAreaDao(AreaDao):
                 study_data.tree.delete(["input", "hydro", "series", area_id, "maxHourlyPumpPower"])
                 study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyGenEnergy_{area_id}"])
                 study_data.tree.delete(["input", "hydro", "common", "capacity", f"maxDailyPumpEnergy_{area_id}"])
-
-        if study_version >= STUDY_VERSION_10_2:
-            with contextlib.suppress(ChildNotFoundError):
                 study_data.tree.delete(["input", "hydro", "series", area_id, "maxDailyReservoirLevels"])
                 study_data.tree.delete(["input", "hydro", "series", area_id, "minDailyReservoirLevels"])
                 study_data.tree.delete(["input", "hydro", "series", area_id, "avgDailyReservoirLevels"])
