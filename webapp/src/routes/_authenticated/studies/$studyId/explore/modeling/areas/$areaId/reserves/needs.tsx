@@ -17,13 +17,15 @@ import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/Se
 import EmptyView from "@/components/page/EmptyView";
 import { reserveQueries } from "@/queries/reserves/queries";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
-import { sortByProp } from "@/services/utils";
+import { sortByName } from "@/services/utils";
+import { buildKey } from "@/utils/reactUtils";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { Alert, Box, Stack } from "@mui/material";
+import { Box } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import useReserves from "./-hooks/useReserves";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/needs",
@@ -31,25 +33,24 @@ export const Route = createFileRoute(
   component: ReservesNeeds,
 });
 
-function getReserveIds(reserves: Reserve[]) {
-  return sortByProp("id", reserves).map(({ id }) => id);
+function reservesToOptions(reserves: Reserve[]) {
+  return sortByName(reserves).map(({ id, name }) => ({ value: id, label: name }));
 }
 
 function ReservesNeeds() {
   const { t } = useTranslation();
-  const { studyId, areaId } = Route.useParams();
+  const params = Route.useParams();
+  const { studyId, areaId } = params;
+  const { data: reserveOptions } = useReserves({ ...params, select: reservesToOptions });
+  const { data: isReservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
+  const [selectedReserveId, setSelectedReserveId] = useState(() => reserveOptions[0]?.value ?? "");
 
-  const { data: reserveIds } = useSuspenseQuery({
-    ...reserveQueries.list(studyId, areaId),
-    select: getReserveIds,
-  });
-
-  const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
-
-  const [selectedReserveId, setSelectedReserveId] = useState(() => reserveIds[0] ?? "");
-
-  if (reserveIds.length > 0 && !reserveIds.includes(selectedReserveId)) {
-    setSelectedReserveId(reserveIds[0] ?? "");
+  // Ensure the selected reserve ID is valid
+  if (
+    reserveOptions.length > 0 &&
+    !reserveOptions.some(({ value }) => value === selectedReserveId)
+  ) {
+    setSelectedReserveId(reserveOptions[0].value);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -64,34 +65,29 @@ function ReservesNeeds() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (reserveIds.length === 0) {
+  if (reserveOptions.length === 0) {
     return <EmptyView icon={GridOffIcon} title={t("global.noData")} />;
   }
 
   return (
-    <Stack direction="column" spacing={1} sx={{ height: 1 }}>
-      {reservesEnabled === false && (
-        <Alert severity="warning" sx={{ mb: 1 }}>
-          {t("study.modeling.reserves.readOnly.alert")}
-        </Alert>
-      )}
+    <>
       <SelectFE
         label={t("study.modeling.reserves.needs.select")}
         value={selectedReserveId}
-        options={reserveIds}
+        options={reserveOptions}
         onChange={handleChange}
         size="extra-small"
         sx={{ minWidth: 200, maxWidth: 300 }}
       />
       <Box sx={{ flex: 1, minHeight: 0 }}>
         <Matrix
-          key={`${areaId}-${selectedReserveId}`}
+          key={buildKey(params, selectedReserveId)}
           studyId={studyId}
           url={`input/reserves/${areaId}/${selectedReserveId}`}
           filterKey="reserves.needs"
-          readOnly={!reservesEnabled}
+          readOnly={!isReservesEnabled}
         />
       </Box>
-    </Stack>
+    </>
   );
 }

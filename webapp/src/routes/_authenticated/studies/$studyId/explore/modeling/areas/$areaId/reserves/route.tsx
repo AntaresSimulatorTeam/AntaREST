@@ -14,7 +14,9 @@
 
 import TabsView from "@/components/page/TabsView";
 import { reserveQueries } from "@/queries/reserves/queries";
-import { createFileRoute, linkOptions } from "@tanstack/react-router";
+import { Alert, Stack } from "@mui/material";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, linkOptions, Outlet } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute(
@@ -30,6 +32,8 @@ export const Route = createFileRoute(
 function ReservesLayout() {
   const { t } = useTranslation();
   const params = Route.useParams();
+  const { studyId } = params;
+  const { data: isReservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
 
   return (
     <TabsView
@@ -67,6 +71,16 @@ function ReservesLayout() {
           }),
         },
       ]}
+      renderOutlet={() => (
+        <Stack direction="column" spacing={1} sx={{ height: 1 }}>
+          {!isReservesEnabled && (
+            <Alert severity="warning" sx={{ mb: 1 }}>
+              {t("study.modeling.reserves.readOnly.alert")}
+            </Alert>
+          )}
+          <Outlet />
+        </Stack>
+      )}
     />
   );
 }

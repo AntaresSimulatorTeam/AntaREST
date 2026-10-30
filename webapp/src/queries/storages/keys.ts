@@ -13,9 +13,9 @@
  */
 
 import type { StorageParams } from "@/services/api/studies/areas/storages/types";
+import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { areaKeys } from "../areas/keys";
-import type { Study } from "@/services/api/studies/types";
 
 export const storageKeys = {
   all: () => [...areaKeys.all(), "storages"],
@@ -25,8 +25,8 @@ export const storageKeys = {
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...storageKeys.list(studyId, areaId), "createStorage"];
   },
-  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
-    return [...storageKeys.list(studyId, areaId), "updateStorage"];
+  update: (studyId: Study["id"], areaId: AreaWithId["id"], storageId: Storage["id"]) => {
+    return [...storageKeys.list(studyId, areaId), "updateStorage", { storageId }];
   },
   duplicate: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...storageKeys.list(studyId, areaId), "duplicateStorage"];

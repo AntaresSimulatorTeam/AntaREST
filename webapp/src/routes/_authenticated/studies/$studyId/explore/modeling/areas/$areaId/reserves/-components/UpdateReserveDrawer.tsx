@@ -12,20 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import FormDrawer from "@/components/FormDrawer";
 import NumberFE from "@/components/fieldEditors/NumberFE";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { reserveTypeSchema } from "@/services/api/studies/areas/reserves/schemas";
-import type {
-  Reserve,
-  ReserveType,
-  UpdateReserveData,
-} from "@/services/api/studies/areas/reserves/types";
+import FormDrawer from "@/components/FormDrawer";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { RESERVE_TYPES } from "@/services/api/studies/areas/reserves/constants";
+import type { Reserve, ReserveType } from "@/services/api/studies/areas/reserves/types";
 import { validateNumber } from "@/utils/validation/number";
 import EditIcon from "@mui/icons-material/Edit";
 import { useTranslation } from "react-i18next";
+import useUpdateReserve from "../-hooks/useUpdateReserve";
+import useArea from "../../-hooks/useArea";
 
 interface UpdateReserveValues {
   type: ReserveType;
@@ -40,20 +39,24 @@ interface Props {
   open: boolean;
   onClose: VoidFunction;
   reserve: Reserve;
-  onSubmit: (values: UpdateReserveData) => Promise<void>;
 }
 
-const RESERVE_TYPES = reserveTypeSchema.options;
-
-function UpdateReserveDrawer({ open, onClose, reserve, onSubmit }: Props) {
+function UpdateReserveDrawer({ open, onClose, reserve }: Props) {
+  const study = useStudy();
+  const area = useArea();
   const { t } = useTranslation();
+  const updateReserve = useUpdateReserve({
+    studyId: study.id,
+    areaId: area.id,
+    reserveId: reserve.id,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<UpdateReserveValues>) => {
-    return onSubmit(dirtyValues);
+    return updateReserve.mutateAsync({ data: dirtyValues });
   };
 
   ////////////////////////////////////////////////////////////////

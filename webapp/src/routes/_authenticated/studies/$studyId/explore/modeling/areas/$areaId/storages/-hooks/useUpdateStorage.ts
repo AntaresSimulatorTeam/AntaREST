@@ -14,16 +14,16 @@
 
 import { storageMutations } from "@/queries/storages/mutations";
 import { storageQueries } from "@/queries/storages/queries";
-import type { StoragesParams } from "@/services/api/studies/areas/storages/types";
+import type { StorageParams } from "@/services/api/studies/areas/storages/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-function useUpdateStorage({ studyId, areaId }: StoragesParams) {
+function useUpdateStorage({ studyId, areaId, storageId }: StorageParams) {
   const queryClient = useQueryClient();
 
   const { queryKey: queryListKey } = storageQueries.list(studyId, areaId);
 
   return useMutation({
-    ...storageMutations.update(studyId, areaId),
+    ...storageMutations.update(studyId, areaId, storageId),
     onSuccess: async (updatedStorage) => {
       await queryClient.cancelQueries({ queryKey: queryListKey });
 

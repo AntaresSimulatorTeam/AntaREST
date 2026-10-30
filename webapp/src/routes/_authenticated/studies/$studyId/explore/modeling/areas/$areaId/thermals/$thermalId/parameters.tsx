@@ -46,7 +46,7 @@ function Parameters() {
   const { t } = useTranslation();
   const params = Route.useParams();
   const study = useStudy();
-  const thermalCluster = useThermalCluster(params);
+  const { data: thermalCluster } = useThermalCluster(params);
   const updateThermalCluster = useUpdateThermalCluster(params);
 
   ////////////////////////////////////////////////////////////////
@@ -54,7 +54,7 @@ function Parameters() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ThermalCluster>) => {
-    return updateThermalCluster.mutateAsync({ thermalId: thermalCluster.id, values: dirtyValues });
+    return updateThermalCluster.mutateAsync({ values: dirtyValues });
   };
 
   ////////////////////////////////////////////////////////////////

@@ -22,6 +22,7 @@ import type {
   CreateThermalClusterParams,
   DeleteThermalClustersParams,
   DuplicateThermalClusterParams,
+  ThermalCluster,
   UpdateThermalClusterParams,
 } from "@/services/api/studies/areas/thermals/types";
 import type { Study } from "@/services/api/studies/types";
@@ -38,11 +39,13 @@ export const thermalMutations = {
       },
     });
   },
-  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+  update: (studyId: Study["id"], areaId: AreaWithId["id"], thermalId: ThermalCluster["id"]) => {
     return mutationOptions({
-      mutationKey: thermalKeys.update(studyId, areaId),
-      mutationFn: (params: Omit<UpdateThermalClusterParams, "studyId" | "areaId">) => {
-        return updateThermalCluster({ ...params, studyId, areaId });
+      mutationKey: thermalKeys.update(studyId, areaId, thermalId),
+      mutationFn: (
+        params: Omit<UpdateThermalClusterParams, "studyId" | "areaId" | "thermalId">,
+      ) => {
+        return updateThermalCluster({ ...params, studyId, areaId, thermalId });
       },
     });
   },

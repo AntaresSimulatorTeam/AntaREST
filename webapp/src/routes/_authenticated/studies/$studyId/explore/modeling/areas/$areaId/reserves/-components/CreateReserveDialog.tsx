@@ -17,7 +17,7 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import { reserveTypeSchema } from "@/services/api/studies/areas/reserves/schemas";
+import { RESERVE_TYPES } from "@/services/api/studies/areas/reserves/constants";
 import type { ReserveType } from "@/services/api/studies/areas/reserves/types";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
@@ -31,11 +31,9 @@ export interface CreateReserveValues {
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  onSubmit: (values: CreateReserveValues) => Promise<void>;
+  onSubmit: (values: CreateReserveValues) => void;
   existingNames: string[];
 }
-
-const RESERVE_TYPES = reserveTypeSchema.options;
 
 function CreateReserveDialog({ open, onClose, onSubmit, existingNames }: Props) {
   const { t } = useTranslation();
@@ -59,6 +57,7 @@ function CreateReserveDialog({ open, onClose, onSubmit, existingNames }: Props) 
       open={open}
       onCancel={onClose}
       onSubmit={handleSubmit}
+      onSubmitSuccessful={onClose}
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>

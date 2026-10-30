@@ -42,7 +42,7 @@ function Parameters() {
   const { t } = useTranslation();
   const params = Route.useParams();
   const study = useStudy();
-  const renewableCluster = useRenewableCluster(params);
+  const { data: renewableCluster } = useRenewableCluster(params);
   const updateRenewableCluster = useUpdateRenewableCluster(params);
 
   ////////////////////////////////////////////////////////////////
@@ -50,10 +50,7 @@ function Parameters() {
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<RenewableCluster>) => {
-    return updateRenewableCluster.mutateAsync({
-      renewableId: renewableCluster.id,
-      values: dirtyValues,
-    });
+    return updateRenewableCluster.mutateAsync({ values: dirtyValues });
   };
 
   ////////////////////////////////////////////////////////////////

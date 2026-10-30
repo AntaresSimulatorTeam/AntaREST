@@ -14,16 +14,16 @@
 
 import { renewableMutations } from "@/queries/renewables/mutations";
 import { renewableQueries } from "@/queries/renewables/queries";
-import type { RenewableClustersParams } from "@/services/api/studies/areas/renewables/types";
+import type { RenewableClusterParams } from "@/services/api/studies/areas/renewables/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-function useUpdateRenewableCluster({ studyId, areaId }: RenewableClustersParams) {
+function useUpdateRenewableCluster({ studyId, areaId, renewableId }: RenewableClusterParams) {
   const queryClient = useQueryClient();
 
   const { queryKey: queryListKey } = renewableQueries.list(studyId, areaId);
 
   return useMutation({
-    ...renewableMutations.update(studyId, areaId),
+    ...renewableMutations.update(studyId, areaId, renewableId),
     onSuccess: async (updatedRenewable) => {
       await queryClient.cancelQueries({ queryKey: queryListKey });
 

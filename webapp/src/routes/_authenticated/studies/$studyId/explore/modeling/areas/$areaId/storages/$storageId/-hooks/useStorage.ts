@@ -13,7 +13,7 @@
  */
 
 import type { Storage, StorageParams } from "@/services/api/studies/areas/storages/types";
-import { type UseSuspenseQueryResult } from "@tanstack/react-query";
+import type { UseSuspenseQueryResult } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { O } from "ts-toolbelt";
@@ -39,7 +39,11 @@ function useStorage<TData>({ studyId, areaId, storageId, select }: UseStoragePar
     [storageId],
   );
 
-  const { data: storage } = useStorages({ studyId, areaId, select: getStorage });
+  const { data: storage, ...restResult } = useStorages({
+    studyId,
+    areaId,
+    select: getStorage,
+  });
 
   const selection = useMemo(() => {
     if (!storage || !select) {
@@ -56,7 +60,10 @@ function useStorage<TData>({ studyId, areaId, storageId, select }: UseStoragePar
     throw new Error(t("study.modeling.storages.notFound", { id: storageId }));
   }
 
-  return select ? selection : storage;
+  return {
+    ...restResult,
+    data: select ? selection : storage,
+  };
 }
 
 export default useStorage;
