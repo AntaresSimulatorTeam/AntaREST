@@ -46,14 +46,14 @@ function AddConstraintDialog({ onCancel }: Props) {
     select: getNames,
   });
 
-  const createConstraint = useCreateStorageConstraint();
+  const createConstraint = useCreateStorageConstraint(params);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ values }: SubmitHandlerPlus<StorageConstraintCreation>) => {
-    createConstraint.mutate({ ...params, values });
+    createConstraint.mutate({ values });
   };
 
   ////////////////////////////////////////////////////////////////

@@ -17,3 +17,5 @@
  * dimension, so the UI uses this ID to share the other production types' normalized shape.
  */
 export const HYDRO_ASSET_ID = "hydro";
+
+export const RESERVE_TYPES = ["up", "down"] as const;

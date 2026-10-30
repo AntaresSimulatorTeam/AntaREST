@@ -12,9 +12,23 @@
  * This file is part of the Antares project.
  */
 
+import type { Options } from "@/components/fieldEditors/SelectFE";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import type { MRT_AggregationFn } from "material-react-table";
-import type { RenewableClusterWithCapacity } from "./renewables/-utils";
-import type { ThermalClusterWithCapacity } from "./thermals/-utils";
+
+interface BaseCluster {
+  id: string;
+  name: string;
+  group: string | null;
+  unitCount: number;
+  nominalCapacity: number;
+  enabled: boolean;
+}
+
+export type ClusterWithCapacity<T extends BaseCluster = BaseCluster> = T & {
+  installedCapacity: number;
+  enabledCapacity: number;
+};
 
 export function toCapacityString(enabledCapacity: number, installedCapacity: number) {
   return `${Math.round(enabledCapacity)} / ${Math.round(installedCapacity)}`;
@@ -33,9 +47,7 @@ export function toCapacityString(enabledCapacity: number, installedCapacity: num
  *
  * @see https://www.material-react-table.com/docs/guides/aggregation-and-grouping#custom-aggregation-functions for more information on custom aggregation functions in Material React Table.
  */
-export const capacityAggregationFn = <
-  T extends ThermalClusterWithCapacity | RenewableClusterWithCapacity,
->(): MRT_AggregationFn<T> => {
+export const capacityAggregationFn = <T extends ClusterWithCapacity>(): MRT_AggregationFn<T> => {
   return (columnId, leafRows) => {
     const { enabledCapacitySum, installedCapacitySum } = leafRows.reduce(
       (acc, row) => {
@@ -51,26 +63,13 @@ export const capacityAggregationFn = <
   };
 };
 
-interface BaseCluster {
-  name: string;
-  group: string;
-  unitCount: number;
-  nominalCapacity: number;
-  enabled: boolean;
-}
-
-export type ClusterWithCapacity<T extends BaseCluster> = T & {
-  installedCapacity: number;
-  enabledCapacity: number;
-};
-
 /**
  * Adds the installed and enabled capacity fields to a cluster.
  *
  * @param cluster - The cluster to add the capacity fields to.
  * @returns The cluster with the installed and enabled capacity fields added.
  */
-export function addClusterCapacity<T extends BaseCluster>(cluster: T) {
+export function addClusterCapacity<T extends BaseCluster>(cluster: T): ClusterWithCapacity<T> {
   const { unitCount, nominalCapacity, enabled } = cluster;
   const installedCapacity = unitCount * nominalCapacity;
   const enabledCapacity = enabled ? installedCapacity : 0;
@@ -100,4 +99,44 @@ export function getClustersWithCapacityTotals<T extends BaseCluster>(
       totalEnabledCapacity: 0,
     },
   );
+}
+
+/**
+ * Transforms a list of clusters into enriched data for display.
+ *
+ * Each cluster is augmented with its capacity information, and aggregated
+ * totals are computed across all clusters.
+ *
+ * Intended for use as the `select` option of a Tanstack Query hook.
+ *
+ * @see addClusterCapacity
+ * @see getClustersWithCapacityTotals
+ *
+ * @param clusters - The clusters to select data for.
+ * @returns An object containing the clusters with capacity and their totals.
+ */
+export function selectClustersData<T extends BaseCluster>(clusters: T[]) {
+  const clustersWithCapacity = clusters.map(addClusterCapacity);
+
+  return {
+    clustersWithCapacity,
+    totals: getClustersWithCapacityTotals(clustersWithCapacity),
+  };
+}
+
+/**
+ * Transforms a list of clusters into options suitable for a select field.
+ *
+ * Optimistic clusters will be marked as disabled in the select options.
+ *
+ * @param clusters - The clusters to transform.
+ * @returns An array of options for the select field.
+ */
+export function clustersToOptions<T extends BaseCluster>(clusters: T[]): Options<T["id"]> {
+  return clusters.map((cluster) => ({
+    label: cluster.name,
+    value: cluster.id,
+    group: cluster.group ?? undefined,
+    disabled: isQueryListItemOptimistic(cluster),
+  }));
 }

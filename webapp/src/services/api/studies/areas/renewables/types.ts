@@ -27,27 +27,27 @@ export type RenewableCluster = z.infer<typeof renewableClusterSchema>;
 export type RenewableClusterCreation = z.input<typeof renewableClusterCreationSchema>;
 export type RenewableClusterUpdate = z.input<typeof renewableClusterUpdateSchema>;
 
-export interface RenewablesAreaParams {
+export interface RenewableClustersParams {
   studyId: Study["id"];
   areaId: AreaWithId["id"];
 }
 
-export interface GetRenewableClusterParams extends RenewablesAreaParams {
-  clusterId: RenewableCluster["id"];
+export interface RenewableClusterParams extends RenewableClustersParams {
+  renewableId: RenewableCluster["id"];
 }
 
-export interface CreateRenewableClusterParams extends RenewablesAreaParams {
+export interface CreateRenewableClusterParams extends RenewableClustersParams {
   values: RenewableClusterCreation;
 }
 
-export interface UpdateRenewableClusterParams extends GetRenewableClusterParams {
+export interface UpdateRenewableClusterParams extends RenewableClusterParams {
   values: RenewableClusterUpdate;
 }
 
-export interface DuplicateRenewableClusterParams extends GetRenewableClusterParams {
+export interface DuplicateRenewableClusterParams extends RenewableClusterParams {
   newName: RenewableCluster["name"];
 }
 
-export interface DeleteRenewableClustersParams extends RenewablesAreaParams {
-  clusterIds: Array<RenewableCluster["id"]>;
+export interface DeleteRenewableClustersParams extends RenewableClustersParams {
+  renewableIds: Array<RenewableCluster["id"]>;
 }

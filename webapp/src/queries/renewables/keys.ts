@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { RenewableCluster } from "@/services/api/studies/areas/renewables/types";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { areaKeys } from "../areas/keys";
@@ -24,8 +25,8 @@ export const renewableKeys = {
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...renewableKeys.list(studyId, areaId), "createRenewableCluster"];
   },
-  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
-    return [...renewableKeys.list(studyId, areaId), "updateRenewableCluster"];
+  update: (studyId: Study["id"], areaId: AreaWithId["id"], renewableId: RenewableCluster["id"]) => {
+    return [...renewableKeys.list(studyId, areaId), "updateRenewableCluster", { renewableId }];
   },
   duplicate: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...renewableKeys.list(studyId, areaId), "duplicateRenewableCluster"];

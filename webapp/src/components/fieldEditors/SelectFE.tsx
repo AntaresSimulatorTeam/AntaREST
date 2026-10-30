@@ -45,6 +45,7 @@ interface Option<T extends AllowedValue> {
   icon?: SvgIconComponent;
   tooltip?: string;
   group?: string;
+  disabled?: boolean;
 }
 
 export type Options<T extends AllowedValue> = Array<T | Option<T>> | ReadonlyArray<T | Option<T>>;
@@ -291,8 +292,8 @@ function SelectFE<OptionValue extends AllowedValue = AllowedValue>({
               {group.name}
             </ListSubheader>
           ),
-          ...group.options.map(({ value, label, icon: Icon, tooltip, id }) => (
-            <MenuItem key={id} value={value}>
+          ...group.options.map(({ value, label, icon: Icon, tooltip, id, disabled }) => (
+            <MenuItem key={id} value={value} disabled={disabled}>
               {Icon && <Icon sx={{ mr: 1, verticalAlign: "sub" }} />}
               {tooltip ? (
                 <Tooltip title={t(tooltip)} placement="right">

@@ -29,9 +29,9 @@ export const thermalClusterSchema = z.object({
   // TODO: Remove normalization once the backend returns consistent IDs.
   id: z.string().transform(nameToId),
   name: z.string(),
-  // Before v9.3, non-null groups are mapped to the values in thermalGroupSchema.
-  // Since v9.3, groups can be custom strings. The API also permits null.
-  group: z.string().nullable(),
+  // Before v9.3, `group` was restricted to the predefined groups (see `thermalGroupSchema`).
+  // Since v9.3, it can be any custom string.
+  group: z.string(),
   enabled: z.boolean(),
   unitCount: z.number(),
   nominalCapacity: z.number(),
@@ -51,23 +51,25 @@ export const thermalClusterSchema = z.object({
   lawForced: z.enum(TS_LAW_OPTIONS),
   lawPlanned: z.enum(TS_LAW_OPTIONS),
   co2: z.number(),
-  // Since v8.6; older studies may omit these fields or return null.
-  so2: nullishToOptional(z.number()),
-  nh3: nullishToOptional(z.number()),
-  nox: nullishToOptional(z.number()),
-  nmvoc: nullishToOptional(z.number()),
-  pm25: nullishToOptional(z.number()),
-  pm5: nullishToOptional(z.number()),
-  pm10: nullishToOptional(z.number()),
-  op1: nullishToOptional(z.number()),
-  op2: nullishToOptional(z.number()),
-  op3: nullishToOptional(z.number()),
-  op4: nullishToOptional(z.number()),
-  op5: nullishToOptional(z.number()),
-  // Since v8.7.
-  costGeneration: nullishToOptional(z.enum(COST_GENERATION_OPTIONS)),
-  efficiency: nullishToOptional(z.number()),
-  variableOMCost: nullishToOptional(z.number()),
+  // Version-specific fields may be missing or `null` for older studies.
+  // `nullishToOptional` normalizes `null` to `undefined`.
+  // Since v8.6
+  so2: nullishToOptional(z.number()).optional(),
+  nh3: nullishToOptional(z.number()).optional(),
+  nox: nullishToOptional(z.number()).optional(),
+  nmvoc: nullishToOptional(z.number()).optional(),
+  pm25: nullishToOptional(z.number()).optional(),
+  pm5: nullishToOptional(z.number()).optional(),
+  pm10: nullishToOptional(z.number()).optional(),
+  op1: nullishToOptional(z.number()).optional(),
+  op2: nullishToOptional(z.number()).optional(),
+  op3: nullishToOptional(z.number()).optional(),
+  op4: nullishToOptional(z.number()).optional(),
+  op5: nullishToOptional(z.number()).optional(),
+  // Since v8.7
+  costGeneration: nullishToOptional(z.enum(COST_GENERATION_OPTIONS)).optional(),
+  efficiency: nullishToOptional(z.number()).optional(),
+  variableOMCost: nullishToOptional(z.number()).optional(),
 });
 
 export const thermalClustersSchema = z.array(thermalClusterSchema);

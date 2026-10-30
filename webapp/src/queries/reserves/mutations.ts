@@ -20,35 +20,52 @@ import {
   updateReservesCertifications,
   updateReservesSymmetries,
 } from "@/services/api/studies/areas/reserves";
-import type { ProductionType } from "@/services/api/studies/areas/reserves/types";
+import type {
+  CreateReserveParams,
+  DeleteReservesParams,
+  ProductionType,
+  Reserve,
+  UpdateReserveGlobalParametersParams,
+  UpdateReserveParams,
+  UpdateReservesCertificationsParams,
+  UpdateReservesSymmetriesParams,
+} from "@/services/api/studies/areas/reserves/types";
+import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { mutationOptions } from "@tanstack/react-query";
 import { reserveKeys } from "./keys";
-import type { Study } from "@/services/api/studies/types";
 
 export const reserveMutations = {
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: reserveKeys.create(studyId, areaId),
-      mutationFn: createReserve,
+      mutationFn: (params: Omit<CreateReserveParams, "studyId" | "areaId">) => {
+        return createReserve({ ...params, studyId, areaId });
+      },
     });
   },
-  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+  update: (studyId: Study["id"], areaId: AreaWithId["id"], reserveId: Reserve["id"]) => {
     return mutationOptions({
-      mutationKey: reserveKeys.update(studyId, areaId),
-      mutationFn: updateReserve,
+      mutationKey: reserveKeys.update(studyId, areaId, reserveId),
+      mutationFn: (params: Omit<UpdateReserveParams, "studyId" | "areaId" | "reserveId">) => {
+        return updateReserve({ ...params, studyId, areaId, reserveId });
+      },
     });
   },
   delete: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: reserveKeys.delete(studyId, areaId),
-      mutationFn: deleteReserves,
+      mutationFn: (params: Omit<DeleteReservesParams, "studyId" | "areaId">) => {
+        return deleteReserves({ ...params, studyId, areaId });
+      },
     });
   },
   updateGlobalParameters: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: reserveKeys.updateGlobalParameters(studyId, areaId),
-      mutationFn: updateReserveGlobalParameters,
+      mutationFn: (params: Omit<UpdateReserveGlobalParametersParams, "studyId" | "areaId">) => {
+        return updateReserveGlobalParameters({ ...params, studyId, areaId });
+      },
     });
   },
   updateCertifications: (
@@ -58,7 +75,11 @@ export const reserveMutations = {
   ) => {
     return mutationOptions({
       mutationKey: reserveKeys.updateCertifications(studyId, areaId, productionType),
-      mutationFn: updateReservesCertifications,
+      mutationFn: (
+        params: Omit<UpdateReservesCertificationsParams, "studyId" | "areaId" | "productionType">,
+      ) => {
+        return updateReservesCertifications({ ...params, studyId, areaId, productionType });
+      },
     });
   },
   updateSymmetries: (
@@ -68,7 +89,11 @@ export const reserveMutations = {
   ) => {
     return mutationOptions({
       mutationKey: reserveKeys.updateSymmetries(studyId, areaId, productionType),
-      mutationFn: updateReservesSymmetries,
+      mutationFn: (
+        params: Omit<UpdateReservesSymmetriesParams, "studyId" | "areaId" | "productionType">,
+      ) => {
+        return updateReservesSymmetries({ ...params, studyId, areaId, productionType });
+      },
     });
   },
 };

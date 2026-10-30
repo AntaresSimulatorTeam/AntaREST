@@ -12,37 +12,37 @@
  * This file is part of the Antares project.
  */
 
-import GroupedDataTable from "@/components/GroupedDataTable";
-import BooleanCell from "@/components/GroupedDataTable/cellRenderers/BooleanCell";
-import type { RowData } from "@/components/GroupedDataTable/types";
-import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
+import DataTable from "@/components/DataTable";
+import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
+import type { MainRowData } from "@/components/DataTable/types";
+import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
+import { renewableKeys } from "@/queries/renewables/keys";
+import { renewableQueries } from "@/queries/renewables/queries";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudySynthesis } from "@/redux/selectors";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { RENEWABLE_GROUPS } from "@/services/api/studies/areas/renewables/constants";
+import { buildKey } from "@/utils/reactUtils";
 import { Box } from "@mui/material";
+import { useIsMutating } from "@tanstack/react-query";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import {
-  addClusterCapacity,
-  capacityAggregationFn,
-  getClustersWithCapacityTotals,
-  toCapacityString,
-} from "../-clustersUtils";
-import {
-  createRenewableCluster,
-  deleteRenewableClusters,
-  duplicateRenewableCluster,
-  getRenewableClusters,
-  RENEWABLE_GROUPS,
-  type RenewableClusterWithCapacity,
-} from "./-utils";
+import { capacityAggregationFn, selectClustersData, toCapacityString } from "../-clustersUtils";
+import useCreateRenewableCluster from "./-hooks/useCreateRenewableCluster";
+import useDeleteRenewableClusters from "./-hooks/useDeleteRenewableClusters";
+import useDuplicateRenewableCluster from "./-hooks/useDuplicateRenewableCluster";
+import useRenewableClusters from "./-hooks/useRenewableClusters";
+import type { RenewableClusterWithCapacity } from "./-types";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/",
 )({
+  loader: async ({ context, params: { studyId, areaId } }) => {
+    await context.queryClient.ensureQueryData(renewableQueries.list(studyId, areaId));
+  },
   component: Renewables,
 });
 
@@ -50,27 +50,24 @@ const columnHelper = createMRTColumnHelper<RenewableClusterWithCapacity>();
 
 function Renewables() {
   const study = useStudy();
-  const { areaId } = Route.useParams();
+  const params = Route.useParams();
   const { t } = useTranslation();
+  const createRenewableCluster = useCreateRenewableCluster(params);
+  const duplicateRenewableCluster = useDuplicateRenewableCluster(params);
+  const deleteRenewableClusters = useDeleteRenewableClusters(params);
   const enrModelling = useAppSelector((state) => getStudySynthesis(state, study.id)?.enr_modelling);
+  const { areaId } = params;
 
   const {
-    data: clustersWithCapacity = [],
-    isLoading,
-    status,
-  } = usePromiseWithSnackbarError<RenewableClusterWithCapacity[]>(
-    async () => {
-      const clusters = await getRenewableClusters(study.id, areaId);
-      return clusters?.map(addClusterCapacity);
-    },
-    {
-      resetDataOnReload: true,
-      errorMessage: t("studies.error.retrieveData"),
-      deps: [study.id, areaId],
-    },
-  );
+    data: { clustersWithCapacity, totals },
+    error,
+    isRefetchError,
+  } = useRenewableClusters({ ...params, select: selectClustersData });
 
-  const [totals, setTotals] = useState(() => getClustersWithCapacityTotals(clustersWithCapacity));
+  const isSaving =
+    useIsMutating({
+      mutationKey: renewableKeys.list(study.id, areaId),
+    }) !== 0;
 
   const columns = useMemo(() => {
     const { totalUnitCount, totalEnabledCapacity, totalInstalledCapacity } = totals;
@@ -120,20 +117,16 @@ function Renewables() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = async (values: RowData) => {
-    const cluster = await createRenewableCluster(study.id, areaId, values);
-    return addClusterCapacity(cluster);
+  const handleCreate = (values: MainRowData) => {
+    createRenewableCluster.mutate({ values });
   };
 
-  const handleDuplicate = async (row: RenewableClusterWithCapacity, newName: string) => {
-    const cluster = await duplicateRenewableCluster(study.id, areaId, row.id, newName);
-
-    return { ...row, ...cluster };
+  const handleDuplicate = (row: RenewableClusterWithCapacity, newName: string) => {
+    duplicateRenewableCluster.mutate({ renewableId: row.id, newName });
   };
 
   const handleDelete = (rows: RenewableClusterWithCapacity[]) => {
-    const ids = rows.map((row) => row.id);
-    return deleteRenewableClusters(study.id, areaId, ids);
+    deleteRenewableClusters.mutate({ renewableIds: rows.map((row) => row.id) });
   };
 
   ////////////////////////////////////////////////////////////////
@@ -145,41 +138,31 @@ function Renewables() {
   }
 
   return (
-    <GroupedDataTable
-      key={status}
-      isLoading={isLoading}
-      data={clustersWithCapacity}
-      columns={columns}
-      groups={[...RENEWABLE_GROUPS] as string[]}
-      allowNewGroups={semver.gte(study.version, "9.3.0")}
-      onCreate={handleCreate}
-      onDuplicate={handleDuplicate}
-      onDelete={handleDelete}
-      nameLinkOptions={(row) =>
-        linkOptions({
-          to: "/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId",
-          params: {
-            studyId: study.id,
-            areaId,
-            renewableId: row.id,
-          },
-        })
-      }
-      deleteConfirmationMessage={(rows) => {
-        return t("studies.modeling.clusters.question.delete", {
-          count: rows.length,
-          clusterNames: rows.map((row) => row.name),
-        });
-      }}
-      fillPendingRow={(row) => ({
-        unitCount: 0,
-        enabledCapacity: 0,
-        installedCapacity: 0,
-        ...row,
-      })}
-      onDataChange={(data) => {
-        setTotals(getClustersWithCapacityTotals(data));
-      }}
-    />
+    <>
+      <RefetchErrorAlert isRefetchError={isRefetchError} error={error} />
+      <DataTable
+        key={buildKey(params)}
+        data={clustersWithCapacity}
+        columns={columns}
+        groups={[...RENEWABLE_GROUPS]}
+        allowNewGroups={semver.gte(study.version, "9.3.0")}
+        onCreate={handleCreate}
+        onDuplicate={handleDuplicate}
+        onDelete={handleDelete}
+        isSaving={isSaving}
+        nameLinkOptions={(row) =>
+          linkOptions({
+            to: "/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId",
+            params: { ...params, renewableId: row.id },
+          })
+        }
+        deleteConfirmationMessage={(rows) => {
+          return t("study.modeling.clusters.question.delete", {
+            count: rows.length,
+            names: rows.map((row) => row.name),
+          });
+        }}
+      />
+    </>
   );
 }

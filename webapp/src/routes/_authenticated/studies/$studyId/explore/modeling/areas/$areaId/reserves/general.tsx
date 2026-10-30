@@ -12,14 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import GroupedDataTable from "@/components/GroupedDataTable";
-import type { RowData } from "@/components/GroupedDataTable/types";
-import { reserveMutations } from "@/queries/reserves/mutations";
+import DataTable from "@/components/DataTable";
+import type { MainRowData } from "@/components/DataTable/types";
+import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
+import { reserveKeys } from "@/queries/reserves/keys";
 import { reserveQueries } from "@/queries/reserves/queries";
-import type { Reserve, UpdateReserveData } from "@/services/api/studies/areas/reserves/types";
+import type { Reserve } from "@/services/api/studies/areas/reserves/types";
+import { buildKey } from "@/utils/reactUtils";
 import EditIcon from "@mui/icons-material/Edit";
-import { Alert, Button, Chip } from "@mui/material";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { Button, Chip } from "@mui/material";
+import { useIsMutating, useSuspenseQueries } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { createMRTColumnHelper } from "material-react-table";
 import { useState } from "react";
@@ -27,6 +29,8 @@ import { useTranslation } from "react-i18next";
 import CreateReserveDialog from "./-components/CreateReserveDialog";
 import UpdateGlobalParametersDrawer from "./-components/UpdateGlobalParametersDrawer";
 import UpdateReserveDrawer from "./-components/UpdateReserveDrawer";
+import useCreateReserve from "./-hooks/useCreateReserve";
+import useDeleteReserves from "./-hooks/useDeleteReserves";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/reserves/general",
@@ -60,44 +64,23 @@ const columns = [
 
 function ReservesGeneral() {
   const { t } = useTranslation();
-  const { studyId, areaId } = Route.useParams();
-  const queryClient = useQueryClient();
+  const params = Route.useParams();
   const [editingReserve, setEditingReserve] = useState<Reserve | null>(null);
   const [isUpdateReserveOpen, setIsUpdateReserveOpen] = useState(false);
   const [isGlobalParametersOpen, setIsGlobalParametersOpen] = useState(false);
+  const createReserve = useCreateReserve(params);
+  const deleteReserves = useDeleteReserves(params);
+  const { studyId, areaId } = params;
 
-  const { data: reservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
+  const [{ data: isReservesEnabled }, { data: reserves, error, isRefetchError }] =
+    useSuspenseQueries({
+      queries: [reserveQueries.enabled(studyId), reserveQueries.list(studyId, areaId)],
+    });
 
-  const { queryKey: listQueryKey } = reserveQueries.list(studyId, areaId);
-
-  const { data: rows, isFetching: isRowsFetching } = useSuspenseQuery(
-    reserveQueries.list(studyId, areaId),
-  );
-
-  const createMutation = useMutation({
-    ...reserveMutations.create(studyId, areaId),
-    onSuccess: (newReserve) => {
-      queryClient.setQueryData(listQueryKey, (old = []) => [...old, newReserve]);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    ...reserveMutations.delete(studyId, areaId),
-    onSuccess: (data, { reserveIds }) => {
-      queryClient.setQueryData(listQueryKey, (old = []) =>
-        old.filter((reserve) => !reserveIds.includes(reserve.id)),
-      );
-    },
-  });
-
-  const updateMutation = useMutation({
-    ...reserveMutations.update(studyId, areaId),
-    onSuccess: (updatedReserve) => {
-      queryClient.setQueryData(listQueryKey, (old = []) =>
-        old.map((reserve) => (reserve.id === updatedReserve.id ? updatedReserve : reserve)),
-      );
-    },
-  });
+  const isSaving =
+    useIsMutating({
+      mutationKey: reserveKeys.list(studyId, areaId),
+    }) !== 0;
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -108,44 +91,19 @@ function ReservesGeneral() {
     setIsUpdateReserveOpen(true);
   };
 
-  const handleCreate = ({ name, type }: RowData & Partial<Reserve>) => {
-    if (!type) {
-      throw new Error("Reserve type is required");
-    }
-
-    return createMutation.mutateAsync({
-      studyId,
-      areaId,
-      data: { name, type },
-    });
+  const handleCreate = ({ name }: MainRowData, type: Reserve["type"]) => {
+    return createReserve.mutate({ data: { name, type } });
   };
 
   const handleDuplicate = (row: Reserve, newName: string) => {
-    return createMutation.mutateAsync({
-      studyId,
-      areaId,
+    return createReserve.mutate({
       data: { ...row, name: newName },
     });
   };
 
   const handleDelete = (rowsToDelete: Reserve[]) => {
-    return deleteMutation.mutateAsync({
-      studyId,
-      areaId,
+    return deleteReserves.mutate({
       reserveIds: rowsToDelete.map((row) => row.id),
-    });
-  };
-
-  const handleUpdate = async (data: UpdateReserveData) => {
-    if (!editingReserve) {
-      return;
-    }
-
-    await updateMutation.mutateAsync({
-      studyId,
-      areaId,
-      reserveId: editingReserve.id,
-      data,
     });
   };
 
@@ -155,23 +113,19 @@ function ReservesGeneral() {
 
   return (
     <>
-      {reservesEnabled === false && (
-        <Alert severity="warning" sx={{ mb: 1 }}>
-          {t("study.modeling.reserves.readOnly.alert")}
-        </Alert>
-      )}
-      <GroupedDataTable
-        key={`${studyId}-${areaId}`}
-        data={rows}
+      <RefetchErrorAlert isRefetchError={isRefetchError} error={error} />
+      <DataTable
+        key={buildKey(params)}
+        data={reserves}
         columns={columns}
-        readOnly={!reservesEnabled}
-        isLoading={isRowsFetching}
+        readOnly={!isReservesEnabled}
+        isSaving={isSaving}
         onCreate={handleCreate}
         renderCreateDialog={({ open, onClose, onSubmit, existingNames }) => (
           <CreateReserveDialog
             open={open}
             onClose={onClose}
-            onSubmit={onSubmit}
+            onSubmit={(values) => onSubmit({ name: values.name }, values.type)}
             existingNames={existingNames}
           />
         )}
@@ -181,7 +135,7 @@ function ReservesGeneral() {
         deleteConfirmationMessage={(rowsToDelete) =>
           t("study.modeling.reserves.question.delete", {
             count: rowsToDelete.length,
-            reserveNames: rowsToDelete.map((row) => row.name),
+            names: rowsToDelete.map((row) => row.name),
           })
         }
         toolbarActions={
@@ -189,7 +143,7 @@ function ReservesGeneral() {
             variant="outlined"
             startIcon={<EditIcon />}
             onClick={() => setIsGlobalParametersOpen(true)}
-            disabled={!reservesEnabled}
+            disabled={!isReservesEnabled}
           >
             {t("study.modeling.reserves.globalParameters")}
           </Button>
@@ -200,7 +154,6 @@ function ReservesGeneral() {
           open={isUpdateReserveOpen}
           reserve={editingReserve}
           onClose={() => setIsUpdateReserveOpen(false)}
-          onSubmit={handleUpdate}
         />
       )}
       <UpdateGlobalParametersDrawer
