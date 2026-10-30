@@ -64,7 +64,7 @@ from antarest.output.model import (
     OutputVariablesViewStatus,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
-from antarest.output.model.raw_files import OutputRawFilesTree, OutputRawFolderTree
+from antarest.output.model.raw_files import OutputRawFilesTree, build_raw_files_tree
 from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -194,23 +194,6 @@ class OutputVariablesViewMaterializationTask:
 
     # Make `OutputVariablesViewMaterializationTask` object callable
     __call__ = run_task
-
-
-def _build_raw_files_tree(files: Iterable[PurePosixPath]) -> OutputRawFilesTree:
-    """
-    Builds the tree structure of the given relative file paths, preserving their order.
-    """
-    tree = OutputRawFilesTree(files=[], directories=[])
-    folders: dict[PurePosixPath, OutputRawFilesTree | OutputRawFolderTree] = {PurePosixPath(): tree}
-    for file in files:
-        # Creates the missing parent folders, from the root to the direct parent
-        for folder_path in reversed(file.parents):
-            if folder_path not in folders:
-                folder = OutputRawFolderTree(name=folder_path.name, files=[], directories=[])
-                folders[folder_path.parent].directories.append(folder)
-                folders[folder_path] = folder
-        folders[file.parent].files.append(file.name)
-    return tree
 
 
 class OutputService:
@@ -904,7 +887,7 @@ class OutputService:
         storage = self._find_output_storage(study_id, output_id)
         if storage.is_output_archived(study_id, output_id):
             raise UnsupportedOperationOnArchivedOutput(output_id)
-        return _build_raw_files_tree(storage.list_raw_files(study_id, output_id))
+        return build_raw_files_tree(storage.list_raw_files(study_id, output_id))
 
     def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath, target: Path) -> None:
         """

@@ -9,6 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from collections.abc import Iterable
+from pathlib import PurePosixPath
+
 from antarest.core.serde import AntaresBaseModel
 
 
@@ -25,3 +28,20 @@ class OutputRawFilesTree(AntaresBaseModel):
 
     files: list[str]
     directories: list[OutputRawFolderTree]
+
+
+def build_raw_files_tree(files: Iterable[PurePosixPath]) -> OutputRawFilesTree:
+    """
+    Builds the tree structure of the given relative file paths, preserving their order.
+    """
+    tree = OutputRawFilesTree(files=[], directories=[])
+    folders: dict[PurePosixPath, OutputRawFilesTree | OutputRawFolderTree] = {PurePosixPath(): tree}
+    for file in files:
+        # Creates the missing parent folders, from the root to the direct parent
+        for folder_path in reversed(file.parents):
+            if folder_path not in folders:
+                folder = OutputRawFolderTree(name=folder_path.name, files=[], directories=[])
+                folders[folder_path.parent].directories.append(folder)
+                folders[folder_path] = folder
+        folders[file.parent].files.append(file.name)
+    return tree
