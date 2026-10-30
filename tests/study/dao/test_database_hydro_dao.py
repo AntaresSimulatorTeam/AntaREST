@@ -877,7 +877,7 @@ def test_convert_hydro_rule_curves_creates_reservoir_levels(dao_10_2: StudyDao) 
     dao.save_hydro_min_daily_reservoir_levels({"paris": dao.matrix_service.create(custom_min)})
     dao.save_hydro_max_daily_reservoir_levels({"paris": dao.matrix_service.create(custom_max)})
     dao.save_hydro_avg_daily_reservoir_levels({"paris": dao.matrix_service.create(custom_avg)})
-    
+
     pl.testing.assert_frame_equal(dao.get_hydro_min_daily_reservoir_levels("paris"), custom_min, check_dtypes=False)
     pl.testing.assert_frame_equal(dao.get_hydro_max_daily_reservoir_levels("paris"), custom_max, check_dtypes=False)
     pl.testing.assert_frame_equal(dao.get_hydro_avg_daily_reservoir_levels("paris"), custom_avg, check_dtypes=False)
