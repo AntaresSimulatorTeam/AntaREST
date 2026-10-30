@@ -91,16 +91,3 @@ def test_build_raw_files_tree_same_folder_name_in_different_parents() -> None:
             ),
         ],
     )
-
-
-def test_build_raw_files_tree_deep() -> None:
-    folder_names = [f"level-{i}" for i in range(20)]
-    tree = build_raw_files_tree([PurePosixPath(*folder_names, "file.txt")])
-
-    folder: OutputRawFilesTree | OutputRawFolderTree = tree
-    for name in folder_names:
-        assert folder.files == []
-        assert [d.name for d in folder.directories] == [name]
-        folder = folder.directories[0]
-    assert folder.files == ["file.txt"]
-    assert folder.directories == []

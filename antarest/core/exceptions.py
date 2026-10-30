@@ -478,11 +478,6 @@ class OutputFileNotFound(HTTPException):
         message = f"The output '{output_id}' file '{path}' does not exist"
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
-    @override
-    def __str__(self) -> str:
-        """Return a string representation of the exception."""
-        return self.detail
-
 
 class InvalidOutputConversionRequest(HTTPException):
     def __init__(self, message: str) -> None:

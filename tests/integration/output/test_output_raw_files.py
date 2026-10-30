@@ -60,14 +60,13 @@ def test_output_raw_files(
     assert res.headers["content-type"] == "application/octet-stream"
     assert res.headers["content-disposition"] == 'attachment; filename="areas.txt"'
 
-    # Unknown file, directory, or file outside the output
-    for path in ["unknown.txt", "about-the-study", "../../study.antares"]:
-        res = client.get(
-            f"/v1/studies/{internal_study_id}/outputs/{output_id}/raw-files/content",
-            params={"path": path},
-        )
-        assert res.status_code == 404, res.json()
-        assert res.json()["exception"] == "OutputFileNotFound"
+    # Unknown file (other cases are covered at storage level)
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/outputs/{output_id}/raw-files/content",
+        params={"path": "unknown.txt"},
+    )
+    assert res.status_code == 404, res.json()
+    assert res.json()["exception"] == "OutputFileNotFound"
 
     # Path containing a new line, which could forge log entries
     res = client.get(
