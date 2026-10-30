@@ -12,7 +12,7 @@
 import uuid
 import zipfile
 from io import BytesIO
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from unittest.mock import ANY, Mock
 
 import pytest
@@ -24,7 +24,8 @@ from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import current_time
-from antarest.output.service import IStudyMetadataProvider, OutputService, StudyMetadata
+from antarest.output.model.raw_files import OutputRawFilesTree, OutputRawFolderTree
+from antarest.output.service import IStudyMetadataProvider, OutputService, StudyMetadata, _build_raw_files_tree
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
@@ -297,3 +298,41 @@ def test_already_existing_study_raises_error_and_deletes_output() -> None:
 
     storage2.import_output.assert_called()
     storage2.delete_output.assert_called_with("id", "output_id")
+
+
+def test_build_raw_files_tree() -> None:
+    assert _build_raw_files_tree([]) == OutputRawFilesTree(files=[], directories=[])
+
+    files = [
+        PurePosixPath("economy/mc-all/areas/fr/values-hourly.txt"),
+        PurePosixPath("economy/mc-all/grid/digest.txt"),
+        PurePosixPath("gems-views/simulation_table.csv"),
+        PurePosixPath("info.antares-output"),
+        PurePosixPath("simulation.log"),
+    ]
+    assert _build_raw_files_tree(files) == OutputRawFilesTree(
+        files=["info.antares-output", "simulation.log"],
+        directories=[
+            OutputRawFolderTree(
+                name="economy",
+                files=[],
+                directories=[
+                    OutputRawFolderTree(
+                        name="mc-all",
+                        files=[],
+                        directories=[
+                            OutputRawFolderTree(
+                                name="areas",
+                                files=[],
+                                directories=[
+                                    OutputRawFolderTree(name="fr", files=["values-hourly.txt"], directories=[])
+                                ],
+                            ),
+                            OutputRawFolderTree(name="grid", files=["digest.txt"], directories=[]),
+                        ],
+                    )
+                ],
+            ),
+            OutputRawFolderTree(name="gems-views", files=["simulation_table.csv"], directories=[]),
+        ],
+    )

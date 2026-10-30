@@ -14,7 +14,7 @@ import shutil
 import tempfile
 import uuid
 from collections.abc import Iterator, Sequence
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 
 import pandas as pd
@@ -444,6 +444,16 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
+        # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def list_raw_files(self, study_id: str, output_id: str) -> list[PurePosixPath]:
+        # todo: implement this
+        raise NotImplementedError()
+
+    @override
+    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath, target: Path) -> None:
         # todo: implement this
         raise NotImplementedError()
 
