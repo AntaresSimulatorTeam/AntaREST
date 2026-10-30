@@ -461,6 +461,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                 parameter_rows[index]["matrix_id"] = matrix_id
 
         return component_values, property_values, parameter_rows
+
     def _save_area_connections(self, connections: List[GemsAreaConnection]) -> None:
         if not connections:
             return
@@ -559,7 +560,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         # All components and clusters exist and no port is connected twice.
         # It means the DB table is not filled as it should.
         raise ValueError("The thermal capacity connections table is not filled as it should") from e
-
 
     @override
     def get_parameter_value(self, component_id: str, parameter_id: str) -> NpArray:
