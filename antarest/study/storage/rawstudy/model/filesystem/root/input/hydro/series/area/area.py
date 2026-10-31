@@ -14,12 +14,14 @@ from typing import Any
 
 from typing_extensions import override
 
-from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6, STUDY_VERSION_9_2
+from antarest.study.model import STUDY_VERSION_6_5, STUDY_VERSION_8_6, STUDY_VERSION_9_2, STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.folder_node import FolderNode
 from antarest.study.storage.rawstudy.model.filesystem.inode import TREE, INode
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_scenario_daily,
+    default_scenario_daily_half,
+    default_scenario_daily_ones,
     default_scenario_hourly,
     default_scenario_monthly,
 )
@@ -61,6 +63,26 @@ class InputHydroSeriesArea(FolderNode):
                 self.matrix_storage_context,
                 self.config.next_file("maxHourlyPumpPower.txt"),
                 default_empty=default_scenario_hourly,
+                should_exist=False,
+            )
+
+        if study_version >= STUDY_VERSION_10_2:
+            hydro_series_matrices["maxDailyReservoirLevels"] = InputSeriesMatrix(
+                self.matrix_storage_context,
+                self.config.next_file("maxDailyReservoirLevels.txt"),
+                default_empty=default_scenario_daily_ones,
+                should_exist=False,
+            )
+            hydro_series_matrices["minDailyReservoirLevels"] = InputSeriesMatrix(
+                self.matrix_storage_context,
+                self.config.next_file("minDailyReservoirLevels.txt"),
+                default_empty=default_scenario_daily,
+                should_exist=False,
+            )
+            hydro_series_matrices["avgDailyReservoirLevels"] = InputSeriesMatrix(
+                self.matrix_storage_context,
+                self.config.next_file("avgDailyReservoirLevels.txt"),
+                default_empty=default_scenario_daily_half,
                 should_exist=False,
             )
 

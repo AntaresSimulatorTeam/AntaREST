@@ -11,17 +11,25 @@
 # This file is part of the Antares project.
 from typing import Any
 
+from antares.study.version import StudyVersion
 from pydantic import ConfigDict
 
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters, HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParameters,
+    HydroPmax,
+    HydroRuleCurves,
+    initialize_compatibility_parameters,
+    validate_compatibility_parameters_against_version,
+)
 
 
 class CompatibilityParametersFileData(AntaresBaseModel):
     model_config = ConfigDict(extra="ignore", populate_by_name=True, alias_generator=to_kebab_case)
 
     hydro_pmax: HydroPmax | None = None
+    hydro_rule_curves: HydroRuleCurves | None = None
 
     def to_model(self) -> CompatibilityParameters:
         return CompatibilityParameters.model_validate(self.model_dump(exclude_none=True))
@@ -31,10 +39,16 @@ class CompatibilityParametersFileData(AntaresBaseModel):
         return cls.model_validate(parameters.model_dump())
 
 
-def parse_compatibility_parameters(data: dict[str, Any]) -> CompatibilityParameters:
+def parse_compatibility_parameters(version: StudyVersion, data: dict[str, Any]) -> CompatibilityParameters:
     # Extract the compatibility section if it exists, otherwise use empty dict
     compatibility_data = data.get("compatibility", {})
-    parameters = CompatibilityParametersFileData.model_validate(compatibility_data).to_model()
+    file_data = CompatibilityParametersFileData.model_validate(compatibility_data)
+    parameters = file_data.to_model()
+    initialize_compatibility_parameters(parameters, version)
+    validate_compatibility_parameters_against_version(
+        version,
+        parameters,
+    )
     return parameters
 
 

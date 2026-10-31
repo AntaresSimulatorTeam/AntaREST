@@ -15,7 +15,7 @@ from antares.study.version import StudyVersion
 from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationDoesNotExist
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaUI
-from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax, HydroRuleCurves
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
     STStorage,
@@ -432,3 +432,16 @@ class StudyConverter:
 
                 max_daily_pump = self._source_dao.get_all_hydro_max_daily_pump_energy()
                 self._new_dao.save_hydro_max_daily_pump_energy(max_daily_pump)
+
+            if (
+                self._study_version >= STUDY_VERSION_10_2
+                and compatibility_data.hydro_rule_curves == HydroRuleCurves.SCENARIZED
+            ):
+                max_levels = self._source_dao.get_all_hydro_max_daily_reservoir_levels()
+                self._new_dao.save_hydro_max_daily_reservoir_levels(max_levels)
+
+                min_levels = self._source_dao.get_all_hydro_min_daily_reservoir_levels()
+                self._new_dao.save_hydro_min_daily_reservoir_levels(min_levels)
+
+                avg_levels = self._source_dao.get_all_hydro_avg_daily_reservoir_levels()
+                self._new_dao.save_hydro_avg_daily_reservoir_levels(avg_levels)

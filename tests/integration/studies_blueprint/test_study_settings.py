@@ -513,6 +513,34 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
     )
     assert res.status_code == 422
 
+    # scenarized should be rejected on a study < 10.2
+    res = client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={"hydroRuleCurves": "scenarized"},
+    )
+    assert res.status_code == 422
+    assert "Hydro rule curves cannot be set to scenarized before study version 10.2" in res.json()["description"]
+
+
+def test_compatibility_settings_10_2_study(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    created = client.post("/v1/studies", params={"name": "foo", "version": 1020})
+    study_id = created.json()
+
+    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
+    assert res.status_code == 200
+    assert res.json() == {"hydroPmax": "daily", "hydroRuleCurves": "single"}
+
+    res = client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={"hydroPmax": "hourly", "hydroRuleCurves": "scenarized"},
+    )
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
+    assert res.status_code == 200
+    assert res.json() == {"hydroPmax": "hourly", "hydroRuleCurves": "scenarized"}
+
 
 @pytest.mark.parametrize("field, min_version", [("includeReserves", "10.2"), ("includeThermalClusterRamping", "10.3")])
 def test_optimization_fields_since_v10_rejected_before(
