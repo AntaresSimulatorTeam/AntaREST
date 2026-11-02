@@ -18,11 +18,7 @@ from typing_extensions import override
 
 from antarest.core.exceptions import GemsScenarioAlreadyExists, GemsScenarioNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
-from antarest.study.business.model.gems.scenario_builder import (
-    GemsScBuilderMapping,
-    GemsScenarioBuilder,
-    ScenarioBuilderMapping,
-)
+from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.scenario_builder import GEMS_SCENARIO_BUILDER_TABLE
@@ -64,9 +60,9 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
 
     @override
     def add_scenario_to_gems_scenario_builder(
-        self, scenario_name: str, mapping: ScenarioBuilderMapping
-    ) -> ScenarioBuilderMapping:
-        filled_scenario = self._fill_missing_years(mapping)
+        self, scenario_name: str, data: list[GemsScBuilderMapping]
+    ) -> list[GemsScBuilderMapping]:
+        filled_scenario = self._fill_missing_years(data)
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
         values = [
@@ -100,13 +96,15 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
 
         session.commit()
 
-    def _fill_missing_years(self, mapping: ScenarioBuilderMapping) -> list[GemsScBuilderMapping]:
+    def _fill_missing_years(self, data: list[GemsScBuilderMapping]) -> list[GemsScBuilderMapping]:
         """
         GEMS scenario builder has default values for missing years, we should initialize them for the front-end
         """
-        result = []
         simulation_nb_years = self.get_impl().get_general_config().nb_years
-        for year in range(simulation_nb_years):
-            obj_mapping = {"scenario": year, "time_series_index": mapping.get(year, year + 1)}
-            result.append(GemsScBuilderMapping.model_validate(obj_mapping))
-        return result
+        existing = {mapping.scenario for mapping in data}
+
+        return data + [
+            GemsScBuilderMapping(scenario=year, time_series_index=year + 1)
+            for year in range(simulation_nb_years)
+            if year not in existing
+        ]

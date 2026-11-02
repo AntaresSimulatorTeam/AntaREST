@@ -12,6 +12,7 @@
 from typing import Annotated, TypeAlias
 
 from pydantic import ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 from antarest.core.model import GemsId
 from antarest.core.serde import AntaresBaseModel
@@ -19,13 +20,11 @@ from antarest.core.serde import AntaresBaseModel
 Scenario: TypeAlias = Annotated[int, Field(ge=0)]
 TimeSerieIndex: TypeAlias = Annotated[int, Field(ge=1)]
 
-ScenarioBuilderMapping: TypeAlias = dict[Scenario, TimeSerieIndex]
-
 
 class GemsScBuilderMapping(AntaresBaseModel):
     """Associate a zero-based scenario with a one-based data-series column."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel)
 
     scenario: Scenario
     time_series_index: TimeSerieIndex

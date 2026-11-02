@@ -74,8 +74,8 @@ from antarest.study.business.model.district_model import (
     DistrictUpdate,
 )
 from antarest.study.business.model.gems.scenario_builder import (
+    GemsScBuilderMapping,
     GemsScenarioBuilder,
-    ScenarioBuilderMapping,
 )
 from antarest.study.business.model.hydro_allocation_model import (
     HydroAllocation,
@@ -2471,12 +2471,12 @@ def create_study_data_routes() -> APIRouter:
         summary="Creates a new scenario inside the GEMS scenario builder for a given study",
     )
     def add_scenario_to_gems_scenario_builder(
-        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: SanitizedStr, mapping: ScenarioBuilderMapping
-    ) -> ScenarioBuilderMapping:
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: SanitizedStr, data: list[GemsScBuilderMapping]
+    ) -> list[GemsScBuilderMapping]:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.gems_scenario_builder_manager.add_scenario_to_gems_scenario_builder(
-            study_interface, scenario_name, mapping
+            study_interface, scenario_name, data
         )
 
     @bp.delete(

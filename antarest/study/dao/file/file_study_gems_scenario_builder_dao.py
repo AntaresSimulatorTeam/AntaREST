@@ -20,7 +20,6 @@ from antarest.core.exceptions import GemsUnavailableForFileSystemStudies
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMapping,
     GemsScenarioBuilder,
-    ScenarioBuilderMapping,
 )
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -74,8 +73,8 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
 
     @override
     def add_scenario_to_gems_scenario_builder(
-        self, scenario_name: str, mapping: ScenarioBuilderMapping
-    ) -> ScenarioBuilderMapping:
+        self, scenario_name: str, data: list[GemsScBuilderMapping]
+    ) -> list[GemsScBuilderMapping]:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
