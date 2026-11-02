@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
 from antarest.study.dao.api.study_dao import StudyDao
@@ -43,6 +44,7 @@ def test_roundtrip(dao_10_2: StudyDao) -> None:
 
 
 def test_replace_builder(dao_10_2: StudyDao) -> None:
+    dao_10_2.save_general_config(GeneralConfig(nb_years=3))
     dao_10_2.save_gems_scenario_builder(
         GemsScenarioBuilder(
             scenarios={
@@ -53,6 +55,20 @@ def test_replace_builder(dao_10_2: StudyDao) -> None:
                 "hydro": [GemsScBuilderMapping(scenario=2, time_series_index=7)],
             }
         )
+    )
+    assert dao_10_2.get_gems_scenario_builder() == GemsScenarioBuilder(
+        scenarios={
+            "load": [
+                GemsScBuilderMapping(scenario=0, time_series_index=1),
+                GemsScBuilderMapping(scenario=1, time_series_index=5),
+                GemsScBuilderMapping(scenario=2, time_series_index=3),  # Default value
+            ],
+            "hydro": [
+                GemsScBuilderMapping(scenario=0, time_series_index=1),  # Default value
+                GemsScBuilderMapping(scenario=1, time_series_index=2),  # Default value
+                GemsScBuilderMapping(scenario=2, time_series_index=7),
+            ],
+        }
     )
     replacement = GemsScenarioBuilder(
         scenarios={

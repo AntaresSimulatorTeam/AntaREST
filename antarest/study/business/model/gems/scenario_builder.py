@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import Annotated, TypeAlias
 
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, PlainSerializer
 from pydantic.alias_generators import to_camel
 
 from antarest.core.model import GemsId
@@ -30,12 +30,17 @@ class GemsScBuilderMapping(AntaresBaseModel):
     time_series_index: TimeSerieIndex
 
 
+SortedGemsScBuilderMapping: TypeAlias = Annotated[
+    list[GemsScBuilderMapping], PlainSerializer(lambda x: sorted(x, key=lambda x: x.scenario))
+]
+
+
 class GemsScenarioBuilder(AntaresBaseModel):
     """Map each group's zero-based scenarios to one-based data-series columns."""
 
     model_config = ConfigDict(extra="forbid")
 
-    scenarios: dict[GemsId, list[GemsScBuilderMapping]] = Field(default_factory=dict)
+    scenarios: dict[GemsId, SortedGemsScBuilderMapping] = Field(default_factory=dict)
 
 
 def fill_missing_years(data: list[GemsScBuilderMapping], nb_years: int) -> list[GemsScBuilderMapping]:
@@ -44,8 +49,10 @@ def fill_missing_years(data: list[GemsScBuilderMapping], nb_years: int) -> list[
     """
     existing = {mapping.scenario for mapping in data}
 
-    return data + [
+    new_mapping = data + [
         GemsScBuilderMapping(scenario=year, time_series_index=year + 1)
         for year in range(nb_years)
         if year not in existing
     ]
+    new_mapping.sort(key=lambda x: x.scenario)
+    return new_mapping
