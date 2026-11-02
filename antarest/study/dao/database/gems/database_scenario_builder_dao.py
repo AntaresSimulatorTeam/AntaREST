@@ -36,12 +36,12 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         if not rows:
             return None
 
-        scenario_builder = {row.scenario_group: json.loads(row.data) for row in rows}
+        scenario_builder = GemsScenarioBuilder(scenarios={row.scenario_group: json.loads(row.data) for row in rows})
         simulation_nb_years = self.get_impl().get_general_config().nb_years
-        for scenario_id, mapping in scenario_builder.items():
-            scenario_builder[scenario_id] = fill_missing_years(mapping, simulation_nb_years)
+        for scenario_id, mapping in scenario_builder.scenarios.items():
+            scenario_builder.scenarios[scenario_id] = fill_missing_years(mapping, simulation_nb_years)
 
-        return GemsScenarioBuilder(scenarios=scenario_builder)
+        return scenario_builder
 
     @override
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
