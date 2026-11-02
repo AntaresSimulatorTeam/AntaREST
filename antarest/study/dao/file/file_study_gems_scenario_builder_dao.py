@@ -82,5 +82,5 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> GemsScBuilderMapping:
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> list[GemsScBuilderMapping]:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

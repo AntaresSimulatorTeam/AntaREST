@@ -25,7 +25,7 @@ class ReadOnlyGemsScenarioBuilderDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> GemsScBuilderMapping:
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> list[GemsScBuilderMapping]:
         raise NotImplementedError()
 
 
