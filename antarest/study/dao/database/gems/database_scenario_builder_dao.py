@@ -37,8 +37,10 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
+        # Fill the default value before saving in DB
+        for scenario_id, mapping in scenario_builder.scenarios.items():
+            scenario_builder.scenarios[scenario_id] = self._fill_missing_years(mapping)
         groups = scenario_builder.model_dump(mode="json")["scenarios"]
-        # todo: we should fill the default value before saving in DB
         try:
             upsert_multiple(
                 session,
