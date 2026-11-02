@@ -98,13 +98,16 @@ import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdReservesC
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyPumpPowerRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-pump-power'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyGenPowerRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-gen-power'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyPumpEnergyRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-pump-energy'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyGenEnergyRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-gen-energy'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroHydroStorageRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/hydro-storage'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits'
+import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsThermalIdRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId/route'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesStorageIdRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/route'
 import { Route as AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesRenewableIdRouteRouteImport } from './routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId/route'
@@ -803,11 +806,29 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsR
         AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute,
     } as any,
   )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRouteImport.update(
+    {
+      id: '/min-reservoir-levels',
+      path: '/min-reservoir-levels',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute,
+    } as any,
+  )
 const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRoute =
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRouteImport.update(
     {
       id: '/min-gen',
       path: '/min-gen',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRouteImport.update(
+    {
+      id: '/max-reservoir-levels',
+      path: '/max-reservoir-levels',
       getParentRoute: () =>
         AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute,
     } as any,
@@ -862,6 +883,15 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEne
     {
       id: '/daily-power-and-energy-credits',
       path: '/daily-power-and-energy-credits',
+      getParentRoute: () =>
+        AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute,
+    } as any,
+  )
+const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRoute =
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRouteImport.update(
+    {
+      id: '/avg-reservoir-levels',
+      path: '/avg-reservoir-levels',
       getParentRoute: () =>
         AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute,
     } as any,
@@ -1240,13 +1270,16 @@ export interface FileRoutesByFullPath {
   '/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesRenewableIdRouteRouteWithChildren
   '/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesStorageIdRouteRouteWithChildren
   '/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsThermalIdRouteRouteWithChildren
+  '/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/hydro-storage': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroHydroStorageRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-gen-energy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyGenEnergyRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-pump-energy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyPumpEnergyRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-gen-power': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyGenPowerRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-pump-power': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyPumpPowerRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute
@@ -1351,13 +1384,16 @@ export interface FileRoutesByTo {
   '/studies/$studyId/explore/modeling/areas/$areaId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdIndexRoute
   '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId': typeof AuthenticatedStudiesStudyIdExploreModelingBindingConstraintsBindingConstraintIdIndexRoute
   '/studies/$studyId/explore/modeling/links/$linkId': typeof AuthenticatedStudiesStudyIdExploreModelingLinksLinkIdIndexRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/hydro-storage': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroHydroStorageRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-gen-energy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyGenEnergyRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-pump-energy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyPumpEnergyRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-gen-power': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyGenPowerRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-pump-power': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyPumpPowerRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRoute
+  '/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute
   '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute
@@ -1480,13 +1516,16 @@ export interface FileRoutesById {
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdRenewablesRenewableIdRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdStoragesStorageIdRouteRouteWithChildren
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdThermalsThermalIdRouteRouteWithChildren
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/hydro-storage': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroHydroStorageRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-gen-energy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyGenEnergyRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-pump-energy': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyPumpEnergyRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-gen-power': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyGenPowerRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-pump-power': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyPumpPowerRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRoute
+  '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute
   '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values': typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute
@@ -1612,13 +1651,16 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId'
     | '/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId'
     | '/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/hydro-storage'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-gen-energy'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-pump-energy'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-gen-power'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-pump-power'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
@@ -1723,13 +1765,16 @@ export interface FileRouteTypes {
     | '/studies/$studyId/explore/modeling/areas/$areaId'
     | '/studies/$studyId/explore/modeling/binding-constraints/$bindingConstraintId'
     | '/studies/$studyId/explore/modeling/links/$linkId'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/hydro-storage'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-gen-energy'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-pump-energy'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-gen-power'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-pump-power'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen'
+    | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
     | '/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
@@ -1851,13 +1896,16 @@ export interface FileRouteTypes {
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/renewables/$renewableId'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/hydro-storage'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-gen-energy'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-pump-energy'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-gen-power'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-pump-power'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen'
+    | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/reservoir-levels'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/run-of-river'
     | '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/water-values'
@@ -2536,11 +2584,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute
     }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels'
+      path: '/min-reservoir-levels'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute
+    }
     '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen': {
       id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen'
       path: '/min-gen'
       fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-gen'
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels'
+      path: '/max-reservoir-levels'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-hourly-pump-power': {
@@ -2583,6 +2645,13 @@ declare module '@tanstack/react-router' {
       path: '/daily-power-and-energy-credits'
       fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/hydro/daily-power-and-energy-credits'
       preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRouteImport
+      parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute
+    }
+    '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels': {
+      id: '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels'
+      path: '/avg-reservoir-levels'
+      fullPath: '/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels'
+      preLoaderRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRouteImport
       parentRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRoute
     }
     '/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId': {
@@ -2933,13 +3002,16 @@ const AuthenticatedStudiesStudyIdExploreConfigurationRouteRouteWithChildren =
   )
 
 interface AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteChildren {
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroHydroStorageRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroHydroStorageRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyGenEnergyRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyGenEnergyRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyPumpEnergyRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxDailyPumpEnergyRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyGenPowerRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyGenPowerRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyPumpPowerRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyPumpPowerRoute
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRoute
+  AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute
   AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute: typeof AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroWaterValuesRoute
@@ -2952,6 +3024,8 @@ interface AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteCh
 
 const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteChildren: AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteChildren =
   {
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroAvgReservoirLevelsRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroDailyPowerAndEnergyCreditsRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroHydroStorageRoute:
@@ -2964,8 +3038,12 @@ const AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRouteRouteChildr
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyGenPowerRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyPumpPowerRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxHourlyPumpPowerRoute,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMaxReservoirLevelsRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinGenRoute,
+    AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRoute:
+      AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroMinReservoirLevelsRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute:
       AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroReservoirLevelsRoute,
     AuthenticatedStudiesStudyIdExploreModelingAreasAreaIdHydroRunOfRiverRoute:

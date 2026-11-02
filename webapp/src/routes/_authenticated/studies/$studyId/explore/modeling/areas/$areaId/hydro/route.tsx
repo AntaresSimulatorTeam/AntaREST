@@ -29,13 +29,13 @@ function HydroLayout() {
   const params = Route.useParams();
   const study = useStudy();
 
-  const { data: hydroPmax = "" } = usePromise(
-    () =>
-      getCompatibilityParamsFormFields(study.id)
-        .then((values) => values.hydroPmax)
-        .catch(() => undefined),
+  const { data: compatibilityParams } = usePromise(
+    () => getCompatibilityParamsFormFields(study.id).catch(() => undefined),
     [study.id],
   );
+
+  const hydroPmax = compatibilityParams?.hydroPmax ?? "";
+  const hydroRuleCurves = compatibilityParams?.hydroRuleCurves ?? "";
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -155,6 +155,34 @@ function HydroLayout() {
                 label: "Max Daily Pump Energy",
                 linkOptions: linkOptions({
                   to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-pump-energy",
+                  params,
+                }),
+              },
+            ]
+          : []),
+        ...(semver.gte(study.version, "10.2.0") && hydroRuleCurves === "scenarized"
+          ? [
+              {
+                id: "minReservoirLevels",
+                label: "Min Reservoir Levels",
+                linkOptions: linkOptions({
+                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels",
+                  params,
+                }),
+              },
+              {
+                id: "maxReservoirLevels",
+                label: "Max Reservoir Levels",
+                linkOptions: linkOptions({
+                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels",
+                  params,
+                }),
+              },
+              {
+                id: "avgReservoirLevels",
+                label: "Avg Reservoir Levels",
+                linkOptions: linkOptions({
+                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels",
                   params,
                 }),
               },
