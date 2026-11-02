@@ -114,6 +114,8 @@ class CommandName(Enum):
     REPLACE_ST_STORAGE_RESERVE_SYMMETRIES = "replace_st_storage_reserve_symmetries"
     REPLACE_HYDRO_RESERVE_CERTIFICATIONS = "replace_hydro_reserve_certifications"
     REPLACE_HYDRO_RESERVE_SYMMETRIES = "replace_hydro_reserve_symmetries"
+    CREATE_GEMS_SCENARIO = "create_gems_scenario"
+    REMOVE_GEMS_SCENARIO = "remove_gems_scenario"
 
 
 @dataclass(frozen=True)
