@@ -432,7 +432,7 @@ def test_deleting_an_area_removes_its_connections_and_the_ones_of_its_clusters(d
         ("electrolyser", "hydrogen_port", "west-h2")
     ]
     # Components stay in the system
-    assert [component.id for component in system.components] == ["dsr", "electrolyser"]
+    assert [component.id for component in system.components] == ["dsr", "electrolyser", "electrolyser2"]
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)

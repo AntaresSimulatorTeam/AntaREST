@@ -58,12 +58,14 @@ def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, matrix_service:
     # Save the old content back: matrices are written as CSV files named after the component and parameter
     dao.save_system(system)
     data_series_folder = dao.get_file_study().config.study_path / "input" / "data-series"
-    assert sorted(f.name for f in data_series_folder.iterdir()) == ["dsr_max_load.csv", "electrolyser_p_max.csv"]
-    assert (data_series_folder / "dsr_max_load.csv").read_text().splitlines()[0] == "10.0"
+
+    # As 2 parameters values point to the same matrix, we should have 2 CSV files only
+    assert sorted(f.name for f in data_series_folder.iterdir()) == ["data_series_0.csv", "data_series_1.csv"]
+    assert (data_series_folder / "data_series_0.csv").read_text().splitlines() == [str(10.0 + 2 * i) for i in range(24)]
 
     yaml_system = YAMLReader().read(dao.get_file_study().config.study_path / "input" / "system.yml")["system"]
-    assert yaml_system["components"][0]["parameters"][1]["value"] == "dsr_max_load"
-    assert yaml_system["components"][1]["parameters"][1]["value"] == "electrolyser_p_max"
+    assert yaml_system["components"][0]["parameters"][1]["value"] == "data_series_0"
+    assert yaml_system["components"][1]["parameters"][1]["value"] == "data_series_1"
 
     saved_system = dao.get_system()
     assert saved_system is not None
