@@ -467,7 +467,7 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
     assert system is not None
     assert system.id == "System 8_1"
     assert system.description == "Electrolyser - V8.6"
-    assert len(system.components) == 2
+    assert len(system.components) == 3
 
     first_component = system.components[0]
     assert first_component.id == "dsr"
@@ -509,6 +509,29 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
         [4, 8, 12, 16, 20, 24, 28, 32],
     ]
     assert np.array_equal(second_component_value.to_numpy(), expected)
+
+    third_component = system.components[2]
+    assert third_component.id == "electrolyser2"
+    assert third_component.model == "andromede-v1-models-weo-hybrid.electrolyser"
+    assert third_component.scenario_group == "sg1"
+    assert third_component.parameters is not None
+    assert len(third_component.parameters) == 2
+    assert third_component.parameters[0].id == "efficiency"
+    assert third_component.parameters[0].time_dependent is False
+    assert third_component.parameters[0].scenario_dependent is False
+    assert third_component.parameters[0].value == 1.4
+    assert third_component.parameters[1].id == "p_max"
+    assert third_component.parameters[1].time_dependent is True
+    assert third_component.parameters[1].scenario_dependent is True
+
+    third_component_value = matrix_service.get(str(third_component.parameters[1].value))
+    assert third_component_value is not None
+    expected = [
+        [2, 4, 6, 8, 10, 12, 14, 16],
+        [3, 6, 9, 12, 15, 18, 21, 24],
+        [4, 8, 12, 16, 20, 24, 28, 32],
+    ]
+    assert np.array_equal(third_component_value.to_numpy(), expected)
 
     assert system.connections is not None
     assert len(system.connections) == 1

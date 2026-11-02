@@ -130,11 +130,21 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
         matrix_service = self.get_impl().matrix_service
         data_series_folder = _get_data_series_folder(file_study.config.study_path)
 
+        mapping_matrix_id_to_csv = {}
+        matrices_count = 0
+
         for component in system.components:
             for parameter in component.parameters:
                 if not _is_dependent(parameter):
                     continue
-                data_series_folder.mkdir(parents=True, exist_ok=True)
-                name = f"{component.id}_{parameter.id}"
-                CsvWriter.write(matrix_service.get(str(parameter.value)), data_series_folder / f"{name}.csv")
-                parameter.value = name
+
+                # Update the parameter value with the name of the CSV file only if it has not been written yet
+                if not parameter.value in mapping_matrix_id_to_csv:
+                    data_series_folder.mkdir(parents=True, exist_ok=True)
+                    name = f"data_series_{matrices_count}"
+                    matrices_count += 1
+                    CsvWriter.write(matrix_service.get(str(parameter.value)), data_series_folder / f"{name}.csv")
+                    mapping_matrix_id_to_csv[parameter.value] = name
+                    parameter.value = name
+                else:
+                    parameter.value = mapping_matrix_id_to_csv[parameter.value]

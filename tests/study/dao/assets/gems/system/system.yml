@@ -36,6 +36,18 @@ system:
           time-dependent: true
           scenario-dependent: true
           value: time-and-scenario-dependent-example
+    - id: electrolyser2
+      model: andromede-v1-models-weo-hybrid.electrolyser
+      scenario-group: sg1
+      parameters:
+        - id: efficiency
+          scenario-dependent: false
+          time-dependent: false
+          value: 1.4
+        - id: p_max
+          time-dependent: true
+          scenario-dependent: true
+          value: time-and-scenario-dependent-example
 
   connections:
     - component1: dsr
