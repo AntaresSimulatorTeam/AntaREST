@@ -80,18 +80,12 @@ class AbstractStudyService(IStudyService, ABC):
 
     @override
     def delete_from_filesystem(self, study: Study) -> None:
-
-        # Database-mode studies have no file-system footprint: nothing to remove.
-        if study.path is not None:
-            study_path = self._get_study_path_on_file_system(study)
-            shutil.rmtree(study_path, ignore_errors=True)
+        if study.archived:
+            self.find_archive_path(study).unlink()
+        elif study.path is not None:
+            shutil.rmtree(check_study_path(study), ignore_errors=True)
 
         remove_from_cache(self._cache, study.id)
-
-    def _get_study_path_on_file_system(self, metadata: Study) -> Path:
-        if metadata.archived:
-            return self.find_archive_path(metadata)
-        return check_study_path(metadata)
 
     def find_archive_path(self, study: Study) -> Path:
         """

@@ -27,6 +27,7 @@ from antarest.core.exceptions import StudyDeletionNotAllowed
 from antarest.core.interfaces.cache import CacheConstants, ICache
 from antarest.core.model import PublicMode
 from antarest.core.serde.ini_reader import read_ini
+from antarest.core.utils.archives import ArchiveFormat
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Identity
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -34,7 +35,14 @@ from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFil
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.main import build_study_service
-from antarest.study.model import DEFAULT_WORKSPACE_NAME, Directory, RawStudy, StudyMetadataCopy, StudyMetadataCreation
+from antarest.study.model import (
+    DEFAULT_WORKSPACE_NAME,
+    Directory,
+    RawStudy,
+    StorageMode,
+    StudyMetadataCopy,
+    StudyMetadataCreation,
+)
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -407,6 +415,25 @@ def test_delete_raw_study(tmp_path: Path) -> None:
         ]
     )
     assert not study_path.exists()
+
+
+@pytest.mark.parametrize("archive_format", list(ArchiveFormat))
+@pytest.mark.parametrize("storage_mode", list(StorageMode))
+def test_delete_archived_study(tmp_path: Path, archive_format: ArchiveFormat, storage_mode: StorageMode) -> None:
+    config = Config(storage=StorageConfig(archive_dir=tmp_path))
+    raw_study_service = RawStudyService(config, Mock(), Mock(), Mock(), Mock())
+    study = RawStudy(
+        id="study",
+        archived=True,
+        storage_mode=storage_mode,
+        path=str(tmp_path / "study") if storage_mode == StorageMode.FILESYSTEM else None,
+    )
+    archive_path = tmp_path / f"{study.id}{archive_format}"
+    archive_path.touch()
+
+    raw_study_service.delete_from_filesystem(study)
+
+    assert not archive_path.exists()
 
 
 @with_admin_user
