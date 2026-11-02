@@ -17,6 +17,7 @@ from antarest.study.business.model.gems.scenario_builder import (
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_gems_scenario import CreateGemsScenario
+from antarest.study.storage.variantstudy.model.command.remove_gems_scenario import RemoveGemsScenario
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -30,7 +31,6 @@ class GemsScenarioBuilderManager:
     def add_scenario_to_gems_scenario_builder(
         self, study: StudyInterface, scenario_name: str, data: list[GemsScBuilderMapping]
     ) -> list[GemsScBuilderMapping]:
-        dao = study.get_study_dao()
         command = CreateGemsScenario(
             scenario_name=scenario_name,
             data=data,
@@ -38,8 +38,12 @@ class GemsScenarioBuilderManager:
             study_version=study.version,
         )
         study.add_commands([command])
-        return dao.get_scenario_from_gems_scenario_builder(scenario_name)
+        return study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
 
     def delete_scenario_from_gems_scenario_builder(self, study: StudyInterface, scenario_name: str) -> None:
-        # todo
-        raise NotImplementedError("")
+        command = RemoveGemsScenario(
+            scenario_name=scenario_name,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+        study.add_commands([command])
