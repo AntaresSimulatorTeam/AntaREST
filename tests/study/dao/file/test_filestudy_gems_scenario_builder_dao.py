@@ -27,14 +27,20 @@ ASSET = Path(__file__).parent.parent / "assets/gems/scenario_builder/modeler-sce
 
 
 def test_roundtrip(dao_10_2: StudyDao) -> None:
+    dao_10_2.save_general_config(GeneralConfig(nb_years=3))
     assert dao_10_2.get_gems_scenario_builder() is None
     builder = GemsScenarioBuilder(
         scenarios={
             "load": [
                 GemsScBuilderMapping(scenario=0, time_series_index=1),
                 GemsScBuilderMapping(scenario=1, time_series_index=5),
+                GemsScBuilderMapping(scenario=2, time_series_index=3),
             ],
-            "hydro": [GemsScBuilderMapping(scenario=2, time_series_index=7)],
+            "hydro": [
+                GemsScBuilderMapping(scenario=0, time_series_index=1),
+                GemsScBuilderMapping(scenario=1, time_series_index=2),
+                GemsScBuilderMapping(scenario=2, time_series_index=7),
+            ],
         }
     )
     dao_10_2.save_gems_scenario_builder(builder)
