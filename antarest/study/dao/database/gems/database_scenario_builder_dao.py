@@ -35,16 +35,18 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         rows = self._db_session.execute(select(table).where(table.c.study_data_id == self._study_data_id)).fetchall()
         if not rows:
             return None
-        return GemsScenarioBuilder(scenarios={row.scenario_group: json.loads(row.data) for row in rows})
+
+        scenario_builder = {row.scenario_group: json.loads(row.data) for row in rows}
+        simulation_nb_years = self.get_impl().get_general_config().nb_years
+        for scenario_id, mapping in scenario_builder.items():
+            scenario_builder[scenario_id] = fill_missing_years(mapping, simulation_nb_years)
+
+        return GemsScenarioBuilder(scenarios=scenario_builder)
 
     @override
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
-        # Fill the default value before saving in DB
-        simulation_nb_years = self.get_impl().get_general_config().nb_years
-        for scenario_id, mapping in scenario_builder.scenarios.items():
-            scenario_builder.scenarios[scenario_id] = fill_missing_years(mapping, simulation_nb_years)
         groups = scenario_builder.model_dump(mode="json")["scenarios"]
         try:
             upsert_multiple(
@@ -116,4 +118,6 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
             raise GemsScenarioNotFound(scenario_name, self._study_id)
 
         mapping_list = json.loads(row.data)
-        return [GemsScBuilderMapping.model_validate(mapping) for mapping in mapping_list]
+        simulation_nb_years = self.get_impl().get_general_config().nb_years
+        unfilled_data = [GemsScBuilderMapping.model_validate(mapping) for mapping in mapping_list]
+        return fill_missing_years(unfilled_data, simulation_nb_years)
