@@ -24,7 +24,7 @@ TimeSerieIndex: TypeAlias = Annotated[int, Field(ge=1)]
 class GemsScBuilderMapping(AntaresBaseModel):
     """Associate a zero-based scenario with a one-based data-series column."""
 
-    model_config = ConfigDict(extra="forbid", alias_generator=to_camel)
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
 
     scenario: Scenario
     time_series_index: TimeSerieIndex
