@@ -42,7 +42,9 @@ from antarest.study.business.model.gems.system import (
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_10_2
+from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvReader
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 from tests.integration.conftest import RUN_ON_WINDOWS
 from tests.study.dao.conftest import _build_db_dao_unreleased_version, check_gems_system_integrity
@@ -776,11 +778,16 @@ def _add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
 
     # The system file references dependent parameters by data series id, matching the real-world
     # file-based `system.yml` convention. `save_components` reads the matrix from an actual file, so
-    # we resolve those ids to the matching CSV asset before saving.
+    # we resolve those ids to the matching CSV asset before saving. File studies expect matrix ids instead,
+    # so the matrices are created beforehand in the matrix store.
     for component in system.components:
         for parameter in component.parameters:
             if parameter.time_dependent or parameter.scenario_dependent:
-                parameter.value = str(DATA_SERIES_PATH / f"{parameter.value}.csv")
+                csv_path = DATA_SERIES_PATH / f"{parameter.value}.csv"
+                if isinstance(dao, FileStudyTreeDao):
+                    parameter.value = dao.matrix_service.create(CsvReader.read(csv_path))
+                else:
+                    parameter.value = str(csv_path)
 
     dao.save_system(system)
     return system

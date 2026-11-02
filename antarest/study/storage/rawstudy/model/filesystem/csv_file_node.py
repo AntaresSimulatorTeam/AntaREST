@@ -25,7 +25,9 @@ class CsvReader:
 
         if isinstance(path, (Path, str)):
             try:
-                return pl.read_csv(path)
+                return pl.read_csv(path, has_header=False, infer_schema=False).with_columns(
+                    pl.all().str.strip_chars().cast(pl.Float64)
+                )
 
             except FileNotFoundError:
                 return pl.DataFrame()
@@ -41,4 +43,4 @@ class CsvWriter:
 
     @staticmethod
     def write(data: pl.DataFrame, path: Path) -> None:
-        data.write_csv(path)
+        data.write_csv(path, include_header=False)

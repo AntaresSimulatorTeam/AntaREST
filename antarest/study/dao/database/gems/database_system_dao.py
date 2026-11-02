@@ -12,7 +12,6 @@
 from pathlib import Path
 from typing import Any, List, NoReturn, Sequence
 
-import polars as pl
 from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
@@ -47,15 +46,9 @@ from antarest.study.dao.database.models.gems.system import (
     GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE,
 )
 from antarest.study.dao.database.models.thermal import THERMAL_CLUSTER_TABLE
+from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvReader
 
 METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
-
-
-def _read_data_series(file_path: str) -> pl.DataFrame:
-    # Data series files have no header row and may contain spaces after separators.
-    return pl.read_csv(file_path, has_header=False, infer_schema=False).with_columns(
-        pl.all().str.strip_chars().cast(pl.Float64)
-    )
 
 
 def _reorder_connection(connection: GemsComponentConnection) -> GemsComponentConnection:
@@ -432,7 +425,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                         missing_files[(component.id, parameter.id)] = file_path
                     else:
                         dependent_parameter_indices.append(len(parameter_rows))
-                        matrix_dataframes.append(_read_data_series(file_path))
+                        matrix_dataframes.append(CsvReader.read(file_path))
                 else:
                     row["value"] = float(parameter.value)
                 parameter_rows.append(row)
