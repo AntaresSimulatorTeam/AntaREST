@@ -12,7 +12,7 @@
 
 import json
 
-from sqlalchemy import CursorResult, delete, insert, select
+from sqlalchemy import CursorResult, delete, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
@@ -66,7 +66,7 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
             raise
 
     @override
-    def add_scenario_to_gems_scenario_builder(
+    def save_scenario_inside_gems_scenario_builder(
         self, scenario_name: str, data: list[GemsScBuilderMapping]
     ) -> list[GemsScBuilderMapping]:
         simulation_nb_years = self.get_impl().get_general_config().nb_years
@@ -77,9 +77,8 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
             {"study_data_id": self._study_data_id, "scenario_group": scenario_name, "data": json.dumps(filled_scenario)}
         ]
 
-        stmt = insert(table).values(values)
         try:
-            session.execute(stmt)
+            upsert_multiple(session, table, values)
             session.commit()
         except IntegrityError as e:
             # Means the scenario already existed

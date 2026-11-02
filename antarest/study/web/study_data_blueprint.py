@@ -2479,6 +2479,19 @@ def create_study_data_routes() -> APIRouter:
             study_interface, scenario_name, data
         )
 
+    @bp.put(
+        "/studies/{uuid}/gems/scenario-builder",
+        summary="Updates the mapping of a scenario inside the GEMS scenario builder for a given study",
+    )
+    def update_scenario_from_gems_scenario_builder(
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: SanitizedStr, data: list[GemsScBuilderMapping]
+    ) -> list[GemsScBuilderMapping]:
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.gems_scenario_builder_manager.update_scenario_from_gems_scenario_builder(
+            study_interface, scenario_name, data
+        )
+
     @bp.delete(
         "/studies/{uuid}/gems/scenario-builder",
         summary="Deletes the given scenario from the gems scenario builder for a given study",

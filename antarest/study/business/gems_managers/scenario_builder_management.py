@@ -18,6 +18,7 @@ from antarest.study.business.model.gems.scenario_builder import (
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_gems_scenario import CreateGemsScenario
 from antarest.study.storage.variantstudy.model.command.remove_gems_scenario import RemoveGemsScenario
+from antarest.study.storage.variantstudy.model.command.replace_gems_scenario import UpdateGemsScenario
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
@@ -32,6 +33,18 @@ class GemsScenarioBuilderManager:
         self, study: StudyInterface, scenario_name: str, data: list[GemsScBuilderMapping]
     ) -> list[GemsScBuilderMapping]:
         command = CreateGemsScenario(
+            scenario_name=scenario_name,
+            data=data,
+            command_context=self._command_context,
+            study_version=study.version,
+        )
+        study.add_commands([command])
+        return study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
+
+    def update_scenario_from_gems_scenario_builder(
+        self, study: StudyInterface, scenario_name: str, data: list[GemsScBuilderMapping]
+    ) -> list[GemsScBuilderMapping]:
+        command = UpdateGemsScenario(
             scenario_name=scenario_name,
             data=data,
             command_context=self._command_context,
