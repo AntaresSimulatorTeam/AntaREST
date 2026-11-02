@@ -629,8 +629,8 @@ class AbstractFileOutputStorage(IOutputStorage):
         outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
         output_path = _output_path(outputs_path, output_id)
         # The output must be a direct child of the study outputs folder: rejects ids like "." or ".."
-        # if output_id == ".." or output_path.parent != outputs_path or not output_path.is_dir():
-        #     raise OutputNotFound(output_id)
+        if output_id == ".." or output_path.parent != outputs_path or not output_path.is_dir():
+            raise OutputNotFound(output_id)
         return output_path
 
     @override

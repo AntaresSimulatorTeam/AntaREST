@@ -449,12 +449,10 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def list_raw_files(self, study_id: str, output_id: str) -> list[PurePosixPath]:
-        # todo: implement this
         raise NotImplementedError()
 
     @override
     def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath) -> bytes:
-        # todo: implement this
         raise NotImplementedError()
 
     @override

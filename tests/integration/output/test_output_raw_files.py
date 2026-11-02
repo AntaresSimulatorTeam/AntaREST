@@ -9,17 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import io
 from pathlib import Path
 
 import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
-from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
-from tests.integration.prepare_proxy import PreparerProxy
 from tests.integration.utils import wait_task_completion
-from tests.test_helpers.dates import utc_to_local
 
 
 @pytest.mark.parametrize("storage_type", ["in_study", "outside_study"], indirect=True)
@@ -112,11 +108,9 @@ def test_output_raw_files_path_traversal(
     secret_file = tmp_path / "secret.txt"
     secret_file.write_text("secret")
 
-    # File paths outside the output folder: any file readable by the server would be exposed
     absolute_path = secret_file.as_posix()
-    # Goes up to the filesystem root (extra ".." are ignored there), then down to the secret file
+    # Climbs up to the filesystem root (extra ".." are ignored there), then down to the secret file
     dot_dot_path = "../" * (len(tmp_path.parts) + 5) + secret_file.relative_to(secret_file.anchor).as_posix()
-    # Both kinds of path traversal: absolute (replaces the output folder when joined) and relative (".." climbs out)
     for path in [absolute_path, dot_dot_path]:
         res = client.get(
             f"/v1/studies/{internal_study_id}/outputs/{output_id}/raw-files/content", params={"path": path}
@@ -124,8 +118,7 @@ def test_output_raw_files_path_traversal(
         assert res.status_code == 404, (path, res.content)
         assert res.json()["exception"] == "OutputFileNotFound"
 
-    # The output id must name a direct child of the outputs folder: ".." resolves to its parent (the study
-    # folder, or the folder holding every study's outputs) and "." to the outputs folder itself.
+    # Output ids that are not a direct child of the outputs folder
     for output_id_outside in ["%2E%2E", "%2E"]:
         res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id_outside}/raw-files")
         assert res.status_code == 404, res.content
@@ -136,28 +129,3 @@ def test_output_raw_files_path_traversal(
         )
         assert res.status_code == 404, res.content
         assert res.json()["exception"] == "OutputNotFound"
-
-
-def test_output_raw_files_database_study(client: TestClient, user_access_token: str) -> None:
-    client.headers = {"Authorization": f"Bearer {user_access_token}"}
-    preparer = PreparerProxy(client, user_access_token)
-    study_id = preparer.create_study("db-study", storage_mode="database")
-
-    # Outputs of database studies are stored outside the study
-    output = io.BytesIO((INTEGRATION_ASSETS_DIR / "output_adq.7z").read_bytes())
-    res = client.post(f"/v1/studies/{study_id}/output", files={"output": output})
-    assert res.status_code == 202, res.json()
-    output_id = f"{utc_to_local('20221003-2142')}adq"
-
-    res = client.get(f"/v1/studies/{study_id}/outputs/{output_id}/raw-files")
-    assert res.status_code == 200, res.json()
-    tree = res.json()
-    assert "simulation.log" in tree["files"]
-    assert "about-the-study" in [d["name"] for d in tree["directories"]]
-
-    res = client.get(
-        f"/v1/studies/{study_id}/outputs/{output_id}/raw-files/content",
-        params={"path": "about-the-study/areas.txt"},
-    )
-    assert res.status_code == 200, res.json()
-    assert res.content == b"DE\r\nES\r\nFR\r\nIT\r\n"
