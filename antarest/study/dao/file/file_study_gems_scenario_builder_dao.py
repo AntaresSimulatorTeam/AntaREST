@@ -13,6 +13,7 @@
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
@@ -20,9 +21,13 @@ from antarest.core.exceptions import GemsUnavailableForFileSystemStudies
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMapping,
     GemsScenarioBuilder,
+    fill_missing_years,
 )
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
 def _get_gems_scenario_builder_file_path(study_path: Path) -> Path:
@@ -32,6 +37,10 @@ def _get_gems_scenario_builder_file_path(study_path: Path) -> Path:
 class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
+        pass
+
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
         pass
 
     @override
@@ -56,7 +65,15 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
                 raise ValueError(f"Duplicate GEMS scenario builder mapping at line {line_number}: {line!r}")
             seen.add((group, scenario_index))
             mappings.append(GemsScBuilderMapping(scenario=scenario_index, time_series_index=int(column)))
-        return GemsScenarioBuilder(scenarios=groups) if groups else None
+
+        if not groups:
+            return None
+
+        simulation_nb_years = self.get_impl().get_general_config().nb_years
+        for scenario_id, mappings in groups.items():
+            groups[scenario_id] = fill_missing_years(mappings, simulation_nb_years)
+
+        return GemsScenarioBuilder(scenarios=groups)
 
     @override
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
