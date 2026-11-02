@@ -12,12 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { Box } from "@mui/material";
+import { Divider, Typography } from "@mui/material";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import CustomScrollbar from "@/components/CustomScrollbar";
 import UploadDialog, { type UploadDialogProps } from "@/components/dialogs/UploadDialog";
 import CheckBoxFE from "@/components/fieldEditors/CheckBoxFE";
 import SelectFE, { type Options } from "@/components/fieldEditors/SelectFE";
@@ -31,7 +30,8 @@ import type { DirectoryDestination } from "../../StudyDestinationFE/types";
 import { useDefaultStudyDestination } from "../../StudyDestinationFE/useDefaultStudyDestination";
 import { useRedirectToDestination } from "../../StudyDestinationFE/useRedirectToDestination";
 import { refreshDirectoriesIfNeeded, toDirectoryPath } from "../../StudyDestinationFE/utils";
-import { studyDestinationDialogPaperSx } from "../styles";
+import StudyDestinationLayout from "../StudyDestinationLayout";
+import { studyDestinationDialogPaperSx, studyDestinationRedirectSx } from "../styles";
 
 interface Props {
   open: boolean;
@@ -92,50 +92,47 @@ function ImportStudyDialog({ open, onClose }: Props) {
       onCancel={onClose}
       onImport={handleImport}
       onImportComplete={handleImportComplete}
-      maxWidth="sm"
+      maxWidth="md"
       fullWidth
       slotProps={{ paper: { sx: studyDestinationDialogPaperSx } }}
-      contentProps={{ sx: { overflow: "hidden" } }}
-      extraContent={
-        <CustomScrollbar style={{ flex: 1, minHeight: 0, marginInline: -8 }}>
-          <Box
-            sx={{
-              p: 1,
-              height: 1,
-              minHeight: 320,
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-            }}
-          >
+      contentProps={{ sx: { px: 2, overflow: "hidden" } }}
+    >
+      {(uploadArea) => (
+        <StudyDestinationLayout
+          destination={
             <StudyDestinationFE
               value={destination}
               onChange={(event) => setDestination(event.target.value)}
               fillHeight
             />
-            <SelectFE
-              label={t("studies.storageMode")}
-              options={STORAGE_MODE_OPTIONS}
-              value={storageMode}
-              onChange={(event) => setStorageMode(event.target.value)}
-              helperText={
-                storageMode === StorageMode.DATABASE
-                  ? t("studies.storageMode.gemsCompatible")
-                  : undefined
-              }
-              size="small"
-            />
-            <CheckBoxFE
-              value={redirect}
-              onChange={(_event, checked) => setRedirect(checked)}
-              label={t("studies.destination.redirectAfterImport")}
-              size="small"
-              sx={{ color: "text.secondary", flexShrink: 0 }}
-            />
-          </Box>
-        </CustomScrollbar>
-      }
-    />
+          }
+        >
+          <Typography component="h3" variant="subtitle2">
+            {t("global.general")}
+          </Typography>
+          <SelectFE
+            label={t("studies.storageMode")}
+            options={STORAGE_MODE_OPTIONS}
+            value={storageMode}
+            onChange={(event) => setStorageMode(event.target.value)}
+            helperText={
+              storageMode === StorageMode.DATABASE
+                ? t("studies.storageMode.gemsCompatible")
+                : undefined
+            }
+          />
+          <CheckBoxFE
+            value={redirect}
+            onChange={(_event, checked) => setRedirect(checked)}
+            label={t("studies.destination.redirectAfterImport")}
+            size="small"
+            sx={studyDestinationRedirectSx}
+          />
+          <Divider />
+          {uploadArea}
+        </StudyDestinationLayout>
+      )}
+    </UploadDialog>
   );
 }
 
