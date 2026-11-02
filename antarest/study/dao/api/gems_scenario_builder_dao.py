@@ -24,6 +24,10 @@ class ReadOnlyGemsScenarioBuilderDao(ABC):
         """Return the scenario builder, or None if no scenario groups are configured."""
         raise NotImplementedError()
 
+    @abstractmethod
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> GemsScBuilderMapping:
+        raise NotImplementedError()
+
 
 class GemsScenarioBuilderDao(ReadOnlyGemsScenarioBuilderDao):
     @abstractmethod

@@ -11,7 +11,11 @@
 # This file is part of the Antares project.
 
 
-from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
+from antarest.study.business.model.gems.scenario_builder import (
+    GemsScBuilderMapping,
+    GemsScenarioBuilder,
+    fill_missing_years,
+)
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
@@ -26,8 +30,9 @@ class GemsScenarioBuilderManager:
     def add_scenario_to_gems_scenario_builder(
         self, study: StudyInterface, scenario_name: str, data: list[GemsScBuilderMapping]
     ) -> list[GemsScBuilderMapping]:
-        # todo
-        raise NotImplementedError("")
+        simulation_nb_years = study.get_study_dao().get_general_config().nb_years
+        filled_scenario = fill_missing_years(data, simulation_nb_years)
+        return filled_scenario
 
     def delete_scenario_from_gems_scenario_builder(self, study: StudyInterface, scenario_name: str) -> None:
         # todo

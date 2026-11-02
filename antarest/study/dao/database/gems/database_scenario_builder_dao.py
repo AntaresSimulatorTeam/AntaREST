@@ -103,3 +103,17 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
             raise GemsScenarioNotFound(scenario_name, self._study_id)
 
         session.commit()
+
+    @override
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> GemsScBuilderMapping:
+        table = GEMS_SCENARIO_BUILDER_TABLE
+        row = self._db_session.execute(
+            select(table).where(
+                (table.c.study_data_id == self._study_data_id) & (table.c.scenario_group == scenario_name)
+            )
+        ).fetchone()
+
+        if not row:
+            raise GemsScenarioNotFound(scenario_name, self._study_id)
+
+        return GemsScBuilderMapping.model_validate_json(row.data)
