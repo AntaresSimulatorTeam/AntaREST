@@ -48,7 +48,7 @@ class CreateGemsScenario(ICommand):
         self, study_dao: StudyDao, listener: ICommandListener | None = None
     ) -> CommandOutput[list[GemsScBuilderMapping]]:
         result = study_dao.add_scenario_to_gems_scenario_builder(self.scenario_name, self.data)
-        return command_succeeded(message="Hydro pmax converted successfully.", result=result)
+        return command_succeeded(message=f"Gems scenario {self.scenario_name} added successfully", result=result)
 
     @override
     def to_dto(self) -> CommandDTO:
