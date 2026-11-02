@@ -15,13 +15,15 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { toError } from "@/utils/fnUtils";
 import type { PromiseAny } from "@/utils/tsUtils";
+import CloudUploadOutlinedIcon from "@mui/icons-material/CloudUploadOutlined";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
-import { Box, Button, LinearProgress, Paper, Typography, colors } from "@mui/material";
+import { Button, LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
 import { useEffect, useState } from "react";
 import { useDropzone, type Accept, type FileRejection } from "react-dropzone";
 import { useTranslation } from "react-i18next";
-import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
+import BasicDialog, { type BasicDialogProps } from "../BasicDialog";
+import { dropzoneSx, uploadProgressSx } from "./styles";
 
 export interface UploadImportResult {
   success: number;
@@ -29,7 +31,7 @@ export interface UploadImportResult {
   total: number;
 }
 
-export interface UploadDialogProps extends Omit<BasicDialogProps, "actions"> {
+export interface UploadDialogProps extends Omit<BasicDialogProps, "actions" | "children"> {
   dropzoneText?: string;
   accept?: Accept;
   /** Allow selecting/dropping several files at once. Each file is imported independently via `onImport`. */
@@ -38,23 +40,22 @@ export interface UploadDialogProps extends Omit<BasicDialogProps, "actions"> {
   onImport: (file: File, setUploadProgress: (progress: number) => void) => PromiseAny;
   /** Called once after all selected files have been processed (a single file counts as a batch of 1). */
   onImportComplete?: (result: UploadImportResult) => PromiseAny;
-  /** Optional content rendered above the dropzone (e.g. extra form fields). */
-  extraContent?: React.ReactNode;
+  /** Customize the body while keeping the upload controls and lifecycle managed by this dialog. */
+  children?: (uploadArea: React.ReactNode) => React.ReactNode;
 }
 
-function UploadDialog(props: UploadDialogProps) {
-  const {
-    dropzoneText,
-    accept,
-    multiple,
-    onImport,
-    onImportComplete,
-    onCancel,
-    onClose,
-    title,
-    extraContent,
-    ...dialogProps
-  } = props;
+function UploadDialog({
+  dropzoneText,
+  accept,
+  multiple,
+  onImport,
+  onImportComplete,
+  onCancel,
+  onClose,
+  title,
+  children,
+  ...dialogProps
+}: UploadDialogProps) {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [isUploading, setIsUploading] = useState(false);
@@ -173,6 +174,59 @@ function UploadDialog(props: UploadDialogProps) {
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  const dropzoneLabel = dropzoneText || t("common.dialog.import.dropzoneText");
+  const uploadStatus = uploadStatusText || t("common.dialog.import.importing");
+
+  const uploadArea = isUploading ? (
+    <Stack direction="column" spacing={2} justifyContent="center" sx={uploadProgressSx}>
+      <Typography role="status" variant="body2" align="center">
+        {uploadStatus}
+      </Typography>
+      <LinearProgress
+        aria-label={uploadStatus}
+        variant={uploadProgress > 2 && uploadProgress < 98 ? "determinate" : "indeterminate"}
+        value={Math.max(0, Math.min(100, uploadProgress))}
+      />
+    </Stack>
+  ) : (
+    <>
+      <Stack
+        component={Paper}
+        {...getRootProps({ role: "button" })}
+        elevation={0}
+        direction="column"
+        spacing={1}
+        alignItems="center"
+        justifyContent="center"
+        sx={[
+          dropzoneSx,
+          isDragActive && {
+            borderColor: "primary.main",
+            bgcolor: "action.selected",
+          },
+        ]}
+      >
+        <input {...getInputProps()} />
+        <CloudUploadOutlinedIcon
+          sx={{ fontSize: 36, mb: 1, color: isDragActive ? "primary.main" : "text.secondary" }}
+        />
+        <Typography sx={{ fontWeight: 500 }}>{dropzoneLabel}</Typography>
+        <Typography
+          component="span"
+          variant="body2"
+          sx={{ color: "primary.main", fontWeight: 500, textDecoration: "underline" }}
+        >
+          {t("common.dialog.import.browseFiles")}
+        </Typography>
+      </Stack>
+      {invalidText && (
+        <Typography role="alert" align="center" color="error.main" sx={{ pt: 1 }}>
+          {invalidText}
+        </Typography>
+      )}
+    </>
+  );
+
   return (
     <BasicDialog
       {...dialogProps}
@@ -185,65 +239,13 @@ function UploadDialog(props: UploadDialogProps) {
       }
       onClose={handleClose}
     >
-      <Box
-        sx={{
-          pt: 1,
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-          // When extra content is provided, fill the available dialog content height
-          // so consumers can use a tall dialog without leaving empty space below.
-          ...(extraContent && { flex: 1, minHeight: 0 }),
-        }}
-      >
-        {extraContent}
-        {isUploading ? (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            {uploadStatusText && (
-              <Typography variant="body2" sx={{ textAlign: "center", color: "text.secondary" }}>
-                {uploadStatusText}
-              </Typography>
-            )}
-            <LinearProgress
-              variant={uploadProgress > 2 && uploadProgress < 98 ? "determinate" : "indeterminate"}
-              value={Math.max(0, Math.min(100, uploadProgress))}
-            />
-          </Box>
-        ) : (
-          <>
-            <Paper
-              {...getRootProps()}
-              elevation={0}
-              sx={{
-                borderWidth: 1,
-                borderStyle: "dashed",
-                borderColor: isDragActive ? colors.blue[500] : colors.grey[500],
-                transition: "border .24s ease-in-out",
-                p: 4,
-                cursor: "pointer",
-                position: "relative",
-                background: "none",
-              }}
-            >
-              <input {...getInputProps()} />
-              <Typography sx={{ textAlign: "center" }}>
-                {dropzoneText || t("common.dialog.import.dropzoneText")}
-              </Typography>
-            </Paper>
-            {invalidText && (
-              <Typography
-                sx={{
-                  textAlign: "center",
-                  color: "error.main",
-                  pt: 1,
-                }}
-              >
-                {invalidText}
-              </Typography>
-            )}
-          </>
-        )}
-      </Box>
+      {children ? (
+        children(uploadArea)
+      ) : (
+        <Stack direction="column" spacing={2} sx={{ pt: 1 }}>
+          {uploadArea}
+        </Stack>
+      )}
     </BasicDialog>
   );
 }

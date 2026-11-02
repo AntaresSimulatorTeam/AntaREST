@@ -21,41 +21,43 @@ import { setStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { createVariant } from "@/services/api/studies/variants";
 import type { VariantTree } from "@/services/api/studies/variants/types";
-import { createListFromTree } from "@/services/utils";
+import { createListFromTree, getSubTree, sortByName } from "@/services/utils";
 import { validateString } from "@/utils/validation/string";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import { useNavigate } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface Props {
-  parentId: string;
+  defaultParentId: string;
   variantTree: VariantTree;
   onClose: () => void;
 }
 
-function CreateVariantDialog({ parentId, variantTree, onClose }: Props) {
+function CreateStudyVariantDialog({ defaultParentId, variantTree, onClose }: Props) {
   const [t] = useTranslation();
   const navigate = useNavigate();
-  const defaultValues = { name: "", sourceId: parentId };
+  const defaultValues = { name: "", parentId: defaultParentId };
   const dispatch = useAppDispatch();
+  const [parentId, setParentId] = useState(defaultParentId);
 
-  const studiesSource = useMemo(() => createListFromTree(variantTree), [variantTree]);
+  const studySourceOptions = useMemo(() => {
+    const studiesSource = createListFromTree(variantTree);
+    return sortByName(studiesSource).map(({ id, name }) => ({ value: id, label: name }));
+  }, [variantTree]);
 
-  const studySourceOptions = useMemo(
-    () => studiesSource.map(({ id, name }) => ({ value: id, label: name })),
-    [studiesSource],
-  );
-
-  const existingNames = useMemo(() => studiesSource.map(({ name }) => name), [studiesSource]);
+  const existingNames = useMemo(() => {
+    const subTree = getSubTree(variantTree, parentId);
+    return subTree ? subTree.children.map(({ node }) => node.name) : [];
+  }, [variantTree, parentId]);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async (data: SubmitHandlerPlus<typeof defaultValues>) => {
-    const { sourceId, name } = data.values;
-    const variantId = await createVariant({ studyId: sourceId, name });
+    const { parentId, name } = data.values;
+    const variantId = await createVariant({ studyId: parentId, name });
     await dispatch(setStudy(variantId)).unwrap();
     return variantId;
   };
@@ -95,11 +97,12 @@ function CreateVariantDialog({ parentId, variantTree, onClose }: Props) {
           />
           <SelectFE
             label={t("study.versionSource")}
-            name="sourceId"
+            name="parentId"
             variant="outlined"
             options={studySourceOptions}
             control={control}
-            rules={{ required: true }}
+            rules={{ required: true, deps: ["name"] }}
+            onChange={(event) => setParentId(event.target.value)}
           />
         </Fieldset>
       )}
@@ -107,4 +110,4 @@ function CreateVariantDialog({ parentId, variantTree, onClose }: Props) {
   );
 }
 
-export default CreateVariantDialog;
+export default CreateStudyVariantDialog;
