@@ -535,7 +535,7 @@ def test_write_output_to_dir(output_storage: IOutputStorage, tmp_path: Path) -> 
         output_storage.write_output_to_dir("STA-mini", "non-existent", export_path)
 
 
-def test_raw_files(output_storage: IOutputStorage, tmp_path: Path) -> None:
+def test_raw_files(output_storage: IOutputStorage) -> None:
     files = output_storage.list_raw_files("STA-mini", "20201014-1427eco")
     assert len(files) == 79
     assert files[:3] == [
@@ -544,30 +544,27 @@ def test_raw_files(output_storage: IOutputStorage, tmp_path: Path) -> None:
         PurePosixPath("about-the-study/links.txt"),
     ]
 
-    target = tmp_path / "areas.txt"
-    output_storage.read_raw_file("STA-mini", "20201014-1427eco", PurePosixPath("about-the-study/areas.txt"), target)
-    assert target.read_bytes() == b"DE\r\nES\r\nFR\r\nIT\r\n"
+    content = output_storage.read_raw_file("STA-mini", "20201014-1427eco", PurePosixPath("about-the-study/areas.txt"))
+    assert content == b"DE\r\nES\r\nFR\r\nIT\r\n"
 
     # Missing file, directory, file outside the output
     for path in ["unknown.txt", "about-the-study", "../20201014-1422eco-hello/info.antares-output"]:
         with pytest.raises(OutputFileNotFound):
-            output_storage.read_raw_file("STA-mini", "20201014-1427eco", PurePosixPath(path), target)
+            output_storage.read_raw_file("STA-mini", "20201014-1427eco", PurePosixPath(path))
 
     with pytest.raises(StudyNotFoundError):
         output_storage.list_raw_files("non-existent", "20201014-1427eco")
     with pytest.raises(OutputNotFound):
         output_storage.list_raw_files("STA-mini", "non-existent")
     with pytest.raises(OutputNotFound):
-        output_storage.read_raw_file("STA-mini", "non-existent", PurePosixPath("about-the-study/areas.txt"), target)
+        output_storage.read_raw_file("STA-mini", "non-existent", PurePosixPath("about-the-study/areas.txt"))
 
     # Output ids that are not a direct child of the study outputs folder
     for output_id in ["..", ".", ""]:
         with pytest.raises(OutputNotFound):
             output_storage.list_raw_files("STA-mini", output_id)
         with pytest.raises(OutputNotFound):
-            output_storage.read_raw_file(
-                "STA-mini", output_id, PurePosixPath("20201014-1427eco/info.antares-output"), target
-            )
+            output_storage.read_raw_file("STA-mini", output_id, PurePosixPath("20201014-1427eco/info.antares-output"))
 
 
 def test_get_logs(output_storage: IOutputStorage, tmp_path: Path) -> None:

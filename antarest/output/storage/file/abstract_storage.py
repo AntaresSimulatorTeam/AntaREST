@@ -629,8 +629,8 @@ class AbstractFileOutputStorage(IOutputStorage):
         outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
         output_path = _output_path(outputs_path, output_id)
         # The output must be a direct child of the study outputs folder: rejects ids like "." or ".."
-        if output_id == ".." or output_path.parent != outputs_path or not output_path.is_dir():
-            raise OutputNotFound(output_id)
+        # if output_id == ".." or output_path.parent != outputs_path or not output_path.is_dir():
+        #     raise OutputNotFound(output_id)
         return output_path
 
     @override
@@ -641,12 +641,12 @@ class AbstractFileOutputStorage(IOutputStorage):
         )
 
     @override
-    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath, target: Path) -> None:
+    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath) -> bytes:
         output_path = self._require_unarchived_output_path(study_id, output_id)
         file_path = output_path / path
         if not is_path_safe(output_path, path.as_posix()) or not file_path.is_file():
             raise OutputFileNotFound(output_id, path.as_posix())
-        shutil.copyfile(file_path, target)
+        return file_path.read_bytes()
 
     def _build_output_node(self, study_id: str, output_id: str) -> Output:
         study_outputs = self._outputs_provider.get_outputs(study_id)

@@ -23,6 +23,7 @@ from pydantic import TypeAdapter
 from starlette.responses import FileResponse, Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
+from antarest.core.files_tree import FilesTree
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.serde.json import to_json
 from antarest.core.serde.matrix_export import TableExportFormat
@@ -42,7 +43,6 @@ from antarest.output.model import (
     OutputVariablesViewResponse,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
-from antarest.output.model.raw_files import OutputRawFilesTree
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.output.variable_view.model import OutputItemId
 from antarest.study.model import MatrixFrequency
@@ -237,13 +237,11 @@ def create_output_routes() -> APIRouter:
         "/studies/{uuid}/outputs/{output_id}/raw-files",
         summary="Fetches the tree structure of all the files of a given output",
         responses={
-            400: {"description": "The output is archived, or its storage does not give access to raw files"},
+            400: {"description": "The output is archived"},
             404: {"description": "The output does not exist"},
         },
     )
-    def get_output_raw_files(
-        output_service: OutputServiceDep, uuid: UuidStr, output_id: SanitizedStr
-    ) -> OutputRawFilesTree:
+    def get_output_raw_files(output_service: OutputServiceDep, uuid: UuidStr, output_id: SanitizedStr) -> FilesTree:
         logger.info(f"Fetching raw files tree of the output {output_id} for study {uuid}")
         return output_service.get_raw_files_tree(uuid, output_id)
 
@@ -251,21 +249,19 @@ def create_output_routes() -> APIRouter:
         "/studies/{uuid}/outputs/{output_id}/raw-files/content",
         summary="Fetches the content of a given output file",
         responses={
-            400: {"description": "The output is archived, or its storage does not give access to raw files"},
+            400: {"description": "The output is archived"},
             404: {"description": "The output or the file does not exist"},
         },
     )
     def get_output_raw_file_content(
         output_service: OutputServiceDep,
-        tmp_export_file: TmpExportFileDep,
         uuid: UuidStr,
         output_id: SanitizedStr,
         path: Annotated[SanitizedStr, Query(description="Path of the file, relative to the output root")],
-    ) -> FileResponse:
+    ) -> Response:
         logger.info(f"Fetching raw file '{path}' of the output {output_id} for study {uuid}")
-        file_path = PurePosixPath(path)
-        output_service.read_raw_file(uuid, output_id, file_path, tmp_export_file)
-        return FileResponse(tmp_export_file, filename=file_path.name, media_type="application/octet-stream")
+        content = output_service.read_raw_file(uuid, output_id, PurePosixPath(path))
+        return Response(content=content, media_type="application/octet-stream")
 
     @bp.get(
         "/studies/{study_id}/outputs",

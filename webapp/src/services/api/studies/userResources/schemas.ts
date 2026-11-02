@@ -16,15 +16,15 @@ import z from "zod";
 
 export const userResourceTypeSchema = z.enum(["file", "folder"]);
 
-export const userResourceFolderSchema = z.object({
+export const folderTreeSchema = z.object({
   name: z.string(),
   files: z.array(z.string()),
   get directories() {
-    return z.array(userResourceFolderSchema);
+    return z.array(folderTreeSchema);
   },
 });
 
-export const userResourcesTreeSchema = z.object({
+export const filesTreeSchema = z.object({
   files: z.array(z.string()),
-  directories: z.array(userResourceFolderSchema),
+  directories: z.array(folderTreeSchema),
 });

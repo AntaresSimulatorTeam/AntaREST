@@ -323,19 +323,17 @@ class IOutputStorage(ABC):
 
         Raises:
             OutputNotFound: if the unarchived output does not exist.
-            UnsupportedOperationOnOutputStorage: if the storage does not give access to raw files.
         """
 
     @abstractmethod
-    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath, target: Path) -> None:
+    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath) -> bytes:
         """
-        Reads the output file located at `path` (relative to the output root) and saves it to `target`.
+        Returns the content of the output file located at `path` (relative to the output root).
         The output must not be archived.
 
         Raises:
             OutputNotFound: if the unarchived output does not exist.
             OutputFileNotFound: if the file does not exist in the output.
-            UnsupportedOperationOnOutputStorage: if the storage does not give access to raw files.
         """
 
     @abstractmethod
