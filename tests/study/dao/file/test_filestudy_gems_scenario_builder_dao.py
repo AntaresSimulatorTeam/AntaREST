@@ -77,7 +77,20 @@ def test_replace_builder(dao_10_2: StudyDao) -> None:
         }
     )
     dao_10_2.save_gems_scenario_builder(replacement)
-    assert dao_10_2.get_gems_scenario_builder() == replacement
+    assert dao_10_2.get_gems_scenario_builder() == GemsScenarioBuilder(
+        scenarios={
+            "load": [
+                GemsScBuilderMapping(scenario=0, time_series_index=4),
+                GemsScBuilderMapping(scenario=1, time_series_index=2),  # Default value
+                GemsScBuilderMapping(scenario=2, time_series_index=3),  # Default value
+            ],
+            "wind": [
+                GemsScBuilderMapping(scenario=0, time_series_index=1),  # Default value
+                GemsScBuilderMapping(scenario=1, time_series_index=2),
+                GemsScBuilderMapping(scenario=2, time_series_index=3),  # Default value
+            ],
+        }
+    )
 
 
 def test_clear_builder(dao_10_2: StudyDao) -> None:
