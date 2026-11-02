@@ -18,7 +18,11 @@ from typing_extensions import override
 
 from antarest.core.exceptions import GemsScenarioAlreadyExists, GemsScenarioNotFound
 from antarest.core.utils.sql_utils import upsert_multiple
-from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
+from antarest.study.business.model.gems.scenario_builder import (
+    GemsScBuilderMapping,
+    GemsScenarioBuilder,
+    fill_missing_years,
+)
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.scenario_builder import GEMS_SCENARIO_BUILDER_TABLE
@@ -38,8 +42,9 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
         # Fill the default value before saving in DB
+        simulation_nb_years = self.get_impl().get_general_config().nb_years
         for scenario_id, mapping in scenario_builder.scenarios.items():
-            scenario_builder.scenarios[scenario_id] = self._fill_missing_years(mapping)
+            scenario_builder.scenarios[scenario_id] = fill_missing_years(mapping, simulation_nb_years)
         groups = scenario_builder.model_dump(mode="json")["scenarios"]
         try:
             upsert_multiple(
@@ -64,7 +69,8 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
     def add_scenario_to_gems_scenario_builder(
         self, scenario_name: str, data: list[GemsScBuilderMapping]
     ) -> list[GemsScBuilderMapping]:
-        filled_scenario = self._fill_missing_years(data)
+        simulation_nb_years = self.get_impl().get_general_config().nb_years
+        filled_scenario = fill_missing_years(data, simulation_nb_years)
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
         values = [
@@ -97,16 +103,3 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
             raise GemsScenarioNotFound(scenario_name, self._study_id)
 
         session.commit()
-
-    def _fill_missing_years(self, data: list[GemsScBuilderMapping]) -> list[GemsScBuilderMapping]:
-        """
-        GEMS scenario builder has default values for missing years, we should initialize them for the front-end
-        """
-        simulation_nb_years = self.get_impl().get_general_config().nb_years
-        existing = {mapping.scenario for mapping in data}
-
-        return data + [
-            GemsScBuilderMapping(scenario=year, time_series_index=year + 1)
-            for year in range(simulation_nb_years)
-            if year not in existing
-        ]

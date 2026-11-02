@@ -36,3 +36,16 @@ class GemsScenarioBuilder(AntaresBaseModel):
     model_config = ConfigDict(extra="forbid")
 
     scenarios: dict[GemsId, list[GemsScBuilderMapping]] = Field(default_factory=dict)
+
+
+def fill_missing_years(data: list[GemsScBuilderMapping], nb_years: int) -> list[GemsScBuilderMapping]:
+    """
+    GEMS scenario builder has default values for missing years, we should initialize them for the front-end
+    """
+    existing = {mapping.scenario for mapping in data}
+
+    return data + [
+        GemsScBuilderMapping(scenario=year, time_series_index=year + 1)
+        for year in range(nb_years)
+        if year not in existing
+    ]
