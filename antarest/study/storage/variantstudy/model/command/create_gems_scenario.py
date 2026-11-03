@@ -14,6 +14,7 @@ from typing import Self
 from pydantic import model_validator
 from typing_extensions import override
 
+from antarest.core.model import GemsId
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_10_2
@@ -34,7 +35,7 @@ class CreateGemsScenario(ICommand):
 
     command_name: CommandName = CommandName.CREATE_GEMS_SCENARIO
 
-    scenario_name: str
+    scenario_name: GemsId
     data: list[GemsScBuilderMapping]
 
     @model_validator(mode="after")

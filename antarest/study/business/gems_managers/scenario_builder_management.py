@@ -9,8 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
-
+from antarest.core.model import GemsId
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMapping,
     GemsScenarioBuilder,
@@ -30,7 +29,7 @@ class GemsScenarioBuilderManager:
         return study.get_study_dao().get_gems_scenario_builder() or GemsScenarioBuilder(scenarios={})
 
     def add_scenario_to_gems_scenario_builder(
-        self, study: StudyInterface, scenario_name: str, data: list[GemsScBuilderMapping]
+        self, study: StudyInterface, scenario_name: GemsId, data: list[GemsScBuilderMapping]
     ) -> list[GemsScBuilderMapping]:
         command = CreateGemsScenario(
             scenario_name=scenario_name,
@@ -42,7 +41,7 @@ class GemsScenarioBuilderManager:
         return study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
 
     def update_scenario_from_gems_scenario_builder(
-        self, study: StudyInterface, scenario_name: str, data: list[GemsScBuilderMapping]
+        self, study: StudyInterface, scenario_name: GemsId, data: list[GemsScBuilderMapping]
     ) -> list[GemsScBuilderMapping]:
         # First ensures the scenario exists
         study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
@@ -56,7 +55,7 @@ class GemsScenarioBuilderManager:
         study.add_commands([command])
         return study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
 
-    def delete_scenario_from_gems_scenario_builder(self, study: StudyInterface, scenario_name: str) -> None:
+    def delete_scenario_from_gems_scenario_builder(self, study: StudyInterface, scenario_name: GemsId) -> None:
         # First ensures the scenario exists
         study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
 

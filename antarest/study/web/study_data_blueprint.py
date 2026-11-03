@@ -23,7 +23,7 @@ from pydantic import Field
 from starlette.responses import RedirectResponse, Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.model import JSON, StudyPermissionType
+from antarest.core.model import JSON, GemsId, StudyPermissionType
 from antarest.core.utils.web import APITag
 from antarest.dependencies import StudyServiceDep, auth_required
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
@@ -2471,7 +2471,7 @@ def create_study_data_routes() -> APIRouter:
         summary="Creates a new scenario inside the GEMS scenario builder for a given study",
     )
     def add_scenario_to_gems_scenario_builder(
-        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: SanitizedStr, data: list[GemsScBuilderMapping]
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: GemsId, data: list[GemsScBuilderMapping]
     ) -> list[GemsScBuilderMapping]:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -2484,7 +2484,7 @@ def create_study_data_routes() -> APIRouter:
         summary="Updates the mapping of a scenario inside the GEMS scenario builder for a given study",
     )
     def update_scenario_from_gems_scenario_builder(
-        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: SanitizedStr, data: list[GemsScBuilderMapping]
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: GemsId, data: list[GemsScBuilderMapping]
     ) -> list[GemsScBuilderMapping]:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
@@ -2497,7 +2497,7 @@ def create_study_data_routes() -> APIRouter:
         summary="Deletes the given scenario from the gems scenario builder for a given study",
     )
     def delete_scenario_from_gems_scenario_builder(
-        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: SanitizedStr
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: GemsId
     ) -> None:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
