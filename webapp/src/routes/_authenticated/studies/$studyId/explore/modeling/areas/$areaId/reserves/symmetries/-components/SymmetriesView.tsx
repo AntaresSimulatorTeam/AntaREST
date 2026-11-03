@@ -153,17 +153,12 @@ function SymmetriesView({
     setIsSaving(true);
 
     try {
-      const updatedSymmetries = await updateSymmetriesMutation.mutateAsync({
+      await updateSymmetriesMutation.mutateAsync({
         data: adaptClusterGroupsToReservesSymmetriesDto(groups),
       });
 
-      // The response is the server-normalized payload; the resync effect
-      // adopts it once `lastSaved` marks the form pristine.
-      queryClient.setQueryData(
-        reserveQueries.symmetries(studyId, areaId, productionType).queryKey,
-        updatedSymmetries,
-      );
-
+      // Record the submitted draft as saved. If no newer edits exist,
+      // the resync effect can replace it with the cache-derived groups.
       setLastSaved(groups);
     } catch (err) {
       enqueueErrorSnackbar(t("form.submit.error"), toError(err));

@@ -13,15 +13,27 @@
  */
 
 import { reserveMutations } from "@/queries/reserves/mutations";
+import { reserveQueries } from "@/queries/reserves/queries";
 import type { ReservesProductionTypeParams } from "@/services/api/studies/areas/reserves/types";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 function useUpdateReservesSymmetries({
   studyId,
   areaId,
   productionType,
 }: ReservesProductionTypeParams) {
-  return useMutation(reserveMutations.updateSymmetries(studyId, areaId, productionType));
+  const queryClient = useQueryClient();
+
+  const { queryKey } = reserveQueries.symmetries(studyId, areaId, productionType);
+
+  return useMutation({
+    ...reserveMutations.updateSymmetries(studyId, areaId, productionType),
+    onSuccess: async (updatedSymmetries) => {
+      await queryClient.cancelQueries({ queryKey });
+
+      queryClient.setQueryData(queryKey, updatedSymmetries);
+    },
+  });
 }
 
 export default useUpdateReservesSymmetries;
