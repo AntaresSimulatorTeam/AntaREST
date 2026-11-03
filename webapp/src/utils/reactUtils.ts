@@ -79,7 +79,7 @@ export function buildKey(...items: Array<Primitive[] | Primitive | Record<string
     }
 
     if (typeof item === "object") {
-      const keys = Object.keys(item).sort();
+      const keys = Object.keys(item).sort((a, b) => a.localeCompare(b));
       lines.push(`{${keys.length}}`);
       for (const key of keys) {
         lines.push(`${JSON.stringify(key)}=${encode(item[key])}`);
