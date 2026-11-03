@@ -16,7 +16,11 @@ import numpy as np
 import pytest
 from sqlalchemy.orm import Session
 
-from antarest.core.exceptions import GemsSystemAlreadyExists, GemsUnavailableForFileSystemStudies
+from antarest.core.exceptions import (
+    GemsSystemAlreadyExists,
+    GemsSystemIncorrectlyFormatted,
+    GemsUnavailableForFileSystemStudies,
+)
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
@@ -114,6 +118,40 @@ def test_should_not_access_system_components(filestudy_dao_v10_2: FileStudyTreeD
         match=f"Gems is unavailable for FileSystem studies, but study {dao.get_file_study().config.study_id} tried to use it.",
     ):
         dao.save_components([])
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "../data-series/max_load_values",
+        "/etc/passwd",
+        "sub/max_load_values",
+        "max_load_values.csv",
+        "max_load_values\n",
+        "ma x",
+    ],
+)
+def test_data_series_name_must_be_a_plain_name(filestudy_dao_v10_2: FileStudyTreeDao, name: str) -> None:
+    dao = filestudy_dao_v10_2
+    _add_system_file_to_study(dao)
+    system_file = dao.get_file_study().config.study_path / "input" / "system.yml"
+    system_file.write_text(system_file.read_text().replace("value: max_load_values", f"value: {name!r}", 1))
+
+    with pytest.raises(GemsSystemIncorrectlyFormatted, match="invalid data series name"):
+        dao.get_system()
+
+
+def test_data_series_symlink_is_rejected(filestudy_dao_v10_2: FileStudyTreeDao, tmp_path: Path) -> None:
+    dao = filestudy_dao_v10_2
+    _add_system_file_to_study(dao)
+    secret = tmp_path / "secret.csv"
+    secret.write_text("1\n2\n")
+    link = dao.get_file_study().config.study_path / "input" / "data-series" / "max_load_values.csv"
+    link.unlink()
+    link.symlink_to(secret)
+
+    with pytest.raises(GemsSystemIncorrectlyFormatted, match="outside of the data series folder"):
+        dao.get_system()
 
 
 def _add_system_file_to_study(dao: FileStudyTreeDao) -> None:
