@@ -119,7 +119,7 @@ def test_output_raw_files_path_traversal(
         assert res.json()["exception"] == "OutputFileNotFound"
 
     # Output ids that are not a direct child of the outputs folder
-    for output_id_outside in ["%2E%2E", "%2E"]:
+    for output_id_outside in ["%2E%2E", "%2E%2E%5C", "%2E"]:
         res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id_outside}/raw-files")
         assert res.status_code == 404, res.content
         assert res.json()["exception"] == "OutputNotFound"

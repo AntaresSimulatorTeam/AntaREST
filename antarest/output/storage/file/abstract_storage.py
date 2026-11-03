@@ -628,8 +628,8 @@ class AbstractFileOutputStorage(IOutputStorage):
     def _require_unarchived_output_path(self, study_id: str, output_id: str) -> Path:
         outputs_path = self._outputs_provider.get_outputs(study_id).outputs_path
         output_path = _output_path(outputs_path, output_id)
-        # The output must be a direct child of the study outputs folder: rejects ids like "." or ".."
-        if output_id == ".." or output_path.parent != outputs_path or not output_path.is_dir():
+        # The output must be a direct child of the study outputs (and not the outptus folder itself)
+        if output_id in {"", "."} or not is_path_safe(outputs_path, output_id) or not output_path.is_dir():
             raise OutputNotFound(output_id)
         return output_path
 

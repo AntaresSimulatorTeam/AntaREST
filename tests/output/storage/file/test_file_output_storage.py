@@ -560,7 +560,7 @@ def test_raw_files(output_storage: IOutputStorage) -> None:
         output_storage.read_raw_file("STA-mini", "non-existent", PurePosixPath("about-the-study/areas.txt"))
 
     # Output ids that are not a direct child of the study outputs folder
-    for output_id in ["..", ".", ""]:
+    for output_id in ["..", "..\\", ".", ""]:
         with pytest.raises(OutputNotFound):
             output_storage.list_raw_files("STA-mini", output_id)
         with pytest.raises(OutputNotFound):
