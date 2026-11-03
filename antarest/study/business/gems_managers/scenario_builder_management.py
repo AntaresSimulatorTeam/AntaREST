@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from antarest.core.exceptions import GemsScenarioAlreadyExists
 from antarest.core.model import GemsId
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMappings,
@@ -31,6 +32,10 @@ class GemsScenarioBuilderManager:
     def add_scenario_to_gems_scenario_builder(
         self, study: StudyInterface, scenario_name: GemsId, data: GemsScBuilderMappings
     ) -> GemsScBuilderMappings:
+        # First ensures the scenario does not already exist
+        if study.get_study_dao().scenario_exists_in_gems_scenario_builder(scenario_name):
+            raise GemsScenarioAlreadyExists(scenario_name, study.id)
+
         command = CreateGemsScenario(
             scenario_name=scenario_name,
             data=data,

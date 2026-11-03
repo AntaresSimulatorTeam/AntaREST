@@ -143,3 +143,13 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     assert res.status_code == 422
     assert res.json()["description"] == "Input should be greater than or equal to 1"
     assert res.json()["exception"] == "RequestValidationError"
+
+    # Try to create a scenario that already exists
+    res = client.post(sc_builder_url, params={"scenario_name": "scenario1"}, json=[])
+    assert res.status_code == 200
+    res = client.post(sc_builder_url, params={"scenario_name": "scenario1"}, json=[])
+    assert res.status_code == 409
+    assert res.json() == {
+        "description": f"Scenario 'scenario1' already exists in the gems scenario builder of study {study_id}",
+        "exception": "GemsScenarioAlreadyExists",
+    }

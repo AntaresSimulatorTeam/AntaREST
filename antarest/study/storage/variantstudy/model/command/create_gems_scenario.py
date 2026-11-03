@@ -21,7 +21,6 @@ from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.common import (
     CommandName,
     CommandOutput,
-    command_failed,
     command_succeeded,
 )
 from antarest.study.storage.variantstudy.model.command.icommand import ICommand
@@ -49,8 +48,6 @@ class CreateGemsScenario(ICommand):
     def _apply_dao(
         self, study_dao: StudyDao, listener: ICommandListener | None = None
     ) -> CommandOutput[GemsScBuilderMappings]:
-        if study_dao.scenario_exists_in_gems_scenario_builder(self.scenario_name):
-            return command_failed(f"GEMS scenario '{self.scenario_name}' already exists")
         result = study_dao.save_scenario_inside_gems_scenario_builder(self.scenario_name, self.data)
         return command_succeeded(message=f"Gems scenario {self.scenario_name} added successfully", result=result)
 
