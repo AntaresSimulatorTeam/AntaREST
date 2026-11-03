@@ -21,7 +21,7 @@ export interface RowData {
   group?: string;
 }
 
-export type MainRowData = Omit<RowData, "id">;
+export type CreateRowData = Omit<RowData, "id">;
 
 export interface BaseDataTableProps<TData extends RowData> {
   data: TData[];
@@ -47,26 +47,26 @@ export interface BaseDataTableProps<TData extends RowData> {
   toolbarActions?: React.ReactNode;
 }
 
+interface DefaultCreateProps {
+  onCreate?: (data: CreateRowData) => void;
+  renderCreateDialog?: never;
+}
+
+interface CustomCreateProps<TExtraData> {
+  onCreate: (data: CreateRowData, extraData: TExtraData) => void;
+  /**
+   * Render a custom create dialog instead of the built-in one.
+   * Useful when creation requires fields the built-in dialog doesn't handle.
+   */
+  renderCreateDialog: (props: {
+    open: boolean;
+    onClose: VoidFunction;
+    onSubmit: (data: CreateRowData, extraData: TExtraData) => void;
+    existingNames: Array<RowData["name"]>;
+  }) => React.ReactNode;
+}
+
 export type DataTableProps<
   TData extends RowData,
-  TCreateSubmitData = undefined,
-> = BaseDataTableProps<TData> &
-  (
-    | {
-        onCreate?: (mainData: MainRowData) => void;
-        renderCreateDialog?: never;
-      }
-    | {
-        onCreate: (mainData: MainRowData, customData: TCreateSubmitData) => void;
-        /**
-         * Render a custom create dialog instead of the built-in one.
-         * Useful when creation requires fields the built-in dialog doesn't handle.
-         */
-        renderCreateDialog: (props: {
-          open: boolean;
-          onClose: VoidFunction;
-          onSubmit: (mainData: MainRowData, customData: TCreateSubmitData) => void;
-          existingNames: Array<RowData["name"]>;
-        }) => React.ReactNode;
-      }
-  );
+  TCreateExtraData = undefined,
+> = BaseDataTableProps<TData> & (DefaultCreateProps | CustomCreateProps<TCreateExtraData>);

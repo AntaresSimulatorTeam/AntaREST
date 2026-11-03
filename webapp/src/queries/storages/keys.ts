@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { StorageParams } from "@/services/api/studies/areas/storages/types";
+import type { Storage, StorageParams } from "@/services/api/studies/areas/storages/types";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { areaKeys } from "../areas/keys";

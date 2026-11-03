@@ -14,7 +14,7 @@
 
 import DataTable from "@/components/DataTable";
 import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
-import type { MainRowData } from "@/components/DataTable/types";
+import type { CreateRowData } from "@/components/DataTable/types";
 import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
 import { thermalKeys } from "@/queries/thermals/keys";
 import { thermalQueries } from "@/queries/thermals/queries";
@@ -125,7 +125,7 @@ function Thermals() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = (values: MainRowData) => {
+  const handleCreate = (values: CreateRowData) => {
     createThermalCluster.mutate({ values });
   };
 

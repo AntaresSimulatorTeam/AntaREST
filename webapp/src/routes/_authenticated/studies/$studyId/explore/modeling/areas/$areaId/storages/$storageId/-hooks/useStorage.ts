@@ -14,7 +14,7 @@
 
 import type { Storage, StorageParams } from "@/services/api/studies/areas/storages/types";
 import type { UseSuspenseQueryResult } from "@tanstack/react-query";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import type { O } from "ts-toolbelt";
 import useStorages from "../../-hooks/useStorages";
@@ -22,6 +22,8 @@ import useStorages from "../../-hooks/useStorages";
 interface UseStorageParams<TData = Storage> extends StorageParams {
   select?: (data: Storage) => TData;
 }
+
+const NOT_FOUND = Symbol("storage-not-found");
 
 function useStorage(params: Omit<UseStorageParams, "select">): UseSuspenseQueryResult<Storage>;
 
@@ -32,38 +34,32 @@ function useStorage<TData>(
 function useStorage<TData>({ studyId, areaId, storageId, select }: UseStorageParams<TData>) {
   const { t } = useTranslation();
 
-  const getStorage = useCallback(
+  const getStorageOrSelection = useCallback(
     (storages: Storage[]) => {
-      return storages.find(({ id }) => id === storageId);
+      const storage = storages.find(({ id }) => id === storageId);
+      if (!storage) {
+        return NOT_FOUND;
+      }
+      return select ? select(storage) : storage;
     },
-    [storageId],
+    [select, storageId],
   );
 
-  const { data: storage, ...restResult } = useStorages({
+  const result = useStorages({
     studyId,
     areaId,
-    select: getStorage,
+    select: getStorageOrSelection,
   });
-
-  const selection = useMemo(() => {
-    if (!storage || !select) {
-      return;
-    }
-    return select(storage);
-  }, [select, storage]);
 
   if (!storageId) {
     throw new Error(t("route.noParameter", { param: "storageId" }));
   }
 
-  if (!storage) {
+  if (result.data === NOT_FOUND) {
     throw new Error(t("study.modeling.storages.notFound", { id: storageId }));
   }
 
-  return {
-    ...restResult,
-    data: select ? selection : storage,
-  };
+  return result;
 }
 
 export default useStorage;

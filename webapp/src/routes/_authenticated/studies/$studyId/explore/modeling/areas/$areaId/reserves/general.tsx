@@ -13,7 +13,7 @@
  */
 
 import DataTable from "@/components/DataTable";
-import type { MainRowData } from "@/components/DataTable/types";
+import type { CreateRowData } from "@/components/DataTable/types";
 import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
 import { reserveKeys } from "@/queries/reserves/keys";
 import { reserveQueries } from "@/queries/reserves/queries";
@@ -91,7 +91,7 @@ function ReservesGeneral() {
     setIsUpdateReserveOpen(true);
   };
 
-  const handleCreate = ({ name }: MainRowData, type: Reserve["type"]) => {
+  const handleCreate = ({ name }: CreateRowData, type: Reserve["type"]) => {
     return createReserve.mutate({ data: { name, type } });
   };
 

@@ -14,7 +14,7 @@
 
 import DataTable from "@/components/DataTable";
 import BooleanCell from "@/components/DataTable/cellRenderers/BooleanCell";
-import type { MainRowData } from "@/components/DataTable/types";
+import type { CreateRowData } from "@/components/DataTable/types";
 import RefetchErrorAlert from "@/components/queries/RefetchErrorAlert";
 import { storageKeys } from "@/queries/storages/keys";
 import { storageQueries } from "@/queries/storages/queries";
@@ -162,7 +162,7 @@ function Storages() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleCreate = (values: MainRowData) => {
+  const handleCreate = (values: CreateRowData) => {
     createStorage.mutate({ values });
   };
 

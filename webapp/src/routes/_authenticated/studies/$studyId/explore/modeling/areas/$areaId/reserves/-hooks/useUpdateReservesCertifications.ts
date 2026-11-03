@@ -28,7 +28,9 @@ function useUpdateReservesCertifications({
 
   return useMutation({
     ...reserveMutations.updateCertifications(studyId, areaId, productionType),
-    onSuccess: (updatedCertifications) => {
+    onSuccess: async (updatedCertifications) => {
+      await queryClient.cancelQueries({ queryKey });
+
       queryClient.setQueryData(queryKey, updatedCertifications);
     },
   });

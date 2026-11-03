@@ -36,7 +36,7 @@ import {
   toggleReserve,
   validateGroups,
 } from "../../-components/SymmetriesTable/utils";
-import useUpdateReservesSymmetries from "../../-hooks/updateReservesSymmetries";
+import useUpdateReservesSymmetries from "../../-hooks/useUpdateReservesSymmetries";
 import { PRODUCTION_TYPES } from "../../-productionTypes";
 
 interface SymmetriesViewProps {

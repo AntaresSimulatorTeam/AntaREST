@@ -20,12 +20,12 @@ import SelectFE from "../fieldEditors/SelectFE";
 import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
 import type { SubmitHandlerPlus } from "../Form/types";
-import type { MainRowData, RowData } from "./types";
+import type { CreateRowData, RowData } from "./types";
 
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  onSubmit: (mainData: MainRowData) => void;
+  onSubmit: (mainData: CreateRowData) => void;
   groups?: string[];
   allowNewGroups?: boolean;
   existingNames: Array<RowData["name"]>;

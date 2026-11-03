@@ -19,7 +19,7 @@ import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { Box, Button, Skeleton } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import {
   MaterialReactTable,
   MRT_ToggleFiltersButton,
@@ -34,6 +34,7 @@ import { useTranslation } from "react-i18next";
 import { useLatest } from "react-use";
 import ConfirmationDialog from "../dialogs/ConfirmationDialog";
 import RouterLink from "../router/RouterLink";
+import CellSkeleton from "./CellSkeleton";
 import CreateDialog from "./CreateDialog";
 import DuplicateDialog from "./DuplicateDialog";
 import type { DataTableProps, RowData } from "./types";
@@ -142,7 +143,7 @@ function DataTable<TData extends RowData, TCreateSubmitData>({
               const CellComp = column.Cell;
 
               if (isQueryListItemOptimistic(row.original)) {
-                return <Skeleton width={80} height={24} sx={{ display: "inline-block" }} />;
+                return <CellSkeleton />;
               }
 
               return CellComp ? <CellComp {...props} /> : renderedCellValue;

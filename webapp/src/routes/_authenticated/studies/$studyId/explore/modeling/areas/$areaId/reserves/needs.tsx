@@ -12,15 +12,17 @@
  * This file is part of the Antares project.
  */
 
+import DataGridSkeleton from "@/components/DataGridSkeleton";
 import Matrix from "@/components/Matrix";
 import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
 import EmptyView from "@/components/page/EmptyView";
 import { reserveQueries } from "@/queries/reserves/queries";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
 import { sortByName } from "@/services/utils";
 import { buildKey } from "@/utils/reactUtils";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { Box } from "@mui/material";
+import { Box, Skeleton } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -33,24 +35,36 @@ export const Route = createFileRoute(
   component: ReservesNeeds,
 });
 
-function reservesToOptions(reserves: Reserve[]) {
-  return sortByName(reserves).map(({ id, name }) => ({ value: id, label: name }));
+function selectReservesData(reserves: Reserve[]) {
+  const sortedReserved = sortByName(reserves);
+
+  const reserveOptions = sortedReserved.map((reserve) => ({
+    value: reserve.id,
+    label: reserve.name,
+    disabled: isQueryListItemOptimistic(reserve),
+  }));
+
+  // Filter out optimistic reserves to get the server-side reserves
+  const serverReserves = sortedReserved.filter((reserve) => !isQueryListItemOptimistic(reserve));
+
+  const optimisticReserves = sortedReserved.filter(isQueryListItemOptimistic);
+
+  return { reserveOptions, serverReserves, optimisticReserves };
 }
 
 function ReservesNeeds() {
   const { t } = useTranslation();
   const params = Route.useParams();
   const { studyId, areaId } = params;
-  const { data: reserveOptions } = useReserves({ ...params, select: reservesToOptions });
+  const {
+    data: { reserveOptions, serverReserves, optimisticReserves },
+  } = useReserves({ ...params, select: selectReservesData });
   const { data: isReservesEnabled } = useSuspenseQuery(reserveQueries.enabled(studyId));
   const [selectedReserveId, setSelectedReserveId] = useState(() => reserveOptions[0]?.value ?? "");
 
   // Ensure the selected reserve ID is valid
-  if (
-    reserveOptions.length > 0 &&
-    !reserveOptions.some(({ value }) => value === selectedReserveId)
-  ) {
-    setSelectedReserveId(reserveOptions[0].value);
+  if (serverReserves.length > 0 && !serverReserves.some(({ id }) => id === selectedReserveId)) {
+    setSelectedReserveId(serverReserves[0].id);
   }
 
   ////////////////////////////////////////////////////////////////
@@ -65,7 +79,17 @@ function ReservesNeeds() {
   // JSX
   ////////////////////////////////////////////////////////////////
 
-  if (reserveOptions.length === 0) {
+  if (serverReserves.length === 0) {
+    // If there are optimistic reserves, show a loading skeleton while waiting for server-side data
+    if (optimisticReserves.length > 0) {
+      return (
+        <>
+          <Skeleton variant="rectangular" height={40} width={300} />
+          <DataGridSkeleton />
+        </>
+      );
+    }
+
     return <EmptyView icon={GridOffIcon} title={t("global.noData")} />;
   }
 
