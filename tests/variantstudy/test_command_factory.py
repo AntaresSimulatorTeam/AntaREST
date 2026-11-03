@@ -20,7 +20,7 @@ import pytest
 
 from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
-from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax, HydroRuleCurves
 from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_8,
@@ -1070,6 +1070,15 @@ COMMANDS = [
         ),
         None,
         id="convert_hydro_pmax_daily",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CONVERT_HYDRO_RULE_CURVES.value,
+            args={"hydro_rule_curves": HydroRuleCurves.SCENARIZED},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="convert_hydro_rule_curves",
     ),
     pytest.param(
         CommandDTO(

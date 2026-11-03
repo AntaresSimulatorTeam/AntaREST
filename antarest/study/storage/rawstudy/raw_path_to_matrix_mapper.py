@@ -147,6 +147,15 @@ class RawPathToMatrixMapper:
         def _save_hydro_max_daily_pump_energy(area_id: str, series_id: str) -> None:
             dao.save_hydro_max_daily_pump_energy({area_id: series_id})
 
+        def _save_hydro_max_daily_reservoir_levels(area_id: str, series_id: str) -> None:
+            dao.save_hydro_max_daily_reservoir_levels({area_id: series_id})
+
+        def _save_hydro_min_daily_reservoir_levels(area_id: str, series_id: str) -> None:
+            dao.save_hydro_min_daily_reservoir_levels({area_id: series_id})
+
+        def _save_hydro_avg_daily_reservoir_levels(area_id: str, series_id: str) -> None:
+            dao.save_hydro_avg_daily_reservoir_levels({area_id: series_id})
+
         def _save_constraint_values_matrix(constraint_id: str, series_id: str) -> None:
             dao.save_constraint_values_matrix({ConstraintId(constraint_id): series_id})
 
@@ -420,6 +429,24 @@ class RawPathToMatrixMapper:
                 getter=dao.get_hydro_max_hourly_pump_power,
                 setter=_save_hydro_max_hourly_pump_power,
                 frequency=_get_hourly_frequency,
+            ),
+            RegexMatcher(
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/maxDailyReservoirLevels"),
+                getter=dao.get_hydro_max_daily_reservoir_levels,
+                setter=_save_hydro_max_daily_reservoir_levels,
+                frequency=_get_daily_frequency,
+            ),
+            RegexMatcher(
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/minDailyReservoirLevels"),
+                getter=dao.get_hydro_min_daily_reservoir_levels,
+                setter=_save_hydro_min_daily_reservoir_levels,
+                frequency=_get_daily_frequency,
+            ),
+            RegexMatcher(
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/avgDailyReservoirLevels"),
+                getter=dao.get_hydro_avg_daily_reservoir_levels,
+                setter=_save_hydro_avg_daily_reservoir_levels,
+                frequency=_get_daily_frequency,
             ),
             RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/creditmodulations_(?P<area_id>[^/]+)"),

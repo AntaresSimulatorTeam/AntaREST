@@ -21,7 +21,7 @@ from antarest.study.business.model.area_properties_model import (
     AreaProperties,
     initialize_area_properties,
 )
-from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax, HydroRuleCurves
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation, HydroAllocationArea
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationArea
 from antarest.study.business.model.hydro_model import HydroManagement, InflowStructure, initialize_hydro_management
@@ -110,6 +110,19 @@ class CreateArea(ICommand):
                 study_data.save_hydro_max_hourly_pump_power({area_id: constants.get_hydro_max_hourly_pump_power()})
                 study_data.save_hydro_max_daily_gen_energy({area_id: constants.get_hydro_max_daily_gen_energy()})
                 study_data.save_hydro_max_daily_pump_energy({area_id: constants.get_hydro_max_daily_pump_energy()})
+            if (
+                self.study_version >= STUDY_VERSION_10_2
+                and compatibility_parameters.hydro_rule_curves == HydroRuleCurves.SCENARIZED
+            ):
+                study_data.save_hydro_max_daily_reservoir_levels(
+                    {area_id: constants.get_hydro_max_daily_reservoir_levels()}
+                )
+                study_data.save_hydro_min_daily_reservoir_levels(
+                    {area_id: constants.get_hydro_min_daily_reservoir_levels()}
+                )
+                study_data.save_hydro_avg_daily_reservoir_levels(
+                    {area_id: constants.get_hydro_avg_daily_reservoir_levels()}
+                )
 
         # Matrices
         study_data.save_load({area_id: null_matrix})

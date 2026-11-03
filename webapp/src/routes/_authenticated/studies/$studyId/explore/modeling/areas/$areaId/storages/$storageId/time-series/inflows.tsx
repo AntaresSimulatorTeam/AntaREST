@@ -14,6 +14,7 @@
 
 import Matrix from "@/components/Matrix";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { buildKey } from "@/utils/reactUtils";
 import { createFileRoute } from "@tanstack/react-router";
 import semver from "semver";
 
@@ -25,11 +26,12 @@ export const Route = createFileRoute(
 
 function Inflows() {
   const study = useStudy();
-  const { areaId, storageId } = Route.useParams();
+  const params = Route.useParams();
+  const { areaId, storageId } = params;
 
   return (
     <Matrix
-      key={storageId}
+      key={buildKey(params)}
       studyId={study.id}
       url={`input/st-storage/series/${areaId}/${storageId}/inflows`}
       filterKey="storages.inflows"

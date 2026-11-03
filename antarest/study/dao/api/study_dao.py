@@ -858,6 +858,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_hydro_max_daily_pump_energy(area_id)
 
     @override
+    def get_hydro_max_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_max_daily_reservoir_levels(area_id)
+
+    @override
+    def get_hydro_min_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_min_daily_reservoir_levels(area_id)
+
+    @override
+    def get_hydro_avg_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_avg_daily_reservoir_levels(area_id)
+
+    @override
     def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
         return self._adaptee.get_all_hydro_maxpower()
 
@@ -908,6 +920,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
         return self._adaptee.get_all_hydro_max_daily_pump_energy()
+
+    @override
+    def get_all_hydro_max_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_daily_reservoir_levels()
+
+    @override
+    def get_all_hydro_min_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_min_daily_reservoir_levels()
+
+    @override
+    def get_all_hydro_avg_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_avg_daily_reservoir_levels()
 
     @override
     def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:

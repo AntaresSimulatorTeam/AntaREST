@@ -18,6 +18,13 @@ import {
   duplicateRenewableCluster,
   updateRenewableCluster,
 } from "@/services/api/studies/areas/renewables";
+import type {
+  CreateRenewableClusterParams,
+  DeleteRenewableClustersParams,
+  DuplicateRenewableClusterParams,
+  RenewableCluster,
+  UpdateRenewableClusterParams,
+} from "@/services/api/studies/areas/renewables/types";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { mutationOptions } from "@tanstack/react-query";
@@ -27,25 +34,35 @@ export const renewableMutations = {
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: renewableKeys.create(studyId, areaId),
-      mutationFn: createRenewableCluster,
+      mutationFn: (params: Omit<CreateRenewableClusterParams, "studyId" | "areaId">) => {
+        return createRenewableCluster({ ...params, studyId, areaId });
+      },
     });
   },
-  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+  update: (studyId: Study["id"], areaId: AreaWithId["id"], renewableId: RenewableCluster["id"]) => {
     return mutationOptions({
-      mutationKey: renewableKeys.update(studyId, areaId),
-      mutationFn: updateRenewableCluster,
+      mutationKey: renewableKeys.update(studyId, areaId, renewableId),
+      mutationFn: (
+        params: Omit<UpdateRenewableClusterParams, "studyId" | "areaId" | "renewableId">,
+      ) => {
+        return updateRenewableCluster({ ...params, studyId, areaId, renewableId });
+      },
     });
   },
   duplicate: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: renewableKeys.duplicate(studyId, areaId),
-      mutationFn: duplicateRenewableCluster,
+      mutationFn: (params: Omit<DuplicateRenewableClusterParams, "studyId" | "areaId">) => {
+        return duplicateRenewableCluster({ ...params, studyId, areaId });
+      },
     });
   },
   delete: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return mutationOptions({
       mutationKey: renewableKeys.delete(studyId, areaId),
-      mutationFn: deleteRenewableClusters,
+      mutationFn: (params: Omit<DeleteRenewableClustersParams, "studyId" | "areaId">) => {
+        return deleteRenewableClusters({ ...params, studyId, areaId });
+      },
     });
   },
 };
