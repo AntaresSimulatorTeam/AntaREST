@@ -13,7 +13,7 @@
 """handle time and scenario-dependent GEMS parameters
 
 Revision ID: f2e3f7ba9896
-Revises: 193aa1d7b5ad
+Revises: e3f1a8c04b27
 Create Date: 2026-10-08 16:00:00.000000
 
 """
@@ -24,7 +24,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "f2e3f7ba9896"
-down_revision = "193aa1d7b5ad"
+down_revision = "e3f1a8c04b27"
 branch_labels = None
 depends_on = None
 
