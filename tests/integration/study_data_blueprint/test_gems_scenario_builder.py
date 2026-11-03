@@ -98,6 +98,12 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     ##########################
 
     # Try to update a fake scenario
+    res = client.put(sc_builder_url, params={"scenario_name": "fake_scenario"}, json=[])
+    assert res.status_code == 404
+    assert res.json() == {
+        "description": f"Could not find scenario 'fake_scenario' inside gems scenario builder for study {study_id}",
+        "exception": "GemsScenarioNotFound",
+    }
 
     # Try to delete a fake scenario
     res = client.delete(sc_builder_url, params={"scenario_name": "fake_scenario"})
@@ -108,3 +114,16 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     }
 
     # Try to create a scenario with wrong years
+    res = client.post(
+        sc_builder_url, params={"scenario_name": "scenario1"}, json=[{"scenario": -1, "timeSeriesIndex": 1}]
+    )
+    assert res.status_code == 422
+    assert res.json()["description"] == "Input should be greater than or equal to 0"
+    assert res.json()["exception"] == "RequestValidationError"
+
+    res = client.post(
+        sc_builder_url, params={"scenario_name": "scenario1"}, json=[{"scenario": 1, "timeSeriesIndex": 0}]
+    )
+    assert res.status_code == 422
+    assert res.json()["description"] == "Input should be greater than or equal to 1"
+    assert res.json()["exception"] == "RequestValidationError"
