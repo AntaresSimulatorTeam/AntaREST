@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import re
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -38,6 +39,34 @@ def _get_gems_system_file_path(study_path: Path) -> Path:
 
 def _get_data_series_folder(study_path: Path) -> Path:
     return study_path / "input" / "data-series"
+
+
+# Only plain names are accepted: no path separator, no dot (hence no `..`, no extension), no drive letter.
+_DATA_SERIES_NAME_PATTERN = re.compile(r"[\w\-]+", re.ASCII)
+
+
+def _resolve_data_series_file(data_series_folder: Path, name: object, study_id: str) -> Path:
+    """
+    Resolves the name of a data series to its CSV file, guaranteeing that the file is a regular
+    file located directly inside `data_series_folder`.
+    """
+    name = str(name)
+    if not _DATA_SERIES_NAME_PATTERN.fullmatch(name):
+        raise GemsSystemIncorrectlyFormatted(
+            f"The system file of study {study_id} references an invalid data series name: {name!r}. "
+            f"Only letters, digits, '_' and '-' are allowed."
+        )
+
+    file_path = data_series_folder / f"{name}.csv"
+    if file_path.is_symlink() or file_path.resolve().parent != data_series_folder.resolve():
+        raise GemsSystemIncorrectlyFormatted(
+            f"The system file of study {study_id} references a data series outside of the data series folder: {name!r}"
+        )
+    if not file_path.is_file():
+        raise GemsSystemIncorrectlyFormatted(
+            f"The system file of study {study_id} references a missing data series file: {name!r}"
+        )
+    return file_path
 
 
 def _is_dependent(parameter: Any) -> bool:
@@ -81,12 +110,7 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
 
         dataframes = []
         for parameter in dependent_parameters:
-            file_path = data_series_folder / f"{parameter.value}.csv"
-            if not file_path.is_file():
-                raise GemsSystemIncorrectlyFormatted(
-                    f"The system file of study {file_study.config.study_id} references a missing data series file: "
-                    f"{file_path}"
-                )
+            file_path = _resolve_data_series_file(data_series_folder, parameter.value, file_study.config.study_id)
             dataframes.append(CsvReader.read(file_path))
 
         if dataframes:
@@ -139,7 +163,7 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
                     continue
 
                 # Update the parameter value with the name of the CSV file only if it has not been written yet
-                if not parameter.value in mapping_matrix_id_to_csv:
+                if parameter.value not in mapping_matrix_id_to_csv:
                     data_series_folder.mkdir(parents=True, exist_ok=True)
                     name = f"data_series_{matrices_count}"
                     matrices_count += 1
