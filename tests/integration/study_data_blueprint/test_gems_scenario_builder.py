@@ -97,6 +97,12 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     # Error cases
     ##########################
 
+    # Try to create a scenario with a name that does not match GemsId (^[a-z0-9_]+$)
+    res = client.post(sc_builder_url, params={"scenario_name": "MyScenario%"}, json=[])
+    assert res.status_code == 422
+    assert res.json()["description"] == "String should match pattern '^[a-z0-9_]+$'"
+    assert res.json()["exception"] == "RequestValidationError"
+
     # Try to update a fake scenario
     res = client.put(sc_builder_url, params={"scenario_name": "fake_scenario"}, json=[])
     assert res.status_code == 404
