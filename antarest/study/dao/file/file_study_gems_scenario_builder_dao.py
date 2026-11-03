@@ -20,8 +20,8 @@ from typing_extensions import override
 from antarest.core.exceptions import GemsUnavailableForFileSystemStudies
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMapping,
+    GemsScBuilderMappings,
     GemsScenarioBuilder,
-    SortedGemsScBuilderMapping,
     fill_missing_years,
 )
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
@@ -50,7 +50,7 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
         if not path.exists():
             return None
 
-        groups: dict[str, SortedGemsScBuilderMapping] = {}
+        groups: dict[str, GemsScBuilderMappings] = {}
         seen: set[tuple[str, int]] = set()
         for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
             if not line.strip():
@@ -91,8 +91,8 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
 
     @override
     def save_scenario_inside_gems_scenario_builder(
-        self, scenario_name: str, data: SortedGemsScBuilderMapping
-    ) -> SortedGemsScBuilderMapping:
+        self, scenario_name: str, data: GemsScBuilderMappings
+    ) -> GemsScBuilderMappings:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
@@ -100,5 +100,5 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> SortedGemsScBuilderMapping:
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> GemsScBuilderMappings:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

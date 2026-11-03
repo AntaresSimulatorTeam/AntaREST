@@ -15,7 +15,7 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.model import GemsId
-from antarest.study.business.model.gems.scenario_builder import SortedGemsScBuilderMapping
+from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMappings
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -39,7 +39,7 @@ class UpdateGemsScenario(ICommand):
     command_name: CommandName = CommandName.UPDATE_GEMS_SCENARIO
 
     scenario_name: GemsId
-    data: SortedGemsScBuilderMapping
+    data: GemsScBuilderMappings
 
     @model_validator(mode="after")
     def _validate_against_version(self) -> Self:
@@ -50,7 +50,7 @@ class UpdateGemsScenario(ICommand):
     @override
     def _apply_dao(
         self, study_dao: StudyDao, listener: ICommandListener | None = None
-    ) -> CommandOutput[SortedGemsScBuilderMapping]:
+    ) -> CommandOutput[GemsScBuilderMappings]:
         existing_mappings = study_dao.get_scenario_from_gems_scenario_builder(self.scenario_name)
 
         final_mapping = list(self.data)  # Avoid mutating user inputs

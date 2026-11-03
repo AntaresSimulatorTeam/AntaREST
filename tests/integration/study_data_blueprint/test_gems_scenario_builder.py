@@ -110,8 +110,8 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
         json=[{"scenario": 1, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 4}],
     )
     assert res.status_code == 422
-    assert res.json()["description"] == "Duplicate scenario found"
-    assert res.json()["exception"] == "ValueError"
+    assert res.json()["description"] == "Value error, Found duplicated scenario inside GEMS scenario builder"
+    assert res.json()["exception"] == "RequestValidationError"
 
     # Try to update a fake scenario
     res = client.put(sc_builder_url, params={"scenario_name": "fake_scenario"}, json=[])
