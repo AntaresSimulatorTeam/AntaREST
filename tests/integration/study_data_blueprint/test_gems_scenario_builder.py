@@ -25,8 +25,23 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     if variant:
         study_id = client.post(f"/v1/studies/{study_id}/variants", params={"name": "variant_study"}).json()
 
-    # Ensures at first there is no sc-builder
     sc_builder_url = f"/v1/studies/{study_id}/gems/scenario-builder"
+
+    # Ensures at first there is no sc-builder
     res = client.get(sc_builder_url)
     assert res.status_code == 200
     assert res.json() == {"scenarios": {}}
+
+    # Set nbYears to 2 for the rest of the test
+    res = client.put(f"/v1/studies/{study_id}/config/general/form", json={"nbYears": 2})
+    assert res.status_code == 200
+
+    # Add 2 scenarios, one with default values and the other ones with custom values
+    res1 = client.post(sc_builder_url, params={"scenario_name": "scenario1"}, json={"data": []})
+    # assert res1.status_code == 200
+    print(res1.json())
+    print("//////")
+    scenario2 = client.post(
+        sc_builder_url, params={"scenario_name": "scenario2"}, json={"data": [{"scenario": 1, "timeSeriesIndex": 5}]}
+    ).json()
+    print(scenario2)
