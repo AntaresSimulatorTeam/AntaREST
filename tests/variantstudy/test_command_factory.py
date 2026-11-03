@@ -1181,6 +1181,33 @@ COMMANDS = [
         None,
         id="replace_hydro_reserve_symmetries",
     ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_GEMS_SCENARIO.value,
+            args={"scenario_name": "my_scenario", "data": [{"scenario": 1, "time_series_index": 2}]},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="create_gems_scenario",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_GEMS_SCENARIO.value,
+            args={"scenario_name": "my_scenario"},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="remove_gems_scenario",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_GEMS_SCENARIO.value,
+            args={"scenario_name": "my_scenario", "data": [{"scenario": 1, "time_series_index": 2}]},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="update_gems_scenario",
+    ),
 ]
 
 

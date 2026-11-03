@@ -25,6 +25,7 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
+from antarest.study.storage.variantstudy.model.command.create_gems_scenario import CreateGemsScenario
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
@@ -47,6 +48,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.remove_gems_scenario import RemoveGemsScenario
 from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
@@ -63,6 +65,7 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
+from antarest.study.storage.variantstudy.model.command.replace_gems_scenario import UpdateGemsScenario
 from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation import ReplaceHydroAllocation
 from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
 from antarest.study.storage.variantstudy.model.command.replace_hydro_reserve_certifications import (
@@ -204,6 +207,9 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.REPLACE_ST_STORAGE_RESERVE_CERTIFICATIONS.value: ReplaceStStorageReserveCertifications,
     CommandName.REPLACE_HYDRO_RESERVE_CERTIFICATIONS.value: ReplaceHydroReserveCertifications,
     CommandName.REPLACE_HYDRO_RESERVE_SYMMETRIES.value: ReplaceHydroReserveSymmetries,
+    CommandName.CREATE_GEMS_SCENARIO.value: CreateGemsScenario,
+    CommandName.UPDATE_GEMS_SCENARIO.value: UpdateGemsScenario,
+    CommandName.REMOVE_GEMS_SCENARIO.value: RemoveGemsScenario,
 }
 
 
