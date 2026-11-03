@@ -45,10 +45,7 @@ def parse_compatibility_parameters(version: StudyVersion, data: dict[str, Any]) 
     file_data = CompatibilityParametersFileData.model_validate(compatibility_data)
     parameters = file_data.to_model()
     initialize_compatibility_parameters(parameters, version)
-    validate_compatibility_parameters_against_version(
-        version,
-        parameters,
-    )
+    validate_compatibility_parameters_against_version(version, parameters)
     return parameters
 
 

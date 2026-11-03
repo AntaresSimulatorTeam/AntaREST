@@ -537,9 +537,42 @@ def test_compatibility_settings_10_2_study(client: TestClient, admin_access_toke
         json={"hydroPmax": "hourly", "hydroRuleCurves": "scenarized"},
     )
     assert res.status_code == 200
-    res = client.get(f"/v1/studies/{study_id}/config/compatibility/form")
-    assert res.status_code == 200
     assert res.json() == {"hydroPmax": "hourly", "hydroRuleCurves": "scenarized"}
+
+
+@pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+def test_reservoir_level_matrices_after_switching_to_scenarized(admin_client: TestClient, storage_mode: str) -> None:
+    # Study init
+    res = admin_client.post("/v1/studies", params={"name": "foo", "version": 1020, "storage_mode": storage_mode})
+    assert res.status_code == 201, res.text
+    study_id = res.json()
+
+    # Create area
+    res = admin_client.post(f"/v1/studies/{study_id}/areas", json={"name": "france"})
+    res.status_code == 200
+
+    # Expected matrices
+    matrix_paths = {
+        "input/hydro/series/france/minDailyReservoirLevels": 0.0,
+        "input/hydro/series/france/maxDailyReservoirLevels": 1.0,
+        "input/hydro/series/france/avgDailyReservoirLevels": 0.5,
+    }
+
+    # Switch to single -> scenarized
+    res = admin_client.put(
+        f"/v1/studies/{study_id}/config/compatibility/form",
+        json={"hydroRuleCurves": "scenarized"},
+    )
+    assert res.status_code == 200
+    assert res.json()["hydroRuleCurves"] == "scenarized"
+
+    # Check matrices && values
+    for path, expected_value in matrix_paths.items():
+        res = admin_client.get(f"/v1/studies/{study_id}/raw", params={"path": path})
+        assert res.status_code == 200
+        matrix = np.asarray(res.json()["data"], dtype=float)
+        np.testing.assert_array_equal(matrix, expected_value)
+        assert matrix.shape == (365, 1)
 
 
 @pytest.mark.parametrize("field, min_version", [("includeReserves", "10.2"), ("includeThermalClusterRamping", "10.3")])

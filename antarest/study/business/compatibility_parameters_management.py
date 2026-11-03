@@ -54,5 +54,6 @@ class CompatibilityParamsManager:
                     study_version=study.version,
                 )
             )
-        study.add_commands(compat_params_commands)
+        if compat_params_commands:
+            study.add_commands(compat_params_commands)
         return self.get_compatibility_parameters(study)
