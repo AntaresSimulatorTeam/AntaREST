@@ -155,15 +155,15 @@ export const MATRICES: Matrices = {
     url: "input/hydro/common/capacity/maxDailyPumpEnergy_{areaId}",
   },
   [HydroMatrixType.MinDailyReservoirLevels]: {
-    title: "Min Reservoir Levels",
+    title: "Min Daily Reservoir Levels",
     url: "input/hydro/series/{areaId}/minDailyReservoirLevels",
   },
   [HydroMatrixType.MaxDailyReservoirLevels]: {
-    title: "Max Reservoir Levels",
+    title: "Max Daily Reservoir Levels",
     url: "input/hydro/series/{areaId}/maxDailyReservoirLevels",
   },
   [HydroMatrixType.AvgDailyReservoirLevels]: {
-    title: "Avg Reservoir Levels",
+    title: "Avg Daily Reservoir Levels",
     url: "input/hydro/series/{areaId}/avgDailyReservoirLevels",
   },
   [HydroMatrixType.InflowPattern]: {

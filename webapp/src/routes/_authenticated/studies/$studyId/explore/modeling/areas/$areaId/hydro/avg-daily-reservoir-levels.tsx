@@ -19,7 +19,7 @@ import { checkRouteAvailability } from "@/utils/routerUtils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 
 export const Route = createFileRoute(
-  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels",
+  "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-daily-reservoir-levels",
 )({
   component: AvgDailyReservoirLevels,
 });

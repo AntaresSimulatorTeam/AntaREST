@@ -163,26 +163,26 @@ function HydroLayout() {
         ...(semver.gte(study.version, "10.2.0") && hydroRuleCurves === "scenarized"
           ? [
               {
-                id: "minReservoirLevels",
-                label: "Min Reservoir Levels",
+                id: "minDailyReservoirLevels",
+                label: "Min Daily Reservoir Levels",
                 linkOptions: linkOptions({
-                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-reservoir-levels",
+                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/min-daily-reservoir-levels",
                   params,
                 }),
               },
               {
-                id: "maxReservoirLevels",
-                label: "Max Reservoir Levels",
+                id: "maxDailyReservoirLevels",
+                label: "Max Daily Reservoir Levels",
                 linkOptions: linkOptions({
-                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-reservoir-levels",
+                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/max-daily-reservoir-levels",
                   params,
                 }),
               },
               {
-                id: "avgReservoirLevels",
-                label: "Avg Reservoir Levels",
+                id: "avgDailyReservoirLevels",
+                label: "Avg Daily Reservoir Levels",
                 linkOptions: linkOptions({
-                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-reservoir-levels",
+                  to: "/studies/$studyId/explore/modeling/areas/$areaId/hydro/avg-daily-reservoir-levels",
                   params,
                 }),
               },
