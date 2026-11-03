@@ -21,6 +21,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
+from antarest.study.storage.variantstudy.model.command.convert_hydro_rule_curves import ConvertHydroRuleCurves
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
@@ -192,6 +193,7 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.REPLACE_HYDRO_ALLOCATION.value: ReplaceHydroAllocation,
     CommandName.REPLACE_HYDRO_CORRELATION.value: ReplaceHydroCorrelation,
     CommandName.CONVERT_HYDRO_PMAX.value: ConvertHydroPmax,
+    CommandName.CONVERT_HYDRO_RULE_CURVES.value: ConvertHydroRuleCurves,
     CommandName.CREATE_USER_RESOURCE.value: ReplaceUserResource,
     CommandName.REPLACE_USER_RESOURCE.value: ReplaceUserResource,
     CommandName.UPDATE_RESERVES_GLOBAL_PARAMETERS.value: UpdateReservesGlobalParameters,

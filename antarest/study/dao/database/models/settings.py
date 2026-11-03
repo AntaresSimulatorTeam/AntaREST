@@ -26,7 +26,7 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     SimulationCore,
     UnitCommitmentMode,
 )
-from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax, HydroRuleCurves
 from antarest.study.business.model.config.general_model import BuildingMode, Mode, Month, WeekDay
 from antarest.study.business.model.config.optimization_config_model import (
     SimplexOptimizationRange,
@@ -123,6 +123,7 @@ COMPATIBILITY_PARAMETERS_TABLE = Table(
     metadata,
     study_data_id_col(),
     Column("hydro_pmax", enum_col(HydroPmax), nullable=True),
+    Column("hydro_rule_curves", enum_col(HydroRuleCurves), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id"],
         ["study_data.study_data_id"],

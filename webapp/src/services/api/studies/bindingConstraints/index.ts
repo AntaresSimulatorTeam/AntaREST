@@ -73,7 +73,7 @@ export async function updateBindingConstraint({
 export async function duplicateBindingConstraint({
   studyId,
   constraintId,
-  newConstraintName,
+  newName: newConstraintName,
 }: DuplicateBindingConstraintParams) {
   const url = format(BINDING_CONSTRAINT_URL, { studyId, constraintId });
 

@@ -13,25 +13,26 @@
  */
 
 import client from "@/services/api/client";
+import type { Promise } from "ts-toolbelt/out/Any/Promise";
 import { z } from "zod";
 import {
-  createReserveParamsSchema,
+  reserveCreationSchema,
   reserveGlobalParametersSchema,
+  reserveGlobalParametersUpdateSchema,
   reserveSchema,
+  reserveUpdateSchema,
   reservesCertificationsCodecs,
   reservesSchema,
   reservesSymmetriesCodecs,
-  updateReserveGlobalParametersSchema,
-  updateReserveParamsSchema,
 } from "./schemas";
 import type {
   CreateReserveParams,
   DeleteReservesParams,
-  GetReserveParams,
   Reserve,
   ReserveGlobalParameters,
-  ReservesAreaParams,
+  ReserveParams,
   ReservesCertifications,
+  ReservesParams,
   ReservesProductionTypeParams,
   ReservesSymmetries,
   UpdateReserveGlobalParametersParams,
@@ -47,7 +48,7 @@ import type {
  * @returns The list of reserves for the given area.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getReserves(params: ReservesAreaParams): Promise<Reserve[]> {
+export async function getReserves(params: ReservesParams): Promise<Reserve[]> {
   const { studyId, areaId } = params;
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/reserves`);
   return reservesSchema.parse(res.data);
@@ -60,7 +61,7 @@ export async function getReserves(params: ReservesAreaParams): Promise<Reserve[]
  * @returns The reserve data.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getReserve(params: GetReserveParams): Promise<Reserve> {
+export async function getReserve(params: ReserveParams): Promise<Reserve> {
   const { studyId, areaId, reserveId } = params;
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/reserves/${reserveId}`);
   return reserveSchema.parse(res.data);
@@ -75,7 +76,7 @@ export async function getReserve(params: GetReserveParams): Promise<Reserve> {
  */
 export async function createReserve(params: CreateReserveParams): Promise<Reserve> {
   const { studyId, areaId, data } = params;
-  const body = createReserveParamsSchema.parse(data);
+  const body = reserveCreationSchema.parse(data);
   const res = await client.post(`/v1/studies/${studyId}/areas/${areaId}/reserves`, body);
   return reserveSchema.parse(res.data);
 }
@@ -89,7 +90,7 @@ export async function createReserve(params: CreateReserveParams): Promise<Reserv
  */
 export async function updateReserve(params: UpdateReserveParams): Promise<Reserve> {
   const { studyId, areaId, reserveId, data } = params;
-  const body = updateReserveParamsSchema.parse(data);
+  const body = reserveUpdateSchema.parse(data);
   const res = await client.patch(
     `/v1/studies/${studyId}/areas/${areaId}/reserves/${reserveId}`,
     body,
@@ -118,7 +119,7 @@ export async function deleteReserves(params: DeleteReservesParams) {
  * @throws If the response doesn't match the expected schema.
  */
 export async function getReserveGlobalParameters(
-  params: ReservesAreaParams,
+  params: ReservesParams,
 ): Promise<ReserveGlobalParameters> {
   const { studyId, areaId } = params;
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/reserves/global-parameters`);
@@ -137,7 +138,7 @@ export async function updateReserveGlobalParameters(
   params: UpdateReserveGlobalParametersParams,
 ): Promise<ReserveGlobalParameters> {
   const { studyId, areaId, data } = params;
-  const body = updateReserveGlobalParametersSchema.parse(data);
+  const body = reserveGlobalParametersUpdateSchema.parse(data);
   const res = await client.put(
     `/v1/studies/${studyId}/areas/${areaId}/reserves/global-parameters`,
     body,
