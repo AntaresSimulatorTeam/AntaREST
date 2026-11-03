@@ -66,7 +66,6 @@ from antarest.study.storage.variantstudy.model.command.remove_xpansion_candidate
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_configuration import RemoveXpansionConfiguration
 from antarest.study.storage.variantstudy.model.command.remove_xpansion_resource import RemoveXpansionResource
 from antarest.study.storage.variantstudy.model.command.replace_comments import ReplaceComments
-from antarest.study.storage.variantstudy.model.command.replace_gems_scenario import UpdateGemsScenario
 from antarest.study.storage.variantstudy.model.command.replace_hydro_allocation import ReplaceHydroAllocation
 from antarest.study.storage.variantstudy.model.command.replace_hydro_correlation import ReplaceHydroCorrelation
 from antarest.study.storage.variantstudy.model.command.replace_hydro_reserve_certifications import (
@@ -106,6 +105,7 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
+from antarest.study.storage.variantstudy.model.command.update_gems_scenario import UpdateGemsScenario
 from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure

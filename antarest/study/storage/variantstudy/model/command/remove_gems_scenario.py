@@ -44,7 +44,7 @@ class RemoveGemsScenario(ICommand):
     @override
     def _apply_dao(self, study_dao: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
         study_dao.remove_scenario_from_gems_scenario_builder(self.scenario_name)
-        return command_succeeded(message=f"Gems scenario {self.scenario_name} added successfully", result=None)
+        return command_succeeded(message=f"Gems scenario {self.scenario_name} removed successfully", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:

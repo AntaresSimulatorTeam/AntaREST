@@ -18,7 +18,7 @@ from antarest.study.business.model.gems.scenario_builder import (
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_gems_scenario import CreateGemsScenario
 from antarest.study.storage.variantstudy.model.command.remove_gems_scenario import RemoveGemsScenario
-from antarest.study.storage.variantstudy.model.command.replace_gems_scenario import UpdateGemsScenario
+from antarest.study.storage.variantstudy.model.command.update_gems_scenario import UpdateGemsScenario
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 

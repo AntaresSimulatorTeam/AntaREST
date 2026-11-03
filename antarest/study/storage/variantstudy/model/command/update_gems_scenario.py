@@ -52,14 +52,14 @@ class UpdateGemsScenario(ICommand):
     ) -> CommandOutput[list[GemsScBuilderMapping]]:
         existing_mappings = study_dao.get_scenario_from_gems_scenario_builder(self.scenario_name)
 
-        final_mapping = self.data
+        final_mapping = list(self.data)  # Avoid mutating user inputs
         new_scenarios = {mapping.scenario for mapping in final_mapping}
         for mapping in existing_mappings:
             if mapping.scenario not in new_scenarios:
                 final_mapping.append(mapping)
 
         result = study_dao.save_scenario_inside_gems_scenario_builder(self.scenario_name, final_mapping)
-        return command_succeeded(message=f"Gems scenario {self.scenario_name} added successfully", result=result)
+        return command_succeeded(message=f"Gems scenario {self.scenario_name} updated successfully", result=result)
 
     @override
     def to_dto(self) -> CommandDTO:
