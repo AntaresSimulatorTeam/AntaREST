@@ -21,7 +21,7 @@ import {
 } from "@/services/api/studies/areas/reserves/adapters";
 import type { ProductionType } from "@/services/api/studies/areas/reserves/types";
 import { toError } from "@/utils/fnUtils";
-import { useQueryClient, useSuspenseQueries } from "@tanstack/react-query";
+import { useSuspenseQueries } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useUndo from "use-undo";
@@ -52,7 +52,6 @@ function SymmetriesView({
 }: SymmetriesViewProps) {
   const { t } = useTranslation();
   const params = Route.useParams();
-  const queryClient = useQueryClient();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { assetsQuery } = PRODUCTION_TYPES[productionType];
   const { studyId, areaId } = params;
