@@ -994,6 +994,8 @@
   "studies.updateDirectory.error": "Failed to update directory. Please try again.",
   "studies.deleteDirectory.error": "Failed to delete directory. Please try again.",
   "variants.createNewVariant": "Create new variant",
+  "variants.unarchive": "Unarchive reference study",
+  "variants.unarchive.warning": "The reference study “{{referenceStudyName}}” is archived. Unarchive it to view this variant.",
   "variants.newVariant": "New variant",
   "variants.newCommand": "Add new command",
   "variants.commandActionLabel": "Select action",

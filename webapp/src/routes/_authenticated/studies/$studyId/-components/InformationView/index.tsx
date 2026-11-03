@@ -23,7 +23,7 @@ import { unarchiveStudy } from "@/services/api/study";
 import { toError } from "@/utils/fnUtils";
 import BoltIcon from "@mui/icons-material/Bolt";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
-import { Box, Button, Divider, Stack } from "@mui/material";
+import { Alert, Box, Button, Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
 import LaunchStudiesDialog from "../../../../../-shared/components/studies/dialogs/LaunchStudiesDialog";
@@ -42,6 +42,11 @@ function InformationView({ variantTree }: Props) {
   const { openDialog } = useDialog();
   const study = useStudy();
 
+  // When the reference study is archived, all its variants are considered archived as well
+  const referenceStudy = variantTree.node;
+  const isArchived = referenceStudy.archived;
+  const isReferenceStudy = study.id === referenceStudy.id;
+
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
@@ -58,9 +63,10 @@ function InformationView({ variantTree }: Props) {
     }
   };
 
-  const handleUnarchiveStudy = async () => {
+  const handleUnarchiveStudyReference = async () => {
     try {
-      await unarchiveStudy(study.id);
+      // Only the reference study can be archived/unarchived
+      await unarchiveStudy(referenceStudy.id);
     } catch (err) {
       enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), toError(err));
     }
@@ -90,7 +96,7 @@ function InformationView({ variantTree }: Props) {
     <ViewWrapper flex={{ gap: 2 }}>
       <Stack flex={1} spacing={1} sx={{ overflow: "auto" }}>
         <LauncherHistory />
-        {!study.archived && (
+        {!isArchived && (
           <Stack direction="column" sx={{ height: 1, flex: 1, overflow: "hidden" }}>
             <Notes />
             <Divider flexItem variant="middle" />
@@ -105,7 +111,7 @@ function InformationView({ variantTree }: Props) {
         <CustomScrollbar>
           <Stack spacing={1} justifyContent="space-between">
             <Stack spacing={1}>
-              {!study.archived && (
+              {!isArchived && (
                 <>
                   <RouterButton
                     variant="contained"
@@ -125,14 +131,21 @@ function InformationView({ variantTree }: Props) {
                   )}
                 </>
               )}
+              {isArchived && !isReferenceStudy && (
+                <Alert severity="warning">
+                  {t("variants.unarchive.warning", {
+                    referenceStudyName: referenceStudy.name,
+                  })}
+                </Alert>
+              )}
             </Stack>
-            {study.archived ? (
+            {isArchived ? (
               <Button
                 variant="contained"
-                onClick={handleUnarchiveStudy}
+                onClick={handleUnarchiveStudyReference}
                 startIcon={<UnarchiveOutlinedIcon />}
               >
-                {t("global.unarchive")}
+                {isReferenceStudy ? t("global.unarchive") : t("variants.unarchive")}
               </Button>
             ) : (
               <Button variant="contained" onClick={handleLaunchStudy} startIcon={<BoltIcon />}>
