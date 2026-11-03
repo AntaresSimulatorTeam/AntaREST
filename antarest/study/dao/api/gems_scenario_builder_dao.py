@@ -12,6 +12,7 @@
 
 from abc import ABC, abstractmethod
 
+from antarest.core.model import GemsId
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMappings,
     GemsScenarioBuilder,
@@ -25,7 +26,11 @@ class ReadOnlyGemsScenarioBuilderDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> GemsScBuilderMappings:
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
         raise NotImplementedError()
 
 

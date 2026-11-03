@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 from typing_extensions import override
 
 from antarest.core.exceptions import GemsUnavailableForFileSystemStudies
+from antarest.core.model import GemsId
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMapping,
     GemsScBuilderMappings,
@@ -96,9 +97,13 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def remove_scenario_from_gems_scenario_builder(self, scenario_name: str) -> None:
+    def remove_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> None:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> GemsScBuilderMappings:
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
+    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

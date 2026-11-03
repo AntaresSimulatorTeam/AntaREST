@@ -18,6 +18,7 @@ import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.core.model import GemsId
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
@@ -1029,8 +1030,12 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_gems_scenario_builder()
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> GemsScBuilderMappings:
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
         return self._adaptee.get_scenario_from_gems_scenario_builder(scenario_name)
+
+    @override
+    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
+        return self._adaptee.scenario_exists_in_gems_scenario_builder(scenario_name)
 
     @override
     def get_catalogs(self) -> list[GemsCatalog]:

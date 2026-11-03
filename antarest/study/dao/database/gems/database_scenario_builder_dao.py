@@ -11,12 +11,14 @@
 # This file is part of the Antares project.
 
 import json
+from typing import Any
 
-from sqlalchemy import CursorResult, delete, select
+from sqlalchemy import CursorResult, Row, delete, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsScenarioAlreadyExists, GemsScenarioNotFound
+from antarest.core.exceptions import GemsScenarioNotFound
+from antarest.core.model import GemsId
 from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMapping,
@@ -70,7 +72,7 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
 
     @override
     def save_scenario_inside_gems_scenario_builder(
-        self, scenario_name: str, data: GemsScBuilderMappings
+        self, scenario_name: GemsId, data: GemsScBuilderMappings
     ) -> GemsScBuilderMappings:
         simulation_nb_years = self.get_impl().get_general_config().nb_years
         filled_scenario = fill_missing_years(data, simulation_nb_years)
@@ -87,15 +89,15 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         try:
             upsert_multiple(session, table, values)
             session.commit()
-        except IntegrityError as e:
-            # Means the scenario already existed
+        except Exception as e:
+            # Probably means the study did not exist in the first place or a weird error occurred in DB.
             session.rollback()
-            raise GemsScenarioAlreadyExists(scenario_name, self._study_id) from e
+            raise e
 
         return filled_scenario
 
     @override
-    def remove_scenario_from_gems_scenario_builder(self, scenario_name: str) -> None:
+    def remove_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> None:
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
         result = session.execute(
@@ -111,13 +113,20 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         session.commit()
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> GemsScBuilderMappings:
+    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
+        return self._fetch_scenario(scenario_name) is not None
+
+    def _fetch_scenario(self, scenario_name: GemsId) -> Row[Any] | None:
         table = GEMS_SCENARIO_BUILDER_TABLE
-        row = self._db_session.execute(
+        return self._db_session.execute(
             select(table).where(
                 (table.c.study_data_id == self._study_data_id) & (table.c.scenario_group == scenario_name)
             )
         ).fetchone()
+
+    @override
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
+        row = self._fetch_scenario(scenario_name)
 
         if not row:
             raise GemsScenarioNotFound(scenario_name, self._study_id)
