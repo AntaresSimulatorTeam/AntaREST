@@ -44,6 +44,9 @@ class GemsScenarioBuilderManager:
     def update_scenario_from_gems_scenario_builder(
         self, study: StudyInterface, scenario_name: str, data: list[GemsScBuilderMapping]
     ) -> list[GemsScBuilderMapping]:
+        # First ensures the scenario exists
+        study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
+
         command = UpdateGemsScenario(
             scenario_name=scenario_name,
             data=data,
@@ -54,6 +57,9 @@ class GemsScenarioBuilderManager:
         return study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
 
     def delete_scenario_from_gems_scenario_builder(self, study: StudyInterface, scenario_name: str) -> None:
+        # First ensures the scenario exists
+        study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
+
         command = RemoveGemsScenario(
             scenario_name=scenario_name,
             command_context=self._command_context,

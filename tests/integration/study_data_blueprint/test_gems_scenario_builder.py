@@ -39,9 +39,72 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     # Add 2 scenarios, one with default values and the other ones with custom values
     res1 = client.post(sc_builder_url, params={"scenario_name": "scenario1"}, json=[])
     assert res1.status_code == 200
-    print(res1.json())
-    print("//////")
-    scenario2 = client.post(
+    assert res1.json() == [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 2}]
+
+    res2 = client.post(
         sc_builder_url, params={"scenario_name": "scenario2"}, json=[{"scenario": 1, "timeSeriesIndex": 5}]
-    ).json()
-    print(scenario2)
+    )
+    assert res2.status_code == 200
+    assert res2.json() == [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 5}]
+
+    # Fetch the 2 scenarios
+    res = client.get(sc_builder_url)
+    assert res.status_code == 200
+    assert res.json() == {
+        "scenarios": {
+            "scenario1": [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 2}],
+            "scenario2": [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 5}],
+        }
+    }
+
+    # Update the data of 1 scenario only. The second one should not be impacted
+    res = client.put(
+        sc_builder_url, params={"scenario_name": "scenario1"}, json=[{"scenario": 0, "timeSeriesIndex": 3}]
+    )
+    assert res.status_code == 200
+    assert res.json() == [{"scenario": 0, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 2}]
+
+    res = client.get(sc_builder_url)
+    assert res.status_code == 200
+    assert res.json() == {
+        "scenarios": {
+            "scenario1": [{"scenario": 0, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 2}],
+            "scenario2": [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 5}],
+        }
+    }
+
+    # Delete the first scenario. The second one should not be impacted
+    res = client.delete(sc_builder_url, params={"scenario_name": "scenario1"})
+    assert res.status_code == 200
+
+    res = client.get(sc_builder_url)
+    assert res.status_code == 200
+    assert res.json() == {
+        "scenarios": {
+            "scenario2": [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 5}],
+        }
+    }
+
+    # Delete the last scenario. Get response should be empty
+    res = client.delete(sc_builder_url, params={"scenario_name": "scenario2"})
+    assert res.status_code == 200
+
+    res = client.get(sc_builder_url)
+    assert res.status_code == 200
+    assert res.json() == {"scenarios": {}}
+
+    ##########################
+    # Error cases
+    ##########################
+
+    # Try to update a fake scenario
+
+    # Try to delete a fake scenario
+    res = client.delete(sc_builder_url, params={"scenario_name": "fake_scenario"})
+    assert res.status_code == 404
+    assert res.json() == {
+        "description": f"Could not find scenario 'fake_scenario' inside gems scenario builder for study {study_id}",
+        "exception": "GemsScenarioNotFound",
+    }
+
+    # Try to create a scenario with wrong years

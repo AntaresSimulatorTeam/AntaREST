@@ -944,7 +944,7 @@ class GemsInvalidConnection(HTTPException):
 
 class GemsScenarioNotFound(HTTPException):
     def __init__(self, scenario_name: str, study_id: str) -> None:
-        message = f"Could not find scenario {scenario_name} inside gems scenario builder for study {study_id}"
+        message = f"Could not find scenario '{scenario_name}' inside gems scenario builder for study {study_id}"
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
