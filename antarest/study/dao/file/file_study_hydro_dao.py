@@ -584,7 +584,7 @@ class FileStudyHydroDao(HydroDao):
             if missing_areas:
                 generator = self.get_impl().generator_matrix_constants
                 maxpower_id = generator.get_hydro_max_power(self.get_impl().get_version())
-                self.save_hydro_maxpower({area_id: maxpower_id for area_id in missing_areas})
+                self.save_hydro_maxpower(dict.fromkeys(missing_areas, maxpower_id))
             for area_id in areas:
                 file_study.tree.delete(_get_max_hourly_gen_power_path(area_id))
                 file_study.tree.delete(_get_max_hourly_pump_power_path(area_id))
@@ -608,9 +608,9 @@ class FileStudyHydroDao(HydroDao):
             min_id = constants.get_hydro_min_daily_reservoir_levels()
             max_id = constants.get_hydro_max_daily_reservoir_levels()
             avg_id = constants.get_hydro_avg_daily_reservoir_levels()
-            self.save_hydro_min_daily_reservoir_levels({area_id: min_id for area_id in areas})
-            self.save_hydro_max_daily_reservoir_levels({area_id: max_id for area_id in areas})
-            self.save_hydro_avg_daily_reservoir_levels({area_id: avg_id for area_id in areas})
+            self.save_hydro_min_daily_reservoir_levels(dict.fromkeys(areas, min_id))
+            self.save_hydro_max_daily_reservoir_levels(dict.fromkeys(areas, max_id))
+            self.save_hydro_avg_daily_reservoir_levels(dict.fromkeys(areas, avg_id))
         else:
             for area_id in areas:
                 file_study.tree.delete(_get_min_daily_reservoir_levels_path(area_id))
