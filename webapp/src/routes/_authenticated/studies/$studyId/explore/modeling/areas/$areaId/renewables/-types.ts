@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-export interface RowData<T = string> {
-  name: string;
-  group?: T;
-}
+import type { RenewableCluster } from "@/services/api/studies/areas/renewables/types";
+import type { ClusterWithCapacity } from "../-clustersUtils";
+
+export type RenewableClusterWithCapacity = ClusterWithCapacity<RenewableCluster>;

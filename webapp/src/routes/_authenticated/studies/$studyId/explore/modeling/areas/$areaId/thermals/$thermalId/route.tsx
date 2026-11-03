@@ -17,6 +17,7 @@ import TabsView from "@/components/page/TabsView";
 import { createFileRoute, linkOptions, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import useThermalClusters from "../-hooks/useThermalClusters";
+import { clustersToOptions } from "../../-clustersUtils";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId",
@@ -28,14 +29,10 @@ function ThermalLayout() {
   const params = Route.useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { studyId, areaId, thermalId } = params;
-  const { data: thermals, isSuccess } = useThermalClusters({ studyId, areaId });
-
-  const thermalOptions = thermals?.map((thermal) => ({
-    label: thermal.name,
-    value: thermal.id,
-    group: thermal.group,
-  })) ?? [thermalId];
+  const { data: thermalOptions } = useThermalClusters({
+    ...params,
+    select: clustersToOptions,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -85,11 +82,10 @@ function ThermalLayout() {
       primaryActions={
         <SelectFE
           label={t("study.modeling.thermals.select")}
-          value={thermalId}
+          value={params.thermalId}
           options={thermalOptions}
           onChange={handleChange}
           size="extra-small"
-          disabled={!isSuccess}
           sx={{ minWidth: 90, maxWidth: 150 }}
         />
       }

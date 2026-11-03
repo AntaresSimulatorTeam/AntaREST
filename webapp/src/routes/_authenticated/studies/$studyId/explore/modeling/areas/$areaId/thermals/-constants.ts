@@ -12,7 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
+import {
+  TS_GENERATION_OPTIONS,
+  TS_LAW_OPTIONS,
+} from "@/services/api/studies/areas/thermals/constants";
+import type {
+  ThermalCluster,
+  ThermalClusterCreation,
+} from "@/services/api/studies/areas/thermals/types";
 
 /** Order of the emission fields displayed in the parameters form. */
 export const THERMAL_POLLUTANTS = [
@@ -45,3 +52,27 @@ export const TS_GEN_MATRIX_COLS = [
   "NPO Min",
   "NPO Max",
 ] as const;
+
+export const DEFAULT_THERMAL_VALUES = {
+  name: "",
+  group: "",
+  enabled: false,
+  unitCount: 0,
+  nominalCapacity: 0,
+  mustRun: false,
+  minStablePower: 0,
+  spinning: 0,
+  minUpTime: 0,
+  minDownTime: 0,
+  marginalCost: 0,
+  fixedCost: 0,
+  startupCost: 0,
+  marketBidCost: 0,
+  spreadCost: 0,
+  genTs: TS_GENERATION_OPTIONS[0],
+  volatilityForced: 0,
+  volatilityPlanned: 0,
+  lawForced: TS_LAW_OPTIONS[0],
+  lawPlanned: TS_LAW_OPTIONS[0],
+  co2: 0,
+} as const satisfies ThermalClusterCreation;

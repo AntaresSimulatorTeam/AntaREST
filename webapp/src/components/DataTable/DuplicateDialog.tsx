@@ -13,34 +13,33 @@
  */
 
 import { validateString } from "@/utils/validation/string";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import { useTranslation } from "react-i18next";
-import FormDialog from "../dialogs/FormDialog";
-import SelectFE from "../fieldEditors/SelectFE";
-import StringFE from "../fieldEditors/StringFE";
 import Fieldset from "../Fieldset";
 import type { SubmitHandlerPlus } from "../Form/types";
+import FormDialog from "../dialogs/FormDialog";
+import StringFE from "../fieldEditors/StringFE";
 import type { RowData } from "./types";
 
 interface Props {
   open: boolean;
   onClose: VoidFunction;
-  onSubmit: (values: RowData) => Promise<void>;
-  groups?: string[];
-  allowNewGroups?: boolean;
-  existingNames: Array<RowData["name"]>;
+  onSubmit: (name: RowData["name"]) => void;
+  existingNames: string[];
+  defaultName: string;
 }
 
-function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existingNames }: Props) {
+function DuplicateDialog(props: Props) {
+  const { open, onClose, onSubmit, existingNames, defaultName } = props;
   const { t } = useTranslation();
-  const hasGroups = groups !== undefined;
+  const defaultValues = { name: defaultName };
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ values: { name, group } }: SubmitHandlerPlus<RowData>) => {
-    return onSubmit(hasGroups ? { name: name.trim(), group } : { name: name.trim() });
+  const handleSubmit = ({ values: { name } }: SubmitHandlerPlus<typeof defaultValues>) => {
+    return onSubmit(name);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -49,11 +48,13 @@ function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existin
 
   return (
     <FormDialog
-      title={t("button.add")}
-      titleIcon={AddCircleIcon}
       open={open}
+      title={t("global.duplicate")}
+      titleIcon={ContentCopyIcon}
       onCancel={onClose}
       onSubmit={handleSubmit}
+      config={{ defaultValues }}
+      allowSubmitOnPristine
     >
       {({ control }) => (
         <Fieldset fullFieldWidth>
@@ -67,28 +68,10 @@ function CreateDialog({ open, onClose, onSubmit, groups, allowNewGroups, existin
             }}
             sx={{ m: 0 }}
           />
-          {hasGroups &&
-            (allowNewGroups ? (
-              <StringFE
-                label={t("global.group")}
-                name="group"
-                datalist={groups}
-                control={control}
-                rules={{ required: t("form.field.required") }}
-              />
-            ) : (
-              <SelectFE
-                label={t("global.group")}
-                name="group"
-                control={control}
-                options={groups}
-                rules={{ required: t("form.field.required") }}
-              />
-            ))}
         </Fieldset>
       )}
     </FormDialog>
   );
 }
 
-export default CreateDialog;
+export default DuplicateDialog;

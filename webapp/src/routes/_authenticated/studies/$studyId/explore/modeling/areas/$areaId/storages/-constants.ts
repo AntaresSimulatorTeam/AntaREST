@@ -12,14 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
+import type { StorageCreation } from "@/services/api/studies/areas/storages/types";
 
-/**
- * Uses empty groups for the existing table and form.
- *
- * @param cluster - The complete API cluster.
- * @returns The cluster with a string group for UI consumers.
- */
-export function adaptThermalClusterToView(cluster: ThermalCluster) {
-  return { ...cluster, group: cluster.group ?? "" };
-}
+export const DEFAULT_STORAGE_VALUES = {
+  name: "",
+  group: "",
+  injectionNominalCapacity: 0,
+  withdrawalNominalCapacity: 0,
+  reservoirCapacity: 0,
+  efficiency: 0,
+  initialLevel: 0,
+  initialLevelOptim: false,
+} as const satisfies StorageCreation;
