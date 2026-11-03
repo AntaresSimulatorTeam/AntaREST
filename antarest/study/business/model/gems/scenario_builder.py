@@ -9,9 +9,9 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Annotated, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
-from pydantic import ConfigDict, Field, PlainSerializer
+from pydantic import BeforeValidator, ConfigDict, Field, PlainSerializer
 from pydantic.alias_generators import to_camel
 
 from antarest.core.model import GemsId
@@ -30,8 +30,16 @@ class GemsScBuilderMapping(AntaresBaseModel):
     time_series_index: TimeSerieIndex
 
 
+def _check_scenario_duplication(data: list[dict[str, Any]]) -> list[GemsScBuilderMapping]:
+    if len(data) != len(set(mapping["scenario"] for mapping in data)):
+        raise ValueError("Duplicate scenario found")
+    return [GemsScBuilderMapping(**mapping) for mapping in data]
+
+
 SortedGemsScBuilderMapping: TypeAlias = Annotated[
-    list[GemsScBuilderMapping], PlainSerializer(lambda x: sorted(x, key=lambda x: x.scenario))
+    list[GemsScBuilderMapping],
+    BeforeValidator(_check_scenario_duplication),
+    PlainSerializer(lambda x: sorted(x, key=lambda x: x.scenario)),
 ]
 
 
@@ -43,7 +51,7 @@ class GemsScenarioBuilder(AntaresBaseModel):
     scenarios: dict[GemsId, SortedGemsScBuilderMapping] = Field(default_factory=dict)
 
 
-def fill_missing_years(data: list[GemsScBuilderMapping], nb_years: int) -> list[GemsScBuilderMapping]:
+def fill_missing_years(data: SortedGemsScBuilderMapping, nb_years: int) -> SortedGemsScBuilderMapping:
     """
     GEMS scenario builder has default values for missing years, we should initialize them for the front-end
     """

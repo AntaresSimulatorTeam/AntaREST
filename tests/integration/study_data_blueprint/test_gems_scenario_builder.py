@@ -103,6 +103,16 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     assert res.json()["description"] == "String should match pattern '^[a-z0-9_]+$'"
     assert res.json()["exception"] == "RequestValidationError"
 
+    # Try to create a scenario with duplicated years
+    res = client.post(
+        sc_builder_url,
+        params={"scenario_name": "scenario1"},
+        json=[{"scenario": 1, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 4}],
+    )
+    assert res.status_code == 422
+    assert res.json()["description"] == "Duplicate scenario found"
+    assert res.json()["exception"] == "ValueError"
+
     # Try to update a fake scenario
     res = client.put(sc_builder_url, params={"scenario_name": "fake_scenario"}, json=[])
     assert res.status_code == 404

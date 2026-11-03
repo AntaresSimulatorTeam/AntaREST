@@ -11,8 +11,8 @@
 # This file is part of the Antares project.
 from antarest.core.model import GemsId
 from antarest.study.business.model.gems.scenario_builder import (
-    GemsScBuilderMapping,
     GemsScenarioBuilder,
+    SortedGemsScBuilderMapping,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.create_gems_scenario import CreateGemsScenario
@@ -29,8 +29,8 @@ class GemsScenarioBuilderManager:
         return study.get_study_dao().get_gems_scenario_builder() or GemsScenarioBuilder(scenarios={})
 
     def add_scenario_to_gems_scenario_builder(
-        self, study: StudyInterface, scenario_name: GemsId, data: list[GemsScBuilderMapping]
-    ) -> list[GemsScBuilderMapping]:
+        self, study: StudyInterface, scenario_name: GemsId, data: SortedGemsScBuilderMapping
+    ) -> SortedGemsScBuilderMapping:
         command = CreateGemsScenario(
             scenario_name=scenario_name,
             data=data,
@@ -41,8 +41,8 @@ class GemsScenarioBuilderManager:
         return study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
 
     def update_scenario_from_gems_scenario_builder(
-        self, study: StudyInterface, scenario_name: GemsId, data: list[GemsScBuilderMapping]
-    ) -> list[GemsScBuilderMapping]:
+        self, study: StudyInterface, scenario_name: GemsId, data: SortedGemsScBuilderMapping
+    ) -> SortedGemsScBuilderMapping:
         # First ensures the scenario exists
         study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
 

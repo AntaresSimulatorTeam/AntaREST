@@ -15,7 +15,7 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.core.model import GemsId
-from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping
+from antarest.study.business.model.gems.scenario_builder import SortedGemsScBuilderMapping
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.common import (
@@ -36,7 +36,7 @@ class CreateGemsScenario(ICommand):
     command_name: CommandName = CommandName.CREATE_GEMS_SCENARIO
 
     scenario_name: GemsId
-    data: list[GemsScBuilderMapping]
+    data: SortedGemsScBuilderMapping
 
     @model_validator(mode="after")
     def _validate_against_version(self) -> Self:
@@ -47,7 +47,7 @@ class CreateGemsScenario(ICommand):
     @override
     def _apply_dao(
         self, study_dao: StudyDao, listener: ICommandListener | None = None
-    ) -> CommandOutput[list[GemsScBuilderMapping]]:
+    ) -> CommandOutput[SortedGemsScBuilderMapping]:
         result = study_dao.save_scenario_inside_gems_scenario_builder(self.scenario_name, self.data)
         return command_succeeded(message=f"Gems scenario {self.scenario_name} added successfully", result=result)
 

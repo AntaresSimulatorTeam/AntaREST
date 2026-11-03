@@ -13,8 +13,8 @@
 from abc import ABC, abstractmethod
 
 from antarest.study.business.model.gems.scenario_builder import (
-    GemsScBuilderMapping,
     GemsScenarioBuilder,
+    SortedGemsScBuilderMapping,
 )
 
 
@@ -25,7 +25,7 @@ class ReadOnlyGemsScenarioBuilderDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> list[GemsScBuilderMapping]:
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> SortedGemsScBuilderMapping:
         raise NotImplementedError()
 
 
@@ -37,8 +37,8 @@ class GemsScenarioBuilderDao(ReadOnlyGemsScenarioBuilderDao):
 
     @abstractmethod
     def save_scenario_inside_gems_scenario_builder(
-        self, scenario_name: str, data: list[GemsScBuilderMapping]
-    ) -> list[GemsScBuilderMapping]:
+        self, scenario_name: str, data: SortedGemsScBuilderMapping
+    ) -> SortedGemsScBuilderMapping:
         raise NotImplementedError()
 
     @abstractmethod

@@ -21,6 +21,7 @@ from antarest.core.utils.sql_utils import upsert_multiple
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMapping,
     GemsScenarioBuilder,
+    SortedGemsScBuilderMapping,
     fill_missing_years,
 )
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
@@ -69,8 +70,8 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
 
     @override
     def save_scenario_inside_gems_scenario_builder(
-        self, scenario_name: str, data: list[GemsScBuilderMapping]
-    ) -> list[GemsScBuilderMapping]:
+        self, scenario_name: str, data: SortedGemsScBuilderMapping
+    ) -> SortedGemsScBuilderMapping:
         simulation_nb_years = self.get_impl().get_general_config().nb_years
         filled_scenario = fill_missing_years(data, simulation_nb_years)
         table = GEMS_SCENARIO_BUILDER_TABLE
@@ -110,7 +111,7 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         session.commit()
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> list[GemsScBuilderMapping]:
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> SortedGemsScBuilderMapping:
         table = GEMS_SCENARIO_BUILDER_TABLE
         row = self._db_session.execute(
             select(table).where(

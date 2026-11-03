@@ -31,7 +31,10 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
-from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
+from antarest.study.business.model.gems.scenario_builder import (
+    GemsScenarioBuilder,
+    SortedGemsScBuilderMapping,
+)
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
@@ -1026,7 +1029,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_gems_scenario_builder()
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> list[GemsScBuilderMapping]:
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> SortedGemsScBuilderMapping:
         return self._adaptee.get_scenario_from_gems_scenario_builder(scenario_name)
 
     @override
