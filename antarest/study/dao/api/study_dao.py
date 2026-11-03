@@ -1003,7 +1003,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
 
     @override
     def get_scenario_from_gems_scenario_builder(self, scenario_name: str) -> list[GemsScBuilderMapping]:
-        raise NotImplementedError()
+        return self._adaptee.get_scenario_from_gems_scenario_builder(scenario_name)
 
     @override
     def get_catalogs(self) -> list[GemsCatalog]:

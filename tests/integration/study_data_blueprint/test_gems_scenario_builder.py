@@ -37,11 +37,11 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     assert res.status_code == 200
 
     # Add 2 scenarios, one with default values and the other ones with custom values
-    res1 = client.post(sc_builder_url, params={"scenario_name": "scenario1"}, json={"data": []})
-    # assert res1.status_code == 200
+    res1 = client.post(sc_builder_url, params={"scenario_name": "scenario1"}, json=[])
+    assert res1.status_code == 200
     print(res1.json())
     print("//////")
     scenario2 = client.post(
-        sc_builder_url, params={"scenario_name": "scenario2"}, json={"data": [{"scenario": 1, "timeSeriesIndex": 5}]}
+        sc_builder_url, params={"scenario_name": "scenario2"}, json=[{"scenario": 1, "timeSeriesIndex": 5}]
     ).json()
     print(scenario2)

@@ -76,7 +76,11 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
         values = [
-            {"study_data_id": self._study_data_id, "scenario_group": scenario_name, "data": json.dumps(filled_scenario)}
+            {
+                "study_data_id": self._study_data_id,
+                "scenario_group": scenario_name,
+                "data": json.dumps([mapping.model_dump() for mapping in filled_scenario]),
+            }
         ]
 
         try:
