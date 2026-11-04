@@ -189,28 +189,22 @@ class TestRepairStudies:
 
         res = admin_client.post("/v1/studies/_repair", json={})
         assert res.status_code == 200, res.json()
-        dry_run_task = wait_task_completion(admin_client, admin_access_token, res.json())
-        assert dry_run_task.status == TaskStatus.COMPLETED, dry_run_task
-        assert dry_run_task.result is not None and dry_run_task.result.return_value is not None
-        assert json.loads(dry_run_task.result.return_value) == {
-            "dry_run": True,
+        assert res.json() == {
+            "dryRun": True,
             "issues": [issue],
-            "proposed_actions": [action],
-            "applied_actions": [],
+            "proposedActions": [action],
+            "appliedActions": [],
             "warnings": [warning],
         }
         assert orphan_archive.is_file()
 
-        res = admin_client.post("/v1/studies/_repair", json={"repairs": ["orphan_archives"], "dry_run": False})
+        res = admin_client.post("/v1/studies/_repair", json={"repairs": ["orphan_archives"], "dryRun": False})
         assert res.status_code == 200, res.json()
-        repair_task = wait_task_completion(admin_client, admin_access_token, res.json())
-        assert repair_task.status == TaskStatus.COMPLETED, repair_task
-        assert repair_task.result is not None and repair_task.result.return_value is not None
-        assert json.loads(repair_task.result.return_value) == {
-            "dry_run": False,
+        assert res.json() == {
+            "dryRun": False,
             "issues": [issue],
-            "proposed_actions": [action],
-            "applied_actions": [action],
+            "proposedActions": [action],
+            "appliedActions": [action],
             "warnings": [warning],
         }
         assert not orphan_archive.exists()

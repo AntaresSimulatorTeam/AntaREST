@@ -35,6 +35,7 @@ from antarest.output.model.download import MatrixIndex
 from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
     DeleteManyStudies,
+    GlobalStudyRepairReport,
     GlobalStudyRepairRequest,
     StorageMode,
     StudyMetadataDTO,
@@ -588,11 +589,13 @@ def create_study_routes() -> APIRouter:
         "/studies/_repair",
         summary="Repair inconsistencies that are not bound to a single study",
     )
-    def repair_studies(study_service: StudyServiceDep, repair_request: GlobalStudyRepairRequest) -> str:
+    def repair_studies(
+        study_service: StudyServiceDep, repair_request: GlobalStudyRepairRequest
+    ) -> GlobalStudyRepairReport:
         """
-        Admin only. Runs global repairs in a background task and returns the task ID.
+        Admin only. Runs global repairs and returns the repair report.
 
-        `dryRun` defaults to true: the task report lists the detected issues and the proposed actions
+        `dryRun` defaults to true: the report lists the detected issues and the proposed actions
         without applying them.
 
         Available repairs:
