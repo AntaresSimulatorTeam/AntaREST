@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import Mock
 
-import numpy as np
 import polars as pl
 import pytest
 from antares.study.version import StudyVersion
@@ -484,8 +483,8 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
 
     first_component_value = matrix_service.get(str(first_component.parameters[1].value))
     assert first_component_value is not None
-    expected = [[float(v)] for v in range(10, 58, 2)]
-    assert np.array_equal(first_component_value.to_numpy(), expected)
+    expected = pl.DataFrame([[v] for v in range(10, 58, 2)], orient="row", schema=["column_1"])
+    assert first_component_value.equals(expected)
 
     second_component = system.components[1]
     assert second_component.id == "electrolyser"
@@ -503,12 +502,16 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
 
     second_component_value = matrix_service.get(str(second_component.parameters[1].value))
     assert second_component_value is not None
-    expected = [
-        [2, 4, 6, 8, 10, 12, 14, 16],
-        [3, 6, 9, 12, 15, 18, 21, 24],
-        [4, 8, 12, 16, 20, 24, 28, 32],
-    ]
-    assert np.array_equal(second_component_value.to_numpy(), expected)
+    expected_matrix = pl.DataFrame(
+        [
+            [2, 4, 6, 8, 10, 12, 14, 16],
+            [3, 6, 9, 12, 15, 18, 21, 24],
+            [4, 8, 12, 16, 20, 24, 28, 32],
+        ],
+        orient="row",
+        schema=["column_1", "column_2", "column_3", "column_4", "column_5", "column_6", "column_7", "column_8"],
+    )
+    assert second_component_value.equals(expected_matrix)
 
     third_component = system.components[2]
     assert third_component.id == "electrolyser2"
@@ -526,12 +529,7 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
 
     third_component_value = matrix_service.get(str(third_component.parameters[1].value))
     assert third_component_value is not None
-    expected = [
-        [2, 4, 6, 8, 10, 12, 14, 16],
-        [3, 6, 9, 12, 15, 18, 21, 24],
-        [4, 8, 12, 16, 20, 24, 28, 32],
-    ]
-    assert np.array_equal(third_component_value.to_numpy(), expected)
+    assert third_component_value.equals(expected_matrix)
 
     assert system.connections is not None
     assert len(system.connections) == 1
