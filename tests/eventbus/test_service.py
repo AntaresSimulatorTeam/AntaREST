@@ -85,10 +85,6 @@ def test_lifecycle() -> None:
 
 
 def test_start_in_current_thread() -> None:
-    """
-    Starting the event bus without a background thread runs the event loop in the calling thread,
-    even when this thread has no current event loop (`asyncio.get_event_loop()` raises since Python 3.14).
-    """
     event_bus = build_eventbus(autostart=False)
     test_bucket: list[Event] = []
 

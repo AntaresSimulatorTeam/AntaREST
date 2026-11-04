@@ -134,9 +134,6 @@ class EventBusService(IEventBus):
             return processed_events_count
 
     def _async_loop(self) -> None:
-        # `asyncio.run` creates a new event loop and sets it as the current loop of the calling thread.
-        # Never rely on `asyncio.get_event_loop()` here: since Python 3.14, it raises a `RuntimeError`
-        # instead of implicitly creating a loop when the thread has none.
         asyncio.run(self._run_loop())
 
     @override

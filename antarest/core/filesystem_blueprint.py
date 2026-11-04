@@ -233,13 +233,7 @@ def _is_relative_to(path: Path, base_path: Path) -> bool:
 
 
 def _iter_mount_dir(mount_dir: Path, pattern: str) -> Iterator[Path]:
-    """
-    Lazily iterate over the paths of `mount_dir` matching the glob `pattern` (all children if empty).
-
-    Since Python 3.13, `Path.glob` validates the pattern (and `Path.iterdir` lists the directory)
-    as soon as it is called, instead of on the first iteration. Delegating from a generator defers
-    those errors to the first `next()` call, so they can be handled the same way as iteration errors.
-    """
+    """Lazy glob/iterdir: since Python 3.13, their errors are raised on call, not on iteration."""
     yield from mount_dir.glob(pattern) if pattern else mount_dir.iterdir()
 
 
