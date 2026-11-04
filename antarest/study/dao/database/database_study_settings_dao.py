@@ -20,9 +20,7 @@ from antarest.core.utils.sql_utils import upsert_one
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.config.adequacy_patch_model import AdequacyPatchParameters
 from antarest.study.business.model.config.advanced_parameters_model import AdvancedParameters
-from antarest.study.business.model.config.compatibility_parameters_model import (
-    CompatibilityParameters,
-)
+from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
 from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.config.optimization_config_model import OptimizationPreferences
 from antarest.study.business.model.config.playlist_model import Playlist, PlaylistValues
@@ -137,11 +135,15 @@ class DatabaseStudySettingsDao(
         row = self._db_session.execute(stmt).fetchone()
         if not row:
             raise StudyNotFoundError(self._study_id)
-        return CompatibilityParameters(hydro_pmax=row.hydro_pmax)
+        return CompatibilityParameters(hydro_pmax=row.hydro_pmax, hydro_rule_curves=row.hydro_rule_curves)
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
-        values = dict(study_data_id=self._study_data_id, hydro_pmax=parameters.hydro_pmax)
+        values = dict(
+            study_data_id=self._study_data_id,
+            hydro_pmax=parameters.hydro_pmax,
+            hydro_rule_curves=parameters.hydro_rule_curves,
+        )
         session = self._db_session
         upsert_one(session, COMPATIBILITY_PARAMETERS_TABLE, values)
         session.commit()

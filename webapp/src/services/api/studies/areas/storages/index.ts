@@ -33,7 +33,7 @@ import type {
   Storage,
   StorageConstraint,
   StorageParams,
-  StoragesAreaParams,
+  StoragesParams,
   UpdateStorageConstraintParams,
   UpdateStorageConstraintsParams,
   UpdateStorageParams,
@@ -48,7 +48,7 @@ import type {
  * @returns All storage properties, preserving server IDs.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getStorages({ studyId, areaId }: StoragesAreaParams): Promise<Storage[]> {
+export async function getStorages({ studyId, areaId }: StoragesParams): Promise<Storage[]> {
   const { data } = await client.get(`/v1/studies/${studyId}/areas/${areaId}/storages`);
   return storagesSchema.parse(data);
 }

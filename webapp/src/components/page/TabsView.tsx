@@ -44,6 +44,8 @@ export interface TabsViewProps {
   disableGutters?: boolean;
   primaryActions?: React.ReactNode;
   secondaryActions?: React.ReactNode;
+  // TODO: split the component in two: TabsView and RouterTabView
+  renderOutlet?: () => React.ReactNode;
 }
 
 function isRouteTab(tab: RouteTab | ContentTab): tab is RouteTab {
@@ -63,6 +65,7 @@ function TabsView({
   disableGutters = false,
   primaryActions,
   secondaryActions,
+  renderOutlet = () => <Outlet />,
 }: TabsViewProps) {
   const matchRoute = useMatchRoute();
   const hasRouteTabs = isRouteTabs(tabs);
@@ -149,9 +152,7 @@ function TabsView({
           )}
         </Stack>
         {hasRouteTabs ? (
-          <Box sx={panelSx}>
-            <Outlet />
-          </Box>
+          <Box sx={panelSx}>{renderOutlet()}</Box>
         ) : (
           tabs.map((tab) => (
             <TabPanel key={tab.id} value={tab.id} sx={panelSx}>

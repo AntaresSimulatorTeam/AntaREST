@@ -74,7 +74,7 @@ class RemoteWorkerExecutor(IRemoteExecutor):
         def _create_awaiter(
             res_wrapper: list[TaskResult],
         ) -> Callable[[Event], Awaitable[None]]:
-            async def _await_task_end(event: Event) -> None:
+            async def _await_task_end(event: Event) -> None:  # NOSONAR: the event bus requires async listeners
                 task_event = WorkerTaskResult.model_validate(event.payload)
                 if task_event.task_id == remote_task_id:
                     res_wrapper.append(task_event.task_result)

@@ -14,6 +14,7 @@
 
 import Matrix from "@/components/Matrix";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { buildKey } from "@/utils/reactUtils";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -25,7 +26,8 @@ export const Route = createFileRoute(
 
 function Co2Costs() {
   const study = useStudy();
-  const { areaId, thermalId } = Route.useParams();
+  const params = Route.useParams();
+  const { areaId, thermalId } = params;
 
   checkRouteAvailability({
     studyVersion: study.version,
@@ -35,7 +37,7 @@ function Co2Costs() {
 
   return (
     <Matrix
-      key={thermalId}
+      key={buildKey(params)}
       studyId={study.id}
       url={`input/thermal/series/${areaId}/${thermalId}/CO2Cost`}
       filterKey="thermals.co2-cost"

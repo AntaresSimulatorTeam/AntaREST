@@ -15,6 +15,7 @@
 import Matrix from "@/components/Matrix";
 import SplitView from "@/components/page/SplitView";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { buildKey } from "@/utils/reactUtils";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { Box } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
@@ -28,8 +29,9 @@ export const Route = createFileRoute(
 
 function VariationCosts() {
   const study = useStudy();
-  const { areaId, storageId } = Route.useParams();
+  const params = Route.useParams();
   const { t } = useTranslation();
+  const { areaId, storageId } = params;
 
   checkRouteAvailability({
     studyVersion: study.version,
@@ -38,11 +40,14 @@ function VariationCosts() {
   });
 
   return (
-    <SplitView splitId="storage-variationInjectionCost-variationWithdrawalCost" sizes={[50, 50]}>
+    <SplitView
+      splitId="storage-variationInjectionCost-variationWithdrawalCost"
+      sizes={[50, 50]}
+      key={buildKey(params)}
+    >
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
-          key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.injectionVariationCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_variation_injection`}
@@ -55,7 +60,6 @@ function VariationCosts() {
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
-          key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.withdrawalVariationCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_variation_withdrawal`}

@@ -15,6 +15,7 @@
 import Matrix from "@/components/Matrix";
 import SplitView from "@/components/page/SplitView";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { buildKey } from "@/utils/reactUtils";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { Box } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
@@ -28,8 +29,9 @@ export const Route = createFileRoute(
 
 function Costs() {
   const study = useStudy();
-  const { areaId, storageId } = Route.useParams();
+  const params = Route.useParams();
   const { t } = useTranslation();
+  const { areaId, storageId } = params;
 
   checkRouteAvailability({
     studyVersion: study.version,
@@ -38,11 +40,14 @@ function Costs() {
   });
 
   return (
-    <SplitView splitId="storage-injectionCost-withdrawalCost" sizes={[50, 50]}>
+    <SplitView
+      splitId="storage-injectionCost-withdrawalCost"
+      sizes={[50, 50]}
+      key={buildKey(params)}
+    >
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
-          key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.injectionCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_injection`}
@@ -55,7 +60,6 @@ function Costs() {
       <Box sx={{ p: 2 }}>
         {/* TODO: Remove isTimeSeries={false} and customColumns when simulator development is complete */}
         <Matrix
-          key={storageId}
           studyId={study.id}
           title={t("study.modeling.storages.withdrawalCost")}
           url={`input/st-storage/series/${areaId}/${storageId}/cost_withdrawal`}

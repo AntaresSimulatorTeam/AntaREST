@@ -20,19 +20,19 @@ import SelectFE from "@/components/fieldEditors/SelectFE";
 import StringFE from "@/components/fieldEditors/StringFE";
 import SwitchFE from "@/components/fieldEditors/SwitchFE";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import { STORAGE_GROUPS } from "@/services/api/studies/areas/storages/constants";
+import { buildKey } from "@/utils/reactUtils";
 import { validateNumber } from "@/utils/validation/number";
 import { Box, Tooltip } from "@mui/material";
 import { createFileRoute } from "@tanstack/react-router";
+import * as R from "ramda";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import {
-  convertPercentageToRatio,
-  convertRatioToPercentage,
-  type FormalizedStorage,
-  getStorage,
-  STORAGE_GROUPS,
-  updateStorage,
-} from "../-utils";
+import { adaptStorageToView } from "../-adapters";
+import useUpdateStorage from "../-hooks/useUpdateStorage";
+import type { FormalizedStorage } from "../-types";
+import { convertPercentageToRatio, convertRatioToPercentage } from "../-utils";
+import useStorage from "./-hooks/useStorage";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/parameters",
@@ -40,33 +40,25 @@ export const Route = createFileRoute(
   component: Parameters,
 });
 
+const adaptStorageToForm = R.o(convertRatioToPercentage, adaptStorageToView);
+
 function Parameters() {
-  const study = useStudy();
-  const { areaId, storageId } = Route.useParams();
   const { t } = useTranslation();
-
-  ////////////////////////////////////////////////////////////////
-  // Config
-  ////////////////////////////////////////////////////////////////
-
-  const getDefaultValues = async () => {
-    const storage = await getStorage(study.id, areaId, storageId);
-    return convertRatioToPercentage(storage);
-  };
+  const params = Route.useParams();
+  const study = useStudy();
+  const { data: defaultValues } = useStorage({ ...params, select: adaptStorageToForm });
+  const updateStorage = useUpdateStorage(params);
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus<FormalizedStorage>) => {
-    const updatedStorage = await updateStorage(
-      study.id,
-      areaId,
-      storageId,
-      convertPercentageToRatio(dirtyValues),
-    );
+    const updatedStorage = await updateStorage.mutateAsync({
+      values: convertPercentageToRatio(dirtyValues),
+    });
 
-    return convertRatioToPercentage(updatedStorage);
+    return adaptStorageToForm(updatedStorage);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -74,12 +66,7 @@ function Parameters() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Form
-      key={areaId + storageId}
-      config={{ defaultValues: getDefaultValues }}
-      onSubmit={handleSubmit}
-      enableUndoRedo
-    >
+    <Form key={buildKey(params)} config={{ defaultValues }} onSubmit={handleSubmit} enableUndoRedo>
       {({ control }) => (
         <>
           <Fieldset legend={t("study.modeling.clusters.operatingParameters")}>

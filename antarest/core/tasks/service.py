@@ -292,7 +292,7 @@ class TaskJobService(ITaskService):
         self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
-        async def task_event_callback(event: Event) -> None:
+        async def task_event_callback(event: Event) -> None:  # NOSONAR: the event bus requires async listeners
             self._do_cancel_task(str(event.payload))
 
         return task_event_callback
