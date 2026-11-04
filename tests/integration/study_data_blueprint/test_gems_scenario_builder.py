@@ -39,21 +39,21 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     # Add 2 scenarios, one with default values and the other ones with custom values
     res1 = client.post(sc_builder_url, params={"scenario_name": "scenario1"}, json=[])
     assert res1.status_code == 200
-    assert res1.json() == [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 2}]
+    assert res1.json() == [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 1}]
 
     res2 = client.post(
         sc_builder_url, params={"scenario_name": "scenario2"}, json=[{"scenario": 1, "timeSeriesIndex": 5}]
     )
     assert res2.status_code == 200
-    assert res2.json() == [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 5}]
+    assert res2.json() == [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 5}]
 
     # Fetch the 2 scenarios
     res = client.get(sc_builder_url)
     assert res.status_code == 200
     assert res.json() == {
         "scenarios": {
-            "scenario1": [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 2}],
-            "scenario2": [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 5}],
+            "scenario1": [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 1}],
+            "scenario2": [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 5}],
         }
     }
 
@@ -62,14 +62,14 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
         sc_builder_url, params={"scenario_name": "scenario1"}, json=[{"scenario": 0, "timeSeriesIndex": 3}]
     )
     assert res.status_code == 200
-    assert res.json() == [{"scenario": 0, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 2}]
+    assert res.json() == [{"scenario": 0, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 1}]
 
     res = client.get(sc_builder_url)
     assert res.status_code == 200
     assert res.json() == {
         "scenarios": {
-            "scenario1": [{"scenario": 0, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 2}],
-            "scenario2": [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 5}],
+            "scenario1": [{"scenario": 0, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 1}],
+            "scenario2": [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 5}],
         }
     }
 
@@ -81,7 +81,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     assert res.status_code == 200
     assert res.json() == {
         "scenarios": {
-            "scenario2": [{"scenario": 0, "timeSeriesIndex": 1}, {"scenario": 1, "timeSeriesIndex": 5}],
+            "scenario2": [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 5}],
         }
     }
 
@@ -138,10 +138,10 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     assert res.json()["exception"] == "RequestValidationError"
 
     res = client.post(
-        sc_builder_url, params={"scenario_name": "scenario1"}, json=[{"scenario": 1, "timeSeriesIndex": 0}]
+        sc_builder_url, params={"scenario_name": "scenario1"}, json=[{"scenario": 1, "timeSeriesIndex": -1}]
     )
     assert res.status_code == 422
-    assert res.json()["description"] == "Input should be greater than or equal to 1"
+    assert res.json()["description"] == "Input should be greater than or equal to 0"
     assert res.json()["exception"] == "RequestValidationError"
 
     # Try to create a scenario that already exists

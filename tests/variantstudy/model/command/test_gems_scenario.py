@@ -44,9 +44,9 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     assert dao.get_gems_scenario_builder() == GemsScenarioBuilder(
         scenarios={
             "scenario_1": [
-                GemsScBuilderMapping(scenario=0, time_series_index=1),
-                GemsScBuilderMapping(scenario=1, time_series_index=2),
-                GemsScBuilderMapping(scenario=2, time_series_index=3),
+                GemsScBuilderMapping(scenario=0, time_series_index=0),
+                GemsScBuilderMapping(scenario=1, time_series_index=1),
+                GemsScBuilderMapping(scenario=2, time_series_index=2),
                 GemsScBuilderMapping(scenario=3, time_series_index=1),
                 GemsScBuilderMapping(scenario=4, time_series_index=8),
             ]
@@ -70,8 +70,8 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
         scenarios={
             "scenario_1": [
                 GemsScBuilderMapping(scenario=0, time_series_index=6),
-                GemsScBuilderMapping(scenario=1, time_series_index=2),  # Unmodified
-                GemsScBuilderMapping(scenario=2, time_series_index=3),  # Unmodified
+                GemsScBuilderMapping(scenario=1, time_series_index=1),  # Unmodified
+                GemsScBuilderMapping(scenario=2, time_series_index=2),  # Unmodified
                 GemsScBuilderMapping(scenario=3, time_series_index=1),  # Unmodified
                 GemsScBuilderMapping(scenario=4, time_series_index=7),
             ]

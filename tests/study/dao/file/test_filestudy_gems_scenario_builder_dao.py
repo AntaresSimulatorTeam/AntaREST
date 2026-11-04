@@ -67,11 +67,11 @@ def test_replace_builder(dao_10_2: StudyDao) -> None:
             "load": [
                 GemsScBuilderMapping(scenario=0, time_series_index=1),
                 GemsScBuilderMapping(scenario=1, time_series_index=5),
-                GemsScBuilderMapping(scenario=2, time_series_index=3),  # Default value
+                GemsScBuilderMapping(scenario=2, time_series_index=2),  # Default value
             ],
             "hydro": [
-                GemsScBuilderMapping(scenario=0, time_series_index=1),  # Default value
-                GemsScBuilderMapping(scenario=1, time_series_index=2),  # Default value
+                GemsScBuilderMapping(scenario=0, time_series_index=0),  # Default value
+                GemsScBuilderMapping(scenario=1, time_series_index=1),  # Default value
                 GemsScBuilderMapping(scenario=2, time_series_index=7),
             ],
         }
@@ -87,13 +87,13 @@ def test_replace_builder(dao_10_2: StudyDao) -> None:
         scenarios={
             "load": [
                 GemsScBuilderMapping(scenario=0, time_series_index=4),
-                GemsScBuilderMapping(scenario=1, time_series_index=2),  # Default value
-                GemsScBuilderMapping(scenario=2, time_series_index=3),  # Default value
+                GemsScBuilderMapping(scenario=1, time_series_index=1),  # Default value
+                GemsScBuilderMapping(scenario=2, time_series_index=2),  # Default value
             ],
             "wind": [
-                GemsScBuilderMapping(scenario=0, time_series_index=1),  # Default value
+                GemsScBuilderMapping(scenario=0, time_series_index=0),  # Default value
                 GemsScBuilderMapping(scenario=1, time_series_index=2),
-                GemsScBuilderMapping(scenario=2, time_series_index=3),  # Default value
+                GemsScBuilderMapping(scenario=2, time_series_index=2),  # Default value
             ],
         }
     )
@@ -151,15 +151,15 @@ def test_real_file_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
 @pytest.mark.parametrize(
     "line",
     [
-        "load 0 = 1",
+        "load 0 = 0",
         "load, -1 = 1",
-        "load, 0 = 0",
+        "load, 0 = -1",
         "load, 0 = 1.5",
         ", 0 = 1",
         "load, 0 = 1\nload, 0 = 2",
-        "Load_Group, 0 = 1",
-        "load-group, 0 = 1",
-        "load group, 0 = 1",
+        "Load_Group, 0 = 0",
+        "load-group, 0 = 0",
+        "load group, 0 = 0",
     ],
 )
 def test_invalid_file(filestudy_dao_v10_2: FileStudyTreeDao, line: str) -> None:

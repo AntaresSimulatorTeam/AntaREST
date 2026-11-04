@@ -17,8 +17,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.model import GemsId
 from antarest.core.serde import AntaresBaseModel
 
-Scenario: TypeAlias = Annotated[int, Field(ge=0)]
-TimeSerieIndex: TypeAlias = Annotated[int, Field(ge=1)]
+Year: TypeAlias = Annotated[int, Field(ge=0)]
 
 
 class GemsScBuilderMapping(AntaresBaseModel):
@@ -26,8 +25,8 @@ class GemsScBuilderMapping(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
 
-    scenario: Scenario
-    time_series_index: TimeSerieIndex
+    scenario: Year
+    time_series_index: Year
 
 
 def _check_scenario_duplication(data: list[GemsScBuilderMapping]) -> list[GemsScBuilderMapping]:
@@ -58,9 +57,7 @@ def fill_missing_years(data: GemsScBuilderMappings, nb_years: int) -> GemsScBuil
     existing = {mapping.scenario for mapping in data}
 
     new_mapping = data + [
-        GemsScBuilderMapping(scenario=year, time_series_index=year + 1)
-        for year in range(nb_years)
-        if year not in existing
+        GemsScBuilderMapping(scenario=year, time_series_index=year) for year in range(nb_years) if year not in existing
     ]
     new_mapping.sort(key=lambda x: x.scenario)
     return new_mapping
