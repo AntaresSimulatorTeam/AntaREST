@@ -59,8 +59,10 @@ class UpdateGemsScenario(ICommand):
             if mapping.scenario not in new_scenarios:
                 final_mapping.append(mapping)
 
-        result = study_dao.save_scenario_inside_gems_scenario_builder(self.scenario_name, final_mapping)
-        return command_succeeded(message=f"Gems scenario {self.scenario_name} updated successfully", result=result)
+        study_dao.save_scenario_inside_gems_scenario_builder(self.scenario_name, final_mapping)
+        return command_succeeded(
+            message=f"Gems scenario {self.scenario_name} updated successfully", result=final_mapping
+        )
 
     @override
     def to_dto(self) -> CommandDTO:
