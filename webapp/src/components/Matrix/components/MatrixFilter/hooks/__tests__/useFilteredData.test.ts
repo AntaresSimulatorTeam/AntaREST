@@ -13,7 +13,7 @@
  */
 
 import { renderHook } from "@testing-library/react";
-import { FILTER_OPERATORS, FILTER_TYPES } from "../../constants";
+import { FILTER_OPERATORS, FILTER_TYPES, TIME_INDEXING } from "../../constants";
 import type { FilterState } from "../../types";
 import { useFilteredData } from "../useFilteredData";
 
@@ -31,6 +31,65 @@ describe("useFilteredData", () => {
       value: 0,
     },
   };
+
+  test("keeps criteria references stable when only the operation changes", () => {
+    const filter: FilterState = {
+      ...defaultFilter,
+      columnsFilter: { type: FILTER_TYPES.LIST, list: [2, 4] },
+    };
+    const { result, rerender } = renderHook(
+      ({ filter }) => useFilteredData({ filter, isTimeSeries: false, rowCount: 4, columnCount: 4 }),
+      { initialProps: { filter } },
+    );
+    const criteria = result.current;
+
+    rerender({ filter: { ...filter, operation: { type: "Add", value: 10 } } });
+
+    expect(result.current).toBe(criteria);
+  });
+
+  test("updates criteria when row filters, column filters, dimensions, or active state change", () => {
+    const filter: FilterState = {
+      ...defaultFilter,
+      columnsFilter: { type: FILTER_TYPES.LIST, list: [2, 4] },
+      rowsFilters: [
+        {
+          id: "rows",
+          indexingType: TIME_INDEXING.HOUR_YEAR,
+          type: FILTER_TYPES.LIST,
+          list: [2, 4],
+        },
+      ],
+    };
+
+    const { result, rerender } = renderHook(
+      ({ filter, rowCount, columnCount }) =>
+        useFilteredData({ filter, isTimeSeries: false, rowCount, columnCount }),
+      { initialProps: { filter, rowCount: 4, columnCount: 4 } },
+    );
+
+    const changedColumns: FilterState = {
+      ...filter,
+      columnsFilter: { type: FILTER_TYPES.LIST, list: [1, 3] },
+    };
+
+    rerender({ filter: changedColumns, rowCount: 4, columnCount: 4 });
+    expect(result.current).toEqual({ columnsIndices: [0, 2], rowsIndices: [1, 3] });
+
+    const changedRows: FilterState = {
+      ...changedColumns,
+      rowsFilters: changedColumns.rowsFilters.map((rowFilter) => ({ ...rowFilter, list: [1, 3] })),
+    };
+
+    rerender({ filter: changedRows, rowCount: 4, columnCount: 4 });
+    expect(result.current).toEqual({ columnsIndices: [0, 2], rowsIndices: [0, 2] });
+
+    rerender({ filter: changedRows, rowCount: 2, columnCount: 1 });
+    expect(result.current).toEqual({ columnsIndices: [0], rowsIndices: [0] });
+
+    rerender({ filter: { ...changedRows, active: false }, rowCount: 3, columnCount: 2 });
+    expect(result.current).toEqual({ columnsIndices: [0, 1], rowsIndices: [0, 1, 2] });
+  });
 
   describe("Empty Filter Behavior", () => {
     test("should return all columns when column list filter is empty", () => {

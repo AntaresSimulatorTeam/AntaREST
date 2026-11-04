@@ -41,7 +41,7 @@ class TestUpdateHydroManagement:
             # Check existing file
             hydro_ini = study_path / "input" / "hydro" / "hydro.ini"
             ini_content = read_ini(hydro_ini)
-            assert ini_content == {
+            expected_ini_content = {
                 "inter-daily-breakdown": {"fr": 1, "be": 1},
                 "intra-daily-modulation": {"fr": 24, "be": 24},
                 "inter-monthly-breakdown": {"fr": 1, "be": 1},
@@ -58,6 +58,9 @@ class TestUpdateHydroManagement:
                 "use leeway": {"be": 0.0, "fr": 0.0},
                 "use water": {"be": False, "fr": False},
             }
+            if study_version >= STUDY_VERSION_9_2:
+                expected_ini_content["overflow spilled cost difference"] = {"be": 1, "fr": 1}
+            assert ini_content == expected_ini_content
 
             # Update several properties
             new_properties = HydroManagementUpdate.model_validate({"inter_daily_breakdown": 3.1, "reservoir": True})
@@ -88,7 +91,7 @@ class TestUpdateHydroManagement:
                 "hard bounds": {"be": False, "fr": False},
             }
             if study_version >= STUDY_VERSION_9_2:
-                expected_content["overflow spilled cost difference"] = {"fr": 1.0}
+                expected_content["overflow spilled cost difference"] = {"fr": 1.0, "be": 1.0}
             assert ini_content == expected_content
 
             # Update properties
@@ -117,5 +120,5 @@ class TestUpdateHydroManagement:
                 assert output.message == "Hydro properties in 'fr' updated."
                 # Checks updated properties
                 ini_content = read_ini(hydro_ini)
-                expected_content["overflow spilled cost difference"] = {"fr": 1.4}
+                expected_content["overflow spilled cost difference"] = {"fr": 1.4, "be": 1.0}
                 assert ini_content == expected_content

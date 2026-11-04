@@ -138,20 +138,20 @@ class RawStudyService(AbstractStudyService):
 
     def archive(self, study: RawStudy) -> None:
         dst_path = self._config.storage.tmp_dir / f"archive_{study.id}"
-        self._storage_mapping[study.storage_mode].write_study_for_archive(study, dst_path)
-
         archive_format = self._config.storage.archive_format
         archive_path = self._config.storage.archive_dir.joinpath(f"{study.id}{archive_format}")
 
         try:
-            stopwatch = StopWatch()
-            archive_dir(dst_path, archive_path, False, archive_format)
-            logger.info(f"Study {study.id} exported ({archive_path.suffix} format) in {stopwatch}s")
-        except Exception as e:
-            logger.warning(f"Failed to archive study {study.id}", exc_info=e)
-            archive_path.unlink(missing_ok=True)
+            self._storage_mapping[study.storage_mode].write_study_for_archive(study, dst_path)
+            try:
+                stopwatch = StopWatch()
+                archive_dir(dst_path, archive_path, False, archive_format)
+                logger.info(f"Study {study.id} exported ({archive_path.suffix} format) in {stopwatch}s")
+            except Exception as e:
+                logger.warning(f"Failed to archive study {study.id}", exc_info=e)
+                archive_path.unlink(missing_ok=True)
+                raise
 
-        else:
             # Remove the source study data if everything went well
             self._storage_mapping[study.storage_mode].remove_study_data(study)
             remove_from_cache(cache=self.cache, root_id=study.id)

@@ -12,7 +12,7 @@
 import pytest
 
 from antarest.core.exceptions import InvalidFieldForVersionError
-from antarest.study.business.model.scenario_builder_model import Ruleset, RulesetUpdate
+from antarest.study.business.model.scenario_builder_model import Ruleset, RulesetUpdate, Value
 from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VERSION_9_2, STUDY_VERSION_9_3
 from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder import (
     parse_ruleset,
@@ -22,7 +22,7 @@ from antarest.study.storage.rawstudy.model.filesystem.config.scenario_builder im
 
 
 def test_ruleset_parsing_load() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "l,be,1": 2,
         "l,be,2": 1,
     }
@@ -32,7 +32,7 @@ def test_ruleset_parsing_load() -> None:
 
 
 def test_ruleset_parsing_hydro() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "h,be,1": 2,
         "h,be,2": 1,
         "hl,be,1": 0.002,
@@ -53,7 +53,7 @@ def test_ruleset_parsing_hydro() -> None:
 
 
 def test_ruleset_parsing_solar() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "s,be,1": 2,
         "s,be,2": 1,
     }
@@ -63,7 +63,7 @@ def test_ruleset_parsing_solar() -> None:
 
 
 def test_ruleset_parsing_wind() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "w,be,1": 2,
         "w,be,2": 1,
     }
@@ -73,7 +73,7 @@ def test_ruleset_parsing_wind() -> None:
 
 
 def test_ruleset_parsing_binding_constraints() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "bc,group1,1": 2,
         "bc,group1,2": 1,
         "bc,group2,1": 3,
@@ -85,7 +85,7 @@ def test_ruleset_parsing_binding_constraints() -> None:
 
 
 def test_ruleset_parsing_thermal() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "t,fr,1,gas": 2,
         "t,fr,2,gas": 1,
         "t,fr,1,nuclear": 1,
@@ -97,7 +97,7 @@ def test_ruleset_parsing_thermal() -> None:
 
 
 def test_ruleset_parsing_storages() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "sts,fr,1,battery": 2,
         "sts,fr,2,battery": 1,
         "sts,fr,1,cars": 1,
@@ -109,7 +109,7 @@ def test_ruleset_parsing_storages() -> None:
 
 
 def test_ruleset_parsing_renewables() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "r,fr,1,solar": 2,
         "r,fr,2,solar": 1,
         "r,fr,1,wind": 1,
@@ -121,7 +121,7 @@ def test_ruleset_parsing_renewables() -> None:
 
 
 def test_ruleset_parsing_links() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "ntc,be,fr,1": 2,
         "ntc,be,fr,2": 1,
     }
@@ -131,7 +131,7 @@ def test_ruleset_parsing_links() -> None:
 
 
 def test_ruleset_parsing_storage_constraints() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "sta,fr,1,battery1,constraint1": 2,
         "sta,fr,2,battery1,constraint1": 1,
     }
@@ -141,7 +141,7 @@ def test_ruleset_parsing_storage_constraints() -> None:
 
 
 def test_ruleset_update_parsing_load() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "l,be,1": 2,
         "l,be,2": 1,
     }
@@ -150,7 +150,7 @@ def test_ruleset_update_parsing_load() -> None:
 
 
 def test_ruleset_update_parsing_hydro() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "h,be,1": 2,
         "h,be,2": 1,
         "hl,be,1": 0.2,
@@ -170,7 +170,7 @@ def test_ruleset_update_parsing_hydro() -> None:
 
 
 def test_ruleset_update_parsing_solar() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "s,be,1": 2,
         "s,be,2": 1,
     }
@@ -179,7 +179,7 @@ def test_ruleset_update_parsing_solar() -> None:
 
 
 def test_ruleset_update_parsing_wind() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "w,be,1": 2,
         "w,be,2": 1,
     }
@@ -188,7 +188,7 @@ def test_ruleset_update_parsing_wind() -> None:
 
 
 def test_ruleset_update_parsing_binding_constraints() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "bc,group1,1": 2,
         "bc,group1,2": 1,
         "bc,group2,1": 3,
@@ -199,7 +199,7 @@ def test_ruleset_update_parsing_binding_constraints() -> None:
 
 
 def test_ruleset_update_parsing_thermal() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "t,fr,1,gas": 2,
         "t,fr,2,gas": 1,
         "t,fr,1,nuclear": 1,
@@ -210,7 +210,7 @@ def test_ruleset_update_parsing_thermal() -> None:
 
 
 def test_ruleset_update_parsing_storages() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "sts,fr,1,battery": 2,
         "sts,fr,2,battery": 1,
         "sts,fr,1,cars": 1,
@@ -221,7 +221,7 @@ def test_ruleset_update_parsing_storages() -> None:
 
 
 def test_ruleset_update_parsing_renewables() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "r,fr,1,solar": 2,
         "r,fr,2,solar": 1,
         "r,fr,1,wind": 1,
@@ -232,7 +232,7 @@ def test_ruleset_update_parsing_renewables() -> None:
 
 
 def test_ruleset_update_parsing_links() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "ntc,be,fr,1": 2,
         "ntc,be,fr,2": 1,
     }
@@ -241,7 +241,7 @@ def test_ruleset_update_parsing_links() -> None:
 
 
 def test_ruleset_update_parsing_storage_constraints() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "sta,fr,1,battery1,constraint1": 2,
         "sta,fr,2,battery1,constraint1": 1,
     }
@@ -266,7 +266,7 @@ def test_random_is_not_serialized() -> None:
 
 
 def test_ruleset_serializing_version() -> None:
-    rules = {
+    rules: dict[str, Value | None] = {
         "bc,group1,1": 2,
         "bc,group1,2": 1,
         "bc,group2,1": 3,

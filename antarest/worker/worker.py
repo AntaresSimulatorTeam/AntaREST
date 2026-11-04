@@ -113,7 +113,7 @@ class AbstractWorker(IService):
         while True:
             time.sleep(1)
 
-    async def _listen_for_tasks(self, event: Event) -> None:
+    async def _listen_for_tasks(self, event: Event) -> None:  # NOSONAR: the event bus requires async listeners
         logger.info(f"Accepting new task {event.model_dump_json()}")
         task_info = WorkerTaskCommand.model_validate(event.payload)
         self.event_bus.push(

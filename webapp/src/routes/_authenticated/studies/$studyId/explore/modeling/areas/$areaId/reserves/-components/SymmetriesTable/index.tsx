@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/GroupedDataTable/utils";
+import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/DataTable/utils";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AddIcon from "@mui/icons-material/Add";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import RedoIcon from "@mui/icons-material/Redo";
@@ -65,6 +65,8 @@ interface Props {
   reserves: Reserve[];
   certifiedReservesByCluster: Map<string, Set<string>>;
   validationErrors: SymmetryValidationError[];
+  // Rendered at the start of the table toolbar (e.g. the production type select).
+  toolbarActions?: React.ReactNode;
   readOnly?: boolean;
   isFetching?: boolean;
   canUndo: boolean;
@@ -90,6 +92,7 @@ function SymmetriesTable({
   reserves,
   certifiedReservesByCluster,
   validationErrors,
+  toolbarActions,
   readOnly,
   isFetching,
   canUndo,
@@ -242,6 +245,7 @@ function SymmetriesTable({
 
   const table = useMaterialReactTable({
     data: rows,
+    localization: { noRecordsToDisplay: t("global.noData") },
     columns,
     getRowId: (row) => row.id,
     getSubRows: (row) => (row.kind === "cluster" ? row.subRows : undefined),
@@ -288,6 +292,7 @@ function SymmetriesTable({
 
       return (
         <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap">
+          {toolbarActions}
           <Stack direction="row" alignItems="center">
             <IconButton
               size="small"
@@ -297,7 +302,7 @@ function SymmetriesTable({
               <RemoveIcon fontSize="small" />
             </IconButton>
             <TextField
-              size="small"
+              size="extra-small"
               type="number"
               value={symmetryCountInput}
               onChange={(e) => setSymmetryCountInput(e.target.value)}
@@ -364,7 +369,7 @@ function SymmetriesTable({
         "> .MuiBox-root": {
           alignItems: "center",
           p: 0,
-          pb: 1,
+          py: 0.5,
           "> .MuiBox-root": {
             flexWrap: "nowrap",
           },

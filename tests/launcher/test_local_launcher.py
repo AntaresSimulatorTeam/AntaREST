@@ -77,6 +77,7 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
 
     job_id = str(uuid.uuid4())
     local_launcher.job_id_to_study_id = {job_id: ("study-id", tmp_path / "run", Mock())}
+    assert isinstance(local_launcher.callbacks.import_output, Mock)
     local_launcher.callbacks.import_output.return_value = "some output"
     launcher_parameters = LauncherParametersDTO(
         nb_cpu=8,
@@ -99,6 +100,7 @@ def test_compute(tmp_path: Path, launcher_config: LocalConfig) -> None:
     )
 
     # noinspection PyUnresolvedReferences
+    assert isinstance(local_launcher.callbacks.update_status, Mock)
     local_launcher.callbacks.update_status.assert_has_calls(
         [
             call(job_id, JobStatus.RUNNING, None, None),
@@ -227,7 +229,7 @@ def test_parse_xpress_dir(tmp_path: Path) -> None:
     assert env_variables["XPRESSDIR"] == "fake_path_for_test"
 
 
-def test_parse_solver_presets(launcher_config: LocalConfig):
+def test_parse_solver_presets(launcher_config: LocalConfig) -> None:
     local_launcher = LocalLauncher(launcher_config, callbacks=Mock(), event_bus=Mock(), cache=Mock())
     launch_parameters = LauncherParametersDTO()
     solver_presets = SolverPresets.model_validate(

@@ -80,6 +80,7 @@ interface StudyCreator {
   publicMode?: StudyPublicMode;
   tags?: string[];
   storageMode?: StorageMode;
+  directory?: string;
 }
 
 interface StudyUpload {
@@ -186,17 +187,19 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
       }
 
       // StudyCreator
-      const { name, version, groups, publicMode, tags, storageMode } = arg;
+      const { name, version, groups, publicMode, tags, storageMode, directory } = arg;
 
-      // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
-      const studyId = await api.createStudy(name, version, groups, storageMode);
+      // TODO: Accept publicMode and tags in the creation API to avoid follow-up edit events.
+      const studyId = await api.createStudy(name, version, groups, storageMode, directory);
 
-      if (publicMode) {
+      // New studies already use NONE, writing it again emits an unnecessary edit event.
+      if (publicMode && publicMode !== "NONE") {
         await api.changePublicMode(studyId, publicMode);
       }
 
       if (tags && tags.length > 0) {
-        await api.updateStudyMetadata(studyId, { tags });
+        // The update response includes the final metadata, including the public mode above.
+        return api.updateStudy(studyId, { tags });
       }
 
       return api.getStudyMetadata(studyId);

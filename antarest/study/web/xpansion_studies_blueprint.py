@@ -138,7 +138,7 @@ def create_xpansion_routes() -> APIRouter:
 
     @bp.post(
         "/studies/{uuid}/extensions/xpansion/resources/{resource_type}",
-        summary="Add Xpansion resource file",
+        summary="Add or replace Xpansion resource file",
     )
     def add_resource(
         study_service: StudyServiceDep,
@@ -146,7 +146,7 @@ def create_xpansion_routes() -> APIRouter:
         resource_type: XpansionResourceFileType,
         file: Annotated[UploadFile, File()],
     ) -> None:
-        logger.info(f"Add xpansion {resource_type} files in the study {uuid}")
+        logger.info(f"Add or replace xpansion {resource_type} files in the study {uuid}")
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.xpansion_manager.add_resource(study_interface, resource_type, file)

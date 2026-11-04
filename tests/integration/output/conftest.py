@@ -38,7 +38,9 @@ _OUTPUT_NAME_MAP = {
 
 
 @pytest.fixture(params=["in_study", "outside_study", "v2"])
-def storage_type(request, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path):
+def storage_type(
+    request: pytest.FixtureRequest, client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
+) -> tuple[str, dict[str, str]]:
     """Parametrized fixture that runs tests with both file and parquet (V2) storage.
 
     Returns (mode, output_name_map) where output_name_map translates original output IDs

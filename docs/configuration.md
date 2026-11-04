@@ -290,19 +290,29 @@ default:
 
 - **Type:** Integer
 - **Default value:** 3600 (corresponds to 1 hour)
-- **Description:** Time in seconds to sleep between two auto_archiver tasks (which means zipping unused studies).
+- **Description:** Time in seconds between maintenance passes archiving inactive studies and old file outputs.
 
 ## **auto_archive_dry_run**
 
 - **Type:** Boolean
 - **Default value:** false
-- **Description:** If `true`, studies will never be archived. Else, the ones that no one has accessed for a while will.
+- **Description:** If `true`, report eligible studies and file outputs without archiving them.
 
 ## **auto_archive_threshold_days**
 
 - **Type:** Integer
 - **Default value:** 60
 - **Description:** Number of days after the last study access date before it should be archived.
+
+File outputs of managed studies are archived after this threshold (60 days by default),
+measured from their last successful unarchiving date when present, or otherwise from the date in their output ID.
+The unarchiving date is recorded only after successful unarchiving; reading or discovering an output does not change it.
+Old outputs without an unarchiving date are eligible from the first maintenance pass, with no deployment grace period.
+Outputs with neither an unarchiving date nor a valid ID date, and Parquet outputs, are excluded from this independent archival.
+Inactive raw studies are archived as a whole. Outputs of variants follow the same date rule,
+regardless of study activity.
+Unarchiving a whole study renews its last access date and the grace period of its restored,
+uncompressed in-study outputs. Outputs that remain zipped or are stored outside the study are unaffected.
 
 ## **snapshot_retention_days**
 

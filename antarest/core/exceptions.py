@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 import re
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from http import HTTPStatus
 
 from fastapi.exceptions import HTTPException
@@ -733,11 +733,6 @@ class XpansionConfigurationDoesNotExist(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, f"Xpansion configuration does not exist for study {study_id}")
 
 
-class XpansionFileAlreadyExistsError(HTTPException):
-    def __init__(self, message: str) -> None:
-        super().__init__(HTTPStatus.CONFLICT, message)
-
-
 class FileCurrentlyUsedInSettings(HTTPException):
     def __init__(self, resource_type: str, filename: str) -> None:
         msg = f"The {resource_type} file '{filename}' is still used in the xpansion settings and cannot be deleted"
@@ -879,6 +874,69 @@ class GemsLibraryAlreadyExists(HTTPException):
         super().__init__(HTTPStatus.CONFLICT, message)
 
 
+class GemsLibraryNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsModelNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsSystemAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class GemsSystemNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsConnectedObjectDeletionNotAllowed(HTTPException):
+    """
+    Exception raised when a legacy object of a FileSystem study cannot be deleted because GEMS components are
+    connected to it: GEMS is unavailable for FileSystem studies, so the connections cannot be removed.
+    """
+
+    def __init__(self, object_id: str, component_ids: Collection[str], *, object_type: str) -> None:
+        components = ", ".join(f"'{component_id}'" for component_id in component_ids)
+        message = (
+            f"{object_type} '{object_id}' is not allowed to be deleted, because the following GEMS components"
+            f" are connected to it: {components}."
+        )
+        super().__init__(HTTPStatus.FORBIDDEN, message)
+
+
+class GemsUnavailableForFileSystemStudies(HTTPException):
+    def __init__(self, study_id: str) -> None:
+        super().__init__(
+            HTTPStatus.METHOD_NOT_ALLOWED,
+            f"Gems is unavailable for FileSystem studies, but study {study_id} tried to use it.",
+        )
+
+
+class GemsModelIncorrectlyFormatted(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class GemsSystemIncorrectlyFormatted(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class GemsTaxonomyAlreadyExists(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class GemsCatalogAlreadyExists(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class GemsInvalidConnection(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)

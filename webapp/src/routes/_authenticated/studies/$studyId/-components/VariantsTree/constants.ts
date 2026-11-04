@@ -45,7 +45,7 @@ export const RECT_TEXT_WIDTH = 350;
  * Higher values zoom out (showing more of the tree), lower values zoom in.
  * Adjust this value to make tree nodes appear larger or smaller.
  */
-export const ZOOM_OUT = 1.5;
+export const ZOOM_OUT = 1.9;
 /** Minimum width for the tree-lines area (0 = no minimum). */
 export const MIN_WIDTH = 0;
 /** Extra depth levels added when computing the tree-lines area width. */

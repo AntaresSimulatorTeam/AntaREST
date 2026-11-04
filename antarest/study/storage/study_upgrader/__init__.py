@@ -34,6 +34,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
+    STUDY_VERSION_10_2,
 )
 
 AVAILABLE_VERSIONS = [
@@ -51,6 +52,7 @@ AVAILABLE_VERSIONS = [
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
+    STUDY_VERSION_10_2,
 ]
 
 

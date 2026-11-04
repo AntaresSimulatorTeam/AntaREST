@@ -34,5 +34,7 @@ function Solar() {
     throw new Error(`${Route.path} is only available when 'enr_modelling' is of type aggregated.`);
   }
 
-  return <Matrix key={areaId} studyId={study.id} url={url} aggregateColumns="stats" />;
+  return (
+    <Matrix key={areaId} studyId={study.id} url={url} filterKey="solar" aggregateColumns="stats" />
+  );
 }

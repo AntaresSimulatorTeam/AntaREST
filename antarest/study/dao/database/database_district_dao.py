@@ -20,19 +20,24 @@ import json
 from collections.abc import Sequence
 from typing import Any
 
+from antares.study.version import StudyVersion
 from sqlalchemy import CursorResult, delete, select
 from typing_extensions import override
 
 from antarest.core.exceptions import AreaNotFound, DistrictConfigNotFound
 from antarest.core.utils.sql_utils import upsert_one
-from antarest.study.business.model.district_model import District
+from antarest.study.business.model.district_model import (
+    District,
+    check_district_complete,
+    validate_district_against_version,
+)
 from antarest.study.dao.api.district_dao import DistrictDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.district import DISTRICT_TABLE
 
 
-def _convert_db_row_to_district(db_row: Any) -> District:
-    return District(
+def _convert_db_row_to_district(db_row: Any, version: StudyVersion) -> District:
+    district = District(
         id=db_row.district_id,
         name=db_row.name,
         output=db_row.output,
@@ -40,7 +45,11 @@ def _convert_db_row_to_district(db_row: Any) -> District:
         apply_filter=db_row.apply_filter,
         add_areas=json.loads(db_row.add_areas),
         subtract_areas=json.loads(db_row.subtract_areas),
+        filter_synthesis=db_row.filter_synthesis,
+        filter_year_by_year=db_row.filter_year_by_year,
     )
+    validate_district_against_version(version, district)
+    return district
 
 
 class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
@@ -63,16 +72,16 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         if invalid_areas:
             raise AreaNotFound(*invalid_areas)
 
+        check_district_complete(district, self.get_impl().get_version())
+
         values = {
             "study_data_id": study_data_id,
             "district_id": district.id,
-            "name": district.name,
-            "output": district.output,
-            "comments": district.comments,
-            "apply_filter": district.apply_filter,
             "add_areas": json.dumps(district.add_areas),
             "subtract_areas": json.dumps(district.subtract_areas),
+            **district.model_dump(mode="json", exclude={"add_areas", "subtract_areas", "id"}),
         }
+
         upsert_one(session, DISTRICT_TABLE, values)
         session.commit()
 
@@ -106,7 +115,8 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         stmt = select(DISTRICT_TABLE).where(DISTRICT_TABLE.c.study_data_id == study_data_id)
         district_rows = session.execute(stmt).fetchall()
 
-        return [_convert_db_row_to_district(row) for row in district_rows]
+        study_version = self.get_impl().get_version()
+        return [_convert_db_row_to_district(row, study_version) for row in district_rows]
 
     @override
     def get_district(self, district_id: str) -> District:
@@ -123,7 +133,8 @@ class DatabaseDistrictDao(DistrictDao, DatabaseDaoBase):
         if not row:
             raise DistrictConfigNotFound(district_id)
 
-        return _convert_db_row_to_district(row)
+        study_version = self.get_impl().get_version()
+        return _convert_db_row_to_district(row, study_version)
 
     @override
     def district_exists(self, district_id: str) -> bool:

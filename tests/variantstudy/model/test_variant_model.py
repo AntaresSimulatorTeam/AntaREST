@@ -23,6 +23,7 @@ from antarest.core.roles import RoleType
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.login.model import Group, Role, User
 from antarest.login.utils import current_user_context, get_current_user
+from antarest.study.dao.api.study_factory_dao import StudyFactoryDao
 from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
@@ -116,6 +117,7 @@ class TestVariantStudyService:
         self, variant_study_service: VariantStudyService, tmp_path: Path, storage_mode: StorageMode
     ) -> None:
         jwt_user = get_current_user()
+        assert jwt_user is not None
         root_study_id = create_root_study(PublicMode.NONE, tmp_path, variant_study_service, jwt_user.id, storage_mode)
         # Create a new variant
         variant_study = variant_study_service.create_variant_study(root_study_id, "my-variant")
@@ -154,6 +156,7 @@ class TestVariantStudyService:
         )
 
         # Remove command (area "Maybe")
+        assert commands[2].id is not None
         variant_study_service.remove_command(saved_id, commands[2].id)
         command_count -= 1
 
@@ -179,7 +182,7 @@ class TestVariantStudyService:
         ctx = variant_study_service.command_factory.command_context
 
         if variant_study.storage_mode == StorageMode.FILESYSTEM:
-            factory = FileStudyDaoFactory(
+            factory: StudyFactoryDao = FileStudyDaoFactory(
                 ctx.matrix_service,
                 ctx.blob_service,
                 ctx.generator_matrix_constants,
@@ -193,6 +196,8 @@ class TestVariantStudyService:
         results = generator.generate_snapshot(saved_id, dao_factory=factory)
         # Check the results. `details` should be empty as all commands were applied synchronously
         assert results.model_dump() == {"success": True, "should_invalidate_cache": False, "details": []}
+        assert isinstance(study, VariantStudy)
+        assert study.snapshot is not None
         assert study.snapshot.id == study.id
 
     @with_db_context
@@ -295,7 +300,7 @@ class TestVariantStudyService:
         variant_id = variant_study.id
         # Isolate it in a new DB session to make sure we mimic an independent request
         with db(), current_user_context(jwt_user):
-            with DBStatementRecorder(db.session.bind) as db_recorder:
+            with DBStatementRecorder(db.session.get_bind().engine) as db_recorder:
                 variant_study_service.get_commands(variant_id)
                 # Only 1 query must be executed:
                 # 1. Get the variant study with its owner, groups and commands
@@ -342,6 +347,7 @@ class TestVariantStudyService:
             variant_study_service.append_commands(variant_study.id, [command_1, command_2])
 
         study = variant_study_service.repository.get(saved_id)
+        assert study is not None
         assert study.author == "john.doe"
         assert study.editor == "john.doe"
         # end creating area
@@ -355,6 +361,7 @@ class TestVariantStudyService:
             variant_study_service.append_commands(variant_study.id, [command_3])
 
         study_db = db.session.get(VariantStudy, variant_study.id)
+        assert study_db is not None
         assert study_db.author == "john.doe"
         assert study_db.editor == "jane.editor"
         # end creating link
@@ -366,6 +373,7 @@ class TestVariantStudyService:
             variant_study_service.append_commands(variant_study.id, [command_4])
 
         study_db = db.session.get(VariantStudy, variant_study.id)
+        assert study_db is not None
         assert study_db.author == "john.doe"
         assert study_db.editor == "john.doe"
         # end deleting area

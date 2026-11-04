@@ -30,9 +30,9 @@ from antarest.study.dao.database.models.st_storage import (
 from tests.study.dao.utils import save_area
 
 
-def _make_storage(dao: StudyDao, **kwargs) -> STStorage:
+def _make_storage(dao: StudyDao, **kwargs: object) -> STStorage:
     """Build a fully-initialized STStorage so DAO write-side validation passes."""
-    storage = STStorage(**kwargs)
+    storage = STStorage.model_validate(kwargs)
     initialize_st_storage(storage, dao.get_version())
     return storage
 
@@ -180,8 +180,8 @@ def test_save_additional_constraints(dao_93: StudyDao) -> None:
         {
             "area_1": {
                 "st_storage_id_1": [
-                    STStorageAdditionalConstraint(name="constraint-1"),
-                    STStorageAdditionalConstraint(name="constraint-2"),
+                    STStorageAdditionalConstraint.model_validate({"name": "constraint-1"}),
+                    STStorageAdditionalConstraint.model_validate({"name": "constraint-2"}),
                 ]
             }
         }
@@ -207,9 +207,9 @@ def test_delete_additional_constraints(dao_93: StudyDao) -> None:
         {
             "area_1": {
                 "st_storage_id_1": [
-                    STStorageAdditionalConstraint(name="constraint-1"),
-                    STStorageAdditionalConstraint(name="constraint-2"),
-                    STStorageAdditionalConstraint(name="constraint-3"),
+                    STStorageAdditionalConstraint.model_validate({"name": "constraint-1"}),
+                    STStorageAdditionalConstraint.model_validate({"name": "constraint-2"}),
+                    STStorageAdditionalConstraint.model_validate({"name": "constraint-3"}),
                 ]
             }
         }

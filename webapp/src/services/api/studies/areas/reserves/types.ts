@@ -14,72 +14,73 @@
 
 import type { AreaWithId } from "@/types/types";
 import type { z } from "zod";
+import type { Study } from "../../types";
 import type {
-  certificationProductionTypeSchema,
-  createReserveParamsSchema,
+  productionTypeSchema,
   reserveCertificationSchema,
+  reserveCreationSchema,
   reserveGlobalParametersSchema,
+  reserveGlobalParametersUpdateSchema,
   reserveSchema,
   reserveTypeSchema,
+  reserveUpdateSchema,
   reservesCertificationsSchema,
   reservesSymmetriesSchema,
-  symmetryProductionTypeSchema,
-  updateReserveGlobalParametersSchema,
-  updateReserveParamsSchema,
+  storageReserveCertificationSchema,
+  thermalReserveCertificationSchema,
 } from "./schemas";
-import type { Study } from "../../types";
 
 export type ReserveType = z.infer<typeof reserveTypeSchema>;
 export type Reserve = z.infer<typeof reserveSchema>;
 export type ReserveGlobalParameters = z.infer<typeof reserveGlobalParametersSchema>;
-export type CertificationProductionType = z.infer<typeof certificationProductionTypeSchema>;
+export type ProductionType = z.infer<typeof productionTypeSchema>;
+export type ThermalReserveCertification = z.infer<typeof thermalReserveCertificationSchema>;
+export type StorageReserveCertification = z.infer<typeof storageReserveCertificationSchema>;
 export type ReserveCertification = z.infer<typeof reserveCertificationSchema>;
+/** Includes the keys of each certification model, rather than only their shared keys. */
+export type ReserveCertificationField<
+  TCertification extends ReserveCertification = ReserveCertification,
+> = TCertification extends ReserveCertification ? keyof TCertification & string : never;
 export type ReservesCertifications = z.infer<typeof reservesCertificationsSchema>;
-export type SymmetryProductionType = z.infer<typeof symmetryProductionTypeSchema>;
 export type ReservesSymmetries = z.infer<typeof reservesSymmetriesSchema>;
 
-export type CreateReserveData = z.infer<typeof createReserveParamsSchema>;
-export type UpdateReserveData = z.infer<typeof updateReserveParamsSchema>;
-export type UpdateReserveGlobalParametersData = z.infer<typeof updateReserveGlobalParametersSchema>;
+export type ReserveCreation = z.infer<typeof reserveCreationSchema>;
+export type ReserveUpdate = z.infer<typeof reserveUpdateSchema>;
+export type ReserveGlobalParametersUpdate = z.infer<typeof reserveGlobalParametersUpdateSchema>;
 
-export interface ReservesAreaParams {
+export interface ReservesParams {
   studyId: Study["id"];
   areaId: AreaWithId["id"];
 }
 
-export interface GetReserveParams extends ReservesAreaParams {
+export interface ReserveParams extends ReservesParams {
   reserveId: Reserve["id"];
 }
 
-export interface CreateReserveParams extends ReservesAreaParams {
-  data: CreateReserveData;
+export interface CreateReserveParams extends ReservesParams {
+  data: ReserveCreation;
 }
 
-export interface UpdateReserveParams extends ReservesAreaParams {
-  reserveId: Reserve["id"];
-  data: UpdateReserveData;
+export interface UpdateReserveParams extends ReserveParams {
+  data: ReserveUpdate;
 }
 
-export interface DeleteReservesParams extends ReservesAreaParams {
+export interface DeleteReservesParams extends ReservesParams {
   reserveIds: Array<Reserve["id"]>;
 }
 
-export interface UpdateReserveGlobalParametersParams extends ReservesAreaParams {
-  data: UpdateReserveGlobalParametersData;
+export interface UpdateReserveGlobalParametersParams extends ReservesParams {
+  data: ReserveGlobalParametersUpdate;
 }
 
-export interface ReservesCertificationsParams extends ReservesAreaParams {
-  productionType: CertificationProductionType;
+export interface ReservesProductionTypeParams extends ReservesParams {
+  productionType: ProductionType;
 }
 
-export interface UpdateReservesCertificationsParams extends ReservesCertificationsParams {
+export interface UpdateReservesCertificationsParams extends ReservesProductionTypeParams {
   data: ReservesCertifications;
 }
 
-export interface ReservesSymmetriesParams extends ReservesAreaParams {
-  productionType: SymmetryProductionType;
-}
-
-export interface UpdateReservesSymmetriesParams extends ReservesSymmetriesParams {
+export interface UpdateReservesSymmetriesParams extends ReservesProductionTypeParams {
   data: ReservesSymmetries;
 }

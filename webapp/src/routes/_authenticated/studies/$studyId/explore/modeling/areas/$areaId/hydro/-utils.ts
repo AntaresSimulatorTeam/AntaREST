@@ -37,6 +37,9 @@ export const HydroMatrixType = {
   MaxHourlyPumpPower: "MaxHourlyPumpPower",
   MaxDailyGenEnergy: "MaxDailyGenEnergy",
   MaxDailyPumpEnergy: "MaxDailyPumpEnergy",
+  MinDailyReservoirLevels: "MinDailyReservoirLevels",
+  MaxDailyReservoirLevels: "MaxDailyReservoirLevels",
+  AvgDailyReservoirLevels: "AvgDailyReservoirLevels",
   InflowPattern: "InflowPattern",
   OverallMonthlyHydro: "OverallMonthlyHydro",
   Allocation: "Allocation",
@@ -150,6 +153,18 @@ export const MATRICES: Matrices = {
   [HydroMatrixType.MaxDailyPumpEnergy]: {
     title: "Max Daily Pump Energy",
     url: "input/hydro/common/capacity/maxDailyPumpEnergy_{areaId}",
+  },
+  [HydroMatrixType.MinDailyReservoirLevels]: {
+    title: "Min Daily Reservoir Levels",
+    url: "input/hydro/series/{areaId}/minDailyReservoirLevels",
+  },
+  [HydroMatrixType.MaxDailyReservoirLevels]: {
+    title: "Max Daily Reservoir Levels",
+    url: "input/hydro/series/{areaId}/maxDailyReservoirLevels",
+  },
+  [HydroMatrixType.AvgDailyReservoirLevels]: {
+    title: "Avg Daily Reservoir Levels",
+    url: "input/hydro/series/{areaId}/avgDailyReservoirLevels",
   },
   [HydroMatrixType.InflowPattern]: {
     title: "Inflow Pattern",

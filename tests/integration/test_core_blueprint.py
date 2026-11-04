@@ -27,7 +27,7 @@ class RegEx:
 
     @override
     def __eq__(self, other: Any) -> bool:
-        return isinstance(other, str) and self.match(other)
+        return isinstance(other, str) and self.match(other) is not None
 
     @override
     def __ne__(self, other: Any) -> bool:

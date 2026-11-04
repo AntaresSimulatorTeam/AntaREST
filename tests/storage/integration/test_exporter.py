@@ -106,21 +106,12 @@ def assert_url_content(url: str, tmp_dir: Path, sta_mini_archive_path: Path) -> 
 
     # Simulate the download of data using a streamed request
     client = TestClient(app)
-    if client.stream is False:
-        # `TestClient` is based on `Requests` (old way before AntaREST-v2.15)
-        # noinspection PyArgumentList
-        res = client.get(url, stream=True)
-        res.raise_for_status()
-        result = res.json()
-    else:
-        # `TestClient` is based on `httpx` (new way since AntaREST-v2.15)
-        data = io.BytesIO()
-        # noinspection PyCallingNonCallable
-        with client.stream("GET", url) as res:
-            for chunk in res.iter_bytes():
-                data.write(chunk)
-        res.raise_for_status()
-        result = json.loads(data.getvalue())
+    data = io.BytesIO()
+    with client.stream("GET", url) as res:
+        for chunk in res.iter_bytes():
+            data.write(chunk)
+    res.raise_for_status()
+    result = json.loads(data.getvalue())
 
     download_task = FileDownloadTaskDTO(**result)
     download_filepath = ftm.fetch_download(download_task.file.id).path

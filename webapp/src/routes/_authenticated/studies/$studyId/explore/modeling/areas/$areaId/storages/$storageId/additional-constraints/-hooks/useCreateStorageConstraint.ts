@@ -16,22 +16,18 @@ import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { storageMutations } from "@/queries/storages/mutations";
 import { storageQueries } from "@/queries/storages/queries";
 import { createOptimisticListItem } from "@/queries/utils";
-import type { StorageConstraint } from "@/services/api/studies/areas/storages/types";
+import type { StorageConstraint, StorageParams } from "@/services/api/studies/areas/storages/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useParams, useRouter } from "@tanstack/react-router";
+import { useRouter } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { DEFAULT_CONSTRAINT_VALUES } from "../-constants";
 
-function useCreateStorageConstraint() {
-  const params = useParams({
-    from: "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
-  });
+function useCreateStorageConstraint({ studyId, areaId, storageId }: StorageParams) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { t } = useTranslation();
 
-  const { studyId, areaId, storageId } = params;
   const { queryKey: queryListKey } = storageQueries.constraintList(studyId, areaId, storageId);
 
   const isRouterMatchTempConstraint = (tempConstraintId: string) => {
@@ -67,7 +63,7 @@ function useCreateStorageConstraint() {
       // causing `isRouterMatchTempConstraint()` to not work as expected
       await router.navigate({
         to: "/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId/additional-constraints/$constraintId",
-        params: { ...params, constraintId: tempConstraintId },
+        params: { studyId, areaId, storageId, constraintId: tempConstraintId },
       });
 
       return tempConstraintId;
@@ -102,7 +98,7 @@ function useCreateStorageConstraint() {
       if (isRouterMatchTempConstraint(tempConstraintId)) {
         router.navigate({
           to: ".",
-          params: { ...params, constraintId: newConstraint.id },
+          params: { studyId, areaId, storageId, constraintId: newConstraint.id },
           replace: true,
         });
       }

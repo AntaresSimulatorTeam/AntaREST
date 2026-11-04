@@ -21,11 +21,12 @@ from unittest.mock import ANY
 import numpy as np
 import pandas as pd
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.study.model import RawStudy, Study
+from antarest.study.model import RawStudy
 from antarest.study.storage.rawstudy.model.filesystem.root.input.thermal.prepro.area.thermal.thermal import (
     default_data_matrix,
 )
@@ -63,9 +64,11 @@ class TestFetchRawData:
 
         # First copy the user resources in the Study directory
         with db():
-            study: RawStudy = db.session.get(Study, internal_study_id)
+            study = db.session.get(RawStudy, internal_study_id)
+            assert study is not None
+            assert study.path is not None
             study_dir = Path(study.path)
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         shutil.copytree(
             ASSETS_DIR.joinpath("user"),
@@ -116,8 +119,8 @@ class TestFetchRawData:
         # If the extension is unknown, we should have a "binary" content
         user_folder_dir = study_dir.joinpath("user/unknown")
         for file_path in user_folder_dir.glob("*.*"):
-            rel_path = file_path.relative_to(study_dir)
-            res = client.get(raw_url, params={"path": f"/{rel_path.as_posix()}", "depth": 1})
+            relative_file_path = file_path.relative_to(study_dir)
+            res = client.get(raw_url, params={"path": f"/{relative_file_path.as_posix()}", "depth": 1})
             assert res.status_code == 200, res.json()
             actual = res.content
             expected = file_path.read_bytes()
@@ -287,8 +290,8 @@ class TestFetchRawData:
         # Some files can be corrupted
         user_folder_dir = study_dir.joinpath("user/bad")
         for file_path in user_folder_dir.glob("*.*"):
-            rel_path = file_path.relative_to(study_dir)
-            res = client.get(raw_url, params={"path": f"/{rel_path.as_posix()}", "depth": 1})
+            relative_file_path = file_path.relative_to(study_dir)
+            res = client.get(raw_url, params={"path": f"/{relative_file_path.as_posix()}", "depth": 1})
             assert res.status_code == http.HTTPStatus.UNPROCESSABLE_ENTITY
 
         # Imports a wrongly formatted matrix
@@ -318,7 +321,7 @@ class TestFetchRawData:
         # =============================
         #  SET UP
         # =============================
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         if study_type == "variant":
             # Copies the study, to convert it into a managed one.
@@ -405,7 +408,7 @@ class TestFetchRawData:
     def test_create_folder(
         self, client: TestClient, user_access_token: str, internal_study_id: str, study_type: str
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         if study_type == "variant":
             # Copies the study, to convert it into a managed one.
@@ -475,7 +478,7 @@ class TestFetchRawData:
         assert expected_msg in res.json()["description"]
 
     def test_create_user_resource_complex_case(self, client: TestClient, user_access_token: str) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # create a Raw study
         res = client.post("/v1/studies?name=MyStudy")
@@ -561,9 +564,11 @@ class TestFetchOriginalFile:
         """
         # First copy the user resources in the Study directory
         with db():
-            study: RawStudy = db.session.get(Study, internal_study_id)
+            study = db.session.get(RawStudy, internal_study_id)
+            assert study is not None
+            assert study.path is not None
             study_dir = Path(study.path)
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         original_file_url = f"/v1/studies/{internal_study_id}/raw/original-file"
 
         shutil.copytree(ASSETS_DIR.joinpath("user"), study_dir.joinpath("user"), dirs_exist_ok=True)
@@ -581,8 +586,8 @@ class TestFetchOriginalFile:
         # If the extension is unknown, we should have a "binary" content
         user_folder_dir = study_dir.joinpath("user/unknown")
         for file_path in user_folder_dir.glob("*.*"):
-            rel_path = file_path.relative_to(study_dir)
-            res = client.get(original_file_url, params={"path": f"/{rel_path.as_posix()}"})
+            relative_file_path = file_path.relative_to(study_dir)
+            res = client.get(original_file_url, params={"path": f"/{relative_file_path.as_posix()}"})
             assert res.status_code == 200, res.json()
 
             actual = res.content

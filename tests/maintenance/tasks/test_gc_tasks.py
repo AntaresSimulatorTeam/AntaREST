@@ -23,7 +23,7 @@ from antarest.maintenance.tasks.gc_tasks_task import gc_tasks_task
 
 
 class TestCleanTasks:
-    def test_clean_tasks_when_not_dry_run(self):
+    def test_clean_tasks_when_not_dry_run(self) -> None:
         mock_service = Mock()
         mock_service.delete_task_by_creation_date.return_value = 5
         gc_tasks_result = clean_tasks(
@@ -34,7 +34,7 @@ class TestCleanTasks:
         assert gc_tasks_result.deleted_count == 5
         assert gc_tasks_result.error is None
 
-    def test_does_not_clean_tasks_when_dry_run(self):
+    def test_does_not_clean_tasks_when_dry_run(self) -> None:
         mock_service = Mock()
         mock_service.delete_task_by_creation_date.return_value = 5
         gc_tasks_result = clean_tasks(
@@ -46,6 +46,6 @@ class TestCleanTasks:
 
 
 class TestTasksGCTask:
-    def test_raises_without_context(self, with_no_maintenance_ctx):
+    def test_raises_without_context(self, with_no_maintenance_ctx: None) -> None:
         with pytest.raises(RuntimeError, match="MaintenanceContext not in app.conf"):
             gc_tasks_task.run()

@@ -62,6 +62,9 @@ class Symmetry(AntaresBaseModel):
 
     reserves: ReserveSymmetry
 
+    def to_model(self) -> ReserveSymmetry:
+        return [ReserveDefinitionId(transform_name_to_id(reserve)) for reserve in self.reserves]
+
 
 _AreaAssetCertification = _ThermalCertification | _StorageCertification
 CertificationT = TypeVar("CertificationT", bound=_AreaAssetCertification)
@@ -142,7 +145,7 @@ class _AreaAssetParticipationFileData(ABC, AntaresBaseModel, Generic[Participati
         for participation in self.participations:
             symmetries = []
             for symmetry in participation.symmetries:
-                symmetries.append(symmetry.reserves)
+                symmetries.append(symmetry.to_model())
             if symmetries:
                 result[participation.get_id()] = symmetries
         return result
@@ -337,7 +340,7 @@ class HydroReserveParticipationsFileData(AntaresBaseModel):
         return result
 
     def get_symmetries(self) -> ReserveSymmetries:
-        return [symmetry.reserves for symmetry in self.participations.symmetries]
+        return [symmetry.to_model() for symmetry in self.participations.symmetries]
 
     @classmethod
     def from_model(cls, symmetries: ReserveSymmetries, certifications: HydroReserveCertificationMapping) -> Self:

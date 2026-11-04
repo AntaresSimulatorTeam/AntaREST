@@ -77,7 +77,7 @@ class RenewableClusterGroup(EnumIgnoreCase):
         return cast("RenewableClusterGroup | None", super()._missing_(value))
 
 
-Group: TypeAlias = LowerCaseStr | None
+Group: TypeAlias = LowerCaseStr
 
 
 class RenewableCluster(AntaresBaseModel):
@@ -117,7 +117,7 @@ class RenewableClusterCreation(AntaresBaseModel):
     enabled: bool | None = None
     unit_count: int | None = Field(default=None, ge=1)
     nominal_capacity: float | None = Field(default=None, ge=0)
-    group: Group = None
+    group: Group | None = None
     ts_interpretation: TimeSeriesInterpretation | None = None
 
     @classmethod
@@ -154,7 +154,7 @@ class RenewableClusterUpdate(AntaresBaseModel):
     enabled: bool | None = None
     unit_count: int | None = Field(default=None, ge=1)
     nominal_capacity: float | None = Field(default=None, ge=0)
-    group: Group = None
+    group: Group | None = None
     ts_interpretation: TimeSeriesInterpretation | None = None
 
 

@@ -17,6 +17,7 @@ from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_9_3, STUDY_VERSION_10_2
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_reserve_definition import CreateReserveDefinition
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.replace_hydro_reserve_certifications import (
     ReplaceHydroReserveCertifications,
 )
@@ -29,7 +30,7 @@ from antarest.study.storage.variantstudy.model.command_context import CommandCon
 def _set_up(dao: StudyDao, command_context: CommandContext) -> None:
     version = dao.get_version()
     # Create area `fr`. Hydro needs no asset to be created.
-    cmd = CreateArea(area_name="FR", command_context=command_context, study_version=version)
+    cmd: ICommand = CreateArea(area_name="FR", command_context=command_context, study_version=version)
     assert cmd.apply(dao).status
     # Create 3 reserves inside area `fr`
     for reserve_name in ["r1", "r2", "r3"]:
@@ -146,7 +147,7 @@ def test_reserve_should_be_certified(dao_10_2: StudyDao, command_context: Comman
     _set_up(dao_10_2, command_context)
 
     # Drop `r3`'s certification, then try to build a symmetry on it
-    cmd = ReplaceHydroReserveCertifications(
+    cmd: ICommand = ReplaceHydroReserveCertifications(
         area_id="fr",
         certifications={r: StorageReserveCertification() for r in ["r1", "r2"]},
         command_context=command_context,

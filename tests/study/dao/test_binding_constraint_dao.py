@@ -44,7 +44,7 @@ from antarest.study.dao.database.models.binding_constraint import (
 )
 from antarest.study.dao.database.study_data_queries import belongs_to_study
 from antarest.study.model import STUDY_VERSION_8_8, Study
-from tests.study.dao.conftest import build_db_dao
+from tests.conftest import build_db_dao
 
 # Common constraint IDs reused across many tests
 BC1: ConstraintId = ConstraintId("bc1")
@@ -52,15 +52,17 @@ BC2: ConstraintId = ConstraintId("bc2")
 BC3: ConstraintId = ConstraintId("bc3")
 
 
-def _bc(constraint_id: ConstraintId, **kwargs) -> BindingConstraint:
-    return BindingConstraint(
-        id=constraint_id,
-        name=kwargs.pop("name", constraint_id),
-        enabled=kwargs.pop("enabled", True),
-        time_step=kwargs.pop("time_step", BindingConstraintFrequency.HOURLY),
-        operator=kwargs.pop("operator", BindingConstraintOperator.LESS),
-        comments=kwargs.pop("comments", ""),
-        **kwargs,
+def _bc(constraint_id: ConstraintId, **kwargs: object) -> BindingConstraint:
+    return BindingConstraint.model_validate(
+        {
+            "id": constraint_id,
+            "name": constraint_id,
+            "enabled": True,
+            "time_step": BindingConstraintFrequency.HOURLY,
+            "operator": BindingConstraintOperator.LESS,
+            "comments": "",
+            **kwargs,
+        }
     )
 
 
@@ -190,7 +192,9 @@ def test_constraint_terms(dao: StudyDao) -> None:
     )
     r = dao.get_constraint(mixed)
     assert len(r.terms) == 2
-    assert {type(t.data) for t in r.terms} == {LinkTerm, ClusterTerm}
+    term_types: set[type[LinkTerm] | type[ClusterTerm]] = {type(t.data) for t in r.terms}
+    expected_term_types: set[type[LinkTerm] | type[ClusterTerm]] = {LinkTerm, ClusterTerm}
+    assert term_types == expected_term_types
 
     # No terms
     dao.save_constraints([_bc(empty, terms=[])])
@@ -269,6 +273,7 @@ def test_version_specific_fields(dao: StudyDao) -> None:
         ]
     )
     r = dao.get_constraint(BC1)
+    assert r.filter_year_by_year is not None
     assert FilterOption.HOURLY in r.filter_year_by_year
     assert FilterOption.DAILY in r.filter_year_by_year
     assert r.filter_synthesis == [FilterOption.WEEKLY]

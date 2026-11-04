@@ -12,6 +12,8 @@
 
 from pathlib import Path
 
+from antares.study.version import StudyVersion
+
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFileNode
 
@@ -21,7 +23,7 @@ def test_get(tmp_path: Path) -> None:
     file.write_text("Hello")
 
     node = RawFileNode(
-        config=FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="id"),
+        config=FileStudyTreeConfig(study_path=file, path=file, version=StudyVersion.parse("8.8"), study_id="id"),
     )
     assert node.get() == b"Hello"
 
@@ -31,7 +33,7 @@ def test_save(tmp_path: Path) -> None:
     file.touch()
 
     node = RawFileNode(
-        config=FileStudyTreeConfig(study_path=file, path=file, version=-1, study_id="id"),
+        config=FileStudyTreeConfig(study_path=file, path=file, version=StudyVersion.parse("8.8"), study_id="id"),
     )
     node.save(b"Hello")
     assert file.read_text() == "Hello"

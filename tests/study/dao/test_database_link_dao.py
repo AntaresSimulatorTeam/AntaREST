@@ -93,7 +93,7 @@ def test_get_all_links(db_dao: DatabaseStudyDao, db_session: Session) -> None:
     dao.save_links([Link(area1="paris", area2="berlin")])
 
     # Ensures we do not perform N+1 requests
-    with DBStatementRecorder(db_session.bind) as db_recorder:
+    with DBStatementRecorder(db_session.get_bind().engine) as db_recorder:
         all_links = dao.get_links()
         assert len(all_links) == 2
 

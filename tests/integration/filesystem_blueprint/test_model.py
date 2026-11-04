@@ -30,6 +30,7 @@ class TestFilesystemDTO:
         }
         dto = FilesystemDTO.model_validate(example)
         assert dto.name == example["name"]
+        assert isinstance(example["mount_dirs"], dict)
         assert dto.mount_dirs["default"] == Path(example["mount_dirs"]["default"])
         assert dto.mount_dirs["common"] == Path(example["mount_dirs"]["common"])
 
@@ -46,6 +47,7 @@ class TestMountPointDTO:
         }
         dto = MountPointDTO.model_validate(example)
         assert dto.name == example["name"]
+        assert isinstance(example["path"], str)
         assert dto.path == Path(example["path"])
         assert dto.total_bytes == example["total_bytes"]
         assert dto.used_bytes == example["used_bytes"]
@@ -89,12 +91,16 @@ class TestFileInfoDTO:
             "message": "OK",
         }
         dto = FileInfoDTO.model_validate(example)
+        assert isinstance(example["path"], str)
         assert dto.path == Path(example["path"])
         assert dto.file_type == example["file_type"]
         assert dto.file_count == example["file_count"]
         assert dto.size_bytes == example["size_bytes"]
+        assert isinstance(example["created"], str)
         assert dto.created == datetime.datetime.fromisoformat(example["created"])
+        assert isinstance(example["modified"], str)
         assert dto.modified == datetime.datetime.fromisoformat(example["modified"])
+        assert isinstance(example["accessed"], str)
         assert dto.accessed == datetime.datetime.fromisoformat(example["accessed"])
         assert dto.message == example["message"]
 

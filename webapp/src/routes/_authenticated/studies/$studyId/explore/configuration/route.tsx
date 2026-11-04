@@ -48,7 +48,7 @@ function ConfigurationLayout() {
         },
         {
           id: "optimization",
-          label: "Optimization",
+          label: t("study.configuration.optimization"),
           linkOptions: linkOptions({
             to: "/studies/$studyId/explore/configuration/optimization",
             params,

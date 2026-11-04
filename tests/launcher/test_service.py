@@ -16,6 +16,7 @@ import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Literal, NotRequired, TypedDict
 from unittest.mock import Mock, call, patch
 from uuid import uuid4
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -24,6 +25,7 @@ import pytest
 from fastapi import HTTPException
 from pydantic import ValidationError
 from sqlalchemy import create_engine
+from sqlalchemy.orm import Session
 
 from antarest.core.config import (
     Config,
@@ -39,7 +41,6 @@ from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.jwt import DEFAULT_ADMIN_USER, JWTUser
 from antarest.core.model import PermissionInfo, PublicMode
 from antarest.core.requests import UserHasNotPermissionError
-from antarest.core.utils.fastapi_sqlalchemy import DBSessionMiddleware
 from antarest.core.utils.fastapi_sqlalchemy.middleware import db, init_db_singleton
 from antarest.core.utils.utils import current_time
 from antarest.dbmodel import Base
@@ -86,6 +87,19 @@ from antarest.study.storage.variantstudy.command_factory import CommandFactory
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.helpers import create_raw_study, with_admin_user, with_db_context
+
+
+class LauncherSettings(TypedDict):
+    id: str
+    name: str
+    type: Literal["local", "slurm"]
+    binaries: NotRequired[dict[str, str]]
+    antares_versions_on_remote_server: NotRequired[list[str]]
+
+
+class LauncherSettingsList(TypedDict):
+    default: str
+    launchers: list[LauncherSettings]
 
 
 class TestLauncherService:
@@ -143,7 +157,7 @@ class TestLauncherService:
             task_service=Mock(),
             cache=Mock(),
         )
-        launcher_service._generate_new_id = lambda: str(uuid)
+        object.__setattr__(launcher_service, "_generate_new_id", lambda: str(uuid))
 
         storage_service_mock.get_user_name.return_value = "fake_user"
         job_id = launcher_service.run_study("study_uuid", "local", LauncherParametersDTO())
@@ -308,9 +322,7 @@ class TestLauncherService:
 
         assert launcher_service.get_result(job_uuid=uuid4()) == fake_execution_result
 
-    def test_service_get_jobs_from_database(
-        self, db_session: DBSessionMiddleware, command_context: CommandContext
-    ) -> None:
+    def test_service_get_jobs_from_database(self, db_session: Session, command_context: CommandContext) -> None:
         launcher_mock = Mock()
         now = current_time()
         identity_instance = Identity(id=1)
@@ -592,11 +604,11 @@ class TestLauncherService:
     )
     def test_service_get_solver_versions(
         self,
-        config: dict[str, str | list[dict[str, str | dict[str, str]]]],
+        config: LauncherSettingsList,
         solver: str,
         expected: list[str],
     ) -> None:
-        launcher_configs = []
+        launcher_configs: list[LocalConfig | SlurmConfig] = []
         for launcher in config["launchers"]:
             if launcher["type"] == "local":
                 launcher_configs.append(
@@ -672,14 +684,18 @@ class TestLauncherService:
         job_result_mock.study_id = "study_id"
         job_result_mock.launcher = launcher
         job_result_mock.owner_id = 36
+        assert isinstance(launcher_service.job_result_repository.get, Mock)
         launcher_service.job_result_repository.get.return_value = job_result_mock
         launcher_service.launchers = {"slurm": Mock()}
 
         job_status = launcher_service.kill_job(job_id=job_id)
 
-        launcher_service.launchers[launcher].kill_job.assert_called_once_with(job_id=job_id)
+        launcher_mock = launcher_service.launchers[launcher]
+        assert isinstance(launcher_mock, Mock)
+        launcher_mock.kill_job.assert_called_once_with(job_id=job_id)
 
         assert job_status.job_status == JobStatus.FAILED
+        assert isinstance(launcher_service.job_result_repository.save, Mock)
         launcher_service.job_result_repository.save.assert_called_once_with(job_status)
 
     def test_append_logs(self, tmp_path: Path) -> None:
@@ -707,6 +723,7 @@ class TestLauncherService:
         job_result_mock.output_id = None
         job_result_mock.launcher = launcher
         job_result_mock.logs = []
+        assert isinstance(launcher_service.job_result_repository.get, Mock)
         launcher_service.job_result_repository.get.return_value = job_result_mock
 
         engine = create_engine("sqlite:///:memory:", echo=False)
@@ -717,6 +734,7 @@ class TestLauncherService:
             session_args={"autocommit": False, "autoflush": False},
         )
         launcher_service.append_log(job_id, "test", JobLogType.BEFORE)
+        assert isinstance(launcher_service.job_result_repository.save, Mock)
         launcher_service.job_result_repository.save.assert_called_with(job_result_mock)
         assert job_result_mock.logs[0].message == "test"
         assert job_result_mock.logs[0].job_id == "job_id"
@@ -751,6 +769,7 @@ class TestLauncherService:
         ]
         job_result_mock.launcher_params = '{"archive_output": false}'
 
+        assert isinstance(launcher_service.job_result_repository.get, Mock)
         launcher_service.job_result_repository.get.return_value = job_result_mock
         slurm_launcher = Mock()
         launcher_service.launchers = {"slurm": slurm_launcher}
@@ -817,10 +836,11 @@ class TestLauncherService:
         zipped_job_id = "zipped_job_id"
         study_id = str(uuid.uuid4())
         # Adds the study linked to the job inside DB
-        study = create_raw_study(study_id, "study-test", tmp_path)
+        study = create_raw_study(study_id, "study-test", str(tmp_path))
         db.session.add(study)
         db.session.commit()
         # Defines the side effects
+        assert isinstance(launcher_service.job_result_repository.get, Mock)
         launcher_service.job_result_repository.get.side_effect = [
             None,
             JobResult(id=job_id, study_id=study_id),
@@ -848,9 +868,11 @@ class TestLauncherService:
         additional_logs = SimulationLogs(out=additional_log, err=None)
         launcher_service._import_output(job_id, output_path, additional_logs)
         assert not launcher_service._get_job_output_fallback_path(job_id).exists()
+        assert isinstance(launcher_service.output_service.import_output, Mock)
         launcher_service.output_service.import_output.assert_called()
 
         launcher_service.download_output("job_id")
+        assert isinstance(launcher_service.output_service.export_output, Mock)
         launcher_service.output_service.export_output.assert_called()
 
         launcher_service._import_output(
@@ -884,9 +906,11 @@ class TestLauncherService:
         study_service.get_study.side_effect = StudyNotFoundError("")
 
         export_file = FileDownloadDTO(id="a", name="a", filename="a", ready=True)
+        assert isinstance(launcher_service.file_transfer_manager.request_download, Mock)
         launcher_service.file_transfer_manager.request_download.return_value = FileDownload(
             id="a", name="a", filename="a", ready=True, path="a"
         )
+        assert isinstance(launcher_service.task_service.add_task, Mock)
         launcher_service.task_service.add_task.return_value = "some id"
 
         assert launcher_service.download_output("job_id") == FileDownloadTaskDTO(task="some id", file=export_file)
@@ -915,6 +939,7 @@ class TestLauncherService:
 
         job_id = "job_id"
         study_id = "study_id"
+        assert isinstance(launcher_service.job_result_repository.get, Mock)
         launcher_service.job_result_repository.get.return_value = JobResult(id=job_id, study_id=study_id)
 
         # Simulate failed launch: output dir contains only simulation.log
@@ -960,6 +985,7 @@ class TestLauncherService:
 
         launcher_service._save_solver_stats(job_result, output_path)
         repository = launcher_service.job_result_repository
+        assert isinstance(repository.save, Mock)
         repository.save.assert_not_called()
 
         expected_saved_stats = """#item	duration_ms	NbOccurences
@@ -1000,7 +1026,7 @@ class TestLauncherService:
         launcher_service._save_solver_stats(job_result, zip_file)
         assert repository.save.call_count == 2
         mock_call = repository.save.mock_calls[-1]
-        actual_obj: JobResult = mock_call.args[0]
+        actual_obj_result: JobResult = mock_call.args[0]
         expected_obj = JobResult(
             id=job_id,
             study_id=study_id,
@@ -1008,7 +1034,7 @@ class TestLauncherService:
             solver_stats="0\n1",
             owner_id=1,
         )
-        assert actual_obj.to_dto().model_dump() == expected_obj.to_dto().model_dump()
+        assert actual_obj_result.to_dto().model_dump() == expected_obj.to_dto().model_dump()
 
     @with_db_context
     def test_import_output_is_called_with_the_right_user(self, tmp_path: Path) -> None:
@@ -1023,7 +1049,7 @@ class TestLauncherService:
         job_repository = Mock()
         job_repository.get.return_value = job_result
         # Adds the study linked to the job inside DB
-        study = create_raw_study(study_id, "study-test", tmp_path)
+        study = create_raw_study(study_id, "study-test", str(tmp_path))
         db.session.add(study)
         db.session.commit()
 
@@ -1053,6 +1079,7 @@ class TestLauncherService:
 
         # Ensures the output_service.import_output method was called with the right user
         launcher_service._import_output("job_id", tmp_path, SimulationLogs.no_logs())
+        assert isinstance(launcher_service.output_service.import_output, Mock)
         launcher_service.output_service.import_output.assert_called_once()
 
     @with_admin_user
@@ -1082,7 +1109,7 @@ class TestLauncherService:
         repository = Mock()
         solver_presets_repository = Mock()
 
-        def get_mock_solver_presets(solver_presets_id: str):
+        def get_mock_solver_presets(solver_presets_id: str) -> SolverPresetsDB | None:
             if solver_presets_id == "config-1":
                 return SolverPresetsDB.from_model(
                     SolverPresets(
@@ -1119,6 +1146,7 @@ class TestLauncherService:
         # Get the actual JobResult that was saved
         mock_call = repository.save.mock_calls[0]
         actual_obj: JobResult = mock_call.args[0]
+        assert actual_obj.launcher_params is not None
         saved_launcher_params = json.loads(actual_obj.launcher_params)
         saved_other_options = saved_launcher_params.get("other_options", "")
         assert saved_other_options == "xpress", "The other_options was not set correctly"

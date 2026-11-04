@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import zipfile
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -61,7 +62,8 @@ class TestThermalClusterGroup:
         When an invalid type is used to create a group, a `ValueError` should be raised.
         """
         with pytest.raises(ValueError):
-            ThermalClusterGroup(123)
+            # Deliberately pass an invalid runtime type to exercise enum validation.
+            ThermalClusterGroup(cast(str, 123))
 
 
 @pytest.fixture
@@ -154,6 +156,11 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
+            "rampingEnabled": None,
+            "maxUpwardPowerRampingRate": None,
+            "maxDownwardPowerRampingRate": None,
+            "powerIncreaseCost": None,
+            "powerDecreaseCost": None,
         }
         assert actual == expected
 
@@ -212,6 +219,11 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
+                "rampingEnabled": None,
+                "maxUpwardPowerRampingRate": None,
+                "maxDownwardPowerRampingRate": None,
+                "powerIncreaseCost": None,
+                "powerDecreaseCost": None,
             },
             {
                 "id": "on and must 2",
@@ -251,6 +263,11 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
+                "rampingEnabled": None,
+                "maxUpwardPowerRampingRate": None,
+                "maxDownwardPowerRampingRate": None,
+                "powerIncreaseCost": None,
+                "powerDecreaseCost": None,
             },
             {
                 "id": "2 avail and must 2",
@@ -290,6 +307,11 @@ class TestThermalManager:
                 "costGeneration": None,
                 "efficiency": None,
                 "variableOMCost": None,
+                "rampingEnabled": None,
+                "maxUpwardPowerRampingRate": None,
+                "maxDownwardPowerRampingRate": None,
+                "powerIncreaseCost": None,
+                "powerDecreaseCost": None,
             },
         ]
         assert actual == expected
@@ -351,6 +373,11 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
+            "rampingEnabled": None,
+            "maxUpwardPowerRampingRate": None,
+            "maxDownwardPowerRampingRate": None,
+            "powerIncreaseCost": None,
+            "powerDecreaseCost": None,
             "spinning": 0.0,
             "spreadCost": 0.0,
             "startupCost": 0.0,
@@ -414,6 +441,12 @@ class TestThermalManager:
             "costGeneration": None,
             "efficiency": None,
             "variableOMCost": None,
+            # These values are None as they are defined in v10.3+
+            "rampingEnabled": None,
+            "maxUpwardPowerRampingRate": None,
+            "maxDownwardPowerRampingRate": None,
+            "powerIncreaseCost": None,
+            "powerDecreaseCost": None,
         }
         assert actual == expected
 

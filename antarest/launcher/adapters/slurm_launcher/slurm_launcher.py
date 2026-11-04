@@ -631,7 +631,7 @@ class SlurmLauncher(AbstractLauncher, SlurmLoad):
         return log_path.read_text() if log_path else None
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
-        async def _listen_to_kill_job(event: Event) -> None:
+        async def _listen_to_kill_job(event: Event) -> None:  # NOSONAR: the event bus requires async listeners
             self.kill_job(event.payload, dispatch=False)
 
         return _listen_to_kill_job

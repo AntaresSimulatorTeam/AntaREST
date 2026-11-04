@@ -27,12 +27,12 @@ def init_db(db_engine: Engine) -> None:
 
 
 @pytest.fixture
-def study_repo(init_db) -> StudyMetadataRepository:
+def study_repo(init_db: None) -> StudyMetadataRepository:
     return StudyMetadataRepository()
 
 
 @pytest.fixture
-def output_repo(init_db) -> OutputV2Repository:
+def output_repo(init_db: None) -> OutputV2Repository:
     return OutputV2Repository()
 
 
@@ -117,7 +117,9 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputV2Reposito
         assert output_2.nb_years == 12
 
         # get only one output
-        output_2 = output_repo.get_output_metadata(study_id="study_id_1", output_name="output_2")
+        retrieved_output_2 = output_repo.get_output_metadata(study_id="study_id_1", output_name="output_2")
+        assert retrieved_output_2 is not None
+        output_2 = retrieved_output_2
         assert output_2.output_name == "output_2"
 
         # get one output which does not exist
@@ -137,7 +139,9 @@ def test_repo(study_repo: StudyMetadataRepository, output_repo: OutputV2Reposito
         ]
 
         # Update one output (archive status)
-        output_1 = output_repo.get_output_metadata(study_id="study_id_1", output_name="output_1")
+        retrieved_output_1 = output_repo.get_output_metadata(study_id="study_id_1", output_name="output_1")
+        assert retrieved_output_1 is not None
+        output_1 = retrieved_output_1
         output_1.archived = True
         output_repo.save_output_metadata(output_1)
         assert len(list(output_repo.search_output_metadata(archived=True))) == 2

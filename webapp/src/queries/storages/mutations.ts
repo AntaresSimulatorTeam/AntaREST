@@ -13,44 +13,103 @@
  */
 
 import {
+  createStorage,
   createStorageConstraint,
   deleteStorageConstraint,
+  deleteStorages,
+  duplicateStorage,
+  updateStorage,
   updateStorageConstraint,
 } from "@/services/api/studies/areas/storages";
-import type { StorageParams } from "@/services/api/studies/areas/storages/types";
-import type { AreaWithId, StudyMetadata } from "@/types/types";
+import type {
+  CreateStorageConstraintParams,
+  CreateStorageParams,
+  DeleteStorageConstraintParams,
+  DeleteStoragesParams,
+  DuplicateStorageParams,
+  Storage,
+  StorageParams,
+  UpdateStorageConstraintParams,
+  UpdateStorageParams,
+} from "@/services/api/studies/areas/storages/types";
+import type { Study } from "@/services/api/studies/types";
+import type { AreaWithId } from "@/types/types";
 import { mutationOptions } from "@tanstack/react-query";
 import { storageKeys } from "./keys";
 
 export const storageMutations = {
+  create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+    return mutationOptions({
+      mutationKey: storageKeys.create(studyId, areaId),
+      mutationFn: (params: Omit<CreateStorageParams, "studyId" | "areaId">) => {
+        return createStorage({ ...params, studyId, areaId });
+      },
+    });
+  },
+  update: (studyId: Study["id"], areaId: AreaWithId["id"], storageId: Storage["id"]) => {
+    return mutationOptions({
+      mutationKey: storageKeys.update(studyId, areaId, storageId),
+      mutationFn: (params: Omit<UpdateStorageParams, "studyId" | "areaId" | "storageId">) => {
+        return updateStorage({ ...params, studyId, areaId, storageId });
+      },
+    });
+  },
+  duplicate: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+    return mutationOptions({
+      mutationKey: storageKeys.duplicate(studyId, areaId),
+      mutationFn: (params: Omit<DuplicateStorageParams, "studyId" | "areaId">) => {
+        return duplicateStorage({ ...params, studyId, areaId });
+      },
+    });
+  },
+  delete: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+    return mutationOptions({
+      mutationKey: storageKeys.delete(studyId, areaId),
+      mutationFn: (params: Omit<DeleteStoragesParams, "studyId" | "areaId">) => {
+        return deleteStorages({ ...params, studyId, areaId });
+      },
+    });
+  },
   createConstraint: (
-    studyId: StudyMetadata["id"],
+    studyId: Study["id"],
     areaId: AreaWithId["id"],
     storageId: StorageParams["storageId"],
   ) => {
     return mutationOptions({
       mutationKey: storageKeys.createConstraint(studyId, areaId, storageId),
-      mutationFn: createStorageConstraint,
+      mutationFn: (
+        params: Omit<CreateStorageConstraintParams, "studyId" | "areaId" | "storageId">,
+      ) => {
+        return createStorageConstraint({ ...params, studyId, areaId, storageId });
+      },
     });
   },
   updateConstraint: (
-    studyId: StudyMetadata["id"],
+    studyId: Study["id"],
     areaId: AreaWithId["id"],
     storageId: StorageParams["storageId"],
   ) => {
     return mutationOptions({
       mutationKey: storageKeys.updateConstraint(studyId, areaId, storageId),
-      mutationFn: updateStorageConstraint,
+      mutationFn: (
+        params: Omit<UpdateStorageConstraintParams, "studyId" | "areaId" | "storageId">,
+      ) => {
+        return updateStorageConstraint({ ...params, studyId, areaId, storageId });
+      },
     });
   },
   deleteConstraint: (
-    studyId: StudyMetadata["id"],
+    studyId: Study["id"],
     areaId: AreaWithId["id"],
     storageId: StorageParams["storageId"],
   ) => {
     return mutationOptions({
       mutationKey: storageKeys.deleteConstraint(studyId, areaId, storageId),
-      mutationFn: deleteStorageConstraint,
+      mutationFn: (
+        params: Omit<DeleteStorageConstraintParams, "studyId" | "areaId" | "storageId">,
+      ) => {
+        return deleteStorageConstraint({ ...params, studyId, areaId, storageId });
+      },
     });
   },
 };

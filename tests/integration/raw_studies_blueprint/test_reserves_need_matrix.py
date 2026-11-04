@@ -10,7 +10,10 @@
 #
 # This file is part of the Antares project.
 
+import io
+
 import numpy as np
+import pandas as pd
 import pytest
 from starlette.testclient import TestClient
 
@@ -18,25 +21,25 @@ from tests.integration.prepare_proxy import PreparerProxy
 
 
 class TestReserveNeedMatrix:
-    @pytest.mark.xfail(
-        reason="Reserve-need matrices require study version 10.2+, which is not yet a supported version."
-    )
-    def test_crud_on_reserve_need_matrix_via_raw(self, client: TestClient, user_access_token: str) -> None:
+    @pytest.mark.parametrize("storage_mode", ["filesystem", "database"])
+    def test_crud_on_reserve_need_matrix_via_raw(
+        self, client: TestClient, user_access_token: str, storage_mode: str
+    ) -> None:
         preparer = PreparerProxy(client, user_access_token)
 
-        study_id = preparer.create_study("reserve-need-test", version=1020, storage_mode="database")
+        study_id = preparer.create_study("reserve-need-test", version=1020, storage_mode=storage_mode)
 
         preparer.create_area(study_id, name="fr")
 
         res = client.post(
             f"/v1/studies/{study_id}/areas/fr/reserves",
-            json={"id": "R1", "type": "up"},
+            json={"name": "R1", "type": "up"},
             headers=preparer.headers,
         )
         assert res.status_code == 200, res.json()
         reserve = res.json()
         reserve_id = reserve["id"]
-        assert reserve_id == "R1"
+        assert reserve_id == "r1"
         assert reserve["type"] == "up"
 
         matrix_path = f"input/reserves/fr/{reserve_id}"
@@ -74,6 +77,18 @@ class TestReserveNeedMatrix:
         data = np.asarray(body["data"], dtype=float)
         assert data.shape == (8760, 1)
         np.testing.assert_allclose(data, np.asarray(custom_values))
+
+        # Download with the default headers: reserve needs have one time-series column.
+        res = client.get(
+            f"/v1/studies/{study_id}/raw/download",
+            params={"path": matrix_path},
+            headers=preparer.headers,
+        )
+        assert res.status_code == 200, res.text
+        downloaded = pd.read_csv(io.BytesIO(res.content), index_col=0)
+        assert list(downloaded.columns) == ["TS-1"]
+        assert downloaded.shape == (8760, 1)
+        np.testing.assert_allclose(downloaded.to_numpy(), np.asarray(custom_values))
 
         res = client.request(
             "DELETE",

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import IO
 from zipfile import ZipFile
 
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
+from antarest.study.business.model.config.general_model import Mode
 
 PARAMETERS_TEMPLATE = """
 [general]

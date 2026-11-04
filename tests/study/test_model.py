@@ -40,7 +40,9 @@ class TestStudy:
             db_session.commit()
 
         with db_session:
-            study = db_session.query(Study).first()
+            retrieved_study = db_session.query(Study).first()
+            assert retrieved_study is not None
+            study = retrieved_study
             assert study.id == str(study_id)
             assert study.name == "Study 1"
 
@@ -139,6 +141,7 @@ class TestStudy:
 
             # verify updating works
             study = db_session.get(Study, study_id_1)
+            assert study is not None
             study.tags = [Tag(label="test-tag-2"), Tag(label="test-tag-3")]
             db_session.merge(study)
             db_session.commit()
@@ -159,7 +162,9 @@ class TestStudy:
             db_session.commit()
 
         with db_session:
-            study = db_session.query(Study).first()
+            retrieved_study = db_session.query(Study).first()
+            assert retrieved_study is not None
+            study = retrieved_study
             assert study.storage_mode == "filesystem"
 
     def test_storage_mode_can_be_database(self, db_session: Session) -> None:
@@ -177,5 +182,7 @@ class TestStudy:
             db_session.commit()
 
         with db_session:
-            study = db_session.query(Study).first()
+            retrieved_study = db_session.query(Study).first()
+            assert retrieved_study is not None
+            study = retrieved_study
             assert study.storage_mode == "database"

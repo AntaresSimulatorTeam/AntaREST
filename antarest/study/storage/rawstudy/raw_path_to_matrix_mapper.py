@@ -61,6 +61,8 @@ class RawPathToMatrixMapper:
     """
 
     def __init__(self, dao: StudyDao) -> None:
+        study_version = dao.get_version()
+
         def _save_thermal_prepro(area_id: str, thermal_id: str, series_id: str) -> None:
             dao.save_thermal_prepro({area_id: {thermal_id: series_id}})
 
@@ -144,6 +146,15 @@ class RawPathToMatrixMapper:
 
         def _save_hydro_max_daily_pump_energy(area_id: str, series_id: str) -> None:
             dao.save_hydro_max_daily_pump_energy({area_id: series_id})
+
+        def _save_hydro_max_daily_reservoir_levels(area_id: str, series_id: str) -> None:
+            dao.save_hydro_max_daily_reservoir_levels({area_id: series_id})
+
+        def _save_hydro_min_daily_reservoir_levels(area_id: str, series_id: str) -> None:
+            dao.save_hydro_min_daily_reservoir_levels({area_id: series_id})
+
+        def _save_hydro_avg_daily_reservoir_levels(area_id: str, series_id: str) -> None:
+            dao.save_hydro_avg_daily_reservoir_levels({area_id: series_id})
 
         def _save_constraint_values_matrix(constraint_id: str, series_id: str) -> None:
             dao.save_constraint_values_matrix({ConstraintId(constraint_id): series_id})
@@ -246,7 +257,11 @@ class RawPathToMatrixMapper:
                 frequency=_get_hourly_frequency,
             ),
             RegexMatcher(
-                pattern=re.compile(r"input/reserves/(?P<area_id>[^/]+)"),
+                pattern=re.compile(
+                    r"input/reserves/(?P<area_id>[^/]+)\.txt"
+                    if study_version >= STUDY_VERSION_10_2
+                    else r"input/reserves/(?P<area_id>[^/]+)"
+                ),
                 getter=dao.get_reserves,
                 setter=_save_reserves,
                 frequency=_get_hourly_frequency,
@@ -416,6 +431,24 @@ class RawPathToMatrixMapper:
                 frequency=_get_hourly_frequency,
             ),
             RegexMatcher(
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/maxDailyReservoirLevels"),
+                getter=dao.get_hydro_max_daily_reservoir_levels,
+                setter=_save_hydro_max_daily_reservoir_levels,
+                frequency=_get_daily_frequency,
+            ),
+            RegexMatcher(
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/minDailyReservoirLevels"),
+                getter=dao.get_hydro_min_daily_reservoir_levels,
+                setter=_save_hydro_min_daily_reservoir_levels,
+                frequency=_get_daily_frequency,
+            ),
+            RegexMatcher(
+                pattern=re.compile(r"input/hydro/series/(?P<area_id>[^/]+)/avgDailyReservoirLevels"),
+                getter=dao.get_hydro_avg_daily_reservoir_levels,
+                setter=_save_hydro_avg_daily_reservoir_levels,
+                frequency=_get_daily_frequency,
+            ),
+            RegexMatcher(
                 pattern=re.compile(r"input/hydro/common/capacity/creditmodulations_(?P<area_id>[^/]+)"),
                 getter=dao.get_hydro_credit_modulations,
                 setter=_save_hydro_credit_modulations,
@@ -455,7 +488,6 @@ class RawPathToMatrixMapper:
             ),
         ]
         # Handle version specific patterns
-        study_version = dao.get_version()
         if study_version < STUDY_VERSION_8_2:
             self._path_matchers.append(
                 RegexMatcher(

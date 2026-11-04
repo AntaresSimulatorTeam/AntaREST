@@ -12,15 +12,22 @@
  * This file is part of the Antares project.
  */
 
-import { getStorageConstraints } from "@/services/api/studies/areas/storages";
+import { getStorageConstraints, getStorages } from "@/services/api/studies/areas/storages";
 import type { StorageParams } from "@/services/api/studies/areas/storages/types";
-import type { AreaWithId, StudyMetadata } from "@/types/types";
+import type { Study } from "@/services/api/studies/types";
+import type { AreaWithId } from "@/types/types";
 import { queryListOptions } from "../utils";
 import { storageKeys } from "./keys";
 
 export const storageQueries = {
+  list: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
+    return queryListOptions({
+      queryKey: storageKeys.list(studyId, areaId),
+      queryFn: () => getStorages({ studyId, areaId }),
+    });
+  },
   constraintList: (
-    studyId: StudyMetadata["id"],
+    studyId: Study["id"],
     areaId: AreaWithId["id"],
     storageId: StorageParams["storageId"],
   ) => {

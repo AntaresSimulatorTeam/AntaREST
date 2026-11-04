@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import logging
+import shutil
 import textwrap
 import typing as t
 from collections.abc import Iterable, Mapping
@@ -19,8 +20,11 @@ from typing import Any
 from zipfile import ZipFile
 
 import pytest
+from antares.study.version import StudyVersion
 
+from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde.ini_writer import write_ini_file
+from antarest.output.model.output_type import OutputType
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
     BindingConstraintFrequency,
@@ -29,6 +33,7 @@ from antarest.study.business.model.binding_constraint_model import (
     LinkTerm,
 )
 from antarest.study.business.model.common import FilterOption
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
@@ -39,8 +44,17 @@ from antarest.study.business.model.sts_model import (
     STStorageAdditionalConstraint,
     STStorageGroup,
 )
-from antarest.study.business.model.thermal_cluster_model import ThermalCluster, ThermalCostGeneration
-from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
+from antarest.study.business.model.thermal_cluster_model import (
+    ThermalCluster,
+    ThermalClusterGroup,
+    ThermalCostGeneration,
+)
+from antarest.study.model import (
+    STUDY_VERSION_8_8,
+    STUDY_VERSION_9_2,
+    STUDY_VERSION_10_2,
+    STUDY_VERSION_10_3,
+)
 from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     _parse_bindings,
     _parse_links_filtering,
@@ -53,13 +67,18 @@ from antarest.study.storage.rawstudy.model.filesystem.config.files import (
     parse_area,
     parse_outputs,
     parse_simulation,
+    parse_simulation_zip,
 )
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     AreaConfig,
+    BindingConstraintConfig,
     FileStudyTreeConfig,
     LinkConfig,
-    Mode,
     Simulation,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    parse_thermal_cluster,
+    serialize_thermal_cluster,
 )
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from tests.storage.business.assets import ASSETS_DIR
@@ -99,7 +118,7 @@ def test_parse_output_parameters(study_path: Path) -> None:
     config = FileStudyTreeConfig(
         study_path=study_path,
         path=study_path,
-        version=0,
+        version=StudyVersion.parse("0"),
         store_new_set=True,
         study_id="id",
         output_path=study_path / "output",
@@ -181,7 +200,7 @@ def test_parse_outputs(study_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         study_id="id",
-        version=0,
+        version=StudyVersion.parse("0"),
         output_path=study_path / "output",
         outputs={
             "20201220-1456eco-hello": Simulation(
@@ -194,6 +213,7 @@ def test_parse_outputs(study_path: Path) -> None:
                 error=False,
                 playlist=[1],
                 xpansion="",
+                output_type=OutputType.LEGACY,
             )
         },
     )
@@ -217,6 +237,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="",
+                    output_type=OutputType.LEGACY,
                 ),
                 "20230203-1530eco": Simulation(
                     name="",
@@ -229,6 +250,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="1.0.2",
+                    output_type=OutputType.LEGACY,
                 ),
                 "20230203-1531eco": Simulation(
                     name="",
@@ -241,6 +263,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=True,
                     xpansion="",
+                    output_type=OutputType.LEGACY,
                 ),
                 "20230203-1600eco": Simulation(
                     name="",
@@ -253,6 +276,7 @@ def test_parse_outputs(study_path: Path) -> None:
                     playlist=[],
                     archived=False,
                     xpansion="",
+                    output_type=OutputType.LEGACY,
                 ),
             },
         ),
@@ -329,7 +353,7 @@ def test_parse_area(study_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         study_id="id",
-        version=0,
+        version=StudyVersion.parse("0"),
         output_path=study_path / "output",
         areas={
             "fr": AreaConfig(
@@ -366,7 +390,7 @@ def test_parse_area__extra_area(study_path: Path) -> None:
         study_path=study_path,
         path=study_path,
         study_id="id",
-        version=0,
+        version=StudyVersion.parse("0"),
         output_path=study_path / "output",
         areas={
             "fr": AreaConfig(
@@ -883,8 +907,28 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     _set_up_output(study_path, output_id)
 
     output = study_path / "output" / output_id
-    for file in ["file_1.txt", "file_2.txt", "file_3.mps", "checkIntegrity.txt"]:
+    for file in [
+        "file_1.txt",
+        "file_2.txt",
+        "file_3.mps",
+        "checkIntegrity.txt",
+        # Other extensions that we should support
+        "file_4.ini",
+        "file_5.yml",
+        "file_6.yaml",
+        "file_7.csv",
+        "file_8.log",
+    ]:
         (output / file).touch()
+
+    # Create a `gems_views` folder to ensure we see it in the output tree
+    gems_folder = output / "gems-views"
+    gems_folder.mkdir()
+    for file in ["view.parquet", "view_config.yml"]:
+        (gems_folder / file).touch()
+
+    # Also create an `economy` folder to ensure we see it
+    (output / "economy").mkdir()
 
     simulation = parse_simulation(output, output_id)
 
@@ -903,8 +947,76 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     assert "file_2" in output_tree[output_id]
     assert "checkIntegrity" in output_tree[output_id]
     assert "file_3" not in output_tree[output_id]
+    assert "file_4" in output_tree[output_id]
+    assert "file_5" in output_tree[output_id]
+    assert "file_6" in output_tree[output_id]
+    assert "file_7" in output_tree[output_id]
+    assert "file_8" in output_tree[output_id]
     # Asserts the `economy` folder is scanned
     assert "economy" in output_tree[output_id]
+    assert "adequacy" not in output_tree[output_id]
+    # Asserts the GEMS folder is scanned
+    assert "gems-views" in output_tree[output_id]
+    assert "view" in output_tree[output_id]["gems-views"]
+    assert "view_config" in output_tree[output_id]["gems-views"]
+
+
+def test_parse_simulation_error_parameter(empty_study_880: FileStudy) -> None:
+    output_id = "20250521-1009eco-fake_output"
+    study_path = empty_study_880.config.path
+    _set_up_output(study_path, output_id)
+
+    output_path = study_path / "output" / output_id
+
+    # 1st case: no `checkIntegrity.txt`, no `execution_info.ini` -> Simulation in error
+    simulation = parse_simulation(output_path, output_id)
+    assert simulation.error is True
+
+    # 2nd case: add a `checkIntegrity.txt` file -> Simulation succeeded
+    (output_path / "checkIntegrity.txt").touch()
+    simulation = parse_simulation(output_path, output_id)
+    assert not simulation.error
+
+    # 3rd case: Only a `execution_info.ini` file -> Simulation succeeded
+    (output_path / "checkIntegrity.txt").unlink()
+    (output_path / "execution_info.ini").touch()
+    simulation = parse_simulation(output_path, output_id)
+    assert not simulation.error
+
+
+def test_parse_simulation_output_type(empty_study_880: FileStudy) -> None:
+    output_id = "20250521-1009eco-fake_output"
+    study_path = empty_study_880.config.path
+    _set_up_output(study_path, output_id)
+
+    output_folder = study_path / "output"
+    output_path = output_folder / output_id
+
+    # Creates ZIP to test it too
+    zipped_id = "20250522-1009eco"
+    shutil.make_archive(str(output_folder / zipped_id), "zip", root_dir=output_folder / output_id)
+    output_archived_path = output_folder / f"{zipped_id}.zip"
+
+    # 1st case: No `gems-views` folder -> Should be seen as Legacy
+    simulation = parse_simulation(output_path, output_id)
+    assert simulation.output_type == OutputType.LEGACY
+
+    simulation = parse_simulation_zip(output_archived_path)
+    assert simulation.output_type == OutputType.LEGACY
+
+    # 2nd case: The folder exists -> Should be seen as GemsViews
+    (output_path / "gems-views").mkdir()
+    simulation = parse_simulation(output_path, output_id)
+    assert simulation.output_type == OutputType.GEMS_VIEWS
+
+    # Recreates ZIP to test it too
+    output_archived_path.unlink()
+    zipped_id = "20250522-1009eco"
+    shutil.make_archive(str(output_folder / zipped_id), "zip", root_dir=output_folder / output_id)
+    output_archived_path = output_folder / f"{zipped_id}.zip"
+
+    simulation = parse_simulation_zip(output_archived_path)
+    assert simulation.output_type == OutputType.GEMS_VIEWS
 
 
 def test_parse_xpansion_simulation(empty_study_880: FileStudy) -> None:
@@ -988,7 +1100,7 @@ def test_config_to_study_index_8_8() -> None:
                 st_storages_additional_constraints={},
             ),
         },
-        bindings=[BindingConstraint(name="Constraint", group="BCGroup")],
+        bindings=[BindingConstraintConfig.from_constraint(BindingConstraint(name="Constraint", group="BCGroup"))],
     )
 
     index = config.to_study_index()
@@ -1016,7 +1128,9 @@ def test_config_to_study_index_9_2_additional_constraints() -> None:
                 filters_synthesis=[],
                 filters_year=[],
                 st_storages=[STStorage(name="Battery")],
-                st_storages_additional_constraints={"battery": [STStorageAdditionalConstraint(name="STSConstraint")]},
+                st_storages_additional_constraints={
+                    "battery": [STStorageAdditionalConstraint.model_validate({"name": "STSConstraint"})]
+                },
             ),
         },
     )
@@ -1032,3 +1146,46 @@ def test_config_to_study_index_9_2_additional_constraints() -> None:
     assert list(index.sts_constraint_ids) == ["be"]
     assert list(index.sts_constraint_ids["be"]) == ["battery"]
     assert list(index.sts_constraint_ids["be"]["battery"]) == ["stsconstraint"]
+
+
+def test_ramp_fields_round_trip_at_10_3() -> None:
+    """Ramping parameters use the solver's INI key names and round trip through parse/serialize."""
+    ini_data = {
+        "name": "test",
+        "group": ThermalClusterGroup.GAS,
+        "ramping-enabled": True,
+        "max-upward-power-ramping-rate": 10.5,
+        "power-increase-cost": 1.0,
+        "power-decrease-cost": 2.0,
+    }
+
+    cluster = parse_thermal_cluster(study_version=STUDY_VERSION_10_3, data=ini_data)
+    assert cluster.ramping_enabled is True
+    assert cluster.max_upward_power_ramping_rate == 10.5
+    assert cluster.max_downward_power_ramping_rate == 0.0
+    assert cluster.power_increase_cost == 1.0
+    assert cluster.power_decrease_cost == 2.0
+
+    serialized = serialize_thermal_cluster(STUDY_VERSION_10_3, cluster)
+    assert serialized["ramping-enabled"] is True
+    assert serialized["max-upward-power-ramping-rate"] == 10.5
+    assert serialized["power-increase-cost"] == 1.0
+    assert serialized["power-decrease-cost"] == 2.0
+    assert serialized["max-downward-power-ramping-rate"] == 0.0
+
+
+@pytest.mark.parametrize(
+    "ini_key",
+    [
+        "ramping-enabled",
+        "max-upward-power-ramping-rate",
+        "max-downward-power-ramping-rate",
+        "power-increase-cost",
+        "power-decrease-cost",
+    ],
+)
+@pytest.mark.parametrize("version", [STUDY_VERSION_10_2])
+def test_ramp_fields_are_rejected_below_10_3(ini_key: str, version: StudyVersion) -> None:
+    value = True if ini_key == "ramping-enabled" else 1.0
+    with pytest.raises(InvalidFieldForVersionError, match="is not a valid field for study version"):
+        parse_thermal_cluster(study_version=version, data={"name": "test", ini_key: value})

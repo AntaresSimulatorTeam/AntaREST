@@ -52,6 +52,7 @@ class PreparerProxy(Proxy):
         res = self.client.post(f"/v1/studies/{study_id}/areas/de/clusters/thermal", json={"name": "01_solar"})
         res.raise_for_status()
 
+        assert isinstance(study_id, str)
         return study_id
 
     def upload_matrix(self, study_id: str, matrix_path: str, df: pd.DataFrame) -> None:
@@ -66,6 +67,7 @@ class PreparerProxy(Proxy):
         res = self.client.post(f"/v1/studies/{parent_id}/variants", params={"name": name})
         res.raise_for_status()
         variant_id = res.json()
+        assert isinstance(variant_id, str)
         return variant_id
 
     def generate_snapshot(self, variant_id: str) -> None:
@@ -84,6 +86,7 @@ class PreparerProxy(Proxy):
         )
         res.raise_for_status()
         area_id = res.json()["id"]
+        assert isinstance(area_id, str)
         return area_id
 
     def update_general_data(self, study_id: str, **data: Any) -> None:
@@ -227,7 +230,7 @@ class TestDownloadMatrices:
         content = io.BytesIO(res.content)
         dataframe = pd.read_csv(content, index_col=0, sep="\t")
         assert dataframe.index[0] == "2018-01-01 00:00:00"
-        dataframe.index = range(len(dataframe))
+        dataframe.index = pd.RangeIndex(len(dataframe))
         transposed_matrix = list(zip(*[8760 * [1.0], 8760 * [1.0], 8760 * [1.0], 8760 * [0.0]]))
         expected_df = pd.DataFrame(
             columns=["Marginal cost modulation", "Market bid modulation", "Capacity modulation", "Min gen modulation"],

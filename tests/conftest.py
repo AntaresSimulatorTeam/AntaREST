@@ -281,7 +281,7 @@ def fs_dao(
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_builder(
-    request,
+    request: pytest.FixtureRequest,
     db_session: Session,
     matrix_service: ISimpleMatrixService,
     command_context: "CommandContext",

@@ -43,19 +43,18 @@ from tests.conftest_instances import create_admin_user
 
 def dirhash(dirname: str | Path, hashfunc: str = "md5") -> str:
     """Compute a single hash for all files in a directory tree (replacement for checksumdir.dirhash)."""
-    hash_constructor = getattr(hashlib, hashfunc)
     hashvalues = []
     for root, dirs, files in os.walk(str(dirname)):
         dirs.sort()
         files.sort()
         for fname in files:
-            hasher = hash_constructor()
+            hasher = hashlib.new(hashfunc)
             filepath = os.path.join(root, fname)
             with open(filepath, "rb") as fp:
                 for chunk in iter(lambda: fp.read(65536), b""):
                     hasher.update(chunk)
             hashvalues.append(hasher.hexdigest())
-    hasher = hash_constructor()
+    hasher = hashlib.new(hashfunc)
     for h in sorted(hashvalues):
         hasher.update(h.encode("utf-8"))
     return hasher.hexdigest()
@@ -129,6 +128,7 @@ def assert_study(a: SUB_JSON, b: SUB_JSON) -> None:
     elif isinstance(a, list) and isinstance(b, np.ndarray):
         _assert_list(a, cast(list[float], b.tolist()))
     elif isinstance(a, float) and math.isnan(a):
+        assert isinstance(b, float)
         assert math.isnan(b)
     else:
         _assert_others(a, b)

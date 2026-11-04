@@ -72,7 +72,7 @@ def test_lifecycle() -> None:
 
     queue_name = "some work job"
     event_bus.add_queue_consumer(append_to_bucket(test_bucket), queue_name)
-    event_bus.add_queue_consumer(lambda event: test_bucket.append(event), queue_name)
+    event_bus.add_queue_consumer(append_to_bucket(test_bucket), queue_name)
     event_bus.queue(
         Event(
             type=EventType.WORKER_TASK,

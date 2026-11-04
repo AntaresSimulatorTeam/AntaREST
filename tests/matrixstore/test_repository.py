@@ -212,7 +212,7 @@ def matrix_repository(
 
 class TestMatrixContentRepository:
     @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
-    def test_save(self, tmp_path: str, matrix_format: str) -> None:
+    def test_save(self, tmp_path: Path, matrix_format: str) -> None:
         """
         Saves the content of a matrix as a file in the directory and returns its SHA256 hash.
         """
@@ -275,7 +275,7 @@ class TestMatrixContentRepository:
                     matrix_content_repo.delete(results[0].hash)
 
     @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
-    def test_get_exists_and_delete(self, tmp_path: str, matrix_format: str) -> None:
+    def test_get_exists_and_delete(self, tmp_path: Path, matrix_format: str) -> None:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
         """
@@ -308,7 +308,7 @@ class TestMatrixContentRepository:
                 matrix_content_repo.delete(missing_hash)
 
     @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
-    def test_mixed_formats(self, tmp_path: str, matrix_format: str) -> None:
+    def test_mixed_formats(self, tmp_path: Path, matrix_format: str) -> None:
         """
         Tests that mixed formats are well handled.
         """

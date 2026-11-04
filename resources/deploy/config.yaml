@@ -9,6 +9,9 @@ db:
   url: "sqlite:///database.db"
 
 storage:
+  study:
+    storage:
+      database_mode_enabled: True
   tmp_dir: ./tmp
   matrixstore: ./matrices
   archive_dir: ./examples/archives

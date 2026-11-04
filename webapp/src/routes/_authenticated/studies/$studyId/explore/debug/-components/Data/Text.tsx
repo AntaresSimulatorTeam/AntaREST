@@ -122,7 +122,7 @@ function Text({ studyId, filePath, filename, fileType, canEdit }: DataCompProps)
             <DownloadButton onClick={handleDownload} />
           </Menubar>
           {isEmptyContent(text) ? (
-            <EmptyView icon={GridOffIcon} title={t("study.outputs.noData")} />
+            <EmptyView icon={GridOffIcon} title={t("global.noData")} />
           ) : (
             <SyntaxHighlighter
               style={atomOneDark}

@@ -20,7 +20,7 @@ GEMS_LIBRARY_METADATA_TABLE = Table(
     "gems_library_metadata",
     metadata,
     study_data_id_col(),
-    Column("id", String(255), nullable=False),
+    Column("id", String(255), primary_key=True),
     Column("description", String(), nullable=True),
     Column("version", String(36), nullable=True),
     ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
@@ -31,11 +31,16 @@ GEMS_PORT_TYPES_TABLE = Table(
     metadata,
     study_data_id_col(),
     Column("id", String(255), primary_key=True),
+    Column("library_id", String(255), primary_key=True),
     Column("description", String(), nullable=True),
     Column("fields", String(), nullable=False),
     Column("area_connection", String(), nullable=True),
     Column("thermal_capacity_connection", String(), nullable=True),
-    ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(
+        ["study_data_id", "library_id"],
+        ["gems_library_metadata.study_data_id", "gems_library_metadata.id"],
+        ondelete="CASCADE",
+    ),
 )
 
 GEMS_MODELS_TABLE = Table(
@@ -43,6 +48,7 @@ GEMS_MODELS_TABLE = Table(
     metadata,
     study_data_id_col(),
     Column("id", String(255), primary_key=True),
+    Column("library_id", String(255), primary_key=True),
     Column("description", String(), nullable=True),
     Column("taxonomy_category", String(), nullable=True),
     Column("properties", String(), nullable=True),
@@ -52,7 +58,11 @@ GEMS_MODELS_TABLE = Table(
     Column("objective_contributions", String(), nullable=False),
     Column("extra_outputs", String(), nullable=False),
     Column("port_field_definitions", String(), nullable=False),
-    ForeignKeyConstraint(["study_data_id"], ["gems_library_metadata.study_data_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(
+        ["study_data_id", "library_id"],
+        ["gems_library_metadata.study_data_id", "gems_library_metadata.id"],
+        ondelete="CASCADE",
+    ),
     ForeignKeyConstraint(
         ["study_data_id", "taxonomy_category"],
         ["gems_taxonomy_categories.study_data_id", "gems_taxonomy_categories.id"],
@@ -64,12 +74,13 @@ GEMS_MODELS_PORTS_TABLE = Table(
     "gems_models_ports",
     metadata,
     study_data_id_col(),
+    Column("library_id", String(255), primary_key=True),
     Column("model_id", String(255), primary_key=True),
     Column("port_id", String(255), primary_key=True),
     Column("type", String(), nullable=False),
     ForeignKeyConstraint(
-        ["study_data_id", "model_id"],
-        ["gems_models.study_data_id", "gems_models.id"],
+        ["study_data_id", "model_id", "library_id"],
+        ["gems_models.study_data_id", "gems_models.id", "gems_models.library_id"],
         ondelete="CASCADE",
     ),
 )
@@ -78,13 +89,14 @@ GEMS_MODELS_PARAMETERS_TABLE = Table(
     "gems_models_parameters",
     metadata,
     study_data_id_col(),
+    Column("library_id", String(255), primary_key=True),
     Column("model_id", String(255), primary_key=True),
     Column("parameter_id", String(255), primary_key=True),
     Column("time_dependent", Boolean(), nullable=False),
     Column("scenario_dependent", Boolean(), nullable=False),
     ForeignKeyConstraint(
-        ["study_data_id", "model_id"],
-        ["gems_models.study_data_id", "gems_models.id"],
+        ["study_data_id", "model_id", "library_id"],
+        ["gems_models.study_data_id", "gems_models.id", "gems_models.library_id"],
         ondelete="CASCADE",
     ),
 )

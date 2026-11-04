@@ -32,25 +32,21 @@ library:
       ports:
         - id: balance_port
           type: flow
-      port-field-definitions:
-        - port: balance_port
-          field: flow
-          definition: -max_load + curtailment
 
 
     - id: electrolyser
       parameters:
-      - id: efficiency
-        scenario-dependent: false
-        time-dependent: false
-      - id: p_max
-        scenario-dependent: true
-        time-dependent: true
+        - id: efficiency
+          scenario-dependent: false
+          time-dependent: false
+        - id: p_max
+          scenario-dependent: true
+          time-dependent: true
       variables:
-      - id: power
-        lower-bound: 0
-        upper-bound: p_max
-        variable-type: continuous
+        - id: power
+          lower-bound: 0
+          upper-bound: p_max
+          variable-type: continuous
       ports:
         - id: hydrogen_port
           type: flow

@@ -21,6 +21,7 @@ from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_st_storage import CreateSTStorage
+from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.update_st_storages import UpdateSTStorages
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.helpers import build_dao_from_file_study, dirhash
@@ -120,7 +121,10 @@ class TestUpdateShortTermSorage:
             write_ini_file(de_ini, expected_de_content)
 
             # Update several properties
-            new_properties = {"fr": {"storage_1": {"efficiency": 0.3}}, "DE": {"Storage_3": {"initial_level": 0.1}}}
+            new_properties: dict[str, dict[str, dict[str, float | bool | str]]] = {
+                "fr": {"storage_1": {"efficiency": 0.3}},
+                "DE": {"Storage_3": {"initial_level": 0.1}},
+            }
             if study_version >= STUDY_VERSION_9_2:
                 new_properties["fr"]["storage_1"]["efficiency_withdrawal"] = 0.8
                 new_properties["DE"]["Storage_3"]["penalize_variation_injection"] = True
@@ -168,7 +172,7 @@ class TestUpdateShortTermSorage:
         study_version = study.config.version
 
         # Create a short-term storage
-        cmd = CreateSTStorage(
+        cmd: ICommand = CreateSTStorage(
             command_context=command_context,
             area_id="fr",
             parameters=STStorageCreation(**{"name": "sts_1"}),

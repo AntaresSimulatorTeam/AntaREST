@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-
+import uuid
+from unittest.mock import Mock
 
 import polars as pl
 import pytest
@@ -26,6 +27,8 @@ from antarest.core.exceptions import (
     XpansionConfigurationDoesNotExist,
     XpansionFileNotFoundError,
 )
+from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
+from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.xpansion_model import (
     XpansionAdequacyCriterion,
@@ -38,6 +41,7 @@ from antarest.study.business.model.xpansion_model import (
 )
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.database.database_study_factory_dao import DatabaseStudyDaoFactory
 from antarest.study.dao.database.models.xpansion import (
     XPANSION_ADEQUACY_CRITERION_TABLE,
     XPANSION_ADEQUACY_PATTERN_TABLE,
@@ -49,6 +53,11 @@ from antarest.study.dao.database.models.xpansion import (
     XPANSION_WEIGHT_TABLE,
 )
 from antarest.study.dao.database.study_data_queries import belongs_to_study
+from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
+from antarest.study.dao.study_conversion.study_converter import StudyConverter
+from antarest.study.model import StorageMode, StudyMetadataCreation
+from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
+from tests.helpers import create_study
 from tests.study.dao.utils import save_area
 
 
@@ -681,3 +690,34 @@ class TestXpansionResources:
             dao.checks_xpansion_resource_can_be_deleted(XpansionResourceFileType.CAPACITIES, "used_capa.txt")
 
         dao.checks_xpansion_resource_can_be_deleted(XpansionResourceFileType.CAPACITIES, "other.txt")  # no raise
+
+
+def test_conversion_with_projections(fs_dao: FileStudyTreeDao, db_session: Session) -> None:
+    # Initialize a FS study with 1 candidate and a projection relative to it
+    fs_dao.create_xpansion_configuration()
+    fs_dao.save_areas_with_properties({"at": AreaProperties(), "be": AreaProperties()})
+    fs_dao.save_links([Link(area1="at", area2="be")])
+    fs_dao.save_xpansion_candidate(XpansionCandidate(name="cdt1", link="at - be", annual_cost_per_mw=100))
+    fs_dao.save_xpansion_settings(XpansionSettings(sensitivity_config=XpansionSensitivitySettings(projection=["cdt1"])))
+
+    # Create a DB Dao
+    study_id = str(uuid.uuid4())
+    with db_session:
+        study = create_study(id=study_id, name="No data", version=str(fs_dao.get_version()))
+        study.storage_mode = StorageMode.DATABASE
+        db_session.add(study)
+        db_session.commit()
+    matrix_service = InMemorySimpleMatrixService()
+    generator_matrix_constants = GeneratorMatrixConstants(matrix_service)
+    db_dao_factory = DatabaseStudyDaoFactory(matrix_service, Mock(), generator_matrix_constants, db_session)
+    db_dao = db_dao_factory.create_study_dao(StudyMetadataCreation(study_id, fs_dao.get_version(), True))
+
+    # Save the link in DB to avoid FK issues
+    db_dao.save_areas_with_properties({"at": AreaProperties(), "be": AreaProperties()})
+    db_dao.save_links([Link(area1="at", area2="be")])
+
+    # Convert the study to a DB one. This should not raise
+    converter = StudyConverter(
+        source_dao=fs_dao, new_dao=db_dao, study_version=fs_dao.get_version(), matrix_service=matrix_service
+    )
+    converter._convert_xpansion()

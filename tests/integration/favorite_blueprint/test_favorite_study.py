@@ -96,7 +96,7 @@ def test_delete_favorite_study_failure_not_found(client: TestClient, admin_acces
     assert resp.json()["description"] == f"Study with id {inexisting_study_id} not found"
 
 
-def test_add_favorite_study_already_existing(client: TestClient, admin_access_token: str):
+def test_add_favorite_study_already_existing(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     study_test_1 = client.post("/v1/studies?name=study_test").json()

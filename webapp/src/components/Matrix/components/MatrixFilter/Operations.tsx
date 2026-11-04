@@ -29,10 +29,10 @@ import { useOperationControls } from "./hooks/useOperationControls";
 import { DESIGN_TOKENS, FORM_STYLES } from "./styles";
 import type { OperationsProps } from "./types";
 
-function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
+function Operations({ filter, setOperation, onApplyOperation }: OperationsProps) {
   const { t } = useTranslation();
-  const { value, hasValidFilters, handleOperationTypeChange, handleValueChange } =
-    useOperationControls({ filter, setFilter, onApplyOperation });
+  const { value, canApplyOperation, handleOperationTypeChange, handleValueChange } =
+    useOperationControls({ filter, setOperation });
 
   const handleOperationTypeChangeEvent = (e: SelectChangeEvent<string>) => {
     handleOperationTypeChange(e.target.value);
@@ -100,7 +100,7 @@ function Operations({ filter, setFilter, onApplyOperation }: OperationsProps) {
             onClick={onApplyOperation}
             variant="outlined"
             size="small"
-            disabled={!hasValidFilters}
+            disabled={!canApplyOperation}
             sx={{
               fontSize: DESIGN_TOKENS.fontSize.xs,
               alignSelf: "flex-end",

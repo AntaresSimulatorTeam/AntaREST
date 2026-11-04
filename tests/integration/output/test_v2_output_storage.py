@@ -18,6 +18,9 @@ import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
+from antarest.output.repository import OutputRepository
 from tests.integration.utils import wait_task_completion
 from tests.test_helpers.dates import utc_to_local
 from tests.test_helpers.download import download_to_file
@@ -33,7 +36,9 @@ def empty_study_id(admin_client: TestClient) -> str:
         params={"name": "My study"},
     )
     assert res.status_code == 201, res.json()
-    return res.json()
+    study_id = res.json()
+    assert isinstance(study_id, str)
+    return study_id
 
 
 @pytest.fixture
@@ -87,6 +92,7 @@ def test_import(admin_client: TestClient, empty_study_id: str, output_zip: Path)
         "nbYears": 1,
         "synthesis": True,
         "storageType": "V2",
+        "outputType": "LEGACY",
     }, res.json()
 
 
@@ -194,6 +200,7 @@ def test_archive_and_unarchive(admin_client: TestClient, study_id: str, output_n
     assert res.status_code == 417
 
     # Unarchive
+    before_unarchiving = current_time()
     res = client.post(f"/v1/studies/{study_id}/outputs/{output_name}/_unarchive")
     assert res.status_code == 200, res.json()
     task_id = res.json()
@@ -205,6 +212,13 @@ def test_archive_and_unarchive(admin_client: TestClient, study_id: str, output_n
     res = client.get(f"/v1/studies/{study_id}/outputs")
     v2_output = next(o for o in res.json() if o["name"] == output_name)
     assert v2_output["archived"] is False
+
+    with db():
+        stored = OutputRepository().get(study_id, output_name)
+        assert stored is not None
+        assert stored.last_unarchiving_date is not None
+        assert stored.last_unarchiving_date >= before_unarchiving
+        assert stored.disk_space_bytes is None
 
     # Unarchiving again should fail (417 EXPECTATION_FAILED)
     res = client.post(f"/v1/studies/{study_id}/outputs/{output_name}/_unarchive")
@@ -269,6 +283,7 @@ def test_export_output(admin_client: TestClient, study_id: str, output_name: str
     data = res.json()
     assert "task" in data
     assert "file" in data
+    assert data["file"]["filename"] == f"{study_id}_{output_name}.zip"
 
     download_id = data["file"]["id"]
     download_to_file(client, download_id, tmp_path / "output.zip")
@@ -356,6 +371,7 @@ def test_conversion_to_v2(admin_client: TestClient, output_zip: Path, empty_stud
             "nbYears": 1,
             "synthesis": True,
             "storageType": "V2",
+            "outputType": "LEGACY",
         }
     ]
 

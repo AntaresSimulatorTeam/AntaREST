@@ -20,6 +20,7 @@ from zipfile import ZipFile
 import pytest
 from pydantic import ValidationError
 
+from antarest.study.business.model.link_model import LinkCreation
 from antarest.study.business.model.scenario_builder_model import RulesetUpdate
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.rawstudy.model.filesystem.config.files import build
@@ -106,7 +107,11 @@ class TestRemoveLink:
 
         # Create a link between Area_X and Area_Y
         output = CreateLink(
-            area1="area_x", area2="area_y", command_context=command_context, study_version=study_version
+            parameters=LinkCreation(),
+            area1="area_x",
+            area2="area_y",
+            command_context=command_context,
+            study_version=study_version,
         ).apply(dao)
         assert output.status, output.message
 
@@ -126,7 +131,11 @@ class TestRemoveLink:
 
         # Create a link between Area_X and Area_Z
         output = CreateLink(
-            area1="area_x", area2="area_z", command_context=command_context, study_version=study_version
+            parameters=LinkCreation(),
+            area1="area_x",
+            area2="area_z",
+            command_context=command_context,
+            study_version=study_version,
         ).apply(dao)
         assert output.status, output.message
 

@@ -124,6 +124,8 @@ _SPECIFIC_MATRICES = {
         cols=["FO Duration", "PO Duration", "FO Rate", "PO Rate", "NPO Min", "NPO Max"],
         rows=[],
     ),
+    # Match reserve needs before legacy reserves: fnmatch's '*' also matches '/'.
+    "input/reserves/*/*": _MatrixProfile(cols=[], rows=[]),
     "input/reserves/*": _MatrixProfile(
         cols=["Primary Res. (draft)", "Strategic Res. (draft)", "DSM", "Day Ahead"],
         rows=[],

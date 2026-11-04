@@ -58,7 +58,12 @@ def db_session_fixture(db_engine: Engine) -> t.Generator[Session, None, None]:
     Yields:
         A new SQLAlchemy session object for database operations.
     """
-    make_session = sessionmaker(bind=db_engine, **SESSION_ARGS)
+    make_session = sessionmaker(
+        bind=db_engine,
+        autocommit=SESSION_ARGS["autocommit"],
+        expire_on_commit=SESSION_ARGS["expire_on_commit"],
+        autoflush=SESSION_ARGS["autoflush"],
+    )
     with contextlib.closing(make_session()) as session:
         yield session
 
@@ -66,15 +71,12 @@ def db_session_fixture(db_engine: Engine) -> t.Generator[Session, None, None]:
 @pytest.fixture(name="db_middleware", autouse=True)
 def db_middleware_fixture(
     db_engine: Engine,
-) -> t.Generator[None, None, None]:
+) -> None:
     """
     Fixture that sets up a database session middleware with custom engine settings.
 
     Args:
         db_engine: The database engine instance created by the db_engine fixture.
-
-    Yields:
-        An instance of the configured DBSessionMiddleware.
     """
     init_db_singleton(
         custom_engine=db_engine,

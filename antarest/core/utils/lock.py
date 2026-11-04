@@ -17,7 +17,7 @@ Distributed lock implementation, used for coordination between workers or possib
 import logging
 import os
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Self
 
 from filelock import AcquireReturnProxy, BaseFileLock, FileLock, Timeout
 from typing_extensions import override
@@ -46,7 +46,7 @@ class AntarestFileLock(FileLock):
         poll_intervall: float | None = None,
         blocking: bool | None = None,
         cancel_check: Callable[[], bool] | None = None,
-    ) -> AcquireReturnProxy:
+    ) -> AcquireReturnProxy[Self]:
         try:
             return super().acquire(
                 timeout, poll_interval, poll_intervall=poll_intervall, blocking=blocking, cancel_check=cancel_check

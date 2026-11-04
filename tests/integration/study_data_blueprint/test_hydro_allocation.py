@@ -15,6 +15,7 @@ import typing as t
 from pathlib import Path
 
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 
@@ -40,7 +41,7 @@ class TestHydroAllocation:
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
         actual = res.json()
-        expected = {"allocation": [{"areaId": "de", "coefficient": 1.0}]}
+        expected: dict[str, object] = {"allocation": [{"areaId": "de", "coefficient": 1.0}]}
         assert actual == expected
 
     def test_get_allocation_form_values__variant(
@@ -72,7 +73,7 @@ class TestHydroAllocation:
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
         actual = res.json()
-        expected = {"allocation": [{"areaId": "de", "coefficient": 1.0}]}
+        expected: dict[str, object] = {"allocation": [{"areaId": "de", "coefficient": 1.0}]}
         assert actual == expected
 
         # create a variant study from the managed study
@@ -123,7 +124,7 @@ class TestHydroAllocation:
         area_id: str,
         expected: t.List[t.List[float]],
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
         """Check `get_allocation_matrix` end point"""
         res = client.get(f"/v1/studies/{internal_study_id}/areas/hydro/allocation/matrix")
         assert res.status_code == http.HTTPStatus.OK, res.json()
@@ -146,7 +147,7 @@ class TestHydroAllocation:
     ) -> None:
         """Check `set_allocation_form_values` end point"""
         area_id = "de"
-        expected = {
+        expected: dict[str, object] = {
             "allocation": [
                 {"areaId": "de", "coefficient": 3},
                 {"areaId": "es", "coefficient": 1.0},
@@ -199,7 +200,7 @@ class TestHydroAllocation:
         )
         assert res.status_code == http.HTTPStatus.OK
         actual = res.json()
-        expected = {
+        expected: dict[str, object] = {
             "columns": ["de", "es", "fr", "it", "north"],
             "data": [
                 [1.0, 0.0, 0.0, 0.0, 0.0],
@@ -250,7 +251,7 @@ class TestHydroAllocation:
         )
         assert res.status_code == http.HTTPStatus.OK, res.json()
         actual = res.json()
-        expected = {
+        expected: dict[str, object] = {
             "columns": ["de", "es", "it"],
             "data": [
                 [10.0, 20.0, 40.0],
