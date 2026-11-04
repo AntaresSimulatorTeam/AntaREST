@@ -23,10 +23,9 @@ from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 
 try:
     import openpyxl  # noqa: F401
-    import tables  # type: ignore # noqa: F401
     import xlsxwriter  # type: ignore # noqa: F401
 except ImportError:
-    raise ImportError("The 'xlsxwriter', 'openpyxl' and 'tables' packages are required") from None
+    raise ImportError("The 'xlsxwriter' and 'openpyxl' packages are required") from None
 
 
 def simplify_dataframe(dataframe: pl.DataFrame, np_type: type[pl.Int32] | type[pl.Int64] = pl.Int64) -> pl.DataFrame:
