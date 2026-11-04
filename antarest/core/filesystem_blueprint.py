@@ -232,6 +232,17 @@ def _is_relative_to(path: Path, base_path: Path) -> bool:
         return False
 
 
+def _iter_mount_dir(mount_dir: Path, pattern: str) -> Iterator[Path]:
+    """
+    Lazily iterate over the paths of `mount_dir` matching the glob `pattern` (all children if empty).
+
+    Since Python 3.13, `Path.glob` validates the pattern (and `Path.iterdir` lists the directory)
+    as soon as it is called, instead of on the first iteration. Delegating from a generator defers
+    those errors to the first `next()` call, so they can be handled the same way as iteration errors.
+    """
+    yield from mount_dir.glob(pattern) if pattern else mount_dir.iterdir()
+
+
 def _build_filesystems(config: Config) -> dict[str, Mapping[str, Path]]:
     config_dirs: Mapping[str, Path] = {
         "res": config.resources_path,
@@ -408,7 +419,7 @@ def create_file_system_blueprint() -> APIRouter:
 
         # The following code looks weird, but it's the only way to handle exceptions in generators.
         file_infos = []
-        iterator = mount_dir.glob(path) if path else mount_dir.iterdir()
+        iterator = _iter_mount_dir(mount_dir, path)
         while True:
             try:
                 file_path = next(iterator)
