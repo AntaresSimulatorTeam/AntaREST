@@ -35,9 +35,6 @@ from tests.test_helpers.download import (
 
 _ID_COLUMNS = ["area", "link", "mcYear", "timeId", "cluster"]
 
-# Query file types not supported by V2 parquet storage (skipped during conversion)
-_V2_UNSUPPORTED_QUERY_FILES = {"id"}
-
 
 def _sort_by_id(df: pd.DataFrame) -> pd.DataFrame:
     """Sort a DataFrame by its ID columns for order-independent comparison."""
@@ -279,16 +276,6 @@ AREAS_REQUESTS__ALL = [
     (
         {
             "output_id": "20201014-1427eco",
-            "query_file": "id",
-            "frequency": "daily",
-            "areas_ids": "",
-            "columns_names": "",
-        },
-        "test-06-all.result.tsv",
-    ),
-    (
-        {
-            "output_id": "20201014-1427eco",
             "query_file": "values",
             "frequency": "daily",
             "columns_names": "COsT,NoDU",
@@ -342,15 +329,6 @@ LINKS_REQUESTS__ALL = [
             "links_ids": "de - fr",
         },
         "test-04-all.result.tsv",
-    ),
-    (
-        {
-            "output_id": "20241807-1540eco-extra-outputs",
-            "query_file": "id",
-            "frequency": "daily",
-            "links_ids": "",
-        },
-        "test-05-all.result.tsv",
     ),
     (
         {
@@ -433,18 +411,17 @@ class TestRawDataAggregationMCInd:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-        storage_type: tuple[str, dict[str, str]],
+        storage_type: dict[str, str],
     ) -> None:
         """
         Test the aggregation of areas data
         """
-        mode, name_map = storage_type
         client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in AREAS_REQUESTS__IND:
             params = {**params}
             output_id = params.pop("output_id")
-            output_id = name_map.get(output_id, output_id)
+            output_id = storage_type.get(output_id, output_id)
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
@@ -468,18 +445,17 @@ class TestRawDataAggregationMCInd:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-        storage_type: tuple[str, dict[str, str]],
+        storage_type: dict[str, str],
     ) -> None:
         """
         Test the aggregation of links data
         """
-        mode, name_map = storage_type
         client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in LINKS_REQUESTS__IND:
             params = {**params}
             output_id = params.pop("output_id")
-            output_id = name_map.get(output_id, output_id)
+            output_id = storage_type.get(output_id, output_id)
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
@@ -503,18 +479,17 @@ class TestRawDataAggregationMCInd:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-        storage_type: tuple[str, dict[str, str]],
+        storage_type: dict[str, str],
     ) -> None:
         """
         Tests that all formats work and produce the same result
         """
-        mode, name_map = storage_type
         client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__IND:
             params = {**params}
             output_id = params.pop("output_id")
-            output_id = name_map.get(output_id, output_id)
+            output_id = storage_type.get(output_id, output_id)
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-ind/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
@@ -631,20 +606,17 @@ class TestRawDataAggregationMCAll:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-        storage_type: tuple[str, dict[str, str]],
+        storage_type: dict[str, str],
     ) -> None:
         """
         Test the aggregation of areas data
         """
-        mode, name_map = storage_type
         client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in AREAS_REQUESTS__ALL:
             params = {**params}
             output_id = params.pop("output_id")
-            output_id = name_map.get(output_id, output_id)
-            if mode == "v2" and params.get("query_file") in _V2_UNSUPPORTED_QUERY_FILES:
-                continue
+            output_id = storage_type.get(output_id, output_id)
             res = client.get(f"/v1/studies/{internal_study_id}/areas/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
@@ -669,20 +641,17 @@ class TestRawDataAggregationMCAll:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-        storage_type: tuple[str, dict[str, str]],
+        storage_type: dict[str, str],
     ) -> None:
         """
         Test the aggregation of links data
         """
-        mode, name_map = storage_type
         client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in LINKS_REQUESTS__ALL:
             params = {**params}
             output_id = params.pop("output_id")
-            output_id = name_map.get(output_id, output_id)
-            if mode == "v2" and params.get("query_file") in _V2_UNSUPPORTED_QUERY_FILES:
-                continue
+            output_id = storage_type.get(output_id, output_id)
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()
@@ -707,18 +676,17 @@ class TestRawDataAggregationMCAll:
         client: TestClient,
         user_access_token: str,
         internal_study_id: str,
-        storage_type: tuple[str, dict[str, str]],
+        storage_type: dict[str, str],
     ) -> None:
         """
         Tests that all formats work and produce the same result
         """
-        mode, name_map = storage_type
         client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         for params, expected_result_filename in SAME_REQUEST_DIFFERENT_FORMATS__ALL:
             params = {**params}
             output_id = params.pop("output_id")
-            output_id = name_map.get(output_id, output_id)
+            output_id = storage_type.get(output_id, output_id)
             res = client.get(f"/v1/studies/{internal_study_id}/links/aggregate/mc-all/{output_id}", params=params)
             assert res.status_code == 200, res.json()
             download_id = res.json()

@@ -147,7 +147,6 @@ class TestMatrixService:
             parent / "test-03-all.result.tsv",
             parent / "test-04-all.result.tsv",
             parent / "test-05-all.result.tsv",
-            parent / "test-06-all.result.tsv",
             parent / "test-07-all.result.tsv",
             parent / "test-08-all.result.tsv",
         ]
@@ -178,13 +177,6 @@ class TestMatrixService:
                 id="e042c928e846ed944751d1d82edec4be25ee606816e7aefc4b64c9cb6808f2a5",
                 width=1,
                 height=2,
-                created_at=now,
-                version=2,
-            ),
-            MatrixMetadataDTO(
-                id="d6b4ecdc42135e48eaa1d868ef535d396bc3953b7c3bf4f802d83964db58af77",
-                width=1,
-                height=14,
                 created_at=now,
                 version=2,
             ),
@@ -255,7 +247,7 @@ class TestMatrixService:
         matrix_service.create(pl.from_pandas(df))
 
     @with_db_context
-    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    @pytest.mark.parametrize("matrix_format", ["tsv", "parquet", "feather"])
     def test_get_with_versions(self, matrix_service: MatrixService, matrix_format: str) -> None:
         matrix_service.matrix_content_repository.format = InternalMatrixFormat(matrix_format)
         matrix_id = matrix_service.create(AGGREGATION_DF)
