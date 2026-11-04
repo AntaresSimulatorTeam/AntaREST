@@ -55,7 +55,7 @@ jobs:
       # Coverage is only uploaded from ubuntu: skip its overhead on windows
       - name: Test with pytest
         if: matrix.os != 'ubuntu-22.04'
-        run: uv run --frozen pytest -n 4 --dist=worksteal
+        run: uv run --frozen pytest -n 4 --dist=worksteal --durations=30
       - name: Archive code coverage results
         if: matrix.os == 'ubuntu-22.04'
         uses: actions/upload-artifact@v7
