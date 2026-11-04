@@ -323,8 +323,10 @@ class TaskJobService(ITaskService):
 
     def _do_cancel_task(self, task_id: str) -> None:
         task = self.repo.get_or_raise(task_id)
-        if task_id in self.tasks:
-            cancelled = self.tasks[task_id].cancel()
+        # Read the future only once: the task may end and be removed from `self.tasks` at any time
+        future = self.tasks.get(task_id)
+        if future is not None:
+            cancelled = future.cancel()
             # Only updating status when the task is actually cancelled.
             if cancelled:
                 logger.info(f"Successfully cancelled task {task_id}")
@@ -357,10 +359,12 @@ class TaskJobService(ITaskService):
 
     @override
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        if task_id in self.tasks:
+        # Read the future only once: the task may end and be removed from `self.tasks` at any time
+        future = self.tasks.get(task_id)
+        if future is not None:
             try:
                 logger.info(f"🤔 Awaiting task '{task_id}' {timeout_sec}s...")
-                self.tasks[task_id].result(timeout_sec)
+                future.result(timeout_sec)
                 logger.info(f"📌 Task '{task_id}' done.")
             except TimeoutError as timeout_exc:
                 error_msg = f"Timeout while awaiting task '{task_id}'"
