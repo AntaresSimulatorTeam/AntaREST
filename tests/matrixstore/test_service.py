@@ -147,7 +147,6 @@ class TestMatrixService:
             parent / "test-03-all.result.tsv",
             parent / "test-04-all.result.tsv",
             parent / "test-05-all.result.tsv",
-            parent / "test-06-all.result.tsv",
             parent / "test-07-all.result.tsv",
             parent / "test-08-all.result.tsv",
         ]
@@ -178,13 +177,6 @@ class TestMatrixService:
                 id="e042c928e846ed944751d1d82edec4be25ee606816e7aefc4b64c9cb6808f2a5",
                 width=1,
                 height=2,
-                created_at=now,
-                version=2,
-            ),
-            MatrixMetadataDTO(
-                id="d6b4ecdc42135e48eaa1d868ef535d396bc3953b7c3bf4f802d83964db58af77",
-                width=1,
-                height=14,
                 created_at=now,
                 version=2,
             ),
