@@ -70,11 +70,6 @@ PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists
 
 @pytest.fixture(autouse=True, scope="session")
 def fast_password_hashing() -> Iterator[None]:
-    """
-    bcrypt's default cost (12 rounds) makes each password hash/check take ~250 ms,
-    which is paid at every login of every integration test.
-    The minimal cost (4 rounds) is more than enough for tests.
-    """
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(bcrypt, "gensalt", functools.partial(bcrypt.gensalt, rounds=4))
         yield
@@ -90,11 +85,6 @@ def _disable_sqlite_durability(dbapi_connection: Any, connection_record: Any) ->
 
 @pytest.fixture(autouse=True, scope="session")
 def fast_sqlite() -> Iterator[None]:
-    """
-    By default, SQLite flushes the database file to disk (fsync) and creates/deletes
-    a journal file at each commit, which is very slow on Windows CI runners.
-    Durability is useless for tests: keep everything in the OS cache instead.
-    """
     event.listen(Engine, "connect", _disable_sqlite_durability)
     yield
     event.remove(Engine, "connect", _disable_sqlite_durability)

@@ -59,11 +59,6 @@ def wait_task_completion(
     base_timeout: float = 10,
 ) -> TaskDTO:
     """
-    Poll the task status until it is final.
-
-    The `wait_for_completion` parameter of the endpoint is not used on purpose:
-    it is subject to a race condition when the task ends while being awaited.
-
     base_timeout is multiplied by 2 on Windows CI to cope with slow CI runners
     """
     timeout = duration_threshold(base_timeout)
