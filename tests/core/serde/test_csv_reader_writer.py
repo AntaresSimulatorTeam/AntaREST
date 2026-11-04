@@ -17,10 +17,12 @@ from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvRe
 
 csv_data = DataFrame(
     [
-        ["row1A", "row2A"],
-        ["row1B", "row2B"],
-        ["row1C", "row2C"],
-    ]
+        [1.2, 1.3],
+        [1.4, 1.5],
+        [1.6, 1.7],
+    ],
+    schema=["column_1", "column_2"],
+    orient="row",
 )
 
 
@@ -34,9 +36,9 @@ def test_csv_reader_and_write_rows(tmp_path: Path) -> None:
     csv_file = tmp_path / "test.csv"
 
     # Ensures the writer can create a file that doesn't exist and write the data as it should.
-    expected_content = """row1A,row2A
-row1B,row2B
-row1C,row2C
+    expected_content = """1.2,1.3
+1.4,1.5
+1.6,1.7
 """
     CsvWriter.write(csv_data, csv_file)
     content = csv_file.read_text()
