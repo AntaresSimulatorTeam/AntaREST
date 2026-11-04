@@ -61,6 +61,8 @@ def _filter_files_with_same_prefix(
     file_dict = {}
     for file in all_files:
         splitted_file_name = file.removesuffix(".txt").split("-")
+        if splitted_file_name[0] == "id":
+            continue  # We do not want to process "id" files
         if len(splitted_file_name) == 2:
             file_type, freq = splitted_file_name
         else:
@@ -107,6 +109,8 @@ def _get_all_headers_and_file_type(
     """
     filtered_files = _filter_files_with_same_prefix(parent_path, file_type_class)
     for file_type, freq in filtered_files.items():
+        if file_type == "id":
+            print("ok")
         file_path = parent_path / f"{file_type}-{freq.value}.txt"
         start_col = get_start_column(freq)
         yield _read_headers_only(file_path, mc_root, file_type, start_col), file_type
