@@ -14,13 +14,13 @@
 
 import { format } from "@/utils/stringUtils";
 import client from "../../client";
-import { userResourcesTreeSchema } from "./schemas";
+import { filesTreeSchema } from "./schemas";
 import type {
   CreateOrReplaceUserResourceParams,
   DeleteUserResourceParams,
   GetUserResourceContentParams,
   GetUserResourceTreeParams,
-  UserResourcesTree,
+  FilesTree,
 } from "./types";
 
 const BASE_URL = "/v1/studies/{studyId}/user-resources";
@@ -34,9 +34,9 @@ const BASE_URL = "/v1/studies/{studyId}/user-resources";
  */
 export async function getUserResourcesTree({
   studyId,
-}: GetUserResourceTreeParams): Promise<UserResourcesTree> {
+}: GetUserResourceTreeParams): Promise<FilesTree> {
   const { data } = await client.get(format(BASE_URL, { studyId }));
-  return userResourcesTreeSchema.parse(data);
+  return filesTreeSchema.parse(data);
 }
 
 /**
