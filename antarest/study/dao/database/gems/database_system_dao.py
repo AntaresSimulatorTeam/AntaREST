@@ -30,7 +30,6 @@ from antarest.study.business.model.gems.system import (
     GemsComponentConnection,
     GemsSystem,
     GemsThermalCapacityConnection,
-    _GemsParameters,
 )
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -115,43 +114,6 @@ def _encode_parameter_value(value: float | str) -> str:
     # since SQL has no native "number or string" column type. `repr` keeps the float's precision so
     # it round-trips exactly through `_decode_parameter_value`.
     return repr(value) if isinstance(value, float) else value
-
-
-def _check_parameters_values_are_correctly_typed(components: List[GemsComponent]) -> None:
-    incorrectly_float_typed_parameter_ids: set[str] = set()
-    incorrectly_str_typed_parameter_ids: set[str] = set()
-
-    for component in components:
-        if component.parameters:
-            for parameter in component.parameters:
-                _check_float_value_is_correctly_typed(incorrectly_float_typed_parameter_ids, parameter)
-                _check_str_value_is_correctly_typed(incorrectly_str_typed_parameter_ids, parameter)
-
-    if incorrectly_str_typed_parameter_ids or incorrectly_float_typed_parameter_ids:
-        message = _build_error_message(incorrectly_float_typed_parameter_ids, incorrectly_str_typed_parameter_ids)
-
-        raise GemsInvalidParameterValue(message)
-
-
-def _check_float_value_is_correctly_typed(
-    incorrectly_float_typed_parameter_ids: set[str], parameter: _GemsParameters
-) -> None:
-    is_incorrectly_typed_float = isinstance(parameter.value, (int, float)) and (
-        parameter.time_dependent or parameter.scenario_dependent
-    )
-    if is_incorrectly_typed_float:
-        incorrectly_float_typed_parameter_ids.add(parameter.id)
-
-
-def _check_str_value_is_correctly_typed(
-    incorrectly_str_typed_parameter_ids: set[str], parameter: _GemsParameters
-) -> None:
-    is_incorrectly_typed_str = isinstance(parameter.value, str) and (
-        not parameter.time_dependent and not parameter.scenario_dependent
-    )
-
-    if is_incorrectly_typed_str:
-        incorrectly_str_typed_parameter_ids.add(parameter.id)
 
 
 def _build_error_message(
@@ -358,9 +320,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if not self._get_system_row_if_exists():
             raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
-        # Validate parameter value types before building rows
-        _check_parameters_values_are_correctly_typed(components)
-
         component_values, property_values, parameter_rows = self._build_component_and_parameter_rows(components)
 
         # Clean all existing data regarding components
@@ -411,7 +370,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
 
             for parameter in component.parameters or []:
-                is_dataseries = parameter.time_dependent or parameter.scenario_dependent
                 row = {
                     "study_data_id": study_data_id,
                     "component_id": component.id,
@@ -421,11 +379,11 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     "value": None,
                     "matrix_id": None,
                 }
-                if is_dataseries:
+                if parameter.is_dataseries():
                     dependent_parameter_indices.append(len(parameter_rows))
                     matrix_dataframes.append(CsvReader.read(parameter.value))
                 else:
-                    row["value"] = float(parameter.value)
+                    row["value"] = parameter.get_value_as_float()
                 parameter_rows.append(row)
 
             for prop in component.properties or []:
@@ -546,7 +504,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         raise ValueError("The thermal capacity connections table is not filled as it should") from e
 
     @override
-    def get_parameter_value(self, component_id: str, parameter_id: str) -> NpArray:
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> NpArray:
         study_data_id = self._study_data_id
         session = self._db_session
 
