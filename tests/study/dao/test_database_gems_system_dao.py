@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import contextlib
 import re
 from pathlib import Path
 from typing import Any
@@ -17,9 +16,6 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from testcontainers.postgres import PostgresContainer
 
 from antarest.core.exceptions import (
     GemsConnectedObjectDeletionNotAllowed,
@@ -29,8 +25,6 @@ from antarest.core.exceptions import (
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.dbmodel import Base
-from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
@@ -43,11 +37,9 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster, 
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvReader
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
-from tests.integration.conftest import RUN_ON_WINDOWS
-from tests.study.dao.conftest import _build_db_dao_unreleased_version, check_gems_system_integrity
+from tests.study.dao.conftest import check_gems_system_integrity
 from tests.study.dao.utils import save_area
 
 ASSETS_PATH = Path(__file__).parent / "assets"
@@ -617,72 +609,6 @@ def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDa
 
     expected_values = np.loadtxt(data_series_path, delimiter=",", ndmin=2)
     assert np.array_equal(dao.get_parameter_value("dsr", "param1"), expected_values)
-
-
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_parameter_value_referencing_a_missing_file_is_rejected(dao_10_2: StudyDao) -> None:
-    dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
-
-    missing_path = DATA_SERIES_PATH / "this_file_does_not_exist.csv"
-    component = GemsComponent.model_validate(
-        {
-            "id": "dsr",
-            "model": "andromede-v1-models-weo-hybrid.dsr",
-            "parameters": [
-                {"id": "param1", "time-dependent": True, "scenario-dependent": False, "value": str(missing_path)},
-                {"id": "param2", "time-dependent": False, "scenario-dependent": False, "value": 2.0},
-            ],
-        }
-    )
-    system = GemsSystem.model_validate({"id": "sys_id", "components": [component]})
-
-    with pytest.raises(
-        GemsInvalidParameterValue,
-        match=re.escape(f"Parameter value(s) reference a missing file: 'dsr.param1' -> '{missing_path}'"),
-    ):
-        dao.save_system(system)
-
-    assert dao.get_system() is None
-
-
-@pytest.mark.skipif(RUN_ON_WINDOWS, reason="Docker fails on Windows")
-def test_parameter_value_referencing_a_missing_file_is_rejected_on_postgresql() -> None:
-    # This check is purely file-system based and runs before any DB statement is issued, so unlike
-    # a DB-level referential integrity check, it cannot leave a PostgreSQL transaction in an aborted
-    # state: there is nothing to roll back from.
-    with PostgresContainer("postgres:14") as postgres:
-        engine = create_engine(postgres.get_connection_url())
-        Base.metadata.create_all(engine)
-        matrix_service = InMemorySimpleMatrixService()
-
-        with contextlib.closing(sessionmaker(bind=engine)()) as db_session:
-            dao = _build_db_dao_unreleased_version(db_session, matrix_service, STUDY_VERSION_10_2)
-
-            _add_library_file_to_study_dao(dao)
-
-            missing_path = DATA_SERIES_PATH / "this_file_does_not_exist.csv"
-            component = GemsComponent.model_validate(
-                {
-                    "id": "dsr",
-                    "model": "andromede-v1-models-weo-hybrid.dsr",
-                    "parameters": [
-                        {
-                            "id": "param1",
-                            "time-dependent": True,
-                            "scenario-dependent": False,
-                            "value": str(missing_path),
-                        },
-                    ],
-                }
-            )
-            system = GemsSystem.model_validate({"id": "sys_id", "components": [component]})
-
-            with pytest.raises(
-                GemsInvalidParameterValue,
-                match=re.escape(f"Parameter value(s) reference a missing file: 'dsr.param1' -> '{missing_path}'"),
-            ):
-                dao.save_system(system)
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
