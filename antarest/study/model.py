@@ -632,6 +632,27 @@ class StudyRepairReport(AntaresBaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class GlobalStudyRepairType(StrEnum):
+    ORPHAN_ARCHIVES = "orphan_archives"
+
+
+class GlobalStudyRepairRequest(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    repairs: list[GlobalStudyRepairType] = Field(default_factory=lambda: [GlobalStudyRepairType.ORPHAN_ARCHIVES])
+    dry_run: bool = True
+
+
+class GlobalStudyRepairReport(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    dry_run: bool
+    issues: list[StudyRepairIssue] = Field(default_factory=list)
+    proposed_actions: list[StudyRepairAction] = Field(default_factory=list)
+    applied_actions: list[StudyRepairAction] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
 class DeleteManyStudies(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 

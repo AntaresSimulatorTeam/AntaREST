@@ -45,6 +45,7 @@ from antarest.study.model import (
 )
 from antarest.study.repository import StudyMetadataRepository
 from antarest.study.service import StudyService
+from antarest.study.storage.abstract.abstract_study_service import StudyArchive, StudyArchivesScan
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from tests.conftest import build_metadata_creation_object_from_study
@@ -434,6 +435,59 @@ def test_delete_archived_study(tmp_path: Path, archive_format: ArchiveFormat, st
     raw_study_service.delete_from_filesystem(study)
 
     assert not archive_path.exists()
+
+
+@pytest.mark.parametrize("storage_mode", list(StorageMode))
+def test_delete_archived_study_without_archive_file(tmp_path: Path, storage_mode: StorageMode) -> None:
+    cache = Mock()
+    config = Config(storage=StorageConfig(archive_dir=tmp_path))
+    raw_study_service = RawStudyService(config, Mock(), cache, Mock(), Mock())
+    study = RawStudy(
+        id="study",
+        archived=True,
+        storage_mode=storage_mode,
+        path=str(tmp_path / "study") if storage_mode == StorageMode.FILESYSTEM else None,
+    )
+
+    raw_study_service.delete_from_filesystem(study)
+
+    cache.invalidate_all.assert_called_once()
+
+
+def test_list_study_archives(tmp_path: Path) -> None:
+    config = Config(storage=StorageConfig(archive_dir=tmp_path))
+    raw_study_service = RawStudyService(config, Mock(), Mock(), Mock(), Mock())
+
+    zip_id = str(uuid.uuid4())
+    seven_zip_id = str(uuid.uuid4())
+    zip_archive = tmp_path / f"{zip_id}.zip"
+    seven_zip_archive = tmp_path / f"{seven_zip_id}.7z"
+    unexpected_entries = {
+        tmp_path / "notes.txt",
+        tmp_path / "not-a-uuid.zip",
+        tmp_path / f"{uuid.uuid4()}.tar",
+        tmp_path / f"{uuid.uuid4().hex}.zip",  # not a canonical UUID, hence not a study ID
+    }
+    for path in {zip_archive, seven_zip_archive, *unexpected_entries}:
+        path.touch()
+    directory = tmp_path / f"{uuid.uuid4()}.zip"
+    directory.mkdir()
+    unexpected_entries.add(directory)
+
+    scan = raw_study_service.list_study_archives()
+
+    assert set(scan.archives) == {
+        StudyArchive(study_id=zip_id, path=zip_archive),
+        StudyArchive(study_id=seven_zip_id, path=seven_zip_archive),
+    }
+    assert set(scan.unexpected_entries) == unexpected_entries
+
+
+def test_list_study_archives_without_archive_dir(tmp_path: Path) -> None:
+    config = Config(storage=StorageConfig(archive_dir=tmp_path / "missing"))
+    raw_study_service = RawStudyService(config, Mock(), Mock(), Mock(), Mock())
+
+    assert raw_study_service.list_study_archives() == StudyArchivesScan(archives=[], unexpected_entries=[])
 
 
 @with_admin_user

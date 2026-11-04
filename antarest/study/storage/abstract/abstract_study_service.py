@@ -12,15 +12,17 @@
 
 import logging
 import shutil
+import uuid
 from abc import ABC
 from pathlib import Path
+from typing import NamedTuple
 
 from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.model import PublicMode
-from antarest.core.utils.archives import ArchiveFormat
+from antarest.core.utils.archives import ArchiveFormat, is_archive_format
 from antarest.login.model import GroupDTO
 from antarest.study.model import (
     DEFAULT_WORKSPACE_NAME,
@@ -33,6 +35,27 @@ from antarest.study.storage.study_service_interface import IStudyService
 from antarest.study.storage.utils import remove_from_cache
 
 logger = logging.getLogger(__name__)
+
+
+class StudyArchive(NamedTuple):
+    study_id: str
+    path: Path
+
+
+class StudyArchivesScan(NamedTuple):
+    archives: list[StudyArchive]
+    unexpected_entries: list[Path]
+
+
+def _parse_study_id_from_archive(entry: Path) -> str | None:
+    """Return the study ID if `entry` is a regular file named `<canonical UUID><.zip|.7z>`, else None."""
+    if not entry.is_file() or not is_archive_format(entry.suffix):
+        return None
+    try:
+        study_id = str(uuid.UUID(entry.stem))
+    except ValueError:
+        return None
+    return study_id if study_id == entry.stem else None
 
 
 class AbstractStudyService(IStudyService, ABC):
@@ -81,7 +104,11 @@ class AbstractStudyService(IStudyService, ABC):
     @override
     def delete_from_filesystem(self, study: Study) -> None:
         if study.archived:
-            self.find_archive_path(study).unlink()
+            # The study is already deleted from the database: a missing archive must not abort the cleanup.
+            try:
+                self.find_archive_path(study).unlink()
+            except FileNotFoundError as e:
+                logger.warning(f"No archive to delete for study {study.id}: {e}")
         elif study.path is not None:
             shutil.rmtree(check_study_path(study), ignore_errors=True)
 
@@ -103,3 +130,18 @@ class AbstractStudyService(IStudyService, ABC):
             if path.is_file():
                 return path
         raise FileNotFoundError(f"Study {study.id} archiving process is corrupted (no archive file found).")
+
+    def list_study_archives(self) -> StudyArchivesScan:
+        """List the study archives; other entries go to `unexpected_entries` and must never be deleted."""
+        archive_dir: Path = self._config.storage.archive_dir
+        if not archive_dir.is_dir():
+            return StudyArchivesScan(archives=[], unexpected_entries=[])
+        archives: list[StudyArchive] = []
+        unexpected_entries: list[Path] = []
+        for entry in sorted(archive_dir.iterdir()):
+            study_id = _parse_study_id_from_archive(entry)
+            if study_id is None:
+                unexpected_entries.append(entry)
+            else:
+                archives.append(StudyArchive(study_id=study_id, path=entry))
+        return StudyArchivesScan(archives=archives, unexpected_entries=unexpected_entries)

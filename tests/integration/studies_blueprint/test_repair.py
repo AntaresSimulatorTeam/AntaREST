@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import json
+import uuid
 from pathlib import Path
 
 from starlette.testclient import TestClient
@@ -147,3 +148,71 @@ class TestRepairStudy:
         res = admin_client.get(f"/v1/studies/{study_id}")
         assert res.status_code == 200, res.json()
         assert res.json()["archived"]
+
+
+class TestRepairStudies:
+    def test_repair_studies_forbidden(self, client: TestClient, user_access_token: str) -> None:
+        user_headers = {"Authorization": f"Bearer {user_access_token}"}
+        res = client.post("/v1/studies/_repair", headers=user_headers, json={})
+        assert res.status_code == 403
+
+    def test_repair_orphan_archives(self, admin_client: TestClient, admin_access_token: str, tmp_path: Path) -> None:
+        archive_dir = tmp_path / "archive_dir"
+
+        res = admin_client.post("/v1/studies", params={"name": "archived-study"})
+        assert res.status_code == 201, res.json()
+        study_id = res.json()
+        res = admin_client.put(f"/v1/studies/{study_id}/archive")
+        assert res.status_code == 200, res.json()
+        archive_task = wait_task_completion(admin_client, admin_access_token, res.json())
+        assert archive_task.status == TaskStatus.COMPLETED, archive_task
+        study_archive = archive_dir / f"{study_id}.zip"
+        assert study_archive.is_file()
+
+        orphan_archive = archive_dir / f"{uuid.uuid4()}.zip"
+        orphan_archive.write_bytes(b"orphan")
+        unexpected_file = archive_dir / "notes.txt"
+        unexpected_file.write_text("not an archive")
+
+        issue = {
+            "code": "orphan_archive",
+            "severity": "warning",
+            "message": "Archive file has no matching study in database",
+            "details": {"file": orphan_archive.name},
+        }
+        action = {
+            "code": "delete_orphan_archive",
+            "description": "Delete the orphan archive file",
+            "details": {"file": orphan_archive.name},
+        }
+        warning = "Unexpected entry ignored in archive directory: notes.txt"
+
+        res = admin_client.post("/v1/studies/_repair", json={})
+        assert res.status_code == 200, res.json()
+        dry_run_task = wait_task_completion(admin_client, admin_access_token, res.json())
+        assert dry_run_task.status == TaskStatus.COMPLETED, dry_run_task
+        assert dry_run_task.result is not None and dry_run_task.result.return_value is not None
+        assert json.loads(dry_run_task.result.return_value) == {
+            "dry_run": True,
+            "issues": [issue],
+            "proposed_actions": [action],
+            "applied_actions": [],
+            "warnings": [warning],
+        }
+        assert orphan_archive.is_file()
+
+        res = admin_client.post("/v1/studies/_repair", json={"repairs": ["orphan_archives"], "dry_run": False})
+        assert res.status_code == 200, res.json()
+        repair_task = wait_task_completion(admin_client, admin_access_token, res.json())
+        assert repair_task.status == TaskStatus.COMPLETED, repair_task
+        assert repair_task.result is not None and repair_task.result.return_value is not None
+        assert json.loads(repair_task.result.return_value) == {
+            "dry_run": False,
+            "issues": [issue],
+            "proposed_actions": [action],
+            "applied_actions": [action],
+            "warnings": [warning],
+        }
+        assert not orphan_archive.exists()
+        assert study_archive.is_file()
+        assert unexpected_file.is_file()

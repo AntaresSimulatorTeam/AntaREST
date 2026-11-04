@@ -1216,3 +1216,11 @@ def test_count_studies__general_case(
     # test that the expected studies are returned
     if expected_ids is not None:
         assert count == len(expected_ids)
+
+
+def test_get_all_ids(db_session: Session) -> None:
+    repository = StudyMetadataRepository(session=db_session)
+    db_session.add_all([create_raw_study(id="raw"), create_variant_study(id="variant")])
+    db_session.commit()
+
+    assert repository.get_all_ids() == {"raw", "variant"}

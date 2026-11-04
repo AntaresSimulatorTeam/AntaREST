@@ -380,6 +380,9 @@ class StudyMetadataRepository:
         result = self.session.execute(stmt)
         return list(result.scalars().all())
 
+    def get_all_ids(self) -> set[str]:
+        return set(self.session.scalars(select(Study.id)).all())
+
     def delete(self, id_: str, *ids: str) -> None:
         ids = (id_,) + ids
         session = self.session

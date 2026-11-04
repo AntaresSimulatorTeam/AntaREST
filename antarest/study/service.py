@@ -131,6 +131,9 @@ from antarest.study.model import (
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_10_2,
+    GlobalStudyRepairReport,
+    GlobalStudyRepairRequest,
+    GlobalStudyRepairType,
     MatrixFrequency,
     RawStudy,
     StorageMode,
@@ -2274,6 +2277,91 @@ class StudyService:
             raw_study_db.archived = archived
             self.repository.save(raw_study_db)
             remove_from_cache(cache=self.cache_service, root_id=uuid)
+
+    def repair_studies(self, repair_request: GlobalStudyRepairRequest) -> str:
+        """
+        Run repairs that are not bound to a single study, in a background task.
+
+        Returns:
+            The ID of the repair task. Its result holds a `GlobalStudyRepairReport` serialized as JSON.
+        """
+
+        def repair_task(notifier: ITaskNotifier) -> TaskResult:
+            report = GlobalStudyRepairReport(dry_run=repair_request.dry_run)
+            if GlobalStudyRepairType.ORPHAN_ARCHIVES in repair_request.repairs:
+                self._repair_orphan_archives(repair_request.dry_run, report, notifier)
+            failed = any(issue.severity == StudyRepairSeverity.ERROR for issue in report.issues)
+            message = (
+                f"Studies repair completed with {len(report.issues)} issue(s) "
+                f"and {len(report.applied_actions)} action(s) applied"
+            )
+            return TaskResult(success=not failed, message=message, return_value=report.model_dump_json())
+
+        return self.task_service.add_task(
+            repair_task,
+            "Repair studies",
+            task_type=TaskType.REPAIR_STUDY,
+            ref_id=None,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    def _repair_orphan_archives(
+        self,
+        dry_run: bool,
+        report: GlobalStudyRepairReport,
+        notifier: ITaskNotifier,
+    ) -> None:
+        logger.info("Looking for orphan study archives (dry_run=%s)", dry_run)
+        notifier.notify_message("Looking for orphan study archives")
+
+        # Scan the disk before reading the database: an archive is written after its study row,
+        # so a study created and archived in between cannot be mistaken for an orphan.
+        scan = self.storage_service.raw_study_service.list_study_archives()
+        with db():
+            existing_ids = self.repository.get_all_ids()
+
+        for entry in scan.unexpected_entries:
+            report.warnings.append(f"Unexpected entry ignored in archive directory: {entry.name}")
+
+        for archive in scan.archives:
+            if archive.study_id in existing_ids:
+                continue
+            details = {"file": archive.path.name}
+            action = StudyRepairAction(
+                code="delete_orphan_archive",
+                description="Delete the orphan archive file",
+                details=details,
+            )
+            report.issues.append(
+                StudyRepairIssue(
+                    code="orphan_archive",
+                    severity=StudyRepairSeverity.WARNING,
+                    message="Archive file has no matching study in database",
+                    details=details,
+                )
+            )
+            report.proposed_actions.append(action)
+            if dry_run:
+                logger.info("Dry-run: would delete orphan archive '%s'", archive.path)
+                continue
+            try:
+                archive.path.unlink(missing_ok=True)
+            except OSError as e:
+                logger.error("Failed to delete orphan archive '%s'", archive.path, exc_info=e)
+                report.issues.append(
+                    StudyRepairIssue(
+                        code="orphan_archive_deletion_failed",
+                        severity=StudyRepairSeverity.ERROR,
+                        message=str(e),
+                        details=details,
+                    )
+                )
+                continue
+            logger.info("Deleted orphan archive '%s'", archive.path)
+            report.applied_actions.append(action)
+
+        notifier.notify_message(f"Found {len(report.proposed_actions)} orphan study archive(s)")
 
     def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, list[Group]]:
         """
