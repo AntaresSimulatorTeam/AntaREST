@@ -10,14 +10,13 @@
 #
 # This file is part of the Antares project.
 from pathlib import PurePosixPath
-from typing import Any
 
 from antarest.core.exceptions import UserResourceNotFound
+from antarest.core.files_tree import FilesTree, FilesTreeBuilder
 from antarest.study.business.model.user_model import (
     ResourceType,
     UserResourceDataCreation,
     UserResourceDataRemoval,
-    UserResourcesTree,
 )
 from antarest.study.business.study_interface import StudyInterface
 from antarest.study.storage.variantstudy.model.command.remove_user_resource import RemoveUserResource
@@ -25,35 +24,21 @@ from antarest.study.storage.variantstudy.model.command.replace_user_resource imp
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-def _build_tree(resources: list[UserResourceDataCreation]) -> UserResourcesTree:
-    root: dict[str, Any] = {"directories": [], "files": []}
-
+def _build_tree(resources: list[UserResourceDataCreation]) -> FilesTree:
+    builder = FilesTreeBuilder()
     for resource in resources:
-        parts = resource.path.parts
-        current = root
-
-        for part in parts[:-1]:
-            directory = next((d for d in current["directories"] if d["name"] == part), None)
-            if directory is None:
-                directory = {"name": part, "directories": [], "files": []}
-                current["directories"].append(directory)
-
-            current = directory
-
-        name = parts[-1]
-
         if resource.resource_type == ResourceType.FILE:
-            current["files"].append(name)
+            builder.add_file(resource.path)
         else:
-            current["directories"].append({"name": name, "directories": [], "files": []})
-    return UserResourcesTree.model_validate(root)
+            builder.add_folder(resource.path)
+    return builder.tree
 
 
 class UserResourcesManager:
     def __init__(self, command_context: CommandContext) -> None:
         self._command_context = command_context
 
-    def get_all_user_resources(self, study: StudyInterface) -> UserResourcesTree:
+    def get_all_user_resources(self, study: StudyInterface) -> FilesTree:
         user_resources = study.get_study_dao().get_all_user_resources()
         return _build_tree(user_resources)
 
