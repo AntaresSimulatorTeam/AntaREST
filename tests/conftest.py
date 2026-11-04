@@ -10,15 +10,18 @@
 #
 # This file is part of the Antares project.
 import functools
+import sqlite3
 import uuid
 from collections.abc import Callable, Iterator
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
 import bcrypt
 import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
+from sqlalchemy import Engine, event
 from sqlalchemy.orm import Session
 
 from antarest.blobstore.in_memory import InMemoryBlobService
@@ -75,6 +78,26 @@ def fast_password_hashing() -> Iterator[None]:
     with pytest.MonkeyPatch.context() as mp:
         mp.setattr(bcrypt, "gensalt", functools.partial(bcrypt.gensalt, rounds=4))
         yield
+
+
+def _disable_sqlite_durability(dbapi_connection: Any, connection_record: Any) -> None:
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA synchronous=OFF")
+        cursor.execute("PRAGMA journal_mode=MEMORY")
+        cursor.close()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def fast_sqlite() -> Iterator[None]:
+    """
+    By default, SQLite flushes the database file to disk (fsync) and creates/deletes
+    a journal file at each commit, which is very slow on Windows CI runners.
+    Durability is useless for tests: keep everything in the OS cache instead.
+    """
+    event.listen(Engine, "connect", _disable_sqlite_durability)
+    yield
+    event.remove(Engine, "connect", _disable_sqlite_durability)
 
 
 @pytest.fixture(scope="session")
