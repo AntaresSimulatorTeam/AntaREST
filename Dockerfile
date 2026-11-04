@@ -1,4 +1,4 @@
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+FROM ghcr.io/astral-sh/uv:python3.14-bookworm-slim
 
 # RUN apt-get update && apt-get install -y procps gdb
 RUN apt-get update && apt-get install -y --no-install-recommends p7zip-full \
