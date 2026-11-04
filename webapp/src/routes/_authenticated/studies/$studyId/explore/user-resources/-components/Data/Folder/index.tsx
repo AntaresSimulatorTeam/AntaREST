@@ -19,7 +19,7 @@ import RouterListItemButton from "@/components/router/RouterListItemButton";
 import useConfirm from "@/hooks/useConfirm";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { deleteUserResource } from "@/services/api/studies/userResources";
-import { userResourceFolderSchema } from "@/services/api/studies/userResources/schemas";
+import { folderTreeSchema } from "@/services/api/studies/userResources/schemas";
 import { toError } from "@/utils/fnUtils";
 import CreateNewFolderIcon from "@mui/icons-material/CreateNewFolder";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -66,7 +66,7 @@ function Folder({ name, path: folderPath, data, studyId }: DataCompProps) {
     filename: string;
   }>(null);
 
-  const folder = userResourceFolderSchema.parse(data);
+  const folder = folderTreeSchema.parse(data);
 
   const fileList = [
     ...folder.directories.map((directory) => [directory.name, directory] as const),
