@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from pathlib import Path
 from typing import Any, List, NoReturn, Sequence
 
 from sqlalchemy import Row, delete, insert, select
@@ -349,6 +348,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
     @override
     def save_components(self, components: List[GemsComponent]) -> None:
+        """
+        Saves the components and their parameters and properties in the database.
+        Components given as input must have their time and scenario-dependent parameters filled with matrix ids.
+        """
         study_data_id = self._study_data_id
         session = self._db_session
 
@@ -393,7 +396,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         # `matrix_service.create_batch` returns, in the same order as `matrix_dataframes`.
         dependent_parameter_indices: list[int] = []
         matrix_dataframes = []
-        missing_files: dict[tuple[str, str], str] = {}
 
         for component in components:
             library_id, model_id = component.model.split(".", 1)
@@ -420,12 +422,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     "matrix_id": None,
                 }
                 if is_dataseries:
-                    file_path = str(parameter.value)
-                    if not Path(file_path).is_file():
-                        missing_files[(component.id, parameter.id)] = file_path
-                    else:
-                        dependent_parameter_indices.append(len(parameter_rows))
-                        matrix_dataframes.append(CsvReader.read(file_path))
+                    dependent_parameter_indices.append(len(parameter_rows))
+                    matrix_dataframes.append(CsvReader.read(parameter.value))
                 else:
                     row["value"] = float(parameter.value)
                 parameter_rows.append(row)
@@ -439,13 +437,6 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                         "value": prop.value,
                     }
                 )
-
-        if missing_files:
-            details = ", ".join(
-                f"'{component_id}.{parameter_id}' -> '{path}'"
-                for (component_id, parameter_id), path in sorted(missing_files.items())
-            )
-            raise GemsInvalidParameterValue(f"Parameter value(s) reference a missing file: {details}")
 
         if matrix_dataframes:
             matrix_service = self.get_impl().matrix_service
