@@ -9,11 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import functools
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from unittest.mock import Mock
 
+import bcrypt
 import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
@@ -61,6 +63,18 @@ from tests.helpers import create_raw_study, create_study
 
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
+
+
+@pytest.fixture(autouse=True, scope="session")
+def fast_password_hashing() -> Iterator[None]:
+    """
+    bcrypt's default cost (12 rounds) makes each password hash/check take ~250 ms,
+    which is paid at every login of every integration test.
+    The minimal cost (4 rounds) is more than enough for tests.
+    """
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(bcrypt, "gensalt", functools.partial(bcrypt.gensalt, rounds=4))
+        yield
 
 
 @pytest.fixture(scope="session")
