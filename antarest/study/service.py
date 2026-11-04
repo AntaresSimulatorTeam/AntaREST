@@ -2287,8 +2287,7 @@ class StudyService:
     def _repair_orphan_archives(self, dry_run: bool, report: GlobalStudyRepairReport) -> None:
         logger.info("Looking for orphan study archives (dry_run=%s)", dry_run)
 
-        # Scan the disk before reading the database: an archive is written after its study row,
-        # so a study created and archived in between cannot be mistaken for an orphan.
+        # Scan the disk first: an archive is always written after its study row.
         scan = self.storage_service.raw_study_service.list_study_archives()
         existing_ids = self.repository.get_all_ids()
 

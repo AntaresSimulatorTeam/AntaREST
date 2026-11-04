@@ -48,7 +48,7 @@ class StudyArchivesScan(NamedTuple):
 
 
 def _parse_study_id_from_archive(entry: Path) -> str | None:
-    """Return the study ID if `entry` is a regular file named `<canonical UUID><.zip|.7z>`, else None."""
+    """Return the study ID of a study archive, or None if `entry` is not one."""
     if not entry.is_file() or not is_archive_format(entry.suffix):
         return None
     try:
@@ -132,7 +132,7 @@ class AbstractStudyService(IStudyService, ABC):
         raise FileNotFoundError(f"Study {study.id} archiving process is corrupted (no archive file found).")
 
     def list_study_archives(self) -> StudyArchivesScan:
-        """List the study archives; other entries go to `unexpected_entries` and must never be deleted."""
+        """List the study archives and the other entries of the archive directory."""
         archive_dir: Path = self._config.storage.archive_dir
         if not archive_dir.is_dir():
             return StudyArchivesScan(archives=[], unexpected_entries=[])

@@ -593,13 +593,9 @@ def create_study_routes() -> APIRouter:
         study_service: StudyServiceDep, repair_request: GlobalStudyRepairRequest
     ) -> GlobalStudyRepairReport:
         """
-        Admin only. Runs global repairs and returns the repair report.
+        Admin only. Returns the repair report; nothing is applied in `dryRun` mode (default).
 
-        `dryRun` defaults to true: the report lists the detected issues and the proposed actions
-        without applying them.
-
-        Available repairs:
-        - `orphan_archives`: delete the study archives of the archive directory that have no matching study in database.
+        - `orphan_archives`: delete the archives with no matching study in database.
         """
         require_admin_user()
         logger.info("Repairing studies")
