@@ -247,7 +247,7 @@ class TestMatrixService:
         matrix_service.create(pl.from_pandas(df))
 
     @with_db_context
-    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    @pytest.mark.parametrize("matrix_format", ["tsv", "parquet", "feather"])
     def test_get_with_versions(self, matrix_service: MatrixService, matrix_format: str) -> None:
         matrix_service.matrix_content_repository.format = InternalMatrixFormat(matrix_format)
         matrix_id = matrix_service.create(AGGREGATION_DF)

@@ -342,7 +342,7 @@ uncompressed in-study outputs. Outputs that remain zipped or are stored outside 
 
 ## **matrixstore_format**
 
-- **Type:** String, possible values: `tsv`, `hdf`, `parquet` or `feather`
+- **Type:** String, possible values: `tsv`, `parquet` or `feather`
 - **Default value:** `tsv`
 - **Description:** Matrixstore internal storage format. `tsv` is the Antares studies format but to improve performance
 and to reduce the disk space allocated to these matrices, you can choose other formats supported by the app. 

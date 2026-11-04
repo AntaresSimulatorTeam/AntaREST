@@ -211,7 +211,7 @@ def matrix_repository(
 
 
 class TestMatrixContentRepository:
-    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    @pytest.mark.parametrize("matrix_format", ["tsv", "parquet", "feather"])
     def test_save(self, tmp_path: Path, matrix_format: str) -> None:
         """
         Saves the content of a matrix as a file in the directory and returns its SHA256 hash.
@@ -274,7 +274,7 @@ class TestMatrixContentRepository:
                     assert matrix_content_repo.exists(results[0].hash), f"Failed on try {i}"
                     matrix_content_repo.delete(results[0].hash)
 
-    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    @pytest.mark.parametrize("matrix_format", ["tsv", "parquet", "feather"])
     def test_get_exists_and_delete(self, tmp_path: Path, matrix_format: str) -> None:
         """
         Retrieves the content of a matrix with a given SHA256 hash.
@@ -307,7 +307,7 @@ class TestMatrixContentRepository:
             with pytest.raises(FileNotFoundError):
                 matrix_content_repo.delete(missing_hash)
 
-    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    @pytest.mark.parametrize("matrix_format", ["tsv", "parquet", "feather"])
     def test_mixed_formats(self, tmp_path: Path, matrix_format: str) -> None:
         """
         Tests that mixed formats are well handled.
@@ -347,7 +347,7 @@ class TestMatrixContentRepository:
                     new_matrix_path = matrix_path.with_suffix(f".{repository_format}")
                     assert repo_matrix_files[0] == new_matrix_path
 
-    @pytest.mark.parametrize("new_matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    @pytest.mark.parametrize("new_matrix_format", ["tsv", "parquet", "feather"])
     def test_legacy_matrices(self, tmp_path: Path, new_matrix_format: str) -> None:
         matrix_content_repo: MatrixContentRepository
         with matrix_repository(tmp_path, InternalMatrixFormat(new_matrix_format)) as matrix_content_repo:
@@ -376,7 +376,7 @@ class TestMatrixContentRepository:
             matrix = matrix_content_repo.get(matrix_hash, matrix_version=1)
             assert matrix.is_empty()
 
-    @pytest.mark.parametrize("new_matrix_format", ["hdf", "parquet", "feather"])
+    @pytest.mark.parametrize("new_matrix_format", ["parquet", "feather"])
     def test_null_matrix_mixed_formats(self, tmp_path: Path, new_matrix_format: str) -> None:
         """Ensures we can transition from a null matrix TSV to a new format"""
         matrix_hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -395,7 +395,7 @@ class TestMatrixContentRepository:
         bucket_dir = repo.bucket_dir
 
         (bucket_dir / "abc123.tsv").touch()
-        (bucket_dir / "def456.hdf").touch()
+        (bucket_dir / "def456.feather").touch()
         invalid_file = bucket_dir / "no_suffix_matrix"
         invalid_file.touch()
         invalid_file_with_unknown_suffix = bucket_dir / "other.tmp"
