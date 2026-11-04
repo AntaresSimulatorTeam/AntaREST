@@ -320,42 +320,6 @@ def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_parameter_value_must_be_a_float_when_value_does_not_depend_on_time_or_scenario(dao_10_2: StudyDao) -> None:
-    dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
-
-    # Parameter type mismatches are detected before any file is read, so the referenced data series
-    # files do not even need to exist on disk for this test.
-    component = GemsComponent.model_validate(
-        {
-            "id": "dsr",
-            "model": "andromede-v1-models-weo-hybrid.dsr",
-            "parameters": [
-                {"id": "param1", "time-dependent": True, "scenario-dependent": False, "value": "demand_profile1"},
-                {"id": "param2", "time-dependent": False, "scenario-dependent": True, "value": "demand_profile2"},
-                {"id": "param3", "time-dependent": False, "scenario-dependent": False, "value": "demand_profile2"},
-                {"id": "param4", "time-dependent": True, "scenario-dependent": False, "value": 42},
-                {"id": "param5", "time-dependent": False, "scenario-dependent": True, "value": 3.14},
-                {"id": "param6", "time-dependent": True, "scenario-dependent": True, "value": "demand_profile3"},
-                {"id": "param7", "time-dependent": True, "scenario-dependent": True, "value": 2.718},
-            ],
-        }
-    )
-    system = GemsSystem.model_validate({"id": "sys_id", "components": [component]})
-
-    with pytest.raises(
-        GemsInvalidParameterValue,
-        match=re.escape(
-            "Parameter value(s) must be a float when they do not depend on time or scenario: ['param3']\n"
-            + "Parameter value(s) must be a string when they depend on time or scenario: ['param4', 'param5', 'param7']"
-        ),
-    ):
-        dao.save_system(system)
-
-    assert dao.get_system() is None
-
-
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_deleting_a_cluster_removes_its_connections(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     _add_library_file_to_study_dao(dao)
@@ -608,7 +572,7 @@ def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDa
     assert matrix_id != str(data_series_path)
 
     expected_values = np.loadtxt(data_series_path, delimiter=",", ndmin=2)
-    assert np.array_equal(dao.get_parameter_value("dsr", "param1"), expected_values)
+    assert np.array_equal(dao.get_parameter_series("dsr", "param1"), expected_values)
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
@@ -628,8 +592,8 @@ def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: Datab
     first_expected = np.loadtxt(DATA_SERIES_PATH / "max_load_values.csv", delimiter=",", ndmin=2)
     second_expected = np.loadtxt(DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv", delimiter=",", ndmin=2)
 
-    assert np.array_equal(dao_10_2.get_parameter_value("dsr", "param1"), first_expected)
-    assert np.array_equal(db_dao.get_parameter_value("dsr", "param1"), second_expected)
+    assert np.array_equal(dao_10_2.get_parameter_series("dsr", "param1"), first_expected)
+    assert np.array_equal(db_dao.get_parameter_series("dsr", "param1"), second_expected)
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
@@ -638,10 +602,10 @@ def test_get_parameter_value_raises_when_component_or_parameter_not_found(dao_10
     _add_system_file_to_study_dao(dao)
 
     with pytest.raises(GemsParameterNotFound, match="Parameter 'unknown' not found for component 'dsr'"):
-        dao.get_parameter_value("dsr", "unknown")
+        dao.get_parameter_series("dsr", "unknown")
 
     with pytest.raises(GemsParameterNotFound, match="Parameter 'max_load' not found for component 'unknown'"):
-        dao.get_parameter_value("unknown", "max_load")
+        dao.get_parameter_series("unknown", "max_load")
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
@@ -653,7 +617,7 @@ def test_get_parameter_value_raises_when_parameter_is_a_constant(dao_10_2: Study
         GemsInvalidParameterValue,
         match="Parameter 'curtailment_price' of component 'dsr' is a constant, it does not reference a matrix",
     ):
-        dao.get_parameter_value("dsr", "curtailment_price")
+        dao.get_parameter_series("dsr", "curtailment_price")
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)

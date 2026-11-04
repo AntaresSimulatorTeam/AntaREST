@@ -12,7 +12,7 @@
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import ValidationError
 from typing_extensions import override
@@ -45,12 +45,11 @@ def _get_data_series_folder(study_path: Path) -> Path:
 _DATA_SERIES_NAME_PATTERN = re.compile(r"[\w\-]+", re.ASCII)
 
 
-def _resolve_data_series_file(data_series_folder: Path, name: object, study_id: str) -> Path:
+def _resolve_data_series_file(data_series_folder: Path, name: str, study_id: str) -> Path:
     """
     Resolves the name of a data series to its CSV file, guaranteeing that the file is a regular
     file located directly inside `data_series_folder`.
     """
-    name = str(name)
     if not _DATA_SERIES_NAME_PATTERN.fullmatch(name):
         raise GemsSystemIncorrectlyFormatted(
             f"The system file of study {study_id} references an invalid data series name: {name!r}. "
@@ -69,11 +68,7 @@ def _resolve_data_series_file(data_series_folder: Path, name: object, study_id: 
     return file_path
 
 
-def _is_dependent(parameter: Any) -> bool:
-    return bool(parameter.time_dependent or parameter.scenario_dependent)
-
-
-class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
+class FileStudyGemsSystemDao(GemsSystemDao, ABC):
     @abstractmethod
     def get_file_study(self) -> FileStudy:
         pass
@@ -106,11 +101,13 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
         parameters with the id of the matrix created from their content.
         """
         data_series_folder = _get_data_series_folder(file_study.config.study_path)
-        dependent_parameters = [p for c in system.components for p in c.parameters if _is_dependent(p)]
+        dependent_parameters = [p for c in system.components for p in c.parameters if p.is_dataseries()]
 
         dataframes = []
         for parameter in dependent_parameters:
-            file_path = _resolve_data_series_file(data_series_folder, parameter.value, file_study.config.study_id)
+            file_path = _resolve_data_series_file(
+                data_series_folder, parameter.get_value_as_str(), file_study.config.study_id
+            )
             dataframes.append(CsvReader.read(file_path))
 
         if dataframes:
@@ -123,7 +120,7 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def get_parameter_value(self, component_id: str, parameter_id: str) -> NpArray:
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> NpArray:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
@@ -159,16 +156,18 @@ class FileStudyGemsSystemyDao(GemsSystemDao, ABC):
 
         for component in system.components:
             for parameter in component.parameters:
-                if not _is_dependent(parameter):
+                if not parameter.is_dataseries():
                     continue
 
                 # Update the parameter value with the name of the CSV file only if it has not been written yet
-                if parameter.value not in mapping_matrix_id_to_csv:
+                if parameter.get_value_as_str() not in mapping_matrix_id_to_csv:
                     data_series_folder.mkdir(parents=True, exist_ok=True)
                     name = f"data_series_{matrices_count}"
                     matrices_count += 1
-                    CsvWriter.write(matrix_service.get(str(parameter.value)), data_series_folder / f"{name}.csv")
-                    mapping_matrix_id_to_csv[parameter.value] = name
+                    CsvWriter.write(
+                        matrix_service.get(parameter.get_value_as_str()), data_series_folder / f"{name}.csv"
+                    )
+                    mapping_matrix_id_to_csv[parameter.get_value_as_str()] = name
                     parameter.value = name
                 else:
-                    parameter.value = mapping_matrix_id_to_csv[parameter.value]
+                    parameter.value = mapping_matrix_id_to_csv[parameter.get_value_as_str()]

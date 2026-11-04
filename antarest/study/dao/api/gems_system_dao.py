@@ -26,7 +26,7 @@ class ReadOnlyGemsSystemDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_parameter_value(self, component_id: str, parameter_id: str) -> NpArray:
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> NpArray:
         """
         Returns the matrix referenced by a time-/scenario-dependent parameter.
 
