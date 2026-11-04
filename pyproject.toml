@@ -33,7 +33,7 @@ dependencies = [
     "humanize~=4.16.0",
     "jsonref~=0.2",
     "PyJWT~=2.15.0",
-    "MarkupSafe~=2.1.5",
+    "MarkupSafe~=3.0.3",
     "numpy~=2.4.2",
     "numexpr==2.14.2",
     "openpyxl~=3.1.5",
