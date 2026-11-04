@@ -71,18 +71,14 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
             raise
 
     @override
-    def save_scenario_inside_gems_scenario_builder(
-        self, scenario_name: GemsId, data: GemsScBuilderMappings
-    ) -> GemsScBuilderMappings:
-        simulation_nb_years = self.get_impl().get_general_config().nb_years
-        filled_scenario = fill_missing_years(data, simulation_nb_years)
+    def save_scenario_inside_gems_scenario_builder(self, scenario_name: GemsId, data: GemsScBuilderMappings) -> None:
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
         values = [
             {
                 "study_data_id": self._study_data_id,
                 "scenario_group": scenario_name,
-                "data": json.dumps([mapping.model_dump() for mapping in filled_scenario]),
+                "data": json.dumps([mapping.model_dump() for mapping in data]),
             }
         ]
 
@@ -93,8 +89,6 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
             # Probably means the study did not exist in the first place or a weird error occurred in DB.
             session.rollback()
             raise e
-
-        return filled_scenario
 
     @override
     def remove_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> None:

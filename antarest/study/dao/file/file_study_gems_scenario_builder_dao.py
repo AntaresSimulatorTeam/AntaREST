@@ -91,9 +91,7 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
                     stream.write(f"{group}, {mapping.scenario} = {mapping.time_series_index}\n")
 
     @override
-    def save_scenario_inside_gems_scenario_builder(
-        self, scenario_name: str, data: GemsScBuilderMappings
-    ) -> GemsScBuilderMappings:
+    def save_scenario_inside_gems_scenario_builder(self, scenario_name: GemsId, data: GemsScBuilderMappings) -> None:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
