@@ -13,7 +13,7 @@ from pathlib import Path
 
 from polars import DataFrame
 
-from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvReader, CsvWriter
+from antarest.core.utils.polars import read_csv, write_csv
 
 csv_data = DataFrame(
     [
@@ -26,12 +26,6 @@ csv_data = DataFrame(
 )
 
 
-def test_behaviour_for_missing_file(tmp_path: Path) -> None:
-    reader = CsvReader()
-    empty_content = reader.read(tmp_path / "empty.csv")
-    assert empty_content.equals(DataFrame())
-
-
 def test_csv_reader_and_write_rows(tmp_path: Path) -> None:
     csv_file = tmp_path / "test.csv"
 
@@ -40,11 +34,10 @@ def test_csv_reader_and_write_rows(tmp_path: Path) -> None:
 1.4,1.5
 1.6,1.7
 """
-    CsvWriter.write(csv_data, csv_file)
+    write_csv(csv_data, csv_file)
     content = csv_file.read_text()
     assert content == expected_content
 
     # Ensures the reader can read the data as it should.
-    reader = CsvReader()
-    parsed_content = reader.read(csv_file)
+    parsed_content = read_csv(csv_file, has_headers=False)
     assert parsed_content.equals(csv_data)

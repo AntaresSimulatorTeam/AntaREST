@@ -25,6 +25,7 @@ from antarest.core.exceptions import (
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
+from antarest.core.utils.polars import read_csv
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
@@ -37,7 +38,6 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster, 
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvReader
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 from tests.study.dao.conftest import check_gems_system_integrity
 from tests.study.dao.utils import save_area
@@ -675,7 +675,7 @@ def _add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
             if parameter.time_dependent or parameter.scenario_dependent:
                 csv_path = DATA_SERIES_PATH / f"{parameter.value}.csv"
                 if isinstance(dao, FileStudyTreeDao):
-                    parameter.value = dao.matrix_service.create(CsvReader.read(csv_path))
+                    parameter.value = dao.matrix_service.create(read_csv(csv_path, has_headers=False))
                 else:
                     parameter.value = str(csv_path)
 
