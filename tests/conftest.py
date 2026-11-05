@@ -9,14 +9,19 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import functools
+import sqlite3
 import uuid
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
+from typing import Any
 from unittest.mock import Mock
 
+import bcrypt
 import pytest
 from antares.study.version import StudyVersion
 from antares.study.version.create_app import CreateApp
+from sqlalchemy import Engine, event
 from sqlalchemy.orm import Session
 
 from antarest.blobstore.in_memory import InMemoryBlobService
@@ -61,6 +66,28 @@ from tests.helpers import create_raw_study, create_study
 
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
+
+
+@pytest.fixture(autouse=True, scope="session")
+def fast_password_hashing() -> Iterator[None]:
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(bcrypt, "gensalt", functools.partial(bcrypt.gensalt, rounds=4))
+        yield
+
+
+def _disable_sqlite_durability(dbapi_connection: Any, connection_record: Any) -> None:
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA synchronous=OFF")
+        cursor.execute("PRAGMA journal_mode=MEMORY")
+        cursor.close()
+
+
+@pytest.fixture(autouse=True, scope="session")
+def fast_sqlite() -> Iterator[None]:
+    event.listen(Engine, "connect", _disable_sqlite_durability)
+    yield
+    event.remove(Engine, "connect", _disable_sqlite_durability)
 
 
 @pytest.fixture(scope="session")
