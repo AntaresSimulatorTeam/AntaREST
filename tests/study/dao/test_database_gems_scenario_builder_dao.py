@@ -18,6 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
 from antarest.study.dao.database.models import STUDY_DATA_TABLE
 from antarest.study.dao.database.models.gems.scenario_builder import GEMS_SCENARIO_BUILDER_TABLE
@@ -27,13 +28,17 @@ from tests.study.dao.conftest import build_db_dao_10_2
 def test_groups_are_stored_per_study(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
     first = build_db_dao_10_2(db_session, matrix_service)
     second = build_db_dao_10_2(db_session, matrix_service)
+    first.save_general_config(GeneralConfig(nb_years=2))  # As we have 2 scenarios in the rest of the test
     builder = GemsScenarioBuilder(
         scenarios={
             "load": [
                 GemsScBuilderMapping(scenario=0, time_series_index=1),
                 GemsScBuilderMapping(scenario=1, time_series_index=5),
             ],
-            "hydro": [GemsScBuilderMapping(scenario=2, time_series_index=7)],
+            "hydro": [
+                GemsScBuilderMapping(scenario=0, time_series_index=4),
+                GemsScBuilderMapping(scenario=1, time_series_index=2),
+            ],
         }
     )
     other_builder = GemsScenarioBuilder(scenarios={"load": [GemsScBuilderMapping(scenario=0, time_series_index=3)]})
@@ -46,16 +51,22 @@ def test_groups_are_stored_per_study(db_session: Session, matrix_service: ISimpl
     )
     rows = db_session.execute(select(table).where(table.c.study_data_id == study_data_id)).all()
     assert {row.scenario_group: json.loads(row.data) for row in rows} == {
+        "hydro": [{"scenario": 0, "time_series_index": 4}, {"scenario": 1, "time_series_index": 2}],
         "load": [{"scenario": 0, "time_series_index": 1}, {"scenario": 1, "time_series_index": 5}],
-        "hydro": [{"scenario": 2, "time_series_index": 7}],
     }
     assert first.get_gems_scenario_builder() == builder
     assert second.get_gems_scenario_builder() == other_builder
 
     replacement = GemsScenarioBuilder(
         scenarios={
-            "load": [GemsScBuilderMapping(scenario=0, time_series_index=9)],
-            "wind": [GemsScBuilderMapping(scenario=1, time_series_index=4)],
+            "load": [
+                GemsScBuilderMapping(scenario=0, time_series_index=9),
+                GemsScBuilderMapping(scenario=1, time_series_index=1),
+            ],
+            "wind": [
+                GemsScBuilderMapping(scenario=0, time_series_index=4),
+                GemsScBuilderMapping(scenario=1, time_series_index=29),
+            ],
         }
     )
     first.save_gems_scenario_builder(replacement)
