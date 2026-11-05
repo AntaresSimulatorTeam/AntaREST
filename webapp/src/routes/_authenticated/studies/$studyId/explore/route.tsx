@@ -15,10 +15,11 @@
 import EmptyView from "@/components/page/EmptyView";
 import TabsView from "@/components/page/TabsView";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
+import { Button } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import useStudy from "../-hooks/useStudy";
+import useStudyInfo from "../-hooks/useStudyInfo";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore")({
   component: StudyExploreLayout,
@@ -30,18 +31,30 @@ function StudyExploreLayout() {
   const study = useStudy();
   const navigate = Route.useNavigate();
 
-  // TODO: move this redirect to the route loader once TanStack Query replaces Redux for fetching study
-  useEffect(() => {
-    if (study.archived) {
-      navigate({
-        to: "/studies/$studyId",
-        params: { studyId: study.id },
-      });
-    }
-  }, [navigate, study]);
+  const {
+    data: { isArchived },
+  } = useStudyInfo({ studyId: study.id });
 
-  if (study.archived) {
-    return <EmptyView icon={ArchiveOutlinedIcon} title={t("study.archived")} />;
+  if (isArchived) {
+    return (
+      <EmptyView
+        icon={ArchiveOutlinedIcon}
+        title={t("study.archived")}
+        primaryActions={
+          <Button
+            variant="contained"
+            onClick={() => {
+              navigate({
+                to: "/studies/$studyId",
+                params: { studyId: study.id },
+              });
+            }}
+          >
+            {t("button.back")}
+          </Button>
+        }
+      />
+    );
   }
 
   return (

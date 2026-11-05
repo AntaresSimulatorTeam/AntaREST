@@ -16,7 +16,6 @@ import CustomScrollbar from "@/components/CustomScrollbar";
 import EditorIcon from "@/components/icons/EditorIcon";
 import RouterLink from "@/components/router/RouterLink";
 import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
-import type { Study } from "@/services/api/studies/types";
 import { buildModificationDate, convertUTCToLocalTime } from "@/services/utils";
 import { truncateTextSx } from "@/utils/muiUtils";
 import { compactSemanticVersion } from "@/utils/versionUtils";
@@ -29,22 +28,26 @@ import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import { Chip, Divider, Stack, Tooltip, Typography, styled } from "@mui/material";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
+import useStudyInfo from "../../-hooks/useStudyInfo";
 
 const TinyText = styled(Typography)(({ theme }) => ({
   fontSize: 12,
   color: theme.vars.palette.text.secondary,
 }));
 
-interface Props {
-  parentStudy?: Study;
-  variantNb?: number;
-}
-
-function Details({ parentStudy, variantNb }: Props) {
+function Details() {
   const study = useStudy();
   const [t, i18n] = useTranslation();
   const publicModeLabel =
     PUBLIC_MODE_LIST.find((mode) => mode.id === study?.publicMode)?.name || "";
+
+  const {
+    data: { parentStudy, descendantCount },
+  } = useStudyInfo({ studyId: study.id });
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   const tooltipContent = (
     <Stack direction="column">
@@ -91,10 +94,10 @@ function Details({ parentStudy, variantNb }: Props) {
         <InfoOutlinedIcon fontSize="small" sx={{ color: "text.secondary", cursor: "pointer" }} />
       </Tooltip>
       <TinyText>{`v${compactSemanticVersion(study.version)}`}</TinyText>
-      {typeof variantNb === "number" && (
+      {typeof descendantCount === "number" && (
         <Stack spacing={1}>
           <AccountTreeOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
-          <TinyText>{variantNb}</TinyText>
+          <TinyText>{descendantCount}</TinyText>
         </Stack>
       )}
       <CustomScrollbar>

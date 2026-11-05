@@ -985,7 +985,7 @@
   "studies.deleteDirectory.error": "Échec de la suppression du répertoire. Veuillez réessayer.",
   "variants.createNewVariant": "Créer une nouvelle variante",
   "variants.unarchive": "Désarchiver l'étude de référence",
-  "variants.unarchive.warning": "L'étude de référence « {{referenceStudyName}} » est archivée. Désarchivez-la pour consulter ce variant.",
+  "variants.unarchive.warning": "L'étude de référence <referenceStudyLink>{{referenceStudyName}}</referenceStudyLink> est archivée. Désarchivez-la pour consulter ce variant.",
   "variants.newVariant": "Nouvelle variante",
   "variants.newCommand": "Ajouter une nouvelle commande",
   "variants.commandActionLabel": "Sélectionnez le type",

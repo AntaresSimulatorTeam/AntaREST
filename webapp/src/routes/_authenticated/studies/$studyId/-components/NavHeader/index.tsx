@@ -12,35 +12,15 @@
  * This file is part of the Antares project.
  */
 
-import { variantQueries } from "@/queries/variants/queries";
-import type { VariantTree } from "@/services/api/studies/variants/types";
-import { countDescendants, getParentNode } from "@/services/utils";
 import { Stack } from "@mui/material";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMatch } from "@tanstack/react-router";
-import { useCallback } from "react";
-import useStudy from "../../-hooks/useStudy";
 import Actions from "./Actions";
 import Breadcrumb from "./Breadcrumb";
 import Details from "./Details";
 
 function NavHeader() {
-  const study = useStudy();
   const match = useMatch({ from: "/_authenticated/studies/$studyId/explore", shouldThrow: false });
   const isExplorer = !!match;
-
-  const selectStudyDetails = useCallback(
-    (tree: VariantTree) => ({
-      parentStudy: getParentNode(tree, study.id),
-      variantNb: countDescendants(tree, study.id),
-    }),
-    [study.id],
-  );
-
-  const { data: studyDetails } = useSuspenseQuery({
-    ...variantQueries.variantTree(study.id),
-    select: selectStudyDetails,
-  });
 
   return (
     <Stack
@@ -51,8 +31,8 @@ function NavHeader() {
       ]}
     >
       <Breadcrumb />
-      <Details {...studyDetails} />
-      <Actions {...studyDetails} isExplorer={isExplorer} />
+      <Details />
+      <Actions isExplorer={isExplorer} />
     </Stack>
   );
 }

@@ -15,37 +15,33 @@
 import CustomScrollbar from "@/components/CustomScrollbar";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import RouterButton from "@/components/router/RouterButton";
+import RouterLink from "@/components/router/RouterLink";
 import useDialog from "@/hooks/useDialog";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { copyStudy } from "@/services/api/studies";
-import type { VariantTree } from "@/services/api/studies/variants/types";
 import { unarchiveStudy } from "@/services/api/study";
 import { toError } from "@/utils/fnUtils";
 import BoltIcon from "@mui/icons-material/Bolt";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import { Alert, Box, Button, Divider, Stack } from "@mui/material";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
+import useStudyInfo from "../../-hooks/useStudyInfo";
 import LaunchStudiesDialog from "../../../../../-shared/components/studies/dialogs/LaunchStudiesDialog";
 import CreateStudyVariantDialog from "./CreateStudyVariantDialog";
 import DetailsList from "./DetailsList";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
 
-interface Props {
-  variantTree: VariantTree;
-}
-
-function InformationView({ variantTree }: Props) {
+function InformationView() {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { openDialog } = useDialog();
   const study = useStudy();
 
-  // When the reference study is archived, all its variants are considered archived as well
-  const referenceStudy = variantTree.node;
-  const isArchived = referenceStudy.archived;
-  const isReferenceStudy = study.id === referenceStudy.id;
+  const {
+    data: { variantTree, referenceStudy, isReference, isArchived },
+  } = useStudyInfo({ studyId: study.id });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -94,6 +90,20 @@ function InformationView({ variantTree }: Props) {
 
   return (
     <ViewWrapper flex={{ gap: 2 }}>
+      {isArchived && !isReference && (
+        <Alert severity="warning">
+          <Trans
+            i18nKey="variants.unarchive.warning"
+            values={{ referenceStudyName: referenceStudy.name }}
+            components={{
+              referenceStudyLink: (
+                <RouterLink to="/studies/$studyId" params={{ studyId: referenceStudy.id }} />
+              ),
+            }}
+          />
+        </Alert>
+      )}
+
       <Stack flex={1} spacing={1} sx={{ overflow: "auto" }}>
         <LauncherHistory />
         {!isArchived && (
@@ -131,13 +141,6 @@ function InformationView({ variantTree }: Props) {
                   )}
                 </>
               )}
-              {isArchived && !isReferenceStudy && (
-                <Alert severity="warning">
-                  {t("variants.unarchive.warning", {
-                    referenceStudyName: referenceStudy.name,
-                  })}
-                </Alert>
-              )}
             </Stack>
             {isArchived ? (
               <Button
@@ -145,7 +148,7 @@ function InformationView({ variantTree }: Props) {
                 onClick={handleUnarchiveStudyReference}
                 startIcon={<UnarchiveOutlinedIcon />}
               >
-                {isReferenceStudy ? t("global.unarchive") : t("variants.unarchive")}
+                {isReference ? t("global.unarchive") : t("variants.unarchive")}
               </Button>
             ) : (
               <Button variant="contained" onClick={handleLaunchStudy} startIcon={<BoltIcon />}>
