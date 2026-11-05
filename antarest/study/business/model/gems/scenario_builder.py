@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 from typing import Annotated, TypeAlias
 
-from pydantic import AfterValidator, ConfigDict, Field, PlainSerializer
+from pydantic import AfterValidator, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from antarest.core.model import GemsId
@@ -32,14 +32,10 @@ class GemsScBuilderMapping(AntaresBaseModel):
 def _check_scenario_duplication(data: list[GemsScBuilderMapping]) -> list[GemsScBuilderMapping]:
     if len(data) != len(set(mapping.scenario for mapping in data)):
         raise ValueError("Found duplicated scenario inside GEMS scenario builder")
-    return data
+    return sorted(data, key=lambda x: x.scenario)
 
 
-GemsScBuilderMappings: TypeAlias = Annotated[
-    list[GemsScBuilderMapping],
-    AfterValidator(_check_scenario_duplication),
-    PlainSerializer(lambda x: sorted(x, key=lambda x: x.scenario)),
-]
+GemsScBuilderMappings: TypeAlias = Annotated[list[GemsScBuilderMapping], AfterValidator(_check_scenario_duplication)]
 
 
 class GemsScenarioBuilder(AntaresBaseModel):

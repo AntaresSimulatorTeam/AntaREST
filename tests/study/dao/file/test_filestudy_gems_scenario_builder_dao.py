@@ -50,7 +50,6 @@ def test_roundtrip(dao_10_2: StudyDao) -> None:
 
 
 def test_replace_builder(dao_10_2: StudyDao) -> None:
-    dao_10_2.save_general_config(GeneralConfig(nb_years=3))
     dao_10_2.save_gems_scenario_builder(
         GemsScenarioBuilder(
             scenarios={
@@ -67,13 +66,8 @@ def test_replace_builder(dao_10_2: StudyDao) -> None:
             "load": [
                 GemsScBuilderMapping(scenario=0, time_series_index=1),
                 GemsScBuilderMapping(scenario=1, time_series_index=5),
-                GemsScBuilderMapping(scenario=2, time_series_index=2),  # Default value
             ],
-            "hydro": [
-                GemsScBuilderMapping(scenario=0, time_series_index=0),  # Default value
-                GemsScBuilderMapping(scenario=1, time_series_index=1),  # Default value
-                GemsScBuilderMapping(scenario=2, time_series_index=7),
-            ],
+            "hydro": [GemsScBuilderMapping(scenario=2, time_series_index=7)],
         }
     )
     replacement = GemsScenarioBuilder(
@@ -85,16 +79,8 @@ def test_replace_builder(dao_10_2: StudyDao) -> None:
     dao_10_2.save_gems_scenario_builder(replacement)
     assert dao_10_2.get_gems_scenario_builder() == GemsScenarioBuilder(
         scenarios={
-            "load": [
-                GemsScBuilderMapping(scenario=0, time_series_index=4),
-                GemsScBuilderMapping(scenario=1, time_series_index=1),  # Default value
-                GemsScBuilderMapping(scenario=2, time_series_index=2),  # Default value
-            ],
-            "wind": [
-                GemsScBuilderMapping(scenario=0, time_series_index=0),  # Default value
-                GemsScBuilderMapping(scenario=1, time_series_index=2),
-                GemsScBuilderMapping(scenario=2, time_series_index=2),  # Default value
-            ],
+            "load": [GemsScBuilderMapping(scenario=0, time_series_index=4)],
+            "wind": [GemsScBuilderMapping(scenario=1, time_series_index=2)],
         }
     )
 

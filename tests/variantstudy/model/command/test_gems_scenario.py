@@ -11,7 +11,6 @@
 # This file is part of the Antares project.
 import pytest
 
-from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_8
@@ -39,14 +38,9 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     result = cmd.apply(dao)
     assert result.status is True
 
-    dao.save_general_config(GeneralConfig(nb_years=4))  # Default values are based on this number
-
     assert dao.get_gems_scenario_builder() == GemsScenarioBuilder(
         scenarios={
             "scenario_1": [
-                GemsScBuilderMapping(scenario=0, time_series_index=0),
-                GemsScBuilderMapping(scenario=1, time_series_index=1),
-                GemsScBuilderMapping(scenario=2, time_series_index=2),
                 GemsScBuilderMapping(scenario=3, time_series_index=1),
                 GemsScBuilderMapping(scenario=4, time_series_index=8),
             ]
@@ -70,8 +64,6 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
         scenarios={
             "scenario_1": [
                 GemsScBuilderMapping(scenario=0, time_series_index=6),
-                GemsScBuilderMapping(scenario=1, time_series_index=1),  # Unmodified
-                GemsScBuilderMapping(scenario=2, time_series_index=2),  # Unmodified
                 GemsScBuilderMapping(scenario=3, time_series_index=1),  # Unmodified
                 GemsScBuilderMapping(scenario=4, time_series_index=7),
             ]

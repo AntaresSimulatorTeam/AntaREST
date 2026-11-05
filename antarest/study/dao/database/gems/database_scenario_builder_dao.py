@@ -24,7 +24,6 @@ from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMapping,
     GemsScBuilderMappings,
     GemsScenarioBuilder,
-    fill_missing_years,
 )
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -39,12 +38,7 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         if not rows:
             return None
 
-        scenario_builder = GemsScenarioBuilder(scenarios={row.scenario_group: json.loads(row.data) for row in rows})
-        simulation_nb_years = self.get_impl().get_general_config().nb_years
-        for scenario_id, mapping in scenario_builder.scenarios.items():
-            scenario_builder.scenarios[scenario_id] = fill_missing_years(mapping, simulation_nb_years)
-
-        return scenario_builder
+        return GemsScenarioBuilder(scenarios={row.scenario_group: json.loads(row.data) for row in rows})
 
     @override
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
@@ -125,7 +119,4 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         if not row:
             raise GemsScenarioNotFound(scenario_name, self._study_id)
 
-        mapping_list = json.loads(row.data)
-        simulation_nb_years = self.get_impl().get_general_config().nb_years
-        unfilled_data = [GemsScBuilderMapping.model_validate(mapping) for mapping in mapping_list]
-        return fill_missing_years(unfilled_data, simulation_nb_years)
+        return [GemsScBuilderMapping.model_validate(mapping) for mapping in json.loads(row.data)]

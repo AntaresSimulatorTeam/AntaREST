@@ -14,12 +14,20 @@ from antarest.core.model import GemsId
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMappings,
     GemsScenarioBuilder,
+    fill_missing_years,
 )
 from antarest.study.business.study_interface import StudyInterface
+from antarest.study.dao.api.study_dao import ReadOnlyStudyDao
 from antarest.study.storage.variantstudy.model.command.create_gems_scenario import CreateGemsScenario
 from antarest.study.storage.variantstudy.model.command.remove_gems_scenario import RemoveGemsScenario
 from antarest.study.storage.variantstudy.model.command.update_gems_scenario import UpdateGemsScenario
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
+
+
+def _get_sc_builder_mappings_filled(dao: ReadOnlyStudyDao, scenario_name: GemsId) -> GemsScBuilderMappings:
+    sc_builder_mappings = dao.get_scenario_from_gems_scenario_builder(scenario_name)
+    simulation_nb_years = dao.get_general_config().nb_years
+    return fill_missing_years(sc_builder_mappings, simulation_nb_years)
 
 
 class GemsScenarioBuilderManager:
@@ -27,13 +35,23 @@ class GemsScenarioBuilderManager:
         self._command_context = command_context
 
     def get_gems_scenario_builder(self, study: StudyInterface) -> GemsScenarioBuilder:
-        return study.get_study_dao().get_gems_scenario_builder() or GemsScenarioBuilder(scenarios={})
+        dao = study.get_study_dao()
+        sc_builder = dao.get_gems_scenario_builder()
+        if not sc_builder:
+            return GemsScenarioBuilder(scenarios={})
+
+        simulation_nb_years = dao.get_general_config().nb_years
+        for scenario_id, mappings in sc_builder.scenarios.items():
+            sc_builder.scenarios[scenario_id] = fill_missing_years(mappings, simulation_nb_years)
+
+        return sc_builder
 
     def add_scenario_to_gems_scenario_builder(
         self, study: StudyInterface, scenario_name: GemsId, data: GemsScBuilderMappings
     ) -> GemsScBuilderMappings:
+        dao = study.get_study_dao()
         # First ensures the scenario does not already exist
-        if study.get_study_dao().scenario_exists_in_gems_scenario_builder(scenario_name):
+        if dao.scenario_exists_in_gems_scenario_builder(scenario_name):
             raise GemsScenarioAlreadyExists(scenario_name, study.id)
 
         command = CreateGemsScenario(
@@ -43,13 +61,15 @@ class GemsScenarioBuilderManager:
             study_version=study.version,
         )
         study.add_commands([command])
-        return study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
+
+        return _get_sc_builder_mappings_filled(dao, scenario_name)
 
     def update_scenario_from_gems_scenario_builder(
         self, study: StudyInterface, scenario_name: GemsId, data: GemsScBuilderMappings
     ) -> GemsScBuilderMappings:
+        dao = study.get_study_dao()
         # First ensures the scenario exists
-        study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
+        dao.get_scenario_from_gems_scenario_builder(scenario_name)
 
         command = UpdateGemsScenario(
             scenario_name=scenario_name,
@@ -58,7 +78,8 @@ class GemsScenarioBuilderManager:
             study_version=study.version,
         )
         study.add_commands([command])
-        return study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
+
+        return _get_sc_builder_mappings_filled(dao, scenario_name)
 
     def delete_scenario_from_gems_scenario_builder(self, study: StudyInterface, scenario_name: GemsId) -> None:
         # First ensures the scenario exists

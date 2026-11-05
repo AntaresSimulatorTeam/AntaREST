@@ -23,7 +23,6 @@ from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMapping,
     GemsScBuilderMappings,
     GemsScenarioBuilder,
-    fill_missing_years,
 )
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -70,10 +69,6 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
 
         if not groups:
             return None
-
-        simulation_nb_years = self.get_impl().get_general_config().nb_years
-        for scenario_id, mappings in groups.items():
-            groups[scenario_id] = fill_missing_years(mappings, simulation_nb_years)
 
         return GemsScenarioBuilder(scenarios=groups)
 
