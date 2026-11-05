@@ -55,6 +55,7 @@ def _parse_study_id_from_archive(entry: Path) -> str | None:
         study_id = str(uuid.UUID(entry.stem))
     except ValueError:
         return None
+    # Reject non-canonical UUIDs (upper-case, no hyphens...): they are not study IDs.
     return study_id if study_id == entry.stem else None
 
 
@@ -109,6 +110,7 @@ class AbstractStudyService(IStudyService, ABC):
                 self.find_archive_path(study).unlink()
             except FileNotFoundError as e:
                 logger.warning(f"No archive to delete for study {study.id}: {e}")
+        # Database-mode studies have no file-system footprint: nothing to remove.
         elif study.path is not None:
             shutil.rmtree(check_study_path(study), ignore_errors=True)
 

@@ -465,7 +465,7 @@ def test_list_study_archives(tmp_path: Path) -> None:
     unexpected_entries = {
         tmp_path / "notes.txt",
         tmp_path / "not-a-uuid.zip",
-        tmp_path / f"{uuid.uuid4()}.tar",
+        tmp_path / f"{uuid.uuid4()}.tar",  # not a supported archive format
         tmp_path / f"{uuid.uuid4().hex}.zip",  # not a canonical UUID, hence not a study ID
     }
     for path in {zip_archive, seven_zip_archive, *unexpected_entries}:

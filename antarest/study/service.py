@@ -2285,8 +2285,6 @@ class StudyService:
         return report
 
     def _repair_orphan_archives(self, dry_run: bool, report: GlobalStudyRepairReport) -> None:
-        logger.info("Looking for orphan study archives (dry_run=%s)", dry_run)
-
         # Scan the disk first: an archive is always written after its study row.
         scan = self.storage_service.raw_study_service.list_study_archives()
         existing_ids = self.repository.get_all_ids()
@@ -2313,12 +2311,11 @@ class StudyService:
             )
             report.proposed_actions.append(action)
             if dry_run:
-                logger.info("Dry-run: would delete orphan archive '%s'", archive.path)
                 continue
             try:
                 archive.path.unlink(missing_ok=True)
             except OSError as e:
-                logger.error("Failed to delete orphan archive '%s'", archive.path, exc_info=e)
+                logger.error("Failed to delete orphan archive '%s'", archive.path.name, exc_info=e)
                 report.issues.append(
                     StudyRepairIssue(
                         code="orphan_archive_deletion_failed",
@@ -2328,10 +2325,8 @@ class StudyService:
                     )
                 )
                 continue
-            logger.info("Deleted orphan archive '%s'", archive.path)
+            logger.info("Deleted orphan archive '%s'", archive.path.name)
             report.applied_actions.append(action)
-
-        logger.info("Found %d orphan study archive(s)", len(report.proposed_actions))
 
     def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, list[Group]]:
         """
