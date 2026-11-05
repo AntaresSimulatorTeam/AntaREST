@@ -921,11 +921,13 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     ]:
         (output / file).touch()
 
-    # Create a `gems_views` folder to ensure we see it in the output tree
-    gems_folder = output / "gems-views"
-    gems_folder.mkdir()
-    for file in ["view.parquet", "view_config.yml"]:
-        (gems_folder / file).touch()
+    # Create a `views` folder with its sub-folders to ensure we see them in the output tree
+    views_folder = output / "views"
+    (views_folder / "input").mkdir(parents=True)
+    (views_folder / "output").mkdir()
+    for file in ["view_config.yml", "system-for-views.yml"]:
+        (views_folder / "input" / file).touch()
+    (views_folder / "output" / "view_area--hourly--20261104T153938.parquet").touch()
 
     # Also create an `economy` folder to ensure we see it
     (output / "economy").mkdir()
@@ -955,10 +957,11 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     # Asserts the `economy` folder is scanned
     assert "economy" in output_tree[output_id]
     assert "adequacy" not in output_tree[output_id]
-    # Asserts the GEMS folder is scanned
-    assert "gems-views" in output_tree[output_id]
-    assert "view" in output_tree[output_id]["gems-views"]
-    assert "view_config" in output_tree[output_id]["gems-views"]
+    # Asserts the GEMS folder and its sub-folders are scanned
+    views_tree = output_tree[output_id]["views"]
+    assert set(views_tree) == {"input", "output"}
+    assert set(views_tree["input"]) == {"view_config", "system-for-views"}
+    assert set(views_tree["output"]) == {"view_area--hourly--20261104T153938"}
 
 
 def test_parse_simulation_error_parameter(empty_study_880: FileStudy) -> None:
@@ -997,15 +1000,25 @@ def test_parse_simulation_output_type(empty_study_880: FileStudy) -> None:
     shutil.make_archive(str(output_folder / zipped_id), "zip", root_dir=output_folder / output_id)
     output_archived_path = output_folder / f"{zipped_id}.zip"
 
-    # 1st case: No `gems-views` folder -> Should be seen as Legacy
+    # 1st case: No `views` folder -> Should be seen as Legacy
     simulation = parse_simulation(output_path, output_id)
     assert simulation.output_type == OutputType.LEGACY
 
     simulation = parse_simulation_zip(output_archived_path)
     assert simulation.output_type == OutputType.LEGACY
 
-    # 2nd case: The folder exists -> Should be seen as GemsViews
-    (output_path / "gems-views").mkdir()
+    # 2nd case: A root file whose name starts with `views` -> Should still be seen as Legacy
+    (output_path / "views-summary.txt").touch()
+    simulation = parse_simulation(output_path, output_id)
+    assert simulation.output_type == OutputType.LEGACY
+
+    output_archived_path.unlink()
+    shutil.make_archive(str(output_folder / zipped_id), "zip", root_dir=output_folder / output_id)
+    simulation = parse_simulation_zip(output_archived_path)
+    assert simulation.output_type == OutputType.LEGACY
+
+    # 3rd case: The folder exists -> Should be seen as GemsViews
+    (output_path / "views").mkdir()
     simulation = parse_simulation(output_path, output_id)
     assert simulation.output_type == OutputType.GEMS_VIEWS
 
