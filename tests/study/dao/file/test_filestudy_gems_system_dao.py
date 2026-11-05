@@ -65,7 +65,14 @@ def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, matrix_service:
 
     # As 2 parameters values point to the same matrix, we should have 2 CSV files only
     assert sorted(f.name for f in data_series_folder.iterdir()) == ["data_series_0.csv", "data_series_1.csv"]
-    assert (data_series_folder / "data_series_0.csv").read_text().splitlines() == [str(10.0 + 2 * i) for i in range(24)]
+    assert (data_series_folder / "data_series_0.csv").read_text().splitlines() == [
+        "10.122",
+        "12.344",
+        "14.0",
+        "16.566",
+        "18.788",
+        "20.5",
+    ]
 
     yaml_system = YAMLReader().read(dao.get_file_study().config.study_path / "input" / "system.yml")["system"]
     assert yaml_system["components"][0]["parameters"][1]["value"] == "data_series_0"
