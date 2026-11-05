@@ -119,7 +119,7 @@ class StudyConverter:
     def _convert_xpansion(self) -> None:
         try:
             settings = self._source_dao.get_xpansion_settings()
-        except (ChildNotFoundError, XpansionConfigurationDoesNotExist):
+        except ChildNotFoundError, XpansionConfigurationDoesNotExist:
             # The source study does not contain an Xpansion configuration. We should return immediately
             return
 

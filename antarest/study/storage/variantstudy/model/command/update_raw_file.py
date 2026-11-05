@@ -50,7 +50,7 @@ class UpdateRawFile(ICommand):
         try:
             data = base64.decodebytes(self.b64Data.encode("utf-8")).decode("utf-8")
             return f"{cls}(target={target!r}, data={data!r})"
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             return f"{cls}(target={target!r}, b64Data={self.b64Data!r})"
 
     @override

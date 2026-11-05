@@ -9,10 +9,10 @@ authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com"
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 classifiers=[
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ]
@@ -33,7 +33,7 @@ dependencies = [
     "humanize~=4.16.0",
     "jsonref~=0.2",
     "PyJWT~=2.15.0",
-    "MarkupSafe~=2.1.5",
+    "MarkupSafe~=3.0.3",
     "numpy~=2.4.2",
     "numexpr==2.14.2",
     "openpyxl~=3.1.5",
@@ -157,8 +157,8 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-# Assumes Python 3.11
-target-version = "py311"
+# Assumes Python 3.14
+target-version = "py314"
 
 [tool.ruff.lint]
 ## E4, E7, E9 and F are the default configuration of ruff, "I" is added to handle imports

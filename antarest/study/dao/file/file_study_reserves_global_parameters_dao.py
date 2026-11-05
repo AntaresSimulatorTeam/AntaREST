@@ -41,7 +41,7 @@ class FileStudyReservesGlobalParametersDao(ReservesGlobalParametersDao, ABC):
         check_area_exists(file_study.config, area_id)
         try:
             data = file_study.tree.get(_get_reserves_ini_path(area_id))
-        except (ChildNotFoundError, KeyError):
+        except ChildNotFoundError, KeyError:
             data = {}
         return parse_reserves_global_parameters(data)
 
@@ -59,7 +59,7 @@ class FileStudyReservesGlobalParametersDao(ReservesGlobalParametersDao, ABC):
             path = _get_reserves_ini_path(area_id)
             try:
                 existing_data = file_study.tree.get(path)
-            except (ChildNotFoundError, KeyError):
+            except ChildNotFoundError, KeyError:
                 existing_data = {}
             existing_data[GLOBAL_PARAMETERS_SECTION] = serialize_reserves_global_parameters(params)
             file_study.tree.save(existing_data, path)
