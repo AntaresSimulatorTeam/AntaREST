@@ -15,6 +15,7 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getLatestStudyVersion } from "@/redux/selectors";
+import useStudyInfo from "@/routes/_authenticated/studies/$studyId/-hooks/useStudyInfo";
 import type { Study } from "@/services/api/studies/types";
 import { archiveStudy, unarchiveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
@@ -65,11 +66,12 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
   const latestVersion = useAppSelector(getLatestStudyVersion);
 
+  const {
+    data: { isReference, isVariant, isArchived },
+  } = useStudyInfo({ studyId: study.id });
+
   const isLatestVersion = study.version === latestVersion;
-  const isReference = study.type === "rawstudy";
-  const isVariant = study.type === "variantstudy";
   const isManaged = study.managed;
-  const isArchived = study.archived;
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -142,7 +144,13 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
           ),
           menuItem(isManaged && isReference, t("global.move"), DriveFileMoveIcon, "move"),
           menuItem(!isArchived, t("global.export"), DownloadOutlinedIcon, "export"),
-          menuItem(isArchived, t("global.unarchive"), UnarchiveOutlinedIcon, handleUnarchive),
+          menuItem(
+            // Only the reference study can be unarchived, not its variants
+            isArchived && isReference,
+            t("global.unarchive"),
+            UnarchiveOutlinedIcon,
+            handleUnarchive,
+          ),
           menuItem(
             isManaged && isReference && !isArchived,
             t("global.archive"),

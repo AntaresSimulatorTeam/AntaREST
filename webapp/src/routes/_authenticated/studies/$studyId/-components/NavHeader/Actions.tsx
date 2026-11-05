@@ -15,7 +15,6 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import FavoriteStudyToggle from "@/routes/-shared/components/studies/FavoriteToggle/FavoriteStudyToggle";
 import StudyActionsMenu from "@/routes/-shared/components/studies/StudyActionsMenu";
-import type { Study } from "@/services/api/studies/types";
 import { unarchiveStudy } from "@/services/api/study";
 import { toError } from "@/utils/fnUtils";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
@@ -27,22 +26,25 @@ import { enqueueSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
+import useStudyInfo from "../../-hooks/useStudyInfo";
 import CommandsDrawer from "./CommandsDrawer";
 
 export type DialogType = "commands";
 
 interface Props {
-  parentStudy?: Study;
-  variantNb?: number;
   isExplorer?: boolean;
 }
 
-function Actions({ parentStudy, variantNb, isExplorer }: Props) {
+function Actions({ isExplorer }: Props) {
   const study = useStudy();
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
+
+  const {
+    data: { parentStudy, descendantCount },
+  } = useStudyInfo({ studyId: study.id });
 
   const isArchived = study.archived;
   const isVariant = study.type === "variantstudy";
@@ -118,7 +120,7 @@ function Actions({ parentStudy, variantNb, isExplorer }: Props) {
         anchorEl={anchorEl}
         study={study}
         parentStudy={parentStudy}
-        variantNb={variantNb}
+        variantNb={descendantCount}
         onClose={() => setAnchorEl(null)}
       />
       <CommandsDrawer open={openDialog === "commands"} studyId={study.id} onClose={closeDialog} />
