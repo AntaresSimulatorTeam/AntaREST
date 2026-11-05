@@ -10,6 +10,9 @@
 #
 # This file is part of the Antares project.
 import re
+from typing import Annotated
+
+from pydantic import AfterValidator
 
 # An output id names a direct child of the outputs folder: one segment, not "", "." or "..", with no
 # separator ("/", "\"), drive qualifier (":") or line break. Anything else escapes the folder (path
@@ -20,3 +23,13 @@ _OUTPUT_ID_PATTERN = re.compile(r"\A(?!\.\.?\Z)[^/\\:\r\n]+\Z")
 
 def is_valid_output_id(output_id: str) -> bool:
     return _OUTPUT_ID_PATTERN.match(output_id) is not None
+
+
+def _validate_output_id(output_id: str) -> str:
+    if not is_valid_output_id(output_id):
+        raise ValueError("An output id must name a direct child of the study outputs folder")
+    return output_id
+
+
+# Validated at the API edge: an invalid output id is rejected with a 422 before reaching the service.
+OutputId = Annotated[str, AfterValidator(_validate_output_id)]
