@@ -91,13 +91,13 @@ class DatabaseHydroDao(HydroDao, DatabaseDaoBase):
     """Database implementation of HydroDao"""
 
     @staticmethod
-    def _convert_row_to_hydro_management(row: Row[Any]) -> HydroManagement:
+    def _convert_row_to_hydro_management(row: Row[*tuple[Any, ...]]) -> HydroManagement:
         """Convert a database row to HydroManagement model."""
         data = get_row_representation_as_dict(row)
         return HydroManagement(**{c.name: data[c.name] for c in _MANAGEMENT_COLS})
 
     @staticmethod
-    def _convert_row_to_inflow_structure(row: Row[Any]) -> InflowStructure:
+    def _convert_row_to_inflow_structure(row: Row[*tuple[Any, ...]]) -> InflowStructure:
         """Convert a database row to InflowStructure model."""
         return InflowStructure(inter_monthly_correlation=row.inter_monthly_correlation)
 
