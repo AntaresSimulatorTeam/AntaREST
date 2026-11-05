@@ -18,7 +18,6 @@ import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
-from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
@@ -1015,7 +1014,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_components()
 
     @override
-    def get_parameter_series(self, component_id: str, parameter_id: str) -> NpArray:
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> pl.DataFrame:
         return self._adaptee.get_parameter_series(component_id, parameter_id)
 
     @override

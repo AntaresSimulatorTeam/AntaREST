@@ -14,6 +14,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from polars import DataFrame
 from pydantic import ValidationError
 from typing_extensions import override
 
@@ -22,7 +23,6 @@ from antarest.core.exceptions import (
     GemsSystemIncorrectlyFormatted,
     GemsUnavailableForFileSystemStudies,
 )
-from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvReader, CsvWriter
@@ -120,7 +120,7 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def get_parameter_series(self, component_id: str, parameter_id: str) -> NpArray:
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> DataFrame:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
