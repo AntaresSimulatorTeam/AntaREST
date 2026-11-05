@@ -592,8 +592,8 @@ def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: Datab
     first_expected = np.loadtxt(DATA_SERIES_PATH / "max_load_values.csv", delimiter=",", ndmin=2)
     second_expected = np.loadtxt(DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv", delimiter=",", ndmin=2)
 
-    assert np.array_equal(dao_10_2.get_parameter_series("dsr", "param1"), first_expected)
-    assert np.array_equal(db_dao.get_parameter_series("dsr", "param1"), second_expected)
+    assert np.array_equal(dao_10_2.get_parameter_series("dsr", "param1").to_numpy(), first_expected)
+    assert np.array_equal(db_dao.get_parameter_series("dsr", "param1").to_numpy(), second_expected)
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)

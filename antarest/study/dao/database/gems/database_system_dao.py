@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing import Any, List, NoReturn, Sequence
 
+from polars import DataFrame
 from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
@@ -23,7 +24,6 @@ from antarest.core.exceptions import (
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.gems.system import (
     GemsAreaConnection,
     GemsComponent,
@@ -504,7 +504,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         raise ValueError("The thermal capacity connections table is not filled as it should") from e
 
     @override
-    def get_parameter_series(self, component_id: str, parameter_id: str) -> NpArray:
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> DataFrame:
         study_data_id = self._study_data_id
         session = self._db_session
 
@@ -522,7 +522,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
 
         matrix_service = self.get_impl().matrix_service
-        return matrix_service.get(parameter_row.matrix_id).to_numpy()
+        return matrix_service.get(parameter_row.matrix_id)
 
     def _get_components_library_and_model(self) -> dict[str, tuple[str, str]]:
         study_data_id = self._study_data_id

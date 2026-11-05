@@ -12,7 +12,8 @@
 
 from abc import ABC, abstractmethod
 
-from antarest.core.serde.np_array import NpArray
+from polars import DataFrame
+
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 
 
@@ -26,7 +27,7 @@ class ReadOnlyGemsSystemDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_parameter_series(self, component_id: str, parameter_id: str) -> NpArray:
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> DataFrame:
         """
         Returns the matrix referenced by a time-/scenario-dependent parameter.
 
