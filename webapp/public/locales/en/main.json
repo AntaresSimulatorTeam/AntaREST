@@ -880,7 +880,7 @@
   "study.area.notFound": "No area found with ID: {{id}}",
   "study.area.storage.additionalConstraint.notFound": "No additional constraint found with ID: {{id}}",
   "studies.question.delete": "Are you sure you want to delete the study: {{studyName}}?",
-  "studies.question.deleteWithVariants": "Are you sure you want to delete the study '{{studyName}}' and its {{variantNb}} sub-variant(s)?",
+  "studies.question.deleteWithVariants": "Are you sure you want to delete the study '{{studyName}}' and its {{descendantCount}} sub-variant(s)?",
   "studies.question.deleteMany_one": "Are you sure you want to delete the selected study? All associated variants will also be deleted.",
   "studies.question.deleteMany_other": "Are you sure you want to delete the {{count}} selected studies? All associated variants will also be deleted.",
   "studies.error.retrieveData": "Failed to retrieve data",

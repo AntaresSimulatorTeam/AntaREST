@@ -19,20 +19,22 @@ import Breadcrumb from "./Breadcrumb";
 import Details from "./Details";
 
 function NavHeader() {
-  const match = useMatch({ from: "/_authenticated/studies/$studyId/explore", shouldThrow: false });
-  const isExplorer = !!match;
+  const isExplorerRoute = !!useMatch({
+    from: "/_authenticated/studies/$studyId/explore",
+    shouldThrow: false,
+  });
 
   return (
     <Stack
       spacing={1}
       sx={[
         { px: 1 },
-        !isExplorer && { borderBottom: (theme) => `1px solid ${theme.vars.palette.divider}` },
+        !isExplorerRoute && { borderBottom: (theme) => `1px solid ${theme.vars.palette.divider}` },
       ]}
     >
       <Breadcrumb />
       <Details />
-      <Actions isExplorer={isExplorer} />
+      <Actions />
     </Stack>
   );
 }

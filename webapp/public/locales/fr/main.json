@@ -880,7 +880,7 @@
   "study.area.notFound": "Aucune zone trouvée avec l'ID : {{id}}",
   "study.area.storage.additionalConstraint.notFound": "Aucune contrainte additionnelle trouvée avec l'ID : {{id}}",
   "studies.question.delete": "Êtes-vous sûr de vouloir supprimer l'étude : {{studyName}} ?",
-  "studies.question.deleteWithVariants": "Êtes-vous sûr de vouloir supprimer l'étude '{{studyName}}' ainsi que ses {{variantNb}} sous-variante(s) ?",
+  "studies.question.deleteWithVariants": "Êtes-vous sûr de vouloir supprimer l'étude '{{studyName}}' ainsi que ses {{descendantCount}} sous-variante(s) ?",
   "studies.question.deleteMany_one": "Êtes-vous sûr de vouloir supprimer l'étude sélectionnée ? Toutes les variantes associées seront également supprimées.",
   "studies.question.deleteMany_other": "Êtes-vous sûr de vouloir supprimer les {{count}} études sélectionnées ? Toutes les variantes associées seront également supprimées.",
   "studies.error.retrieveData": "Échec de la récupération des données",

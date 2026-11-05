@@ -27,7 +27,7 @@ export const variantQueries = {
         const tree = await getVariantTree({ studyId, signal });
 
         // Update the cache for all studies in the tree except the current one.
-        // `getVariantTree()` returns the same tree structure for all studies in the tree.
+        // `getVariantTree` returns the same tree structure for all studies in the tree.
         notifyManager.batch(() => {
           for (const item of createListFromTree(tree)) {
             // Skip the current study as it is the key being fetched

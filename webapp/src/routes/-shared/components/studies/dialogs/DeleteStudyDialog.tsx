@@ -21,22 +21,33 @@ import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
 import { Typography } from "@mui/material";
-import { useNavigate } from "@tanstack/react-router";
+import { useMatch, useNavigate } from "@tanstack/react-router";
 import { Trans, useTranslation } from "react-i18next";
+
+// Only to allow clicking on the link in the JSDoc
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { StudyActionsMenuProps } from "../StudyActionsMenu";
 
 interface Props {
   study: StudyMetadata;
-  parentStudy?: Study;
-  variantNb?: number;
+  /**
+   * @see {@link StudyActionsMenuProps.studyInfo} for more details on how this prop is derived.
+   */
+  studyInfo?: {
+    parentStudy?: Study;
+    descendantCount?: number;
+  };
   open: boolean;
   onClose: VoidFunction;
 }
 
-function DeleteStudyDialog({ study, parentStudy, variantNb, open, onClose }: Props) {
+function DeleteStudyDialog({ study, studyInfo, open, onClose }: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const isStudyRoute = !!useMatch({ from: "/_authenticated/studies/$studyId", shouldThrow: false });
+  const { parentStudy, descendantCount } = studyInfo ?? {};
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -48,11 +59,13 @@ function DeleteStudyDialog({ study, parentStudy, variantNb, open, onClose }: Pro
 
       onClose();
 
-      navigate(
-        parentStudy
-          ? { to: "/studies/$studyId", params: { studyId: parentStudy.id } }
-          : { to: "/studies" },
-      );
+      if (isStudyRoute) {
+        navigate(
+          parentStudy
+            ? { to: "/studies/$studyId", params: { studyId: parentStudy.id } }
+            : { to: "/studies" },
+        );
+      }
     } catch (err) {
       enqueueErrorSnackbar(t("studies.error.deleteStudy"), toError(err));
     }
@@ -72,11 +85,11 @@ function DeleteStudyDialog({ study, parentStudy, variantNb, open, onClose }: Pro
       onCancel={onClose}
     >
       <Typography>
-        {typeof variantNb !== "number" || variantNb > 0 ? (
+        {typeof descendantCount !== "number" || descendantCount > 0 ? (
           <Trans
             t={t}
             i18nKey="studies.question.deleteWithVariants"
-            values={{ variantNb, studyName: study.name }}
+            values={{ descendantCount, studyName: study.name }}
           />
         ) : (
           t("studies.question.delete", { studyName: study.name })
