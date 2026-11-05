@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 from typing import List
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, model_validator
 
+from antarest.core.exceptions import GemsInvalidParameterValue
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
@@ -24,7 +25,39 @@ class _GemsParameters(AntaresBaseModel):
     id: str
     time_dependent: bool
     scenario_dependent: bool
-    value: float  # TODO: authorize string values when time_dependent and/or scenario_dependant is True
+    value: float | str
+
+    def is_dataseries(self) -> bool:
+        return self.time_dependent or self.scenario_dependent
+
+    @model_validator(mode="after")
+    def validate_value(self) -> "_GemsParameters":
+        if self.is_dataseries() and not isinstance(self.value, str):
+            raise GemsInvalidParameterValue(
+                f"Time and/or scenario-dependent parameters must have a string value (path to CSV file), but {self.value} was given for {self.id} parameter"
+            )
+        if not self.is_dataseries() and not isinstance(self.value, (int, float)):
+            raise GemsInvalidParameterValue(
+                f"Constant parameters must have a numeric value, but '{self.value}' was given for {self.id} parameter"
+            )
+        return self
+
+    def get_value_as_float(self) -> float:
+
+        if self.is_dataseries():
+            raise GemsInvalidParameterValue(
+                f"Time and/or scenario-dependent parameters must have a string value, but {self.value} was given for {self.id} parameter"
+            )
+
+        return float(self.value)
+
+    def get_value_as_str(self) -> str:
+        if not self.is_dataseries():
+            raise GemsInvalidParameterValue(
+                f"Constant parameters must have a numeric value, but '{self.value}' was given for {self.id} parameter"
+            )
+
+        return str(self.value)
 
 
 class _GemsProperties(AntaresBaseModel):
@@ -40,8 +73,8 @@ class GemsComponent(AntaresBaseModel):
     id: str
     model: str
     scenario_group: str | None = None
-    parameters: List[_GemsParameters] | None = None
-    properties: List[_GemsProperties] | None = None
+    parameters: List[_GemsParameters] = []
+    properties: List[_GemsProperties] = []
 
 
 class GemsComponentConnection(AntaresBaseModel):

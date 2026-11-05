@@ -458,11 +458,15 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert second_model.ports[1].type == "flow"
 
 
-def check_gems_system_integrity(system: GemsSystem) -> None:
+def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatrixService) -> None:
+    """
+    If `matrix_service` is given, time-dependent parameter values are expected to be matrix ids
+    and their content is checked. Otherwise, they are expected to be data series ids.
+    """
     assert system is not None
     assert system.id == "System 8_1"
     assert system.description == "Electrolyser - V8.6"
-    assert len(system.components) == 2
+    assert len(system.components) == 3
 
     first_component = system.components[0]
     assert first_component.id == "dsr"
@@ -474,9 +478,13 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert first_component.parameters[0].scenario_dependent is False
     assert first_component.parameters[0].value == 10
     assert first_component.parameters[1].id == "max_load"
-    assert first_component.parameters[1].time_dependent is False
+    assert first_component.parameters[1].time_dependent is True
     assert first_component.parameters[1].scenario_dependent is False
-    assert first_component.parameters[1].value == 200
+
+    first_component_value = matrix_service.get(str(first_component.parameters[1].value))
+    assert first_component_value is not None
+    expected = pl.DataFrame([10.122, 12.344, 14.0, 16.566, 18.788, 20.5], orient="row", schema=["column_1"])
+    assert first_component_value.equals(expected)
 
     second_component = system.components[1]
     assert second_component.id == "electrolyser"
@@ -489,9 +497,39 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert second_component.parameters[0].scenario_dependent is False
     assert second_component.parameters[0].value == 0.7
     assert second_component.parameters[1].id == "p_max"
-    assert second_component.parameters[1].time_dependent is False
-    assert second_component.parameters[1].scenario_dependent is False
-    assert second_component.parameters[1].value == 300
+    assert second_component.parameters[1].time_dependent is True
+    assert second_component.parameters[1].scenario_dependent is True
+
+    second_component_value = matrix_service.get(str(second_component.parameters[1].value))
+    assert second_component_value is not None
+    expected_matrix = pl.DataFrame(
+        [
+            [2.2, 4.4, 6.6, 8.8, 10.10, 12.12, 14.14, 16.16],
+            [3.3, 6.6, 9.9, 12.12, 15.15, 18.18, 21.21, 24.24],
+            [4.4, 8.8, 12.12, 16.16, 20.20, 24.24, 28.28, 32.32],
+        ],
+        orient="row",
+        schema=["column_1", "column_2", "column_3", "column_4", "column_5", "column_6", "column_7", "column_8"],
+    )
+    assert second_component_value.equals(expected_matrix)
+
+    third_component = system.components[2]
+    assert third_component.id == "electrolyser2"
+    assert third_component.model == "andromede-v1-models-weo-hybrid.electrolyser"
+    assert third_component.scenario_group == "sg1"
+    assert third_component.parameters is not None
+    assert len(third_component.parameters) == 2
+    assert third_component.parameters[0].id == "efficiency"
+    assert third_component.parameters[0].time_dependent is False
+    assert third_component.parameters[0].scenario_dependent is False
+    assert third_component.parameters[0].value == 1.4
+    assert third_component.parameters[1].id == "p_max"
+    assert third_component.parameters[1].time_dependent is True
+    assert third_component.parameters[1].scenario_dependent is True
+
+    third_component_value = matrix_service.get(str(third_component.parameters[1].value))
+    assert third_component_value is not None
+    assert third_component_value.equals(expected_matrix)
 
     assert system.connections is not None
     assert len(system.connections) == 1

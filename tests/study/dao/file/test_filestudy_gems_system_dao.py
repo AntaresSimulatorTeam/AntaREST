@@ -12,11 +12,20 @@
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pytest
+from sqlalchemy.orm import Session
 
-from antarest.core.exceptions import GemsSystemAlreadyExists, GemsUnavailableForFileSystemStudies
+from antarest.core.exceptions import (
+    GemsSystemAlreadyExists,
+    GemsSystemIncorrectlyFormatted,
+    GemsUnavailableForFileSystemStudies,
+)
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
-from tests.study.dao.conftest import check_gems_system_integrity
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
+from tests.study.dao.conftest import build_db_dao_10_2, check_gems_system_integrity
+from tests.study.dao.test_database_gems_system_dao import _add_system_file_to_study_dao
 
 ASSETS_PATH = Path(__file__).parent.parent / "assets"
 
@@ -37,22 +46,68 @@ def test_cannot_replace_system(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
         dao.save_system(system)
 
 
-def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, matrix_service: ISimpleMatrixService) -> None:
     dao = filestudy_dao_v10_2
     _add_system_file_to_study(dao)
 
+    # Data series files are loaded in the matrix store, the parameters then reference matrix ids
     system = dao.get_system()
     assert system is not None
-    check_gems_system_integrity(system)
+    check_gems_system_integrity(system, matrix_service)
 
     _remove_system_file_for_study(dao)
+    _remove_data_series_files_for_study(dao)
     assert dao.get_system() is None
 
-    # Save the old content back
+    # Save the old content back: matrices are written as CSV files named after the component and parameter
     dao.save_system(system)
+    data_series_folder = dao.get_file_study().config.study_path / "input" / "data-series"
+
+    # As 2 parameters values point to the same matrix, we should have 2 CSV files only
+    assert sorted(f.name for f in data_series_folder.iterdir()) == ["data_series_0.csv", "data_series_1.csv"]
+    assert (data_series_folder / "data_series_0.csv").read_text().splitlines() == [
+        "10.122",
+        "12.344",
+        "14.0",
+        "16.566",
+        "18.788",
+        "20.5",
+    ]
+
+    yaml_system = YAMLReader().read(dao.get_file_study().config.study_path / "input" / "system.yml")["system"]
+    assert yaml_system["components"][0]["parameters"][1]["value"] == "data_series_0"
+    assert yaml_system["components"][1]["parameters"][1]["value"] == "data_series_1"
+
     saved_system = dao.get_system()
     assert saved_system is not None
-    check_gems_system_integrity(saved_system)
+    check_gems_system_integrity(saved_system, matrix_service)
+
+
+def test_db_to_file_system_conversion(
+    filestudy_dao_v10_2: FileStudyTreeDao, db_session: Session, matrix_service: ISimpleMatrixService
+) -> None:
+    db_dao = build_db_dao_10_2(db_session, matrix_service)
+    _add_system_file_to_study_dao(db_dao)
+    db_system = db_dao.get_system()
+    assert db_system is not None
+    check_gems_system_integrity(db_system, matrix_service)
+
+    file_dao = filestudy_dao_v10_2
+    file_dao.save_system(db_system)
+
+    fs_system = file_dao.get_system()
+    assert fs_system is not None
+    check_gems_system_integrity(fs_system, matrix_service)
+
+    # Both studies point to matrices with the same content
+    for db_component, fs_component in zip(db_system.components, fs_system.components):
+        for db_parameter, fs_parameter in zip(db_component.parameters, fs_component.parameters):
+            if db_parameter.time_dependent or db_parameter.scenario_dependent:
+                db_matrix = matrix_service.get(str(db_parameter.value)).to_numpy()
+                fs_matrix = matrix_service.get(str(fs_parameter.value)).to_numpy()
+                assert np.array_equal(db_matrix, fs_matrix)
+            else:
+                assert db_parameter.value == fs_parameter.value
 
 
 def test_should_not_access_system_components(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
@@ -72,11 +127,50 @@ def test_should_not_access_system_components(filestudy_dao_v10_2: FileStudyTreeD
         dao.save_components([])
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        "../data-series/max_load_values",
+        "/etc/passwd",
+        "sub/max_load_values",
+        "max_load_values.csv",
+        "max_load_values\n",
+        "ma x",
+    ],
+)
+def test_data_series_name_must_be_a_plain_name(filestudy_dao_v10_2: FileStudyTreeDao, name: str) -> None:
+    dao = filestudy_dao_v10_2
+    _add_system_file_to_study(dao)
+    system_file = dao.get_file_study().config.study_path / "input" / "system.yml"
+    system_file.write_text(system_file.read_text().replace("value: max_load_values", f"value: {name!r}", 1))
+
+    with pytest.raises(GemsSystemIncorrectlyFormatted, match="invalid data series name"):
+        dao.get_system()
+
+
+def test_data_series_symlink_is_rejected(filestudy_dao_v10_2: FileStudyTreeDao, tmp_path: Path) -> None:
+    dao = filestudy_dao_v10_2
+    _add_system_file_to_study(dao)
+    secret = tmp_path / "secret.csv"
+    secret.write_text("1\n2\n")
+    link = dao.get_file_study().config.study_path / "input" / "data-series" / "max_load_values.csv"
+    link.unlink()
+    link.symlink_to(secret)
+
+    with pytest.raises(GemsSystemIncorrectlyFormatted, match="outside of the data series folder"):
+        dao.get_system()
+
+
 def _add_system_file_to_study(dao: FileStudyTreeDao) -> None:
     input_folder = dao.get_file_study().config.study_path / "input"
     shutil.copy(ASSETS_PATH / "gems" / "system" / "system.yml", input_folder / "system.yml")
+    shutil.copytree(ASSETS_PATH / "gems" / "data-series", input_folder / "data-series", dirs_exist_ok=True)
 
 
 def _remove_system_file_for_study(dao: FileStudyTreeDao) -> None:
     input_folder = dao.get_file_study().config.study_path / "input"
     (input_folder / "system.yml").unlink()
+
+
+def _remove_data_series_files_for_study(dao: FileStudyTreeDao) -> None:
+    shutil.rmtree(dao.get_file_study().config.study_path / "input" / "data-series")

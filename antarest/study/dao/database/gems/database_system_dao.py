@@ -16,10 +16,14 @@ from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import (
+    GemsInvalidComponents,
     GemsInvalidConnection,
+    GemsInvalidParameterValue,
+    GemsParameterNotFound,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
+from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.gems.system import (
     GemsAreaConnection,
     GemsComponent,
@@ -40,6 +44,7 @@ from antarest.study.dao.database.models.gems.system import (
     GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE,
 )
 from antarest.study.dao.database.models.thermal import THERMAL_CLUSTER_TABLE
+from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvReader
 
 METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
 
@@ -104,6 +109,27 @@ def _check_legacy_connections(
         connected_ports.add(port)
 
 
+def _encode_parameter_value(value: float | str) -> str:
+    # The `value` column stores either a fixed numeric value or the `id` of a data series as text,
+    # since SQL has no native "number or string" column type. `repr` keeps the float's precision so
+    # it round-trips exactly through `_decode_parameter_value`.
+    return repr(value) if isinstance(value, float) else value
+
+
+def _build_error_message(
+    incorrectly_float_typed_parameter_ids: set[str], incorrectly_str_typed_parameter_ids: set[str]
+) -> str:
+    message = ""
+    if incorrectly_str_typed_parameter_ids:
+        message += f"Parameter value(s) must be a float when they do not depend on time or scenario: {sorted(incorrectly_str_typed_parameter_ids)}"
+
+    if incorrectly_float_typed_parameter_ids:
+        if message:
+            message += "\n"
+        message += f"Parameter value(s) must be a string when they depend on time or scenario: {sorted(incorrectly_float_typed_parameter_ids)}"
+    return message
+
+
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     """Database implementation of GemsSystemDao"""
 
@@ -162,8 +188,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     "id": component_row.component_id,
                     "model": model,
                     "scenario_group": component_row.scenario_group if component_row.scenario_group else None,
-                    "parameters": component_parameters.get(component_row.component_id),
-                    "properties": component_properties.get(component_row.component_id),
+                    "parameters": component_parameters.get(component_row.component_id, []),
+                    "properties": component_properties.get(component_row.component_id, []),
                 }
             )
 
@@ -181,12 +207,13 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         parameters_rows = session.execute(parameters_stmt).fetchall()
         component_parameters: dict[str, list[dict[str, Any]]] = {}
         for parameter_row in parameters_rows:
+            is_dataseries = parameter_row.time_dependent or parameter_row.scenario_dependent
             component_parameters.setdefault(parameter_row.component_id, []).append(
                 {
                     "id": parameter_row.parameter_id,
                     "time-dependent": parameter_row.time_dependent,
                     "scenario-dependent": parameter_row.scenario_dependent,
-                    "value": parameter_row.value,
+                    "value": parameter_row.matrix_id if is_dataseries else parameter_row.value,
                 }
             )
         return component_parameters
@@ -283,18 +310,52 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
     @override
     def save_components(self, components: List[GemsComponent]) -> None:
+        """
+        Saves the components and their parameters and properties in the database.
+        Components given as input must have their time and scenario-dependent parameters filled with matrix ids.
+        """
         study_data_id = self._study_data_id
         session = self._db_session
 
         if not self._get_system_row_if_exists():
             raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
+        component_values, property_values, parameter_rows = self._build_component_and_parameter_rows(components)
+
         # Clean all existing data regarding components
         session.execute(delete(GEMS_COMPONENTS_TABLE).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id))
 
+        if component_values:
+            session.execute(insert(GEMS_COMPONENTS_TABLE), component_values)
+        if parameter_rows:
+            try:
+                session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_rows)
+            except IntegrityError as e:
+                session.rollback()
+                raise GemsInvalidComponents("Could not save components, the table is not filled as it should") from e
+
+        if property_values:
+            session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
+
+        session.commit()
+
+    def _build_component_and_parameter_rows(
+        self, components: List[GemsComponent]
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+        """
+        Builds the rows to insert in `GEMS_COMPONENTS_TABLE`, `GEMS_COMPONENT_PROPERTIES_TABLE`, and
+        `GEMS_COMPONENT_PARAMETERS_TABLE`.
+        """
+        study_data_id = self._study_data_id
+
         component_values = []
-        parameter_values = []
         property_values = []
+        parameter_rows: list[dict[str, Any]] = []
+        # Indices (into `parameter_rows`) of the rows whose `matrix_id` still needs to be filled once
+        # `matrix_service.create_batch` returns, in the same order as `matrix_dataframes`.
+        dependent_parameter_indices: list[int] = []
+        matrix_dataframes = []
+
         for component in components:
             library_id, model_id = component.model.split(".", 1)
 
@@ -309,16 +370,21 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
 
             for parameter in component.parameters or []:
-                parameter_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "component_id": component.id,
-                        "parameter_id": parameter.id,
-                        "time_dependent": parameter.time_dependent,
-                        "scenario_dependent": parameter.scenario_dependent,
-                        "value": parameter.value,
-                    }
-                )
+                row = {
+                    "study_data_id": study_data_id,
+                    "component_id": component.id,
+                    "parameter_id": parameter.id,
+                    "time_dependent": parameter.time_dependent,
+                    "scenario_dependent": parameter.scenario_dependent,
+                    "value": None,
+                    "matrix_id": None,
+                }
+                if parameter.is_dataseries():
+                    dependent_parameter_indices.append(len(parameter_rows))
+                    matrix_dataframes.append(CsvReader.read(parameter.value))
+                else:
+                    row["value"] = parameter.get_value_as_float()
+                parameter_rows.append(row)
 
             for prop in component.properties or []:
                 property_values.append(
@@ -330,14 +396,13 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     }
                 )
 
-        if component_values:
-            session.execute(insert(GEMS_COMPONENTS_TABLE), component_values)
-        if parameter_values:
-            session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
-        if property_values:
-            session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
+        if matrix_dataframes:
+            matrix_service = self.get_impl().matrix_service
+            matrix_ids = matrix_service.create_batch(iter(matrix_dataframes))
+            for index, matrix_id in zip(dependent_parameter_indices, matrix_ids):
+                parameter_rows[index]["matrix_id"] = matrix_id
 
-        session.commit()
+        return component_values, property_values, parameter_rows
 
     def _save_area_connections(self, connections: List[GemsAreaConnection]) -> None:
         if not connections:
@@ -437,6 +502,27 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         # All components and clusters exist and no port is connected twice.
         # It means the DB table is not filled as it should.
         raise ValueError("The thermal capacity connections table is not filled as it should") from e
+
+    @override
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> NpArray:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        stmt = select(GEMS_COMPONENT_PARAMETERS_TABLE).where(
+            GEMS_COMPONENT_PARAMETERS_TABLE.c.study_data_id == study_data_id,
+            GEMS_COMPONENT_PARAMETERS_TABLE.c.component_id == component_id,
+            GEMS_COMPONENT_PARAMETERS_TABLE.c.parameter_id == parameter_id,
+        )
+        parameter_row = session.execute(stmt).fetchone()
+        if parameter_row is None:
+            raise GemsParameterNotFound(f"Parameter '{parameter_id}' not found for component '{component_id}'")
+        if parameter_row.matrix_id is None:
+            raise GemsInvalidParameterValue(
+                f"Parameter '{parameter_id}' of component '{component_id}' is a constant, it does not reference a matrix"
+            )
+
+        matrix_service = self.get_impl().matrix_service
+        return matrix_service.get(parameter_row.matrix_id).to_numpy()
 
     def _get_components_library_and_model(self) -> dict[str, tuple[str, str]]:
         study_data_id = self._study_data_id
