@@ -85,6 +85,11 @@ def test_lifecycle() -> None:
 
 
 def test_start_in_current_thread() -> None:
+    """
+    `start(threaded=False)` runs the event loop in the calling thread.
+    On Python 3.14 it used to crash because `asyncio.get_event_loop()`
+    no longer creates a loop implicitly.
+    """
     event_bus = build_eventbus(autostart=False)
     test_bucket: list[Event] = []
 
