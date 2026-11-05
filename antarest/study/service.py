@@ -89,6 +89,7 @@ from antarest.study.business.binding_constraint_management import BindingConstra
 from antarest.study.business.compatibility_parameters_management import CompatibilityParamsManager
 from antarest.study.business.correlation_management import CorrelationManager
 from antarest.study.business.district_manager import DistrictManager
+from antarest.study.business.gems_managers.scenario_builder_management import GemsScenarioBuilderManager
 from antarest.study.business.general_management import GeneralManager
 from antarest.study.business.layer_management import LayerManager
 from antarest.study.business.link_management import LinkManager
@@ -682,6 +683,7 @@ class StudyService:
             self.binding_constraint_manager,
         )
         self.user_resources_manager = UserResourcesManager(command_context)
+        self.gems_scenario_builder_manager = GemsScenarioBuilderManager(command_context)
         self.cache_service = cache_service
         self.config = config
         self.on_deletion_callbacks: list[Callable[[str], None]] = []
