@@ -61,6 +61,8 @@ def _filter_files_with_same_prefix(
     file_dict = {}
     for file in all_files:
         splitted_file_name = file.removesuffix(".txt").split("-")
+        if splitted_file_name[0] == "id":
+            continue  # We do not want to process "id" files
         if len(splitted_file_name) == 2:
             file_type, freq = splitted_file_name
         else:
