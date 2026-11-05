@@ -12,6 +12,7 @@
 
 import datetime
 import io
+import threading
 import time
 import typing as t
 from pathlib import Path
@@ -24,6 +25,8 @@ from antarest.core.tasks.model import TaskDTO, TaskStatus
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.study.model import Study
+from antarest.study.storage.variantstudy.model.model import GenerationResultInfoDTO
+from antarest.study.storage.variantstudy.variant_study_service import VariantStudyService
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.studies_blueprint.utils import (
     check_exported_study_integrity,
@@ -486,7 +489,9 @@ def test_lifecycle_for_both_storage_modes(
 
 
 @pytest.mark.flaky(reruns=3)
-def test_variant_concurrent_generation(client: TestClient, admin_access_token: str) -> None:
+def test_variant_concurrent_generation(
+    client: TestClient, admin_access_token: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 
     # Create a Variant study
@@ -501,6 +506,7 @@ def test_variant_concurrent_generation(client: TestClient, admin_access_token: s
     # Launch a generation task
     res = client.put(f"/v1/studies/{variant_id}/generate")
     res.raise_for_status()
+    initial_task_id = res.json()
 
     # Do not wait for the generation to end and add an area to the variant
     res = client.post(f"/v1/studies/{variant_id}/areas", json={"name": "area1"})
@@ -511,25 +517,31 @@ def test_variant_concurrent_generation(client: TestClient, admin_access_token: s
     assert res.status_code == 200
     assert res.json() == [{"id": "area1", "name": "area1", "thermals": [], "type": "AREA"}]
 
+    wait_task_completion(client, admin_access_token, initial_task_id)
+
     # Launch 3 generation tasks.
     # The 2nd and 3rd generations should not be launched and simply return the id of the first one.
-    # But as the generations are really fast, this is a bit clunky.
-    # For test reproducibility, we're just going to check that at most 2 generation tasks were launched.
-    res = client.put(f"/v1/studies/{variant_id}/generate")
-    first_task_id = res.json()
-    res = client.put(f"/v1/studies/{variant_id}/generate")
-    second_task_id = res.json()
-    res = client.put(f"/v1/studies/{variant_id}/generate")
-    third_task_id = res.json()
-    generation_tasks = {first_task_id, second_task_id, third_task_id}
-    assert len(generation_tasks) <= 2
+    # Generations are really fast: block them until all requests are sent, for test reproducibility.
+    release_generation = threading.Event()
+    original_generate = VariantStudyService.generate
 
-    # Wait for the generations to end and ensure they succeeded
-    for task_id in generation_tasks:
-        res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True&timeout=10")
-        res.raise_for_status()
-        task = res.json()
-        assert task["result"]["success"] is True
+    def blocking_generate(self: VariantStudyService, *args: t.Any, **kwargs: t.Any) -> GenerationResultInfoDTO:
+        release_generation.wait(timeout=30)
+        return original_generate(self, *args, **kwargs)
+
+    monkeypatch.setattr(VariantStudyService, "generate", blocking_generate)
+    try:
+        generation_tasks = {client.put(f"/v1/studies/{variant_id}/generate").json() for _ in range(3)}
+    finally:
+        release_generation.set()
+    assert len(generation_tasks) == 1
+
+    # Wait for the generation to end and ensure it succeeded
+    task_id = generation_tasks.pop()
+    res = client.get(f"/v1/tasks/{task_id}?wait_for_completion=True&timeout=10")
+    res.raise_for_status()
+    task = res.json()
+    assert task["result"]["success"] is True
 
 
 def test_delete_command(client: TestClient, admin_access_token: str) -> None:
