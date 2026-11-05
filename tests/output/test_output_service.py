@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import uuid
 import zipfile
+from collections.abc import Callable
 from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
@@ -19,12 +20,13 @@ from unittest.mock import ANY, Mock
 import pytest
 from typing_extensions import override
 
-from antarest.core.exceptions import OutputAlreadyExists, TaskAlreadyRunning
+from antarest.core.exceptions import OutputAlreadyExists, OutputNotFound, TaskAlreadyRunning
 from antarest.core.model import PublicMode, StudyPermissionType
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import current_time
+from antarest.launcher.model import LogType
 from antarest.output.dbmodel import Output
 from antarest.output.service import IStudyMetadataProvider, OutputService, StudyMetadata
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
@@ -431,3 +433,36 @@ def test_select_outputs_by_id_and_unarchiving_date(
     repository.get_all.assert_called_once_with("study")
     repository.get.assert_not_called()
     repository.save_unarchiving_date.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "output_id", ["", ".", "..", "../x", "a/b", "..\\", "..\\..\\x", "C:", "C:..", "D:other", "c:foo"]
+)
+def test_output_operations_reject_ids_that_escape_the_outputs_folder(output_id: str) -> None:
+    """
+    An invalid id like ".." must never be joined to a path: for database studies with side-by-side
+    outputs it would reach another study's (CWE-639). `_find_output_storage` rejects it before any
+    storage is consulted, so every output endpoint is covered by the single check.
+    """
+    storage = Mock(spec=IOutputStorage, storage_type=OutputStorageType.IN_STUDY_FILE_TREE)
+    storage.output_exists.return_value = True
+    service = OutputService(
+        matrix_service=Mock(),
+        file_transfer_manager=Mock(),
+        tmp_dir=Mock(),
+        studies_repository=Mock(spec=IStudyMetadataProvider),
+        storages=[storage],
+        task_service=SimpleSyncTaskService(),
+        output_repository=Mock(),
+    )
+
+    operations: list[Callable[[], object]] = [
+        lambda: service.delete_output("study", output_id),
+        lambda: service.get_logs("study", output_id, LogType.STDOUT),
+        lambda: service.get_digest_file("study", output_id),
+    ]
+    for operation in operations:
+        with pytest.raises(OutputNotFound):
+            operation()
+
+    storage.output_exists.assert_not_called()
