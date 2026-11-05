@@ -35,6 +35,8 @@ from antarest.output.model.download import MatrixIndex
 from antarest.study.dtos import StudySynthesis
 from antarest.study.model import (
     DeleteManyStudies,
+    GlobalStudyRepairReport,
+    GlobalStudyRepairRequest,
     StorageMode,
     StudyMetadataDTO,
     StudyMetadataPatchDTO,
@@ -582,6 +584,22 @@ def create_study_routes() -> APIRouter:
     def unarchive_study(study_service: StudyServiceDep, study_id: UuidStr) -> str:
         logger.info(f"Unarchiving study {study_id}")
         return study_service.unarchive(study_id)
+
+    @bp.post(
+        "/studies/_repair",
+        summary="Repair inconsistencies that are not bound to a single study",
+    )
+    def repair_studies(
+        study_service: StudyServiceDep, repair_request: GlobalStudyRepairRequest
+    ) -> GlobalStudyRepairReport:
+        """
+        Admin only. Returns the repair report; nothing is applied in `dryRun` mode (default).
+
+        - `orphan_archives`: delete the archives with no matching study in database.
+        """
+        require_admin_user()
+        logger.info("Repairing studies")
+        return study_service.repair_studies(repair_request)
 
     @bp.post(
         "/studies/{study_id}/_repair",

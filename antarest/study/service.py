@@ -132,6 +132,9 @@ from antarest.study.model import (
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_REFERENCE_TEMPLATES,
     STUDY_VERSION_10_2,
+    GlobalStudyRepairReport,
+    GlobalStudyRepairRequest,
+    GlobalStudyRepairType,
     MatrixFrequency,
     RawStudy,
     StorageMode,
@@ -2276,6 +2279,56 @@ class StudyService:
             raw_study_db.archived = archived
             self.repository.save(raw_study_db)
             remove_from_cache(cache=self.cache_service, root_id=uuid)
+
+    def repair_studies(self, repair_request: GlobalStudyRepairRequest) -> GlobalStudyRepairReport:
+        report = GlobalStudyRepairReport(dry_run=repair_request.dry_run)
+        if GlobalStudyRepairType.ORPHAN_ARCHIVES in repair_request.repairs:
+            self._repair_orphan_archives(repair_request.dry_run, report)
+        return report
+
+    def _repair_orphan_archives(self, dry_run: bool, report: GlobalStudyRepairReport) -> None:
+        # Scan the disk first: an archive is always written after its study row.
+        scan = self.storage_service.raw_study_service.list_study_archives()
+        existing_ids = self.repository.get_all_ids()
+
+        for entry in scan.unexpected_entries:
+            report.warnings.append(f"Unexpected entry ignored in archive directory: {entry.name}")
+
+        for archive in scan.archives:
+            if archive.study_id in existing_ids:
+                continue
+            details = {"file": archive.path.name}
+            action = StudyRepairAction(
+                code="delete_orphan_archive",
+                description="Delete the orphan archive file",
+                details=details,
+            )
+            report.issues.append(
+                StudyRepairIssue(
+                    code="orphan_archive",
+                    severity=StudyRepairSeverity.WARNING,
+                    message="Archive file has no matching study in database",
+                    details=details,
+                )
+            )
+            report.proposed_actions.append(action)
+            if dry_run:
+                continue
+            try:
+                archive.path.unlink(missing_ok=True)
+            except OSError as e:
+                logger.error("Failed to delete orphan archive '%s'", archive.path.name, exc_info=e)
+                report.issues.append(
+                    StudyRepairIssue(
+                        code="orphan_archive_deletion_failed",
+                        severity=StudyRepairSeverity.ERROR,
+                        message=str(e),
+                        details=details,
+                    )
+                )
+                continue
+            logger.info("Deleted orphan archive '%s'", archive.path.name)
+            report.applied_actions.append(action)
 
     def _validate_and_prepare_permissions(self, group_ids: Sequence[str]) -> tuple[Any, list[Group]]:
         """
