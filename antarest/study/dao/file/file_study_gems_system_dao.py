@@ -154,6 +154,7 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
         mapping_matrix_id_to_csv = {}
         matrices_count = 0
 
+        data_series_folder.mkdir(parents=True, exist_ok=True)
         for component in system.components:
             for parameter in component.parameters:
                 if not parameter.is_dataseries():
@@ -161,7 +162,6 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
 
                 # Update the parameter value with the name of the CSV file only if it has not been written yet
                 if parameter.get_value_as_str() not in mapping_matrix_id_to_csv:
-                    data_series_folder.mkdir(parents=True, exist_ok=True)
                     name = f"data_series_{matrices_count}"
                     matrices_count += 1
                     CsvWriter.write(

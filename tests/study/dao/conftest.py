@@ -483,7 +483,7 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
 
     first_component_value = matrix_service.get(str(first_component.parameters[1].value))
     assert first_component_value is not None
-    expected = pl.DataFrame([[v] for v in range(10, 58, 2)], orient="row", schema=["column_1"])
+    expected = pl.DataFrame([10.122, 12.344, 14.0, 16.566, 18.788, 20.5], orient="row", schema=["column_1"])
     assert first_component_value.equals(expected)
 
     second_component = system.components[1]
@@ -504,9 +504,9 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
     assert second_component_value is not None
     expected_matrix = pl.DataFrame(
         [
-            [2, 4, 6, 8, 10, 12, 14, 16],
-            [3, 6, 9, 12, 15, 18, 21, 24],
-            [4, 8, 12, 16, 20, 24, 28, 32],
+            [2.2, 4.4, 6.6, 8.8, 10.10, 12.12, 14.14, 16.16],
+            [3.3, 6.6, 9.9, 12.12, 15.15, 18.18, 21.21, 24.24],
+            [4.4, 8.8, 12.12, 16.16, 20.20, 24.24, 28.28, 32.32],
         ],
         orient="row",
         schema=["column_1", "column_2", "column_3", "column_4", "column_5", "column_6", "column_7", "column_8"],
