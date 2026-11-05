@@ -9,20 +9,33 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from typing import Annotated, TypeAlias
 
-from pydantic import ConfigDict, Field
+from pydantic import AfterValidator, ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
 from antarest.core.model import GemsId
 from antarest.core.serde import AntaresBaseModel
+
+Year: TypeAlias = Annotated[int, Field(ge=0)]
 
 
 class GemsScBuilderMapping(AntaresBaseModel):
     """Associate a zero-based scenario with a one-based data-series column."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
 
-    scenario: int = Field(ge=0)
-    time_series_index: int = Field(ge=1)
+    scenario: Year
+    time_series_index: Year
+
+
+def _check_scenario_duplication(data: list[GemsScBuilderMapping]) -> list[GemsScBuilderMapping]:
+    if len(data) != len(set(mapping.scenario for mapping in data)):
+        raise ValueError("Found duplicated scenario inside GEMS scenario builder")
+    return sorted(data, key=lambda x: x.scenario)
+
+
+GemsScBuilderMappings: TypeAlias = Annotated[list[GemsScBuilderMapping], AfterValidator(_check_scenario_duplication)]
 
 
 class GemsScenarioBuilder(AntaresBaseModel):
@@ -30,4 +43,17 @@ class GemsScenarioBuilder(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    scenarios: dict[GemsId, list[GemsScBuilderMapping]] = Field(default_factory=dict)
+    scenarios: dict[GemsId, GemsScBuilderMappings] = Field(default_factory=dict)
+
+
+def fill_missing_years(data: GemsScBuilderMappings, nb_years: int) -> GemsScBuilderMappings:
+    """
+    GEMS scenario builder has default values for missing years, we should initialize them for the front-end
+    """
+    existing = {mapping.scenario for mapping in data}
+
+    new_mapping = data + [
+        GemsScBuilderMapping(scenario=year, time_series_index=year) for year in range(nb_years) if year not in existing
+    ]
+    new_mapping.sort(key=lambda x: x.scenario)
+    return new_mapping
