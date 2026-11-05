@@ -20,30 +20,18 @@ import usePromiseWithSnackbarError from "@/hooks/usePromiseWithSnackbarError";
 import { getUserResourceContent } from "@/services/api/studies/userResources";
 import { downloadFile, getFileExtension } from "@/utils/fileUtils";
 import GridOffIcon from "@mui/icons-material/GridOff";
-import { useTheme } from "@mui/material";
+import { Typography } from "@mui/material";
 import { useTranslation } from "react-i18next";
-import { Light as SyntaxHighlighter, type SyntaxHighlighterProps } from "react-syntax-highlighter";
-import { atomOneDark } from "react-syntax-highlighter/dist/esm/styles/hljs";
-import type { DataCompProps } from "../../-utils";
-import { Filename, Menubar } from "./styles";
-
-function getSyntaxProps(text: string, fileExtension: string): SyntaxHighlighterProps {
-  const isTxtFile = fileExtension === "txt";
-
-  return {
-    children: text,
-    showLineNumbers: !isTxtFile,
-    language: isTxtFile ? "plaintext" : fileExtension,
-  };
-}
+import type { DataCompProps } from "../../../-utils";
+import { Filename, Menubar } from "../styles";
+import { textContentSx } from "./styles";
 
 function isEmptyContent(text: string): boolean {
   return typeof text === "string" && !text.trim();
 }
 
-function Text({ studyId, path, name, type: fileType }: DataCompProps) {
+function Text({ studyId, path, name }: DataCompProps) {
   const { t } = useTranslation();
-  const theme = useTheme();
   const fileExtension = getFileExtension(path);
 
   const textResponse = usePromiseWithSnackbarError(
@@ -53,17 +41,9 @@ function Text({ studyId, path, name, type: fileType }: DataCompProps) {
     },
     {
       errorMessage: t("studies.error.retrieveData"),
-      deps: [studyId, path, fileType],
+      deps: [studyId, path],
     },
   );
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleUploadSuccessful = () => {
-    textResponse.reload();
-  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -81,27 +61,16 @@ function Text({ studyId, path, name, type: fileType }: DataCompProps) {
               studyStorageMode="database"
               path={path}
               accept={{ "*/*": [`.${fileExtension}`] }}
-              onUploadSuccessful={handleUploadSuccessful}
+              onUploadSuccessful={textResponse.reload}
             />
             <DownloadButton onClick={() => downloadFile(text, name)} />
           </Menubar>
           {isEmptyContent(text) ? (
             <EmptyView icon={GridOffIcon} title={t("global.noData")} />
           ) : (
-            <SyntaxHighlighter
-              style={atomOneDark}
-              lineNumberStyle={{
-                opacity: 0.5,
-                paddingRight: theme.spacing(3),
-              }}
-              customStyle={{
-                margin: 0,
-                padding: theme.spacing(2),
-                borderRadius: theme.shape.borderRadius,
-                fontSize: theme.typography.body2.fontSize,
-              }}
-              {...getSyntaxProps(text, fileExtension)}
-            />
+            <Typography component="pre" variant="body2" sx={textContentSx}>
+              <code>{text}</code>
+            </Typography>
           )}
         </>
       )}
