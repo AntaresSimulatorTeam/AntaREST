@@ -938,27 +938,30 @@ def test_parse_simulation(empty_study_880: FileStudy) -> None:
     assert simulation.date == "20250521-1009"
 
     # Check the FileStudyTree object
-    empty_study_880.config.outputs = {output_id: simulation}
-    tree = empty_study_880.tree.build()
-    output_tree = tree["output"].get()
-    assert len(output_tree.keys()) == 1
-    # Asserts every .txt file is scanned but not the .mps one
-    assert "file_1" in output_tree[output_id]
-    assert "file_2" in output_tree[output_id]
-    assert "checkIntegrity" in output_tree[output_id]
-    assert "file_3" not in output_tree[output_id]
-    assert "file_4" in output_tree[output_id]
-    assert "file_5" in output_tree[output_id]
-    assert "file_6" in output_tree[output_id]
-    assert "file_7" in output_tree[output_id]
-    assert "file_8" in output_tree[output_id]
-    # Asserts the `economy` folder is scanned
-    assert "economy" in output_tree[output_id]
-    assert "adequacy" not in output_tree[output_id]
-    # Asserts the GEMS folder is scanned
-    assert "gems-views" in output_tree[output_id]
-    assert "view" in output_tree[output_id]["gems-views"]
-    assert "view_config" in output_tree[output_id]["gems-views"]
+    # Ensures we see the same tree no matter the simulation `error` attribute.
+    for status in [True, False]:
+        simulation.error = status
+        empty_study_880.config.outputs = {output_id: simulation}
+        tree = empty_study_880.tree.build()
+        output_tree = tree["output"].get()
+        assert len(output_tree.keys()) == 1
+        # Asserts every .txt file is scanned but not the .mps one
+        assert "file_1" in output_tree[output_id]
+        assert "file_2" in output_tree[output_id]
+        assert "checkIntegrity" in output_tree[output_id]
+        assert "file_3" not in output_tree[output_id]
+        assert "file_4" in output_tree[output_id]
+        assert "file_5" in output_tree[output_id]
+        assert "file_6" in output_tree[output_id]
+        assert "file_7" in output_tree[output_id]
+        assert "file_8" in output_tree[output_id]
+        # Asserts the `economy` folder is scanned
+        assert "economy" in output_tree[output_id]
+        assert "adequacy" not in output_tree[output_id]
+        # Asserts the GEMS folder is scanned
+        assert "gems-views" in output_tree[output_id]
+        assert "view" in output_tree[output_id]["gems-views"]
+        assert "view_config" in output_tree[output_id]["gems-views"]
 
 
 def test_parse_simulation_error_parameter(empty_study_880: FileStudy) -> None:
