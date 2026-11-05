@@ -29,7 +29,7 @@ def test_build_files_tree() -> None:
     files = [
         PurePosixPath("economy/mc-all/areas/fr/values-hourly.txt"),
         PurePosixPath("economy/mc-all/grid/digest.txt"),
-        PurePosixPath("gems-views/simulation_table.csv"),
+        PurePosixPath("views/simulation_table.csv"),
         PurePosixPath("info.antares-output"),
         PurePosixPath("simulation.log"),
     ]
@@ -54,7 +54,7 @@ def test_build_files_tree() -> None:
                     )
                 ],
             ),
-            FolderTree(name="gems-views", files=["simulation_table.csv"], directories=[]),
+            FolderTree(name="views", files=["simulation_table.csv"], directories=[]),
         ],
     )
 
