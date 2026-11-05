@@ -38,7 +38,7 @@ dependencies = [
     "numexpr==2.14.2",
     "openpyxl~=3.1.5",
     "pandas~=2.3.3",
-    "paramiko~=3.5.1",
+    "paramiko~=3.4.1",
     "plyer~=2.1.0",
     "polars~=1.44.2",
     "psycopg2-binary~=2.9.9",
@@ -87,7 +87,7 @@ test = [
 ]
 
 [project.optional-dependencies]
-desktop = ["PyQt6~=6.12.0"]
+desktop = ["PyQt6~=6.11.0"]
 windows = [
     "pypiwin32; platform_system == 'Windows'",
 ]

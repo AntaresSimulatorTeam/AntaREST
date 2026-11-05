@@ -29,6 +29,18 @@
       "allowedVersions": "<2.5"
     },
     {
+      "description": "antares-launcher 1.6.0 requires paramiko<3.5",
+      "matchManagers": ["pep621"],
+      "matchPackageNames": ["paramiko"],
+      "allowedVersions": "<3.5"
+    },
+    {
+      "description": "PyQt6 6.12.0 ships invalid .pyi stubs that break mypy",
+      "matchManagers": ["pep621"],
+      "matchPackageNames": ["PyQt6", "pyqt6"],
+      "allowedVersions": "<6.12"
+    },
+    {
       "description": "Group all Python minor/patch updates in one PR",
       "matchManagers": ["pep621"],
       "matchUpdateTypes": ["minor", "patch"],
