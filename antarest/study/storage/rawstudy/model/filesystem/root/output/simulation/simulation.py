@@ -55,7 +55,7 @@ class OutputSimulation(FolderNode):
             "info": OutputSimulationInfoAntaresOutput(self.config.next_file("info.antares-output")),
         }
 
-        if not self.simulation.error and self.config.path.exists():
+        if self.config.path.exists():
             for resource in self.config.path.iterdir():
                 if resource.is_file():
                     file_name = resource.name
