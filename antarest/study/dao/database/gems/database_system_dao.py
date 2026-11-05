@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from pathlib import Path
 from typing import Any, List, NoReturn, Sequence
 
 from polars import DataFrame
@@ -24,6 +25,7 @@ from antarest.core.exceptions import (
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
+from antarest.core.utils.polars import read_csv
 from antarest.study.business.model.gems.system import (
     GemsAreaConnection,
     GemsComponent,
@@ -44,7 +46,6 @@ from antarest.study.dao.database.models.gems.system import (
     GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE,
 )
 from antarest.study.dao.database.models.thermal import THERMAL_CLUSTER_TABLE
-from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvReader
 
 METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
 
@@ -326,16 +327,28 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         session.execute(delete(GEMS_COMPONENTS_TABLE).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id))
 
         if component_values:
-            session.execute(insert(GEMS_COMPONENTS_TABLE), component_values)
+            try:
+                session.execute(insert(GEMS_COMPONENTS_TABLE), component_values)
+            except IntegrityError as e:
+                session.rollback()
+                raise GemsInvalidComponents("Could not save components, the table is not filled as it should") from e
         if parameter_rows:
             try:
                 session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_rows)
             except IntegrityError as e:
                 session.rollback()
-                raise GemsInvalidComponents("Could not save components, the table is not filled as it should") from e
+                raise GemsInvalidComponents(
+                    "Could not save components parameters, the table is not filled as it should"
+                ) from e
 
         if property_values:
-            session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
+            try:
+                session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
+            except IntegrityError as e:
+                session.rollback()
+                raise GemsInvalidComponents(
+                    "Could not save components properties, the table is not filled as it should"
+                ) from e
 
         session.commit()
 
@@ -381,7 +394,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                 }
                 if parameter.is_dataseries():
                     dependent_parameter_indices.append(len(parameter_rows))
-                    matrix_dataframes.append(CsvReader.read(parameter.value))
+                    matrix_dataframes.append(read_csv(Path(parameter.get_value_as_str()), has_headers=False))
                 else:
                     row["value"] = parameter.get_value_as_float()
                 parameter_rows.append(row)

@@ -23,9 +23,10 @@ from antarest.core.exceptions import (
     GemsSystemIncorrectlyFormatted,
     GemsUnavailableForFileSystemStudies,
 )
+from antarest.core.utils.polars import read_csv
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
-from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvReader, CsvWriter
+from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvWriter
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader, YAMLWriter
 
@@ -108,7 +109,7 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
             file_path = _resolve_data_series_file(
                 data_series_folder, parameter.get_value_as_str(), file_study.config.study_id
             )
-            dataframes.append(CsvReader.read(file_path))
+            dataframes.append(read_csv(file_path, has_headers=False))
 
         if dataframes:
             matrix_ids = self.get_impl().matrix_service.create_batch(iter(dataframes))

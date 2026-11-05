@@ -24,7 +24,7 @@ from typing_extensions import override
 from antarest.core.exceptions import ChildNotFoundError
 from antarest.core.model import JSON
 from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
-from antarest.core.utils.polars import create_polars_dataframe, read_input_dataframe
+from antarest.core.utils.polars import create_polars_dataframe, read_tsv
 from antarest.core.utils.utils import StopWatch
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
@@ -226,7 +226,7 @@ class InputSeriesMatrix(LazyNode[bytes | JSON, MatrixId | MatrixContent, JSON]):
             matrix = self._matrix_storage_context.matrix_service.get(link_content)
         else:
             try:
-                matrix = read_input_dataframe(file_path, has_headers=False)
+                matrix = read_tsv(file_path, has_headers=False)
                 matrix.columns = [str(i) for i in range(len(matrix.columns))]
             except FileNotFoundError as e:
                 # Some matrices are optional and not required by the Simulator. If so, we shouldn't raise.
