@@ -43,6 +43,7 @@ from antarest.output.model import (
     OutputVariablesViewResponse,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
+from antarest.output.model.output_id import OutputId
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.output.variable_view.model import OutputItemId
 from antarest.study.model import MatrixFrequency
@@ -128,7 +129,7 @@ def create_output_routes() -> APIRouter:
         summary="Convert output to another storage",
     )
     def convert_output(
-        output_service: OutputServiceDep, uuid: UuidStr, output_id: SanitizedStr, storage_type: OutputStorageType
+        output_service: OutputServiceDep, uuid: UuidStr, output_id: OutputId, storage_type: OutputStorageType
     ) -> str | None:
         logger.info(f"Converting output {uuid} / {output_id} to {storage_type} storage")
         output_service.convert_output(uuid, output_id, storage_type)
@@ -139,7 +140,7 @@ def create_output_routes() -> APIRouter:
         summary="Get outputs data variables",
     )
     def output_variables_information(
-        output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr
+        output_service: OutputServiceDep, study_id: UuidStr, output_id: OutputId
     ) -> OutputVariablesInformation:
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
         return output_service.get_output_variables_information(study_id, output_id)
@@ -148,9 +149,7 @@ def create_output_routes() -> APIRouter:
         "/studies/{study_id}/outputs/{output_id}/export",
         summary="Get outputs data",
     )
-    def output_export(
-        output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr
-    ) -> FileDownloadTaskDTO:
+    def output_export(output_service: OutputServiceDep, study_id: UuidStr, output_id: OutputId) -> FileDownloadTaskDTO:
         logger.info(f"Fetching whole output of the simulation {output_id} for study {study_id}")
         return output_service.export_output(study_uuid=study_id, output_uuid=output_id)
 
@@ -161,7 +160,7 @@ def create_output_routes() -> APIRouter:
     def get_output_time_index(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         frequency: Annotated[
             MatrixFrequency,
             Query(
@@ -189,7 +188,7 @@ def create_output_routes() -> APIRouter:
         output_service: OutputServiceDep,
         tmp_export_file: TmpExportFileDep,
         study_id: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         data: StudyDownloadDTO,
         use_task: Annotated[bool, Query(deprecated=True)] = False,
     ) -> FileResponse:
@@ -201,7 +200,7 @@ def create_output_routes() -> APIRouter:
         "/studies/{study_id}/outputs/{output_id}",
         summary="Delete a simulation output",
     )
-    def delete_output(output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr) -> None:
+    def delete_output(output_service: OutputServiceDep, study_id: UuidStr, output_id: OutputId) -> None:
         logger.info(f"Deleting output {output_id} from study {study_id}")
         output_service.delete_output(study_id, output_id)
 
@@ -209,7 +208,7 @@ def create_output_routes() -> APIRouter:
         "/studies/{study_id}/outputs/{output_id}/_archive",
         summary="Archive output",
     )
-    def archive_output(output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr) -> str | None:
+    def archive_output(output_service: OutputServiceDep, study_id: UuidStr, output_id: OutputId) -> str | None:
         logger.info(f"Archiving of the output {output_id} of the study {study_id}")
 
         content = output_service.archive_output(study_id, output_id)
@@ -219,7 +218,7 @@ def create_output_routes() -> APIRouter:
         "/studies/{study_id}/outputs/{output_id}/_unarchive",
         summary="Unarchive output",
     )
-    def unarchive_output(output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr) -> str | None:
+    def unarchive_output(output_service: OutputServiceDep, study_id: UuidStr, output_id: OutputId) -> str | None:
         logger.info(f"Unarchiving of the output {output_id} of the study {study_id}")
 
         content = output_service.unarchive_output(study_id, output_id)
@@ -229,7 +228,7 @@ def create_output_routes() -> APIRouter:
         "/private/studies/{study_id}/outputs/{output_id}/digest-ui",
         summary="Display an output digest file for the front-end",
     )
-    def get_digest_file(output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr) -> DigestUI:
+    def get_digest_file(output_service: OutputServiceDep, study_id: UuidStr, output_id: OutputId) -> DigestUI:
         logger.info(f"Retrieving the digest file for the output {output_id} of the study {study_id}")
         return output_service.get_digest_file(study_id, output_id)
 
@@ -241,7 +240,7 @@ def create_output_routes() -> APIRouter:
             404: {"description": "The output does not exist"},
         },
     )
-    def get_output_raw_files(output_service: OutputServiceDep, uuid: UuidStr, output_id: SanitizedStr) -> FilesTree:
+    def get_output_raw_files(output_service: OutputServiceDep, uuid: UuidStr, output_id: OutputId) -> FilesTree:
         logger.info(f"Fetching raw files tree of the output {output_id} for study {uuid}")
         return output_service.get_raw_files_tree(uuid, output_id)
 
@@ -256,7 +255,7 @@ def create_output_routes() -> APIRouter:
     def get_output_raw_file_content(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         path: Annotated[SanitizedStr, Query(description="Path of the file, relative to the output root")],
     ) -> Response:
         logger.info(f"Fetching raw file '{path}' of the output {output_id} for study {uuid}")
@@ -279,7 +278,7 @@ def create_output_routes() -> APIRouter:
     def aggregate_areas_raw_data(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         query_file: MCIndAreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: SanitizedStr = "",
@@ -337,7 +336,7 @@ def create_output_routes() -> APIRouter:
     def redirect_aggregate_areas_raw_data(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         query_file: MCIndAreasQueryFile,
         frequency: MatrixFrequency,
         mc_years: SanitizedStr = "",
@@ -356,7 +355,7 @@ def create_output_routes() -> APIRouter:
     def aggregate_links_raw_data(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         query_file: MCIndLinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: SanitizedStr = "",
@@ -413,7 +412,7 @@ def create_output_routes() -> APIRouter:
     def redirect_aggregate_links_raw_data(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         query_file: MCIndLinksQueryFile,
         frequency: MatrixFrequency,
         mc_years: SanitizedStr = "",
@@ -432,7 +431,7 @@ def create_output_routes() -> APIRouter:
     def aggregate_areas_raw_data__all(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         query_file: MCAllAreasQueryFile,
         frequency: MatrixFrequency,
         areas_ids: SanitizedStr = "",
@@ -487,7 +486,7 @@ def create_output_routes() -> APIRouter:
     def redirect_aggregate_areas_raw_data__all(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         query_file: MCAllAreasQueryFile,
         frequency: MatrixFrequency,
         areas_ids: SanitizedStr = "",
@@ -505,7 +504,7 @@ def create_output_routes() -> APIRouter:
     def aggregate_links_raw_data__all(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         query_file: MCAllLinksQueryFile,
         frequency: MatrixFrequency,
         links_ids: SanitizedStr = "",
@@ -561,7 +560,7 @@ def create_output_routes() -> APIRouter:
     def redirect_aggregate_links_raw_data__all(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         query_file: MCAllLinksQueryFile,
         frequency: MatrixFrequency,
         links_ids: SanitizedStr = "",
@@ -577,7 +576,7 @@ def create_output_routes() -> APIRouter:
         summary="Retrieves the list of variables for a given output",
     )
     def get_output_variables_list(
-        output_service: OutputServiceDep, uuid: UuidStr, output_id: SanitizedStr
+        output_service: OutputServiceDep, uuid: UuidStr, output_id: OutputId
     ) -> OutputVariablesList:
         return output_service.get_output_variables_list(uuid, output_id)
 
@@ -592,7 +591,7 @@ def create_output_routes() -> APIRouter:
     def get_output_variables_view(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         variable_name: SanitizedStr,
         frequency: MatrixFrequency,
         type: OutputVariablesType,
@@ -630,7 +629,7 @@ def create_output_routes() -> APIRouter:
     def export_output_variables_view(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         variable_name: SanitizedStr,
         frequency: MatrixFrequency,
         type: OutputVariablesType,
@@ -672,7 +671,7 @@ def create_output_routes() -> APIRouter:
     def materialize_output_variables_view(
         output_service: OutputServiceDep,
         uuid: UuidStr,
-        output_id: SanitizedStr,
+        output_id: OutputId,
         variable_name: SanitizedStr,
         frequency: MatrixFrequency,
         type: OutputVariablesType,
