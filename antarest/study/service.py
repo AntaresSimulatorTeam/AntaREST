@@ -2935,7 +2935,7 @@ class StudyService:
                 "constraints": constraints,
             }
 
-        except (ChildNotFoundError, XpansionConfigurationDoesNotExist):
+        except ChildNotFoundError, XpansionConfigurationDoesNotExist:
             xpansion = None
 
         obj["xpansion"] = xpansion

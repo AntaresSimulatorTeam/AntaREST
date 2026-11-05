@@ -67,7 +67,7 @@ adding powerful features for collaboration, storage optimization, and advanced e
 
 Before you begin, ensure you have the following installed:
 
-- **Python**: 3.14.x ([Download](https://www.python.org/downloads/)), 3.11 is still supported
+- **Python**: 3.14.x ([Download](https://www.python.org/downloads/))
 - **Node.js**: 22.23.4 ([Download](https://nodejs.org/))
 - **Git**: Latest version ([Download](https://git-scm.com/))
 

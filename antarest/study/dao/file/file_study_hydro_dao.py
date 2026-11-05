@@ -193,7 +193,7 @@ class FileStudyHydroDao(HydroDao):
 
         try:
             ini_content = file_study.tree.get(CORRELATION_PATH)
-        except (ChildNotFoundError, KeyError):
+        except ChildNotFoundError, KeyError:
             ini_content = {}
 
         for key, value in ini_content.items():

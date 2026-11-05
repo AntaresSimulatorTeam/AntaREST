@@ -9,7 +9,7 @@ This document provides guidelines and instructions for contributing to the proje
 
 Before contributing, make sure you have the following installed:
 
-- Python 3.14.x (3.11 is still supported)
+- Python 3.14.x
 - Node.js 22.23.4
 - Git
 
