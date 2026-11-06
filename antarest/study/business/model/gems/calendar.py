@@ -58,11 +58,10 @@ class GemsCalendar(AntaresBaseModel):
 
         # Validate constant time step for `granular_date`
         if len(self.data) > 2:
-            first_time_delta = self.data[1].granular_date - self.data[0].granular_date
-            for k in range(1, len(self.data) - 1):
-                time_delta = self.data[k + 1].granular_date - self.data[k].granular_date
-                if time_delta != first_time_delta:
-                    raise ValueError("All 'granular_date' must be separated by a constant time step")
+            deltas = (b.granular_date - a.granular_date for a, b in zip(self.data, self.data[1:]))
+            first = next(deltas)
+            if any(d != first for d in deltas):
+                raise ValueError("All 'granular_date' must be separated by a constant time step")
 
         return self
 
