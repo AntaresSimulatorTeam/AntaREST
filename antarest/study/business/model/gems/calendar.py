@@ -12,7 +12,6 @@
 
 import csv
 import io
-import re
 from datetime import datetime
 from pathlib import Path
 from typing import Self
@@ -23,7 +22,6 @@ from pydantic import ConfigDict, Field, field_serializer, model_validator
 
 from antarest.core.serde import AntaresBaseModel
 
-_DATETIME_PATTERN = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
 _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
