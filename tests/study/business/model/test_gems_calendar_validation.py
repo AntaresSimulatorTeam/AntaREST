@@ -18,7 +18,7 @@ import pytest
 from antarest.study.business.model.gems.calendar import GemsCalendar, _GemsCalendarData
 
 
-def test_gems_calendar_non_contiguous_time_index() -> None:
+def test_gems_calendar_model_errors() -> None:
     # Does not start at 0
     with pytest.raises(ValueError, match="All 'absolute_time_index' must make a contiguous list that start at 0"):
         GemsCalendar(
@@ -61,6 +61,28 @@ def test_gems_calendar_non_contiguous_time_index() -> None:
                     absolute_time_index=0,
                     block=0,
                     granular_date=datetime(2025, 1, 1, 1, 0, 0),
+                ),
+            ]
+        )
+
+    # No constant time-step for `granular_date`
+    with pytest.raises(ValueError, match="All 'granular_date' must be separated by a constant time step"):
+        GemsCalendar(
+            data=[
+                _GemsCalendarData(
+                    absolute_time_index=0,
+                    block=0,
+                    granular_date=datetime(2025, 1, 1, 0, 0, 0),
+                ),
+                _GemsCalendarData(
+                    absolute_time_index=1,
+                    block=1,
+                    granular_date=datetime(2025, 1, 1, 1, 0, 0),
+                ),
+                _GemsCalendarData(
+                    absolute_time_index=2,
+                    block=2,
+                    granular_date=datetime(2025, 1, 1, 3, 0, 0),
                 ),
             ]
         )
