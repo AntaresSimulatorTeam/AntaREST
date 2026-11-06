@@ -81,6 +81,7 @@ from antarest.study.dao.api.compatibility_parameters_dao import (
     ReadOnlyCompatibilityParametersDao,
 )
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
+from antarest.study.dao.api.gems_calendar_dao import GemsCalendarDao, ReadOnlyGemsCalendarDao
 from antarest.study.dao.api.gems_catalog_dao import GemsCatalogDao, ReadOnlyGemsCatalogDao
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao, ReadOnlyGemsScenarioBuilderDao
@@ -179,6 +180,7 @@ class ReadOnlyStudyDao(
     ReadOnlyGemsCatalogDao,
     ReadOnlyGemsTaxonomyDao,
     ReadOnlyGemsScenarioBuilderDao,
+    ReadOnlyGemsCalendarDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -237,6 +239,7 @@ class StudyDao(
     GemsCatalogDao,
     GemsTaxonomyDao,
     GemsScenarioBuilderDao,
+    GemsCalendarDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -1040,3 +1043,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_catalogs(self) -> list[GemsCatalog]:
         return self._adaptee.get_catalogs()
+
+    @override
+    def get_gems_calendar(self) -> bytes | None:
+        return self._adaptee.get_gems_calendar()
