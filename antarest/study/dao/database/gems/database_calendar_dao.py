@@ -24,9 +24,7 @@ class DatabaseGemsCalendarDao(GemsCalendarDao, DatabaseDaoBase):
     @override
     def get_gems_calendar(self) -> GemsCalendar | None:
         table = GEMS_CALENDAR_TABLE
-        row = self._db_session.execute(
-            select(table.c.calendar).where(table.c.study_data_id == self._study_data_id)
-        ).fetchone()
+        row = self._db_session.execute(select(table).where(table.c.study_data_id == self._study_data_id)).fetchone()
         if not row:
             return None
 
@@ -34,11 +32,7 @@ class DatabaseGemsCalendarDao(GemsCalendarDao, DatabaseDaoBase):
 
     @override
     def save_gems_calendar(self, calendar: GemsCalendar) -> None:
-        table = GEMS_CALENDAR_TABLE
         session = self._db_session
-        upsert_one(
-            session,
-            table,
-            {"study_data_id": self._study_data_id, "calendar": calendar.model_dump_json().encode("utf-8")},
-        )
+        values = {"study_data_id": self._study_data_id, "calendar": calendar.model_dump_json().encode("utf-8")}
+        upsert_one(session, GEMS_CALENDAR_TABLE, values)
         session.commit()
