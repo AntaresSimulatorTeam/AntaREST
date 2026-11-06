@@ -10,8 +10,6 @@
 #
 # This file is part of the Antares project.
 
-import csv
-import io
 from datetime import datetime
 from pathlib import Path
 from typing import Self
@@ -58,19 +56,12 @@ class GemsCalendar(AntaresBaseModel):
             raise ValueError("All 'absolute_time_index' must make a contiguous list that start at 0")
         return self
 
-    def to_csv(self) -> bytes:
-        """
-        Export the calendar data to CSV format as bytes.
-        """
-        output = io.StringIO()
-        writer = csv.writer(output, lineterminator="\n")
-        writer.writerow(["absolute_time_index", "block", "granular_date"])
-        for row in self.data:
-            writer.writerow([row.absolute_time_index, row.block, row.granular_date.strftime(_DATETIME_FORMAT)])
-        return output.getvalue().encode("utf-8")
+    def write(self, file_path: Path) -> None:
+        df = pl.DataFrame(self.data)
+        df.write_csv(file_path, separator=",", include_header=True)
 
     @classmethod
-    def from_path(cls, file_path: Path) -> "GemsCalendar":
+    def read(cls, file_path: Path) -> "GemsCalendar":
         df = pl.read_csv(file_path)
 
         if df.columns != ["absolute_time_index", "block", "granular_date"]:

@@ -42,10 +42,10 @@ class FileStudyGemsCalendarDao(GemsCalendarDao, ABC):
         path = _get_gems_calendar_file_path(self.get_file_study().config.study_path)
         if not path.exists():
             return None
-        return GemsCalendar.from_path(path)
+        return GemsCalendar.read(path)
 
     @override
     def save_gems_calendar(self, calendar: GemsCalendar) -> None:
         path = _get_gems_calendar_file_path(self.get_file_study().config.study_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(calendar.to_csv())
+        calendar.write(path)
