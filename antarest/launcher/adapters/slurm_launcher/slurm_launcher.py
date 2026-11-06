@@ -409,7 +409,7 @@ class SlurmLauncher(AbstractLauncher, SlurmLoad):
                 study.xpansion_mode,
                 study.job_log_dir,
             )
-        except (FileNotFoundError, NoValidOutputError):
+        except FileNotFoundError, NoValidOutputError:
             msg = "Simulation failed, output results are not available"
             self.callbacks.append_after_log(study.name, msg)
             # see antarest.launcher.service.LauncherService.update

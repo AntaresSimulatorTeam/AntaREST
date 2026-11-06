@@ -105,7 +105,7 @@ def _archive_inactive_studies_and_outputs(
                     task_result = _await_archive_task(study_service.task_service, task_id)
                     if task_result.return_value != "skipped":
                         archived_outputs += 1
-            except (TaskAlreadyRunning, OutputAlreadyArchived):
+            except TaskAlreadyRunning, OutputAlreadyArchived:
                 continue
             except Exception as e:
                 db.session.rollback()

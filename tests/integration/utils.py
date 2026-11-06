@@ -19,7 +19,7 @@ from collections.abc import Callable
 
 from starlette.testclient import TestClient
 
-from antarest.core.tasks.model import TaskDTO, TaskStatus
+from antarest.core.tasks.model import TaskDTO
 
 logger = logging.getLogger(__name__)
 
@@ -62,17 +62,15 @@ def wait_task_completion(
     base_timeout is multiplied by 2 on Windows CI to cope with slow CI runners
     """
     timeout = duration_threshold(base_timeout)
-    params = {"wait_for_completion": True, "timeout": timeout}
-    res = client.request(
-        "GET",
-        f"/v1/tasks/{task_id}",
-        headers={"Authorization": f"Bearer {access_token}"} if access_token else {},
-        params=params,
-    )
-    if res.status_code == 200:
+    headers = {"Authorization": f"Bearer {access_token}"} if access_token else {}
+    end = time.time() + timeout
+    while True:
+        res = client.get(f"/v1/tasks/{task_id}", headers=headers)
+        if res.status_code != 200:
+            raise ValueError(f"Unexpected status code {res.status_code}")
         task = TaskDTO(**res.json())
-        if task.status not in {TaskStatus.PENDING, TaskStatus.RUNNING}:
+        if task.status.is_final():
             return task
-    elif res.status_code == 408:
-        raise TimeoutError(f"{timeout} seconds")
-    raise ValueError(f"Unexpected status code {res.status_code}")
+        if time.time() >= end:
+            raise TimeoutError(f"{timeout} seconds")
+        time.sleep(0.05)

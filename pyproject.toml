@@ -9,10 +9,10 @@ authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com"
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
-requires-python = ">=3.11"
+requires-python = ">=3.14"
 classifiers=[
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.14",
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ]
@@ -20,27 +20,27 @@ dependencies = [
     "antares-launcher==1.6.0",
     "antares-study-version==1.0.21",
     "antares-timeseries-generation==0.1.9",
-    "fastapi==0.141.1",
-    "uvicorn[standard]~=0.52.0",
-    "pydantic~=2.13.4",
+    "fastapi==0.162.0",
+    "uvicorn[standard]~=0.54.0",
+    "pydantic~=2.14.2",
     "httpx~=0.28.1",
     "python-multipart~=0.0.31",
-    "alembic~=1.18.4",
+    "alembic~=1.20.1",
     "bcrypt~=5.0.0",
-    "click~=8.4.1",
+    "click~=8.5.0",
     "filelock~=4.2.1",
     "gunicorn~=23.0.0",
     "humanize~=4.16.0",
     "jsonref~=0.2",
     "PyJWT~=2.15.0",
-    "MarkupSafe~=2.1.5",
+    "MarkupSafe~=3.0.3",
     "numpy~=2.4.2",
     "numexpr==2.14.2",
     "openpyxl~=3.1.5",
     "pandas~=2.3.3",
     "paramiko~=3.4.1",
     "plyer~=2.1.0",
-    "polars~=1.43.2",
+    "polars~=1.44.2",
     "psycopg2-binary~=2.9.9",
     "pyarrow~=23.0.1",
     "prometheus-client==0.26.0",
@@ -50,7 +50,7 @@ dependencies = [
     "redis~=5.3.1",
     "SQLAlchemy~=2.0.41",
     "typing_extensions~=4.16.0",
-    "xlsxwriter~=3.2.0",
+    "xlsxwriter~=3.3.1",
     "ecs-logging~=2.3.0",
 ]
 
@@ -58,11 +58,11 @@ dependencies = [
 dev = [
     {include-group = "test"},
     "celery-types~=0.26.0",
-    "ruff~=0.16.1",
-    "mypy~=2.3.0",
-    "pre-commit~=4.6.0",
-    "pyinstaller==6.21.0",
-    "pyinstaller-hooks-contrib==2026.6",
+    "ruff~=0.17.3",
+    "mypy~=2.4.1",
+    "pre-commit~=4.7.0",
+    "pyinstaller==6.22.3",
+    "pyinstaller-hooks-contrib==2026.9",
     # Extra requirements installed by `mypy --install-types`.
     # IMPORTANT: Make sure the versions of these typing libraries match the versions
     # of the corresponding implementation libraries used in production (in `pyproject.toml`).
@@ -77,11 +77,11 @@ dev = [
 ]
 test = [
     "checksumdir~=1.3.0",
-    "pytest~=9.1.1",
+    "pytest~=9.2.0",
     "pytest-rerunfailures~=16.1",
     "pytest-xdist~=3.8.0",
     "pytest-cov~=7.1.0",
-    "pytest-mock~=3.15.0",
+    "pytest-mock~=3.17.0",
     "jinja2~=3.1.3",
     "testcontainers~=4.15.0"
 ]
@@ -157,8 +157,8 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-# Assumes Python 3.11
-target-version = "py311"
+# Assumes Python 3.14
+target-version = "py314"
 
 [tool.ruff.lint]
 ## E4, E7, E9 and F are the default configuration of ruff, "I" is added to handle imports

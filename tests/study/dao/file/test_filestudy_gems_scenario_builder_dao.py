@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.config.general_model import GeneralConfig
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
 from antarest.study.dao.api.study_dao import StudyDao
@@ -26,14 +27,20 @@ ASSET = Path(__file__).parent.parent / "assets/gems/scenario_builder/modeler-sce
 
 
 def test_roundtrip(dao_10_2: StudyDao) -> None:
+    dao_10_2.save_general_config(GeneralConfig(nb_years=3))
     assert dao_10_2.get_gems_scenario_builder() is None
     builder = GemsScenarioBuilder(
         scenarios={
             "load": [
                 GemsScBuilderMapping(scenario=0, time_series_index=1),
                 GemsScBuilderMapping(scenario=1, time_series_index=5),
+                GemsScBuilderMapping(scenario=2, time_series_index=3),
             ],
-            "hydro": [GemsScBuilderMapping(scenario=2, time_series_index=7)],
+            "hydro": [
+                GemsScBuilderMapping(scenario=0, time_series_index=1),
+                GemsScBuilderMapping(scenario=1, time_series_index=2),
+                GemsScBuilderMapping(scenario=2, time_series_index=7),
+            ],
         }
     )
     dao_10_2.save_gems_scenario_builder(builder)
@@ -54,6 +61,15 @@ def test_replace_builder(dao_10_2: StudyDao) -> None:
             }
         )
     )
+    assert dao_10_2.get_gems_scenario_builder() == GemsScenarioBuilder(
+        scenarios={
+            "load": [
+                GemsScBuilderMapping(scenario=0, time_series_index=1),
+                GemsScBuilderMapping(scenario=1, time_series_index=5),
+            ],
+            "hydro": [GemsScBuilderMapping(scenario=2, time_series_index=7)],
+        }
+    )
     replacement = GemsScenarioBuilder(
         scenarios={
             "load": [GemsScBuilderMapping(scenario=0, time_series_index=4)],
@@ -61,7 +77,12 @@ def test_replace_builder(dao_10_2: StudyDao) -> None:
         }
     )
     dao_10_2.save_gems_scenario_builder(replacement)
-    assert dao_10_2.get_gems_scenario_builder() == replacement
+    assert dao_10_2.get_gems_scenario_builder() == GemsScenarioBuilder(
+        scenarios={
+            "load": [GemsScBuilderMapping(scenario=0, time_series_index=4)],
+            "wind": [GemsScBuilderMapping(scenario=1, time_series_index=2)],
+        }
+    )
 
 
 def test_clear_builder(dao_10_2: StudyDao) -> None:
@@ -116,15 +137,15 @@ def test_real_file_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
 @pytest.mark.parametrize(
     "line",
     [
-        "load 0 = 1",
+        "load 0 = 0",
         "load, -1 = 1",
-        "load, 0 = 0",
+        "load, 0 = -1",
         "load, 0 = 1.5",
         ", 0 = 1",
         "load, 0 = 1\nload, 0 = 2",
-        "Load_Group, 0 = 1",
-        "load-group, 0 = 1",
-        "load group, 0 = 1",
+        "Load_Group, 0 = 0",
+        "load-group, 0 = 0",
+        "load group, 0 = 0",
     ],
 )
 def test_invalid_file(filestudy_dao_v10_2: FileStudyTreeDao, line: str) -> None:

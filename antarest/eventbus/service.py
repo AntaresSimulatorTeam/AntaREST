@@ -133,9 +133,8 @@ class EventBusService(IEventBus):
             self.backend.clear_events()
             return processed_events_count
 
-    def _async_loop(self, new_loop: bool = True) -> None:
-        loop = asyncio.new_event_loop() if new_loop else asyncio.get_event_loop()
-        loop.run_until_complete(self._run_loop())
+    def _async_loop(self) -> None:
+        asyncio.run(self._run_loop())
 
     @override
     def start(self, threaded: bool = True) -> None:
@@ -148,4 +147,4 @@ class EventBusService(IEventBus):
             logger.info("Starting event bus")
             t.start()
         else:
-            self._async_loop(new_loop=False)
+            self._async_loop()

@@ -311,7 +311,7 @@ def parse_simulation_zip(path: Path) -> Simulation:
                 # Determine the output type without having to extract the whole data
                 output_type = OutputType.LEGACY
                 for file in existing_files:
-                    if file.startswith(GEMS_VIEWS_DIR):
+                    if file.startswith(f"{GEMS_VIEWS_DIR}/"):
                         output_type = OutputType.GEMS_VIEWS
                         break
 
