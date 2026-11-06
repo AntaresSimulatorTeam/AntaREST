@@ -58,6 +58,8 @@ class GemsCalendar(AntaresBaseModel):
 
     def write(self, file_path: Path) -> None:
         df = pl.DataFrame(self.data)
+        # Write datetime column as string
+        df = df.with_columns(pl.col("granular_date").dt.strftime(_DATETIME_FORMAT))
         df.write_csv(file_path, separator=",", include_header=True)
 
     @classmethod
@@ -77,4 +79,4 @@ class GemsCalendar(AntaresBaseModel):
         except InvalidOperationError:
             raise ValueError(f"Calendar file column 'granular_date' must follow this format: {_DATETIME_FORMAT}")
 
-        return GemsCalendar.model_validate(df.to_dicts())
+        return GemsCalendar.model_validate({"data": df.to_dicts()})
