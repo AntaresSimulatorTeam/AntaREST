@@ -147,11 +147,18 @@ class ThematicTrimmingFileData(AntaresBaseModel, populate_by_name=True):
     # Since v8.8
     sts_cashflow_by_cluster: bool | None = Field(default=None, alias="STS Cashflow By Cluster")
     npcap_hours: bool | None = Field(default=None, alias="NPCAP HOURS")
+    ov_cost_csr: bool | None = Field(default=None, alias="OV. COST CSR")
+    lold_csr: bool | None = Field(default=None, alias="LOLD CSR")
+    lolp_csr: bool | None = Field(default=None, alias="LOLP CSR")
+    mrg_price_csr: bool | None = Field(default=None, alias="MRG. PRICE CSR")
+    unsp_enrg_csr: bool | None = Field(default=None, alias="UNSP. ENRG CSR")
+    max_mrg_csr: bool | None = Field(default=None, alias="MAX MRG CSR")
     # Since v9.1
     sts_by_group: bool | None = Field(default=None, alias="STS by group")
     # Since v9.3
     dispatch_gen: bool | None = Field(default=None, alias="DISPATCH. GEN.")
     renewable_gen: bool | None = Field(default=None, alias="RENEWABLE GEN.")
+    npcap_hours_csr: bool | None = Field(default=None, alias="NPCAP HOURS CSR")
 
     def to_model(self, default_bool: bool, version: StudyVersion) -> ThematicTrimming:
         # We're initializing the default values here as the model class has default values
