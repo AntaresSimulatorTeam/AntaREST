@@ -107,9 +107,7 @@ def _build_db_dao_unreleased_version(
 
 
 def build_db_dao_10_2(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    """Initialize a v10.2 study using the latest available reference template."""
-    # TODO: once v10.2 is released (template available), use `build_db_dao(db_session, matrix_service, STUDY_VERSION_10_2)`.
-    return _build_db_dao_unreleased_version(db_session, matrix_service, STUDY_VERSION_10_2)
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_10_2)
 
 
 def _build_dao_unreleased_version(
