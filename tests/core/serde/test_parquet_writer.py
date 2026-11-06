@@ -100,7 +100,7 @@ def test_batch_parquet_writer_writes_one_batch(tmp_path: Path) -> None:
     ]
     with BatchParquetWriter(parquet_file, schema=tables[0].schema, row_group_size=5) as writer:
         for t in tables:
-            writer.add_table(t)
+            writer.append_table(t)
 
     with ParquetFile(parquet_file) as pf:
         assert pf.num_row_groups == 1
@@ -117,7 +117,7 @@ def test_batch_parquet_writer_writes_multiple_batches_when_size_exceeds_threshol
     ]
     with BatchParquetWriter(parquet_file, schema=tables[0].schema, row_group_size=5) as writer:
         for t in tables:
-            writer.add_table(t)
+            writer.append_table(t)
 
     with ParquetFile(parquet_file) as pf:
         assert pf.num_row_groups == 2
@@ -128,7 +128,7 @@ def test_batch_parquet_writer_cannot_add_table_to_closed_writer(tmp_path: Path) 
     parquet_file = tmp_path / "file.parquet"
     table = pl.DataFrame(data=[(1, 2), (3, 4)], schema=["A", "B"], orient="row").to_arrow()
     with BatchParquetWriter(parquet_file, schema=table.schema, row_group_size=5) as writer:
-        writer.add_table(table)
+        writer.append_table(table)
 
     with pytest.raises(ValueError):
-        writer.add_table(table)
+        writer.append_table(table)
