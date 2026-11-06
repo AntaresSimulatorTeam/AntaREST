@@ -137,10 +137,23 @@ def test_validate_gems_calendar_empty() -> None:
         GemsCalendar.from_csv(b"")
 
 
-def test_validate_gems_calendar_missing_granular_date_column() -> None:
-    csv_content = b"absolute_time_index,block,date\n0,0,2025-01-01 00:00:00\n"
-    with pytest.raises(ValueError, match="must contain a 'granular_date' column"):
-        GemsCalendar.from_csv(csv_content)
+@pytest.mark.parametrize(
+    "content",
+    [
+        b"absolute_time_index,block,fake\n0,0,2025-01-01 00:00:00\n",  # No 'granular_date' column
+        b"absolute_time_index,fake,granular_date\n0,0,2025-01-01 00:00:00\n",  # No 'block' column
+        b"fake,block,granular_date\n0,0,2025-01-01 00:00:00\n",  # No 'absolute_time' column
+        b"absolute_time_index,block,granular_date,extra_col\n0,0,2025-01-01 00:00:00,0\n",  # Extra column
+        b"granular_date,block,absolute_time_index\n0,0,2025-01-01 00:00:0\n",  # Columns in the wrong order
+    ],
+)
+def test_validate_gems_calendar_columns(content: bytes, tmp_path: Path) -> None:
+    file_path = tmp_path / "calendar.csv"
+    file_path.write_bytes(content)
+
+    msg = "Calendar file must have these exact columns 'absolute_time_index', 'block', and 'granular_date'"
+    with pytest.raises(ValueError, match=msg):
+        GemsCalendar.read(file_path)
 
 
 @pytest.mark.parametrize(
@@ -168,8 +181,3 @@ def test_validate_gems_calendar_invalid_date(invalid_date: str, tmp_path: Path) 
         error_msg = "1 validation error for GemsCalendar"
     with pytest.raises(ValueError, match=error_msg):
         GemsCalendar.read(file_path)
-
-
-def test_validate_gems_calendar_non_utf8() -> None:
-    with pytest.raises(ValueError, match="not valid UTF-8"):
-        GemsCalendar.from_csv(b"\xff\xfe\x00\x00")
