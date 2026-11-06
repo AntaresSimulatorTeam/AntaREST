@@ -23,7 +23,7 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 
 
-class _GemsParameters(AntaresBaseModel):
+class GemsParameters(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
@@ -35,7 +35,7 @@ class _GemsParameters(AntaresBaseModel):
         return self.time_dependent or self.scenario_dependent
 
     @model_validator(mode="after")
-    def validate_value(self) -> "_GemsParameters":
+    def validate_value(self) -> "GemsParameters":
         if self.is_dataseries() and not isinstance(self.value, str):
             raise GemsParameterValueIsConstantButShouldNotBe(self.id, self.value)
 
@@ -70,7 +70,7 @@ class GemsComponent(AntaresBaseModel):
     id: str
     model: str
     scenario_group: str | None = None
-    parameters: List[_GemsParameters] = []
+    parameters: List[GemsParameters] = []
     properties: List[_GemsProperties] = []
 
 
