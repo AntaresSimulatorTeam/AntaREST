@@ -52,3 +52,9 @@ def test_gems_calendar_dao(dao_10_2: StudyDao) -> None:
     # Replace the calendar
     dao.save_gems_calendar(OTHER_CALENDAR)
     assert dao.get_gems_calendar() == OTHER_CALENDAR
+
+
+def test_gems_calendar_dao_read_real_life_calendar(dao_10_2: StudyDao, gems_calendar: GemsCalendar) -> None:
+    dao = dao_10_2
+    dao.save_gems_calendar(SAMPLE_CALENDAR)
+    assert dao.get_gems_calendar() == SAMPLE_CALENDAR
