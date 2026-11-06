@@ -1,0 +1,64 @@
+view:
+
+  id: view_area
+
+  scope:
+    location:
+      taxonomy-category: balance # category of the taxonomy, the components of which serves as locational objects. Main case is 'area'.
+
+  taxonomy: antares_legacy_taxonomy
+  
+  aggregations-patterns:
+    - id: annual_all_scenario
+      time-granularity: year #hour, day, week, month ou year.
+      scenario: true
+    - id: hourly_per_scenario
+      time-granularity: hour #hour, day, week, month ou year.
+      scenario: false
+
+  metrics:  #reference to the selected metric among the catalog
+      - id: antares_legacy_area_catalog.OV_COST
+      - id: antares_legacy_area_catalog.OP_COST
+      - id: antares_legacy_area_catalog.MRG_PRICE
+      - id: antares_legacy_area_catalog.CO2_EMIS
+      - id: antares_legacy_area_catalog.NH3_EMIS
+      - id: antares_legacy_area_catalog.SO2_EMIS
+      - id: antares_legacy_area_catalog.NOX_EMIS
+      - id: antares_legacy_area_catalog.PM2_5_EMIS
+      - id: antares_legacy_area_catalog.PM5_EMIS
+      - id: antares_legacy_area_catalog.PM10_EMIS      
+      - id: antares_legacy_area_catalog.NMVOC_EMIS
+      - id: antares_legacy_area_catalog.OP1_EMIS      
+      - id: antares_legacy_area_catalog.OP2_EMIS      
+      - id: antares_legacy_area_catalog.OP3_EMIS
+      - id: antares_legacy_area_catalog.OP4_EMIS      
+      - id: antares_legacy_area_catalog.OP5_EMIS
+      - id: antares_legacy_area_catalog.LOAD
+      - id: antares_legacy_area_catalog.RES_LOAD
+      - id: antares_legacy_area_catalog.DTG_BY_TECHNOLOGY
+      - id: antares_legacy_area_catalog.BALANCE
+      - id: antares_legacy_area_catalog.RES_GENERATION
+      - id: antares_legacy_area_catalog.STS_INJECTION
+      - id: antares_legacy_area_catalog.STS_WITHDRAWAL
+      - id: antares_legacy_area_catalog.STS_LEVEL
+      - id: antares_legacy_area_catalog.UNSP_ENRG
+      - id: antares_legacy_area_catalog.SPIL_ENRG
+      - id: antares_legacy_area_catalog.NODU 
+      - id: antares_legacy_area_catalog.NP_COST 
+      - id: antares_legacy_area_catalog.AVL_DTG
+      - id: antares_legacy_area_catalog.DTG_MRG
+      - id: antares_legacy_area_catalog.LOLD
+      - id: antares_legacy_area_catalog.LOLP
+      - id: antares_legacy_area_catalog.NPCAP_HOURS 
+      - id: antares_legacy_area_catalog.ROW_BAL
+      - id: antares_legacy_area_catalog.MISC_NDG
+      - id: antares_legacy_area_catalog.PSP
+      - id: antares_legacy_area_catalog.H_STOR
+      - id: antares_legacy_area_catalog.H_PUMP
+      - id: antares_legacy_area_catalog.H_OVFL
+      - id: antares_legacy_area_catalog.H_COST
+      - id: antares_legacy_area_catalog.H_INFL
+      - id: antares_legacy_area_catalog.H_LEV 
+    # - id: antares_legacy_area_catalog.MAX.MRG # Calulation from hour to hour can differ for this metric max-mrg-utilis.cpp in Simulator 
+    # - id: antares_legacy_area_catalog.H.VAL
+

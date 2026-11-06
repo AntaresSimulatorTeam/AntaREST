@@ -1,0 +1,29 @@
+view:
+
+  id: view_link
+
+  scope:
+    location:
+      taxonomy-category: link # category of the taxonomy, the components of which serves as locational objects. Main case is 'area'.
+
+  taxonomy: antares_legacy_taxonomy
+  
+  aggregations-patterns:
+    - id: annual_all_scenario
+      time-granularity: year #hour, day, week, month ou year.
+      scenario: true
+    - id: hourly_per_scenario
+      time-granularity: hour #hour, day, week, month ou year.
+      scenario: false
+
+  metrics:  #reference to the selected metric among the catalog
+      - id: antares_legacy_link_catalog.FLOW_LIN
+      - id: antares_legacy_link_catalog.CONG_FEE_ABS
+      - id: antares_legacy_link_catalog.CONG_FEE_ALG
+      - id: antares_legacy_link_catalog.MARG_COST
+      - id: antares_legacy_link_catalog.CONG_PROB_DIR
+      - id: antares_legacy_link_catalog.CONG_PROB_INDIR
+      - id: antares_legacy_link_catalog.HURDLE_COST
+      - id: antares_legacy_link_catalog.UCAP_LIN
+      - id: antares_legacy_link_catalog.LOOP_FLOW
+
