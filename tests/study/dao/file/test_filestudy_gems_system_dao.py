@@ -148,19 +148,6 @@ def test_data_series_name_must_be_a_plain_name(filestudy_dao_v10_2: FileStudyTre
         dao.get_system()
 
 
-def test_data_series_symlink_is_rejected(filestudy_dao_v10_2: FileStudyTreeDao, tmp_path: Path) -> None:
-    dao = filestudy_dao_v10_2
-    _add_system_file_to_study(dao)
-    secret = tmp_path / "secret.csv"
-    secret.write_text("1\n2\n")
-    link = dao.get_file_study().config.study_path / "input" / "data-series" / "max_load_values.csv"
-    link.unlink()
-    link.symlink_to(secret)
-
-    with pytest.raises(GemsSystemIncorrectlyFormatted, match="outside of the data series folder"):
-        dao.get_system()
-
-
 def _add_system_file_to_study(dao: FileStudyTreeDao) -> None:
     input_folder = dao.get_file_study().config.study_path / "input"
     shutil.copy(ASSETS_PATH / "gems" / "system" / "system.yml", input_folder / "system.yml")

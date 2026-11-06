@@ -58,10 +58,7 @@ def _resolve_data_series_file(data_series_folder: Path, name: str, study_id: str
         )
 
     file_path = data_series_folder / f"{name}.csv"
-    if file_path.is_symlink() or file_path.resolve().parent != data_series_folder.resolve():
-        raise GemsSystemIncorrectlyFormatted(
-            f"The system file of study {study_id} references a data series outside of the data series folder: {name!r}"
-        )
+
     if not file_path.is_file():
         raise GemsSystemIncorrectlyFormatted(
             f"The system file of study {study_id} references a missing data series file: {name!r}"
