@@ -32,6 +32,7 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.config.optimization_config_model import (
     initialize_optimization_preferences_against_version,
 )
+from antarest.study.business.model.gems.calendar import GemsCalendar
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.system import GemsAreaConnection, GemsSystem, GemsThermalCapacityConnection
@@ -64,6 +65,12 @@ from tests.study.dao.utils import save_area
 def gems_catalog() -> GemsCatalog:
     path = Path(__file__).parent / "assets/gems/catalogs/antares_legacy_area_catalog.yml"
     return GemsCatalog.model_validate(YAMLReader().read(path)["catalog"])
+
+
+@pytest.fixture
+def gems_calendar() -> GemsCalendar:
+    path = Path(__file__).parent / "assets/gems/calendar/calendar_file.csv"
+    return GemsCalendar.read(path)
 
 
 @pytest.fixture
@@ -107,9 +114,7 @@ def _build_db_dao_unreleased_version(
 
 
 def build_db_dao_10_2(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    """Initialize a v10.2 study using the latest available reference template."""
-    # TODO: once v10.2 is released (template available), use `build_db_dao(db_session, matrix_service, STUDY_VERSION_10_2)`.
-    return _build_db_dao_unreleased_version(db_session, matrix_service, STUDY_VERSION_10_2)
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_10_2)
 
 
 def _build_dao_unreleased_version(
