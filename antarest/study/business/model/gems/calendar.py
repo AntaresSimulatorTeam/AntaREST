@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Self
 
 import polars as pl
-from polars.exceptions import InvalidOperationError
+from polars.exceptions import InvalidOperationError, NoDataError
 from pydantic import ConfigDict, Field, field_serializer, model_validator
 
 from antarest.core.serde import AntaresBaseModel
@@ -62,16 +62,19 @@ class GemsCalendar(AntaresBaseModel):
 
     @classmethod
     def read(cls, file_path: Path) -> "GemsCalendar":
-        df = pl.read_csv(file_path)
+        error_msg = "Calendar file must have these exact columns 'absolute_time_index', 'block', and 'granular_date'"
+
+        try:
+            df = pl.read_csv(file_path)
+        except NoDataError:
+            raise ValueError(error_msg)
 
         if df.columns != ["absolute_time_index", "block", "granular_date"]:
-            message = "Calendar file must have these exact columns 'absolute_time_index', 'block', and 'granular_date'"
-            raise ValueError(message)
+            raise ValueError(error_msg)
 
         try:
             df = df.with_columns(pl.col("granular_date").str.to_datetime(_DATETIME_FORMAT).alias("granular_date"))
         except InvalidOperationError:
-            message = f"Calendar file column 'granular_date' must follow this format: {_DATETIME_FORMAT}"
-            raise ValueError(message)
+            raise ValueError(f"Calendar file column 'granular_date' must follow this format: {_DATETIME_FORMAT}")
 
         return GemsCalendar.model_validate(df.to_dicts())

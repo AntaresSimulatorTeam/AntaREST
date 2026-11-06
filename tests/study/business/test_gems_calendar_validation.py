@@ -117,26 +117,6 @@ def test_gems_calendar_data_date_validation() -> None:
         )
 
 
-def test_validate_gems_calendar_valid() -> None:
-    csv_content = (
-        b"absolute_time_index,block,granular_date\n"
-        b"0,0,2025-01-01 00:00:00\n"
-        b"1,0,2025-01-01 01:00:00\n"
-        b"2,0,2025-01-01 02:00:00\n"
-    )
-    GemsCalendar.from_csv(csv_content)
-
-
-def test_validate_gems_calendar_valid_with_whitespace() -> None:
-    csv_content = b"absolute_time_index, block , granular_date \n0, 0, 2025-01-01 00:00:00 \n"
-    GemsCalendar.from_csv(csv_content)
-
-
-def test_validate_gems_calendar_empty() -> None:
-    with pytest.raises(ValueError, match="empty or missing a header"):
-        GemsCalendar.from_csv(b"")
-
-
 @pytest.mark.parametrize(
     "content",
     [
@@ -145,6 +125,8 @@ def test_validate_gems_calendar_empty() -> None:
         b"fake,block,granular_date\n0,0,2025-01-01 00:00:00\n",  # No 'absolute_time' column
         b"absolute_time_index,block,granular_date,extra_col\n0,0,2025-01-01 00:00:00,0\n",  # Extra column
         b"granular_date,block,absolute_time_index\n0,0,2025-01-01 00:00:0\n",  # Columns in the wrong order
+        b"",  # No columns
+        b"absolute_time_index;block;granular_date\n0;0;2025-01-01 00:00:00\n",  # Wrong separator
     ],
 )
 def test_validate_gems_calendar_columns(content: bytes, tmp_path: Path) -> None:
