@@ -15,7 +15,6 @@ from datetime import datetime
 import pytest
 
 from antarest.study.business.model.gems.calendar import GemsCalendar, _GemsCalendarData
-from antarest.study.dao.api.gems_calendar_dao import validate_gems_calendar
 
 
 def test_gems_calendar_pydantic_model_valid() -> None:
@@ -124,23 +123,23 @@ def test_validate_gems_calendar_valid() -> None:
         b"1,0,2025-01-01 01:00:00\n"
         b"2,0,2025-01-01 02:00:00\n"
     )
-    validate_gems_calendar(csv_content)
+    GemsCalendar.from_csv(csv_content)
 
 
 def test_validate_gems_calendar_valid_with_whitespace() -> None:
     csv_content = b"absolute_time_index, block , granular_date \n0, 0, 2025-01-01 00:00:00 \n"
-    validate_gems_calendar(csv_content)
+    GemsCalendar.from_csv(csv_content)
 
 
 def test_validate_gems_calendar_empty() -> None:
     with pytest.raises(ValueError, match="empty or missing a header"):
-        validate_gems_calendar(b"")
+        GemsCalendar.from_csv(b"")
 
 
 def test_validate_gems_calendar_missing_granular_date_column() -> None:
     csv_content = b"absolute_time_index,block,date\n0,0,2025-01-01 00:00:00\n"
     with pytest.raises(ValueError, match="must contain a 'granular_date' column"):
-        validate_gems_calendar(csv_content)
+        GemsCalendar.from_csv(csv_content)
 
 
 @pytest.mark.parametrize(
@@ -162,9 +161,9 @@ def test_validate_gems_calendar_missing_granular_date_column() -> None:
 def test_validate_gems_calendar_invalid_date(invalid_date: str) -> None:
     csv_content = f"absolute_time_index,block,granular_date\n0,0,{invalid_date}\n".encode("utf-8")
     with pytest.raises(ValueError, match="Invalid date"):
-        validate_gems_calendar(csv_content)
+        GemsCalendar.from_csv(csv_content)
 
 
 def test_validate_gems_calendar_non_utf8() -> None:
     with pytest.raises(ValueError, match="not valid UTF-8"):
-        validate_gems_calendar(b"\xff\xfe\x00\x00")
+        GemsCalendar.from_csv(b"\xff\xfe\x00\x00")

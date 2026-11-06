@@ -15,13 +15,6 @@ from abc import ABC, abstractmethod
 from antarest.study.business.model.gems.calendar import GemsCalendar
 
 
-def validate_gems_calendar(calendar_bytes: bytes) -> None:
-    """
-    Validate that the calendar content is valid CSV and matches the GemsCalendar schema.
-    """
-    GemsCalendar.from_csv(calendar_bytes)
-
-
 class ReadOnlyGemsCalendarDao(ABC):
     @abstractmethod
     def get_gems_calendar(self) -> GemsCalendar | None:
