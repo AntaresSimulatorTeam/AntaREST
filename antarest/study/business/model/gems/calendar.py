@@ -49,11 +49,23 @@ class GemsCalendar(AntaresBaseModel):
     data: list[_GemsCalendarData]
 
     @model_validator(mode="after")
-    def validate_contiguous_absolute_time_index(self) -> Self:
+    def _validate_model(self) -> Self:
+        # Validate contiguous `absolute_time_index`
         indices = [entry.absolute_time_index for entry in self.data]
         expected = list(range(len(indices)))
         if indices != expected:
             raise ValueError("All 'absolute_time_index' must make a contiguous list that start at 0")
+
+        # Validate constant time step for `granular_date`
+        if len(self.data) > 2:
+            first_time_delta = self.data[1].granular_date - self.data[0].granular_date
+            for k in range(1, len(self.data) - 1):
+                time_delta = self.data[k + 1].granular_date - self.data[k].granular_date
+                if time_delta != first_time_delta:
+                    raise ValueError(
+                        f"All 'granular_date' must be separated by a constant time step of {first_time_delta}"
+                    )
+
         return self
 
     def write(self, file_path: Path) -> None:
