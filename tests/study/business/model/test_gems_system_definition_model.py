@@ -13,26 +13,28 @@ import re
 
 import pytest
 
-from antarest.core.exceptions import GemsInvalidParameterValue
+from antarest.core.exceptions import (
+    GemsParameterValueIsConstantButShouldNotBe,
+    GemsParameterValueIsNotConstantButShouldBe,
+)
 from antarest.study.business.model.gems.system import GemsComponent
 
 
 @pytest.mark.parametrize(
-    "value, time_dependent, scenario_dependent, value_in_message",
+    "value, time_dependent, scenario_dependent",
     [
-        (42, True, False, "42.0"),  # time-dependent, int value
-        (3.14, False, True, "3.14"),  # scenario-dependent, float value
-        (2.718, True, True, "2.718"),  # time and scenario-dependent, float value
+        (42, True, False),  # time-dependent, int value
+        (3.14, False, True),  # scenario-dependent, float value
+        (2.718, True, True),  # time and scenario-dependent, float value
     ],
 )
 def test_parameter_value_raises_when_float_and_value_depends_on_time_or_scenario(
-    value: float, time_dependent: bool, scenario_dependent: bool, value_in_message: str
+    value: float, time_dependent: bool, scenario_dependent: bool
 ) -> None:
     with pytest.raises(
-        GemsInvalidParameterValue,
+        GemsParameterValueIsConstantButShouldNotBe,
         match=re.escape(
-            f"Time and/or scenario-dependent parameters must have a string value (path to CSV file), "
-            f"but {value_in_message} was given for param1 parameter"
+            f"Parameter 'param1' had this constant value: {float(value)} but should be time and/or scenario dependent"
         ),
     ):
         GemsComponent.model_validate(
@@ -54,8 +56,8 @@ def test_parameter_value_raises_when_float_and_value_depends_on_time_or_scenario
 def test_parameter_raises_when_value_is_a_string_and_value_does_not_depend_on_time_or_scenario() -> None:
 
     with pytest.raises(
-        GemsInvalidParameterValue,
-        match=re.escape("Constant parameters must have a numeric value, but 'test' was given for param1 parameter"),
+        GemsParameterValueIsNotConstantButShouldBe,
+        match="Parameter 'param1' had this value: 'test' but should be constant",
     ):
         GemsComponent.model_validate(
             {
