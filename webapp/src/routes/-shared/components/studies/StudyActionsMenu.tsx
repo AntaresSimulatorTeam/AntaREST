@@ -41,6 +41,10 @@ import MoveStudyDialog from "./dialogs/MoveStudyDialog";
 import UpdateStudyDialog from "./dialogs/UpdateStudyDialog";
 import UpgradeStudyDialog from "./dialogs/UpgradeStudyDialog";
 
+// Only to allow clicking on the link in the JSDoc
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type useStudyInfo from "@/routes/_authenticated/studies/$studyId/-hooks/useStudyInfo";
+
 export type DialogType =
   | "launch"
   | "properties"
@@ -50,26 +54,43 @@ export type DialogType =
   | "copy"
   | "delete";
 
-interface Props {
+export interface StudyActionsMenuProps {
   open: boolean;
   anchorEl: MenuProps["anchorEl"];
   onClose: VoidFunction;
   study: StudyMetadata;
-  parentStudy?: Study;
-  variantNb?: number;
+  /**
+   * This prop is derived from the `useStudyInfo` hook, which can only be called
+   * within the `/_authenticated/studies/$studyId` route because it relies on
+   * study tree details available only in that context for performance reasons.
+   *
+   * Outside this route, the descendant count is unavailable, and all study
+   * variants are treated as archived to prevent unauthorized actions.
+   *
+   * @see {@link useStudyInfo} for more details.
+   */
+  studyInfo?: {
+    parentStudy?: Study;
+    descendantCount?: number;
+    isArchived?: boolean;
+  };
 }
 
-function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variantNb }: Props) {
+function StudyActionsMenu({ open, anchorEl, onClose, study, studyInfo }: StudyActionsMenuProps) {
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
   const latestVersion = useAppSelector(getLatestStudyVersion);
 
   const isLatestVersion = study.version === latestVersion;
-  const isReference = study.type === "rawstudy";
-  const isVariant = study.type === "variantstudy";
   const isManaged = study.managed;
-  const isArchived = study.archived;
+  const isReference = study.type === "rawstudy";
+  const isVariant = !isReference;
+  /**
+   * @see {@link StudyActionsMenuProps.studyInfo} comment to understand
+   * why variant studies are considered archived by default
+   */
+  const isArchived = isReference ? study.archived : (studyInfo?.isArchived ?? true);
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -142,7 +163,13 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
           ),
           menuItem(isManaged && isReference, t("global.move"), DriveFileMoveIcon, "move"),
           menuItem(!isArchived, t("global.export"), DownloadOutlinedIcon, "export"),
-          menuItem(isArchived, t("global.unarchive"), UnarchiveOutlinedIcon, handleUnarchive),
+          menuItem(
+            // Only the reference study can be unarchived, not its variants
+            isArchived && isReference,
+            t("global.unarchive"),
+            UnarchiveOutlinedIcon,
+            handleUnarchive,
+          ),
           menuItem(
             isManaged && isReference && !isArchived,
             t("global.archive"),
@@ -164,13 +191,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
       {openDialog === "move" && <MoveStudyDialog open studies={[study]} onClose={closeDialog} />}
       {openDialog === "copy" && <CopyStudyDialog open study={study} onClose={closeDialog} />}
       {openDialog === "delete" && (
-        <DeleteStudyDialog
-          open
-          study={study}
-          parentStudy={parentStudy}
-          variantNb={variantNb}
-          onClose={closeDialog}
-        />
+        <DeleteStudyDialog open study={study} studyInfo={studyInfo} onClose={closeDialog} />
       )}
     </>
   );

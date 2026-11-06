@@ -16,8 +16,8 @@ import snakeCase from "lodash/snakeCase";
 import * as RA from "ramda-adjunct";
 import z from "zod";
 import client from "../client";
-import { studyVersionsSchema } from "./schemas";
-import type { CopyStudyParams } from "./types";
+import { studiesSchema, studySchema, studyVersionsSchema } from "./schemas";
+import type { CopyStudyParams, GetStudyParentsParams, Study } from "./types";
 
 export async function copyStudy({ studyId, ...params }: CopyStudyParams) {
   const { data } = await client.post(`/v1/studies/${studyId}/copy`, null, {
@@ -35,4 +35,25 @@ export async function copyStudy({ studyId, ...params }: CopyStudyParams) {
 export async function getStudyVersions() {
   const { data } = await client.get("/v1/studies/_versions");
   return studyVersionsSchema.parse(data);
+}
+
+/**
+ * GET /v1/studies/{studyId}/parents - Gets the parents of the specified study.
+ *
+ * @param params - Parameters.
+ * @param params.studyId - The ID of the study.
+ * @param params.direct - If `true`, only the direct parent is returned.
+ * @returns The direct parent if `direct` is `true`, otherwise all the parents of the specified study,
+ * ordered from the closest to the furthest.
+ */
+export function getStudyParents(params: GetStudyParentsParams & { direct: true }): Promise<Study>;
+export function getStudyParents(
+  params: GetStudyParentsParams & { direct?: false },
+): Promise<Study[]>;
+export function getStudyParents(params: GetStudyParentsParams): Promise<Study | Study[]>;
+export async function getStudyParents({ studyId, direct }: GetStudyParentsParams) {
+  const { data } = await client.get(`/v1/studies/${studyId}/parents`, {
+    params: { direct },
+  });
+  return direct ? studySchema.parse(data) : studiesSchema.parse(data);
 }
