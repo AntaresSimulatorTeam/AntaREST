@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Any, List, NoReturn, Sequence
+from typing import Any, List, NoReturn, Sequence, TypeAlias
 
 from polars import DataFrame
 from sqlalchemy import Row, delete, insert, select
@@ -48,6 +48,7 @@ from antarest.study.dao.database.models.gems.system import (
 from antarest.study.dao.database.models.thermal import THERMAL_CLUSTER_TABLE
 
 METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
+DbRows: TypeAlias = list[dict[str, Any]]
 
 
 def _reorder_connection(connection: GemsComponentConnection) -> GemsComponentConnection:
@@ -198,7 +199,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         return components
 
-    def _get_components_parameters(self) -> dict[str, list[dict[str, Any]]]:
+    def _get_components_parameters(self) -> dict[str, DbRows]:
         study_data_id = self._study_data_id
         session = self._db_session
 
@@ -206,7 +207,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             GEMS_COMPONENT_PARAMETERS_TABLE.c.study_data_id == study_data_id
         )
         parameters_rows = session.execute(parameters_stmt).fetchall()
-        component_parameters: dict[str, list[dict[str, Any]]] = {}
+        component_parameters: dict[str, DbRows] = {}
         for parameter_row in parameters_rows:
             is_dataseries = parameter_row.time_dependent or parameter_row.scenario_dependent
             component_parameters.setdefault(parameter_row.component_id, []).append(
@@ -219,7 +220,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
         return component_parameters
 
-    def _get_components_properties(self) -> dict[str, list[dict[str, Any]]]:
+    def _get_components_properties(self) -> dict[str, DbRows]:
         study_data_id = self._study_data_id
         session = self._db_session
 
@@ -227,7 +228,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             GEMS_COMPONENT_PROPERTIES_TABLE.c.study_data_id == study_data_id
         )
         properties_rows = session.execute(properties_stmt).fetchall()
-        component_properties: dict[str, list[dict[str, Any]]] = {}
+        component_properties: dict[str, DbRows] = {}
         for property_row in properties_rows:
             component_properties.setdefault(property_row.component_id, []).append(
                 {
@@ -321,7 +322,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if not self._get_system_row_if_exists():
             raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
-        component_values, property_values, parameter_rows = self._build_component_and_parameter_rows(components)
+        component_values = self._build_component_rows(components)
+        parameter_values = self._build_parameter_rows(components)
+        property_values = self._build_properties_rows(components)
 
         # Clean all existing data regarding components
         session.execute(delete(GEMS_COMPONENTS_TABLE).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id))
@@ -332,9 +335,9 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             except IntegrityError as e:
                 session.rollback()
                 raise GemsInvalidComponents("Could not save components, the table is not filled as it should") from e
-        if parameter_rows:
+        if parameter_values:
             try:
-                session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_rows)
+                session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
             except IntegrityError as e:
                 session.rollback()
                 raise GemsInvalidComponents(
@@ -352,22 +355,13 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         session.commit()
 
-    def _build_component_and_parameter_rows(
-        self, components: List[GemsComponent]
-    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    def _build_component_rows(self, components: List[GemsComponent]) -> DbRows:
         """
-        Builds the rows to insert in `GEMS_COMPONENTS_TABLE`, `GEMS_COMPONENT_PROPERTIES_TABLE`, and
-        `GEMS_COMPONENT_PARAMETERS_TABLE`.
+        Builds the rows to insert in `GEMS_COMPONENTS_TABLE
         """
         study_data_id = self._study_data_id
 
         component_values = []
-        property_values = []
-        parameter_rows: list[dict[str, Any]] = []
-        # Indices (into `parameter_rows`) of the rows whose `matrix_id` still needs to be filled once
-        # `matrix_service.create_batch` returns, in the same order as `matrix_dataframes`.
-        dependent_parameter_indices: list[int] = []
-        matrix_dataframes = []
 
         for component in components:
             library_id, model_id = component.model.split(".", 1)
@@ -382,6 +376,43 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                 }
             )
 
+        return component_values
+
+    def _build_properties_rows(self, components: List[GemsComponent]) -> DbRows:
+        """
+        Builds the rows to insert in `GEMS_COMPONENT_PROPERTIES_TABLE`
+        """
+        study_data_id = self._study_data_id
+
+        property_values = []
+
+        for component in components:
+            for prop in component.properties or []:
+                property_values.append(
+                    {
+                        "study_data_id": study_data_id,
+                        "component_id": component.id,
+                        "property_id": prop.id,
+                        "value": prop.value,
+                    }
+                )
+
+        return property_values
+
+    def _build_parameter_rows(self, components: List[GemsComponent]) -> DbRows:
+        """
+        Builds the rows to insert in `GEMS_COMPONENTS_TABLE`, `GEMS_COMPONENT_PROPERTIES_TABLE`, and
+        `GEMS_COMPONENT_PARAMETERS_TABLE`.
+        """
+        study_data_id = self._study_data_id
+
+        parameter_rows: DbRows = []
+        # Indices (into `parameter_rows`) of the rows whose `matrix_id` still needs to be filled once
+        # `matrix_service.create_batch` returns, in the same order as `matrix_dataframes`.
+        dependent_parameter_indices: list[int] = []
+        matrix_dataframes = []
+
+        for component in components:
             for parameter in component.parameters or []:
                 row = {
                     "study_data_id": study_data_id,
@@ -399,23 +430,13 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     row["value"] = parameter.get_value_as_float()
                 parameter_rows.append(row)
 
-            for prop in component.properties or []:
-                property_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "component_id": component.id,
-                        "property_id": prop.id,
-                        "value": prop.value,
-                    }
-                )
-
         if matrix_dataframes:
             matrix_service = self.get_impl().matrix_service
             matrix_ids = matrix_service.create_batch(iter(matrix_dataframes))
             for index, matrix_id in zip(dependent_parameter_indices, matrix_ids):
                 parameter_rows[index]["matrix_id"] = matrix_id
 
-        return component_values, property_values, parameter_rows
+        return parameter_rows
 
     def _save_area_connections(self, connections: List[GemsAreaConnection]) -> None:
         if not connections:

@@ -70,7 +70,7 @@ GEMS_COMPONENT_PARAMETERS_TABLE = Table(
     Column("parameter_id", String(255), primary_key=True),
     Column("time_dependent", Boolean, nullable=False),
     Column("scenario_dependent", Boolean, nullable=False),
-    # Contains the value of the float constant in case
+    # Contains the value of the float constant in case (time_dependent, scenario_dependent) = (False, False)
     Column("value", Float, nullable=True),
     # Contains the id of the matrix in the matrix store in case (time_dependent, scenario_dependent) != (False, False)
     Column("matrix_id", String(64), nullable=True),
