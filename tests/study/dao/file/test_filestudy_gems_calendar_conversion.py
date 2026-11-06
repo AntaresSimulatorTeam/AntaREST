@@ -45,12 +45,13 @@ def test_calendar_conversion_roundtrip(
     matrix_service: ISimpleMatrixService,
 ) -> None:
     file_dao = filestudy_dao_v10_2
-    file_dao.save_library(GemsLibrary(id="test_library"))
+    db_dao = dao_10_2
+    file_dao.save_library(GemsLibrary(id="test_library"))  # To not skip the conversion phase
     file_dao.save_gems_calendar(SAMPLE_CALENDAR)
 
     # Convert from file to db
-    StudyConverter(file_dao, dao_10_2, STUDY_VERSION_10_2, matrix_service).convert_study_inputs()
-    assert dao_10_2.get_gems_calendar() == SAMPLE_CALENDAR
+    StudyConverter(file_dao, db_dao, STUDY_VERSION_10_2, matrix_service).convert_study_inputs()
+    assert db_dao.get_gems_calendar() == SAMPLE_CALENDAR
 
     # Remove calendar from file dao and convert back from db to file
     calendar_file = file_dao.get_file_study().config.study_path / "input" / "calendar_file.csv"
@@ -58,5 +59,5 @@ def test_calendar_conversion_roundtrip(
     assert file_dao.get_gems_calendar() is None
     (file_dao.get_file_study().config.study_path / "input/model-libraries/library.yaml").unlink(missing_ok=True)
 
-    StudyConverter(dao_10_2, file_dao, STUDY_VERSION_10_2, matrix_service)._convert_gems()
+    StudyConverter(db_dao, file_dao, STUDY_VERSION_10_2, matrix_service)._convert_gems()
     assert file_dao.get_gems_calendar() == SAMPLE_CALENDAR
