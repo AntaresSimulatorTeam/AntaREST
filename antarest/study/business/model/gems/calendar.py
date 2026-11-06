@@ -14,9 +14,12 @@ import csv
 import io
 import re
 from datetime import datetime
-from typing import Any, Self
+from pathlib import Path
+from typing import Self
 
-from pydantic import ConfigDict, field_serializer, field_validator, model_validator
+import polars as pl
+from polars.exceptions import ComputeError
+from pydantic import ConfigDict, Field, field_serializer, model_validator
 
 from antarest.core.serde import AntaresBaseModel
 
@@ -31,28 +34,9 @@ class _GemsCalendarData(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    absolute_time_index: int
-    block: int
+    absolute_time_index: int = Field(ge=0)
+    block: int = Field(ge=0)
     granular_date: datetime
-
-    @field_validator("granular_date", mode="before")
-    @classmethod
-    def validate_granular_date(cls, v: Any) -> datetime:
-        if isinstance(v, str):
-            v_stripped = v.strip()
-            if not _DATETIME_PATTERN.fullmatch(v_stripped):
-                raise ValueError(f"Invalid date format: {v!r}. Expected format is '{_DATETIME_FORMAT}'")
-            try:
-                return datetime.strptime(v_stripped, _DATETIME_FORMAT)
-            except ValueError as e:
-                raise ValueError(f"Invalid date: {v!r}. Expected format is '{_DATETIME_FORMAT}'") from e
-        if isinstance(v, datetime):
-            if v.microsecond != 0 or v.tzinfo is not None:
-                raise ValueError(
-                    f"Invalid date: {v!r}. Expected format is '{_DATETIME_FORMAT}' without microseconds or timezone"
-                )
-            return v
-        raise ValueError(f"Invalid date type: {type(v)}. Expected format is '{_DATETIME_FORMAT}'")
 
     @field_serializer("granular_date")
     def serialize_granular_date(self, v: datetime) -> str:
@@ -88,45 +72,17 @@ class GemsCalendar(AntaresBaseModel):
         return output.getvalue().encode("utf-8")
 
     @classmethod
-    def from_csv(cls, calendar_bytes: bytes) -> "GemsCalendar":
-        """
-        Parse and validate a CSV bytes representation of a GEMS calendar.
-        """
-        try:
-            decoded = calendar_bytes.decode("utf-8")
-        except UnicodeDecodeError as e:
-            raise ValueError(f"Calendar file is not valid UTF-8: {e}") from e
+    def from_path(cls, file_path: Path) -> "GemsCalendar":
+        df = pl.read_csv(file_path)
 
-        reader = csv.reader(io.StringIO(decoded))
-        try:
-            header = next(reader)
-        except StopIteration:
-            raise ValueError("Calendar file is empty or missing a header row") from None
-
-        cleaned_header = [col.strip() for col in header]
-        try:
-            date_col_idx = cleaned_header.index("granular_date")
-        except ValueError:
-            raise ValueError("Calendar file must contain a 'granular_date' column") from None
+        if df.columns != ["absolute_time_index", "block", "granular_date"]:
+            message = "Calendar file must have these exact columns 'absolute_time_index', 'block', and 'granular_date'"
+            raise ValueError(message)
 
         try:
-            time_idx_col = cleaned_header.index("absolute_time_index")
-            block_col = cleaned_header.index("block")
-        except ValueError as e:
-            raise ValueError(f"Calendar file must contain required columns: {e}") from e
+            df = df.with_columns(pl.col("granular_date").str.to_datetime(_DATETIME_FORMAT).alias("granular_date"))
+        except ComputeError:
+            message = f"Calendar file column 'granular_date' must follow this format: {_DATETIME_FORMAT}"
+            raise ValueError(message)
 
-        data: list[_GemsCalendarData] = []
-        for line_num, row in enumerate(reader, start=2):
-            if not row or not any(field.strip() for field in row):
-                continue
-            if len(row) <= max(time_idx_col, block_col, date_col_idx):
-                raise ValueError(f"Missing column values at line {line_num}")
-            data.append(
-                _GemsCalendarData(
-                    absolute_time_index=int(row[time_idx_col].strip()),
-                    block=int(row[block_col].strip()),
-                    granular_date=row[date_col_idx].strip(),  # validated by _GemsCalendarData field_validator
-                )
-            )
-
-        return cls(data=data)
+        return GemsCalendar.model_validate(df.to_dicts())
