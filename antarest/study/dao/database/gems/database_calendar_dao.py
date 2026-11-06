@@ -29,11 +29,8 @@ class DatabaseGemsCalendarDao(GemsCalendarDao, DatabaseDaoBase):
         ).fetchone()
         if not row:
             return None
-        raw_calendar = bytes(row.calendar)
-        try:
-            return GemsCalendar.model_validate_json(raw_calendar)
-        except Exception:
-            return GemsCalendar.from_csv(raw_calendar)
+
+        return GemsCalendar.model_validate_json(row.calendar)
 
     @override
     def save_gems_calendar(self, calendar: GemsCalendar) -> None:
