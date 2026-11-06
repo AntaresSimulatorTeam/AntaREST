@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from pathlib import Path
 from typing import Any, List, NoReturn, Sequence, TypeAlias
 
 from polars import DataFrame
@@ -25,7 +24,6 @@ from antarest.core.exceptions import (
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.core.utils.polars import read_csv
 from antarest.study.business.model.gems.system import (
     GemsAreaConnection,
     GemsComponent,
@@ -401,16 +399,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
     def _build_parameter_rows(self, components: List[GemsComponent]) -> DbRows:
         """
-        Builds the rows to insert in `GEMS_COMPONENTS_TABLE`, `GEMS_COMPONENT_PROPERTIES_TABLE`, and
-        `GEMS_COMPONENT_PARAMETERS_TABLE`.
+        Builds the rows to insert in `GEMS_COMPONENT_PARAMETERS_TABLE`.
         """
         study_data_id = self._study_data_id
-
         parameter_rows: DbRows = []
-        # Indices (into `parameter_rows`) of the rows whose `matrix_id` still needs to be filled once
-        # `matrix_service.create_batch` returns, in the same order as `matrix_dataframes`.
-        dependent_parameter_indices: list[int] = []
-        matrix_dataframes = []
 
         for component in components:
             for parameter in component.parameters or []:
@@ -424,17 +416,10 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     "matrix_id": None,
                 }
                 if parameter.is_dataseries():
-                    dependent_parameter_indices.append(len(parameter_rows))
-                    matrix_dataframes.append(read_csv(Path(parameter.get_value_as_str()), has_headers=False))
+                    row["matrix_id"] = parameter.get_value_as_str()
                 else:
                     row["value"] = parameter.get_value_as_float()
                 parameter_rows.append(row)
-
-        if matrix_dataframes:
-            matrix_service = self.get_impl().matrix_service
-            matrix_ids = matrix_service.create_batch(iter(matrix_dataframes))
-            for index, matrix_id in zip(dependent_parameter_indices, matrix_ids):
-                parameter_rows[index]["matrix_id"] = matrix_id
 
         return parameter_rows
 

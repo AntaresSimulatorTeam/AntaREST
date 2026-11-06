@@ -46,13 +46,13 @@ class _GemsParameters(AntaresBaseModel):
     def get_value_as_float(self) -> float:
 
         if self.is_dataseries():
-            raise GemsInvalidParameterValue(f"Trying to get a float value from a dataseries for {self.id} parameter")
+            raise GemsInvalidParameterValue(f"Trying to get a float value from a dataseries for parameter {self.id}")
 
         return float(self.value)
 
     def get_value_as_str(self) -> str:
         if not self.is_dataseries():
-            raise GemsInvalidParameterValue(f"Trying to get a string value from a constant for {self.id} parameter")
+            raise GemsInvalidParameterValue(f"Trying to get a string value from a constant for parameter {self.id}")
 
         return str(self.value)
 
