@@ -13,7 +13,11 @@ from typing import List
 
 from pydantic import ConfigDict, model_validator
 
-from antarest.core.exceptions import GemsInvalidParameterValue
+from antarest.core.exceptions import (
+    GemsInvalidParameterValue,
+    GemsParameterValueIsConstantButShouldNotBe,
+    GemsParameterValueIsNotConstantButShouldBe,
+)
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
@@ -33,29 +37,22 @@ class _GemsParameters(AntaresBaseModel):
     @model_validator(mode="after")
     def validate_value(self) -> "_GemsParameters":
         if self.is_dataseries() and not isinstance(self.value, str):
-            raise GemsInvalidParameterValue(
-                f"Time and/or scenario-dependent parameters must have a string value (path to CSV file), but {self.value} was given for {self.id} parameter"
-            )
+            raise GemsParameterValueIsConstantButShouldNotBe(self.id, self.value)
+
         if not self.is_dataseries() and not isinstance(self.value, (int, float)):
-            raise GemsInvalidParameterValue(
-                f"Constant parameters must have a numeric value, but '{self.value}' was given for {self.id} parameter"
-            )
+            raise GemsParameterValueIsNotConstantButShouldBe(self.id, self.value)
         return self
 
     def get_value_as_float(self) -> float:
 
         if self.is_dataseries():
-            raise GemsInvalidParameterValue(
-                f"Time and/or scenario-dependent parameters must have a string value, but {self.value} was given for {self.id} parameter"
-            )
+            raise GemsInvalidParameterValue(f"Trying to get a float value from a dataseries for {self.id} parameter")
 
         return float(self.value)
 
     def get_value_as_str(self) -> str:
         if not self.is_dataseries():
-            raise GemsInvalidParameterValue(
-                f"Constant parameters must have a numeric value, but '{self.value}' was given for {self.id} parameter"
-            )
+            raise GemsInvalidParameterValue(f"Trying to get a string value from a constant for {self.id} parameter")
 
         return str(self.value)
 

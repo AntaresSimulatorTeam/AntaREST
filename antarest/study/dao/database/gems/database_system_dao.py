@@ -20,8 +20,8 @@ from typing_extensions import override
 from antarest.core.exceptions import (
     GemsInvalidComponents,
     GemsInvalidConnection,
-    GemsInvalidParameterValue,
     GemsParameterNotFound,
+    GemsParameterValueIsConstantButShouldNotBe,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
@@ -530,9 +530,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         if parameter_row is None:
             raise GemsParameterNotFound(f"Parameter '{parameter_id}' not found for component '{component_id}'")
         if parameter_row.matrix_id is None:
-            raise GemsInvalidParameterValue(
-                f"Parameter '{parameter_id}' of component '{component_id}' is a constant, it does not reference a matrix"
-            )
+            raise GemsParameterValueIsConstantButShouldNotBe(parameter_id, parameter_row.value)
 
         matrix_service = self.get_impl().matrix_service
         return matrix_service.get(parameter_row.matrix_id)

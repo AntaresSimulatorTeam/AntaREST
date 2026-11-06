@@ -952,6 +952,20 @@ class GemsInvalidParameterValue(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
+class GemsParameterValueIsConstantButShouldNotBe(HTTPException):
+    def __init__(self, parameter_id: str, value: float) -> None:
+        message = (
+            f"Parameter '{parameter_id}' had this constant value: {value} but should be time and/or scenario dependent"
+        )
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class GemsParameterValueIsNotConstantButShouldBe(HTTPException):
+    def __init__(self, parameter_id: str, value: str) -> None:
+        message = f"Parameter '{parameter_id}' had this value: '{value}' but should be constant"
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class GemsParameterNotFound(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)

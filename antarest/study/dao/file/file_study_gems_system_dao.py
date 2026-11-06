@@ -93,6 +93,8 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
                 f"The system file of study {file_study.config.study_id} is not supported: {e}"
             ) from e
 
+        # Matrices are stored in the matrix store to ensure compatibility with the database implementation.
+        # As this will only be called in the converter, this is not a performance issue.
         self._save_data_series_to_matrix_store(system, file_study)
         return system
 
@@ -161,14 +163,13 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
                 if not parameter.is_dataseries():
                     continue
 
+                str_value = parameter.get_value_as_str()
                 # Update the parameter value with the name of the CSV file only if it has not been written yet
-                if parameter.get_value_as_str() not in mapping_matrix_id_to_csv:
+                if str_value not in mapping_matrix_id_to_csv:
                     name = f"data_series_{matrices_count}"
                     matrices_count += 1
-                    CsvWriter.write(
-                        matrix_service.get(parameter.get_value_as_str()), data_series_folder / f"{name}.csv"
-                    )
-                    mapping_matrix_id_to_csv[parameter.get_value_as_str()] = name
+                    CsvWriter.write(matrix_service.get(str_value), data_series_folder / f"{name}.csv")
+                    mapping_matrix_id_to_csv[str_value] = name
                     parameter.value = name
                 else:
-                    parameter.value = mapping_matrix_id_to_csv[parameter.get_value_as_str()]
+                    parameter.value = mapping_matrix_id_to_csv[str_value]

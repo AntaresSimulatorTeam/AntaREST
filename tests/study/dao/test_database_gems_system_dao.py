@@ -20,8 +20,8 @@ import pytest
 from antarest.core.exceptions import (
     GemsConnectedObjectDeletionNotAllowed,
     GemsInvalidConnection,
-    GemsInvalidParameterValue,
     GemsParameterNotFound,
+    GemsParameterValueIsConstantButShouldNotBe,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
@@ -614,8 +614,8 @@ def test_get_parameter_value_raises_when_parameter_is_a_constant(dao_10_2: Study
     _add_system_file_to_study_dao(dao)
 
     with pytest.raises(
-        GemsInvalidParameterValue,
-        match="Parameter 'curtailment_price' of component 'dsr' is a constant, it does not reference a matrix",
+        GemsParameterValueIsConstantButShouldNotBe,
+        match="Parameter 'curtailment_price' had this constant value: 10.0 but should be time and/or scenario dependent",
     ):
         dao.get_parameter_series("dsr", "curtailment_price")
 
