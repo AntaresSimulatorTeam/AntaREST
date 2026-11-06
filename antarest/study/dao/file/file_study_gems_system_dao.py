@@ -23,10 +23,9 @@ from antarest.core.exceptions import (
     GemsSystemIncorrectlyFormatted,
     GemsUnavailableForFileSystemStudies,
 )
-from antarest.core.utils.polars import read_csv
+from antarest.core.utils.polars import read_csv, write_csv
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
-from antarest.study.storage.rawstudy.model.filesystem.csv_file_node import CsvWriter
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader, YAMLWriter
 
@@ -165,7 +164,7 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
                 if str_value not in mapping_matrix_id_to_csv:
                     name = f"data_series_{matrices_count}"
                     matrices_count += 1
-                    CsvWriter.write(matrix_service.get(str_value), data_series_folder / f"{name}.csv")
+                    write_csv(matrix_service.get(str_value), data_series_folder / f"{name}.csv")
                     mapping_matrix_id_to_csv[str_value] = name
                     parameter.value = name
                 else:

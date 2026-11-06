@@ -12,7 +12,6 @@
 import re
 from pathlib import Path
 from typing import Any
-from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -33,11 +32,11 @@ from antarest.study.business.model.gems.system import (
     GemsComponent,
     GemsComponentConnection,
     GemsSystem,
+    _GemsParameters,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 from tests.study.dao.conftest import check_gems_system_integrity
 from tests.study.dao.utils import save_area
@@ -552,15 +551,8 @@ def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDa
     _add_library_file_to_study_dao(dao)
 
     data_series_path = DATA_SERIES_PATH / "max_load_values.csv"
-    component = GemsComponent.model_validate(
-        {
-            "id": "dsr",
-            "model": "andromede-v1-models-weo-hybrid.dsr",
-            "parameters": [
-                {"id": "param1", "time-dependent": True, "scenario-dependent": False, "value": str(data_series_path)},
-            ],
-        }
-    )
+    component = _create_component_with_data_series_path(dao, "dsr", "param1", data_series_path)
+
     system = GemsSystem.model_validate({"id": "sys_id", "components": [component]})
     dao.save_system(system)
 
@@ -578,9 +570,11 @@ def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDa
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: DatabaseStudyDao) -> None:
     # `dao_10_2` and `db_dao` point to two distinct studies sharing the same matrix store.
-    first_component = _create_component_with_data_series_path("dsr", "param1", DATA_SERIES_PATH / "max_load_values.csv")
+    first_component = _create_component_with_data_series_path(
+        dao_10_2, "dsr", "param1", DATA_SERIES_PATH / "max_load_values.csv"
+    )
     second_component = _create_component_with_data_series_path(
-        "dsr", "param1", DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv"
+        db_dao, "dsr", "param1", DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv"
     )
 
     _add_library_file_to_study_dao(dao_10_2)
@@ -620,40 +614,6 @@ def test_get_parameter_value_raises_when_parameter_is_a_constant(dao_10_2: Study
         dao.get_parameter_series("dsr", "curtailment_price")
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
-def test_save_components_uploads_matrices_in_a_single_batch(dao_10_2: StudyDao, db_dao: DatabaseStudyDao) -> None:
-    _add_library_file_to_study_dao(dao_10_2)
-
-    component = GemsComponent.model_validate(
-        {
-            "id": "dsr",
-            "model": "andromede-v1-models-weo-hybrid.dsr",
-            "parameters": [
-                {
-                    "id": "param1",
-                    "time-dependent": True,
-                    "scenario-dependent": False,
-                    "value": str(DATA_SERIES_PATH / "max_load_values.csv"),
-                },
-                {
-                    "id": "param2",
-                    "time-dependent": True,
-                    "scenario-dependent": True,
-                    "value": str(DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv"),
-                },
-            ],
-        }
-    )
-    system = GemsSystem.model_validate({"id": "sys_id", "components": [component]})
-
-    # `dao_10_2` and `db_dao` share the same underlying matrix service instance.
-    matrix_service = db_dao.matrix_service
-    with patch.object(matrix_service, "create_batch", wraps=matrix_service.create_batch) as create_batch_spy:
-        dao_10_2.save_system(system)
-
-    create_batch_spy.assert_called_once()
-
-
 def _add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
     # Add the library and the legacy objects first, as the system file requires them
     _add_library_file_to_study_dao(dao)
@@ -672,15 +632,17 @@ def _add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
     # so the matrices are created beforehand in the matrix store.
     for component in system.components:
         for parameter in component.parameters:
-            if parameter.time_dependent or parameter.scenario_dependent:
-                csv_path = DATA_SERIES_PATH / f"{parameter.value}.csv"
-                if isinstance(dao, FileStudyTreeDao):
-                    parameter.value = dao.matrix_service.create(read_csv(csv_path, has_headers=False))
-                else:
-                    parameter.value = str(csv_path)
+            if parameter.is_dataseries():
+                _add_file_content_to_matrix_store(
+                    dao, parameter, DATA_SERIES_PATH / Path(f"{parameter.get_value_as_str()}.csv")
+                )
 
     dao.save_system(system)
     return system
+
+
+def _add_file_content_to_matrix_store(dao: StudyDao, parameter: _GemsParameters, csv_path: Path) -> None:
+    parameter.value = dao.matrix_service.create(read_csv(csv_path, has_headers=False))
 
 
 def _add_library_file_to_study_dao(dao: StudyDao) -> None:
@@ -690,13 +652,20 @@ def _add_library_file_to_study_dao(dao: StudyDao) -> None:
     dao.save_library(library)
 
 
-def _create_component_with_data_series_path(component_id: str, parameter_id: str, csv_path: Path) -> GemsComponent:
+def _create_component_with_data_series_path(
+    dao: StudyDao, component_id: str, parameter_id: str, csv_path: Path
+) -> GemsComponent:
+    parameter = _GemsParameters.model_validate(
+        {"id": parameter_id, "time-dependent": True, "scenario-dependent": False, "value": str(csv_path)},
+    )
+    _add_file_content_to_matrix_store(dao, parameter, csv_path)
+
     return GemsComponent.model_validate(
         {
             "id": component_id,
             "model": "andromede-v1-models-weo-hybrid.dsr",
             "parameters": [
-                {"id": parameter_id, "time-dependent": True, "scenario-dependent": False, "value": str(csv_path)},
+                parameter,
             ],
         }
     )
