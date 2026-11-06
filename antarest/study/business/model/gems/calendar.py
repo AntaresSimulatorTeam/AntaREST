@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Self
 
 import polars as pl
-from polars.exceptions import ComputeError
+from polars.exceptions import InvalidOperationError
 from pydantic import ConfigDict, Field, field_serializer, model_validator
 
 from antarest.core.serde import AntaresBaseModel
@@ -70,7 +70,7 @@ class GemsCalendar(AntaresBaseModel):
 
         try:
             df = df.with_columns(pl.col("granular_date").str.to_datetime(_DATETIME_FORMAT).alias("granular_date"))
-        except ComputeError:
+        except InvalidOperationError:
             message = f"Calendar file column 'granular_date' must follow this format: {_DATETIME_FORMAT}"
             raise ValueError(message)
 

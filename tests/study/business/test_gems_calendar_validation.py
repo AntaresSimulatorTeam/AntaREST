@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 from datetime import datetime
+from pathlib import Path
 
 import pytest
 
@@ -145,23 +146,28 @@ def test_validate_gems_calendar_missing_granular_date_column() -> None:
 @pytest.mark.parametrize(
     "invalid_date",
     [
-        "2025-01-01",
-        "2025-01-01 00:00",
-        "2025-01-01 00:00:00+01:00",
-        "2025-01-01T00:00:00",
-        "01/01/2025 00:00:00",
-        "2025-02-29 00:00:00",  # 2025 is not a leap year
+        "2025-01-01",  # Missing hours, minutes and seconds
+        "2025-01-01 00:00",  # Missing seconds
+        "2025-01-01 00:00:00+01:00",  # No timezone is accepted
+        "2025-01-01T00:00:00",  # Wrong format
+        "01/01/2025 00:00:00",  # Wrong format
         "2025-13-01 00:00:00",  # invalid month
         "2025-01-32 00:00:00",  # invalid day
         "2025-01-01 25:00:00",  # invalid hour
-        "not-a-date",
-        "",
+        "not-a-date",  # Not a date
+        "",  # No data
     ],
 )
-def test_validate_gems_calendar_invalid_date(invalid_date: str) -> None:
+def test_validate_gems_calendar_invalid_date(invalid_date: str, tmp_path: Path) -> None:
     csv_content = f"absolute_time_index,block,granular_date\n0,0,{invalid_date}\n".encode("utf-8")
-    with pytest.raises(ValueError, match="Invalid date"):
-        GemsCalendar.from_csv(csv_content)
+    file_path = tmp_path / "calendar.csv"
+    file_path.write_bytes(csv_content)
+
+    error_msg = "Calendar file column 'granular_date' must follow this format: %Y-%m-%d %H:%M:%S"
+    if invalid_date == "":  # Special msg for this case
+        error_msg = "1 validation error for GemsCalendar"
+    with pytest.raises(ValueError, match=error_msg):
+        GemsCalendar.read(file_path)
 
 
 def test_validate_gems_calendar_non_utf8() -> None:
