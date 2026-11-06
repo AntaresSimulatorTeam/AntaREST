@@ -10,9 +10,111 @@
 #
 # This file is part of the Antares project.
 
+from datetime import datetime
+
 import pytest
 
+from antarest.study.business.model.gems.calendar import GemsCalendar, _GemsCalendarData
 from antarest.study.dao.api.gems_calendar_dao import validate_gems_calendar
+
+
+def test_gems_calendar_pydantic_model_valid() -> None:
+    calendar = GemsCalendar(
+        data=[
+            _GemsCalendarData(
+                absolute_time_index=0,
+                block=0,
+                granular_date=datetime(2025, 1, 1, 0, 0, 0),
+            ),
+            _GemsCalendarData(
+                absolute_time_index=1,
+                block=0,
+                granular_date=datetime(2025, 1, 1, 1, 0, 0),
+            ),
+        ]
+    )
+    assert len(calendar.data) == 2
+    assert calendar.data[0].absolute_time_index == 0
+    assert calendar.data[1].absolute_time_index == 1
+
+    # Check json dumping and reloading round-trip
+    dumped = calendar.model_dump_json()
+    reloaded = GemsCalendar.model_validate_json(dumped)
+    assert reloaded == calendar
+
+
+def test_gems_calendar_non_contiguous_time_index() -> None:
+    # Does not start at 0
+    with pytest.raises(ValueError, match="All 'absolute_time_index' must make a contiguous list that start at 0"):
+        GemsCalendar(
+            data=[
+                _GemsCalendarData(
+                    absolute_time_index=1,
+                    block=0,
+                    granular_date=datetime(2025, 1, 1, 0, 0, 0),
+                ),
+            ]
+        )
+
+    # Gap in sequence
+    with pytest.raises(ValueError, match="All 'absolute_time_index' must make a contiguous list that start at 0"):
+        GemsCalendar(
+            data=[
+                _GemsCalendarData(
+                    absolute_time_index=0,
+                    block=0,
+                    granular_date=datetime(2025, 1, 1, 0, 0, 0),
+                ),
+                _GemsCalendarData(
+                    absolute_time_index=2,
+                    block=0,
+                    granular_date=datetime(2025, 1, 1, 1, 0, 0),
+                ),
+            ]
+        )
+
+    # Duplicated index
+    with pytest.raises(ValueError, match="All 'absolute_time_index' must make a contiguous list that start at 0"):
+        GemsCalendar(
+            data=[
+                _GemsCalendarData(
+                    absolute_time_index=0,
+                    block=0,
+                    granular_date=datetime(2025, 1, 1, 0, 0, 0),
+                ),
+                _GemsCalendarData(
+                    absolute_time_index=0,
+                    block=0,
+                    granular_date=datetime(2025, 1, 1, 1, 0, 0),
+                ),
+            ]
+        )
+
+
+def test_gems_calendar_data_date_validation() -> None:
+    # Valid string parsing
+    row = _GemsCalendarData(
+        absolute_time_index=0,
+        block=0,
+        granular_date="2025-01-01 00:00:00",
+    )
+    assert row.granular_date == datetime(2025, 1, 1, 0, 0, 0)
+
+    # Datetime with microsecond rejected
+    with pytest.raises(ValueError, match="Expected format is '%Y-%m-%d %H:%M:%S'"):
+        _GemsCalendarData(
+            absolute_time_index=0,
+            block=0,
+            granular_date=datetime(2025, 1, 1, 0, 0, 0, 123456),
+        )
+
+    # Invalid string format rejected
+    with pytest.raises(ValueError, match="Invalid date"):
+        _GemsCalendarData(
+            absolute_time_index=0,
+            block=0,
+            granular_date="2025-01-01T00:00:00",
+        )
 
 
 def test_validate_gems_calendar_valid() -> None:

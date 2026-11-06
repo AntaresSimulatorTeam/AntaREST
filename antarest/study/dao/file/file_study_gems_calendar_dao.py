@@ -16,7 +16,8 @@ from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from antarest.study.dao.api.gems_calendar_dao import GemsCalendarDao, validate_gems_calendar
+from antarest.study.business.model.gems.calendar import GemsCalendar
+from antarest.study.dao.api.gems_calendar_dao import GemsCalendarDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 
 if TYPE_CHECKING:
@@ -37,17 +38,15 @@ class FileStudyGemsCalendarDao(GemsCalendarDao, ABC):
         pass
 
     @override
-    def get_gems_calendar(self) -> bytes | None:
+    def get_gems_calendar(self) -> GemsCalendar | None:
         path = _get_gems_calendar_file_path(self.get_file_study().config.study_path)
         if not path.exists():
             return None
         content = path.read_bytes()
-        validate_gems_calendar(content)
-        return content
+        return GemsCalendar.from_csv(content)
 
     @override
-    def save_gems_calendar(self, calendar: bytes) -> None:
-        validate_gems_calendar(calendar)
+    def save_gems_calendar(self, calendar: GemsCalendar) -> None:
         path = _get_gems_calendar_file_path(self.get_file_study().config.study_path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(calendar)
+        path.write_bytes(calendar.to_csv())

@@ -30,6 +30,7 @@ from antarest.study.business.model.config.optimization_config_model import Optim
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
+from antarest.study.business.model.gems.calendar import GemsCalendar
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import (
@@ -1045,5 +1046,5 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_catalogs()
 
     @override
-    def get_gems_calendar(self) -> bytes | None:
+    def get_gems_calendar(self) -> GemsCalendar | None:
         return self._adaptee.get_gems_calendar()

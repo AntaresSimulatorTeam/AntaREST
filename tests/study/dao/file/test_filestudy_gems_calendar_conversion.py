@@ -10,16 +10,32 @@
 #
 # This file is part of the Antares project.
 
+from datetime import datetime
+
 import pytest
 
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.gems.calendar import GemsCalendar, _GemsCalendarData
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import STUDY_VERSION_10_2
 
-SAMPLE_CALENDAR = b"absolute_time_index,block,granular_date\n0,0,2025-01-01 00:00:00\n1,0,2025-01-01 01:00:00\n"
+SAMPLE_CALENDAR = GemsCalendar(
+    data=[
+        _GemsCalendarData(
+            absolute_time_index=0,
+            block=0,
+            granular_date=datetime(2025, 1, 1, 0, 0, 0),
+        ),
+        _GemsCalendarData(
+            absolute_time_index=1,
+            block=0,
+            granular_date=datetime(2025, 1, 1, 1, 0, 0),
+        ),
+    ]
+)
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)

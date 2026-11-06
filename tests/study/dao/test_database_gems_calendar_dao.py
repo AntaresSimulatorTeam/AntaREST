@@ -10,17 +10,40 @@
 #
 # This file is part of the Antares project.
 
-import pytest
+from datetime import datetime
+
 from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
 from antarest.matrixstore.service import ISimpleMatrixService
+from antarest.study.business.model.gems.calendar import GemsCalendar, _GemsCalendarData
 from antarest.study.dao.database.models import STUDY_DATA_TABLE
 from antarest.study.dao.database.models.gems.calendar import GEMS_CALENDAR_TABLE
 from tests.study.dao.conftest import build_db_dao_10_2
 
-SAMPLE_CALENDAR = b"absolute_time_index,block,granular_date\n0,0,2025-01-01 00:00:00\n1,0,2025-01-01 01:00:00\n"
-OTHER_CALENDAR = b"absolute_time_index,block,granular_date\n0,0,2026-01-01 00:00:00\n"
+SAMPLE_CALENDAR = GemsCalendar(
+    data=[
+        _GemsCalendarData(
+            absolute_time_index=0,
+            block=0,
+            granular_date=datetime(2025, 1, 1, 0, 0, 0),
+        ),
+        _GemsCalendarData(
+            absolute_time_index=1,
+            block=0,
+            granular_date=datetime(2025, 1, 1, 1, 0, 0),
+        ),
+    ]
+)
+OTHER_CALENDAR = GemsCalendar(
+    data=[
+        _GemsCalendarData(
+            absolute_time_index=0,
+            block=0,
+            granular_date=datetime(2026, 1, 1, 0, 0, 0),
+        ),
+    ]
+)
 
 
 def test_database_gems_calendar_dao(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
@@ -45,18 +68,21 @@ def test_database_gems_calendar_dao(db_session: Session, matrix_service: ISimple
     )
     row = db_session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchone()
     assert row is not None
-    assert bytes(row.calendar) == SAMPLE_CALENDAR
+    assert bytes(row.calendar) == SAMPLE_CALENDAR.model_dump_json().encode("utf-8")
 
     # Replace calendar
-    replacement = b"absolute_time_index,block,granular_date\n0,0,2025-06-01 12:00:00\n"
+    replacement = GemsCalendar(
+        data=[
+            _GemsCalendarData(
+                absolute_time_index=0,
+                block=0,
+                granular_date=datetime(2025, 6, 1, 12, 0, 0),
+            ),
+        ]
+    )
     first.save_gems_calendar(replacement)
     assert first.get_gems_calendar() == replacement
     assert second.get_gems_calendar() == OTHER_CALENDAR
-
-    # Validation failure does not save invalid calendar
-    with pytest.raises(ValueError, match="Invalid date"):
-        first.save_gems_calendar(b"absolute_time_index,block,granular_date\n0,0,bad-date\n")
-    assert first.get_gems_calendar() == replacement
 
     # Cascading delete when study_data is deleted
     db_session.execute(delete(STUDY_DATA_TABLE).where(STUDY_DATA_TABLE.c.study_data_id == study_data_id))

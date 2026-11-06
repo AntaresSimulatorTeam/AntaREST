@@ -14,30 +14,34 @@ from sqlalchemy import select
 from typing_extensions import override
 
 from antarest.core.utils.sql_utils import upsert_one
-from antarest.study.dao.api.gems_calendar_dao import GemsCalendarDao, validate_gems_calendar
+from antarest.study.business.model.gems.calendar import GemsCalendar
+from antarest.study.dao.api.gems_calendar_dao import GemsCalendarDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.calendar import GEMS_CALENDAR_TABLE
 
 
 class DatabaseGemsCalendarDao(GemsCalendarDao, DatabaseDaoBase):
     @override
-    def get_gems_calendar(self) -> bytes | None:
+    def get_gems_calendar(self) -> GemsCalendar | None:
         table = GEMS_CALENDAR_TABLE
         row = self._db_session.execute(
             select(table.c.calendar).where(table.c.study_data_id == self._study_data_id)
         ).fetchone()
         if not row:
             return None
-        return bytes(row.calendar)
+        raw_calendar = bytes(row.calendar)
+        try:
+            return GemsCalendar.model_validate_json(raw_calendar)
+        except Exception:
+            return GemsCalendar.from_csv(raw_calendar)
 
     @override
-    def save_gems_calendar(self, calendar: bytes) -> None:
-        validate_gems_calendar(calendar)
+    def save_gems_calendar(self, calendar: GemsCalendar) -> None:
         table = GEMS_CALENDAR_TABLE
         session = self._db_session
         upsert_one(
             session,
             table,
-            {"study_data_id": self._study_data_id, "calendar": calendar},
+            {"study_data_id": self._study_data_id, "calendar": calendar.model_dump_json().encode("utf-8")},
         )
         session.commit()
