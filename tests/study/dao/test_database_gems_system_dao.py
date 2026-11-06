@@ -24,25 +24,26 @@ from antarest.core.exceptions import (
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.core.utils.polars import read_csv
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.gems.library import GemsLibrary
-from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
 from antarest.study.business.model.gems.system import (
     GemsComponent,
     GemsComponentConnection,
+    GemsParameters,
     GemsSystem,
-    _GemsParameters,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
-from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
-from tests.study.dao.conftest import check_gems_system_integrity
+from tests.study.dao.conftest import (
+    DATA_SERIES_PATH,
+    add_file_content_to_matrix_store,
+    add_legacy_objects_to_study_dao,
+    add_library_file_to_study_dao,
+    add_system_file_to_study_dao,
+    check_gems_system_integrity,
+)
 from tests.study.dao.utils import save_area
-
-ASSETS_PATH = Path(__file__).parent / "assets"
-DATA_SERIES_PATH = ASSETS_PATH / "gems" / "data-series"
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
@@ -53,7 +54,7 @@ def test_cannot_replace_system(dao_10_2: StudyDao) -> None:
     assert dao.get_system() is None
     assert dao.get_components() == []
 
-    system = _add_system_file_to_study_dao(dao)
+    system = add_system_file_to_study_dao(dao)
 
     # Ensures we cannot replace a system once it already exists in a study
     with pytest.raises(GemsSystemAlreadyExists, match="A system file already exists for study"):
@@ -64,7 +65,7 @@ def test_cannot_replace_system(dao_10_2: StudyDao) -> None:
 def test_system_is_not_saved_if_an_error_is_raised(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 
-    _add_library_file_to_study_dao(dao)
+    add_library_file_to_study_dao(dao)
 
     # Ensures the system is not saved if an error is raised during the save process
     falsy_component = GemsComponent(id="dsr", model="andromede-v1-models-weo-hybrid.missing_model")
@@ -86,11 +87,8 @@ def test_system_is_not_saved_if_an_error_is_raised(dao_10_2: StudyDao) -> None:
 def test_save_and_load_system(dao_10_2: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     dao = dao_10_2
 
-    _add_system_file_to_study_dao(dao)
+    add_system_file_to_study_dao(dao)
 
-    # Fetch the saved system and check its content. Time-/scenario-dependent parameter values are
-    # now opaque matrix ids (not the data series id used in the source file), so we skip that part
-    # of the generic integrity check and verify it separately below.
     saved_system = dao.get_system()
     assert saved_system is not None
     check_gems_system_integrity(saved_system, matrix_service)
@@ -123,7 +121,7 @@ def test_cannot_save_components_without_system(dao_10_2: StudyDao) -> None:
 def test_save_components_fully_replaces_existing_ones(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 
-    _add_system_file_to_study_dao(dao)
+    add_system_file_to_study_dao(dao)
 
     updated_comp1 = GemsComponent.model_validate(
         {
@@ -178,7 +176,7 @@ def test_save_components_fully_replaces_existing_ones(dao_10_2: StudyDao) -> Non
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_connections_are_optional(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
+    add_library_file_to_study_dao(dao)
 
     system = GemsSystem.model_validate({"id": "sys_id", "components": []})
     dao.save_system(system)
@@ -220,7 +218,7 @@ def test_connections_can_link_2_ports_of_the_same_component(dao_10_2: StudyDao) 
 def test_cannot_have_duplicated_connections(dao_10_2: StudyDao) -> None:
 
     dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
+    add_library_file_to_study_dao(dao)
 
     component1 = GemsComponent.model_validate({"id": "dsr", "model": "andromede-v1-models-weo-hybrid.dsr"})
     component2 = GemsComponent.model_validate(
@@ -251,7 +249,7 @@ def test_cannot_have_duplicated_connections(dao_10_2: StudyDao) -> None:
 def test_symmetric_connections_are_detected_as_identical(dao_10_2: StudyDao) -> None:
 
     dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
+    add_library_file_to_study_dao(dao)
 
     component1 = GemsComponent.model_validate({"id": "dsr", "model": "andromede-v1-models-weo-hybrid.dsr"})
     component2 = GemsComponent.model_validate(
@@ -282,7 +280,7 @@ def test_symmetric_connections_are_detected_as_identical(dao_10_2: StudyDao) -> 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_connections_cannot_link_a_port_of_a_component_to_itself(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
+    add_library_file_to_study_dao(dao)
 
     component = GemsComponent.model_validate({"id": "dsr", "model": "andromede-v1-models-weo-hybrid.dsr"})
 
@@ -302,7 +300,7 @@ def test_connections_cannot_link_a_port_of_a_component_to_itself(dao_10_2: Study
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
+    add_library_file_to_study_dao(dao)
 
     component = GemsComponent.model_validate({"id": "dsr", "model": "andromede-v1-models-weo-hybrid.dsr"})
 
@@ -321,8 +319,8 @@ def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_deleting_a_cluster_removes_its_connections(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
-    _add_legacy_objects_to_study_dao(dao)
+    add_library_file_to_study_dao(dao)
+    add_legacy_objects_to_study_dao(dao)
     coal_cluster = ThermalCluster(id="coal_cluster", name="Coal_Cluster")
     initialize_thermal_cluster(coal_cluster, dao.get_version())
     dao.save_thermals({"west": [coal_cluster]})
@@ -366,7 +364,7 @@ def test_deleting_a_cluster_removes_its_connections(dao_10_2: StudyDao) -> None:
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_deleting_an_area_removes_its_connections_and_the_ones_of_its_clusters(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    _add_system_file_to_study_dao(dao)
+    add_system_file_to_study_dao(dao)
     system_before = dao.get_system()
     assert system_before is not None
     assert [(c.component, c.port, c.area) for c in system_before.area_connections] == [
@@ -457,8 +455,8 @@ def test_cannot_save_invalid_legacy_connections(
     dao_10_2: StudyDao, section: str, connections: list[dict[str, Any]], error_msg: str
 ) -> None:
     dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
-    _add_legacy_objects_to_study_dao(dao)
+    add_library_file_to_study_dao(dao)
+    add_legacy_objects_to_study_dao(dao)
 
     system = GemsSystem.model_validate(
         {
@@ -475,7 +473,7 @@ def test_cannot_save_invalid_legacy_connections(
 @pytest.mark.parametrize("dao_10_2", ["fs"], indirect=True)
 def test_cannot_delete_legacy_objects_connected_to_gems_in_filesystem_studies(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    system = _add_system_file_to_study_dao(dao)
+    system = add_system_file_to_study_dao(dao)
 
     with pytest.raises(
         GemsConnectedObjectDeletionNotAllowed,
@@ -506,8 +504,8 @@ def test_cannot_delete_area_whose_clusters_are_connected_to_gems_in_filesystem_s
     dao_10_2: StudyDao,
 ) -> None:
     dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
-    _add_legacy_objects_to_study_dao(dao)
+    add_library_file_to_study_dao(dao)
+    add_legacy_objects_to_study_dao(dao)
     # The area is only referenced through its thermal cluster
     system = GemsSystem.model_validate(
         {
@@ -536,19 +534,10 @@ def test_cannot_delete_area_whose_clusters_are_connected_to_gems_in_filesystem_s
     assert dao.get_system() == system
 
 
-def _add_legacy_objects_to_study_dao(dao: StudyDao) -> None:
-    # Legacy objects referenced by the system file asset
-    save_area(dao, "west")
-    save_area(dao, "West-H2")
-    cluster = ThermalCluster(id="gas_cluster", name="Gas_Cluster")
-    initialize_thermal_cluster(cluster, dao.get_version())
-    dao.save_thermals({"west": [cluster]})
-
-
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    _add_library_file_to_study_dao(dao)
+    add_library_file_to_study_dao(dao)
 
     data_series_path = DATA_SERIES_PATH / "max_load_values.csv"
     component = _create_component_with_data_series_path(dao, "dsr", "param1", data_series_path)
@@ -577,10 +566,10 @@ def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: Datab
         db_dao, "dsr", "param1", DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv"
     )
 
-    _add_library_file_to_study_dao(dao_10_2)
+    add_library_file_to_study_dao(dao_10_2)
     dao_10_2.save_system(GemsSystem.model_validate({"id": "sys_id", "components": [first_component]}))
 
-    _add_library_file_to_study_dao(db_dao)
+    add_library_file_to_study_dao(db_dao)
     db_dao.save_system(GemsSystem.model_validate({"id": "sys_id", "components": [second_component]}))
 
     first_expected = np.loadtxt(DATA_SERIES_PATH / "max_load_values.csv", delimiter=",", ndmin=2)
@@ -593,7 +582,7 @@ def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: Datab
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_get_parameter_value_raises_when_component_or_parameter_not_found(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    _add_system_file_to_study_dao(dao)
+    add_system_file_to_study_dao(dao)
 
     with pytest.raises(GemsParameterNotFound, match="Parameter 'unknown' not found for component 'dsr'"):
         dao.get_parameter_series("dsr", "unknown")
@@ -605,7 +594,7 @@ def test_get_parameter_value_raises_when_component_or_parameter_not_found(dao_10
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_get_parameter_value_raises_when_parameter_is_a_constant(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
-    _add_system_file_to_study_dao(dao)
+    add_system_file_to_study_dao(dao)
 
     with pytest.raises(
         GemsParameterValueIsConstantButShouldNotBe,
@@ -614,51 +603,13 @@ def test_get_parameter_value_raises_when_parameter_is_a_constant(dao_10_2: Study
         dao.get_parameter_series("dsr", "curtailment_price")
 
 
-def _add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
-    # Add the library and the legacy objects first, as the system file requires them
-    _add_library_file_to_study_dao(dao)
-    _add_legacy_objects_to_study_dao(dao)
-    dao.save_gems_scenario_builder(
-        GemsScenarioBuilder(scenarios={"sg1": [GemsScBuilderMapping(scenario=0, time_series_index=1)]})
-    )
-
-    gems_system_asset_path = ASSETS_PATH / "gems" / "system" / "system.yml"
-    content = YAMLReader().read(gems_system_asset_path)["system"]
-    system = GemsSystem.model_validate(content)
-
-    # The system file references dependent parameters by data series id, matching the real-world
-    # file-based `system.yml` convention. `save_components` reads the matrix from an actual file, so
-    # we resolve those ids to the matching CSV asset before saving. File studies expect matrix ids instead,
-    # so the matrices are created beforehand in the matrix store.
-    for component in system.components:
-        for parameter in component.parameters:
-            if parameter.is_dataseries():
-                _add_file_content_to_matrix_store(
-                    dao, parameter, DATA_SERIES_PATH / Path(f"{parameter.get_value_as_str()}.csv")
-                )
-
-    dao.save_system(system)
-    return system
-
-
-def _add_file_content_to_matrix_store(dao: StudyDao, parameter: _GemsParameters, csv_path: Path) -> None:
-    parameter.value = dao.matrix_service.create(read_csv(csv_path, has_headers=False))
-
-
-def _add_library_file_to_study_dao(dao: StudyDao) -> None:
-    gems_library_asset_path = ASSETS_PATH / "gems" / "libraries" / "8_1_simulator_nr_tests.yml"
-    content = YAMLReader().read(gems_library_asset_path)["library"]
-    library = GemsLibrary.model_validate(content)
-    dao.save_library(library)
-
-
 def _create_component_with_data_series_path(
     dao: StudyDao, component_id: str, parameter_id: str, csv_path: Path
 ) -> GemsComponent:
-    parameter = _GemsParameters.model_validate(
+    parameter = GemsParameters.model_validate(
         {"id": parameter_id, "time-dependent": True, "scenario-dependent": False, "value": str(csv_path)},
     )
-    _add_file_content_to_matrix_store(dao, parameter, csv_path)
+    add_file_content_to_matrix_store(dao, parameter, csv_path)
 
     return GemsComponent.model_validate(
         {

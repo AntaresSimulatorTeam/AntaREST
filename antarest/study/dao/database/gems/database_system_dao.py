@@ -109,27 +109,6 @@ def _check_legacy_connections(
         connected_ports.add(port)
 
 
-def _encode_parameter_value(value: float | str) -> str:
-    # The `value` column stores either a fixed numeric value or the `id` of a data series as text,
-    # since SQL has no native "number or string" column type. `repr` keeps the float's precision so
-    # it round-trips exactly through `_decode_parameter_value`.
-    return repr(value) if isinstance(value, float) else value
-
-
-def _build_error_message(
-    incorrectly_float_typed_parameter_ids: set[str], incorrectly_str_typed_parameter_ids: set[str]
-) -> str:
-    message = ""
-    if incorrectly_str_typed_parameter_ids:
-        message += f"Parameter value(s) must be a float when they do not depend on time or scenario: {sorted(incorrectly_str_typed_parameter_ids)}"
-
-    if incorrectly_float_typed_parameter_ids:
-        if message:
-            message += "\n"
-        message += f"Parameter value(s) must be a string when they depend on time or scenario: {sorted(incorrectly_float_typed_parameter_ids)}"
-    return message
-
-
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     """Database implementation of GemsSystemDao"""
 

@@ -25,7 +25,7 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 from tests.study.dao.conftest import build_db_dao_10_2, check_gems_system_integrity
-from tests.study.dao.test_database_gems_system_dao import _add_system_file_to_study_dao
+from tests.study.dao.test_database_gems_system_dao import add_system_file_to_study_dao
 
 ASSETS_PATH = Path(__file__).parent.parent / "assets"
 
@@ -37,7 +37,7 @@ def test_default_case(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
 
 def test_cannot_replace_system(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     dao = filestudy_dao_v10_2
-    _add_system_file_to_study(dao)
+    add_system_file_to_study_dao(dao)
 
     system = dao.get_system()
     assert system is not None
@@ -48,7 +48,7 @@ def test_cannot_replace_system(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
 
 def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, matrix_service: ISimpleMatrixService) -> None:
     dao = filestudy_dao_v10_2
-    _add_system_file_to_study(dao)
+    add_system_file_to_study_dao(dao)
 
     # Data series files are loaded in the matrix store, the parameters then reference matrix ids
     system = dao.get_system()
@@ -87,7 +87,7 @@ def test_db_to_file_system_conversion(
     filestudy_dao_v10_2: FileStudyTreeDao, db_session: Session, matrix_service: ISimpleMatrixService
 ) -> None:
     db_dao = build_db_dao_10_2(db_session, matrix_service)
-    _add_system_file_to_study_dao(db_dao)
+    add_system_file_to_study_dao(db_dao)
     db_system = db_dao.get_system()
     assert db_system is not None
     check_gems_system_integrity(db_system, matrix_service)

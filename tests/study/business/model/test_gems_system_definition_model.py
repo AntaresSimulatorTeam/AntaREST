@@ -103,4 +103,9 @@ def test_parameter_value_should_not_raise_when_properly_filled(
         }
     )
 
-    assert component is not None
+    assert component.id == "dsr"
+    assert component.model == "andromede-v1-models-weo-hybrid.dsr"
+    assert component.parameters[0].id == "param1"
+    assert component.parameters[0].time_dependent == time_dependent
+    assert component.parameters[0].scenario_dependent == scenario_dependent
+    assert component.parameters[0].value == value

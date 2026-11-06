@@ -21,6 +21,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from antarest.blobstore.service import IBlobService
+from antarest.core.utils.polars import read_csv
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -34,7 +35,13 @@ from antarest.study.business.model.config.optimization_config_model import (
 )
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
-from antarest.study.business.model.gems.system import GemsAreaConnection, GemsSystem, GemsThermalCapacityConnection
+from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder, GemsScBuilderMapping
+from antarest.study.business.model.gems.system import (
+    GemsAreaConnection,
+    GemsParameters,
+    GemsSystem,
+    GemsThermalCapacityConnection,
+)
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -58,6 +65,9 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import build_db_dao, build_filesystem_dao
 from tests.study.dao.utils import save_area
+
+ASSETS_PATH = Path(__file__).parent / "assets"
+DATA_SERIES_PATH = ASSETS_PATH / "gems" / "data-series"
 
 
 @pytest.fixture
@@ -459,10 +469,6 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
 
 
 def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatrixService) -> None:
-    """
-    If `matrix_service` is given, time-dependent parameter values are expected to be matrix ids
-    and their content is checked. Otherwise, they are expected to be data series ids.
-    """
     assert system is not None
     assert system.id == "System 8_1"
     assert system.description == "Electrolyser - V8.6"
@@ -553,6 +559,53 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
             }
         )
     ]
+
+
+def add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
+    # Add the library and the legacy objects first, as the system file requires them
+    add_library_file_to_study_dao(dao)
+    add_legacy_objects_to_study_dao(dao)
+    dao.save_gems_scenario_builder(
+        GemsScenarioBuilder(scenarios={"sg1": [GemsScBuilderMapping(scenario=0, time_series_index=1)]})
+    )
+
+    gems_system_asset_path = ASSETS_PATH / "gems" / "system" / "system.yml"
+    content = YAMLReader().read(gems_system_asset_path)["system"]
+    system = GemsSystem.model_validate(content)
+
+    # The system file references dependent parameters by data series id, matching the real-world
+    # file-based `system.yml` convention. `save_components` reads the matrix from an actual file, so
+    # we resolve those ids to the matching CSV asset before saving. File studies expect matrix ids instead,
+    # so the matrices are created beforehand in the matrix store.
+    for component in system.components:
+        for parameter in component.parameters:
+            if parameter.is_dataseries():
+                add_file_content_to_matrix_store(
+                    dao, parameter, DATA_SERIES_PATH / Path(f"{parameter.get_value_as_str()}.csv")
+                )
+
+    dao.save_system(system)
+    return system
+
+
+def add_library_file_to_study_dao(dao: StudyDao) -> None:
+    gems_library_asset_path = ASSETS_PATH / "gems" / "libraries" / "8_1_simulator_nr_tests.yml"
+    content = YAMLReader().read(gems_library_asset_path)["library"]
+    library = GemsLibrary.model_validate(content)
+    dao.save_library(library)
+
+
+def add_legacy_objects_to_study_dao(dao: StudyDao) -> None:
+    # Legacy objects referenced by the system file asset
+    save_area(dao, "west")
+    save_area(dao, "West-H2")
+    cluster = ThermalCluster(id="gas_cluster", name="Gas_Cluster")
+    initialize_thermal_cluster(cluster, dao.get_version())
+    dao.save_thermals({"west": [cluster]})
+
+
+def add_file_content_to_matrix_store(dao: StudyDao, parameter: GemsParameters, csv_path: Path) -> None:
+    parameter.value = dao.matrix_service.create(read_csv(csv_path, has_headers=False))
 
 
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
