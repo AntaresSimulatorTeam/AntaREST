@@ -27,9 +27,6 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
             df.columns = [str(k) for k in range(len(df.columns))]
         else:
             df = read_tsv(path, has_headers=True)
-    elif matrix_format == InternalMatrixFormat.HDF:
-        pandas_df = cast(pd.DataFrame, pd.read_hdf(path))
-        df = pl.from_pandas(pandas_df)
     elif matrix_format == InternalMatrixFormat.PARQUET:
         df = pl.read_parquet(path)
     elif matrix_format == InternalMatrixFormat.FEATHER:

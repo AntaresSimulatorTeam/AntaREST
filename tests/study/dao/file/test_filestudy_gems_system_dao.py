@@ -24,8 +24,7 @@ from antarest.core.exceptions import (
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
-from tests.study.dao.conftest import build_db_dao_10_2, check_gems_system_integrity
-from tests.study.dao.test_database_gems_system_dao import add_system_file_to_study_dao
+from tests.study.dao.conftest import add_system_file_to_study_dao, build_db_dao_10_2, check_gems_system_integrity
 
 ASSETS_PATH = Path(__file__).parent.parent / "assets"
 

@@ -35,7 +35,7 @@ from antarest.study.business.model.config.optimization_config_model import (
 )
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
-from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder, GemsScBuilderMapping
+from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
 from antarest.study.business.model.gems.system import (
     GemsAreaConnection,
     GemsParameters,

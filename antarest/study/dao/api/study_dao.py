@@ -19,7 +19,6 @@ from antares.study.version import StudyVersion
 from typing_extensions import override
 
 from antarest.core.model import GemsId
-from antarest.core.serde.np_array import NpArray
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
