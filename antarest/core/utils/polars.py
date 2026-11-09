@@ -32,10 +32,6 @@ def read_tsv(path: Path, has_headers: bool) -> pl.DataFrame:
     return _read_file(path, has_headers, separator="\t")
 
 
-def read_csv(path: Path, has_headers: bool) -> pl.DataFrame:
-    return _read_file_with_floats(has_headers, path, separator=",")
-
-
 def _read_file(path: Path, has_headers: bool, separator: str) -> pl.DataFrame:
     try:
         df = pl.read_csv(path, n_threads=1, separator=separator, has_header=has_headers)

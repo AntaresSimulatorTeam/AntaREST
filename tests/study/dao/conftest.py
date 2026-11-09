@@ -21,7 +21,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from antarest.blobstore.service import IBlobService
-from antarest.core.utils.polars import read_csv
+from antarest.core.utils.polars import read_tsv
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -613,7 +613,7 @@ def add_legacy_objects_to_study_dao(dao: StudyDao) -> None:
 
 
 def add_file_content_to_matrix_store(dao: StudyDao, parameter: GemsParameters, csv_path: Path) -> None:
-    parameter.value = dao.matrix_service.create(read_csv(csv_path, has_headers=False))
+    parameter.value = dao.matrix_service.create(read_tsv(csv_path, has_headers=False))
 
 
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:

@@ -23,7 +23,7 @@ from antarest.core.exceptions import (
     GemsSystemIncorrectlyFormatted,
     GemsUnavailableForFileSystemStudies,
 )
-from antarest.core.utils.polars import read_csv, write_csv
+from antarest.core.utils.polars import read_tsv, write_csv
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -47,7 +47,7 @@ _DATA_SERIES_NAME_PATTERN = re.compile(r"[\w\-]+", re.ASCII)
 
 def _resolve_data_series_file(data_series_folder: Path, name: str, study_id: str) -> Path:
     """
-    Resolves the name of a data series to its CSV file, guaranteeing that the file is a regular
+    Resolves the name of a data series to its matrix file, guaranteeing that the file is a regular
     file located directly inside `data_series_folder`.
     """
     if not _DATA_SERIES_NAME_PATTERN.fullmatch(name):
@@ -118,7 +118,7 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
             file_path = _resolve_data_series_file(
                 data_series_folder, parameter.get_value_as_str(), file_study.config.study_id
             )
-            dataframes.append(read_csv(file_path, has_headers=False))
+            dataframes.append(read_tsv(file_path, has_headers=False))
 
         if dataframes:
             matrix_ids = self.get_impl().matrix_service.create_batch(iter(dataframes))
