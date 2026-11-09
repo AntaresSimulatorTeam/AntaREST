@@ -115,6 +115,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                 "id": metadata_row.id,
                 "description": metadata_row.description,
                 "version": metadata_row.version,
+                "taxonomy": metadata_row.taxonomy,
                 "port_types": port_types,
                 "models": models,
             }
@@ -136,6 +137,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
             "id": library.id,
             "description": library.description,
             "version": library.version,
+            "taxonomy": library.taxonomy,
         }
         session.execute(insert(GEMS_LIBRARY_METADATA_TABLE), metadata_values)
 
