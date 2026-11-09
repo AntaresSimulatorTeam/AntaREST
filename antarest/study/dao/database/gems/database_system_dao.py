@@ -352,6 +352,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     "component_id": component.id,
                     "model_id": model_id,
                     "scenario_group": component.scenario_group,
+                    "integer_strategy": json.dumps(component.integer_strategy) if component.integer_strategy else None,
                 }
             )
 
