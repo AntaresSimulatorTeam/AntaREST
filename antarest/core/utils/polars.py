@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -51,5 +51,5 @@ def _read_file_with_floats(has_headers: bool, path: Path, separator: str) -> Dat
     return df
 
 
-def write_csv(data: pl.DataFrame, path: Path) -> None:
-    data.write_csv(path, include_header=False, separator=",")
+def write_tsv(data: pl.DataFrame, file: Path | IO[str] | IO[bytes], include_headers: bool = False) -> None:
+    data.write_csv(file, include_header=include_headers, separator="\t")
