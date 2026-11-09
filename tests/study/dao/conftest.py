@@ -588,9 +588,10 @@ def add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
     for component in system.components:
         for parameter in component.parameters:
             if parameter.is_dataseries():
-                add_file_content_to_matrix_store(
-                    dao, parameter, DATA_SERIES_PATH / Path(f"{parameter.get_value_as_str()}.csv")
-                )
+                for extension in {".csv", ".tsv"}:
+                    file_path = DATA_SERIES_PATH / f"{parameter.get_value_as_str()}{extension}"
+                    if file_path.exists():
+                        add_file_content_to_matrix_store(dao, parameter, file_path)
 
     dao.save_system(system)
     return system
