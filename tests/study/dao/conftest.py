@@ -486,6 +486,10 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
     assert first_component.parameters[1].id == "max_load"
     assert first_component.parameters[1].time_dependent is True
     assert first_component.parameters[1].scenario_dependent is False
+    assert first_component.integer_strategy is not None
+    assert first_component.integer_strategy.id.value == "heuristic"
+    assert first_component.integer_strategy.heuristic_id is not None
+    assert first_component.integer_strategy.heuristic_id.value == "fast"
 
     first_component_value = matrix_service.get(str(first_component.parameters[1].value))
     assert first_component_value is not None
@@ -505,6 +509,9 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
     assert second_component.parameters[1].id == "p_max"
     assert second_component.parameters[1].time_dependent is True
     assert second_component.parameters[1].scenario_dependent is True
+    assert second_component.integer_strategy is not None
+    assert second_component.integer_strategy.id.value == "relaxed"
+    assert second_component.integer_strategy.heuristic_id is None
 
     second_component_value = matrix_service.get(str(second_component.parameters[1].value))
     assert second_component_value is not None
@@ -532,6 +539,7 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
     assert third_component.parameters[1].id == "p_max"
     assert third_component.parameters[1].time_dependent is True
     assert third_component.parameters[1].scenario_dependent is True
+    assert third_component.integer_strategy is None
 
     third_component_value = matrix_service.get(str(third_component.parameters[1].value))
     assert third_component_value is not None

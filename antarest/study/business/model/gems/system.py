@@ -9,7 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import List
+from enum import StrEnum
+from typing import List, Self
 
 from pydantic import ConfigDict, model_validator
 
@@ -64,12 +65,41 @@ class _GemsProperties(AntaresBaseModel):
     value: str
 
 
+class IntegerStrategyId(StrEnum):
+    EXACT = "exact"
+    RELAXED = "relaxed"
+    HEURISTIC = "heuristic"
+
+
+class IntegerStrategyHeuristicId(StrEnum):
+    FAST = "fast"
+    ACCURATE = "accurate"
+
+
+class _IntegerStrategy(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
+
+    id: IntegerStrategyId
+    heuristic_id: IntegerStrategyHeuristicId | None = None
+
+    @model_validator(mode="after")
+    def validate_integer_strategy(self) -> Self:
+        if self.id == IntegerStrategyId.HEURISTIC and self.heuristic_id is None:
+            raise ValueError("heuristic-id is required when id is 'heuristic'")
+
+        if self.heuristic_id is not None and self.id != IntegerStrategyId.HEURISTIC:
+            raise ValueError("heuristic-id is forbidden when id is not 'heuristic'")
+
+        return self
+
+
 class GemsComponent(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
     model: str
     scenario_group: str | None = None
+    integer_strategy: _IntegerStrategy | None = None
     parameters: List[GemsParameters] = []
     properties: List[_GemsProperties] = []
 

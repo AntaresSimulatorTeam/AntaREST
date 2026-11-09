@@ -12,6 +12,7 @@
 import re
 
 import pytest
+from pydantic import ValidationError
 
 from antarest.core.exceptions import (
     GemsParameterValueIsConstantButShouldNotBe,
@@ -109,3 +110,22 @@ def test_parameter_value_should_not_raise_when_properly_filled(
     assert component.parameters[0].time_dependent == time_dependent
     assert component.parameters[0].scenario_dependent == scenario_dependent
     assert component.parameters[0].value == value
+
+
+def test_integer_strategy() -> None:
+    with pytest.raises(ValidationError, match="heuristic-id is required when id is 'heuristic'"):
+        GemsComponent.model_validate({"id": "id", "model": "model", "integer-strategy": {"id": "heuristic"}})
+
+    with pytest.raises(ValidationError, match="heuristic-id is forbidden when id is not 'heuristic'"):
+        GemsComponent.model_validate(
+            {"id": "id", "model": "model", "integer-strategy": {"id": "relaxed", "heuristic-id": "fast"}}
+        )
+
+    # Wrong enum values
+    with pytest.raises(ValidationError, match="Input should be 'exact', 'relaxed' or 'heuristic'"):
+        GemsComponent.model_validate({"id": "id", "model": "model", "integer-strategy": {"id": "wrong id"}})
+
+    with pytest.raises(ValidationError, match="Input should be 'fast' or 'accurate'"):
+        GemsComponent.model_validate(
+            {"id": "id", "model": "model", "integer-strategy": {"id": "heuristic", "heuristic-id": "wrong id"}}
+        )

@@ -45,6 +45,7 @@ GEMS_COMPONENTS_TABLE = Table(
     Column("library_id", String(255), nullable=False),
     Column("model_id", String(255)),
     Column("scenario_group", String(255), nullable=True),
+    Column("integer_strategy", String(), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id"],
         ["gems_system_metadata.study_data_id"],
