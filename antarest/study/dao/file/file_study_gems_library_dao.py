@@ -55,4 +55,4 @@ class FileStudyGemsLibraryDao(GemsLibraryDao, ABC):
 
         yaml_content = library.model_dump(mode="json", exclude_unset=True, by_alias=True)
         library_folder_path.mkdir(exist_ok=True)
-        YAMLWriter().write({"library": yaml_content}, library_folder_path / "library.yaml")
+        YAMLWriter().write({"library": yaml_content}, library_folder_path / "library.yml")

@@ -136,7 +136,8 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
     @override
     def save_system(self, system: GemsSystem) -> None:
         file_study = self.get_file_study()
-        system_file_path = _get_gems_system_file_path(file_study.config.study_path)
+        study_path = file_study.config.study_path
+        system_file_path = _get_gems_system_file_path(study_path)
 
         if system_file_path.exists():
             raise GemsSystemAlreadyExists(f"A system file already exists for study {file_study.config.study_id}")
@@ -145,8 +146,15 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
         system = system.model_copy(deep=True)
         self._write_data_series_from_matrix_store(system, file_study)
 
-        yaml_content = system.model_dump(mode="json", exclude_unset=True, by_alias=True)
+        yaml_content = system.model_dump(mode="json", exclude_unset=True, by_alias=True, exclude_none=True)
         YAMLWriter().write({"system": yaml_content}, system_file_path)
+
+        # The simulator always need a `optim-config.yml` file to run
+        # As we do not handle it in the DAO at the moment, we create it here
+        # todo: remove this once we support the optim-config.yml file in the DAO
+        optim_config_path = study_path / "input" / "optim-config.yml"
+        if not optim_config_path.exists():
+            optim_config_path.touch()
 
     @override
     def save_components(self, components: list[GemsComponent]) -> None:
