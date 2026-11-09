@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import json
 from typing import Any, List, NoReturn, Sequence, TypeAlias
 
 from polars import DataFrame
@@ -162,15 +163,16 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         components = []
         for component_row in all_components_rows:
             model = f"{component_row.library_id}.{component_row.model_id}"
-            current_component = GemsComponent.model_validate(
-                {
-                    "id": component_row.component_id,
-                    "model": model,
-                    "scenario_group": component_row.scenario_group if component_row.scenario_group else None,
-                    "parameters": component_parameters.get(component_row.component_id, []),
-                    "properties": component_properties.get(component_row.component_id, []),
-                }
-            )
+            args = {
+                "id": component_row.component_id,
+                "model": model,
+                "scenario_group": component_row.scenario_group if component_row.scenario_group else None,
+                "parameters": component_parameters.get(component_row.component_id, []),
+                "properties": component_properties.get(component_row.component_id, []),
+            }
+            if component_row.integer_strategy:
+                args["integer_strategy"] = json.loads(component_row.integer_strategy)
+            current_component = GemsComponent.model_validate(args)
 
             components.append(current_component)
 
