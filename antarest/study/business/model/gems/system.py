@@ -11,20 +11,50 @@
 # This file is part of the Antares project.
 from typing import List
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, model_validator
 
+from antarest.core.exceptions import (
+    GemsInvalidParameterValue,
+    GemsParameterValueIsConstantButShouldNotBe,
+    GemsParameterValueIsNotConstantButShouldBe,
+)
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 
 
-class _GemsParameters(AntaresBaseModel):
+class GemsParameters(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
     time_dependent: bool
     scenario_dependent: bool
-    value: float  # TODO: authorize string values when time_dependent and/or scenario_dependant is True
+    value: float | str
+
+    def is_dataseries(self) -> bool:
+        return self.time_dependent or self.scenario_dependent
+
+    @model_validator(mode="after")
+    def validate_value(self) -> "GemsParameters":
+        if self.is_dataseries() and not isinstance(self.value, str):
+            raise GemsParameterValueIsConstantButShouldNotBe(self.id, self.value)
+
+        if not self.is_dataseries() and not isinstance(self.value, (int, float)):
+            raise GemsParameterValueIsNotConstantButShouldBe(self.id, self.value)
+        return self
+
+    def get_value_as_float(self) -> float:
+
+        if self.is_dataseries():
+            raise GemsInvalidParameterValue(f"Trying to get a float value from a dataseries for parameter {self.id}")
+
+        return float(self.value)
+
+    def get_value_as_str(self) -> str:
+        if not self.is_dataseries():
+            raise GemsInvalidParameterValue(f"Trying to get a string value from a constant for parameter {self.id}")
+
+        return str(self.value)
 
 
 class _GemsProperties(AntaresBaseModel):
@@ -40,8 +70,8 @@ class GemsComponent(AntaresBaseModel):
     id: str
     model: str
     scenario_group: str | None = None
-    parameters: List[_GemsParameters] | None = None
-    properties: List[_GemsProperties] | None = None
+    parameters: List[GemsParameters] = []
+    properties: List[_GemsProperties] = []
 
 
 class GemsComponentConnection(AntaresBaseModel):
