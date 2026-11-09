@@ -539,7 +539,7 @@ def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDa
     dao = dao_10_2
     add_library_file_to_study_dao(dao)
 
-    data_series_path = DATA_SERIES_PATH / "max_load_values.csv"
+    data_series_path = DATA_SERIES_PATH / "max_load_values.tsv"
     component = _create_component_with_data_series_path(dao, "dsr", "param1", data_series_path)
 
     system = GemsSystem.model_validate({"id": "sys_id", "components": [component]})
@@ -560,7 +560,7 @@ def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDa
 def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: DatabaseStudyDao) -> None:
     # `dao_10_2` and `db_dao` point to two distinct studies sharing the same matrix store.
     first_component = _create_component_with_data_series_path(
-        dao_10_2, "dsr", "param1", DATA_SERIES_PATH / "max_load_values.csv"
+        dao_10_2, "dsr", "param1", DATA_SERIES_PATH / "max_load_values.tsv"
     )
     second_component = _create_component_with_data_series_path(
         db_dao, "dsr", "param1", DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv"
@@ -572,7 +572,7 @@ def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: Datab
     add_library_file_to_study_dao(db_dao)
     db_dao.save_system(GemsSystem.model_validate({"id": "sys_id", "components": [second_component]}))
 
-    first_expected = np.loadtxt(DATA_SERIES_PATH / "max_load_values.csv", delimiter=",", ndmin=2)
+    first_expected = np.loadtxt(DATA_SERIES_PATH / "max_load_values.tsv", delimiter=",", ndmin=2)
     second_expected = np.loadtxt(DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv", delimiter=",", ndmin=2)
 
     assert np.array_equal(dao_10_2.get_parameter_series("dsr", "param1").to_numpy(), first_expected)

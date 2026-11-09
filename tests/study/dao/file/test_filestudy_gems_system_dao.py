@@ -132,7 +132,7 @@ def test_should_not_access_system_components(filestudy_dao_v10_2: FileStudyTreeD
         "../data-series/max_load_values",
         "/etc/passwd",
         "sub/max_load_values",
-        "max_load_values.csv",
+        "max_load_values.tsv",
         "max_load_values\n",
         "ma x",
     ],
