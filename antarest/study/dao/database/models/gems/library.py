@@ -23,7 +23,13 @@ GEMS_LIBRARY_METADATA_TABLE = Table(
     Column("id", String(255), primary_key=True),
     Column("description", String(), nullable=True),
     Column("version", String(36), nullable=True),
+    Column("taxonomy", String(255), nullable=True),
     ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
+    ForeignKeyConstraint(
+        ["study_data_id", "taxonomy"],
+        ["gems_taxonomy_metadata.study_data_id", "gems_taxonomy_metadata.id"],
+        ondelete="CASCADE",
+    ),
 )
 
 GEMS_PORT_TYPES_TABLE = Table(

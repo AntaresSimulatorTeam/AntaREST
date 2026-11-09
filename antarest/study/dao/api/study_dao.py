@@ -1018,6 +1018,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_components()
 
     @override
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> pl.DataFrame:
+        return self._adaptee.get_parameter_series(component_id, parameter_id)
+
+    @override
     def get_system(self) -> GemsSystem | None:
         return self._adaptee.get_system()
 
