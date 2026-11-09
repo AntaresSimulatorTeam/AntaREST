@@ -118,7 +118,7 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
             file_path = _resolve_data_series_file(
                 data_series_folder, parameter.get_value_as_str(), file_study.config.study_id
             )
-            dataframes.append(read_gems_tsv(file_path, has_headers=False))
+            dataframes.append(read_gems_tsv(file_path))
 
         if dataframes:
             matrix_ids = self.get_impl().matrix_service.create_batch(iter(dataframes))
