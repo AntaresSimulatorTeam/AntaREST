@@ -23,6 +23,22 @@ export const treeNodeIcons = {
   folderOpen: FolderOpenIcon,
 };
 
+export const nodeLabelStyles = {
+  minWidth: 0,
+  width: 1,
+  gap: 1,
+} satisfies SxProps<Theme>;
+
+export const nodeNameStyles = {
+  flex: 1,
+  minWidth: 0,
+} satisfies SxProps<Theme>;
+
+export const workspaceDiskUsageStyles = {
+  flex: 1,
+  minWidth: 0,
+} satisfies SxProps<Theme>;
+
 export const treeItemStyles: SxProps<Theme> = (theme) => ({
   "& > .MuiTreeItem-content": {
     "&:hover": {

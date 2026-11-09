@@ -21,10 +21,6 @@ export interface TreeItemEnhancedProps extends TreeItemProps {
   disableTooltip?: boolean;
 }
 
-////////////////////////////////////////////////////////////////
-// Utils
-////////////////////////////////////////////////////////////////
-
 function withTooltip(label: TreeItemEnhancedProps["label"], disableTooltip: boolean) {
   if (typeof label !== "string") {
     return label;
@@ -40,24 +36,18 @@ function withTooltip(label: TreeItemEnhancedProps["label"], disableTooltip: bool
 }
 
 function withLoading(label: TreeItemEnhancedProps["label"], loading: boolean) {
-  if (!loading) {
-    return label;
-  }
-
+  // Keep the label mounted so loading does not reset focus or local state.
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-      {/* Wrapped with a <Box> to prevent display issue when item is expanded */}
-      <Box>
-        <CircularProgress size={12} color="secondary" />
-      </Box>
+    <Box sx={{ display: loading ? "flex" : "block", alignItems: "center", gap: 1, minWidth: 0 }}>
+      {loading && (
+        <Box>
+          <CircularProgress size={12} color="secondary" />
+        </Box>
+      )}
       {label}
     </Box>
   );
 }
-
-////////////////////////////////////////////////////////////////
-// Component
-////////////////////////////////////////////////////////////////
 
 function TreeItemEnhanced({
   onClick,

@@ -40,6 +40,7 @@ interface Props {
   isRootSelected?: boolean;
   /** sessionStorage key used to persist and restore scroll position across navigations. */
   scrollKey?: string;
+  headerContent?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -52,6 +53,7 @@ function TreeSection({
   onRootClick,
   isRootSelected = false,
   scrollKey,
+  headerContent,
   children,
 }: Props) {
   const { container, iconColor, titleColor } = variantStyles[variant];
@@ -71,15 +73,15 @@ function TreeSection({
             spacing={1}
             alignItems="center"
             onClick={onToggleCollapse}
-            sx={{ cursor: "pointer" }}
+            sx={{ cursor: "pointer", minWidth: 0 }}
           >
             <Box sx={{ color: iconColor, fontSize: ICON_SIZE, lineHeight: 0 }}>{icon}</Box>
-            <Typography variant="subtitle2" sx={[titleStyles, { color: titleColor }]}>
+            <Typography variant="subtitle2" noWrap sx={[titleStyles, { color: titleColor }]}>
               {title}
             </Typography>
           </Stack>
 
-          <Stack direction="row">
+          <Stack direction="row" sx={{ flexShrink: 0 }}>
             {onAddDirectory && (
               <Tooltip title={t("studies.tree.addRootDirectory")} placement="top" arrow>
                 <IconButton
@@ -106,6 +108,7 @@ function TreeSection({
             )}
           </Stack>
         </Stack>
+        {headerContent}
       </Box>
 
       {/* The parent grid collapses this row to 0fr. */}

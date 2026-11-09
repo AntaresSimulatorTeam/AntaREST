@@ -12,18 +12,32 @@
  * This file is part of the Antares project.
  */
 
+import type { FolderDTO } from "@/queries/explorer/schemas";
 import { createStudy } from "@/tests/studyFixtures";
+import type { StudyMetadata } from "@/types/types";
 
-export function externalStudy(folder: string) {
-  return createStudy({ id: folder, folder, workspace: "workspace", managed: false });
+export const WORKSPACE = { name: "workspace", diskName: "" };
+
+export const DISK_USAGE = { totalBytes: 100, usedBytes: 40, freeBytes: 60 };
+
+export const FULL_DISK_USAGE = { totalBytes: 100, usedBytes: 90, freeBytes: 10 };
+
+export function externalStudy(folder: string, overrides: Partial<StudyMetadata> = {}) {
+  return createStudy({
+    id: folder,
+    folder,
+    workspace: WORKSPACE.name,
+    managed: false,
+    ...overrides,
+  });
 }
 
-export function folder(name: string, parentPath: string) {
+export function folder(name: string, parentPath: string): FolderDTO {
   return {
     name,
     path: [parentPath.replace(/^\/workspace\/?/, ""), name].filter(Boolean).join("/"),
     parentPath,
-    workspace: "workspace",
+    workspace: WORKSPACE.name,
     hasChildren: true,
   };
 }

@@ -19,10 +19,6 @@ import type { TreeSectionVariant } from "./TreeSection";
 export const ICON_SIZE = 18;
 export const ICON_BUTTON_PADDING = 0.5;
 
-////////////////////////////////////////////////////////////////
-// Shared styles
-////////////////////////////////////////////////////////////////
-
 export const titleStyles = {
   fontWeight: 600,
   textTransform: "uppercase",
@@ -30,8 +26,6 @@ export const titleStyles = {
 } satisfies SxProps<Theme>;
 
 const containerBaseStyles = {
-  borderLeftWidth: 3,
-  borderLeftStyle: "solid",
   p: 0.5,
   display: "flex",
   flexDirection: "column",
@@ -48,16 +42,11 @@ export const actionButtonStyles = {
   p: 0.25,
 } satisfies SxProps<Theme>;
 
-////////////////////////////////////////////////////////////////
-// Variant styles
-////////////////////////////////////////////////////////////////
-
 export const variantStyles = {
   managed: {
     container: (theme: Theme) => ({
       ...containerBaseStyles,
       backgroundColor: withOpacity(theme.vars.palette.info.main, 0.05),
-      borderLeftColor: theme.vars.palette.info.main,
     }),
     iconColor: "info.main" as const,
     titleColor: "info.main" as const,
@@ -66,7 +55,6 @@ export const variantStyles = {
     container: (theme: Theme) => ({
       ...containerBaseStyles,
       backgroundColor: withOpacity(theme.vars.palette.action.disabled, 0.2),
-      borderLeftColor: theme.vars.palette.action.disabled,
     }),
     iconColor: "text.secondary" as const,
     titleColor: "text.secondary" as const,
@@ -79,10 +67,6 @@ export const variantStyles = {
     titleColor: string;
   }
 >;
-
-////////////////////////////////////////////////////////////////
-// Component styles
-////////////////////////////////////////////////////////////////
 
 // Content row: no padding (inner wrapper handles it), clips during collapse animation
 export const contentSxOverride = { p: 0, overflow: "hidden" } satisfies SxProps<Theme>;

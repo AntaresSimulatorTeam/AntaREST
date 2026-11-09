@@ -12,15 +12,18 @@
  * This file is part of the Antares project.
  */
 
+import { DEFAULT_WORKSPACE_NAME } from "@/components/utils/constants";
+import { useAppMode } from "@/hooks/useAppMode";
+import { updateStudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudies, getStudyFilters } from "@/redux/selectors";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import StorageIcon from "@mui/icons-material/Storage";
 import { Box, Divider } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { updateStudyFilters } from "@/redux/ducks/studies";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudies, getStudyFilters } from "@/redux/selectors";
+import DiskUsageIndicator from "./DiskUsageIndicator";
 import ExternalTree from "./ExternalTree";
 import ManagedTree from "./ManagedTree";
 import TreeSection, { type TreeSectionVariant } from "./TreeSection";
@@ -28,6 +31,7 @@ import { studyTreeGridSx } from "./styles";
 
 function StudyTree() {
   const { t } = useTranslation();
+  const { isWebMode } = useAppMode();
   const dispatch = useAppDispatch();
   const studies = useAppSelector(getStudies);
   const managedCollapsed = useAppSelector((s) => getStudyFilters(s).managed.collapsed);
@@ -98,6 +102,14 @@ function StudyTree() {
         isRootSelected={managedRootSelected}
         onAddDirectory={handleAddDirectoryClick}
         scrollKey="study-tree-managed"
+        headerContent={
+          isWebMode && (
+            <DiskUsageIndicator
+              workspace={DEFAULT_WORKSPACE_NAME}
+              label={t("studies.tree.diskUsage.label")}
+            />
+          )
+        }
       >
         <ManagedTree
           isCreatingDirectory={isCreatingDirectory}

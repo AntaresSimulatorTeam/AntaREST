@@ -24,7 +24,7 @@ import {
 } from "@mui/material";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
-import { mergeSxProp } from "@/utils/muiUtils";
+import { getUsageColor, mergeSxProp } from "@/utils/muiUtils";
 
 /**
  * Determines the color of the progress bar based on value and mode
@@ -40,20 +40,14 @@ function getColor(value = 0, error = false, colorMode: "default" | "cluster" = "
   }
 
   if (colorMode === "cluster") {
-    // Cluster computing indicators: high usage = bad
-    if (value >= 90) {
-      return "error"; // Red for ≥ 90% (critical usage)
-    }
-    if (value > 50) {
-      return "warning"; // Orange for > 50% and < 90% (moderate usage)
-    }
-    return "success"; // Green for ≤ 50% (safe usage)
+    return getUsageColor(value);
   }
 
   // Default behavior: maintains backward compatibility for other use cases
   if (value === 100) {
     return "success";
   }
+
   return "primary";
 }
 
@@ -82,6 +76,10 @@ function LinearProgressWithLabel({
   const variant = typeof value === "number" || hasError ? "determinate" : "indeterminate";
 
   const { t } = useTranslation();
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   const content = (
     <Box sx={mergeSxProp({ display: "flex", alignItems: "center", height: 22 }, sx)}>
