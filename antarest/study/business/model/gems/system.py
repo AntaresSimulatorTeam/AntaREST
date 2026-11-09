@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from enum import StrEnum
-from typing import List
+from typing import List, Self
 
 from pydantic import ConfigDict, model_validator
 
@@ -81,6 +81,16 @@ class _IntegerStrategy(AntaresBaseModel):
 
     id: IntegerStrategyId
     heuristic_id: IntegerStrategyHeuristicId
+
+    @model_validator(mode="after")
+    def validate_integer_strategy(self) -> Self:
+        if self.id == IntegerStrategyId.HEURISTIC and self.heuristic_id is None:
+            raise ValueError("heuristic-id is required when id is 'heuristic'")
+
+        if self.heuristic_id is not None and self.id != IntegerStrategyId.HEURISTIC:
+            raise ValueError("heuristic-id is forbidden when id is not 'heuristic'")
+
+        return self
 
 
 class GemsComponent(AntaresBaseModel):
