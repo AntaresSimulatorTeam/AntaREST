@@ -56,13 +56,24 @@ def _resolve_data_series_file(data_series_folder: Path, name: str, study_id: str
             f"Only letters, digits, '_' and '-' are allowed."
         )
 
-    file_path = data_series_folder / f"{name}.csv"
+    file_paths = []
+    extensions = {".csv", ".tsv"}  # Both extensions are valid for the Simulator
+    for extension in extensions:
+        file_path = data_series_folder / f"{name}{extension}"
+        if file_path.is_file():
+            file_paths.append(file_path)
 
-    if not file_path.is_file():
+    if not file_paths:
         raise GemsSystemIncorrectlyFormatted(
             f"The system file of study {study_id} references a missing data series file: {name!r}"
         )
-    return file_path
+
+    if len(file_paths) > 1:
+        raise GemsSystemIncorrectlyFormatted(
+            f"The file {name!r} inside study {study_id} exist in more than 1 format among these extensions {extensions}"
+        )
+
+    return file_paths[0]
 
 
 class FileStudyGemsSystemDao(GemsSystemDao, ABC):
