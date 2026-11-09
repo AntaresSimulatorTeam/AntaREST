@@ -80,7 +80,7 @@ class _IntegerStrategy(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: IntegerStrategyId
-    heuristic_id: IntegerStrategyHeuristicId
+    heuristic_id: IntegerStrategyHeuristicId | None = None
 
     @model_validator(mode="after")
     def validate_integer_strategy(self) -> Self:
