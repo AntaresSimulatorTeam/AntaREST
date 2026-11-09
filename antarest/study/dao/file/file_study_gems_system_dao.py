@@ -23,7 +23,7 @@ from antarest.core.exceptions import (
     GemsSystemIncorrectlyFormatted,
     GemsUnavailableForFileSystemStudies,
 )
-from antarest.core.utils.polars import read_csv, write_csv
+from antarest.core.utils.polars import read_gems_tsv, write_tsv
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
@@ -47,7 +47,7 @@ _DATA_SERIES_NAME_PATTERN = re.compile(r"[\w\-]+", re.ASCII)
 
 def _resolve_data_series_file(data_series_folder: Path, name: str, study_id: str) -> Path:
     """
-    Resolves the name of a data series to its CSV file, guaranteeing that the file is a regular
+    Resolves the name of a data series to its matrix file, guaranteeing that the file is a regular
     file located directly inside `data_series_folder`.
     """
     if not _DATA_SERIES_NAME_PATTERN.fullmatch(name):
@@ -56,13 +56,24 @@ def _resolve_data_series_file(data_series_folder: Path, name: str, study_id: str
             f"Only letters, digits, '_' and '-' are allowed."
         )
 
-    file_path = data_series_folder / f"{name}.csv"
+    file_paths = []
+    extensions = {".csv", ".tsv"}  # Both extensions are valid for the Simulator
+    for extension in extensions:
+        file_path = data_series_folder / f"{name}{extension}"
+        if file_path.is_file():
+            file_paths.append(file_path)
 
-    if not file_path.is_file():
+    if not file_paths:
         raise GemsSystemIncorrectlyFormatted(
             f"The system file of study {study_id} references a missing data series file: {name!r}"
         )
-    return file_path
+
+    if len(file_paths) > 1:
+        raise GemsSystemIncorrectlyFormatted(
+            f"The file {name!r} inside study {study_id} exist in more than 1 format among these extensions {extensions}"
+        )
+
+    return file_paths[0]
 
 
 class FileStudyGemsSystemDao(GemsSystemDao, ABC):
@@ -107,7 +118,7 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
             file_path = _resolve_data_series_file(
                 data_series_folder, parameter.get_value_as_str(), file_study.config.study_id
             )
-            dataframes.append(read_csv(file_path, has_headers=False))
+            dataframes.append(read_gems_tsv(file_path))
 
         if dataframes:
             matrix_ids = self.get_impl().matrix_service.create_batch(iter(dataframes))
@@ -164,7 +175,7 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
                 if str_value not in mapping_matrix_id_to_csv:
                     name = f"data_series_{matrices_count}"
                     matrices_count += 1
-                    write_csv(matrix_service.get(str_value), data_series_folder / f"{name}.csv")
+                    write_tsv(matrix_service.get(str_value), data_series_folder / f"{name}.csv")
                     mapping_matrix_id_to_csv[str_value] = name
                     parameter.value = name
                 else:
