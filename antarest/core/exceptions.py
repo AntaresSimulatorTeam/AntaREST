@@ -1001,3 +1001,9 @@ class GemsParameterValueIsNotConstantButShouldBe(HTTPException):
 class GemsParameterNotFound(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsTaxonomyNotFound(HTTPException):
+    def __init__(self, taxonomy: str, study_id: str) -> None:
+        message = f"Taxonomy '{taxonomy}' not found inside study {study_id}"
+        super().__init__(HTTPStatus.CONFLICT, message)
