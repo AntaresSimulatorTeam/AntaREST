@@ -13,8 +13,9 @@ from pathlib import Path
 
 import pytest
 
-from antarest.core.exceptions import GemsLibraryAlreadyExists
+from antarest.core.exceptions import GemsLibraryAlreadyExists, GemsTaxonomyNotFound
 from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 from tests.study.dao.conftest import check_8_1_gems_library_integrity
@@ -43,3 +44,24 @@ def test_nominal_cases(dao_10_2: StudyDao) -> None:
     saved_library = dao.get_library()
     assert saved_library is not None
     check_8_1_gems_library_integrity(saved_library)
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_taxonomy_foreign_keys(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    assert dao.get_library() is None
+
+    # First save a taxonomy
+    gems_taxonomy_asset_path = ASSETS_PATH / "gems" / "taxonomy" / "taxonomy.yml"
+    content = YAMLReader().read(gems_taxonomy_asset_path)["taxonomy"]
+    taxonomy = GemsTaxonomy.model_validate(content)
+    dao.save_taxonomy(taxonomy)
+
+    # Create a Library that references a fake taxonomy -> Should fail
+    library = GemsLibrary(id="library", taxonomy="fake taxonomy")
+    with pytest.raises(GemsTaxonomyNotFound, match="Taxonomy 'fake taxonomy' not found inside study"):
+        dao.save_library(library)
+
+    # Create a Library referencing the righ taxonomy -> Should succeed
+    library = GemsLibrary(id="library", taxonomy=taxonomy.id)
+    dao.save_library(library)

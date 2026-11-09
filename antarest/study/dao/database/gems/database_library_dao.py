@@ -13,9 +13,10 @@ import json
 from typing import Any
 
 from sqlalchemy import insert, select
+from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsLibraryAlreadyExists
+from antarest.core.exceptions import GemsLibraryAlreadyExists, GemsTaxonomyNotFound
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -139,7 +140,13 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
             "version": library.version,
             "taxonomy": library.taxonomy,
         }
-        session.execute(insert(GEMS_LIBRARY_METADATA_TABLE), metadata_values)
+        try:
+            session.execute(insert(GEMS_LIBRARY_METADATA_TABLE), metadata_values)
+        except IntegrityError as e:
+            session.rollback()
+            if library.taxonomy:
+                raise GemsTaxonomyNotFound(library.taxonomy, self._study_id) from e
+            raise e
 
         port_type_values = [
             {
