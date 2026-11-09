@@ -24,6 +24,7 @@ from antarest.core.exceptions import (
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
+from antarest.core.utils.polars import read_gems_tsv
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.system import (
@@ -559,12 +560,10 @@ def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDa
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
 def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: DatabaseStudyDao) -> None:
     # `dao_10_2` and `db_dao` point to two distinct studies sharing the same matrix store.
-    first_component = _create_component_with_data_series_path(
-        dao_10_2, "dsr", "param1", DATA_SERIES_PATH / "max_load_values.tsv"
-    )
-    second_component = _create_component_with_data_series_path(
-        db_dao, "dsr", "param1", DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv"
-    )
+    max_load_path = DATA_SERIES_PATH / "max_load_values.tsv"
+    time_and_scenario_matrix_path = DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv"
+    first_component = _create_component_with_data_series_path(dao_10_2, "dsr", "param1", max_load_path)
+    second_component = _create_component_with_data_series_path(db_dao, "dsr", "param1", time_and_scenario_matrix_path)
 
     add_library_file_to_study_dao(dao_10_2)
     dao_10_2.save_system(GemsSystem.model_validate({"id": "sys_id", "components": [first_component]}))
@@ -572,8 +571,8 @@ def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: Datab
     add_library_file_to_study_dao(db_dao)
     db_dao.save_system(GemsSystem.model_validate({"id": "sys_id", "components": [second_component]}))
 
-    first_expected = np.loadtxt(DATA_SERIES_PATH / "max_load_values.tsv", delimiter=",", ndmin=2)
-    second_expected = np.loadtxt(DATA_SERIES_PATH / "time-and-scenario-dependent-example.csv", delimiter=",", ndmin=2)
+    first_expected = read_gems_tsv(max_load_path).to_numpy()
+    second_expected = read_gems_tsv(time_and_scenario_matrix_path).to_numpy()
 
     assert np.array_equal(dao_10_2.get_parameter_series("dsr", "param1").to_numpy(), first_expected)
     assert np.array_equal(db_dao.get_parameter_series("dsr", "param1").to_numpy(), second_expected)
