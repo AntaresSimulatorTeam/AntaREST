@@ -1,7 +1,7 @@
 """add_taxonomy_field_inside_library
 
 Revision ID: 812d802c2d2d
-Revises: e3f1a8c04b27
+Revises: f2e3f7ba9896
 Create Date: 2026-11-09 11:04:51.652538
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '812d802c2d2d'
-down_revision = 'e3f1a8c04b27'
+down_revision = 'f2e3f7ba9896'
 branch_labels = None
 depends_on = None
 

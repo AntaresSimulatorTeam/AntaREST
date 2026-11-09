@@ -12,6 +12,8 @@
 
 from abc import ABC, abstractmethod
 
+from polars import DataFrame
+
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 
 
@@ -22,6 +24,16 @@ class ReadOnlyGemsSystemDao(ABC):
 
     @abstractmethod
     def get_components(self) -> list[GemsComponent]:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> DataFrame:
+        """
+        Returns the matrix referenced by a time-/scenario-dependent parameter.
+
+        Raises `GemsParameterNotFound` if the component/parameter does not exist, and
+        `GemsInvalidParameterValue` if the parameter is a constant (not a matrix).
+        """
         raise NotImplementedError()
 
 
