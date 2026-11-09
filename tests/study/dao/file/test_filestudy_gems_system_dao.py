@@ -147,6 +147,19 @@ def test_data_series_name_must_be_a_plain_name(filestudy_dao_v10_2: FileStudyTre
         dao.get_system()
 
 
+def test_data_series_file_exist_in_both_format(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    dao = filestudy_dao_v10_2
+    _add_system_file_to_study(dao)
+    data_series_path = dao.get_file_study().config.study_path / "input" / "data-series"
+    (data_series_path / "max_load_values.csv").touch()
+
+    # Now we have both `max_load_values.csv` and `max_load_values.tsv` -> Should raise an error when reading the system
+
+    msg = "The file 'max_load_values' inside study  exist in more than 1 format"
+    with pytest.raises(GemsSystemIncorrectlyFormatted, match=msg):
+        dao.get_system()
+
+
 def _add_system_file_to_study(dao: FileStudyTreeDao) -> None:
     input_folder = dao.get_file_study().config.study_path / "input"
     shutil.copy(ASSETS_PATH / "gems" / "system" / "system.yml", input_folder / "system.yml")
