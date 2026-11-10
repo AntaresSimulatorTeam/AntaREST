@@ -57,7 +57,7 @@ def test_calendar_conversion_roundtrip(
     calendar_file = file_dao.get_file_study().config.study_path / "input" / "calendar_file.csv"
     calendar_file.unlink()
     assert file_dao.get_gems_calendar() is None
-    (file_dao.get_file_study().config.study_path / "input/model-libraries/library.yaml").unlink(missing_ok=True)
+    (file_dao.get_file_study().config.study_path / "input/model-libraries/library.yml").unlink(missing_ok=True)
 
     StudyConverter(db_dao, file_dao, STUDY_VERSION_10_2, matrix_service)._convert_gems()
     assert file_dao.get_gems_calendar() == SAMPLE_CALENDAR
