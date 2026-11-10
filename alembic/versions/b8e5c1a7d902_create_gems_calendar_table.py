@@ -1,7 +1,7 @@
 """create_gems_calendar_table
 
 Revision ID: b8e5c1a7d902
-Revises: e3f1a8c04b27
+Revises: ef8dfb022995
 Create Date: 2026-11-06 11:15:00.000000
 
 """
@@ -13,7 +13,7 @@ from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = "b8e5c1a7d902"
-down_revision = "e3f1a8c04b27"
+down_revision = "ef8dfb022995"
 branch_labels = None
 depends_on = None
 
