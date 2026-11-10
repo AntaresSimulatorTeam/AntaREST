@@ -15,6 +15,7 @@ import typing as t
 import uuid
 import zipfile
 from collections.abc import Iterable
+from datetime import datetime
 from pathlib import Path
 
 import jinja2
@@ -25,7 +26,7 @@ from sqlalchemy import create_engine
 from starlette.testclient import TestClient
 
 from antarest.core.config import Config
-from antarest.core.jwt import DEFAULT_ADMIN_USER
+from antarest.core.model import PublicMode
 from antarest.core.utils.archives import archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
@@ -36,10 +37,9 @@ from antarest.main import (
     inject_services,
 )
 from antarest.service_creator import Services
-from antarest.study.repository import AccessPermissions, StudyFilter
+from antarest.study.model import RawStudy, StudyContentStatus
 from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
-from tests.integration.utils import wait_for
 
 HERE = Path(__file__).parent.resolve()
 PROJECT_DIR = next(iter(p for p in HERE.parents if p.joinpath("antarest").exists()))
@@ -137,15 +137,29 @@ def app_and_services(base_app: FastAPI, tmp_path: Path, db_path: Path) -> Iterab
     init_db(config, config_path, auto_upgrade=False, init_admin=False)
     services = inject_services(app, config)
 
-    def is_study_scanned() -> bool:
-        with db():
-            studies = services.study.get_studies_information(
-                StudyFilter(access_permissions=AccessPermissions.for_user(DEFAULT_ADMIN_USER))
-            )
-            return len(studies) == 1
+    # Save the study corresponding to the "STA-mini" sample to avoid having to scan it.
+    # This speeds-up the tests.
+    study = RawStudy(
+        id=str(uuid.uuid4()),
+        content_status=StudyContentStatus.VALID,
+        workspace="ext",
+        name="STA-mini",
+        type="rawstudy",
+        version="7.0",
+        author="Andrea SGATTONI",
+        editor="Andrea SGATTONI",
+        horizon="2030",
+        created_at=datetime.strptime("2016-12-02 12:57:32", "%Y-%m-%d %H:%M:%S"),
+        updated_at=datetime.strptime("2020-10-14 12:30:39", "%Y-%m-%d %H:%M:%S"),
+        path=str(ext_workspace_path / "STA-mini"),
+        folder="STA-mini",
+        public_mode=PublicMode.FULL,
+        tags=[],
+        jobs=[],
+    )
 
-    wait_for(is_study_scanned, timeout=10, sleep_time=0.01)
-    services.watcher.stop()
+    with db():
+        services.study.repository.save(study)
 
     yield app, services
 
