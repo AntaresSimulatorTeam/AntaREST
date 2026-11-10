@@ -16,32 +16,19 @@ import RouterListItemButton, {
   type RouterListItemButtonProps,
 } from "@/components/router/RouterListItemButton";
 import RouterMenuItem, { type RouterMenuItemProps } from "@/components/router/RouterMenuItem";
-import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { directoryQueries } from "@/queries/directories/queries";
-import { requestStudyFolderReveal, setStudy } from "@/redux/ducks/studies";
+import { requestStudyFolderReveal } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudiesById, getStudyFilters, isMenuOpen } from "@/redux/selectors";
+import { isMenuOpen } from "@/redux/selectors";
 import FavoriteToggle from "@/routes/-shared/components/studies/FavoriteToggle";
-import type { StudyMetadata } from "@/types/types";
 import { getDescendantIds } from "@/utils/directoryUtils";
-import { toError } from "@/utils/fnUtils";
-import { getStudyFolder } from "@/utils/studiesUtils";
 import FolderIcon from "@mui/icons-material/Folder";
-import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
-import {
-  IconButton,
-  List,
-  ListItemIcon,
-  ListItemText,
-  Menu,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { List, ListItemIcon, ListItemText, Menu, Tooltip, Typography } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { linkOptions, useLocation, useNavigate } from "@tanstack/react-router";
-import React, { useEffect, useRef, useState } from "react";
+import { linkOptions } from "@tanstack/react-router";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import SidebarItem from "../SidebarItem";
 import { type Favorite } from "./types";
@@ -50,38 +37,16 @@ import useFavorites from "./useFavorites";
 function FavoritesMenu() {
   const { t } = useTranslation();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [revealingStudyId, setRevealingStudyId] = useState<string | null>(null);
-  const revealRequestId = useRef(0);
   const isMainMenuOpen = useAppSelector(isMenuOpen);
-  const studiesById = useAppSelector(getStudiesById);
-  const {
-    activeTree,
-    managed: { directoryId },
-    external: { path },
-  } = useAppSelector(getStudyFilters);
   const dispatch = useAppDispatch();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const favorites = useFavorites();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
-
-  useEffect(() => {
-    setRevealingStudyId(null);
-
-    // Ignore metadata that arrives after the user navigates somewhere else.
-    return () => {
-      revealRequestId.current += 1;
-    };
-  }, [location, activeTree, directoryId, path]);
 
   ////////////////////////////////////////////////////////////////
   // Utils
   ////////////////////////////////////////////////////////////////
 
   const closeMenu = () => {
-    revealRequestId.current += 1;
-    setRevealingStudyId(null);
     setAnchorEl(null);
   };
 
@@ -155,47 +120,6 @@ function FavoritesMenu() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleShowInExplorer = async (
-    event: React.MouseEvent<HTMLButtonElement>,
-    studyId: string,
-  ) => {
-    event.preventDefault();
-    event.stopPropagation();
-
-    const requestId = ++revealRequestId.current;
-    setRevealingStudyId(studyId);
-
-    let study: StudyMetadata;
-
-    try {
-      study = studiesById[studyId] ?? (await dispatch(setStudy(studyId)).unwrap());
-    } catch (error) {
-      if (requestId === revealRequestId.current) {
-        enqueueErrorSnackbar(t("studies.error.showInExplorer"), toError(error));
-      }
-
-      return;
-    } finally {
-      if (requestId === revealRequestId.current) {
-        setRevealingStudyId(null);
-      }
-    }
-
-    if (requestId !== revealRequestId.current) {
-      return;
-    }
-
-    dispatch(requestStudyFolderReveal(getStudyFolder(study, directories)));
-    setAnchorEl(null);
-
-    // Selecting the folder invalidates the metadata token, so handle navigation errors separately.
-    try {
-      await navigate({ to: "/studies" });
-    } catch (error) {
-      enqueueErrorSnackbar(t("studies.error.showInExplorer"), toError(error));
-    }
-  };
-
   const handleItemClick = (event: React.MouseEvent<HTMLElement>) => {
     if (!isMainMenuOpen) {
       setAnchorEl(event.currentTarget);
@@ -245,19 +169,6 @@ function FavoritesMenu() {
           </Typography>
         </ListItemText>
       </Tooltip>
-      {fav.type === "study" && (
-        <Tooltip title={t("studies.showInExplorer")} placement="right">
-          <IconButton
-            size="small"
-            aria-label={t("studies.showInExplorer")}
-            loading={revealingStudyId === fav.original.studyId}
-            disabled={revealingStudyId !== null}
-            onClick={(event) => handleShowInExplorer(event, fav.original.studyId)}
-          >
-            <FolderOpenIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      )}
       <FavoriteToggle favorite={fav.original} edge="end" tooltipPlacement="right" />
     </>
   );

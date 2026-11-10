@@ -955,8 +955,6 @@
   "studies.viewMode.list": "Vue liste",
   "studies.addFavorite": "Ajouter aux favoris",
   "studies.removeFavorite": "Retirer des favoris",
-  "studies.showInExplorer": "Afficher dans l'explorateur d'études",
-  "studies.error.showInExplorer": "Impossible d'afficher le dossier de l'étude dans l'explorateur d'études",
   "studies.exportOptions": "Options d'export",
   "studies.exportOutput": "Exporter une sortie",
   "studies.exportOutputFilter": "Exporter une sortie filtrée",
