@@ -11,16 +11,20 @@
 # This file is part of the Antares project.
 
 from datetime import datetime
-from pathlib import Path
 from typing import Self
 
-import polars as pl
-from polars.exceptions import InvalidOperationError, NoDataError
 from pydantic import ConfigDict, Field, field_serializer, model_validator
 
 from antarest.core.serde import AntaresBaseModel
 
+# GEMS supports UTC with time zone offsets, ex: 2025-01-01 00:00:00+01:00
+# On our side we do not and assume every given date as an offset of 0.
+# If an offset is given, we raise an error.
 _DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+
+def get_calendar_datetime_format() -> str:
+    return _DATETIME_FORMAT
 
 
 class _GemsCalendarData(AntaresBaseModel):
@@ -64,28 +68,3 @@ class GemsCalendar(AntaresBaseModel):
                 raise ValueError("All 'granular_date' must be separated by a constant time step")
 
         return self
-
-    def write(self, file_path: Path) -> None:
-        df = pl.DataFrame(self.data)
-        # Write datetime column as string
-        df = df.with_columns(pl.col("granular_date").dt.strftime(_DATETIME_FORMAT))
-        df.write_csv(file_path, separator=",", include_header=True)
-
-    @classmethod
-    def read(cls, file_path: Path) -> "GemsCalendar":
-        error_msg = "Calendar file must have these exact columns 'absolute_time_index', 'block', and 'granular_date'"
-
-        try:
-            df = pl.read_csv(file_path)
-        except NoDataError:
-            raise ValueError(error_msg)
-
-        if df.columns != ["absolute_time_index", "block", "granular_date"]:
-            raise ValueError(error_msg)
-
-        try:
-            df = df.with_columns(pl.col("granular_date").str.to_datetime(_DATETIME_FORMAT).alias("granular_date"))
-        except InvalidOperationError:
-            raise ValueError(f"Calendar file column 'granular_date' must follow this format: {_DATETIME_FORMAT}")
-
-        return GemsCalendar.model_validate({"data": df.to_dicts()})

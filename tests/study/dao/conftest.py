@@ -51,6 +51,7 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.file.file_study_gems_calendar_dao import read_gems_calendar
 from antarest.study.model import (
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_VERSION_8_8,
@@ -80,7 +81,7 @@ def gems_catalog() -> GemsCatalog:
 @pytest.fixture
 def gems_calendar() -> GemsCalendar:
     path = Path(__file__).parent / "assets/gems/calendar/calendar_file.csv"
-    return GemsCalendar.read(path)
+    return read_gems_calendar(path)
 
 
 @pytest.fixture

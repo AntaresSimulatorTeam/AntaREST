@@ -16,6 +16,7 @@ from pathlib import Path
 import pytest
 
 from antarest.study.business.model.gems.calendar import GemsCalendar, _GemsCalendarData
+from antarest.study.dao.file.file_study_gems_calendar_dao import read_gems_calendar
 
 
 def test_gems_calendar_model_errors() -> None:
@@ -106,7 +107,7 @@ def test_validate_gems_calendar_columns(content: bytes, tmp_path: Path) -> None:
 
     msg = "Calendar file must have these exact columns 'absolute_time_index', 'block', and 'granular_date'"
     with pytest.raises(ValueError, match=msg):
-        GemsCalendar.read(file_path)
+        read_gems_calendar(file_path)
 
 
 @pytest.mark.parametrize(
@@ -133,4 +134,4 @@ def test_validate_gems_calendar_invalid_date(invalid_date: str, tmp_path: Path) 
     if invalid_date == "":  # Special msg for this case
         error_msg = "1 validation error for GemsCalendar"
     with pytest.raises(ValueError, match=error_msg):
-        GemsCalendar.read(file_path)
+        read_gems_calendar(file_path)
