@@ -62,6 +62,9 @@ def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, matrix_service:
     dao.save_system(system)
     data_series_folder = dao.get_file_study().config.study_path / "input" / "data-series"
 
+    # todo: remove this test once optim-config.yml is handled in the DAO
+    assert (dao.get_file_study().config.study_path / "input" / "optim-config.yml").exists()
+
     # As 2 parameters values point to the same matrix, we should have 2 CSV files only
     assert sorted(f.name for f in data_series_folder.iterdir()) == ["data_series_0.csv", "data_series_1.csv"]
     assert (data_series_folder / "data_series_0.csv").read_text().splitlines() == [
@@ -74,8 +77,14 @@ def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, matrix_service:
     ]
 
     yaml_system = YAMLReader().read(dao.get_file_study().config.study_path / "input" / "system.yml")["system"]
-    assert yaml_system["components"][0]["parameters"][1]["value"] == "data_series_0"
-    assert yaml_system["components"][1]["parameters"][1]["value"] == "data_series_1"
+    components = yaml_system["components"]
+    assert components[0]["parameters"][1]["value"] == "data_series_0"
+    assert components[1]["parameters"][1]["value"] == "data_series_1"
+
+    # Ensures we do not dump `None` values inside the YAML file
+    for component in components:
+        if "scenario-group" in component:
+            assert component["scenario-group"] is not None
 
     saved_system = dao.get_system()
     assert saved_system is not None
