@@ -59,7 +59,10 @@ GEMS_COMPONENTS_TABLE = Table(
     ForeignKeyConstraint(
         ["study_data_id", "scenario_group"],
         ["gems_scenario_builder.study_data_id", "gems_scenario_builder.scenario_group"],
-        ondelete="SET NULL",
+        # These 2 lines allow the foreign key constraint to be deferred until the end of the transaction (the COMMIT)
+        # This way no issue is encountered when deleting a study
+        deferrable=True,
+        initially="DEFERRED",
     ),
 )
 
