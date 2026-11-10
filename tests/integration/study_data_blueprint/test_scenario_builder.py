@@ -109,8 +109,8 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     assert res.status_code == 200
     assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"0": ""}}}}
 
-    scenarios: AreaItemsScenarios = {"be": {}, "fr": {"nuclear": {"0": 2}}}
-    res = client.put(f"/v1/studies/{study_id}/config/scenariobuilder/thermal", json={"thermal": scenarios})
+    area_scenarios: AreaItemsScenarios = {"be": {}, "fr": {"nuclear": {"0": 2}}}
+    res = client.put(f"/v1/studies/{study_id}/config/scenariobuilder/thermal", json={"thermal": area_scenarios})
     assert res.status_code == 200
     assert res.json() == {"thermal": {"be": {}, "fr": {"nuclear": {"0": 2}}}}
 
@@ -212,7 +212,7 @@ sts,fr,4,battery = 11
     )
 
 
-def test_get_scenario_builder_for_study_with_binding_constraint_without_group(admin_client: TestClient):
+def test_get_scenario_builder_for_study_with_binding_constraint_without_group(admin_client: TestClient) -> None:
     # For studies which versionis <= 8.6, binding constraints do not have a group.
     # This test makes sure that the scenario builder is still accessible for such studies.
     res = admin_client.post("/v1/studies", params={"name": "study-for-auth-test", "version": "8.6"})

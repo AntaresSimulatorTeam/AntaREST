@@ -12,20 +12,24 @@
  * This file is part of the Antares project.
  */
 
-import { invalidateQueriesAfterMutation } from "@/queries/invalidateQueriesAfterMutation";
-import { thermalKeys } from "@/queries/thermals/keys";
 import { thermalMutations } from "@/queries/thermals/mutations";
-import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
+import { thermalQueries } from "@/queries/thermals/queries";
+import type { ThermalClusterParams } from "@/services/api/studies/areas/thermals/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-function useUpdateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
+function useUpdateThermalCluster({ studyId, areaId, thermalId }: ThermalClusterParams) {
   const queryClient = useQueryClient();
 
+  const { queryKey: queryListKey } = thermalQueries.list(studyId, areaId);
+
   return useMutation({
-    ...thermalMutations.update(studyId, areaId),
-    onSuccess: async (_, { studyId, areaId }) => {
-      // GroupedDataTable owns optimistic rows until its controlled mode is available.
-      await invalidateQueriesAfterMutation(queryClient, thermalKeys.list(studyId, areaId));
+    ...thermalMutations.update(studyId, areaId, thermalId),
+    onSuccess: async (updatedThermal) => {
+      await queryClient.cancelQueries({ queryKey: queryListKey });
+
+      queryClient.setQueryData(queryListKey, (old = []) =>
+        old.map((thermal) => (thermal.id === updatedThermal.id ? updatedThermal : thermal)),
+      );
     },
   });
 }

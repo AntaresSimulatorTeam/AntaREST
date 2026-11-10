@@ -37,6 +37,7 @@ interface MatrixActionsProps {
   onMatrixUpdated: VoidFunction;
   canImport?: boolean;
   enableFilters?: boolean;
+  filterKey?: string;
   enableResize?: boolean;
   readOnly?: boolean;
 }
@@ -52,6 +53,7 @@ function MatrixActions({
   timeFrequency,
   canImport = false,
   enableFilters = false,
+  filterKey,
   enableResize = false,
   readOnly = false,
 }: MatrixActionsProps) {
@@ -99,6 +101,7 @@ function MatrixActions({
           {enableResize && !readOnly && <MatrixResize />}
           {enableFilters && (
             <MatrixFilter
+              persistence={filterKey ? { studyId, key: filterKey } : undefined}
               dateTime={dateTime}
               isTimeSeries={isTimeSeries}
               timeFrequency={timeFrequency}

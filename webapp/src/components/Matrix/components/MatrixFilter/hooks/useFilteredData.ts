@@ -20,7 +20,7 @@ import type { DateInfo, FilterCriteria, FilterOperatorType, FilterState } from "
 import { processRowFilters } from "../utils";
 
 interface UseFilteredDataProps {
-  filter: FilterState;
+  filter: Pick<FilterState, "active" | "columnsFilter" | "rowsFilters">;
   datesInfo?: DateInfo[];
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
@@ -119,6 +119,9 @@ const createDefaultCriteria = R.memoizeWith(
  *
  * @param props - The configuration object for filtering
  * @param props.filter - The filter state containing active status and filter configurations
+ * @param props.filter.active - Whether to apply the filters
+ * @param props.filter.columnsFilter - Column selection criteria
+ * @param props.filter.rowsFilters - Row selection criteria
  * @param props.datesInfo - Array of dates info for time-based filtering
  * @param props.isTimeSeries - Whether the data represents a time series
  * @param props.timeFrequency - The frequency of the time series data
@@ -127,7 +130,7 @@ const createDefaultCriteria = R.memoizeWith(
  * @returns Filter criteria containing arrays of filtered row and column indices
  */
 export function useFilteredData({
-  filter,
+  filter: { active, columnsFilter, rowsFilters },
   datesInfo,
   isTimeSeries,
   timeFrequency,
@@ -136,16 +139,31 @@ export function useFilteredData({
 }: UseFilteredDataProps): FilterCriteria {
   return useMemo(() => {
     // Return all indices when filter is inactive
-    if (!filter.active) {
+    if (!active) {
       return createDefaultCriteria(rowCount, columnCount);
     }
 
     // Filter on columns
-    const columnsIndices = filterColumns(filter.columnsFilter, columnCount);
+    const columnsIndices = filterColumns(columnsFilter, columnCount);
 
     // Filter on rows
-    const rowsIndices = processRowFilters(filter, datesInfo, isTimeSeries, timeFrequency, rowCount);
+    const rowsIndices = processRowFilters(
+      { rowsFilters },
+      datesInfo,
+      isTimeSeries,
+      timeFrequency,
+      rowCount,
+    );
 
     return { columnsIndices, rowsIndices };
-  }, [filter, datesInfo, isTimeSeries, timeFrequency, rowCount, columnCount]);
+  }, [
+    active,
+    columnsFilter,
+    rowsFilters,
+    datesInfo,
+    isTimeSeries,
+    timeFrequency,
+    rowCount,
+    columnCount,
+  ]);
 }

@@ -28,7 +28,10 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     SheddingPolicy,
     initialize_advanced_parameters_against_version,
 )
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParameters,
+    initialize_compatibility_parameters,
+)
 from antarest.study.business.model.config.general_model import GeneralConfig, initialize_general_config_against_version
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
@@ -37,7 +40,7 @@ from antarest.study.business.model.config.optimization_config_model import (
 )
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
-from antarest.study.business.model.district_model import District, DistrictApplyFilter
+from antarest.study.business.model.district_model import District, DistrictApplyFilter, initialize_district
 from antarest.study.business.model.layer_model import Layer
 from antarest.study.business.model.thematic_trimming_model import (
     ThematicTrimming,
@@ -92,7 +95,9 @@ def _create_default_settings(dao: DatabaseStudyDao, study_version: StudyVersion)
         dao.save_adequacy_patch_parameters(adequacy_patch_parameters)
 
     if study_version >= STUDY_VERSION_9_2:
-        dao.save_compatibility_parameters(CompatibilityParameters())
+        compatibility_parameters = CompatibilityParameters()
+        initialize_compatibility_parameters(compatibility_parameters, study_version)
+        dao.save_compatibility_parameters(compatibility_parameters)
 
 
 class DatabaseStudyDaoFactory(StudyFactoryDao):
@@ -150,15 +155,15 @@ class DatabaseStudyDaoFactory(StudyFactoryDao):
         )
 
         dao.save_layer(Layer(id=DEFAULT_LAYER_ID, name=DEFAULT_LAYER_NAME))
-        dao.save_district(
-            District(
-                id="all areas",
-                name="All areas",
-                output=False,
-                comments="Spatial aggregates on all areas",
-                apply_filter=DistrictApplyFilter.add_all,
-            )
+        district = District(
+            id="all areas",
+            name="All areas",
+            output=False,
+            comments="Spatial aggregates on all areas",
+            apply_filter=DistrictApplyFilter.add_all,
         )
+        initialize_district(district, version)
+        dao.save_district(district)
         _create_default_settings(dao, metadata.version)
         return dao
 

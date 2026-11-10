@@ -22,7 +22,7 @@ from antarest.study.business.model.hydro_model import HydroManagement, InflowStr
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
-from tests.study.dao.conftest import build_db_dao
+from tests.conftest import build_db_dao
 from tests.study.dao.utils import save_area
 
 

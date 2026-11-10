@@ -9,7 +9,9 @@
       "addAreas": [],
       "subtractAreas": [],
       "name": "All areas",
-      "applyFilter": "add-all"
+      "applyFilter": "add-all",
+      "filterSynthesis": null,
+      "filterYearByYear": null
     }
   },
   "areas": {

@@ -380,6 +380,9 @@ class StudyMetadataRepository:
         result = self.session.execute(stmt)
         return list(result.scalars().all())
 
+    def get_all_ids(self) -> set[str]:
+        return set(self.session.scalars(select(Study.id)).all())
+
     def delete(self, id_: str, *ids: str) -> None:
         ids = (id_,) + ids
         session = self.session
@@ -488,7 +491,7 @@ class DirectoryRepository:
 
     def count_studies(self, directory_id: str) -> int:
         stmt = select(func.count(Study.id)).where(Study.directory_id == directory_id)
-        return int(self.session.scalar(stmt))
+        return self.session.execute(stmt).scalar_one()
 
     def check_cycle(self, directory_id: str, new_parent_id: str) -> bool:
         if directory_id == new_parent_id:
@@ -572,7 +575,7 @@ class DirectoryRepository:
         all_directory_ids.extend([d.id for d in descendants])
 
         stmt = select(func.count(Study.id)).where(Study.directory_id.in_(all_directory_ids))
-        return int(self.session.scalar(stmt))
+        return self.session.execute(stmt).scalar_one()
 
     def get_directory_paths_bulk(self, directory_ids: list[str]) -> dict[str, str]:
         """

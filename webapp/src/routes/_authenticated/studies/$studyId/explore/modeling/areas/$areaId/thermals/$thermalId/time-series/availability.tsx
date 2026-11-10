@@ -13,6 +13,7 @@
  */
 
 import Matrix from "@/components/Matrix";
+import { buildKey } from "@/utils/reactUtils";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
@@ -22,13 +23,15 @@ export const Route = createFileRoute(
 });
 
 function Availability() {
-  const { studyId, areaId, thermalId } = Route.useParams();
+  const params = Route.useParams();
+  const { studyId, areaId, thermalId } = params;
 
   return (
     <Matrix
-      key={thermalId}
+      key={buildKey(params)}
       studyId={studyId}
       url={`input/thermal/series/${areaId}/${thermalId}/series`}
+      filterKey="thermals.availability"
       aggregateColumns="stats" // avg, min, max
     />
   );

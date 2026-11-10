@@ -13,7 +13,7 @@
 from collections.abc import Callable
 from pathlib import Path
 
-from antarest.core.serde.ini_common import any_section_option_matcher
+from antarest.core.serde.ini_common import OptionMatcher, any_section_option_matcher
 from antarest.core.serde.ini_writer import LOWER_CASE_SERIALIZER, IniWriter
 
 
@@ -69,7 +69,9 @@ def test_write_with_custom_serializer(tmp_path: str, ini_cleaner: Callable[[str]
     def duplicate(value: str) -> str:
         return value * 2
 
-    serializers = {any_section_option_matcher("group"): duplicate}
+    serializers: dict[OptionMatcher, Callable[[str], str | int | float | bool]] = {
+        any_section_option_matcher("group"): duplicate
+    }
     writer = IniWriter(value_serializers=serializers)
 
     expected = """

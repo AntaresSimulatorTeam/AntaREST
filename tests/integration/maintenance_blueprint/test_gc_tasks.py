@@ -29,7 +29,7 @@ from tests.helpers import with_admin_user
 
 class TestTasksGCIntegration:
     @with_admin_user
-    def test_clean_tasks_gc(self, task_service: ITaskService, task_job_repository: TaskJobRepository):
+    def test_clean_tasks_gc(self, task_service: ITaskService, task_job_repository: TaskJobRepository) -> None:
         task_1 = TaskJob(
             id="1", status=TaskStatus.RUNNING.value, name="task_1", creation_date=datetime(2026, 1, 1, 10, 0, 0)
         )
@@ -73,7 +73,7 @@ class TestTasksGCIntegration:
             assert len(task_list) == 1
             assert task_list == [expected_task]
 
-    def test_returns_skipped_when_lock_held(self, task_service: ITaskService):
+    def test_returns_skipped_when_lock_held(self, task_service: ITaskService) -> None:
         lock_folder = Path(tempfile.gettempdir())
         with db():
             with create_file_lock(lock_id=LockId.TASKS_GC, lock_folder=lock_folder):

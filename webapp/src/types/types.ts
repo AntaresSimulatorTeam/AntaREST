@@ -101,13 +101,6 @@ export interface StudyMetadata {
   directoryId?: string | null;
 }
 
-export interface StudyMetadataPatchDTO {
-  name?: string;
-  author?: string;
-  horizon?: string;
-  tags?: string[];
-}
-
 export interface OutputSynthesis {
   name: string;
   mode: "Economy" | "Adequacy" | "Expansion";

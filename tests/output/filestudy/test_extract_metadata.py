@@ -30,7 +30,7 @@ def output_path(tmp_path: Path, sta_mini_zip_path: Path) -> Path:
     return target / "STA-mini" / "output" / "20201014-1427eco"
 
 
-def test_extract_output_metadata(output_path: Path):
+def test_extract_output_metadata(output_path: Path) -> None:
     metadata = extract_output_details(output_path)
     assert metadata.name == "20201014-1427eco"
     assert metadata.mode == "Economy"

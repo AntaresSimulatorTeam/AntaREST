@@ -18,6 +18,7 @@ import polars as pl
 from antares.study.version import StudyVersion
 from typing_extensions import override
 
+from antarest.core.model import GemsId
 from antarest.study.business.model.area_model import AreaInfo, AreaUI, AreaUIData
 from antarest.study.business.model.area_properties_model import AreaProperties
 from antarest.study.business.model.binding_constraint_model import BindingConstraint, ConstraintId
@@ -29,9 +30,13 @@ from antarest.study.business.model.config.optimization_config_model import Optim
 from antarest.study.business.model.config.playlist_model import Playlist
 from antarest.study.business.model.config.timeseries_config_model import TimeSeriesConfiguration
 from antarest.study.business.model.district_model import District
+from antarest.study.business.model.gems.calendar import GemsCalendar
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
-from antarest.study.business.model.gems.scenario_builder import GemsScenarioBuilder
+from antarest.study.business.model.gems.scenario_builder import (
+    GemsScBuilderMappings,
+    GemsScenarioBuilder,
+)
 from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
@@ -77,6 +82,7 @@ from antarest.study.dao.api.compatibility_parameters_dao import (
     ReadOnlyCompatibilityParametersDao,
 )
 from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
+from antarest.study.dao.api.gems_calendar_dao import GemsCalendarDao, ReadOnlyGemsCalendarDao
 from antarest.study.dao.api.gems_catalog_dao import GemsCatalogDao, ReadOnlyGemsCatalogDao
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao, ReadOnlyGemsScenarioBuilderDao
@@ -175,6 +181,7 @@ class ReadOnlyStudyDao(
     ReadOnlyGemsCatalogDao,
     ReadOnlyGemsTaxonomyDao,
     ReadOnlyGemsScenarioBuilderDao,
+    ReadOnlyGemsCalendarDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -233,6 +240,7 @@ class StudyDao(
     GemsCatalogDao,
     GemsTaxonomyDao,
     GemsScenarioBuilderDao,
+    GemsCalendarDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -858,6 +866,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_hydro_max_daily_pump_energy(area_id)
 
     @override
+    def get_hydro_max_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_max_daily_reservoir_levels(area_id)
+
+    @override
+    def get_hydro_min_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_min_daily_reservoir_levels(area_id)
+
+    @override
+    def get_hydro_avg_daily_reservoir_levels(self, area_id: str) -> pl.DataFrame:
+        return self._adaptee.get_hydro_avg_daily_reservoir_levels(area_id)
+
+    @override
     def get_all_hydro_maxpower(self) -> AreaSeriesMapping:
         return self._adaptee.get_all_hydro_maxpower()
 
@@ -908,6 +928,18 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_all_hydro_max_daily_pump_energy(self) -> AreaSeriesMapping:
         return self._adaptee.get_all_hydro_max_daily_pump_energy()
+
+    @override
+    def get_all_hydro_max_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_max_daily_reservoir_levels()
+
+    @override
+    def get_all_hydro_min_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_min_daily_reservoir_levels()
+
+    @override
+    def get_all_hydro_avg_daily_reservoir_levels(self) -> AreaSeriesMapping:
+        return self._adaptee.get_all_hydro_avg_daily_reservoir_levels()
 
     @override
     def get_reserves_global_parameters(self, area_id: str) -> ReservesGlobalParameters:
@@ -990,6 +1022,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_components()
 
     @override
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> pl.DataFrame:
+        return self._adaptee.get_parameter_series(component_id, parameter_id)
+
+    @override
     def get_system(self) -> GemsSystem | None:
         return self._adaptee.get_system()
 
@@ -1002,5 +1038,17 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_gems_scenario_builder()
 
     @override
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
+        return self._adaptee.get_scenario_from_gems_scenario_builder(scenario_name)
+
+    @override
+    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
+        return self._adaptee.scenario_exists_in_gems_scenario_builder(scenario_name)
+
+    @override
     def get_catalogs(self) -> list[GemsCatalog]:
         return self._adaptee.get_catalogs()
+
+    @override
+    def get_gems_calendar(self) -> GemsCalendar | None:
+        return self._adaptee.get_gems_calendar()

@@ -55,7 +55,7 @@ if TYPE_CHECKING:
 
 DEFAULT_WORKSPACE_NAME = "default"
 
-NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse("9.3")
+NEW_DEFAULT_STUDY_VERSION: StudyVersion = StudyVersion.parse("10.2")
 STUDY_VERSION_6_5 = StudyVersion.parse("6.5")
 STUDY_VERSION_7_0 = StudyVersion.parse("7.0")
 STUDY_VERSION_7_1 = StudyVersion.parse("7.1")
@@ -72,8 +72,9 @@ STUDY_VERSION_8_8 = StudyVersion.parse("8.8")
 STUDY_VERSION_9_0 = StudyVersion.parse("9.0")
 STUDY_VERSION_9_1 = StudyVersion.parse("9.1")
 STUDY_VERSION_9_2 = StudyVersion.parse("9.2")
-STUDY_VERSION_9_3 = NEW_DEFAULT_STUDY_VERSION
-STUDY_VERSION_10_2 = StudyVersion.parse("10.2")
+STUDY_VERSION_9_3 = StudyVersion.parse("9.3")
+STUDY_VERSION_10_2 = NEW_DEFAULT_STUDY_VERSION
+STUDY_VERSION_10_3 = StudyVersion.parse("10.3")
 
 
 def _serialize_version(version: StudyVersion) -> str:
@@ -99,6 +100,7 @@ STUDY_REFERENCE_TEMPLATES: set[StudyVersion] = {
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
+    STUDY_VERSION_10_2,
 }
 
 
@@ -623,6 +625,27 @@ class StudyRepairReport(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     study_id: str
+    dry_run: bool
+    issues: list[StudyRepairIssue] = Field(default_factory=list)
+    proposed_actions: list[StudyRepairAction] = Field(default_factory=list)
+    applied_actions: list[StudyRepairAction] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class GlobalStudyRepairType(StrEnum):
+    ORPHAN_ARCHIVES = "orphan_archives"
+
+
+class GlobalStudyRepairRequest(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    repairs: list[GlobalStudyRepairType] = Field(default_factory=lambda: [GlobalStudyRepairType.ORPHAN_ARCHIVES])
+    dry_run: bool = True
+
+
+class GlobalStudyRepairReport(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     dry_run: bool
     issues: list[StudyRepairIssue] = Field(default_factory=list)
     proposed_actions: list[StudyRepairAction] = Field(default_factory=list)

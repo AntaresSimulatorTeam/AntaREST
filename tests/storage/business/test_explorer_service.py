@@ -12,7 +12,7 @@
 
 import os
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from unittest.mock import patch
 
 import pytest
@@ -151,7 +151,9 @@ def test_list_dir_several_subfolders(config_scenario_a: Config) -> None:
     )
 
     assert str(result[0].path) == result[0].path.as_posix()
-    assert str(result[0].parent_path) == result[0].parent_path.as_posix()
+    parent_path = result[0].model_dump()["parent_path"]
+    assert isinstance(parent_path, PurePosixPath)
+    assert str(parent_path) == parent_path.as_posix()
 
 
 def test_list_dir_in_empty_folder(config_scenario_a: Config) -> None:
@@ -163,7 +165,7 @@ def test_list_dir_in_empty_folder(config_scenario_a: Config) -> None:
 
 def test_list_dir_with_permission_error(config_scenario_a: Config) -> None:
     explorer = Explorer(config_scenario_a)
-    with patch("os.listdir", side_effect=PermissionError("Permission denied")):
+    with patch.object(Path, "iterdir", side_effect=PermissionError("Permission denied")):
         # asserts the endpoint doesn't fail but rather returns an empty list
         result = explorer.list_dir("diese", "folder")
         assert len(result) == 0

@@ -121,9 +121,6 @@ export const getDirectoryListSx = (
   listHeight: number | string | undefined,
   fillHeight: boolean,
 ): SxProps<Theme> => ({
-  m: 0,
-  p: 0,
-  listStyle: "none",
   display: "flex",
   flexDirection: "column",
   ...(fillHeight
@@ -131,7 +128,7 @@ export const getDirectoryListSx = (
     : listHeight !== undefined
       ? { height: listHeight }
       : { minHeight: 400, maxHeight: 700 }),
-  overflowY: "auto",
+  overflow: "hidden",
   bgcolor: "background.paper",
 });
 

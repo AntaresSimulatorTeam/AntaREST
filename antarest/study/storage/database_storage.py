@@ -32,15 +32,19 @@ from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_LT_MATRIX_TABLE,
     BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
 )
+from antarest.study.dao.database.models.gems.system import GEMS_COMPONENT_PARAMETERS_TABLE
 from antarest.study.dao.database.models.hydro import (
+    HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE,
     HYDRO_CREDIT_MODULATIONS_TABLE,
     HYDRO_ENERGY_TABLE,
     HYDRO_INFLOW_PATTERN_TABLE,
     HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
     HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+    HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE,
     HYDRO_MAX_HOURLY_GEN_POWER_TABLE,
     HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
     HYDRO_MAXPOWER_TABLE,
+    HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE,
     HYDRO_MINGEN_TABLE,
     HYDRO_MODULATION_TABLE,
     HYDRO_RESERVOIR_TABLE,
@@ -80,6 +84,7 @@ from antarest.study.dao.file.file_study_factory_dao import FileStudyDaoFactory
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import RawStudy, Study, StudyMetadataCopy, StudyMetadataCreation
 from antarest.study.repository import StudyMetadataRepository
+from antarest.study.storage.file_study_utils import ensure_legacy_reserves_files
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.study_upgrader import StudyUpgrader
 from antarest.study.storage.utils import (
@@ -132,12 +137,16 @@ MATRIX_TABLES = [
     HYDRO_MAX_HOURLY_PUMP_POWER_TABLE,
     HYDRO_MAX_DAILY_GEN_ENERGY_TABLE,
     HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE,
+    HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE,
+    HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE,
+    HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE,
     XPANSION_CAPACITY_TABLE,
     XPANSION_WEIGHT_TABLE,
     BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
     BINDING_CONSTRAINT_LT_MATRIX_TABLE,
     BINDING_CONSTRAINT_GT_MATRIX_TABLE,
     BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
+    GEMS_COMPONENT_PARAMETERS_TABLE,
 ]
 
 
@@ -240,6 +249,8 @@ class DatabaseStudyStorage(IStudyStorage):
             source_dao=source_dao, new_dao=new_dao, study_version=study_version, matrix_service=self._matrix_service
         )
         converter.convert_study_inputs()
+        if not normalized_matrices:
+            ensure_legacy_reserves_files(new_dao.get_file_study().config)
 
     @override
     def get_disk_usage(self, study: Study) -> int:

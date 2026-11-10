@@ -32,8 +32,13 @@ from antarest.study.model import (
     STUDY_VERSION_7_2,
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_7,
-    STUDY_VERSION_9_3,
+    STUDY_VERSION_8_8,
     STUDY_VERSION_10_2,
+    STUDY_VERSION_10_3,
+)
+from antarest.study.storage.rawstudy.model.filesystem.config.thermal import (
+    parse_thermal_cluster,
+    serialize_thermal_cluster,
 )
 
 
@@ -177,8 +182,8 @@ def test_thermal_cluster_creation_default_values() -> None:
     }
 
 
-def test_thermal_cluster_creation_default_values_10_2() -> None:
-    cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_10_2)
+def test_thermal_cluster_creation_default_values_10_3() -> None:
+    cluster = create_thermal_cluster(ThermalClusterCreation(name="Cluster @"), version=STUDY_VERSION_10_3)
     assert cluster.model_dump() == {
         "id": "Cluster",
         "name": "Cluster @",
@@ -243,11 +248,11 @@ def test_thermal_cluster_creation_default_values_10_2() -> None:
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"cost_generation": ThermalCostGeneration.USE_COST_TIME_SERIES}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"efficiency": 50}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], {"variable_o_m_cost": 10}),
-        ([STUDY_VERSION_9_3], {"ramping_enabled": True}),
-        ([STUDY_VERSION_9_3], {"max_upward_power_ramping_rate": 10.5}),
-        ([STUDY_VERSION_9_3], {"max_downward_power_ramping_rate": 10.5}),
-        ([STUDY_VERSION_9_3], {"power_increase_cost": 1.0}),
-        ([STUDY_VERSION_9_3], {"power_decrease_cost": 1.0}),
+        ([STUDY_VERSION_10_2], {"ramping_enabled": True}),
+        ([STUDY_VERSION_10_2], {"max_upward_power_ramping_rate": 10.5}),
+        ([STUDY_VERSION_10_2], {"max_downward_power_ramping_rate": 10.5}),
+        ([STUDY_VERSION_10_2], {"power_increase_cost": 1.0}),
+        ([STUDY_VERSION_10_2], {"power_decrease_cost": 1.0}),
     ],
 )
 def test_thermal_cluster_creation_invalid_fields(versions: list[StudyVersion], fields: dict[str, Any]) -> None:
@@ -362,11 +367,11 @@ def test_thermal_cluster_creation_all_values() -> None:
         ),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], [STUDY_VERSION_8_7], {"efficiency": 50}),
         ([STUDY_VERSION_7_2, STUDY_VERSION_8_6], [STUDY_VERSION_8_7], {"variable_o_m_cost": 10}),
-        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"ramping_enabled": True}),
-        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"max_upward_power_ramping_rate": 10.5}),
-        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"max_downward_power_ramping_rate": 10.5}),
-        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"power_increase_cost": 1.0}),
-        ([STUDY_VERSION_9_3], [STUDY_VERSION_10_2], {"power_decrease_cost": 1.0}),
+        ([STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"ramping_enabled": True}),
+        ([STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"max_upward_power_ramping_rate": 10.5}),
+        ([STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"max_downward_power_ramping_rate": 10.5}),
+        ([STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"power_increase_cost": 1.0}),
+        ([STUDY_VERSION_10_2], [STUDY_VERSION_10_3], {"power_decrease_cost": 1.0}),
     ],
 )
 def test_thermal_cluster_version_validation(
@@ -492,7 +497,6 @@ def invalid_fields() -> list[dict[str, Any]]:
         "spread_cost",
         "fixed_cost",
         "startup_cost",
-        "market_bid_cost",
         "variable_o_m_cost",
         "power_increase_cost",
         "power_decrease_cost",
@@ -519,6 +523,27 @@ def test_invalid_field_values(
 
 
 @pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
+def test_negative_market_bid_cost(
+    thermal_cluster_cls: type[ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate],
+) -> None:
+    data: dict[str, Any] = {"marketBidCost": -12.5}
+    if thermal_cluster_cls != ThermalClusterUpdate:
+        data["name"] = "cluster-data"
+
+    cluster = thermal_cluster_cls.model_validate(data)
+
+    assert cluster.market_bid_cost == -12.5
+    assert cluster.model_dump(by_alias=True)["marketBidCost"] == -12.5
+
+
+def test_parse_negative_market_bid_cost() -> None:
+    cluster = parse_thermal_cluster(STUDY_VERSION_8_8, {"name": "gas", "market-bid-cost": -12.5})
+
+    assert cluster.market_bid_cost == -12.5
+    assert serialize_thermal_cluster(STUDY_VERSION_8_8, cluster)["market-bid-cost"] == -12.5
+
+
+@pytest.mark.parametrize("thermal_cluster_cls", [ThermalCluster, ThermalClusterCreation, ThermalClusterUpdate])
 def test_invalid_min_up_down_time_should_be_truncated(
     thermal_cluster_cls: type[ThermalCluster | ThermalClusterCreation | ThermalClusterUpdate],
 ) -> None:
@@ -541,7 +566,7 @@ def test_zero_ramp_rate_is_accepted() -> None:
     """0 is the solver's own default and means "no ramping for this cluster", not an invalid value."""
     cluster = create_thermal_cluster(
         ThermalClusterCreation(name="Cluster @", max_upward_power_ramping_rate=0, max_downward_power_ramping_rate=0),
-        version=STUDY_VERSION_10_2,
+        version=STUDY_VERSION_10_3,
     )
     assert cluster.max_upward_power_ramping_rate == 0.0
     assert cluster.max_downward_power_ramping_rate == 0.0

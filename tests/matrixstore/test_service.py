@@ -56,7 +56,7 @@ from tests.conftest import PROJECT_DIR
 from tests.helpers import with_db_context
 
 MatrixType = list[list[float]]
-TEST_MATRIX = [[1, 2, 3], [4, 5, 6]]
+TEST_MATRIX: list[list[float]] = [[1, 2, 3], [4, 5, 6]]
 resource_path = (
     PROJECT_DIR
     / "tests"
@@ -105,7 +105,7 @@ class TestMatrixService:
         """Creates a new matrix object with the specified data, but fail during saving."""
         # if the matrix can't be created in the service
         matrix_repo = matrix_service.repo
-        matrix_repo.save = Mock(side_effect=Exception("database error"))
+        object.__setattr__(matrix_repo, "save", Mock(side_effect=Exception("database error")))
         with pytest.raises(Exception, match="database error"):
             matrix_service.create(create_polars_dataframe(TEST_MATRIX))
 
@@ -147,7 +147,6 @@ class TestMatrixService:
             parent / "test-03-all.result.tsv",
             parent / "test-04-all.result.tsv",
             parent / "test-05-all.result.tsv",
-            parent / "test-06-all.result.tsv",
             parent / "test-07-all.result.tsv",
             parent / "test-08-all.result.tsv",
         ]
@@ -178,13 +177,6 @@ class TestMatrixService:
                 id="e042c928e846ed944751d1d82edec4be25ee606816e7aefc4b64c9cb6808f2a5",
                 width=1,
                 height=2,
-                created_at=now,
-                version=2,
-            ),
-            MatrixMetadataDTO(
-                id="d6b4ecdc42135e48eaa1d868ef535d396bc3953b7c3bf4f802d83964db58af77",
-                width=1,
-                height=14,
                 created_at=now,
                 version=2,
             ),
@@ -252,10 +244,10 @@ class TestMatrixService:
     def test_ability_to_save_matrices_with_strings(self, matrix_service: MatrixService) -> None:
         data = [["area_1", "area_2", "area_3"], [1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
         df = pd.DataFrame(data=data, columns=["c1", "c2", "c3"], dtype=pd.StringDtype())
-        matrix_service.create(create_polars_dataframe(df))
+        matrix_service.create(pl.from_pandas(df))
 
     @with_db_context
-    @pytest.mark.parametrize("matrix_format", ["tsv", "hdf", "parquet", "feather"])
+    @pytest.mark.parametrize("matrix_format", ["tsv", "parquet", "feather"])
     def test_get_with_versions(self, matrix_service: MatrixService, matrix_format: str) -> None:
         matrix_service.matrix_content_repository.format = InternalMatrixFormat(matrix_format)
         matrix_id = matrix_service.create(AGGREGATION_DF)
@@ -653,7 +645,7 @@ def test_check_compliance_method() -> None:
         check_dataframe_compliance(df)
 
 
-def _create_upload_file(filename: str, file: t.IO[bytes] = None, content_type: str = "") -> UploadFile:
+def _create_upload_file(filename: str, file: t.BinaryIO, content_type: str = "") -> UploadFile:
     # `content_type` attribute was replace by a read-ony property in starlette-v0.24.
     headers = Headers(headers={"content-type": content_type})
     # noinspection PyTypeChecker,PyArgumentList

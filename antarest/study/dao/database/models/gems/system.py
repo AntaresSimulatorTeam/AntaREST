@@ -9,13 +9,23 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, Column, Float, ForeignKeyConstraint, String, Table
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    Float,
+    ForeignKeyConstraint,
+    Index,
+    PrimaryKeyConstraint,
+    String,
+    Table,
+    text,
+)
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
-
 
 GEMS_SYSTEM_METADATA_TABLE = Table(
     "gems_system_metadata",
@@ -35,6 +45,7 @@ GEMS_COMPONENTS_TABLE = Table(
     Column("library_id", String(255), nullable=False),
     Column("model_id", String(255)),
     Column("scenario_group", String(255), nullable=True),
+    Column("integer_strategy", String(), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id"],
         ["gems_system_metadata.study_data_id"],
@@ -48,7 +59,10 @@ GEMS_COMPONENTS_TABLE = Table(
     ForeignKeyConstraint(
         ["study_data_id", "scenario_group"],
         ["gems_scenario_builder.study_data_id", "gems_scenario_builder.scenario_group"],
-        ondelete="SET NULL",
+        # These 2 lines allow the foreign key constraint to be deferred until the end of the transaction (the COMMIT)
+        # This way no issue is encountered when deleting a study
+        deferrable=True,
+        initially="DEFERRED",
     ),
 )
 
@@ -60,11 +74,22 @@ GEMS_COMPONENT_PARAMETERS_TABLE = Table(
     Column("parameter_id", String(255), primary_key=True),
     Column("time_dependent", Boolean, nullable=False),
     Column("scenario_dependent", Boolean, nullable=False),
-    Column("value", Float, nullable=False),
+    # Contains the value of the float constant in case (time_dependent, scenario_dependent) = (False, False)
+    Column("value", Float, nullable=True),
+    # Contains the id of the matrix in the matrix store in case (time_dependent, scenario_dependent) != (False, False)
+    Column("matrix_id", String(64), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id", "component_id"],
         ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
+    ),
+    CheckConstraint(
+        "(matrix_id IS NULL) = (NOT time_dependent AND NOT scenario_dependent)",
+        name="ck_gems_component_parameters_matrix_id_matches_dependent",
+    ),
+    CheckConstraint(
+        "(value IS NULL) =  (time_dependent OR scenario_dependent)",
+        name="ck_gems_component_parameters_value_matches_dependent",
     ),
 )
 
@@ -80,4 +105,95 @@ GEMS_COMPONENT_PROPERTIES_TABLE = Table(
         ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
     ),
+)
+
+GEMS_COMPONENT_CONNECTIONS_TABLE = Table(
+    "gems_component_connections",
+    metadata,
+    study_data_id_col(),
+    Column("component1", String(255), primary_key=True),
+    Column("component2", String(255), primary_key=True),
+    Column("port1", String(255), primary_key=True),
+    Column("port2", String(255), primary_key=True),
+    # Ensures component1 exists in the study.
+    ForeignKeyConstraint(
+        ["study_data_id", "component1"],
+        [
+            "gems_components.study_data_id",
+            "gems_components.component_id",
+        ],
+        name="fk_gems_component_connections_component1_exists",
+        ondelete="CASCADE",
+    ),
+    # Ensures component2 exists in the study.
+    ForeignKeyConstraint(
+        ["study_data_id", "component2"],
+        [
+            "gems_components.study_data_id",
+            "gems_components.component_id",
+        ],
+        name="fk_gems_component_connections_component2_exists",
+        ondelete="CASCADE",
+    ),
+    CheckConstraint(
+        "component1 != component2 or port1 != port2",
+        name="ck_gems_component_connections_have_distinct_endpoints",
+    ),
+    # A connection between (component1, port1) and (component2, port2) is the same, physically,
+    # as its symmetric counterpart. Indexing on the ordered pair forbids declaring both.
+    Index(
+        "uq_no_inverted_pairs",
+        text("(CASE WHEN component1 <= component2 THEN component1 ELSE component2 END)"),
+        text("(CASE WHEN component1 >= component2 THEN component1 ELSE component2 END)"),
+        text("(CASE WHEN port1 <= port2 THEN port1 ELSE port2 END)"),
+        text("(CASE WHEN port1 >= port2 THEN port1 ELSE port2 END)"),
+        unique=True,
+    ),
+)
+
+
+# Antares Simulator allows a single connection of each kind per port, hence the primary keys.
+GEMS_AREA_CONNECTIONS_TABLE = Table(
+    "gems_area_connections",
+    metadata,
+    study_data_id_col(primary_key=False),
+    Column("component_id", String(255), nullable=False),
+    Column("port_id", String(255), nullable=False),
+    Column("area_id", String(255), nullable=False),
+    ForeignKeyConstraint(
+        ["study_data_id", "component_id"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
+        name="fk_gems_area_connections_component",
+        ondelete="CASCADE",
+    ),
+    ForeignKeyConstraint(
+        ["study_data_id", "area_id"],
+        ["area.study_data_id", "area.area_id"],
+        name="fk_gems_area_connections_area",
+        ondelete="CASCADE",
+    ),
+    PrimaryKeyConstraint("study_data_id", "component_id", "port_id", name="pk_gems_area_connections"),
+)
+
+GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE = Table(
+    "gems_thermal_capacity_connections",
+    metadata,
+    study_data_id_col(primary_key=False),
+    Column("component_id", String(255), nullable=False),
+    Column("port_id", String(255), nullable=False),
+    Column("area_id", String(255), nullable=False),
+    Column("cluster_id", String(255), nullable=False),
+    ForeignKeyConstraint(
+        ["study_data_id", "component_id"],
+        ["gems_components.study_data_id", "gems_components.component_id"],
+        name="fk_gems_thermal_capacity_connections_component",
+        ondelete="CASCADE",
+    ),
+    ForeignKeyConstraint(
+        ["study_data_id", "area_id", "cluster_id"],
+        ["thermal_cluster.study_data_id", "thermal_cluster.area_id", "thermal_cluster.thermal_id"],
+        name="fk_gems_thermal_capacity_connections_cluster",
+        ondelete="CASCADE",
+    ),
+    PrimaryKeyConstraint("study_data_id", "component_id", "port_id", name="pk_gems_thermal_capacity_connections"),
 )

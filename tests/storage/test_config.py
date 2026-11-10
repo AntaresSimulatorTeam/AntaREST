@@ -204,6 +204,8 @@ def test_launcher_config_solver_versions(tmp_path: Path) -> None:
         yaml.dump(data, fd)
     config = Config.from_yaml_file(config_path)
 
+    assert config.launcher.configs is not None
+
     # Local launcher
     local_launcher = cast(LocalConfig, config.launcher.configs[0])
     assert sorted(local_launcher.binaries) == [

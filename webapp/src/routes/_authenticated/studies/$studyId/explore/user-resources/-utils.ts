@@ -12,10 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type {
-  UserResourceFolder,
-  UserResourcesTree,
-} from "@/services/api/studies/userResources/types";
+import type { FilesTree, FolderTree } from "@/services/api/studies/userResources/types";
 import { getFileExtension } from "@/utils/fileUtils";
 import type { SvgIconComponent } from "@mui/icons-material";
 import BlockIcon from "@mui/icons-material/Block";
@@ -28,7 +25,7 @@ import TextSnippetIcon from "@mui/icons-material/TextSnippet";
 // Types
 ////////////////////////////////////////////////////////////////
 
-export type TreeItemData = UserResourceFolder | string;
+export type TreeItemData = FolderTree | string;
 
 export type TreeItemType = "json" | "text" | "image" | "folder" | "unsupported";
 
@@ -59,6 +56,7 @@ const SUPPORTED_TEXT_EXTENSIONS = [
   "tsv",
   "ini",
   "yml",
+  "yaml",
   "json",
 ] as const;
 
@@ -92,7 +90,7 @@ export function getTreeItemIcon(type: TreeItemType): SvgIconComponent {
  * @param treeItem - The tree item to check.
  * @returns True if the tree item is a folder, false otherwise.
  */
-export function isTreeItemFolder(treeItem: TreeItemData): treeItem is UserResourceFolder {
+export function isTreeItemFolder(treeItem: TreeItemData): treeItem is FolderTree {
   return typeof treeItem === "object";
 }
 
@@ -132,8 +130,8 @@ export function getTreeItemType(treeItem: TreeItemData): TreeItemType {
  */
 export function getTreeItem(
   pathSegments: string[],
-  tree: UserResourcesTree | UserResourceFolder,
-): UserResourceFolder | string | undefined {
+  tree: FilesTree | FolderTree,
+): FolderTree | string | undefined {
   if (pathSegments.length === 0) {
     return undefined;
   }

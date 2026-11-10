@@ -97,6 +97,8 @@ def test_get_all_areas_info_returns_areas(dao: StudyDao) -> None:
     area_names = {a.name for a in areas}
     assert area_names == {"Paris", "London", "Berlin"}
     areas_by_id = {area.id: area for area in areas}
+    assert areas_by_id["paris"].thermals is not None
+    assert areas_by_id["berlin"].thermals is not None
     assert [thermal.id for thermal in areas_by_id["paris"].thermals] == ["gas"]
     assert [thermal.id for thermal in areas_by_id["berlin"].thermals] == ["coal"]
     assert areas_by_id["london"].thermals == []

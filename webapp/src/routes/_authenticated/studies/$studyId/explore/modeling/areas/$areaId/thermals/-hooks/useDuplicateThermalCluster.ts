@@ -12,20 +12,69 @@
  * This file is part of the Antares project.
  */
 
-import { invalidateQueriesAfterMutation } from "@/queries/invalidateQueriesAfterMutation";
-import { thermalKeys } from "@/queries/thermals/keys";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { thermalMutations } from "@/queries/thermals/mutations";
-import type { ThermalsAreaParams } from "@/services/api/studies/areas/thermals/types";
+import { thermalQueries } from "@/queries/thermals/queries";
+import { createOptimisticListItem } from "@/queries/utils";
+import type {
+  ThermalCluster,
+  ThermalClustersParams,
+} from "@/services/api/studies/areas/thermals/types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import { DEFAULT_THERMAL_VALUES } from "../-constants";
 
-function useDuplicateThermalCluster({ studyId, areaId }: ThermalsAreaParams) {
+function useDuplicateThermalCluster({ studyId, areaId }: ThermalClustersParams) {
   const queryClient = useQueryClient();
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
+  const { t } = useTranslation();
+
+  const { queryKey: queryListKey } = thermalQueries.list(studyId, areaId);
 
   return useMutation({
     ...thermalMutations.duplicate(studyId, areaId),
-    onSuccess: async (_, { studyId, areaId }) => {
-      // GroupedDataTable owns optimistic rows until its controlled mode is available.
-      await invalidateQueriesAfterMutation(queryClient, thermalKeys.list(studyId, areaId));
+    onMutate: async (variables) => {
+      const { thermalId: thermalToDuplicateId, newName } = variables;
+      const tempThermalId = crypto.randomUUID();
+
+      await queryClient.cancelQueries({ queryKey: queryListKey });
+
+      const prevThermals = queryClient.getQueryData(queryListKey);
+      const thermalToDuplicate = prevThermals?.find(({ id }) => id === thermalToDuplicateId);
+
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return [
+          ...old,
+          createOptimisticListItem<ThermalCluster>({
+            ...DEFAULT_THERMAL_VALUES,
+            ...thermalToDuplicate,
+            id: tempThermalId,
+            name: newName,
+          }),
+        ];
+      });
+
+      return tempThermalId;
+    },
+    onError: (error, variables, tempThermalId) => {
+      enqueueErrorSnackbar(
+        t("study.modeling.clusters.duplicate.error", { name: variables.newName }),
+        error,
+      );
+
+      if (!tempThermalId) {
+        return;
+      }
+
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return old.filter((thermal) => thermal.id !== tempThermalId);
+      });
+    },
+    onSuccess: async (duplicatedThermal, _, tempThermalId) => {
+      await queryClient.cancelQueries({ queryKey: queryListKey });
+      queryClient.setQueryData(queryListKey, (old = []) => {
+        return old.map((thermal) => (thermal.id === tempThermalId ? duplicatedThermal : thermal));
+      });
     },
   });
 }

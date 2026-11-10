@@ -16,7 +16,7 @@ from pydantic.alias_generators import to_camel
 from antarest.core.exceptions import InvalidFieldForVersionError
 from antarest.core.serde import AntaresBaseModel
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
-from antarest.study.model import STUDY_VERSION_10_2
+from antarest.study.model import STUDY_VERSION_10_2, STUDY_VERSION_10_3
 
 
 class LegacyTransmissionCapacities(EnumIgnoreCase):
@@ -74,6 +74,7 @@ class OptimizationPreferences(AntaresBaseModel):
     simplex_optimization_range: SimplexOptimizationRange = SimplexOptimizationRange.WEEK
     # Since v10.2
     include_reserves: bool | None = None
+    # Since v10.3
     include_thermal_cluster_ramping: bool | None = None
 
 
@@ -114,6 +115,7 @@ def initialize_optimization_preferences_against_version(
     if version >= STUDY_VERSION_10_2:
         if parameters.include_reserves is None:
             parameters.include_reserves = False
+    if version >= STUDY_VERSION_10_3:
         if parameters.include_thermal_cluster_ramping is None:
             parameters.include_thermal_cluster_ramping = False
 
@@ -121,7 +123,11 @@ def initialize_optimization_preferences_against_version(
 def validate_optimization_preferences_against_version(
     version: StudyVersion, parameters: OptimizationPreferences | OptimizationPreferencesUpdate
 ) -> None:
-    if version < STUDY_VERSION_10_2:
-        for field in ("include_reserves", "include_thermal_cluster_ramping"):
-            if getattr(parameters, field) is not None:
-                raise InvalidFieldForVersionError(f"Field {field} is not a valid field for study version before 10.2")
+    for field, min_version in (
+        ("include_reserves", STUDY_VERSION_10_2),
+        ("include_thermal_cluster_ramping", STUDY_VERSION_10_3),
+    ):
+        if version < min_version and getattr(parameters, field) is not None:
+            raise InvalidFieldForVersionError(
+                f"Field {field} is not a valid field for study version before {min_version:2d}"
+            )

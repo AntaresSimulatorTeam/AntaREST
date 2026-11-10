@@ -39,6 +39,7 @@ import { useTranslation } from "react-i18next";
 import { useUnmount } from "react-use";
 import useOutput from "../../-hooks/useOutput";
 import useOutputContext from "../../-hooks/useOutputFilters";
+import { isLink } from "../../-utils";
 import { buildVariableViewParams, DATE_GRID_COLUMN, isClusterDataType } from "./utils";
 
 function OutputVariableMatrix() {
@@ -175,6 +176,16 @@ function OutputVariableMatrix() {
         return (
           <FilterableMatrixGrid
             ref={matrixGridRef}
+            filterPersistence={{
+              studyId: study.id,
+              key: JSON.stringify([
+                "outputs",
+                output.id,
+                isLink(item) ? "links" : "areas",
+                "variable-per-variable",
+                dataType,
+              ]),
+            }}
             data={variableViewData.data}
             rows={variableViewData.data.length}
             columns={gridColumns}

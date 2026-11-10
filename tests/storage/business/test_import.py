@@ -38,6 +38,7 @@ def test_import_study(tmp_path: Path, study_service: StudyService, empty_study_9
     (tmp_path / "internal_studies").mkdir()
     output_access_mock = Mock()
     study_service.register_output_access(output_access_mock)
+    assert isinstance(study_service.user_service.get_user, Mock)
     study_service.user_service.get_user.return_value = User(id=1, name="admin")
     study_service.repository = StudyMetadataRepository()
 

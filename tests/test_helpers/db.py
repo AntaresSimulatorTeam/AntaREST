@@ -11,8 +11,9 @@
 # This file is part of the Antares project.
 from dataclasses import dataclass
 
+from sqlalchemy.engine import Connection
 from sqlalchemy.event import listens_for
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import Session, SessionTransaction, sessionmaker
 
 
 @dataclass
@@ -28,23 +29,23 @@ def create_db_event_counter(session_factory: sessionmaker[Session]) -> DbEventCo
     counter = DbEventCounter()
 
     @listens_for(session_factory, "after_begin")
-    def after_begin(session, transaction, connection):
+    def after_begin(session: Session, transaction: SessionTransaction, connection: Connection) -> None:
         counter.begin += 1
 
     @listens_for(session_factory, "after_rollback")
-    def after_rollback(session):
+    def after_rollback(session: Session) -> None:
         counter.rollback += 1
 
     @listens_for(session_factory, "after_commit")
-    def after_commit(session):
+    def after_commit(session: Session) -> None:
         counter.commit += 1
 
     @listens_for(session_factory, "after_transaction_create")
-    def on_transaction_start(session, transaction):
+    def on_transaction_start(session: Session, transaction: SessionTransaction) -> None:
         counter.transaction_start += 1
 
     @listens_for(session_factory, "after_transaction_end")
-    def on_transaction_end(session, transaction):
+    def on_transaction_end(session: Session, transaction: SessionTransaction) -> None:
         counter.transaction_end += 1
 
     return counter

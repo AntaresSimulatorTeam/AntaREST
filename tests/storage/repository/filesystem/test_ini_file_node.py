@@ -13,9 +13,10 @@
 import textwrap
 import typing as t
 from pathlib import Path
+from typing import Any
 
 import pytest
-from sqlalchemy.dialects.postgresql.array import Any
+from antares.study.version import StudyVersion
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import (
     FileStudyTreeConfig,
@@ -54,7 +55,7 @@ def test_get(tmp_path: Path) -> None:
         config=FileStudyTreeConfig(
             study_path=ini_path,
             path=ini_path,
-            version=-1,
+            version=StudyVersion.parse("8.8"),
             areas={},
             outputs={},
             study_id="id",
@@ -78,7 +79,7 @@ def test_get_depth(tmp_path: Path) -> None:
         config=FileStudyTreeConfig(
             study_path=ini_path,
             path=ini_path,
-            version=-1,
+            version=StudyVersion.parse("8.8"),
             areas={},
             outputs={},
             study_id="id",
@@ -94,7 +95,7 @@ def test_save(tmp_path: Path) -> None:
         config=FileStudyTreeConfig(
             study_path=tmp_path,
             path=ini_path,
-            version=-1,
+            version=StudyVersion.parse("8.8"),
             study_id="id",
             areas={},
             outputs={},
@@ -103,7 +104,7 @@ def test_save(tmp_path: Path) -> None:
 
     # The example below allows for creating an INI file from scratch by providing
     # a dictionary of sections to write. The dictionary order is preserved.
-    data = {
+    data: dict[str, object] = {
         "part1": {
             "key_float": 2.1,
             "key_int": 1,
@@ -204,7 +205,7 @@ def test_get_scenario_builder(tmp_path: Path, ini_section: str, url: t.List[str]
         config=FileStudyTreeConfig(
             study_path=tmp_path,
             path=ini_path,
-            version=-1,
+            version=StudyVersion.parse("8.8"),
             study_id="id",
             areas={},
             outputs={},
@@ -220,7 +221,7 @@ def create_ini_node(study_path: Path, ini_path: Path) -> IniFileNode:
         config=FileStudyTreeConfig(
             study_path=study_path,
             path=ini_path,
-            version=-1,
+            version=StudyVersion.parse("8.8"),
             study_id="id",
             areas={},
             outputs={},

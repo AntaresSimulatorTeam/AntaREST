@@ -37,7 +37,7 @@ import { useTranslation } from "react-i18next";
 import { useUnmount } from "react-use";
 import useOutput from "../../-hooks/useOutput";
 import useOutputContext from "../../-hooks/useOutputFilters";
-import { createOutputDataPath } from "../../-utils";
+import { createOutputDataPath, isLink } from "../../-utils";
 import { DATE_GRID_COLUMN, isValidColumnStatistic } from "./utils";
 
 function OutputMatrix() {
@@ -164,6 +164,16 @@ function OutputMatrix() {
         return (
           <FilterableMatrixGrid
             ref={matrixGridRef}
+            filterPersistence={{
+              studyId: study.id,
+              key: JSON.stringify([
+                "outputs",
+                output.id,
+                isLink(item) ? "links" : "areas",
+                year > 0 ? "mc-ind" : "mc-all",
+                dataType,
+              ]),
+            }}
             data={matrixResult.data}
             rows={matrixResult.data.length}
             columns={filteredGridColumns}

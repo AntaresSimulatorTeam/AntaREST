@@ -27,6 +27,7 @@ from antarest.core.exceptions import IncorrectPathError
 from antarest.core.model import SUB_JSON
 from antarest.core.serde.json import from_json, to_json
 from antarest.core.serde.matrix_export import TableExportFormat, simplify_dataframe
+from antarest.core.utils.polars import write_tsv
 from antarest.core.utils.utils import sanitize_string
 from antarest.core.utils.web import APITag
 from antarest.dependencies import StudyServiceDep, auth_required
@@ -123,7 +124,7 @@ class MatrixFormat(EnumIgnoreCase):
             if dataframe.is_empty():
                 return Response(content=b"", media_type="application/octet-stream")
             string_buffer = io.StringIO()
-            dataframe.write_csv(string_buffer, separator="\t", include_header=False)
+            write_tsv(dataframe, string_buffer)
             return Response(content=string_buffer.getvalue(), media_type="text/csv")
 
         buffer = io.BytesIO()

@@ -6,8 +6,8 @@ A local build allows using Antares Web as a desktop application.
 
 Requirements:
 
-- python : 3.11.x
-- node : 22.23.2
+- python : 3.14.x
+- node : 22.23.4
 - uv : latest (see [installation](https://docs.astral.sh/uv/getting-started/installation/))
 
 Then perform the following steps:

@@ -113,7 +113,7 @@ def check_exported_study_integrity(client: TestClient, export_path: Path, downlo
     study_antares = read_ini(study_path / "study.antares")
     assert study_antares == {
         "antares": {
-            "version": 9.3,
+            "version": 10.2,
             "caption": study_name,
             "author": "George",
             "editor": "George",

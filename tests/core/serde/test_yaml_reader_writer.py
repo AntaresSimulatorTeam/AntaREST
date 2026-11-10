@@ -39,8 +39,8 @@ stopping_threshold: 3.0
 
     # Ensures the reader can read the data as it should.
     reader = YAMLReader()
-    content = reader.read(yaml_file)
-    assert content == yaml_dict
+    parsed_content = reader.read(yaml_file)
+    assert parsed_content == yaml_dict
     # Also ensures it can read data from a missing file
     empty_content = reader.read(tmp_path / "empty.yaml")
     assert empty_content == {}

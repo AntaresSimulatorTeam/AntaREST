@@ -18,6 +18,6 @@ from antarest.maintenance.tasks.disk_usage_log_task import disk_usage_log_task
 
 
 class TestDiskUsageLogTask:
-    def test_raises_without_context(self, with_no_maintenance_ctx):
+    def test_raises_without_context(self, with_no_maintenance_ctx: None) -> None:
         with pytest.raises(RuntimeError, match="MaintenanceContext not in app.conf"):
             disk_usage_log_task.run()

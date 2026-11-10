@@ -409,7 +409,7 @@ class SlurmLauncher(AbstractLauncher, SlurmLoad):
                 study.xpansion_mode,
                 study.job_log_dir,
             )
-        except (FileNotFoundError, NoValidOutputError):
+        except FileNotFoundError, NoValidOutputError:
             msg = "Simulation failed, output results are not available"
             self.callbacks.append_after_log(study.name, msg)
             # see antarest.launcher.service.LauncherService.update
@@ -631,7 +631,7 @@ class SlurmLauncher(AbstractLauncher, SlurmLoad):
         return log_path.read_text() if log_path else None
 
     def _create_event_listener(self) -> Callable[[Event], Awaitable[None]]:
-        async def _listen_to_kill_job(event: Event) -> None:
+        async def _listen_to_kill_job(event: Event) -> None:  # NOSONAR: the event bus requires async listeners
             self.kill_job(event.payload, dispatch=False)
 
         return _listen_to_kill_job

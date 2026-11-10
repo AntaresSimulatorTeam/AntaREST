@@ -17,9 +17,11 @@ from antarest.study.business.model.binding_constraint_model import (
     BindingConstraintFrequency,
     BindingConstraintOperator,
     ClusterTerm,
+    ConstraintId,
     ConstraintTerm,
     LinkTerm,
 )
+from antarest.study.business.model.link_model import LinkCreation
 from antarest.study.business.model.scenario_builder_model import RulesetUpdate
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation
 from antarest.study.dao.file.file_study_constraint_dao import update_matrices_names
@@ -60,7 +62,13 @@ def test_manage_binding_constraint(
         cluster = "cluster"
         CreateArea(area_name=area1, command_context=command_context, study_version=study_version).apply(dao)
         CreateArea(area_name=area2, command_context=command_context, study_version=study_version).apply(dao)
-        CreateLink(area1=area1, area2=area2, command_context=command_context, study_version=study_version).apply(dao)
+        CreateLink(
+            parameters=LinkCreation(),
+            area1=area1,
+            area2=area2,
+            command_context=command_context,
+            study_version=study_version,
+        ).apply(dao)
         CreateCluster(
             area_id=area1,
             parameters=ThermalClusterCreation(name=cluster),
@@ -204,8 +212,8 @@ def test_manage_binding_constraint(
             ).apply(dao)
             assert output.status, output.message
 
-        output = RemoveMultipleBindingConstraints(
-            id="bd 1", command_context=command_context, study_version=study_version
+        output = RemoveMultipleBindingConstraints.model_validate(
+            {"id": "bd 1", "command_context": command_context, "study_version": study_version}
         ).apply(dao)  # Ensures we're able to handle legacy command
         assert output.status, output.message
 
@@ -241,8 +249,8 @@ def test_manage_binding_constraint(
             expected_bd_2["group"] = "default"
         assert bd_config.get("0") == expected_bd_2
 
-        output = RemoveMultipleBindingConstraints(
-            id="bd 2", command_context=command_context, study_version=study_version
+        output = RemoveMultipleBindingConstraints.model_validate(
+            {"id": "bd 2", "command_context": command_context, "study_version": study_version}
         ).apply(dao)
         assert output.status, output.message
 
@@ -268,7 +276,11 @@ def test_scenario_builder(empty_study_870: FileStudy, command_context: CommandCo
         output = CreateArea(area_name=area, command_context=command_context, study_version=study_version).apply(dao)
         assert output.status, output.message
     output = CreateLink(
-        area1=areas["Area X"], area2=areas["Area Y"], command_context=command_context, study_version=study_version
+        parameters=LinkCreation(),
+        area1=areas["Area X"],
+        area2=areas["Area Y"],
+        command_context=command_context,
+        study_version=study_version,
     ).apply(dao)
     assert output.status, output.message
 
@@ -364,7 +376,13 @@ def test__update_matrices_names(
     cluster = "cluster"
     CreateArea(area_name=area1, command_context=command_context, study_version=study_version).apply(dao)
     CreateArea(area_name=area2, command_context=command_context, study_version=study_version).apply(dao)
-    CreateLink(area1=area1, area2=area2, command_context=command_context, study_version=study_version).apply(dao)
+    CreateLink(
+        parameters=LinkCreation(),
+        area1=area1,
+        area2=area2,
+        command_context=command_context,
+        study_version=study_version,
+    ).apply(dao)
     CreateCluster(
         area_id=area1,
         parameters=ThermalClusterCreation(name=cluster),
@@ -402,7 +420,7 @@ def test__update_matrices_names(
     # update matrices names
     update_matrices_names(
         file_study=empty_study,
-        bc_id="bd_rename_matrices",
+        bc_id=ConstraintId("bd_rename_matrices"),
         existing_operator=existing_operator,
         new_operator=new_operator,
     )

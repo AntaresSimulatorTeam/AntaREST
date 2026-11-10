@@ -18,6 +18,7 @@ from collections.abc import Sequence
 from typing import Any, NoReturn
 
 import polars as pl
+from antares.study.version import StudyVersion
 from sqlalchemy import CursorResult, Row, Select, Table, delete, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
@@ -57,13 +58,12 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
           for a cluster (same question for areas etc)
     """
 
-    def _convert_db_row_to_thermal(self, row: Any) -> ThermalCluster:
+    def _convert_db_row_to_thermal(self, row: Any, version: StudyVersion) -> ThermalCluster:
         data = get_row_representation_as_dict(row)
         del data["study_data_id"]
         del data["area_id"]
         data["id"] = data.pop("thermal_id")
         cluster = ThermalCluster(**data)
-        version = self.get_impl().get_version()
         validate_thermal_cluster_against_version(version, cluster)
         return cluster
 
@@ -202,10 +202,13 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
 
         stmt = select(THERMAL_CLUSTER_TABLE).where(THERMAL_CLUSTER_TABLE.c.study_data_id == study_data_id)
         rows = session.execute(stmt).fetchall()
+        if not rows:
+            return {}
+        version = self.get_impl().get_version()
 
         thermals_by_areas: dict[str, dict[str, ThermalCluster]] = {}
         for row in rows:
-            thermal = self._convert_db_row_to_thermal(row)
+            thermal = self._convert_db_row_to_thermal(row, version)
             thermals_by_areas.setdefault(row.area_id, {})[thermal.id.lower()] = thermal
         return thermals_by_areas
 
@@ -222,8 +225,10 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
         if not rows:
             # Ensures the area exists
             validate_area_exists(session, study_data_id, area_id)
+            return []
+        version = self.get_impl().get_version()
 
-        return [self._convert_db_row_to_thermal(row) for row in rows]
+        return [self._convert_db_row_to_thermal(row, version) for row in rows]
 
     def _select_thermal_cluster(self, area_id: str, thermal_id: str) -> Select[Any]:
         study_data_id = self._study_data_id
@@ -241,7 +246,7 @@ class DatabaseThermalDao(ThermalDao, DatabaseDaoBase):
         if not row:
             self.raise_the_right_thermal_exception({area_id: [thermal_id]})
 
-        return self._convert_db_row_to_thermal(row)
+        return self._convert_db_row_to_thermal(row, self.get_impl().get_version())
 
     @override
     def thermal_exists(self, area_id: str, thermal_id: str) -> bool:

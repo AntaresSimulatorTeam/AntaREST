@@ -39,8 +39,16 @@ export interface FilterState {
   rowsFilters: RowFilter[];
   operation: {
     type: string;
-    value: number;
+    value: number | undefined;
   };
+}
+
+export type PersistedMatrixFilters = Pick<FilterState, "active" | "rowsFilters" | "columnsFilter">;
+
+export interface MatrixFilterPersistence {
+  studyId: string;
+  /** Logical view and matrix slot, independent of the area or cluster. */
+  key: string;
 }
 
 export interface FilterCriteria {
@@ -57,12 +65,13 @@ export interface MatrixFilterProps {
   isTimeSeries: boolean;
   timeFrequency?: TimeFrequencyType;
   readOnly?: boolean;
+  persistence?: MatrixFilterPersistence;
   ref?: React.Ref<MatrixFilterHandle>;
 }
 
 export interface FilterSectionProps {
   filter: FilterState;
-  setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
+  setFilter: React.Dispatch<React.SetStateAction<PersistedMatrixFilters>>;
 }
 
 export interface ColumnFilterProps extends FilterSectionProps {
@@ -90,7 +99,9 @@ export interface RowFilterProps extends FilterSectionProps {
   onToggleExpanded?: (id: string) => void;
 }
 
-export interface OperationsProps extends FilterSectionProps {
+export interface OperationsProps {
+  filter: FilterState;
+  setOperation: React.Dispatch<React.SetStateAction<FilterState["operation"]>>;
   onApplyOperation: () => void;
 }
 
@@ -99,7 +110,6 @@ export interface SelectionSummaryProps {
 }
 
 export interface TemporalIndexingParams {
-  filter: FilterState;
   rowFilter: RowFilter;
   datesInfo?: DateInfo[];
   isTimeSeries: boolean;

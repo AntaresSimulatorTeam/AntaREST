@@ -20,11 +20,7 @@ import { toError } from "@/utils/fnUtils";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import { deleteStudy } from "@/redux/ducks/studies";
 
-interface UseDeleteStudiesOptions {
-  onSuccess?: () => void;
-}
-
-export function useDeleteStudies(options?: UseDeleteStudiesOptions) {
+export function useDeleteStudies() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
@@ -34,22 +30,19 @@ export function useDeleteStudies(options?: UseDeleteStudiesOptions) {
     onError: (error) => {
       enqueueErrorSnackbar(t("studies.error.deleteStudies"), toError(error));
     },
-    onSuccess: (_data, variables) => {
-      // TEMPORARY: Manually update Redux store for immediate UI feedback
-      // since WebSocket events may be delayed or lost
-
-      // TODO: Remove once migrated to React Query for state management
-      // The proper solution is to invalidate React Query cache here
-      variables.studyIds.forEach((studyId) => {
-        dispatch(
-          deleteStudy({
-            name: "", // Pass 'name' to trigger WebSocket code path (avoids redundant API calls)
-            id: studyId,
-          }),
-        );
-      });
-
-      options?.onSuccess?.();
+    onSuccess: async (_data, { studyIds }) => {
+      // WebSocket events may be delayed or lost. Update Redux before closing the dialog.
+      // TODO: Remove this bridge when the study list moves to TanStack Query.
+      await Promise.all(
+        studyIds.map((studyId) =>
+          dispatch(
+            deleteStudy({
+              name: "", // Use the local confirmation path without another DELETE request.
+              id: studyId,
+            }),
+          ).unwrap(),
+        ),
+      );
     },
   });
 }

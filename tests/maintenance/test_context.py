@@ -18,7 +18,7 @@ from antarest.maintenance.context import MaintenanceContext
 
 
 class TestMaintenanceContext:
-    def test_constructor_stores_config_and_services(self):
+    def test_constructor_stores_config_and_services(self) -> None:
         """Test that constructor properly stores config and core_services."""
         mock_config = Mock()
         mock_core_services = Mock()
@@ -28,7 +28,7 @@ class TestMaintenanceContext:
         assert ctx.config is mock_config
         assert ctx.core_services is mock_core_services
 
-    def test_matrix_service_returns_service_from_core_services(self):
+    def test_matrix_service_returns_service_from_core_services(self) -> None:
         """Test that matrix_service property returns the service from core_services."""
         mock_matrix_service = Mock()
         mock_core_services = Mock()
@@ -39,7 +39,7 @@ class TestMaintenanceContext:
 
         assert ctx.matrix_service is mock_matrix_service
 
-    def test_blob_service_returns_service_from_core_services(self):
+    def test_blob_service_returns_service_from_core_services(self) -> None:
         """Test that blob_service property returns the service from core_services."""
         mock_blob_service = Mock()
         mock_core_services = Mock()
@@ -50,7 +50,7 @@ class TestMaintenanceContext:
 
         assert ctx.blob_service is mock_blob_service
 
-    def test_multiple_instances_are_independent(self):
+    def test_multiple_instances_are_independent(self) -> None:
         """Test that multiple MaintenanceContext instances are independent (not singleton)."""
         mock_config_1 = Mock()
         mock_config_2 = Mock()

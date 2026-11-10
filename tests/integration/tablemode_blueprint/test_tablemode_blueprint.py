@@ -154,7 +154,7 @@ def test_tablemode_fail(admin_client: TestClient, admin_access_token: str) -> No
     )
 
 
-def test_tablemode_area_type_success(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_area_type_success(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with valid AREA columns"""
     table_data = {
         "table_name": "Valid Area Table",
@@ -168,7 +168,7 @@ def test_tablemode_area_type_success(admin_client: TestClient, admin_access_toke
     assert result["table_type"] == TableType.AREA
 
 
-def test_tablemode_area_type_failure(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_area_type_failure(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with invalid AREA columns"""
     table_data = {
         "table_name": "Invalid Area Table",
@@ -182,7 +182,7 @@ def test_tablemode_area_type_failure(admin_client: TestClient, admin_access_toke
 
 
 # LINK table type tests
-def test_tablemode_link_type_success(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_link_type_success(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with valid LINK columns"""
     table_data = {
         "table_name": "Valid Link Table",
@@ -196,7 +196,7 @@ def test_tablemode_link_type_success(admin_client: TestClient, admin_access_toke
     assert result["table_type"] == TableType.LINK
 
 
-def test_tablemode_link_type_failure(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_link_type_failure(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with invalid LINK columns"""
     table_data = {
         "table_name": "Invalid Link Table",
@@ -210,7 +210,7 @@ def test_tablemode_link_type_failure(admin_client: TestClient, admin_access_toke
 
 
 # THERMAL table type tests
-def test_tablemode_thermal_type_success(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_thermal_type_success(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with valid THERMAL columns"""
     table_data = {
         "table_name": "Valid Thermal Table",
@@ -224,7 +224,7 @@ def test_tablemode_thermal_type_success(admin_client: TestClient, admin_access_t
     assert result["table_type"] == TableType.THERMAL
 
 
-def test_tablemode_thermal_type_failure(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_thermal_type_failure(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with invalid THERMAL columns"""
     table_data = {
         "table_name": "Invalid Thermal Table",
@@ -238,7 +238,7 @@ def test_tablemode_thermal_type_failure(admin_client: TestClient, admin_access_t
 
 
 # RENEWABLE table type tests
-def test_tablemode_renewable_type_success(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_renewable_type_success(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with valid RENEWABLE columns"""
     table_data = {
         "table_name": "Valid Renewable Table",
@@ -252,7 +252,7 @@ def test_tablemode_renewable_type_success(admin_client: TestClient, admin_access
     assert result["table_type"] == TableType.RENEWABLE
 
 
-def test_tablemode_renewable_type_failure(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_renewable_type_failure(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with invalid RENEWABLE columns"""
     table_data = {
         "table_name": "Invalid Renewable Table",
@@ -266,7 +266,7 @@ def test_tablemode_renewable_type_failure(admin_client: TestClient, admin_access
 
 
 # ST_STORAGE table type tests
-def test_tablemode_st_storage_type_success(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_st_storage_type_success(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with valid ST_STORAGE columns"""
     table_data = {
         "table_name": "Valid ST Storage Table",
@@ -281,7 +281,7 @@ def test_tablemode_st_storage_type_success(admin_client: TestClient, admin_acces
     assert result["table_columns"] == [STStorageColumn.GROUP, STStorageColumn.EFFICIENCY, STStorageColumn.INITIAL_LEVEL]
 
 
-def test_tablemode_st_storage_type_failure(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_st_storage_type_failure(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with invalid ST_STORAGE columns"""
     table_data = {
         "table_name": "Invalid ST Storage Table",
@@ -295,7 +295,7 @@ def test_tablemode_st_storage_type_failure(admin_client: TestClient, admin_acces
 
 
 # BINDING_CONSTRAINT table type tests
-def test_tablemode_binding_constraint_type_success(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_binding_constraint_type_success(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with valid BINDING_CONSTRAINT columns"""
     table_data = {
         "table_name": "Valid Binding Constraint Table",
@@ -313,7 +313,7 @@ def test_tablemode_binding_constraint_type_success(admin_client: TestClient, adm
     assert result["table_type"] == TableType.BINDING_CONSTRAINT
 
 
-def test_tablemode_binding_constraint_type_failure(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_binding_constraint_type_failure(admin_client: TestClient, admin_access_token: str) -> None:
     """Test creating a table with invalid BINDING_CONSTRAINT columns"""
     table_data = {
         "table_name": "Invalid Binding Constraint Table",
@@ -327,7 +327,9 @@ def test_tablemode_binding_constraint_type_failure(admin_client: TestClient, adm
 
 
 # ST_STORAGE_ADDITIONAL_CONSTRAINTS table type tests
-def test_tablemode_st_storage_additional_constraints_type_success(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_st_storage_additional_constraints_type_success(
+    admin_client: TestClient, admin_access_token: str
+) -> None:
     """Test creating a table with valid ST_STORAGE_ADDITIONAL_CONSTRAINTS columns"""
     table_data = {
         "table_name": "Valid ST Storage Additional Constraints Table",
@@ -345,7 +347,9 @@ def test_tablemode_st_storage_additional_constraints_type_success(admin_client: 
     assert result["table_type"] == TableType.ST_STORAGE_ADDITIONAL_CONSTRAINTS
 
 
-def test_tablemode_st_storage_additional_constraints_type_failure(admin_client: TestClient, admin_access_token: str):
+def test_tablemode_st_storage_additional_constraints_type_failure(
+    admin_client: TestClient, admin_access_token: str
+) -> None:
     """Test creating a table with invalid ST_STORAGE_ADDITIONAL_CONSTRAINTS columns"""
     table_data = {
         "table_name": "Invalid ST Storage Additional Constraints Table",

@@ -6,7 +6,7 @@ Python/FastAPI backend in `antarest/` and a React/TypeScript frontend in `webapp
 
 ## Tech stack
 
-- **Backend**: Python 3.11, FastAPI, Pydantic v2, SQLAlchemy 2 + Alembic, Celery/Redis,
+- **Backend**: Python 3.14, FastAPI, Pydantic v2, SQLAlchemy 2 + Alembic, Celery/Redis,
   managed with **uv** (`uv sync`, `uv run ...`).
 - **Frontend**: Node 22.13, React 19, Vite, Redux Toolkit, TanStack
   Query/Router, MUI, vitest.

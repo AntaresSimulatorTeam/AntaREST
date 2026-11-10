@@ -159,8 +159,8 @@ def test_manage_binding_constraint(
             ).apply(study_dao=db_dao_versioned)
             assert output.status, output.message
 
-        output = RemoveMultipleBindingConstraints(
-            id=bd1, command_context=command_context, study_version=study_version
+        output = RemoveMultipleBindingConstraints.model_validate(
+            {"id": bd1, "command_context": command_context, "study_version": study_version}
         ).apply(db_dao_versioned)
         assert output.status, output.message
 
@@ -173,8 +173,8 @@ def test_manage_binding_constraint(
             # "BD 2" is still present in the "default" group — scenario builder must be untouched
             assert db_dao_versioned.get_ruleset().binding_constraints == {"default": {"0": 1}}
 
-        output = RemoveMultipleBindingConstraints(
-            id=bd2, command_context=command_context, study_version=study_version
+        output = RemoveMultipleBindingConstraints.model_validate(
+            {"id": bd2, "command_context": command_context, "study_version": study_version}
         ).apply(db_dao_versioned)
         assert output.status, output.message
 

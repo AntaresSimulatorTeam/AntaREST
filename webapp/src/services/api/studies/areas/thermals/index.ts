@@ -13,7 +13,6 @@
  */
 
 import client from "@/services/api/client";
-import { nameToId } from "@/services/utils";
 import {
   thermalClusterCreationSchema,
   thermalClusterSchema,
@@ -24,9 +23,9 @@ import type {
   CreateThermalClusterParams,
   DeleteThermalClustersParams,
   DuplicateThermalClusterParams,
-  GetThermalClusterParams,
   ThermalCluster,
-  ThermalsAreaParams,
+  ThermalClusterParams,
+  ThermalClustersParams,
   UpdateThermalClusterParams,
 } from "./types";
 
@@ -42,37 +41,30 @@ import type {
 export async function getThermalClusters({
   studyId,
   areaId,
-}: ThermalsAreaParams): Promise<ThermalCluster[]> {
+}: ThermalClustersParams): Promise<ThermalCluster[]> {
   const res = await client.get(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`);
-  const clusters = thermalClustersSchema.parse(res.data);
-  // The backend model preserves name casing for backward compatibility,
-  // while database storage lowercases IDs. Creation and file-backed reads can therefore
-  // return different ID casing from database-backed reads.
-  // TODO: Return canonical lowercase IDs consistently from the API, then remove this normalization.
-  return clusters.map((cluster) => ({ ...cluster, id: nameToId(cluster.id) }));
+  return thermalClustersSchema.parse(res.data);
 }
 
 /**
- * GET /v1/studies/{studyId}/areas/{areaId}/clusters/thermal/{clusterId} - Gets a thermal cluster.
+ * GET /v1/studies/{studyId}/areas/{areaId}/clusters/thermal/{thermalId} - Gets a thermal cluster.
  *
- * @param params - Study, area, and cluster identifiers.
+ * @param params - Study, area, and thermal cluster identifiers.
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
- * @param params.clusterId - Cluster identifier.
+ * @param params.thermalId - Thermal cluster identifier.
  * @returns The complete cluster, with a normalized ID.
  * @throws If the response doesn't match the expected schema.
  */
 export async function getThermalCluster({
   studyId,
   areaId,
-  clusterId,
-}: GetThermalClusterParams): Promise<ThermalCluster> {
+  thermalId,
+}: ThermalClusterParams): Promise<ThermalCluster> {
   const res = await client.get(
-    `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${clusterId}`,
+    `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${thermalId}`,
   );
-  const cluster = thermalClusterSchema.parse(res.data);
-  // TODO: Return canonical lowercase IDs consistently from the API, then remove this normalization.
-  return { ...cluster, id: nameToId(cluster.id) };
+  return thermalClusterSchema.parse(res.data);
 }
 
 /**
@@ -82,7 +74,7 @@ export async function getThermalCluster({
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
  * @param params.values - Cluster values; only name is required.
- * @returns The created cluster, preserving the server's ID casing.
+ * @returns The created cluster, with a normalized ID.
  * @throws If the values or response don't match the expected schema.
  */
 export async function createThermalCluster({
@@ -96,49 +88,49 @@ export async function createThermalCluster({
 }
 
 /**
- * PATCH /v1/studies/{studyId}/areas/{areaId}/clusters/thermal/{clusterId} - Updates a thermal cluster.
+ * PATCH /v1/studies/{studyId}/areas/{areaId}/clusters/thermal/{thermalId} - Updates a thermal cluster.
  *
  * @param params - Identifiers and the partial cluster values to update.
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
- * @param params.clusterId - Cluster identifier.
+ * @param params.thermalId - Thermal cluster identifier.
  * @param params.values - Partial cluster values to update.
- * @returns The updated cluster, preserving the server's ID casing.
+ * @returns The updated cluster, with a normalized ID.
  * @throws If the values or response don't match the expected schema.
  */
 export async function updateThermalCluster({
   studyId,
   areaId,
-  clusterId,
+  thermalId,
   values,
 }: UpdateThermalClusterParams): Promise<ThermalCluster> {
   const body = thermalClusterUpdateSchema.parse(values);
   const res = await client.patch(
-    `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${clusterId}`,
+    `/v1/studies/${studyId}/areas/${areaId}/clusters/thermal/${thermalId}`,
     body,
   );
   return thermalClusterSchema.parse(res.data);
 }
 
 /**
- * POST /v1/studies/{studyId}/areas/{areaId}/thermals/{clusterId} - Duplicates a thermal cluster.
+ * POST /v1/studies/{studyId}/areas/{areaId}/thermals/{thermalId} - Duplicates a thermal cluster.
  *
  * @param params - Source identifiers and the new name, sent as a query parameter.
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
- * @param params.clusterId - Source cluster identifier.
+ * @param params.thermalId - Source thermal cluster identifier.
  * @param params.newName - New cluster name.
- * @returns The duplicated cluster, preserving the server's ID casing.
+ * @returns The duplicated cluster, with a normalized ID.
  * @throws If the response doesn't match the expected schema.
  */
 export async function duplicateThermalCluster({
   studyId,
   areaId,
-  clusterId,
+  thermalId,
   newName,
 }: DuplicateThermalClusterParams): Promise<ThermalCluster> {
   const res = await client.post(
-    `/v1/studies/${studyId}/areas/${areaId}/thermals/${clusterId}`,
+    `/v1/studies/${studyId}/areas/${areaId}/thermals/${thermalId}`,
     null,
     { params: { newName } },
   );
@@ -151,14 +143,14 @@ export async function duplicateThermalCluster({
  * @param params - Study and area identifiers and the cluster IDs to send in the request body.
  * @param params.studyId - Study identifier.
  * @param params.areaId - Area identifier.
- * @param params.clusterIds - Cluster identifiers to delete.
+ * @param params.thermalIds - Thermal cluster identifiers to delete.
  */
 export async function deleteThermalClusters({
   studyId,
   areaId,
-  clusterIds,
+  thermalIds,
 }: DeleteThermalClustersParams): Promise<void> {
   await client.delete(`/v1/studies/${studyId}/areas/${areaId}/clusters/thermal`, {
-    data: clusterIds,
+    data: thermalIds,
   });
 }

@@ -74,7 +74,7 @@ class ThermalClusterFileData(AntaresBaseModel):
     efficiency: float | None = None
     variable_o_m_cost: float | None = Field(default=None, alias="variableomcost")
 
-    # Added in 10.2
+    # Added in 10.3
     ramping_enabled: bool | None = None
     max_upward_power_ramping_rate: float | None = None
     max_downward_power_ramping_rate: float | None = None

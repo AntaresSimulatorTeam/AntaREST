@@ -37,6 +37,8 @@ function FavoriteStudyToggle({ studyId, ...rest }: Props) {
 
   const { data: isFavorite } = useSuspenseQuery({
     ...studyQueries.favorites(),
+    // Grid changes remount the cards. The persistent favorites menu owns mount refreshes.
+    refetchOnMount: false,
     select: selectIsFavorite,
   });
 

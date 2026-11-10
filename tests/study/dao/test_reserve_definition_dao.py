@@ -30,9 +30,14 @@ from antarest.study.business.model.thermal_cluster_model import ThermalCluster, 
 from antarest.study.dao.api.study_dao import StudyDao
 from tests.study.dao.utils import save_area
 
+R1 = ReserveDefinitionId("r1")
+R2 = ReserveDefinitionId("r2")
+R3 = ReserveDefinitionId("r3")
+R4 = ReserveDefinitionId("r4")
 
-def _reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overrides) -> ReserveDefinition:
-    base = dict(
+
+def _reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overrides: object) -> ReserveDefinition:
+    base: dict[str, object] = dict(
         name=name,
         type=reserve_type,
         failure_cost=10.0,
@@ -42,7 +47,7 @@ def _reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overrides)
         energy_activation_ratio=0.9,
     )
     base.update(overrides)
-    return ReserveDefinition(**base)
+    return ReserveDefinition.model_validate(base)
 
 
 def test_save_and_retrieve(dao_10_2: StudyDao) -> None:
@@ -61,7 +66,7 @@ def test_save_updates_existing(dao_10_2: StudyDao) -> None:
     dao_10_2.save_reserve_definitions({"paris": [_reserve("R1", failure_cost=10.0)]})
     dao_10_2.save_reserve_definitions({"paris": [_reserve("R1", failure_cost=999.0)]})
 
-    fetched = dao_10_2.get_reserve_definition("paris", "r1")
+    fetched = dao_10_2.get_reserve_definition("paris", R1)
     assert fetched.failure_cost == 999.0
 
 
@@ -74,17 +79,17 @@ def test_reserve_definition_exists(dao_10_2: StudyDao) -> None:
     save_area(dao_10_2, "paris")
     dao_10_2.save_reserve_definitions({"paris": [_reserve("R1")]})
 
-    assert dao_10_2.reserve_definition_exists("paris", "r1") is True
+    assert dao_10_2.reserve_definition_exists("paris", R1) is True
     assert dao_10_2.reserve_definition_exists("paris", "unknown") is False
 
 
 def test_reserve_definition_exists_on_missing_area(dao_10_2: StudyDao) -> None:
-    assert dao_10_2.reserve_definition_exists("nonexistent", "r1") is False
+    assert dao_10_2.reserve_definition_exists("nonexistent", R1) is False
 
 
 def test_get_raises_area_not_found(dao_10_2: StudyDao) -> None:
     with pytest.raises(AreaNotFound):
-        dao_10_2.get_reserve_definition("nonexistent", "r1")
+        dao_10_2.get_reserve_definition("nonexistent", R1)
 
 
 def test_get_raises_reserve_not_found_when_area_exists(dao_10_2: StudyDao) -> None:
@@ -99,7 +104,7 @@ def test_get_all_for_area(dao_10_2: StudyDao) -> None:
 
     fetched = list(dao_10_2.get_all_reserve_definitions_for_area("paris"))
     assert len(fetched) == 2
-    assert {r.id for r in fetched} == {"r1", "r2"}
+    assert {r.id for r in fetched} == {R1, R2}
 
 
 def test_get_all_for_area_empty(dao_10_2: StudyDao) -> None:
@@ -125,24 +130,24 @@ def test_get_all_across_areas(dao_10_2: StudyDao) -> None:
 
     result = dao_10_2.get_all_reserve_definitions()
     assert set(result.keys()) == {"paris", "lyon"}
-    assert set(result["paris"].keys()) == {"r1", "r2"}
-    assert set(result["lyon"].keys()) == {"r1"}
+    assert set(result["paris"].keys()) == {R1, R2}
+    assert set(result["lyon"].keys()) == {R1}
 
 
 def test_delete(dao_10_2: StudyDao) -> None:
     save_area(dao_10_2, "paris")
     dao_10_2.save_reserve_definitions({"paris": [_reserve("R1"), _reserve("R2")]})
 
-    dao_10_2.delete_reserve_definitions("paris", ["r1"])
+    dao_10_2.delete_reserve_definitions("paris", [R1])
 
-    assert dao_10_2.reserve_definition_exists("paris", "r1") is False
-    assert dao_10_2.reserve_definition_exists("paris", "r2") is True
+    assert dao_10_2.reserve_definition_exists("paris", R1) is False
+    assert dao_10_2.reserve_definition_exists("paris", R2) is True
 
 
 def test_delete_not_found_raises(dao_10_2: StudyDao) -> None:
     save_area(dao_10_2, "paris")
     with pytest.raises((ReserveDefinitionNotFound, ReserveDefinitionsNotFound)):
-        dao_10_2.delete_reserve_definitions("paris", ["unknown"])
+        dao_10_2.delete_reserve_definitions("paris", [ReserveDefinitionId("unknown")])
 
 
 def test_save_and_retrieve_reserve_need(dao_10_2: StudyDao, matrix_service: ISimpleMatrixService) -> None:
@@ -151,9 +156,9 @@ def test_save_and_retrieve_reserve_need(dao_10_2: StudyDao, matrix_service: ISim
 
     matrix_df = pl.DataFrame([[0.0]] * 8760, orient="row")
     matrix_id = matrix_service.create(matrix_df)
-    dao_10_2.save_reserve_needs({"paris": {ReserveDefinitionId("r1"): matrix_id}})
+    dao_10_2.save_reserve_needs({"paris": {R1: matrix_id}})
 
-    fetched = dao_10_2.get_reserve_need("paris", "r1")
+    fetched = dao_10_2.get_reserve_need("paris", R1)
     assert fetched.shape == (8760, 1)
 
 
@@ -181,22 +186,22 @@ def test_removing_a_thermal_reserve_cascades_on_symmetries_and_certifications(da
     initialize_thermal_cluster(th2, dao.get_version())
     dao.save_thermals({"fr": [th1, th2]})
     reserves = []
-    for reserve_name in ["r1", "r2", "r3", "r4"]:
+    for reserve_name in [R1, R2, R3, R4]:
         reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN))
     dao.save_reserve_definitions({"fr": reserves})
 
     # Save 1 symmetry and 1 certification.
     certification = ThermalReserveCertification()
     dao.save_thermal_reserve_certifications(
-        {"fr": {"r1": {"th1": certification, "th2": certification}, "r2": {"th1": certification}}}
+        {"fr": {R1: {"th1": certification, "th2": certification}, R2: {"th1": certification}}}
     )
-    dao.save_thermal_reserve_symmetries({"fr": {"th1": [["r1", "r2"]]}})
+    dao.save_thermal_reserve_symmetries({"fr": {"th1": [[R1, R2]]}})
 
     # Remove the reserve `r1`. We should no longer see `r1` in the symmetries and certifications.
-    dao.delete_reserve_definitions("fr", ["r1"])
+    dao.delete_reserve_definitions("fr", [R1])
 
     assert dao.get_thermal_reserve_symmetries("fr") == {}
-    assert dao.get_thermal_reserve_certifications("fr") == {"r2": {"th1": certification}}
+    assert dao.get_thermal_reserve_certifications("fr") == {R2: {"th1": certification}}
 
 
 def test_removing_an_st_storage_reserve_cascades_on_symmetries_and_certifications(dao_10_2: StudyDao) -> None:
@@ -209,22 +214,22 @@ def test_removing_an_st_storage_reserve_cascades_on_symmetries_and_certification
     initialize_st_storage(sts2, dao.get_version())
     dao.save_st_storages({"fr": [sts1, sts2]})
     reserves = []
-    for reserve_name in ["r1", "r2", "r3", "r4"]:
+    for reserve_name in [R1, R2, R3, R4]:
         reserves.append(ReserveDefinition(name=reserve_name, type=ReserveType.DOWN, id=reserve_name))
     dao.save_reserve_definitions({"fr": reserves})
 
     # Save 1 symmetry and 1 certification.
     certification = StorageReserveCertification()
     dao.save_st_storage_reserve_certifications(
-        {"fr": {"r1": {"sts1": certification, "sts2": certification}, "r2": {"sts1": certification}}}
+        {"fr": {R1: {"sts1": certification, "sts2": certification}, R2: {"sts1": certification}}}
     )
-    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [["r1", "r2"]]}})
+    dao.save_st_storage_reserve_symmetries({"fr": {"sts1": [[R1, R2]]}})
 
     # Remove the reserve `r1`. We should no longer see `r1` in the symmetries and certifications.
-    dao.delete_reserve_definitions("fr", ["r1"])
+    dao.delete_reserve_definitions("fr", [R1])
 
     assert dao.get_st_storage_reserve_symmetries("fr") == {}
-    assert dao.get_st_storage_reserve_certifications("fr") == {"r2": {"sts1": certification}}
+    assert dao.get_st_storage_reserve_certifications("fr") == {R2: {"sts1": certification}}
 
 
 class TestCoexistenceWithGlobalParameters:
@@ -262,7 +267,7 @@ class TestCoexistenceWithGlobalParameters:
             {"paris": ReservesGlobalParameters(reference_activation_duration_up=9)}
         )
 
-        assert dao_10_2.get_reserve_definition("paris", "r1") == reserve
+        assert dao_10_2.get_reserve_definition("paris", R1) == reserve
 
     def test_delete_reserve_preserves_global_parameters(self, dao_10_2: StudyDao) -> None:
         save_area(dao_10_2, "paris")
@@ -270,10 +275,10 @@ class TestCoexistenceWithGlobalParameters:
         dao_10_2.save_reserves_global_parameters({"paris": global_params})
         dao_10_2.save_reserve_definitions({"paris": [_reserve("R1")]})
 
-        dao_10_2.delete_reserve_definitions("paris", ["r1"])
+        dao_10_2.delete_reserve_definitions("paris", [R1])
 
         assert dao_10_2.get_reserves_global_parameters("paris") == global_params
-        assert dao_10_2.reserve_definition_exists("paris", "r1") is False
+        assert dao_10_2.reserve_definition_exists("paris", R1) is False
 
     def test_upsert_multiple_reserves_preserves_global_parameters(self, dao_10_2: StudyDao) -> None:
         save_area(dao_10_2, "paris")
@@ -283,6 +288,6 @@ class TestCoexistenceWithGlobalParameters:
         dao_10_2.save_reserve_definitions({"paris": [_reserve("R1", failure_cost=999.0), _reserve("R3")]})
 
         assert dao_10_2.get_reserves_global_parameters("paris") == global_params
-        assert dao_10_2.get_reserve_definition("paris", "r1").failure_cost == 999.0
-        assert dao_10_2.reserve_definition_exists("paris", "r2") is True
-        assert dao_10_2.reserve_definition_exists("paris", "r3") is True
+        assert dao_10_2.get_reserve_definition("paris", R1).failure_cost == 999.0
+        assert dao_10_2.reserve_definition_exists("paris", R2) is True
+        assert dao_10_2.reserve_definition_exists("paris", R3) is True

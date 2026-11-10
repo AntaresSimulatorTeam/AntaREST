@@ -125,5 +125,7 @@ def test_catalog_batch_preserves_metric_fields(dao_10_2: StudyDao) -> None:
     assert_catalogs_equal(saved, [catalog, empty_catalog])
     actual_catalog_with_metrics = saved[0].model_dump(mode="json", by_alias=True, exclude_unset=True)
     actual_catalog_with_metrics["metrics-definition"].sort(key=lambda metric: metric["id"])
-    content["metrics-definition"].sort(key=lambda metric: metric["id"])
+    expected_metrics = content["metrics-definition"]
+    assert isinstance(expected_metrics, list)
+    expected_metrics.sort(key=lambda metric: metric["id"])
     assert actual_catalog_with_metrics == content

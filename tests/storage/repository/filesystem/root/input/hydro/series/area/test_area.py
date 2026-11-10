@@ -16,12 +16,15 @@ from typing import Any
 from unittest.mock import Mock
 
 import pytest
+from antares.study.version import StudyVersion
 
 from antarest.study.storage.rawstudy.model.filesystem.config.model import FileStudyTreeConfig
 from antarest.study.storage.rawstudy.model.filesystem.matrix.input_series_matrix import InputSeriesMatrix
 from antarest.study.storage.rawstudy.model.filesystem.matrix.matrix_storage_context import MatrixStorageContext
 from antarest.study.storage.rawstudy.model.filesystem.matrix.simulator_default import (
     default_scenario_daily,
+    default_scenario_daily_half,
+    default_scenario_daily_ones,
     default_scenario_hourly,
     default_scenario_monthly,
 )
@@ -64,6 +67,34 @@ AFTER_860 = {
     },
 }
 
+AFTER_920 = {
+    **AFTER_860,
+    "maxHourlyGenPower": {
+        "default_empty": default_scenario_hourly().tolist(),
+        "nb_columns": None,
+    },
+    "maxHourlyPumpPower": {
+        "default_empty": default_scenario_hourly().tolist(),
+        "nb_columns": None,
+    },
+}
+
+AFTER_1020 = {
+    **AFTER_920,
+    "maxDailyReservoirLevels": {
+        "default_empty": default_scenario_daily_ones().tolist(),
+        "nb_columns": None,
+    },
+    "minDailyReservoirLevels": {
+        "default_empty": default_scenario_daily().tolist(),
+        "nb_columns": None,
+    },
+    "avgDailyReservoirLevels": {
+        "default_empty": default_scenario_daily_half().tolist(),
+        "nb_columns": None,
+    },
+}
+
 
 class TestInputHydroSeriesArea:
     @pytest.mark.parametrize(
@@ -72,6 +103,8 @@ class TestInputHydroSeriesArea:
             pytest.param("000", BEFORE_650, id="before-650"),
             pytest.param("650", AFTER_650, id="after-650"),
             pytest.param("860", AFTER_860, id="after-860"),
+            pytest.param("920", AFTER_920, id="after-920"),
+            pytest.param("1020", AFTER_1020, id="after-1020"),
         ],
     )
     def test_build_input_hydro_series_area(
@@ -86,7 +119,7 @@ class TestInputHydroSeriesArea:
             study_path=Path("path/to/study"),
             path=Path("path/to/study"),
             study_id=study_id,
-            version=int(version),  # will become a `str` in the future
+            version=StudyVersion.parse(version),
             areas={},
         )
 
@@ -101,5 +134,6 @@ class TestInputHydroSeriesArea:
         actual_obj = {}
         for key, value in actual.items():
             assert isinstance(value, InputSeriesMatrix)
+            assert value.default_empty is not None
             actual_obj[key] = {"default_empty": value.default_empty().tolist(), "nb_columns": value.nb_columns}
         assert actual_obj == expected

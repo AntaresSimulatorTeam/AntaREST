@@ -88,10 +88,12 @@ class InputHydroCommonCapacity(FolderNode):
             if self.config.version >= info["start_version"]:
                 for area in self.config.area_names():
                     name = f"{info['name']}_{area}"
+                    # Since v9.2, maxpower is optional: hourly hydro power series replace it.
+                    optional_maxpower = info["name"] == "maxpower" and self.config.version >= STUDY_VERSION_9_2
                     children[name] = InputSeriesMatrix(
                         self.matrix_storage_context,
                         self.config.next_file(f"{name}.txt"),
                         default_empty=info["default_empty"],
-                        should_exist=info.get("should_exist", True),
+                        should_exist=info.get("should_exist", True) and not optional_maxpower,
                     )
         return children

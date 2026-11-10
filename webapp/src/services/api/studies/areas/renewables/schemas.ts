@@ -12,18 +12,20 @@
  * This file is part of the Antares project.
  */
 
-import { nullishToOptional } from "@/utils/zodUtils";
+import { nameToId } from "@/services/utils";
 import { z } from "zod";
 import { RENEWABLE_GROUPS, TS_INTERPRETATION_OPTIONS } from "./constants";
 
 export const renewableGroupSchema = z.enum(RENEWABLE_GROUPS);
 
 export const renewableClusterSchema = z.object({
-  id: z.string(),
+  // Backend models preserve name casing, while database storage lowercases IDs.
+  // TODO: Remove normalization once the backend returns consistent IDs.
+  id: z.string().transform(nameToId),
   name: z.string(),
-  // Before v9.3, non-null groups are mapped to the values in renewableGroupSchema.
-  // Since v9.3, groups can be custom strings. The API also permits null.
-  group: z.string().nullable(),
+  // Before v9.3, `group` was restricted to the predefined groups (see `renewableGroupSchema`).
+  // Since v9.3, it can be any custom string.
+  group: z.string(),
   tsInterpretation: z.enum(TS_INTERPRETATION_OPTIONS),
   enabled: z.boolean(),
   unitCount: z.number().int().min(1),
@@ -32,15 +34,11 @@ export const renewableClusterSchema = z.object({
 
 export const renewableClustersSchema = z.array(renewableClusterSchema);
 
-// Null write values are ignored by the backend, including group; they do not clear fields.
-export const renewableClusterUpdateSchema = z.object({
-  group: nullishToOptional(renewableClusterSchema.shape.group.unwrap()),
-  tsInterpretation: nullishToOptional(renewableClusterSchema.shape.tsInterpretation),
-  enabled: nullishToOptional(renewableClusterSchema.shape.enabled),
-  unitCount: nullishToOptional(renewableClusterSchema.shape.unitCount),
-  nominalCapacity: nullishToOptional(renewableClusterSchema.shape.nominalCapacity),
-});
+export const renewableClusterCreationSchema = renewableClusterSchema
+  .omit({ id: true })
+  .partial()
+  .required({ name: true });
 
-export const renewableClusterCreationSchema = renewableClusterUpdateSchema.extend({
-  name: renewableClusterSchema.shape.name,
-});
+export const renewableClusterUpdateSchema = renewableClusterSchema
+  .omit({ id: true, name: true })
+  .partial();

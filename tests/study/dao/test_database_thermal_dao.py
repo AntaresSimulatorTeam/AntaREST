@@ -20,12 +20,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from antarest.core.exceptions import AreaNotFound, ThermalClusterNotFound
+from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.thermal_cluster_model import (
     LawOption,
     LocalTSGenerationBehavior,
     ThermalCluster,
     ThermalClusterCreation,
     ThermalClusterGroup,
+    ThermalClusterUpdate,
     ThermalCostGeneration,
     initialize_thermal_cluster,
 )
@@ -41,13 +43,14 @@ from antarest.study.dao.database.models.thermal import (
 )
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
+from antarest.study.storage.variantstudy.model.command.update_thermal_clusters import UpdateThermalClusters
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.study.dao.utils import save_area
 
 
-def _make_thermal(dao: StudyDao, **kwargs) -> ThermalCluster:
+def _make_thermal(dao: StudyDao, **kwargs: object) -> ThermalCluster:
     """Build a fully-initialized ThermalCluster so DAO write-side validation passes."""
-    cluster = ThermalCluster(**kwargs)
+    cluster = ThermalCluster.model_validate(kwargs)
     initialize_thermal_cluster(cluster, dao.get_version())
     return cluster
 
@@ -128,6 +131,29 @@ def test_save_thermal_creates_cluster(dao: StudyDao) -> None:
 
     with pytest.raises(AreaNotFound):
         dao.save_thermals({"nonexistent": [thermal]})
+
+
+def test_negative_market_bid_cost_commands(dao: StudyDao, command_context: CommandContext) -> None:
+    save_area(dao, "Paris")
+
+    creation = CreateCluster(
+        area_id="paris",
+        parameters=ThermalClusterCreation(name="gas", market_bid_cost=-12.5),
+        command_context=command_context,
+        study_version=dao.get_version(),
+    )
+    assert creation.apply(dao).status
+    assert dao.get_thermal("paris", "gas").market_bid_cost == -12.5
+    assert dao.get_all_thermals_for_area("paris")[0].market_bid_cost == -12.5
+    assert dao.get_all_thermals()["paris"]["gas"].market_bid_cost == -12.5
+
+    update = UpdateThermalClusters(
+        cluster_properties={"paris": {"gas": ThermalClusterUpdate(market_bid_cost=-25.5)}},
+        command_context=command_context,
+        study_version=dao.get_version(),
+    )
+    assert update.apply(dao).status
+    assert dao.get_thermal("paris", "gas").market_bid_cost == -25.5
 
 
 def test_save_thermal_overwrites_existing(dao: StudyDao) -> None:
@@ -242,7 +268,7 @@ def test_thermal_exists_returns_false_for_unknown_area(dao: StudyDao) -> None:
     assert not dao.thermal_exists("nonexistent", "gas")
 
 
-def test_thermal_matrix_round_trip(dao: StudyDao, matrix_service) -> None:
+def test_thermal_matrix_round_trip(dao: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     """Matrices survive a save/get round-trip on both backends."""
     save_area(dao, "Paris")
     dao.save_thermals({"paris": [_make_thermal(dao, name="Gas")]})
@@ -357,9 +383,9 @@ def test_save_thermal_matrix_raises_when_missing(db_dao: DatabaseStudyDao) -> No
             saver({"nonexistent": {"gas": "missing-matrix-id"}})
 
 
-def test_save_thermal_round_trips_ramp_fields(dao_10_2: StudyDao) -> None:
-    """Ramping parameters, added in v10.2, survive a save/get round trip on both backends."""
-    dao = dao_10_2
+def test_save_thermal_round_trips_ramp_fields(dao_10_3: StudyDao) -> None:
+    """Ramping parameters, added in v10.3, survive a save/get round trip on both backends."""
+    dao = dao_10_3
     save_area(dao, "Paris")
 
     thermal = _make_thermal(
@@ -378,7 +404,7 @@ def test_save_thermal_round_trips_ramp_fields(dao_10_2: StudyDao) -> None:
     result = dao.get_thermal("paris", "gas_cluster")
     assert result.ramping_enabled is True
     assert result.max_upward_power_ramping_rate == 10.5
-    # Left at the v10.2 default by `initialize_thermal_cluster`.
+    # Left at the v10.3 default by `initialize_thermal_cluster`.
     assert result.max_downward_power_ramping_rate == 0.0
     assert result.power_increase_cost == 1.0
     assert result.power_decrease_cost == 2.0

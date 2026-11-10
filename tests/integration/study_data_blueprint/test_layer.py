@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from tests.integration.prepare_proxy import PreparerProxy
@@ -20,7 +21,7 @@ class TestLayer:
     @pytest.mark.parametrize("study_type", ["raw", "variant"])
     def test_layer_endpoints(self, client: TestClient, user_access_token: str, study_type: str) -> None:
         """Test layer CRUD operations via HTTP endpoints"""
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}  # type: ignore
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         preparer = PreparerProxy(client, user_access_token)
         study_id = preparer.create_study("foo", version=880)

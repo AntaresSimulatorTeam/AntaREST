@@ -42,7 +42,7 @@ class MockInputSeriesMatrix(InputSeriesMatrix):
         df.write_csv(self.config.path, separator="\t", include_header=False)
 
     def check_errors(self, data: str, url: list[str] | None = None, raising: bool = False) -> list[str]:
-        pass  # not used
+        return []  # not used
 
 
 def test_normalize_denormalize_methods(tmp_path: Path) -> None:

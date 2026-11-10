@@ -68,7 +68,7 @@ class FileStudyReserveDefinitionDao(ReserveDefinitionDao, ABC):
         check_area_exists(file_study.config, area_id)
         try:
             data = file_study.tree.get(_area_reserves_path(area_id))
-        except (ChildNotFoundError, KeyError):
+        except ChildNotFoundError, KeyError:
             return []
         return data  # type: ignore
 

@@ -12,6 +12,7 @@
 import io
 
 import pytest
+from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.study.model import StorageMode
@@ -34,7 +35,7 @@ class TestStudyMatrixIndex:
         user_access_token: str,
         internal_study_id: str,
     ) -> None:
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # Check the matrix index for Thermal clusters
         # ===========================================
@@ -122,7 +123,7 @@ class TestStudyMatrixIndex:
         """
         Test the new time-index endpoint for outputs with different frequencies.
         """
-        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+        client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         output_id = "20201014-1427eco"
 
@@ -200,11 +201,14 @@ class TestStudyMatrixIndex:
         assert actual == expected
 
     @pytest.mark.parametrize("mode", [StorageMode.DATABASE, StorageMode.FILESYSTEM])
-    def test_for_both_type_of_studies(self, client: TestClient, user_access_token: str, mode: StorageMode) -> None:
+    @pytest.mark.parametrize("version", ["9.3", "10.2"])
+    def test_for_both_type_of_studies(
+        self, client: TestClient, user_access_token: str, mode: StorageMode, version: str
+    ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
         # Create a database study
-        res = client.post(f"/v1/studies?name=study&storage_mode={mode}")
+        res = client.post("/v1/studies", params={"name": "study", "storage_mode": mode, "version": version})
         assert res.status_code == 201, res.json()
         study_id = res.json()
 
@@ -242,7 +246,7 @@ class TestStudyMatrixIndex:
             "input/wind/series/wind_france",
             "input/solar/series/solar_france",
             "input/misc-gen/miscgen-france",
-            "input/reserves/france",
+            "input/reserves/france.txt" if version == "10.2" else "input/reserves/france",
             "input/links/belgium/capacities/france_direct",
             "input/links/belgium/capacities/france_indirect",
             "input/thermal/prepro/france/th1/modulation",

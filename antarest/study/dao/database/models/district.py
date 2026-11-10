@@ -34,5 +34,7 @@ DISTRICT_TABLE = Table(
     Column("apply_filter", enum_col(DistrictApplyFilter), nullable=False),
     Column("add_areas", String, nullable=False),
     Column("subtract_areas", String, nullable=False),
+    Column("filter_synthesis", String, nullable=True),
+    Column("filter_year_by_year", String, nullable=True),
     ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
 )

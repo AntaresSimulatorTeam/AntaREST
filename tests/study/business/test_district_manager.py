@@ -89,7 +89,7 @@ def study_with_sets(empty_study_880: FileStudy) -> FileStudyInterface:
 
 
 class TestDistrictManager:
-    def test_get_districts(self, manager: DistrictManager, study_with_sets: FileStudy) -> None:
+    def test_get_districts(self, manager: DistrictManager, study_with_sets: FileStudyInterface) -> None:
         actual = manager.get_districts(study_with_sets)
         expected = [
             DistrictDTO(
@@ -117,13 +117,15 @@ class TestDistrictManager:
         assert actual == expected
 
     def test_create_district__district_already_exist(
-        self, manager: DistrictManager, study_with_sets: FileStudy
+        self, manager: DistrictManager, study_with_sets: FileStudyInterface
     ) -> None:
         district_creation = DistrictCreation(name="d1", output=True, comments="", areas=[])
         with pytest.raises(DistrictAlreadyExist):
             manager.create_district(study_with_sets, district_creation)
 
-    def test_create_district__area_not_found(self, manager: DistrictManager, study_with_sets: FileStudy) -> None:
+    def test_create_district__area_not_found(
+        self, manager: DistrictManager, study_with_sets: FileStudyInterface
+    ) -> None:
         district_creation = DistrictCreation(
             name="d4",
             output=True,
@@ -133,7 +135,7 @@ class TestDistrictManager:
         with pytest.raises(AreaNotFound, match=r"MISSING"):
             manager.create_district(study_with_sets, district_creation)
 
-    def test_create_district__nominal(self, manager: DistrictManager, study_with_sets: FileStudy) -> None:
+    def test_create_district__nominal(self, manager: DistrictManager, study_with_sets: FileStudyInterface) -> None:
         with patch.object(study_with_sets, "add_commands", wraps=study_with_sets.add_commands) as add_commands_mock:
             dto = DistrictCreation(
                 name="D4",
@@ -153,12 +155,16 @@ class TestDistrictManager:
             assert actual == expected
             _check_add_commands(add_commands_mock, CreateDistrict)
 
-    def test_update_district__district_not_found(self, manager: DistrictManager, study_with_sets: FileStudy) -> None:
+    def test_update_district__district_not_found(
+        self, manager: DistrictManager, study_with_sets: FileStudyInterface
+    ) -> None:
         dto = DistrictUpdate(output=True, comments="", areas=[])
         with pytest.raises(DistrictNotFound, match="MISSING"):
             manager.update_district(study_with_sets, "MISSING", dto)
 
-    def test_update_district__area_not_found(self, manager: DistrictManager, study_with_sets: FileStudy) -> None:
+    def test_update_district__area_not_found(
+        self, manager: DistrictManager, study_with_sets: FileStudyInterface
+    ) -> None:
         dto = DistrictUpdate(
             output=True,
             comments="",
@@ -167,7 +173,7 @@ class TestDistrictManager:
         with pytest.raises(AreaNotFound, match=r"MISSING"):
             manager.update_district(study_with_sets, "d1", dto)
 
-    def test_update_district__nominal(self, manager: DistrictManager, study_with_sets: FileStudy) -> None:
+    def test_update_district__nominal(self, manager: DistrictManager, study_with_sets: FileStudyInterface) -> None:
         with patch.object(study_with_sets, "add_commands", wraps=study_with_sets.add_commands) as add_commands_mock:
             dto = DistrictUpdate(
                 output=True,
@@ -177,11 +183,13 @@ class TestDistrictManager:
             manager.update_district(study_with_sets, "d1", dto)
             _check_add_commands(add_commands_mock, UpdateDistrict)
 
-    def test_remove_district__district_not_found(self, manager: DistrictManager, study_with_sets: FileStudy) -> None:
+    def test_remove_district__district_not_found(
+        self, manager: DistrictManager, study_with_sets: FileStudyInterface
+    ) -> None:
         with pytest.raises(DistrictNotFound, match="MISSING"):
             manager.remove_district(study_with_sets, district_id="MISSING")
 
-    def test_remove_district__nominal(self, manager: DistrictManager, study_with_sets: FileStudy) -> None:
+    def test_remove_district__nominal(self, manager: DistrictManager, study_with_sets: FileStudyInterface) -> None:
         with patch.object(study_with_sets, "add_commands", wraps=study_with_sets.add_commands) as add_commands_mock:
             manager.remove_district(study_with_sets, district_id="d1")
             _check_add_commands(add_commands_mock, RemoveDistrict)

@@ -12,8 +12,8 @@
 import os
 import shutil
 import zipfile
-from pathlib import Path
-from unittest.mock import Mock
+from pathlib import Path, PurePosixPath
+from unittest.mock import Mock, patch
 
 import pytest
 from typing_extensions import override
@@ -23,6 +23,7 @@ from antarest.core.exceptions import (
     OutputAlreadyArchived,
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
+    OutputFileNotFound,
     OutputNotFound,
     StudyNotFoundError,
 )
@@ -30,6 +31,7 @@ from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
+from antarest.output.model.output_type import OutputType
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
 from antarest.output.storage.file.out_of_study import OutOfStudyFileOutputStorage
@@ -42,8 +44,8 @@ from antarest.output.storage.output_storage import (
     OutputSettingsOptimization,
     OutputStorageType,
 )
+from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import DEFAULT_WORKSPACE_NAME
-from antarest.study.storage.rawstudy.model.filesystem.config.model import Mode
 from tests.test_helpers.dates import utc_to_local
 
 
@@ -81,7 +83,7 @@ class OutOfStudyFileOutputProvider(IFileOutputsProvider):
 
 
 @pytest.fixture(params=[OutputStorageType.IN_STUDY_FILE_TREE, OutputStorageType.OUT_OF_STUDY_FILE_TREE])
-def output_storage(request, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputStorage:
+def output_storage(request: pytest.FixtureRequest, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputStorage:
     executor = Mock(spec=IRemoteExecutor)
 
     studies_dir = tmp_path / "studies"
@@ -94,8 +96,8 @@ def output_storage(request, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputS
         zf.extractall(studies_dir)
 
     if request.param == OutputStorageType.IN_STUDY_FILE_TREE:
-        klass = InStudyFileOutputStorage
-        outputs_provider = InStudySimpleFileOutputsProvider(studies_dir)
+        klass: type[InStudyFileOutputStorage] | type[OutOfStudyFileOutputStorage] = InStudyFileOutputStorage
+        outputs_provider: IFileOutputsProvider = InStudySimpleFileOutputsProvider(studies_dir)
     else:
         klass = OutOfStudyFileOutputStorage
         outputs_provider = OutOfStudyFileOutputProvider(outputs_dir)
@@ -103,7 +105,13 @@ def output_storage(request, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputS
         (studies_dir / "STA-mini" / "output").rename(outputs_dir / "STA-mini")
         shutil.rmtree(studies_dir)
 
-    return klass(outputs_provider=outputs_provider, cache=LocalCache(), remote_executor=executor, repository=Mock())
+    return klass(
+        outputs_provider=outputs_provider,
+        cache=LocalCache(),
+        config=Mock(),
+        remote_executor=executor,
+        repository=Mock(),
+    )
 
 
 def test_file_output_storage(output_storage: IOutputStorage) -> None:
@@ -132,6 +140,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=1,
             archived=False,
             storage_type=storage_type,
+            output_type=OutputType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -159,6 +168,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=2,
             archived=False,
             storage_type=storage_type,
+            output_type=OutputType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -186,6 +196,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=1,
             archived=False,
             storage_type=storage_type,
+            output_type=OutputType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -213,6 +224,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=1,
             archived=False,
             storage_type=storage_type,
+            output_type=OutputType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Adequacy",
@@ -240,6 +252,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=1,
             archived=True,
             storage_type=storage_type,
+            output_type=OutputType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Adequacy",
@@ -267,6 +280,7 @@ def test_file_output_storage(output_storage: IOutputStorage) -> None:
             nb_years=1,
             archived=False,
             storage_type=storage_type,
+            output_type=OutputType.LEGACY,
             settings=OutputSettings(
                 general=OutputSettingsGeneral(
                     mode="Economy",
@@ -323,6 +337,31 @@ def test_output_deletion(output_storage: IOutputStorage, tmp_path: Path) -> None
     assert "20201014-1422eco-hello" not in [o.id for o in outputs]
 
 
+def test_failed_compression_preserves_source_and_cleans_temporary_zip(
+    output_storage: IOutputStorage, tmp_path: Path
+) -> None:
+    output_id = "20201014-1422eco-hello"
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        output_folder = tmp_path / "studies" / "STA-mini" / "output"
+    else:
+        output_folder = tmp_path / "outputs" / "STA-mini"
+    source = output_folder / output_id
+    original_files = {p.relative_to(source): p.read_bytes() for p in source.rglob("*") if p.is_file()}
+
+    def fail_compression(src: Path, target: Path, **kwargs: object) -> None:
+        target.write_bytes(b"partial ZIP")
+        raise OSError("Compression failed")
+
+    with patch("antarest.output.storage.file.abstract_storage.archive_dir", side_effect=fail_compression):
+        with pytest.raises(OSError, match="Compression failed"):
+            output_storage.archive_study_output("STA-mini", output_id)
+
+    assert source.is_dir()
+    assert {p.relative_to(source): p.read_bytes() for p in source.rglob("*") if p.is_file()} == original_files
+    assert not (output_folder / f"{output_id}.zip").exists()
+    assert not list(output_folder.glob("~archive-*.tmp"))
+
+
 def test_output_archival(output_storage: IOutputStorage, tmp_path: Path) -> None:
     assert not output_storage.is_output_archived("STA-mini", "20201014-1422eco-hello")
     output_storage.archive_study_output("STA-mini", "20201014-1422eco-hello")
@@ -360,6 +399,23 @@ def test_output_archival(output_storage: IOutputStorage, tmp_path: Path) -> None
         output_storage.unarchive_study_output("non-existent", "non-existent")
     with pytest.raises(OutputNotFound):
         output_storage.unarchive_study_output("STA-mini", "non-existent")
+
+
+def test_get_disk_usage_includes_archive(output_storage: IOutputStorage, tmp_path: Path) -> None:
+    output_folder = tmp_path / "studies" / "STA-mini" / "output"
+    if output_storage.storage_type == OutputStorageType.OUT_OF_STUDY_FILE_TREE:
+        output_folder = tmp_path / "outputs" / "STA-mini"
+
+    output_id = "20201014-1422eco-hello"
+    directory_size = output_storage.get_disk_usage("STA-mini", output_id)
+    archive_path = output_folder / f"{output_id}.zip"
+    archive_dir(output_folder / output_id, archive_path)
+    archive_size = archive_path.stat().st_size
+
+    assert output_storage.get_disk_usage("STA-mini", output_id) == directory_size + archive_size
+
+    shutil.rmtree(output_folder / output_id)
+    assert output_storage.get_disk_usage("STA-mini", output_id) == archive_size
 
 
 def test_output_copy(output_storage: IOutputStorage, tmp_path: Path) -> None:
@@ -477,6 +533,38 @@ def test_write_output_to_dir(output_storage: IOutputStorage, tmp_path: Path) -> 
         output_storage.write_output_to_dir("non-existent", "20201014-1427eco", export_path)
     with pytest.raises(OutputNotFound):
         output_storage.write_output_to_dir("STA-mini", "non-existent", export_path)
+
+
+def test_raw_files(output_storage: IOutputStorage) -> None:
+    files = output_storage.list_raw_files("STA-mini", "20201014-1427eco")
+    assert len(files) == 79
+    assert files[:3] == [
+        PurePosixPath("about-the-study/areas.txt"),
+        PurePosixPath("about-the-study/comments.txt"),
+        PurePosixPath("about-the-study/links.txt"),
+    ]
+
+    content = output_storage.read_raw_file("STA-mini", "20201014-1427eco", PurePosixPath("about-the-study/areas.txt"))
+    assert content == b"DE\r\nES\r\nFR\r\nIT\r\n"
+
+    # Missing file, directory, file outside the output
+    for path in ["unknown.txt", "about-the-study", "../20201014-1422eco-hello/info.antares-output"]:
+        with pytest.raises(OutputFileNotFound):
+            output_storage.read_raw_file("STA-mini", "20201014-1427eco", PurePosixPath(path))
+
+    with pytest.raises(StudyNotFoundError):
+        output_storage.list_raw_files("non-existent", "20201014-1427eco")
+    with pytest.raises(OutputNotFound):
+        output_storage.list_raw_files("STA-mini", "non-existent")
+    with pytest.raises(OutputNotFound):
+        output_storage.read_raw_file("STA-mini", "non-existent", PurePosixPath("about-the-study/areas.txt"))
+
+    # Output ids that are not a direct child of the study outputs folder
+    for output_id in ["..", "..\\", ".", ""]:
+        with pytest.raises(OutputNotFound):
+            output_storage.list_raw_files("STA-mini", output_id)
+        with pytest.raises(OutputNotFound):
+            output_storage.read_raw_file("STA-mini", output_id, PurePosixPath("20201014-1427eco/info.antares-output"))
 
 
 def test_get_logs(output_storage: IOutputStorage, tmp_path: Path) -> None:

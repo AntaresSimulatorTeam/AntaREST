@@ -12,8 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/GroupedDataTable/utils";
+import CellSkeleton from "@/components/DataTable/CellSkeleton";
+import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/DataTable/utils";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import type {
   ProductionType,
   Reserve,
@@ -87,6 +89,10 @@ function getCertificationValue(
   return values[field] ?? null;
 }
 
+function isOptimisticRow(row: CertificationsTableRow) {
+  return row.kind === "reserve" && isQueryListItemOptimistic(row.reserve);
+}
+
 // Displays reserves as parent rows and their certified assets as expandable
 // sub-rows, with one column per certification parameter of the production type.
 // Clicking a reserve name opens the asset selection drawer, clicking an asset
@@ -117,7 +123,7 @@ function CertificationsTable({
         Cell: ({ renderedCellValue, row, staticRowIndex, table }) => (
           <Stack direction="row" alignItems="center" gap={0.5}>
             <MRT_ExpandButton row={row} staticRowIndex={staticRowIndex} table={table} />
-            {readOnly ? (
+            {readOnly || isOptimisticRow(row.original) ? (
               renderedCellValue
             ) : (
               <Box
@@ -155,6 +161,10 @@ function CertificationsTable({
         header: t("study.modeling.reserves.certifications.field.enabled"),
         size: 80,
         Cell: ({ cell }) => {
+          if (isOptimisticRow(cell.row.original)) {
+            return <CellSkeleton />;
+          }
+
           const value = cell.getValue();
 
           if (value === null) {
@@ -177,6 +187,12 @@ function CertificationsTable({
             id: field,
             header: t(`study.modeling.reserves.certifications.field.${field}`),
             size: 80,
+            Cell: ({ cell }) => {
+              if (isOptimisticRow(cell.row.original)) {
+                return <CellSkeleton />;
+              }
+              return cell.getValue();
+            },
           },
         ),
       ),

@@ -26,6 +26,7 @@ from antarest.study.business.model.renewable_cluster_model import (
     RenewableClusterGroup,
     TimeSeriesInterpretation,
 )
+from antarest.study.business.model.scenario_builder_model import Value
 from antarest.study.business.model.thermal_cluster_model import ThermalClusterCreation, ThermalClusterGroup
 from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 from antarest.study.model import STUDY_VERSION_8_8, STUDY_VERSION_9_2
@@ -235,7 +236,7 @@ class TestRemoveArea:
             assert output.status, output.message
 
             # Add scenario builder data
-            default_ruleset = {
+            default_ruleset: dict[str, Value | None] = {
                 f"l,{area_id2},0": 1,
                 f"h,{area_id2},0": 1,
                 f"w,{area_id2},0": 1,
@@ -246,6 +247,7 @@ class TestRemoveArea:
             if study_version >= 800:
                 default_ruleset[f"hl,{area_id2},0"] = 1
             if study_version >= 810:
+                assert renewable_id is not None
                 default_ruleset[f"r,{area_id2},0,{renewable_id.lower()}"] = 1
             if study_version >= 870:
                 default_ruleset["bc,bd 2,0"] = 1
@@ -274,8 +276,8 @@ class TestRemoveArea:
             assert "bd 2" in output.message
 
             # First remove the constraint
-            output = RemoveMultipleBindingConstraints(
-                id="bd 2", command_context=command_context, study_version=study_version
+            output = RemoveMultipleBindingConstraints.model_validate(
+                {"id": "bd 2", "command_context": command_context, "study_version": study_version}
             ).apply(study_dao=dao)
             assert output.status, output.message
 
