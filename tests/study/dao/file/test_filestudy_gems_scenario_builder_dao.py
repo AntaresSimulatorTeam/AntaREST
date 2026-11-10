@@ -198,7 +198,7 @@ def test_conversion_roundtrip(
     StudyConverter(file_dao, dao_10_2, STUDY_VERSION_10_2, matrix_service).convert_study_inputs()
     assert dao_10_2.get_gems_scenario_builder() == builder
     path.unlink()
-    (file_dao.get_file_study().config.study_path / "input/model-libraries/library.yaml").unlink(missing_ok=True)
+    (file_dao.get_file_study().config.study_path / "input/model-libraries/library.yml").unlink(missing_ok=True)
     # Only GEMS is copied back: the destination already contains the legacy study inputs.
     StudyConverter(dao_10_2, file_dao, STUDY_VERSION_10_2, matrix_service)._convert_gems()
     assert file_dao.get_gems_scenario_builder() == builder
