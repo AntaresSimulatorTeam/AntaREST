@@ -21,6 +21,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from antarest.blobstore.service import IBlobService
+from antarest.core.utils.polars import read_gems_tsv
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -35,7 +36,13 @@ from antarest.study.business.model.config.optimization_config_model import (
 from antarest.study.business.model.gems.calendar import GemsCalendar
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
-from antarest.study.business.model.gems.system import GemsAreaConnection, GemsSystem, GemsThermalCapacityConnection
+from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
+from antarest.study.business.model.gems.system import (
+    GemsAreaConnection,
+    GemsParameters,
+    GemsSystem,
+    GemsThermalCapacityConnection,
+)
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.link_model import Link
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
@@ -59,6 +66,9 @@ from antarest.study.storage.variantstudy.model.command.create_area import Create
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import build_db_dao, build_filesystem_dao
 from tests.study.dao.utils import save_area
+
+ASSETS_PATH = Path(__file__).parent / "assets"
+DATA_SERIES_PATH = ASSETS_PATH / "gems" / "data-series"
 
 
 @pytest.fixture
@@ -463,11 +473,11 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert second_model.ports[1].type == "flow"
 
 
-def check_gems_system_integrity(system: GemsSystem) -> None:
+def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatrixService) -> None:
     assert system is not None
     assert system.id == "System 8_1"
     assert system.description == "Electrolyser - V8.6"
-    assert len(system.components) == 2
+    assert len(system.components) == 3
 
     first_component = system.components[0]
     assert first_component.id == "dsr"
@@ -479,9 +489,17 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert first_component.parameters[0].scenario_dependent is False
     assert first_component.parameters[0].value == 10
     assert first_component.parameters[1].id == "max_load"
-    assert first_component.parameters[1].time_dependent is False
+    assert first_component.parameters[1].time_dependent is True
     assert first_component.parameters[1].scenario_dependent is False
-    assert first_component.parameters[1].value == 200
+    assert first_component.integer_strategy is not None
+    assert first_component.integer_strategy.id.value == "heuristic"
+    assert first_component.integer_strategy.heuristic_id is not None
+    assert first_component.integer_strategy.heuristic_id.value == "fast"
+
+    first_component_value = matrix_service.get(str(first_component.parameters[1].value))
+    assert first_component_value is not None
+    expected = pl.DataFrame([10.122, 12.344, 14.0, 16.566, 18.788, 20.5], orient="row", schema=["column_1"])
+    assert first_component_value.equals(expected)
 
     second_component = system.components[1]
     assert second_component.id == "electrolyser"
@@ -494,9 +512,43 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
     assert second_component.parameters[0].scenario_dependent is False
     assert second_component.parameters[0].value == 0.7
     assert second_component.parameters[1].id == "p_max"
-    assert second_component.parameters[1].time_dependent is False
-    assert second_component.parameters[1].scenario_dependent is False
-    assert second_component.parameters[1].value == 300
+    assert second_component.parameters[1].time_dependent is True
+    assert second_component.parameters[1].scenario_dependent is True
+    assert second_component.integer_strategy is not None
+    assert second_component.integer_strategy.id.value == "relaxed"
+    assert second_component.integer_strategy.heuristic_id is None
+
+    second_component_value = matrix_service.get(str(second_component.parameters[1].value))
+    assert second_component_value is not None
+    expected_matrix = pl.DataFrame(
+        [
+            [2.2, 4.4, 6.6, 8.8, 10.10, 12.12, 14.14, 16.16],
+            [3.3, 6.6, 9.9, 12.12, 15.15, 18.18, 21.21, 24.24],
+            [4.4, 8.8, 12.12, 16.16, 20.20, 24.24, 28.28, 32.32],
+        ],
+        orient="row",
+        schema=["column_1", "column_2", "column_3", "column_4", "column_5", "column_6", "column_7", "column_8"],
+    )
+    assert second_component_value.equals(expected_matrix)
+
+    third_component = system.components[2]
+    assert third_component.id == "electrolyser2"
+    assert third_component.model == "andromede-v1-models-weo-hybrid.electrolyser"
+    assert third_component.scenario_group == "sg1"
+    assert third_component.parameters is not None
+    assert len(third_component.parameters) == 2
+    assert third_component.parameters[0].id == "efficiency"
+    assert third_component.parameters[0].time_dependent is False
+    assert third_component.parameters[0].scenario_dependent is False
+    assert third_component.parameters[0].value == 1.4
+    assert third_component.parameters[1].id == "p_max"
+    assert third_component.parameters[1].time_dependent is True
+    assert third_component.parameters[1].scenario_dependent is True
+    assert third_component.integer_strategy is None
+
+    third_component_value = matrix_service.get(str(third_component.parameters[1].value))
+    assert third_component_value is not None
+    assert third_component_value.equals(expected_matrix)
 
     assert system.connections is not None
     assert len(system.connections) == 1
@@ -520,6 +572,54 @@ def check_gems_system_integrity(system: GemsSystem) -> None:
             }
         )
     ]
+
+
+def add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
+    # Add the library and the legacy objects first, as the system file requires them
+    add_library_file_to_study_dao(dao)
+    add_legacy_objects_to_study_dao(dao)
+    dao.save_gems_scenario_builder(
+        GemsScenarioBuilder(scenarios={"sg1": [GemsScBuilderMapping(scenario=0, time_series_index=1)]})
+    )
+
+    gems_system_asset_path = ASSETS_PATH / "gems" / "system" / "system.yml"
+    content = YAMLReader().read(gems_system_asset_path)["system"]
+    system = GemsSystem.model_validate(content)
+
+    # The system file references dependent parameters by data series id, matching the real-world
+    # file-based `system.yml` convention. `save_components` reads the matrix from an actual file, so
+    # we resolve those ids to the matching CSV asset before saving. File studies expect matrix ids instead,
+    # so the matrices are created beforehand in the matrix store.
+    for component in system.components:
+        for parameter in component.parameters:
+            if parameter.is_dataseries():
+                for extension in {".csv", ".tsv"}:
+                    file_path = DATA_SERIES_PATH / f"{parameter.get_value_as_str()}{extension}"
+                    if file_path.exists():
+                        add_file_content_to_matrix_store(dao, parameter, file_path)
+
+    dao.save_system(system)
+    return system
+
+
+def add_library_file_to_study_dao(dao: StudyDao) -> None:
+    gems_library_asset_path = ASSETS_PATH / "gems" / "libraries" / "8_1_simulator_nr_tests.yml"
+    content = YAMLReader().read(gems_library_asset_path)["library"]
+    library = GemsLibrary.model_validate(content)
+    dao.save_library(library)
+
+
+def add_legacy_objects_to_study_dao(dao: StudyDao) -> None:
+    # Legacy objects referenced by the system file asset
+    save_area(dao, "west")
+    save_area(dao, "West-H2")
+    cluster = ThermalCluster(id="gas_cluster", name="Gas_Cluster")
+    initialize_thermal_cluster(cluster, dao.get_version())
+    dao.save_thermals({"west": [cluster]})
+
+
+def add_file_content_to_matrix_store(dao: StudyDao, parameter: GemsParameters, csv_path: Path) -> None:
+    parameter.value = dao.matrix_service.create(read_gems_tsv(csv_path))
 
 
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:

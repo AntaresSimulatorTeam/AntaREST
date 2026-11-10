@@ -45,6 +45,7 @@ GEMS_COMPONENTS_TABLE = Table(
     Column("library_id", String(255), nullable=False),
     Column("model_id", String(255)),
     Column("scenario_group", String(255), nullable=True),
+    Column("integer_strategy", String(), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id"],
         ["gems_system_metadata.study_data_id"],
@@ -58,7 +59,10 @@ GEMS_COMPONENTS_TABLE = Table(
     ForeignKeyConstraint(
         ["study_data_id", "scenario_group"],
         ["gems_scenario_builder.study_data_id", "gems_scenario_builder.scenario_group"],
-        ondelete="SET NULL",
+        # These 2 lines allow the foreign key constraint to be deferred until the end of the transaction (the COMMIT)
+        # This way no issue is encountered when deleting a study
+        deferrable=True,
+        initially="DEFERRED",
     ),
 )
 
@@ -70,11 +74,22 @@ GEMS_COMPONENT_PARAMETERS_TABLE = Table(
     Column("parameter_id", String(255), primary_key=True),
     Column("time_dependent", Boolean, nullable=False),
     Column("scenario_dependent", Boolean, nullable=False),
-    Column("value", Float, nullable=False),
+    # Contains the value of the float constant in case (time_dependent, scenario_dependent) = (False, False)
+    Column("value", Float, nullable=True),
+    # Contains the id of the matrix in the matrix store in case (time_dependent, scenario_dependent) != (False, False)
+    Column("matrix_id", String(64), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id", "component_id"],
         ["gems_components.study_data_id", "gems_components.component_id"],
         ondelete="CASCADE",
+    ),
+    CheckConstraint(
+        "(matrix_id IS NULL) = (NOT time_dependent AND NOT scenario_dependent)",
+        name="ck_gems_component_parameters_matrix_id_matches_dependent",
+    ),
+    CheckConstraint(
+        "(value IS NULL) =  (time_dependent OR scenario_dependent)",
+        name="ck_gems_component_parameters_value_matches_dependent",
     ),
 )
 

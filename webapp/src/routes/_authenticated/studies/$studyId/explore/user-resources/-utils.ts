@@ -56,6 +56,7 @@ const SUPPORTED_TEXT_EXTENSIONS = [
   "tsv",
   "ini",
   "yml",
+  "yaml",
   "json",
 ] as const;
 

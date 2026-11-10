@@ -57,8 +57,8 @@ class _GemsModelsParameters(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
-    time_dependent: bool
-    scenario_dependent: bool
+    time_dependent: bool = True
+    scenario_dependent: bool = True
 
 
 class _GemsModelsPorts(AntaresBaseModel):
@@ -94,5 +94,6 @@ class GemsLibrary(AntaresBaseModel):
     id: str
     description: str | None = None
     version: str | None = None
+    taxonomy: str | None = None
     port_types: list[_GemsPortType] = Field(default_factory=list)
     models: list[_GemsModels] = Field(default_factory=list)

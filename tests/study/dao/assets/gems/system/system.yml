@@ -15,17 +15,22 @@ system:
   components:
     - id: dsr
       model: andromede-v1-models-weo-hybrid.dsr
+      integer-strategy:
+        id: heuristic
+        heuristic-id: fast
       parameters:
         - id: curtailment_price
           time-dependent: false
           scenario-dependent: false
           value: 10
         - id: max_load
-          time-dependent: false
+          time-dependent: true
           scenario-dependent: false
-          value: 200
+          value: max_load_values
     - id: electrolyser
       model: andromede-v1-models-weo-hybrid.electrolyser
+      integer-strategy:
+        id: relaxed
       scenario-group: sg1
       parameters:
         - id: efficiency
@@ -33,9 +38,21 @@ system:
           time-dependent: false
           value: 0.7
         - id: p_max
+          time-dependent: true
+          scenario-dependent: true
+          value: time-and-scenario-dependent-example
+    - id: electrolyser2
+      model: andromede-v1-models-weo-hybrid.electrolyser
+      scenario-group: sg1
+      parameters:
+        - id: efficiency
           scenario-dependent: false
           time-dependent: false
-          value: 300
+          value: 1.4
+        - id: p_max
+          time-dependent: true
+          scenario-dependent: true
+          value: time-and-scenario-dependent-example
 
   connections:
     - component1: dsr
