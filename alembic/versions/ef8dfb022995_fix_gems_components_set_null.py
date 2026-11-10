@@ -26,6 +26,8 @@ def upgrade():
             "gems_scenario_builder",
             ["study_data_id", "scenario_group"],
             ["study_data_id", "scenario_group"],
+            deferrable=True,
+            initially="DEFERRED",
         )
 
 

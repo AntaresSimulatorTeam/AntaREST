@@ -11,7 +11,9 @@
 # This file is part of the Antares project.
 import pytest
 
+from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
+from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.model import STUDY_VERSION_8_8
 from antarest.study.storage.variantstudy.model.command.create_gems_scenario import CreateGemsScenario
@@ -70,11 +72,22 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
         }
     )
 
+    # Create a component that references the created scenario
+    dao.save_library(GemsLibrary.model_validate({"id": "library1", "models": [{"id": "model1"}]}))
+    dao.save_system(
+        GemsSystem(id="id", components=[GemsComponent(id="id", model="library1.model1", scenario_group="scenario_1")])
+    )
+
     # Delete the scenario
     cmd3 = RemoveGemsScenario(study_version=version, command_context=command_context, scenario_name="scenario_1")
     result = cmd3.apply(dao)
     assert result.status is True
     assert dao.get_gems_scenario_builder() is None
+
+    # Ensures the scenario group is removed from the components table.
+    components = dao.get_components()
+    assert len(components) == 1
+    assert components[0].scenario_group is None
 
     ##########################
     # Error cases
