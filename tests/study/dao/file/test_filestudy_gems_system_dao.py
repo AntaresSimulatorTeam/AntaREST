@@ -74,8 +74,14 @@ def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, matrix_service:
     ]
 
     yaml_system = YAMLReader().read(dao.get_file_study().config.study_path / "input" / "system.yml")["system"]
-    assert yaml_system["components"][0]["parameters"][1]["value"] == "data_series_0"
-    assert yaml_system["components"][1]["parameters"][1]["value"] == "data_series_1"
+    components = yaml_system["components"]
+    assert components[0]["parameters"][1]["value"] == "data_series_0"
+    assert components[1]["parameters"][1]["value"] == "data_series_1"
+
+    # Ensures we do not dump `None` values inside the YAML file
+    for component in components:
+        if "scenario-group" in component:
+            assert component["scenario-group"] is not None
 
     saved_system = dao.get_system()
     assert saved_system is not None
