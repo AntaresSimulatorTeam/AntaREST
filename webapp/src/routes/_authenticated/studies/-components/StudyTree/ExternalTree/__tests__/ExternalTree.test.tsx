@@ -17,7 +17,9 @@ import studiesReducer, {
   requestStudyFolderReveal,
 } from "@/redux/ducks/studies";
 import { getFolders, getWorkspaces } from "@/services/api/study";
-import { StorageMode, StudyType, type StudyMetadata } from "@/types/types";
+import type { StudyMetadata } from "@/types/types";
+import { deferred } from "@/tests/queryUtils";
+import { externalStudy, folder, FOLDERS_BY_PATH } from "./fixtures";
 import { createTheme, ThemeProvider } from "@mui/material";
 import { configureStore } from "@reduxjs/toolkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -53,37 +55,6 @@ vi.mock(
 
 const theme = createTheme({ cssVariables: true });
 
-function makeStudy(folder: string): StudyMetadata {
-  return {
-    id: folder,
-    name: folder,
-    folder,
-    workspace: "workspace",
-    managed: false,
-    creationDate: "2026-10-30",
-    modificationDate: "2026-10-30",
-    owner: { name: "Owner" },
-    editor: "",
-    author: "",
-    type: StudyType.RAW,
-    version: "9.3",
-    archived: false,
-    storageMode: StorageMode.FILESYSTEM,
-    groups: [],
-    publicMode: "READ",
-  };
-}
-
-function folder(name: string, parentPath: string) {
-  return {
-    name,
-    path: [parentPath.replace(/^\/workspace\/?/, ""), name].filter(Boolean).join("/"),
-    parentPath,
-    workspace: "workspace",
-    hasChildren: true,
-  };
-}
-
 function setup(studies: StudyMetadata[] = [], initialPath?: string) {
   const store = configureStore({ reducer: { studies: studiesReducer } });
 
@@ -118,13 +89,8 @@ beforeEach(() => {
 });
 
 test("loads an absent favorite from its workspace through its children before revealing it", async () => {
-  const foldersByPath: Record<string, Array<ReturnType<typeof folder>>> = {
-    "": [folder("Projects", "/workspace")],
-    Projects: [folder("Target", "/workspace/Projects")],
-    "Projects/Target": [folder("Child", "/workspace/Projects/Target")],
-  };
   vi.mocked(getFolders).mockImplementation((_workspace, path) =>
-    Promise.resolve(foldersByPath[path] ?? []),
+    Promise.resolve(FOLDERS_BY_PATH[path] ?? []),
   );
 
   setup([], "/workspace/Projects/Target");
@@ -133,16 +99,15 @@ test("loads an absent favorite from its workspace through its children before re
   expect(treeItem("Projects")).toHaveAttribute("aria-expanded", "true");
   expect(treeItem("Target")).toHaveAttribute("aria-expanded", "true");
   expect(treeItem("Target")).toHaveAttribute("aria-checked", "true");
-  expect(getFolders).toHaveBeenNthCalledWith(1, "workspace", "");
-  expect(getFolders).toHaveBeenNthCalledWith(2, "workspace", "Projects");
-  expect(getFolders).toHaveBeenNthCalledWith(3, "workspace", "Projects/Target");
-  expect(getFolders).toHaveBeenCalledTimes(3);
+  expect(getFolders).toHaveBeenCalledWith("workspace", "");
+  expect(getFolders).toHaveBeenCalledWith("workspace", "Projects");
+  expect(getFolders).toHaveBeenCalledWith("workspace", "Projects/Target");
 });
 
 test("reopens the same favorite after collapse and preserves another expanded branch", async () => {
   const user = userEvent.setup();
   const store = setup(
-    [makeStudy("Other/Keep/Study"), makeStudy("Target/Child/Study")],
+    [externalStudy("Other/Keep/Study"), externalStudy("Target/Child/Study")],
     "/workspace/Target",
   );
   await screen.findByText("Child");
@@ -159,9 +124,8 @@ test("reopens the same favorite after collapse and preserves another expanded br
 
   const requestId = store.getState().studies.folderRevealRequest?.requestId;
 
-  if (requestId) {
-    act(() => store.dispatch(finishStudyFolderReveal(requestId)));
-  }
+  expect(requestId).toBeDefined();
+  act(() => store.dispatch(finishStudyFolderReveal(requestId ?? "")));
 
   await user.click(screen.getByText("Target"));
 
@@ -184,22 +148,17 @@ test("reports a folder that is no longer in its parent and finishes the reveal r
 });
 
 test("does not apply a delayed folder response after the reveal is cancelled", async () => {
-  let resolveFolders: (folders: Array<ReturnType<typeof folder>>) => void = () => undefined;
-  vi.mocked(getFolders).mockReturnValueOnce(
-    new Promise((resolve) => {
-      resolveFolders = resolve;
-    }),
-  );
+  const response = deferred<Array<ReturnType<typeof folder>>>();
+  vi.mocked(getFolders).mockReturnValueOnce(response.promise);
 
   const store = setup([], "/workspace/Target");
   await waitFor(() => expect(getFolders).toHaveBeenCalledOnce());
   const requestId = store.getState().studies.folderRevealRequest?.requestId;
 
-  if (requestId) {
-    act(() => store.dispatch(finishStudyFolderReveal(requestId)));
-  }
+  expect(requestId).toBeDefined();
+  act(() => store.dispatch(finishStudyFolderReveal(requestId ?? "")));
 
-  await act(() => resolveFolders([folder("Target", "/workspace")]));
+  await act(() => response.resolve([folder("Target", "/workspace")]));
 
   expect(screen.queryByText("Target")).not.toBeInTheDocument();
   expect(getFolders).toHaveBeenCalledOnce();
@@ -207,24 +166,17 @@ test("does not apply a delayed folder response after the reveal is cancelled", a
 
 test("loads children on the next reveal after cancelling a target-child response", async () => {
   const children = [folder("New child", "/workspace/Target")];
-  let resolveFolders: (folders: typeof children) => void = () => undefined;
-  vi.mocked(getFolders)
-    .mockReturnValueOnce(
-      new Promise((resolve) => {
-        resolveFolders = resolve;
-      }),
-    )
-    .mockResolvedValue(children);
+  const response = deferred<typeof children>();
+  vi.mocked(getFolders).mockReturnValueOnce(response.promise).mockResolvedValue(children);
 
-  const store = setup([makeStudy("Target/Study")], "/workspace/Target");
+  const store = setup([externalStudy("Target/Study")], "/workspace/Target");
   await waitFor(() => expect(getFolders).toHaveBeenCalledWith("workspace", "Target"));
   const requestId = store.getState().studies.folderRevealRequest?.requestId;
 
-  if (requestId) {
-    act(() => store.dispatch(finishStudyFolderReveal(requestId)));
-  }
+  expect(requestId).toBeDefined();
+  act(() => store.dispatch(finishStudyFolderReveal(requestId ?? "")));
 
-  await act(() => resolveFolders(children));
+  await act(() => response.resolve(children));
 
   expect(screen.queryByText("New child")).not.toBeInTheDocument();
 

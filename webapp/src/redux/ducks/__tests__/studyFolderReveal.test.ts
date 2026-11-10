@@ -16,71 +16,49 @@ import studiesReducer, {
   finishStudyFolderReveal,
   requestStudyFolderReveal,
   updateStudyFilters,
+  type StudyFolder,
 } from "../studies";
 
 vi.mock("@/redux/store", () => ({ default: { dispatch: vi.fn() } }));
 
-test("revealing a managed folder selects and opens its section while preserving other filters", () => {
-  const initial = studiesReducer(
-    undefined,
-    updateStudyFilters({
-      search: "scenario",
-      type: "variants",
-      activeTree: "external",
-      managed: { collapsed: true, showDescendants: true },
-      external: { path: "/workspace/Other", collapsed: true, showDescendants: true },
-    }),
-  );
-  const action = requestStudyFolderReveal({
-    tree: "managed",
-    directoryId: "target",
-    directoryIds: ["target", "child"],
-  });
+const MANAGED_ROOT = { tree: "managed", directoryId: null, directoryIds: null } as const;
+const EXTERNAL_FOLDER = { tree: "external", path: "/workspace/Target" } as const;
 
-  const result = studiesReducer(initial, action);
+test.each([
+  {
+    folder: { tree: "managed", directoryId: "target", directoryIds: ["target", "child"] },
+    selection: { directoryId: "target", directoryIds: ["target", "child"] },
+  },
+  { folder: EXTERNAL_FOLDER, selection: { path: EXTERNAL_FOLDER.path } },
+] satisfies Array<{ folder: StudyFolder; selection: object }>)(
+  "revealing a $folder.tree folder opens only its section and preserves other filters",
+  ({ folder, selection }) => {
+    const initial = studiesReducer(
+      undefined,
+      updateStudyFilters({
+        search: "scenario",
+        type: "variants",
+        activeTree: folder.tree === "managed" ? "external" : "managed",
+        managed: { directoryId: "other", collapsed: true, showDescendants: true },
+        external: { path: "/workspace/Other", collapsed: true, showDescendants: true },
+      }),
+    );
+    const action = requestStudyFolderReveal(folder);
 
-  expect(result.filters).toEqual({
-    ...initial.filters,
-    activeTree: "managed",
-    managed: {
-      ...initial.filters.managed,
-      collapsed: false,
-      directoryId: "target",
-      directoryIds: ["target", "child"],
-    },
-  });
-  expect(result.folderRevealRequest).toEqual(action.payload);
-});
+    const result = studiesReducer(initial, action);
 
-test("revealing an external folder opens only its section", () => {
-  const initial = studiesReducer(
-    undefined,
-    updateStudyFilters({
-      activeTree: "managed",
-      managed: { directoryId: "other", directoryIds: ["other"], collapsed: true },
-      external: { path: "/workspace/Old", collapsed: true },
-    }),
-  );
-
-  const result = studiesReducer(
-    initial,
-    requestStudyFolderReveal({
-      tree: "external",
-      path: "/workspace/Target",
-    }),
-  );
-
-  expect(result.filters).toEqual({
-    ...initial.filters,
-    activeTree: "external",
-    external: { ...initial.filters.external, path: "/workspace/Target", collapsed: false },
-  });
-});
+    expect(result.filters).toEqual({
+      ...initial.filters,
+      activeTree: folder.tree,
+      [folder.tree]: { ...initial.filters[folder.tree], ...selection, collapsed: false },
+    });
+    expect(result.folderRevealRequest).toEqual(action.payload);
+  },
+);
 
 test("repeated reveals get distinct requests and an older completion cannot clear the latest", () => {
-  const folder = { tree: "managed", directoryId: null, directoryIds: null } as const;
-  const first = requestStudyFolderReveal(folder);
-  const second = requestStudyFolderReveal(folder);
+  const first = requestStudyFolderReveal(MANAGED_ROOT);
+  const second = requestStudyFolderReveal(MANAGED_ROOT);
 
   expect(first.payload.requestId).not.toBe(second.payload.requestId);
 
@@ -98,13 +76,7 @@ test("repeated reveals get distinct requests and an older completion cannot clea
 });
 
 test("manual navigation cancels a pending reveal", () => {
-  const pending = studiesReducer(
-    undefined,
-    requestStudyFolderReveal({
-      tree: "external",
-      path: "/workspace/Target",
-    }),
-  );
+  const pending = studiesReducer(undefined, requestStudyFolderReveal(EXTERNAL_FOLDER));
 
   const result = studiesReducer(
     pending,

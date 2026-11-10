@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { deferred } from "@/tests/queryUtils";
 import { SimpleTreeView, TreeItem } from "@mui/x-tree-view";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { finishStudyFolderReveal } from "@/redux/ducks/studies";
@@ -69,17 +70,7 @@ beforeEach(() => {
     const top = this.classList.contains("MuiTreeItem-content") ? rowTop : 0;
     const height = this.classList.contains("MuiTreeItem-content") ? rowHeight : 100;
 
-    return {
-      top,
-      bottom: top + height,
-      height,
-      left: 0,
-      right: 100,
-      width: 100,
-      x: 0,
-      y: top,
-      toJSON: () => ({}),
-    };
+    return new DOMRect(0, top, 100, height);
   });
 });
 
@@ -108,6 +99,11 @@ test.each([
     expect(scrollTo).toHaveBeenCalledTimes(1);
     expect(scrollTo).toHaveBeenCalledWith({ top: expected, behavior: "instant" });
     expect(scrollTo.mock.contexts[0]).toBe(viewport);
+
+    rerender(<Harness requestId="request-2" />);
+
+    await waitFor(() => expect(scrollTo).toHaveBeenCalledTimes(2));
+    expect(dispatch).toHaveBeenLastCalledWith(finishStudyFolderReveal("request-2"));
   },
 );
 
@@ -122,16 +118,12 @@ test("does not scroll when the folder is already visible", async () => {
 
 test("waits for loading and for the target to be mounted", async () => {
   const { rerender } = render(<Harness ready={false} />);
-  await act(async () => {
-    await new Promise(requestAnimationFrame);
-  });
+  await act(() => new Promise(requestAnimationFrame));
 
   expect(dispatch).not.toHaveBeenCalled();
 
   rerender(<Harness showItem={false} />);
-  await act(async () => {
-    await new Promise(requestAnimationFrame);
-  });
+  await act(() => new Promise(requestAnimationFrame));
 
   expect(dispatch).not.toHaveBeenCalled();
 
@@ -143,9 +135,7 @@ test("waits for loading and for the target to be mounted", async () => {
 
 test("reveals after deferred viewport initialization and its synchronous scroll restoration", async () => {
   render(<Harness initialized={false} />);
-  await act(async () => {
-    await new Promise(requestAnimationFrame);
-  });
+  await act(() => new Promise(requestAnimationFrame));
 
   expect(scrollTo).not.toHaveBeenCalled();
   expect(dispatch).not.toHaveBeenCalled();
@@ -167,9 +157,7 @@ test("retries a zero-height row when its expansion styles change", async () => {
   rowHeight = 0;
 
   render(<Harness />);
-  await act(async () => {
-    await new Promise(requestAnimationFrame);
-  });
+  await act(() => new Promise(requestAnimationFrame));
 
   expect(dispatch).not.toHaveBeenCalled();
 
@@ -182,75 +170,31 @@ test("retries a zero-height row when its expansion styles change", async () => {
   expect(dispatch).toHaveBeenCalledWith(finishStudyFolderReveal("request-1"));
 });
 
-test("waits for expansion animations before measuring the destination", async () => {
-  let finishAnimation: (() => void) | undefined;
+test("only finishes the latest request when an earlier reveal is waiting for expansion", async () => {
+  const animation = deferred<void>();
   let running = true;
-  const finished = new Promise<void>((resolve) => {
-    finishAnimation = resolve;
-  });
   const { rerender } = render(<Harness ready={false} />);
   const getAnimations = vi.fn(() =>
     running
-      ? [
-          {
-            playState: "running",
-            transitionProperty: "height",
-            finished,
-            effect: { getComputedTiming: () => ({ iterations: 1 }) },
-          },
-        ]
+      ? [{ playState: "running", transitionProperty: "height", finished: animation.promise }]
       : [],
   );
-
   Object.defineProperty(screen.getByTestId("grid"), "getAnimations", { value: getAnimations });
 
   rerender(<Harness />);
-
   await waitFor(() => expect(getAnimations).toHaveBeenCalled());
+
   expect(scrollTo).not.toHaveBeenCalled();
   expect(dispatch).not.toHaveBeenCalled();
 
-  await act(async () => {
-    running = false;
-    finishAnimation?.();
-    await finished;
-  });
-
-  await waitFor(() => expect(scrollTo).toHaveBeenCalledOnce());
-});
-
-test("reveals the same folder again for a new request", async () => {
-  const { rerender } = render(<Harness />);
-  await waitFor(() => expect(scrollTo).toHaveBeenCalledOnce());
-
+  getAnimations.mockClear();
   rerender(<Harness requestId="request-2" />);
-
-  await waitFor(() => expect(scrollTo).toHaveBeenCalledTimes(2));
-  expect(dispatch).toHaveBeenLastCalledWith(finishStudyFolderReveal("request-2"));
-});
-
-test("only finishes the latest request when an earlier reveal is waiting for expansion", async () => {
-  let finishAnimation: () => void = vi.fn();
-  let running = true;
-  const finished = new Promise<void>((resolve) => {
-    finishAnimation = resolve;
-  });
-  const { rerender } = render(<Harness ready={false} />);
-  const getAnimations = vi.fn(() =>
-    running ? [{ playState: "running", transitionProperty: "height", finished }] : [],
-  );
-  Object.defineProperty(screen.getByTestId("grid"), "getAnimations", { value: getAnimations });
-
-  rerender(<Harness />);
-  await waitFor(() => expect(getAnimations).toHaveBeenCalledOnce());
-
-  rerender(<Harness requestId="request-2" />);
-  await waitFor(() => expect(getAnimations).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(getAnimations).toHaveBeenCalled());
 
   await act(async () => {
     running = false;
-    finishAnimation();
-    await finished;
+    animation.resolve();
+    await animation.promise;
   });
 
   await waitFor(() => expect(dispatch).toHaveBeenCalledWith(finishStudyFolderReveal("request-2")));

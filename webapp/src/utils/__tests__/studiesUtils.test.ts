@@ -14,30 +14,8 @@
 
 import type { StudyFilters } from "@/redux/ducks/studies";
 import type { Directory } from "@/services/api/directories/types";
-import { StorageMode, StudyType, type StudyMetadata } from "@/types/types";
+import { createStudy } from "@/tests/studyFixtures";
 import { filterStudies, getStudyFolder } from "../studiesUtils";
-
-function createStudy(overrides: Partial<StudyMetadata> = {}): StudyMetadata {
-  return {
-    id: "study",
-    name: "Study",
-    creationDate: "2026-11-05",
-    modificationDate: "2026-11-05",
-    owner: { id: 1, name: "Owner" },
-    editor: "Editor",
-    author: "Author",
-    type: StudyType.RAW,
-    version: "9.3",
-    workspace: "network",
-    managed: true,
-    archived: false,
-    storageMode: StorageMode.FILESYSTEM,
-    groups: [],
-    publicMode: "NONE",
-    directoryId: null,
-    ...overrides,
-  };
-}
 
 const directories: Directory[] = [
   { id: "parent", name: "Parent", parentId: null },

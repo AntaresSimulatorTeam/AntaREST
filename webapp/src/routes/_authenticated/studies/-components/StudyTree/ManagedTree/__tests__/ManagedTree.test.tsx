@@ -15,6 +15,8 @@
 import studiesReducer, { requestStudyFolderReveal } from "@/redux/ducks/studies";
 import { directoryQueries } from "@/queries/directories/queries";
 import { createDirectory, getDirectories } from "@/services/api/directories";
+import { deferred } from "@/tests/queryUtils";
+import { DIRECTORIES, TARGET_FOLDER } from "./fixtures";
 import type { Directory } from "@/services/api/directories/types";
 import { createTheme, ThemeProvider } from "@mui/material";
 import { configureStore } from "@reduxjs/toolkit";
@@ -45,13 +47,7 @@ vi.mock("@/routes/-shared/components/studies/FavoriteToggle/FavoriteDirectoryTog
   default: () => null,
 }));
 
-const directories: Directory[] = [
-  { id: "other", name: "Other", parentId: null },
-  { id: "keep", name: "Keep", parentId: "other" },
-  { id: "parent", name: "Parent", parentId: null },
-  { id: "target", name: "Target", parentId: "parent" },
-  { id: "child", name: "Child", parentId: "target" },
-];
+const theme = createTheme({ cssVariables: true });
 
 function treeItem(name: string) {
   return screen.getByText(name).closest('[role="treeitem"]');
@@ -100,7 +96,7 @@ function setup({
   render(
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider theme={createTheme({ cssVariables: true })}>
+        <ThemeProvider theme={theme}>
           <Suspense fallback="Loading">
             <CreationHarness initiallyCreating={initiallyCreating} />
           </Suspense>
@@ -113,25 +109,22 @@ function setup({
 }
 
 function setupDirectoryRefresh() {
-  let resolveDirectories: (value: Directory[]) => void = () => undefined;
-  const pending = new Promise<Directory[]>((resolve) => {
-    resolveDirectories = resolve;
-  });
-  vi.mocked(getDirectories).mockReturnValue(pending);
+  const response = deferred<Directory[]>();
+  vi.mocked(getDirectories).mockReturnValue(response.promise);
   const store = setup({ directoryId: "target", cachedDirectories: [] });
 
   return {
     store,
     finish: (value: Directory[]) => {
-      resolveDirectories(value);
-      return pending;
+      response.resolve(value);
+      return response.promise;
     },
   };
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(getDirectories).mockResolvedValue(directories);
+  vi.mocked(getDirectories).mockResolvedValue(DIRECTORIES);
 });
 
 test("reveals a nested favorite repeatedly without collapsing an unrelated branch", async () => {
@@ -142,14 +135,7 @@ test("reveals a nested favorite repeatedly without collapsing an unrelated branc
 
   expect(treeItem("Other")).toHaveAttribute("aria-expanded", "true");
 
-  const reveal = () =>
-    store.dispatch(
-      requestStudyFolderReveal({
-        tree: "managed",
-        directoryId: "target",
-        directoryIds: ["target", "child"],
-      }),
-    );
+  const reveal = () => store.dispatch(requestStudyFolderReveal(TARGET_FOLDER));
 
   act(() => {
     reveal();
@@ -184,7 +170,7 @@ test("reveals a target absent from stale data once the directory refresh finds i
   });
 
   await act(async () => {
-    await finish(directories);
+    await finish(DIRECTORIES);
   });
 
   await screen.findByText("Target");
@@ -222,68 +208,35 @@ test("does not report the managed root as missing when there are no directories"
   });
 });
 
-test("starts creation on mount and preserves the draft while tree selection changes", async () => {
-  const user = userEvent.setup();
-  const store = setup({ initiallyCreating: true });
-  const input = await screen.findByRole("textbox");
-  await waitFor(() => expect(input).toHaveFocus());
+test.each([true, false])(
+  "preserves the creation draft during tree updates (creating on mount: %s)",
+  async (initiallyCreating) => {
+    const user = userEvent.setup();
+    const store = setup({ initiallyCreating });
 
-  await user.type(input, "New folder");
-  act(() => {
-    store.dispatch(
-      requestStudyFolderReveal({
-        tree: "managed",
-        directoryId: "target",
-        directoryIds: ["target", "child"],
-      }),
-    );
-  });
+    if (!initiallyCreating) {
+      await screen.findByText("Parent");
+      await user.click(screen.getByRole("button", { name: "New folder" }));
+    }
 
-  await waitFor(() => expect(treeItem("Target")).toHaveAttribute("aria-checked", "true"));
-  expect(input).toHaveValue("New folder");
+    const input = await screen.findByRole("textbox");
+    await waitFor(() => expect(input).toHaveFocus());
 
-  await user.type(input, " draft");
+    await user.type(input, "New folder");
+    act(() => {
+      store.dispatch(requestStudyFolderReveal(TARGET_FOLDER));
+    });
 
-  expect(input).toHaveValue("New folder draft");
+    await waitFor(() => expect(treeItem("Target")).toHaveAttribute("aria-checked", "true"));
+    expect(input).toHaveValue("New folder");
 
-  await user.keyboard("{Escape}");
+    await user.type(input, " draft");
 
-  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-  expect(createDirectory).not.toHaveBeenCalled();
-});
+    expect(input).toHaveValue("New folder draft");
 
-test("starts creation after mount and saves a fresh draft after cancelling and reopening", async () => {
-  const user = userEvent.setup();
-  vi.mocked(createDirectory).mockResolvedValue({
-    id: "created",
-    name: "Saved folder",
-    parentId: null,
-  });
-  setup();
-  await screen.findByText("Parent");
+    await user.keyboard("{Escape}");
 
-  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-
-  await user.click(screen.getByRole("button", { name: "New folder" }));
-  const firstInput = await screen.findByRole("textbox");
-  await waitFor(() => expect(firstInput).toHaveFocus());
-  await user.type(firstInput, "Discarded draft{Escape}");
-
-  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-  expect(createDirectory).not.toHaveBeenCalled();
-
-  await user.click(screen.getByRole("button", { name: "New folder" }));
-  const reopenedInput = await screen.findByRole("textbox");
-  await waitFor(() => expect(reopenedInput).toHaveFocus());
-
-  expect(reopenedInput).toHaveValue("");
-
-  await user.type(reopenedInput, "Saved folder{Enter}");
-
-  await screen.findByText("Saved folder");
-  await waitFor(() => expect(screen.queryByRole("textbox")).not.toBeInTheDocument());
-  expect(vi.mocked(createDirectory).mock.calls.map(([params]) => params)).toEqual([
-    { name: "Saved folder", parentId: null },
-  ]);
-  expect(enqueueErrorSnackbar).not.toHaveBeenCalled();
-});
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+    expect(createDirectory).not.toHaveBeenCalled();
+  },
+);

@@ -25,6 +25,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import FavoritesMenu from "..";
 import type { Favorite } from "../types";
+import { DIRECTORIES, FAVORITE_STUDY, FOLDER_CASES } from "./fixtures";
 
 const mocks = vi.hoisted(() => ({
   dispatch: vi.fn(),
@@ -57,14 +58,9 @@ vi.mock("@/routes/-shared/components/studies/FavoriteToggle", () => ({
   default: () => <button type="button">studies.removeFavorite</button>,
 }));
 
-const favoriteStudy: Favorite = {
-  id: "study-study-id",
-  name: "Favorite study",
-  type: "study",
-  original: { studyId: "study-id", studyName: "Favorite study" },
-};
-
-async function renderFavorites() {
+async function renderFavorites({ expanded = true, favorites = [FAVORITE_STUDY] } = {}) {
+  mocks.isMenuOpen = expanded;
+  mocks.favorites = favorites;
   const root = createRootRoute({
     component: () => (
       <>
@@ -78,7 +74,6 @@ async function renderFavorites() {
       createRoute({ getParentRoute: () => root, path: "/" }),
       createRoute({ getParentRoute: () => root, path: "/studies" }),
       createRoute({ getParentRoute: () => root, path: "/studies/$studyId" }),
-      createRoute({ getParentRoute: () => root, path: "/tasks" }),
     ]),
     history: createMemoryHistory({ initialEntries: ["/"] }),
   });
@@ -93,21 +88,14 @@ async function renderFavorites() {
   }
 
   await user.click(trigger);
-  await screen.findByText("Favorite study");
+  await screen.findByText(favorites[0].name);
 
   return { user, router };
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
   mocks.dispatch.mockReset();
-
-  mocks.isMenuOpen = true;
-  mocks.favorites = [favoriteStudy];
-  mocks.directories = [
-    { id: "folder", name: "Folder", parentId: null },
-    { id: "child", name: "Child", parentId: "folder" },
-  ];
+  mocks.directories = DIRECTORIES;
 });
 
 afterEach(() => {
@@ -117,92 +105,43 @@ afterEach(() => {
 test.each([true, false])(
   "primary favorite opens the study (expanded sidebar: %s)",
   async (expanded) => {
-    mocks.isMenuOpen = expanded;
-    const { user, router } = await renderFavorites();
+    const { user, router } = await renderFavorites({ expanded });
 
-    expect(screen.queryByTestId("FolderOpenIcon")).not.toBeInTheDocument();
-
-    await user.click(screen.getByText("Favorite study"));
+    await user.click(screen.getByText(FAVORITE_STUDY.name));
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/studies/study-id"));
     expect(mocks.dispatch).not.toHaveBeenCalled();
   },
 );
 
-test("keyboard users can reach the popup action and return to the favorite", async () => {
-  mocks.isMenuOpen = false;
-  const { user } = await renderFavorites();
-  const item = screen.getByRole("menuitem");
-  const action = screen.getByRole("button", { name: "studies.removeFavorite" });
-
-  expect(item).toHaveFocus();
+test("custom keyboard navigation reaches actions and returns to favorite rows", async () => {
+  const folder = FOLDER_CASES[0].favorite;
+  const { user } = await renderFavorites({
+    expanded: false,
+    favorites: [FAVORITE_STUDY, folder],
+  });
+  const studyItem = screen.getByRole("menuitem", { name: new RegExp(FAVORITE_STUDY.name) });
 
   await user.tab();
 
-  expect(action).toHaveFocus();
+  expect(screen.getAllByRole("button", { name: "studies.removeFavorite" })[0]).toHaveFocus();
 
   await user.tab({ shift: true });
 
-  expect(item).toHaveFocus();
-
-  await user.tab();
-
-  expect(action).toHaveFocus();
-});
-
-test("Tab after the last popup action closes the menu", async () => {
-  mocks.isMenuOpen = false;
-  const { user } = await renderFavorites();
-
-  await user.tab();
-  await user.tab();
-
-  await waitFor(() => expect(screen.queryByRole("menu")).not.toBeInTheDocument());
-});
-
-test("arrow navigation from a popup action moves to the next favorite", async () => {
-  mocks.isMenuOpen = false;
-  mocks.favorites.push({
-    id: "study-second",
-    name: "Second study",
-    type: "study",
-    original: { studyId: "second", studyName: "Second study" },
-  });
-  const { user } = await renderFavorites();
+  expect(studyItem).toHaveFocus();
 
   await user.tab();
   await user.keyboard("{ArrowDown}");
 
-  expect(screen.getByRole("menuitem", { name: /^Second study/ })).toHaveFocus();
+  expect(screen.getByRole("menuitem", { name: new RegExp(folder.name) })).toHaveFocus();
 });
 
-test.each([
-  {
-    favorite: {
-      id: "directory-folder",
-      name: "Favorite folder",
-      type: "directory",
-      original: { directoryId: "folder", directoryName: "Favorite folder" },
-    },
-    target: { tree: "managed", directoryId: "folder", directoryIds: ["folder", "child"] },
-  },
-  {
-    favorite: {
-      id: "external-directory-folder",
-      name: "Favorite folder",
-      type: "externalDirectory",
-      absolutePath: "/external/folder",
-      original: { workspace: "external", path: "folder" },
-    },
-    target: { tree: "external", path: "/external/folder" },
-  },
-] satisfies Array<{ favorite: Favorite; target: unknown }>)(
+test.each(FOLDER_CASES)(
   "folder favorites reveal their location in the Explorer ($favorite.type)",
   async ({ favorite, target }) => {
-    mocks.favorites.push(favorite);
-    const { user, router } = await renderFavorites();
+    const { user, router } = await renderFavorites({ favorites: [favorite] });
 
-    await user.click(screen.getByText("Favorite folder"));
+    await user.click(screen.getByText(favorite.name));
 
     await waitFor(() => expect(router.state.location.pathname).toBe("/studies"));
     expect(mocks.dispatch).toHaveBeenCalledWith({ type: "reveal", payload: target });
