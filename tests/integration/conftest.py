@@ -137,9 +137,6 @@ def app_and_services(base_app: FastAPI, tmp_path: Path, db_path: Path) -> Iterab
     init_db(config, config_path, auto_upgrade=False, init_admin=False)
     services = inject_services(app, config)
 
-    # Start the watcher so it scans the ext_workspace
-    services.watcher.start()
-
     def is_study_scanned() -> bool:
         with db():
             studies = services.study.get_studies_information(
