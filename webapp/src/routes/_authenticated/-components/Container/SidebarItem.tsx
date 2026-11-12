@@ -52,7 +52,7 @@ interface CollapsibleItemProps extends BaseProps {
   disableAutoActive?: never;
   disableAutoMainMenuOpen?: boolean;
   children?: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLAnchorElement>;
+  onClick?: React.MouseEventHandler<HTMLElement>;
 }
 
 export type SidebarItemProps = LinkItemProps | CollapsibleItemProps;
@@ -85,7 +85,7 @@ function SidebarItem({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     if (isCollapsible) {
       if (isMenuOpen) {
         setExpanded(!expanded);
@@ -136,9 +136,11 @@ function SidebarItem({
             </RouterListItemButton>
           ) : (
             <ListItemButton
-              href={linkOptions ? linkOptions.href : ""}
-              target="_blank"
-              rel="noopener noreferrer"
+              {...(isExternalLink && {
+                href: linkOptions.href,
+                target: "_blank",
+                rel: "noopener noreferrer",
+              })}
               onClick={handleClick}
               sx={listItemBtnSx}
             >

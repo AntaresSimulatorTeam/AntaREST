@@ -18,16 +18,18 @@ import { explorerQueries } from "@/queries/explorer/queries";
 
 /**
  * Hook to fetch workspaces.
- * Only fetches in desktop mode as workspaces are generated dynamically based on mounted discs.
- * On web mode, this case is almost never used, so we save the API call.
+ * Fetches in desktop mode, or on demand when revealing a folder in a web workspace
+ * that cannot be derived from the available studies.
  *
+ * @param options - Whether the caller needs workspaces outside desktop mode.
+ * @param options.enabled - Enable the query on demand in web mode.
  * @returns Query result with workspaces data
  */
-export function useWorkspaces() {
+export function useWorkspaces({ enabled = false }: { enabled?: boolean } = {}) {
   const { isDesktopMode } = useAppMode();
 
   return useQuery({
     ...explorerQueries.workspaces(),
-    enabled: isDesktopMode,
+    enabled: isDesktopMode || enabled,
   });
 }
