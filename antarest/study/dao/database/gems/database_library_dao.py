@@ -27,6 +27,7 @@ from antarest.study.dao.database.models.gems.library import (
     GEMS_MODELS_PARAMETERS_TABLE,
     GEMS_MODELS_PORTS_TABLE,
     GEMS_MODELS_TABLE,
+    GEMS_MODELS_VARIABLES_TABLE,
     GEMS_PORT_TYPES_TABLE,
 )
 
@@ -91,7 +92,19 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
             )
 
         # Variables
-        # todo
+        variables_table = GEMS_MODELS_VARIABLES_TABLE
+        model_variables_stmt = select(variables_table).where(variables_table.c.study_data_id == study_data_id)
+        model_variables_rows = session.execute(model_variables_stmt).fetchall()
+        model_variables: dict[str, list[dict[str, Any]]] = {}
+        for model_variables_row in model_variables_rows:
+            model_variables.setdefault(model_variables_row.model_id, []).append(
+                {
+                    "id": model_variables_row.id,
+                    "type": model_variables_row.type,
+                    "lower_bound": model_variables_row.lower_bound,
+                    "upper_bound": model_variables_row.upper_bound,
+                }
+            )
 
         ## Constraints and Objective contributions
         model_constraints: dict[str, list[dict[str, Any]]] = {}
@@ -119,7 +132,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                     "parameters": model_parameters.get(model_row.id, []),
                     "constraints": model_constraints.get(model_row.id, []),
                     "objective_contributions": model_objective_contributions.get(model_row.id, []),
-                    "variables": json.loads(model_row.variables),  # todo
+                    "variables": model_variables.get(model_row.id, []),
                     # These fields were dumped as is, we simply reload them.
                     "binding_constraints": json.loads(model_row.binding_constraints),
                     "extra_outputs": json.loads(model_row.extra_outputs),
