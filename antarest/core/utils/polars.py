@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -32,8 +32,11 @@ def read_tsv(path: Path, has_headers: bool) -> pl.DataFrame:
     return _read_file(path, has_headers, separator="\t")
 
 
-def read_csv(path: Path, has_headers: bool) -> pl.DataFrame:
-    return _read_file_with_floats(has_headers, path, separator=",")
+def read_gems_tsv(path: Path) -> pl.DataFrame:
+    """
+    GEMS support matrices with spaces and tabs so we should support it too.
+    """
+    return _read_file_with_floats(False, path, separator="\t")
 
 
 def _read_file(path: Path, has_headers: bool, separator: str) -> pl.DataFrame:
@@ -55,5 +58,5 @@ def _read_file_with_floats(has_headers: bool, path: Path, separator: str) -> Dat
     return df
 
 
-def write_csv(data: pl.DataFrame, path: Path) -> None:
-    data.write_csv(path, include_header=False, separator=",")
+def write_tsv(data: pl.DataFrame, file: Path | IO[str] | IO[bytes], include_headers: bool = False) -> None:
+    data.write_csv(file, include_header=include_headers, separator="\t")

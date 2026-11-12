@@ -21,7 +21,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from antarest.blobstore.service import IBlobService
-from antarest.core.utils.polars import read_csv
+from antarest.core.utils.polars import read_gems_tsv
 from antarest.dbmodel import Base
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.matrixstore.service import ISimpleMatrixService
@@ -33,6 +33,7 @@ from antarest.study.business.model.binding_constraint_model import (
 from antarest.study.business.model.config.optimization_config_model import (
     initialize_optimization_preferences_against_version,
 )
+from antarest.study.business.model.gems.calendar import GemsCalendar
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
@@ -50,6 +51,7 @@ from antarest.study.business.model.sts_model import STStorage, STStorageAddition
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.database.database_study_dao import DatabaseStudyDao
+from antarest.study.dao.file.file_study_gems_calendar_dao import read_gems_calendar
 from antarest.study.model import (
     NEW_DEFAULT_STUDY_VERSION,
     STUDY_VERSION_8_8,
@@ -74,6 +76,12 @@ DATA_SERIES_PATH = ASSETS_PATH / "gems" / "data-series"
 def gems_catalog() -> GemsCatalog:
     path = Path(__file__).parent / "assets/gems/catalogs/antares_legacy_area_catalog.yml"
     return GemsCatalog.model_validate(YAMLReader().read(path)["catalog"])
+
+
+@pytest.fixture
+def gems_calendar() -> GemsCalendar:
+    path = Path(__file__).parent / "assets/gems/calendar/calendar_file.csv"
+    return read_gems_calendar(path)
 
 
 @pytest.fixture
@@ -117,9 +125,7 @@ def _build_db_dao_unreleased_version(
 
 
 def build_db_dao_10_2(db_session: Session, matrix_service: ISimpleMatrixService) -> DatabaseStudyDao:
-    """Initialize a v10.2 study using the latest available reference template."""
-    # TODO: once v10.2 is released (template available), use `build_db_dao(db_session, matrix_service, STUDY_VERSION_10_2)`.
-    return _build_db_dao_unreleased_version(db_session, matrix_service, STUDY_VERSION_10_2)
+    return build_db_dao(db_session, matrix_service, STUDY_VERSION_10_2)
 
 
 def _build_dao_unreleased_version(
@@ -486,6 +492,10 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
     assert first_component.parameters[1].id == "max_load"
     assert first_component.parameters[1].time_dependent is True
     assert first_component.parameters[1].scenario_dependent is False
+    assert first_component.integer_strategy is not None
+    assert first_component.integer_strategy.id.value == "heuristic"
+    assert first_component.integer_strategy.heuristic_id is not None
+    assert first_component.integer_strategy.heuristic_id.value == "fast"
 
     first_component_value = matrix_service.get(str(first_component.parameters[1].value))
     assert first_component_value is not None
@@ -505,6 +515,9 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
     assert second_component.parameters[1].id == "p_max"
     assert second_component.parameters[1].time_dependent is True
     assert second_component.parameters[1].scenario_dependent is True
+    assert second_component.integer_strategy is not None
+    assert second_component.integer_strategy.id.value == "relaxed"
+    assert second_component.integer_strategy.heuristic_id is None
 
     second_component_value = matrix_service.get(str(second_component.parameters[1].value))
     assert second_component_value is not None
@@ -532,6 +545,7 @@ def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatri
     assert third_component.parameters[1].id == "p_max"
     assert third_component.parameters[1].time_dependent is True
     assert third_component.parameters[1].scenario_dependent is True
+    assert third_component.integer_strategy is None
 
     third_component_value = matrix_service.get(str(third_component.parameters[1].value))
     assert third_component_value is not None
@@ -580,9 +594,10 @@ def add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
     for component in system.components:
         for parameter in component.parameters:
             if parameter.is_dataseries():
-                add_file_content_to_matrix_store(
-                    dao, parameter, DATA_SERIES_PATH / Path(f"{parameter.get_value_as_str()}.csv")
-                )
+                for extension in {".csv", ".tsv"}:
+                    file_path = DATA_SERIES_PATH / f"{parameter.get_value_as_str()}{extension}"
+                    if file_path.exists():
+                        add_file_content_to_matrix_store(dao, parameter, file_path)
 
     dao.save_system(system)
     return system
@@ -605,7 +620,7 @@ def add_legacy_objects_to_study_dao(dao: StudyDao) -> None:
 
 
 def add_file_content_to_matrix_store(dao: StudyDao, parameter: GemsParameters, csv_path: Path) -> None:
-    parameter.value = dao.matrix_service.create(read_csv(csv_path, has_headers=False))
+    parameter.value = dao.matrix_service.create(read_gems_tsv(csv_path))
 
 
 def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:

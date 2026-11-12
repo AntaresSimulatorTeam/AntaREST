@@ -23,6 +23,7 @@ from antares.tsgen.ts_generator import OutageGenerationParameters, ThermalCluste
 from pydantic import ValidationInfo, model_validator
 from typing_extensions import override
 
+from antarest.core.utils.polars import write_tsv
 from antarest.study.business.model.thermal_cluster_model import LocalTSGenerationBehavior
 from antarest.study.business.model.user_model import ResourceType, UserResourceDataCreation
 from antarest.study.dao.api.study_dao import StudyDao
@@ -138,7 +139,7 @@ class GenerateThermalClusterTimeSeries(ICommand):
                         for detail_type, data in outage_dataframes.items():
                             # Convert numpy array to TSV bytes using polars
                             buffer = io.BytesIO()
-                            pl.DataFrame(data).write_csv(buffer, separator="\t", include_header=False)
+                            write_tsv(pl.DataFrame(data), buffer)
                             tsv_bytes = buffer.getvalue()
 
                             blob_id = self.command_context.blob_service.save(tsv_bytes)

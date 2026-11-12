@@ -62,6 +62,9 @@ def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, matrix_service:
     dao.save_system(system)
     data_series_folder = dao.get_file_study().config.study_path / "input" / "data-series"
 
+    # todo: remove this test once optim-config.yml is handled in the DAO
+    assert (dao.get_file_study().config.study_path / "input" / "optim-config.yml").exists()
+
     # As 2 parameters values point to the same matrix, we should have 2 CSV files only
     assert sorted(f.name for f in data_series_folder.iterdir()) == ["data_series_0.csv", "data_series_1.csv"]
     assert (data_series_folder / "data_series_0.csv").read_text().splitlines() == [
@@ -74,8 +77,14 @@ def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, matrix_service:
     ]
 
     yaml_system = YAMLReader().read(dao.get_file_study().config.study_path / "input" / "system.yml")["system"]
-    assert yaml_system["components"][0]["parameters"][1]["value"] == "data_series_0"
-    assert yaml_system["components"][1]["parameters"][1]["value"] == "data_series_1"
+    components = yaml_system["components"]
+    assert components[0]["parameters"][1]["value"] == "data_series_0"
+    assert components[1]["parameters"][1]["value"] == "data_series_1"
+
+    # Ensures we do not dump `None` values inside the YAML file
+    for component in components:
+        if "scenario-group" in component:
+            assert component["scenario-group"] is not None
 
     saved_system = dao.get_system()
     assert saved_system is not None
@@ -132,7 +141,7 @@ def test_should_not_access_system_components(filestudy_dao_v10_2: FileStudyTreeD
         "../data-series/max_load_values",
         "/etc/passwd",
         "sub/max_load_values",
-        "max_load_values.csv",
+        "max_load_values.tsv",
         "max_load_values\n",
         "ma x",
     ],
@@ -144,6 +153,19 @@ def test_data_series_name_must_be_a_plain_name(filestudy_dao_v10_2: FileStudyTre
     system_file.write_text(system_file.read_text().replace("value: max_load_values", f"value: {name!r}", 1))
 
     with pytest.raises(GemsSystemIncorrectlyFormatted, match="invalid data series name"):
+        dao.get_system()
+
+
+def test_data_series_file_exist_in_both_format(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
+    dao = filestudy_dao_v10_2
+    _add_system_file_to_study(dao)
+    data_series_path = dao.get_file_study().config.study_path / "input" / "data-series"
+    (data_series_path / "max_load_values.csv").touch()
+
+    # Now we have both `max_load_values.csv` and `max_load_values.tsv` -> Should raise an error when reading the system
+
+    msg = "The file 'max_load_values' inside study  exist in more than 1 format"
+    with pytest.raises(GemsSystemIncorrectlyFormatted, match=msg):
         dao.get_system()
 
 
