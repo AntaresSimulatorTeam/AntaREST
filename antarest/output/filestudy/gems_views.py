@@ -24,7 +24,7 @@ from pathlib import Path
 import polars as pl
 import yaml
 
-from antarest.output.model.gems_views import GemsViewConfig
+from antarest.output.model.gems_views import GemsMetricLocation, GemsTaxonomyViews, GemsViewConfig, GemsViewLocations
 from antarest.output.model.output_type import GEMS_VIEWS_DIR
 
 _VIEWS_INPUT_DIR = "input"
@@ -58,3 +58,16 @@ def read_metric_locations(output_dir: Path, view: GemsViewConfig) -> list[str]:
             df = pl.scan_parquet(parquet_path).select(pl.col(_METRIC_LOCATION_COL).unique()).collect()
             locations.update(df[_METRIC_LOCATION_COL].to_list())
     return sorted(locations)
+
+
+def extract_gems_views(output_dir: Path) -> list[GemsTaxonomyViews]:
+    """
+    Returns the views of the output grouped by taxonomy category, with the locations available for each view.
+    """
+    views_by_taxonomy: dict[str, dict[str, GemsViewLocations]] = {}
+    for view in parse_gems_view_configs(output_dir):
+        locations = [GemsMetricLocation(id=location) for location in read_metric_locations(output_dir, view)]
+        views_by_taxonomy.setdefault(view.taxonomy_category, {})[view.id] = GemsViewLocations(
+            metrics_location=locations
+        )
+    return [GemsTaxonomyViews(taxonomy=taxonomy, view_ids=[views]) for taxonomy, views in views_by_taxonomy.items()]

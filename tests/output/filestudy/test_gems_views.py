@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from antarest.output.filestudy.gems_views import parse_gems_view_configs, read_metric_locations
+from antarest.output.filestudy.gems_views import extract_gems_views, parse_gems_view_configs, read_metric_locations
 from antarest.output.model.gems_views import GemsViewConfig
 
 
@@ -48,3 +48,38 @@ def test_read_metric_locations__view_not_built(output_dir: Path, view_configs: d
     # The view is declared but the views builder produced no file for it
     view_not_built = view_configs["view_area"].model_copy(update={"id": "view_unknown"})
     assert read_metric_locations(output_dir, view_not_built) == []
+
+
+def test_extract_gems_views(output_dir: Path) -> None:
+    views = extract_gems_views(output_dir)
+
+    assert [v.model_dump() for v in views] == [
+        {
+            "taxonomy": "balance",
+            "view_ids": [
+                {
+                    "view_area": {
+                        "metrics_location": [{"id": "area1_node"}, {"id": "area2_node"}, {"id": "area3_node"}]
+                    },
+                    "view_storage": {"metrics_location": [{"id": "area3_node"}]},
+                    "view_thermal": {
+                        "metrics_location": [{"id": "area1_node"}, {"id": "area2_node"}, {"id": "area3_node"}]
+                    },
+                }
+            ],
+        },
+        {
+            "taxonomy": "link",
+            "view_ids": [
+                {
+                    "view_link": {
+                        "metrics_location": [
+                            {"id": "area1_area2_link"},
+                            {"id": "area1_area3_link"},
+                            {"id": "area2_area3_link"},
+                        ]
+                    }
+                }
+            ],
+        },
+    ]
