@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "antares-web": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "mcp-server", "antares-web-mcp"],
+      "env": {
+        "ANTARES_WEB_URL": "${ANTARES_WEB_URL:-http://localhost:8080}",
+        "ANTARES_WEB_TOKEN": "${ANTARES_WEB_TOKEN:-}"
+      }
+    }
+  }
+}

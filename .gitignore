@@ -135,8 +135,9 @@ dmypy.json
 # IDE Pycharm
 .idea/
 
-# VSCode
-.vscode/
+# VSCode (except the shared MCP servers configuration, used by GitHub Copilot)
+.vscode/*
+!.vscode/mcp.json
 
 # Study examples
 *-gitignore/
