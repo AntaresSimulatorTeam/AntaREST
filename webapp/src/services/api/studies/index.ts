@@ -43,8 +43,8 @@ export async function getStudyVersions() {
  * @param params - Parameters.
  * @param params.studyId - The ID of the study.
  * @param params.direct - If `true`, only the direct parent is returned.
- * @returns The direct parent if `direct` is `true`, otherwise all the parents of the specified study,
- * ordered from the closest to the furthest.
+ * @returns The direct parent if `direct` is `true` (or `null` if there is no direct parent),
+ * otherwise all the parents of the specified study, ordered from the closest to the furthest.
  */
 export function getStudyParents(params: GetStudyParentsParams & { direct: true }): Promise<Study>;
 export function getStudyParents(
