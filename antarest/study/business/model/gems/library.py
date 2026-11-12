@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+from enum import StrEnum
 from typing import Any
 
 from pydantic import ConfigDict, Field
@@ -66,6 +67,12 @@ class _GemsModelsPorts(AntaresBaseModel):
 
     id: str
     type: str
+
+
+class VariableType(StrEnum):
+    CONTINUOUS = "continuous"
+    INTEGER = "integer"
+    BINARY = "binary"
 
 
 class _GemsModels(AntaresBaseModel):

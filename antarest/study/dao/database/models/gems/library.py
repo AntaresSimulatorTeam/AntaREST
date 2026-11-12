@@ -11,7 +11,9 @@
 # This file is part of the Antares project.
 from sqlalchemy import Boolean, Column, ForeignKeyConstraint, String, Table
 
+from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
+from antarest.study.business.model.gems.library import VariableType
 from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
@@ -58,10 +60,7 @@ GEMS_MODELS_TABLE = Table(
     Column("description", String(), nullable=True),
     Column("taxonomy_category", String(), nullable=True),
     Column("properties", String(), nullable=True),
-    Column("variables", String(), nullable=False),
     Column("binding_constraints", String(), nullable=False),
-    Column("constraints", String(), nullable=False),
-    Column("objective_contributions", String(), nullable=False),
     Column("extra_outputs", String(), nullable=False),
     Column("port_field_definitions", String(), nullable=False),
     ForeignKeyConstraint(
@@ -100,6 +99,54 @@ GEMS_MODELS_PARAMETERS_TABLE = Table(
     Column("parameter_id", String(255), primary_key=True),
     Column("time_dependent", Boolean(), nullable=False),
     Column("scenario_dependent", Boolean(), nullable=False),
+    ForeignKeyConstraint(
+        ["study_data_id", "model_id", "library_id"],
+        ["gems_models.study_data_id", "gems_models.id", "gems_models.library_id"],
+        ondelete="CASCADE",
+    ),
+)
+
+GEMS_MODELS_VARIABLES_TABLE = Table(
+    "gems_models_variables",
+    metadata,
+    study_data_id_col(),
+    Column("library_id", String(255), primary_key=True),
+    Column("model_id", String(255), primary_key=True),
+    Column("id", String(255), primary_key=True),
+    Column("variable_type", enum_col(VariableType), nullable=False),
+    Column("lower_bound", String(), nullable=True),
+    Column("upper_bound", String(), nullable=True),
+    ForeignKeyConstraint(
+        ["study_data_id", "model_id", "library_id"],
+        ["gems_models.study_data_id", "gems_models.id", "gems_models.library_id"],
+        ondelete="CASCADE",
+    ),
+)
+
+
+GEMS_MODELS_CONSTRAINTS_TABLE = Table(
+    "gems_models_constraints",
+    metadata,
+    study_data_id_col(),
+    Column("library_id", String(255), primary_key=True),
+    Column("model_id", String(255), primary_key=True),
+    Column("id", String(255), primary_key=True),
+    Column("expression", String(), nullable=False),
+    ForeignKeyConstraint(
+        ["study_data_id", "model_id", "library_id"],
+        ["gems_models.study_data_id", "gems_models.id", "gems_models.library_id"],
+        ondelete="CASCADE",
+    ),
+)
+
+GEMS_MODELS_OBJECTIVE_CONTRIBUTIONS_TABLE = Table(
+    "gems_models_objective_contributions",
+    metadata,
+    study_data_id_col(),
+    Column("library_id", String(255), primary_key=True),
+    Column("model_id", String(255), primary_key=True),
+    Column("id", String(255), primary_key=True),
+    Column("expression", String(), nullable=False),
     ForeignKeyConstraint(
         ["study_data_id", "model_id", "library_id"],
         ["gems_models.study_data_id", "gems_models.id", "gems_models.library_id"],
