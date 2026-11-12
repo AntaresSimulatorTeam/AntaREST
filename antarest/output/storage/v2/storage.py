@@ -47,6 +47,7 @@ from antarest.output.filestudy.model import QueryFileType
 from antarest.output.filestudy.variables import extract_variables_list
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
+from antarest.output.model.gems_views import GemsTaxonomyViews
 from antarest.output.model.output_type import OutputType
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -453,6 +454,10 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath) -> bytes:
+        raise NotImplementedError()
+
+    @override
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews]:
         raise NotImplementedError()
 
     @override

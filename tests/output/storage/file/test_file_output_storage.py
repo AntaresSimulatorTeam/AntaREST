@@ -24,6 +24,7 @@ from antarest.core.exceptions import (
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
     OutputFileNotFound,
+    OutputGemsViewsNotFound,
     OutputNotFound,
     StudyNotFoundError,
 )
@@ -565,6 +566,26 @@ def test_raw_files(output_storage: IOutputStorage) -> None:
             output_storage.list_raw_files("STA-mini", output_id)
         with pytest.raises(OutputNotFound):
             output_storage.read_raw_file("STA-mini", output_id, PurePosixPath("20201014-1427eco/info.antares-output"))
+
+
+def test_get_gems_views(output_storage: IOutputStorage) -> None:
+    # `import_output` copies the directory: the asset is left untouched.
+    # The output name depends on the local timezone, so we use the returned one.
+    gems_output_dir = Path(__file__).parents[2] / "filestudy" / "data" / "20261104-1636eco-gems_views"
+    output_id = output_storage.import_output("STA-mini", gems_output_dir)
+
+    views = output_storage.get_gems_views("STA-mini", output_id)
+    assert [v.taxonomy for v in views] == ["balance", "link"]
+    assert [list(views_by_id) for views_by_id in views[0].view_ids] == [["view_area", "view_storage", "view_thermal"]]
+    assert [location.id for location in views[1].view_ids[0]["view_link"].metrics_location] == [
+        "area1_area2_link",
+        "area1_area3_link",
+        "area2_area3_link",
+    ]
+
+    # Legacy output: no views
+    with pytest.raises(OutputGemsViewsNotFound):
+        output_storage.get_gems_views("STA-mini", "20201014-1427eco")
 
 
 def test_get_logs(output_storage: IOutputStorage, tmp_path: Path) -> None:

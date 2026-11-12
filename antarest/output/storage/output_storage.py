@@ -30,6 +30,7 @@ from antarest.launcher.model import LogType
 from antarest.output.filestudy.model import QueryFileType
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
+from antarest.output.model.gems_views import GemsTaxonomyViews
 from antarest.output.model.output_type import OutputType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
@@ -334,6 +335,17 @@ class IOutputStorage(ABC):
         Raises:
             OutputNotFound: if the unarchived output does not exist.
             OutputFileNotFound: if the file does not exist in the output.
+        """
+
+    @abstractmethod
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews]:
+        """
+        Returns the GEMS views of the output grouped by taxonomy category, with their available locations.
+        The output must not be archived.
+
+        Raises:
+            OutputNotFound: if the unarchived output does not exist.
+            OutputGemsViewsNotFound: if the output does not contain GEMS views.
         """
 
     @abstractmethod

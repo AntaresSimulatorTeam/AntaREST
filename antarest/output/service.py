@@ -65,6 +65,7 @@ from antarest.output.model import (
     OutputVariablesViewStatus,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
+from antarest.output.model.gems_views import GemsTaxonomyViews
 from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -930,3 +931,13 @@ class OutputService:
         if storage.is_output_archived(study_id, output_id):
             raise UnsupportedOperationOnArchivedOutput(output_id)
         return storage.read_raw_file(study_id, output_id, path)
+
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews]:
+        """
+        Returns the GEMS views of the output grouped by taxonomy category, with their available locations.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.is_output_archived(study_id, output_id):
+            raise UnsupportedOperationOnArchivedOutput(output_id)
+        return storage.get_gems_views(study_id, output_id)

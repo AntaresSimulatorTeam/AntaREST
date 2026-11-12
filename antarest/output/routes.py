@@ -43,6 +43,7 @@ from antarest.output.model import (
     OutputVariablesViewResponse,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
+from antarest.output.model.gems_views import GemsTaxonomyViews
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.output.variable_view.model import OutputItemId
 from antarest.study.model import MatrixFrequency
@@ -262,6 +263,20 @@ def create_output_routes() -> APIRouter:
         logger.info(f"Fetching raw file '{path}' of the output {output_id} for study {uuid}")
         content = output_service.read_raw_file(uuid, output_id, PurePosixPath(path))
         return Response(content=content, media_type="application/octet-stream")
+
+    @bp.get(
+        "/studies/{study_id}/outputs/{output_id}/gems-views",
+        summary="Fetches the GEMS views of a given output, with their available locations",
+        responses={
+            400: {"description": "The output is archived"},
+            404: {"description": "The output does not exist or does not contain GEMS views"},
+        },
+    )
+    def get_output_gems_views(
+        output_service: OutputServiceDep, study_id: UuidStr, output_id: SanitizedStr
+    ) -> list[GemsTaxonomyViews]:
+        logger.info(f"Fetching GEMS views of the output {output_id} for study {study_id}")
+        return output_service.get_gems_views(study_id, output_id)
 
     @bp.get(
         "/studies/{study_id}/outputs",

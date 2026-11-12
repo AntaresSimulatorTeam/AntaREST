@@ -30,6 +30,7 @@ from antarest.core.exceptions import (
     OutputAlreadyExists,
     OutputAlreadyUnarchived,
     OutputFileNotFound,
+    OutputGemsViewsNotFound,
     OutputNotFound,
 )
 from antarest.core.interfaces.cache import ICache
@@ -48,6 +49,7 @@ from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.output.filestudy.aggregation import AggregatorManager
 from antarest.output.filestudy.download import build_matrix_aggregation_result
+from antarest.output.filestudy.gems_views import extract_gems_views
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file_as_pandas_dataframe
 from antarest.output.filestudy.metadata import parse_output_config
 from antarest.output.filestudy.model import (
@@ -61,6 +63,8 @@ from antarest.output.model import (
     StudyDownloadDTO,
 )
 from antarest.output.model.download import MatrixIndex
+from antarest.output.model.gems_views import GemsTaxonomyViews
+from antarest.output.model.output_type import OutputType
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
     DigestNotFoundError,
@@ -647,6 +651,13 @@ class AbstractFileOutputStorage(IOutputStorage):
         if not is_path_safe(output_path, path.as_posix()) or not file_path.is_file():
             raise OutputFileNotFound(output_id, path.as_posix())
         return file_path.read_bytes()
+
+    @override
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews]:
+        output_path = self._require_unarchived_output_path(study_id, output_id)
+        if OutputType.from_output_dir(output_path) != OutputType.GEMS_VIEWS:
+            raise OutputGemsViewsNotFound(output_id)
+        return extract_gems_views(output_path)
 
     def _build_output_node(self, study_id: str, output_id: str) -> Output:
         study_outputs = self._outputs_provider.get_outputs(study_id)
