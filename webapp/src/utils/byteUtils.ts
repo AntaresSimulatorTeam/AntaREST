@@ -14,20 +14,20 @@
 
 import i18n from "@/i18n";
 
-const SIZE_UNITS = ["bytes", "kib", "mib", "gib", "tib", "pib"] as const;
+const SIZE_UNITS = ["bytes", "kb", "mb", "gb", "tb", "pb"] as const;
 
 /**
- * Formats a byte count with binary units in the current application language.
+ * Formats a byte count with decimal units in the current application language.
  *
  * @param bytes - The byte count to format.
  * @returns The localized size and unit.
  */
 export function formatBytes(bytes: number): string {
-  const exponent = bytes > 0 ? Math.floor(Math.log(bytes) / Math.log(1024)) : 0;
+  const exponent = bytes > 0 ? Math.floor(Math.log(bytes) / Math.log(1000)) : 0;
   const unitIndex = Math.max(0, Math.min(exponent, SIZE_UNITS.length - 1));
   const value = new Intl.NumberFormat(i18n.resolvedLanguage ?? i18n.language, {
     maximumFractionDigits: 1,
-  }).format(bytes / 1024 ** unitIndex);
+  }).format(bytes / 1000 ** unitIndex);
 
   return i18n.t(`global.units.${SIZE_UNITS[unitIndex]}`, { value });
 }

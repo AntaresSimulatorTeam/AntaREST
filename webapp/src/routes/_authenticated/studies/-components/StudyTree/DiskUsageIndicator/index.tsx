@@ -14,7 +14,7 @@
 
 import { filesystemQueries } from "@/queries/filesystem/queries";
 import { formatBytes } from "@/utils/byteUtils";
-import { getUsageColor } from "@/utils/muiUtils";
+import { getUsageColor } from "@/theme/utils";
 import { Box, LinearProgress, Tooltip, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";

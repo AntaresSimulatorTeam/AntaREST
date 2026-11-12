@@ -67,19 +67,23 @@ function TreeSection({
   return (
     <>
       <Box sx={container}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Stack direction="row" alignItems="center" spacing={0.5}>
           <Stack
             direction="row"
             spacing={1}
             alignItems="center"
             onClick={onToggleCollapse}
-            sx={{ cursor: "pointer", minWidth: 0 }}
+            sx={{ cursor: "pointer", flex: 1, minWidth: 0 }}
           >
-            <Box sx={{ color: iconColor, fontSize: ICON_SIZE, lineHeight: 0 }}>{icon}</Box>
+            <Box sx={{ color: iconColor, fontSize: ICON_SIZE, lineHeight: 0, flexShrink: 0 }}>
+              {icon}
+            </Box>
             <Typography variant="subtitle2" noWrap sx={[titleStyles, { color: titleColor }]}>
               {title}
             </Typography>
           </Stack>
+
+          {headerContent}
 
           <Stack direction="row" sx={{ flexShrink: 0 }}>
             {onAddDirectory && (
@@ -108,7 +112,6 @@ function TreeSection({
             )}
           </Stack>
         </Stack>
-        {headerContent}
       </Box>
 
       {/* The parent grid collapses this row to 0fr. */}

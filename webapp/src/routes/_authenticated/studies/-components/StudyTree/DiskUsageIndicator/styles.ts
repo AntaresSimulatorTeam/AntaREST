@@ -19,6 +19,8 @@ export const indicatorStyles = {
   alignItems: "center",
   gap: 0.5,
   height: 20,
+  width: 80,
+  flexShrink: 0,
   minWidth: 0,
   color: "text.secondary",
   borderRadius: 0.5,
@@ -38,7 +40,7 @@ export const progressStyles = {
 } satisfies SxProps<Theme>;
 
 export const percentageStyles = {
-  minWidth: "4ch",
+  width: "5ch",
   flexShrink: 0,
   whiteSpace: "nowrap",
   textAlign: "right",

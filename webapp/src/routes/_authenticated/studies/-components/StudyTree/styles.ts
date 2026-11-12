@@ -30,6 +30,7 @@ const containerBaseStyles = {
   display: "flex",
   flexDirection: "column",
   minHeight: 0,
+  minWidth: 0,
 } satisfies SxProps<Theme>;
 
 export const nodeActionsContainerStyles = {

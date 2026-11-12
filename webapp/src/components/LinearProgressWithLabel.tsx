@@ -24,7 +24,8 @@ import {
 } from "@mui/material";
 import * as R from "ramda";
 import { useTranslation } from "react-i18next";
-import { getUsageColor, mergeSxProp } from "@/utils/muiUtils";
+import { getUsageColor } from "@/theme/utils";
+import { mergeSxProp } from "@/utils/muiUtils";
 
 /**
  * Determines the color of the progress bar based on value and mode

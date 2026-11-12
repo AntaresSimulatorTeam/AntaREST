@@ -35,8 +35,7 @@ export const nodeNameStyles = {
 } satisfies SxProps<Theme>;
 
 export const workspaceDiskUsageStyles = {
-  flex: 1,
-  minWidth: 0,
+  flexShrink: 0,
 } satisfies SxProps<Theme>;
 
 export const treeItemStyles: SxProps<Theme> = (theme) => ({

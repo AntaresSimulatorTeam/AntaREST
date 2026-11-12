@@ -38,13 +38,14 @@ function withTooltip(label: TreeItemEnhancedProps["label"], disableTooltip: bool
 function withLoading(label: TreeItemEnhancedProps["label"], loading: boolean) {
   // Keep the label mounted so loading does not reset focus or local state.
   return (
-    <Box sx={{ display: loading ? "flex" : "block", alignItems: "center", gap: 1, minWidth: 0 }}>
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       {loading && (
+        // Wrapped with a <Box> to prevent display issues when the item is expanded.
         <Box>
           <CircularProgress size={12} color="secondary" />
         </Box>
       )}
-      {label}
+      <Box sx={{ flex: 1, minWidth: 0 }}>{label}</Box>
     </Box>
   );
 }
