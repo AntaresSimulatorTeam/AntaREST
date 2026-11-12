@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import json
-from typing import Any
+from typing import Any, Callable
 
 from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
@@ -197,13 +197,15 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
         if port_type_values:
             session.execute(insert(GEMS_PORT_TYPES_TABLE), port_type_values)
 
-        def _convert_model_to_rows(items: list[Any]) -> list[dict[str, Any]]:
+        def _convert_model_to_rows(
+            items: list[Any], dump: Callable[[Any], dict[str, Any]] = lambda x: x.model_dump(mode="json")
+        ) -> list[dict[str, Any]]:
             return [
                 {
                     "study_data_id": study_data_id,
                     "library_id": library.id,
                     "model_id": model.id,
-                    **item.model_dump(mode="json"),
+                    **dump(item),
                 }
                 for item in items
             ]
@@ -231,21 +233,13 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                 }
             )
 
-            parameter_values += _convert_model_to_rows(model.parameters)
+            port_values += _convert_model_to_rows(model.ports, dump=lambda p: {"port_id": p.id, "type": p.type})
+            parameter_values += _convert_model_to_rows(
+                model.parameters, dump=lambda p: {"parameter_id": p.id, **p.model_dump()}
+            )
             variables_values += _convert_model_to_rows(model.variables)
             constraints_values += _convert_model_to_rows(model.constraints)
             objective_contributions_values += _convert_model_to_rows(model.objective_contributions)
-
-            for port in model.ports:
-                port_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "library_id": library.id,
-                        "model_id": model.id,
-                        "port_id": port.id,
-                        "type": port.type,
-                    }
-                )
 
         if model_values:
             session.execute(insert(GEMS_MODELS_TABLE), model_values)
