@@ -197,6 +197,17 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
         if port_type_values:
             session.execute(insert(GEMS_PORT_TYPES_TABLE), port_type_values)
 
+        def _convert_model_to_rows(items: list[Any]) -> list[dict[str, Any]]:
+            return [
+                {
+                    "study_data_id": study_data_id,
+                    "library_id": library.id,
+                    "model_id": model.id,
+                    **item.model_dump(mode="json"),
+                }
+                for item in items
+            ]
+
         model_values = []
         port_values = []
         parameter_values = []
@@ -220,6 +231,11 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                 }
             )
 
+            parameter_values += _convert_model_to_rows(model.parameters)
+            variables_values += _convert_model_to_rows(model.variables)
+            constraints_values += _convert_model_to_rows(model.constraints)
+            objective_contributions_values += _convert_model_to_rows(model.objective_contributions)
+
             for port in model.ports:
                 port_values.append(
                     {
@@ -231,51 +247,17 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                     }
                 )
 
-            for parameter in model.parameters:
-                parameter_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "library_id": library.id,
-                        "model_id": model.id,
-                        **parameter.model_dump(),
-                    }
-                )
-
-            for variable in model.variables:
-                variables_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "library_id": library.id,
-                        "model_id": model.id,
-                        **variable.model_dump(mode="json"),
-                    }
-                )
-
-            for constraint in model.constraints:
-                constraints_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "library_id": library.id,
-                        "model_id": model.id,
-                        **constraint.model_dump(),
-                    }
-                )
-
-            for objective_contribution in model.objective_contributions:
-                objective_contributions_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "library_id": library.id,
-                        "model_id": model.id,
-                        **objective_contribution.model_dump(),
-                    }
-                )
-
         if model_values:
             session.execute(insert(GEMS_MODELS_TABLE), model_values)
         if port_values:
             session.execute(insert(GEMS_MODELS_PORTS_TABLE), port_values)
         if parameter_values:
             session.execute(insert(GEMS_MODELS_PARAMETERS_TABLE), parameter_values)
+        if variables_values:
+            session.execute(insert(GEMS_MODELS_VARIABLES_TABLE), variables_values)
+        if constraints_values:
+            session.execute(insert(GEMS_MODELS_CONSTRAINTS_TABLE), constraints_values)
+        if objective_contributions_values:
+            session.execute(insert(GEMS_MODELS_OBJECTIVE_CONTRIBUTIONS_TABLE), objective_contributions_values)
 
         session.commit()
