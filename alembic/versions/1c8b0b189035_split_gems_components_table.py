@@ -35,7 +35,7 @@ def upgrade():
         sa.Column("library_id", sa.String(length=255), nullable=False),
         sa.Column("model_id", sa.String(length=255), nullable=False),
         sa.Column("id", sa.String(length=255), nullable=False),
-        sa.Column("variable_type", variables_type_enum, nullable=False),
+        sa.Column("type", variables_type_enum, nullable=False),
         sa.Column("lower_bound", sa.String(), nullable=True),
         sa.Column("upper_bound", sa.String(), nullable=True),
         sa.PrimaryKeyConstraint("study_data_id", "library_id", "model_id", "id", name="pk_gems_model_variables"),
