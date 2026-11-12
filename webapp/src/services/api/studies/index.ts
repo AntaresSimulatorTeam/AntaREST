@@ -44,13 +44,16 @@ export async function getStudyVersions() {
  * @param params.studyId - The ID of the study.
  * @param params.direct - If `true`, only the direct parent is returned.
  * @returns The direct parent if `direct` is `true` (or `null` if there is no direct parent),
- * otherwise all the parents of the specified study, ordered from the closest to the furthest.
+ * otherwise all the parents of the specified study, ordered from the closest to the furthest
+ * (or an empty array if there are no parents).
  */
-export function getStudyParents(params: GetStudyParentsParams & { direct: true }): Promise<Study>;
+export function getStudyParents(
+  params: GetStudyParentsParams & { direct: true },
+): Promise<Study | null>;
 export function getStudyParents(
   params: GetStudyParentsParams & { direct?: false },
 ): Promise<Study[]>;
-export function getStudyParents(params: GetStudyParentsParams): Promise<Study | Study[]>;
+export function getStudyParents(params: GetStudyParentsParams): Promise<Study | Study[] | null>;
 export async function getStudyParents({ studyId, direct }: GetStudyParentsParams) {
   const { data } = await client.get(`/v1/studies/${studyId}/parents`, {
     params: { direct },

@@ -86,6 +86,9 @@ export const getReferenceStudy = createSelector(getStudiesById, getStudy, (studi
   while (parentId) {
     const parent = studiesById[parentId];
 
+    // TODO: The parent may be missing from the store (e.g. the user can't access it).
+    // In that case, we stop at the highest known ancestor, which may not be the actual reference study.
+    // The API should expose this info on variant studies (e.g. a flag indicating whether the reference is archived).
     if (!parent) {
       break;
     }
