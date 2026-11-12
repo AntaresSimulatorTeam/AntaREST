@@ -116,7 +116,7 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
             stmt = select(table).where(table.c.study_data_id == study_data_id)
             rows = session.execute(stmt).fetchall()
             for row in rows:
-                mapping.setdefault(row.model_id, []).append({"id": row.constraint_id, "expression": row.expression})
+                mapping.setdefault(row.model_id, []).append({"id": row.id, "expression": row.expression})
 
         ## Other data
         models_stmt = select(GEMS_MODELS_TABLE).where(GEMS_MODELS_TABLE.c.study_data_id == study_data_id)
