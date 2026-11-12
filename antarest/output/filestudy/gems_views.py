@@ -55,7 +55,11 @@ def read_metric_locations(output_dir: Path, view: GemsViewConfig) -> list[str]:
         # File name: <view_id>--<aggregation_id>--<timestamp>.parquet
         for parquet_path in views_output_dir.glob(f"{view.id}--{aggregation.id}--*.parquet"):
             # Lazy scan: only the `metric_location` column is actually read from the file
-            df = pl.scan_parquet(parquet_path).select(pl.col(_METRIC_LOCATION_COL).unique()).collect()
+            df = (
+                pl.scan_parquet(parquet_path, glob=False)
+                .select(pl.col(_METRIC_LOCATION_COL).drop_nulls().unique())
+                .collect()
+            )
             locations.update(df[_METRIC_LOCATION_COL].to_list())
     return sorted(locations)
 
