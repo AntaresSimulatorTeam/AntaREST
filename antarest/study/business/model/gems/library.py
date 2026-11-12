@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 from enum import StrEnum
-from typing import Any
+from typing import Any, TypeAlias
 
 from pydantic import ConfigDict, Field
 
@@ -75,6 +75,26 @@ class VariableType(StrEnum):
     BINARY = "binary"
 
 
+class _GemsModelConstraints(AntaresBaseModel):
+    id: str
+    expression: str
+
+
+class _GemsModelObjectiveContributions(AntaresBaseModel):
+    id: str
+    expression: str
+
+
+VariablesBound: TypeAlias = str | float | None
+
+
+class _GemsModelVariables(AntaresBaseModel):
+    id: str
+    type: VariableType
+    lower_bound: VariablesBound = None
+    upper_bound: VariablesBound = None
+
+
 class _GemsModels(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
@@ -84,13 +104,13 @@ class _GemsModels(AntaresBaseModel):
     properties: list[_GemsModelsProperties] = Field(default_factory=list)
     parameters: list[_GemsModelsParameters] = Field(default_factory=list)
     ports: list[_GemsModelsPorts] = Field(default_factory=list)
+    constraints: list[_GemsModelConstraints] = Field(default_factory=list)
+    objective_contributions: list[_GemsModelObjectiveContributions] = Field(default_factory=list)
+    variables: list[_GemsModelVariables] = Field(default_factory=list)
 
     # These fields are not used in the current implementation
     # That's why they are treated as unknown data
-    variables: Any | None = None
     binding_constraints: Any | None = None
-    constraints: Any | None = None
-    objective_contributions: Any | None = None
     extra_outputs: Any | None = None
     port_field_definitions: Any | None = None
 
