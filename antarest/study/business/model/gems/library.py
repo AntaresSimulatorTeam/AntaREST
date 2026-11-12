@@ -91,7 +91,7 @@ VariablesBound: TypeAlias = str | float | None
 
 class _GemsModelVariables(AntaresBaseModel):
     id: GemsId
-    type: VariableType
+    type: VariableType = Field(alias="variable-type")
     lower_bound: VariablesBound = None
     upper_bound: VariablesBound = None
 
