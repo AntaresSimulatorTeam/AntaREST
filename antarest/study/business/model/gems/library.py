@@ -14,6 +14,7 @@ from typing import Any, TypeAlias
 
 from pydantic import ConfigDict, Field
 
+from antarest.core.model import GemsId
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 
@@ -76,12 +77,12 @@ class VariableType(StrEnum):
 
 
 class _GemsModelConstraints(AntaresBaseModel):
-    id: str
+    id: GemsId
     expression: str
 
 
 class _GemsModelObjectiveContributions(AntaresBaseModel):
-    id: str
+    id: GemsId
     expression: str
 
 
@@ -89,7 +90,7 @@ VariablesBound: TypeAlias = str | float | None
 
 
 class _GemsModelVariables(AntaresBaseModel):
-    id: str
+    id: GemsId
     type: VariableType
     lower_bound: VariablesBound = None
     upper_bound: VariablesBound = None
@@ -98,7 +99,7 @@ class _GemsModelVariables(AntaresBaseModel):
 class _GemsModels(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
-    id: str
+    id: GemsId
     description: str | None = None
     taxonomy_category: str | None = None
     properties: list[_GemsModelsProperties] = Field(default_factory=list)
