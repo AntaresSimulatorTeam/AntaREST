@@ -972,6 +972,7 @@
   "studies.tree.external.short": "disk",
   "studies.tree.error.failToFetchWorkspace": "Failed to load workspaces",
   "studies.tree.error.failToFetchFolder": "Failed to load subfolders for {{path}}",
+  "studies.tree.error.folderUnavailable": "The folder is no longer available in the Study Explorer.",
   "studies.tree.unscannedStudyFolder": "Unscanned study",
   "studies.tree.addRootDirectory": "Add root directory",
   "studies.tree.noDirectories": "No directories found",

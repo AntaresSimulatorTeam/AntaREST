@@ -83,6 +83,12 @@ export const getStudyFilters = (state: AppState): StudyFilters => {
   return getStudiesState(state).filters;
 };
 
+export const getStudyFolderRevealRequest = (
+  state: AppState,
+): StudiesState["folderRevealRequest"] => {
+  return getStudiesState(state).folderRevealRequest;
+};
+
 export const getStudySortConfig = (state: AppState): StudySortConfig => {
   return getStudiesState(state).sort;
 };

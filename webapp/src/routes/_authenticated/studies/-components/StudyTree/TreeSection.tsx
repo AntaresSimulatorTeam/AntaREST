@@ -37,6 +37,7 @@ interface Props {
   onToggleCollapse: () => void;
   onAddDirectory?: () => void;
   onRootClick?: () => void;
+  isRootSelected?: boolean;
   /** sessionStorage key used to persist and restore scroll position across navigations. */
   scrollKey?: string;
   children: React.ReactNode;
@@ -49,6 +50,7 @@ function TreeSection({
   onToggleCollapse,
   onAddDirectory,
   onRootClick,
+  isRootSelected = false,
   scrollKey,
   children,
 }: Props) {
@@ -62,7 +64,6 @@ function TreeSection({
 
   return (
     <>
-      {/* Header row */}
       <Box sx={container}>
         <Stack direction="row" justifyContent="space-between" alignItems="center">
           <Stack
@@ -97,6 +98,8 @@ function TreeSection({
                 onClick={onRootClick}
                 sx={{ p: ICON_BUTTON_PADDING }}
                 aria-label="Home"
+                aria-pressed={isRootSelected}
+                color={isRootSelected ? "primary" : "default"}
               >
                 <HomeIcon sx={{ fontSize: ICON_SIZE }} />
               </IconButton>
@@ -105,9 +108,9 @@ function TreeSection({
         </Stack>
       </Box>
 
-      {/* Content row — collapses via 0fr grid row in parent */}
+      {/* The parent grid collapses this row to 0fr. */}
       <Box sx={[container, contentSxOverride]}>
-        <Box sx={innerContentSx}>
+        <Box sx={innerContentSx} data-study-tree-scroll>
           <CustomScrollbar style={scrollbarStyle} events={scrollEvents}>
             {children}
           </CustomScrollbar>

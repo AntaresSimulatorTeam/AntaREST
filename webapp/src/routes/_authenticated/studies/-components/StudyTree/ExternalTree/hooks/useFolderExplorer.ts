@@ -34,6 +34,13 @@ export function useFolderExplorer() {
   const [exploredFolders, setExploredFolders] = useState<string[]>([]);
   const [itemsLoading, setItemsLoading] = useState<string[]>([]);
 
+  // Only applied results count as explored. A cancelled reveal may discard fetched folders.
+  const markPathExplored = (itemId: string) => {
+    setExploredFolders((previous) =>
+      previous.includes(itemId) ? previous : [...previous, itemId],
+    );
+  };
+
   /**
    * Parses a path and extracts workspace and subpath components.
    * Validates that the path is absolute and has a valid workspace.
@@ -63,9 +70,14 @@ export function useFolderExplorer() {
    * and trigger a scan only when needed by expanding folders.
    *
    * @param itemId - The full path of the folder to explore (e.g., "/workspace/sub/path")
+   * @param options - Folder loading options.
+   * @param options.refresh - Fetch even when the query cache is still fresh.
    * @returns Promise that resolves when folders are fetched, or null if path is invalid
    */
-  const explorePath = async (itemId: string): Promise<FolderDTO[] | null> => {
+  const explorePath = async (
+    itemId: string,
+    { refresh = false }: { refresh?: boolean } = {},
+  ): Promise<FolderDTO[] | null> => {
     const parsed = parsePath(itemId);
 
     if (!parsed) {
@@ -77,17 +89,10 @@ export function useFolderExplorer() {
     setItemsLoading((prev) => [...prev, itemId]);
 
     try {
-      const folders = await queryClient.fetchQuery(explorerQueries.folders(workspace, path));
-
-      // Mark this path as explored
-      setExploredFolders((prev) => {
-        if (prev.includes(itemId)) {
-          return prev;
-        }
-        return [...prev, itemId];
+      return await queryClient.fetchQuery({
+        ...explorerQueries.folders(workspace, path),
+        ...(refresh && { staleTime: 0 }),
       });
-
-      return folders;
     } catch (err) {
       enqueueErrorSnackbar(
         t("studies.tree.error.failToFetchFolder", {
@@ -96,6 +101,7 @@ export function useFolderExplorer() {
         }),
         toError(err),
       );
+
       return null;
     } finally {
       setItemsLoading((prev) => prev.filter((id) => id !== itemId));
@@ -104,6 +110,7 @@ export function useFolderExplorer() {
 
   return {
     explorePath,
+    markPathExplored,
     exploredFolders,
     itemsLoading,
   };

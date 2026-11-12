@@ -32,6 +32,16 @@ function StudyTree() {
   const studies = useAppSelector(getStudies);
   const managedCollapsed = useAppSelector((s) => getStudyFilters(s).managed.collapsed);
   const externalCollapsed = useAppSelector((s) => getStudyFilters(s).external.collapsed);
+  const managedRootSelected = useAppSelector((s) => {
+    const filters = getStudyFilters(s);
+
+    return filters.activeTree === "managed" && filters.managed.directoryId === null;
+  });
+  const externalRootSelected = useAppSelector((s) => {
+    const filters = getStudyFilters(s);
+
+    return filters.activeTree === "external" && filters.external.path === "";
+  });
   const externalStudies = useMemo(() => studies.filter((s) => !s.managed), [studies]);
 
   const [isCreatingDirectory, setIsCreatingDirectory] = useState(false);
@@ -78,13 +88,14 @@ function StudyTree() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={studyTreeGridSx(gridTemplateRows)}>
+    <Box sx={studyTreeGridSx(gridTemplateRows)} data-study-tree>
       <TreeSection
         variant="managed"
         title={t("studies.tree.managed")}
         icon={<AccountTreeIcon />}
         onToggleCollapse={() => handleToggleCollapse("managed")}
         onRootClick={handleManagedRootClick}
+        isRootSelected={managedRootSelected}
         onAddDirectory={handleAddDirectoryClick}
         scrollKey="study-tree-managed"
       >
@@ -103,6 +114,7 @@ function StudyTree() {
         icon={<StorageIcon />}
         onToggleCollapse={() => handleToggleCollapse("external")}
         onRootClick={handleExternalRootClick}
+        isRootSelected={externalRootSelected}
         scrollKey="study-tree-external"
       >
         <ExternalTree studies={externalStudies} onRootClick={handleExternalRootClick} />
