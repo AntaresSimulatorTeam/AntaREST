@@ -34,6 +34,7 @@ nav:
   - Architecture: architecture.md
   - Database management: database.md
   - Add a new study version: add-new-antares-version.md
+  - MCP server (AI assistants): mcp-server.md
   - Changelog: CHANGELOG.md
   - Contributing: contributing.md
   

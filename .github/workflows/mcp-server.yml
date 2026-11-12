@@ -1,0 +1,37 @@
+name: mcp-server
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "mcp-server/**"
+      - ".github/workflows/mcp-server.yml"
+
+jobs:
+  mcp-server:
+    runs-on: ubuntu-22.04
+    defaults:
+      run:
+        working-directory: mcp-server
+    steps:
+      - name: Checkout github repo
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "mcp-server/uv.lock"
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Check format (ruff)
+        run: |
+          uv run --frozen ruff check
+          uv run --frozen ruff format --check
+      - name: Check typing (mypy)
+        run: uv run --frozen mypy
+      - name: Test with pytest
+        run: uv run --frozen pytest

@@ -1,0 +1,27 @@
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "antares-web-url",
+      "description": "Antares Web URL",
+      "default": "http://localhost:8080"
+    },
+    {
+      "type": "promptString",
+      "id": "antares-web-token",
+      "description": "Antares Web bot token (leave empty if security is disabled)",
+      "password": true
+    }
+  ],
+  "servers": {
+    "antares-web": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "${workspaceFolder}/mcp-server", "antares-web-mcp"],
+      "env": {
+        "ANTARES_WEB_URL": "${input:antares-web-url}",
+        "ANTARES_WEB_TOKEN": "${input:antares-web-token}"
+      }
+    }
+  }
+}

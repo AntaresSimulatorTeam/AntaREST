@@ -30,7 +30,7 @@ repos:
     hooks:
     -   id: license-check
         name: Check license headers
-        entry: bash -c 'python scripts/license_checker_and_adder.py --path=antarest --action=check-strict && python scripts/license_checker_and_adder.py --path=tests --action=check-strict && python scripts/license_checker_and_adder.py --path=webapp --action=check-strict'
+        entry: bash -c 'python scripts/license_checker_and_adder.py --path=antarest --action=check-strict && python scripts/license_checker_and_adder.py --path=tests --action=check-strict && python scripts/license_checker_and_adder.py --path=webapp --action=check-strict && python scripts/license_checker_and_adder.py --path=mcp-server --action=check-strict'
         language: system
-        files: ^(antarest|tests|webapp)/
+        files: ^(antarest|tests|webapp|mcp-server)/
         pass_filenames: false
