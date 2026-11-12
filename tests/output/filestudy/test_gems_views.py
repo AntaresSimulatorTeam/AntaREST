@@ -14,7 +14,8 @@ from pathlib import Path
 
 import pytest
 
-from antarest.output.filestudy.gems_views import parse_gems_view_configs
+from antarest.output.filestudy.gems_views import parse_gems_view_configs, read_metric_locations
+from antarest.output.model.gems_views import GemsViewConfig
 
 
 @pytest.fixture
@@ -29,3 +30,21 @@ def test_parse_gems_view_configs(output_dir: Path) -> None:
     assert [c.id for c in configs] == ["view_area", "view_link", "view_storage", "view_thermal"]
     assert [c.taxonomy_category for c in configs] == ["balance", "link", "balance", "balance"]
     assert [a.id for a in configs[0].aggregations_patterns] == ["annual_all_scenario", "hourly_per_scenario"]
+
+
+@pytest.fixture
+def view_configs(output_dir: Path) -> dict[str, GemsViewConfig]:
+    return {config.id: config for config in parse_gems_view_configs(output_dir)}
+
+
+def test_read_metric_locations(output_dir: Path, view_configs: dict[str, GemsViewConfig]) -> None:
+    # Locations are deduplicated and sorted
+    assert read_metric_locations(output_dir, view_configs["view_area"]) == ["area1_node", "area2_node", "area3_node"]
+    # Only the locations having a component of this kind appear
+    assert read_metric_locations(output_dir, view_configs["view_storage"]) == ["area3_node"]
+
+
+def test_read_metric_locations__view_not_built(output_dir: Path, view_configs: dict[str, GemsViewConfig]) -> None:
+    # The view is declared but the views builder produced no file for it
+    view_not_built = view_configs["view_area"].model_copy(update={"id": "view_unknown"})
+    assert read_metric_locations(output_dir, view_not_built) == []

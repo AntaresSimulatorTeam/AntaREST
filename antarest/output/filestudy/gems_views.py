@@ -21,6 +21,7 @@ Expected layout, as written by the Simulator and the GEMS views builder:
 
 from pathlib import Path
 
+import polars as pl
 import yaml
 
 from antarest.output.model.gems_views import GemsViewConfig
@@ -28,6 +29,8 @@ from antarest.output.model.output_type import GEMS_VIEWS_DIR
 
 _VIEWS_INPUT_DIR = "input"
 _VIEW_CONFIG_PATTERN = "view_config_*.yml"
+_VIEWS_OUTPUT_DIR = "output"
+_METRIC_LOCATION_COL = "metric_location"
 
 
 def parse_gems_view_configs(output_dir: Path) -> list[GemsViewConfig]:
@@ -40,3 +43,18 @@ def parse_gems_view_configs(output_dir: Path) -> list[GemsViewConfig]:
         content = yaml.safe_load(config_path.read_text(encoding="utf-8"))
         configs.append(GemsViewConfig.model_validate(content["view"]))
     return configs
+
+
+def read_metric_locations(output_dir: Path, view: GemsViewConfig) -> list[str]:
+    """
+    Returns the sorted, distinct locations (areas, links...) found in the files built for the given view.
+    """
+    views_output_dir = output_dir / GEMS_VIEWS_DIR / _VIEWS_OUTPUT_DIR
+    locations: set[str] = set()
+    for aggregation in view.aggregations_patterns:
+        # File name: <view_id>--<aggregation_id>--<timestamp>.parquet
+        for parquet_path in views_output_dir.glob(f"{view.id}--{aggregation.id}--*.parquet"):
+            # Lazy scan: only the `metric_location` column is actually read from the file
+            df = pl.scan_parquet(parquet_path).select(pl.col(_METRIC_LOCATION_COL).unique()).collect()
+            locations.update(df[_METRIC_LOCATION_COL].to_list())
+    return sorted(locations)
