@@ -16,7 +16,7 @@ import { deferred } from "@/tests/queryUtils";
 import { SimpleTreeView, TreeItem } from "@mui/x-tree-view";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { finishStudyFolderReveal } from "@/redux/ducks/studies";
-import { useRevealTreeItem } from "../useRevealTreeItem";
+import useRevealTreeItem from "../useRevealTreeItem";
 
 const { dispatch } = vi.hoisted(() => ({ dispatch: vi.fn() }));
 vi.mock("@/redux/hooks/useAppDispatch", () => ({ default: () => dispatch }));

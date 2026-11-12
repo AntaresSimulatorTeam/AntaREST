@@ -32,7 +32,7 @@ interface Options {
  * @param options.ready - Whether the target path has loaded and expanded.
  * @returns Refs to attach to the tree view.
  */
-export function useRevealTreeItem({ requestId, itemId, ready = true }: Options) {
+function useRevealTreeItem({ requestId, itemId, ready = true }: Options) {
   const dispatch = useAppDispatch();
   const treeRef = useRef<HTMLUListElement>(null);
   const apiRef = useSimpleTreeViewApiRef();
@@ -162,3 +162,5 @@ function centerRowIfOutsideViewport(viewport: HTMLElement, { top, bottom, height
     behavior: "instant",
   });
 }
+
+export default useRevealTreeItem;

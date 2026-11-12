@@ -70,9 +70,14 @@ export function useFolderExplorer() {
    * and trigger a scan only when needed by expanding folders.
    *
    * @param itemId - The full path of the folder to explore (e.g., "/workspace/sub/path")
+   * @param options - Folder loading options.
+   * @param options.refresh - Fetch even when the query cache is still fresh.
    * @returns Promise that resolves when folders are fetched, or null if path is invalid
    */
-  const explorePath = async (itemId: string): Promise<FolderDTO[] | null> => {
+  const explorePath = async (
+    itemId: string,
+    { refresh = false }: { refresh?: boolean } = {},
+  ): Promise<FolderDTO[] | null> => {
     const parsed = parsePath(itemId);
 
     if (!parsed) {
@@ -84,7 +89,10 @@ export function useFolderExplorer() {
     setItemsLoading((prev) => [...prev, itemId]);
 
     try {
-      return await queryClient.fetchQuery(explorerQueries.folders(workspace, path));
+      return await queryClient.fetchQuery({
+        ...explorerQueries.folders(workspace, path),
+        ...(refresh && { staleTime: 0 }),
+      });
     } catch (err) {
       enqueueErrorSnackbar(
         t("studies.tree.error.failToFetchFolder", {

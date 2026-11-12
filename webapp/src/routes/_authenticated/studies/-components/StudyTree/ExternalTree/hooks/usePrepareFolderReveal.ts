@@ -21,25 +21,23 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLatest } from "react-use";
 import type { ExternalTreeNodeMetadata } from "../types";
-import { findNodeByPath, insertFoldersIfNotExist } from "../utils";
+import { findNodeByPath } from "../utils";
 
 interface Options {
   request: Extract<StudyFolderRevealRequest, { tree: "external" }> | null;
   studiesTree: ExternalTreeNodeMetadata;
   workspaceReady: boolean;
   workspaceError: Error | null;
-  exploredFolders: readonly string[];
-  explorePath: (path: string) => Promise<FolderDTO[] | null>;
+  explorePath: (path: string, options?: { refresh?: boolean }) => Promise<FolderDTO[] | null>;
   markPathExplored: (path: string) => void;
   updateTreeWithFolders: (folders: FolderDTO[], parentPath: string) => void;
 }
 
-export function usePrepareFolderReveal({
+function usePrepareFolderReveal({
   request,
   studiesTree,
   workspaceReady,
   workspaceError,
-  exploredFolders,
   explorePath,
   markPathExplored,
   updateTreeWithFolders,
@@ -56,7 +54,6 @@ export function usePrepareFolderReveal({
     studiesTree,
     explorePath,
     markPathExplored,
-    exploredFolders,
     updateTreeWithFolders,
     workspaceError,
   });
@@ -81,43 +78,47 @@ export function usePrepareFolderReveal({
     };
 
     const prepareFolder = async () => {
-      let tree = revealContext.current.studiesTree;
       const requiredPaths = [...getParentPaths(requestedPath), requestedPath].filter(Boolean);
+      const workspace = findNodeByPath(revealContext.current.studiesTree, requiredPaths[0]);
+
+      if (!workspace) {
+        reportMissingFolder();
+
+        return;
+      }
 
       for (const [index, itemPath] of requiredPaths.entries()) {
         if (cancelled) {
           return;
         }
 
-        const node = findNodeByPath(tree, itemPath);
+        // Cached nodes and earlier exploration do not prove that the folder still exists.
+        const folders = await revealContext.current.explorePath(itemPath, { refresh: true });
 
-        if (!node || node.isScannedStudy || node.isStudyFolder) {
-          reportMissingFolder();
+        if (cancelled) {
+          return;
+        }
+
+        if (!folders) {
+          dispatch(finishStudyFolderReveal(requestId));
 
           return;
         }
 
+        revealContext.current.updateTreeWithFolders(folders, itemPath);
+        revealContext.current.markPathExplored(itemPath);
+
         const nextPath = requiredPaths[index + 1];
-        const needsChildren = nextPath
-          ? !findNodeByPath(tree, nextPath)
-          : !revealContext.current.exploredFolders.includes(itemPath);
 
-        if (needsChildren) {
-          const folders = await revealContext.current.explorePath(itemPath);
+        if (
+          nextPath &&
+          !folders.some(
+            (folder) => `${itemPath}/${folder.name}` === nextPath && !folder.isStudyFolder,
+          )
+        ) {
+          reportMissingFolder();
 
-          if (cancelled) {
-            return;
-          }
-
-          if (!folders) {
-            dispatch(finishStudyFolderReveal(requestId));
-
-            return;
-          }
-
-          revealContext.current.updateTreeWithFolders(folders, itemPath);
-          revealContext.current.markPathExplored(itemPath);
-          tree = insertFoldersIfNotExist(tree, folders);
+          return;
         }
       }
 
@@ -133,3 +134,5 @@ export function usePrepareFolderReveal({
 
   return requestId !== undefined && preparedRequestId === requestId;
 }
+
+export default usePrepareFolderReveal;

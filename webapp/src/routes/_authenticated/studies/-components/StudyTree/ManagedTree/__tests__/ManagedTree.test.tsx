@@ -12,9 +12,14 @@
  * This file is part of the Antares project.
  */
 
-import studiesReducer, { requestStudyFolderReveal } from "@/redux/ducks/studies";
+import studiesReducer, {
+  requestStudyFolderReveal,
+  updateStudyFilters,
+} from "@/redux/ducks/studies";
 import { directoryQueries } from "@/queries/directories/queries";
 import { createDirectory, getDirectories } from "@/services/api/directories";
+import { createStudy } from "@/tests/studyFixtures";
+import { filterStudies } from "@/utils/studiesUtils";
 import { deferred } from "@/tests/queryUtils";
 import { DIRECTORIES, TARGET_FOLDER } from "./fixtures";
 import type { Directory } from "@/services/api/directories/types";
@@ -161,6 +166,7 @@ test("reveals a nested favorite repeatedly without collapsing an unrelated branc
 
 test("reveals a target absent from stale data once the directory refresh finds it", async () => {
   const { store, finish } = setupDirectoryRefresh();
+  act(() => store.dispatch(updateStudyFilters({ managed: { showDescendants: true } })));
 
   await waitFor(() => expect(getDirectories).toHaveBeenCalledOnce());
   expect(enqueueErrorSnackbar).not.toHaveBeenCalled();
@@ -177,6 +183,11 @@ test("reveals a target absent from stale data once the directory refresh finds i
   expect(treeItem("Target")).toHaveAttribute("aria-checked", "true");
   expect(treeItem("Target")).toHaveAttribute("aria-expanded", "true");
   expect(enqueueErrorSnackbar).not.toHaveBeenCalled();
+  expect(store.getState().studies.folderRevealRequest).not.toBeNull();
+  expect(store.getState().studies.filters.managed.directoryIds).toEqual(["target", "child"]);
+  const childStudy = createStudy({ directoryId: "child" });
+
+  expect(filterStudies(store.getState().studies.filters, [childStudy])).toEqual([childStudy]);
 });
 
 test("waits for the directory refresh to confirm that the target is missing", async () => {

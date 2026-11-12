@@ -17,6 +17,7 @@ import studiesReducer, {
   requestStudyFolderReveal,
 } from "@/redux/ducks/studies";
 import { getFolders, getWorkspaces } from "@/services/api/study";
+import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyMetadata } from "@/types/types";
 import { deferred } from "@/tests/queryUtils";
 import { externalStudy, folder, FOLDERS_BY_PATH } from "./fixtures";
@@ -62,7 +63,9 @@ function setup(studies: StudyMetadata[] = [], initialPath?: string) {
     store.dispatch(requestStudyFolderReveal({ tree: "external", path: initialPath }));
   }
 
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false, staleTime: 60_000 } },
+  });
 
   render(
     <Provider store={store}>
@@ -85,8 +88,24 @@ beforeEach(() => {
   vi.clearAllMocks();
   window.localStorage?.clear();
   vi.mocked(getWorkspaces).mockResolvedValue([{ name: "workspace", diskName: "" }]);
-  vi.mocked(getFolders).mockResolvedValue([]);
+  vi.mocked(getFolders).mockImplementation((_workspace, path) => {
+    if (path === "") {
+      return Promise.resolve([folder("Target", "/workspace"), folder("Other", "/workspace")]);
+    }
+
+    if (path === "Target") {
+      return Promise.resolve([folder("Child", "/workspace/Target")]);
+    }
+
+    if (path === "Other") {
+      return Promise.resolve([folder("Keep", "/workspace/Other")]);
+    }
+
+    return Promise.resolve([]);
+  });
 });
+
+afterEach(() => vi.restoreAllMocks());
 
 test("loads an absent favorite from its workspace through its children before revealing it", async () => {
   vi.mocked(getFolders).mockImplementation((_workspace, path) =>
@@ -139,12 +158,43 @@ test("reopens the same favorite after collapse and preserves another expanded br
   expect(treeItem("Other")).toHaveAttribute("aria-expanded", "true");
 });
 
-test("reports a folder that is no longer in its parent and finishes the reveal request", async () => {
-  const store = setup([], "/workspace/Missing");
+test("revalidates a previously explored favorite and removes its deleted cached branch", async () => {
+  const cachedFolders = [
+    folder("Target", "/workspace"),
+    folder("Child", "/workspace/Target"),
+    folder("Other", "/workspace"),
+  ];
+  const getItem = storage.getItem.bind(storage);
+  vi.spyOn(storage, "getItem").mockImplementation((key) =>
+    key === StorageKey.StudyTreeFolders ? cachedFolders : getItem(key),
+  );
+  const saveFolders = vi.spyOn(storage, "setItem");
+  const store = setup(
+    [externalStudy("Target/Child/Study"), externalStudy("Other/Keep/Study")],
+    "/workspace/Target",
+  );
+
+  await screen.findByText("Child");
+  await waitFor(() => expect(getFolders).toHaveBeenCalledWith("workspace", "Target"));
+
+  const requestId = store.getState().studies.folderRevealRequest?.requestId;
+
+  expect(requestId).toBeDefined();
+  act(() => store.dispatch(finishStudyFolderReveal(requestId ?? "")));
+  vi.mocked(getFolders).mockResolvedValue([folder("Other", "/workspace")]);
+
+  act(() => {
+    store.dispatch(requestStudyFolderReveal({ tree: "external", path: "/workspace/Target" }));
+  });
 
   await waitFor(() => expect(enqueueErrorSnackbar).toHaveBeenCalledOnce());
   expect(store.getState().studies.folderRevealRequest).toBeNull();
-  expect(screen.queryByText("Missing")).not.toBeInTheDocument();
+  expect(screen.queryByText("Target")).not.toBeInTheDocument();
+  expect(screen.queryByText("Child")).not.toBeInTheDocument();
+  expect(screen.getByText("Other")).toBeInTheDocument();
+  expect(saveFolders).toHaveBeenLastCalledWith(StorageKey.StudyTreeFolders, [
+    folder("Other", "/workspace"),
+  ]);
 });
 
 test("does not apply a delayed folder response after the reveal is cancelled", async () => {
@@ -167,7 +217,14 @@ test("does not apply a delayed folder response after the reveal is cancelled", a
 test("loads children on the next reveal after cancelling a target-child response", async () => {
   const children = [folder("New child", "/workspace/Target")];
   const response = deferred<typeof children>();
-  vi.mocked(getFolders).mockReturnValueOnce(response.promise).mockResolvedValue(children);
+  let pending = true;
+  vi.mocked(getFolders).mockImplementation((_workspace, path) => {
+    if (path === "") {
+      return Promise.resolve([folder("Target", "/workspace")]);
+    }
+
+    return pending ? response.promise : Promise.resolve(children);
+  });
 
   const store = setup([externalStudy("Target/Study")], "/workspace/Target");
   await waitFor(() => expect(getFolders).toHaveBeenCalledWith("workspace", "Target"));
@@ -177,6 +234,7 @@ test("loads children on the next reveal after cancelling a target-child response
   act(() => store.dispatch(finishStudyFolderReveal(requestId ?? "")));
 
   await act(() => response.resolve(children));
+  pending = false;
 
   expect(screen.queryByText("New child")).not.toBeInTheDocument();
 

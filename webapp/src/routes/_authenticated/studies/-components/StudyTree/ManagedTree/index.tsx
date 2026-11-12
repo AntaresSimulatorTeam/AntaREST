@@ -27,7 +27,7 @@ import { SimpleTreeView } from "@mui/x-tree-view";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useRevealTreeItem } from "../hooks/useRevealTreeItem";
+import useRevealTreeItem from "../hooks/useRevealTreeItem";
 import DeleteDirectoryDialog from "./DeleteDirectoryDialog";
 import EditableTreeItem from "./EditableTreeItem";
 import { useDeleteDirectoryDialog } from "./hooks/useDeleteDirectoryDialog";
@@ -40,7 +40,7 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const directoryId = useAppSelector((state) => getStudyFilters(state).managed.directoryId);
+  const { directoryId, directoryIds } = useAppSelector((state) => getStudyFilters(state).managed);
   const isActive = useAppSelector((state) => getStudyFilters(state).activeTree === "managed");
   const revealRequest = useAppSelector((state) => {
     const request = getStudyFolderRevealRequest(state);
@@ -90,6 +90,19 @@ function ManagedTree({ isCreatingDirectory, onDirectoryCreated }: ManagedTreePro
     );
     dispatch(finishStudyFolderReveal(revealRequest.requestId));
   }, [revealRequest, directoryExists, fetchStatus, error, enqueueErrorSnackbar, t, dispatch]);
+
+  useEffect(() => {
+    if (!isActive || !directoryExists) {
+      return;
+    }
+
+    const nextDirectoryIds = directoryId ? getDescendantIds(directoryId, directories) : null;
+
+    if (!R.equals(directoryIds, nextDirectoryIds)) {
+      // Updating only the scope preserves any reveal still waiting for layout.
+      dispatch(updateStudyFilters({ managed: { directoryIds: nextDirectoryIds } }));
+    }
+  }, [directories, directoryId, directoryIds, directoryExists, isActive, dispatch]);
 
   useEffect(() => {
     if (revealRequest) {

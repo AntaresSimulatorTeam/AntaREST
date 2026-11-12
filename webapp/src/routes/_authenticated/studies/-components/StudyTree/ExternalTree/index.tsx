@@ -21,10 +21,10 @@ import { getStudyFilters, getStudyFolderRevealRequest } from "@/redux/selectors"
 import { getParentPaths } from "@/utils/pathUtils";
 import { SimpleTreeView } from "@mui/x-tree-view";
 import { useCallback, useMemo, useState } from "react";
-import { useRevealTreeItem } from "../hooks/useRevealTreeItem";
+import useRevealTreeItem from "../hooks/useRevealTreeItem";
 import ExternalTreeNode from "./ExternalTreeNode";
 import { useFolderExplorer } from "./hooks/useFolderExplorer";
-import { usePrepareFolderReveal } from "./hooks/usePrepareFolderReveal";
+import usePrepareFolderReveal from "./hooks/usePrepareFolderReveal";
 import { useStudyTree } from "./hooks/useStudyTree";
 import { useWorkspaces } from "./hooks/useWorkspaces";
 import type { ExternalTreeProps } from "./types";
@@ -79,7 +79,6 @@ function ExternalTree({ studies }: ExternalTreeProps) {
     workspaceError: workspaceQuery.error,
     explorePath,
     markPathExplored,
-    exploredFolders,
     updateTreeWithFolders,
   });
 

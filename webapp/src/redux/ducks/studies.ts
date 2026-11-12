@@ -171,7 +171,7 @@ export const updateStudyFilters = createAction<O.Partial<StudyFilters, "deep">>(
   n("UPDATE_FILTERS"),
 );
 
-/** Selects a folder and requests a reveal, including repeated visits to the same folder. */
+/** Selects a folder and creates a new reveal request on every call. */
 export const requestStudyFolderReveal = createAction(n("REVEAL_FOLDER"), (folder: StudyFolder) => ({
   payload: { ...folder, requestId: nanoid() },
 }));
