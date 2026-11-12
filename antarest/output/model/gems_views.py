@@ -20,9 +20,11 @@ from antarest.core.utils.string import to_kebab_case
 
 
 class _GemsViewConfigAggregationPattern(AntaresBaseModel):
-    model_config = ConfigDict(extra="ignore")
+    model_config = ConfigDict(populate_by_name=True, extra="ignore", alias_generator=to_kebab_case)
 
     id: str
+    scenario: bool
+    time_granularity: str
 
 
 class GemsViewConfig(AntaresBaseModel):
@@ -42,10 +44,19 @@ class GemsMetricLocation(AntaresBaseModel):
     id: str
 
 
+class GemsAggregationPattern(AntaresBaseModel):
+    model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_camel)
+
+    id: str
+    scenario: bool
+    time_granularity: str
+
+
 class GemsViewLocations(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_camel)
 
     metrics_location: list[GemsMetricLocation]
+    aggregation_patterns: list[GemsAggregationPattern]
 
 
 class GemsTaxonomyViews(AntaresBaseModel):

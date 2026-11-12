@@ -24,7 +24,13 @@ from pathlib import Path
 import polars as pl
 import yaml
 
-from antarest.output.model.gems_views import GemsMetricLocation, GemsTaxonomyViews, GemsViewConfig, GemsViewLocations
+from antarest.output.model.gems_views import (
+    GemsAggregationPattern,
+    GemsMetricLocation,
+    GemsTaxonomyViews,
+    GemsViewConfig,
+    GemsViewLocations,
+)
 from antarest.output.model.output_type import GEMS_VIEWS_DIR
 
 _VIEWS_INPUT_DIR = "input"
@@ -71,7 +77,13 @@ def extract_gems_views(output_dir: Path) -> list[GemsTaxonomyViews]:
     views_by_taxonomy: dict[str, dict[str, GemsViewLocations]] = {}
     for view in parse_gems_view_configs(output_dir):
         locations = [GemsMetricLocation(id=location) for location in read_metric_locations(output_dir, view)]
+        aggregation_patterns = [
+            GemsAggregationPattern(
+                id=aggregation.id, scenario=aggregation.scenario, time_granularity=aggregation.time_granularity
+            )
+            for aggregation in view.aggregations_patterns
+        ]
         views_by_taxonomy.setdefault(view.taxonomy_category, {})[view.id] = GemsViewLocations(
-            metrics_location=locations
+            metrics_location=locations, aggregation_patterns=aggregation_patterns
         )
     return [GemsTaxonomyViews(taxonomy=taxonomy, view_ids=[views]) for taxonomy, views in views_by_taxonomy.items()]

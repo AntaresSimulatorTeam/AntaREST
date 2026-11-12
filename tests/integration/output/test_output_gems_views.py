@@ -50,11 +50,25 @@ def test_output_gems_views(
             "viewIds": [
                 {
                     "view_area": {
-                        "metricsLocation": [{"id": "area1_node"}, {"id": "area2_node"}, {"id": "area3_node"}]
+                        "metricsLocation": [{"id": "area1_node"}, {"id": "area2_node"}, {"id": "area3_node"}],
+                        "aggregationPatterns": [
+                            {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
+                            {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
+                        ],
                     },
-                    "view_storage": {"metricsLocation": [{"id": "area3_node"}]},
+                    "view_storage": {
+                        "metricsLocation": [{"id": "area3_node"}],
+                        "aggregationPatterns": [
+                            {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
+                            {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
+                        ],
+                    },
                     "view_thermal": {
-                        "metricsLocation": [{"id": "area1_node"}, {"id": "area2_node"}, {"id": "area3_node"}]
+                        "metricsLocation": [{"id": "area1_node"}, {"id": "area2_node"}, {"id": "area3_node"}],
+                        "aggregationPatterns": [
+                            {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
+                            {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
+                        ],
                     },
                 }
             ],
@@ -68,8 +82,12 @@ def test_output_gems_views(
                             {"id": "area1_area2_link"},
                             {"id": "area1_area3_link"},
                             {"id": "area2_area3_link"},
-                        ]
-                    }
+                        ],
+                        "aggregationPatterns": [
+                            {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
+                            {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
+                        ],
+                    },
                 }
             ],
         },
