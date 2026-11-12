@@ -13,12 +13,15 @@
  */
 
 import CustomScrollbar from "@/components/CustomScrollbar";
+import BackdropLoading from "@/components/loaders/BackdropLoading";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
-import type { VariantTree } from "@/services/api/studies/variants/types";
+import type { Study } from "@/services/api/studies/types";
 import { measureTextWidth } from "@/utils/domUtils";
 import { Box, useTheme } from "@mui/material";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useStudy from "../../-hooks/useStudy";
+import useStudyVariantTree from "../../-hooks/useStudyVariantTree";
 import {
   DEPTH_OFFSET,
   MIN_WIDTH,
@@ -32,24 +35,23 @@ import {
   TILE_SIZE_Y_2,
   ZOOM_OUT,
 } from "./constants";
-import TreeNode from "./TreeNode";
 import TreeLabels from "./TreeLabels";
+import TreeNode from "./TreeNode";
 import { buildLayoutTree, type LayoutNode } from "./utils";
 
-interface VariantsTreeProps {
-  variantTree: VariantTree;
-  onClick: (studyId: string) => void;
-}
-
-function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
+function VariantsTree() {
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const { typography } = useTheme();
   const { isDarkMode } = useThemeColorScheme();
-  const layoutTree = useMemo(() => buildLayoutTree(variantTree), [variantTree]);
-  const { depth, totalDescendants } = layoutTree.drawOptions;
+  const navigate = useNavigate();
   const study = useStudy();
+
+  const { data: layoutTree, isFetching } = useStudyVariantTree({
+    studyId: study.id,
+    select: buildLayoutTree,
+  });
 
   const defaultLabelWidth = useMemo(() => {
     const font = `${TEXT_SIZE / ZOOM_OUT}px ${typography.fontFamily}`;
@@ -78,6 +80,7 @@ function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
     return () => observer.disconnect();
   }, []);
 
+  const { depth, totalDescendants } = layoutTree.drawOptions;
   const baseRectWidth = Math.max(TILE_SIZE_X * (depth + DEPTH_OFFSET), MIN_WIDTH);
   const treeHeight = TILE_SIZE_Y * (totalDescendants + 1) + TILE_SIZE_Y_2;
 
@@ -90,7 +93,13 @@ function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
     (containerWidth - labelWidth) * ZOOM_OUT - RECT_X_SPACING,
   );
 
-  const handleHover = useCallback((id: string | null) => setHoverId(id), []);
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleClick = (studyId: Study["id"]) => {
+    navigate({ to: "/studies/$studyId", params: { studyId } });
+  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -104,8 +113,13 @@ function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
         minWidth: 0,
         flexGrow: 1,
         overflow: "hidden",
+        position: "relative",
       }}
+      // Prevent keyboard interaction with the container when fetching
+      inert={isFetching}
     >
+      {/* Prevents interaction with an outdated tree during background refetches */}
+      <BackdropLoading open={isFetching} />
       <CustomScrollbar style={{ height: "100%" }}>
         <Box
           sx={{
@@ -134,8 +148,8 @@ function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
               hoverId={hoverId}
               currentStudyId={study.id}
               isDarkMode={isDarkMode}
-              onClick={onClick}
-              onHover={handleHover}
+              onClick={handleClick}
+              onHover={setHoverId}
             />
           </Box>
           <svg
@@ -154,8 +168,8 @@ function VariantsTree({ variantTree, onClick }: VariantsTreeProps) {
               baseRectWidth={graphWidth}
               hoverId={hoverId}
               currentStudyId={study.id}
-              onClick={onClick}
-              onHover={handleHover}
+              onClick={handleClick}
+              onHover={setHoverId}
             />
           </svg>
         </Box>

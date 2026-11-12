@@ -235,12 +235,12 @@ export function getSubTree(tree: VariantTree, studyId: string): VariantTree | un
   return undefined;
 }
 
-export function countDescendants(tree: VariantTree, studyId?: string): number {
+export function getDescendantCount(tree: VariantTree, studyId?: string): number {
   const rootTree = studyId ? getSubTree(tree, studyId) : tree;
 
   if (!rootTree) {
     return 0;
   }
 
-  return rootTree.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0);
+  return rootTree.children.reduce((sum, child) => sum + 1 + getDescendantCount(child), 0);
 }

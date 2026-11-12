@@ -17,9 +17,10 @@ import client from "../../client";
 import { variantTreeSchema } from "./schemas";
 import type { CreateVariantParams, GetVariantTreeParams } from "./types";
 
-export async function getVariantTree({ studyId, fromRoot = true }: GetVariantTreeParams) {
+export async function getVariantTree({ studyId, fromRoot = true, signal }: GetVariantTreeParams) {
   const { data } = await client.get(`/v1/studies/${studyId}/variants`, {
     params: { from_root: fromRoot },
+    signal,
   });
   return variantTreeSchema.parse(data);
 }
