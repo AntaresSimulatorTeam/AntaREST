@@ -77,11 +77,13 @@ class VariableType(StrEnum):
 
 
 class _GemsModelConstraints(AntaresBaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
     id: GemsId
     expression: str
 
 
 class _GemsModelObjectiveContributions(AntaresBaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
     id: GemsId
     expression: str
 
@@ -90,6 +92,8 @@ VariablesBound: TypeAlias = str | float | None
 
 
 class _GemsModelVariables(AntaresBaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True, alias_generator=to_kebab_case)
+
     id: GemsId
     type: VariableType = Field(alias="variable-type")
     lower_bound: VariablesBound = None
