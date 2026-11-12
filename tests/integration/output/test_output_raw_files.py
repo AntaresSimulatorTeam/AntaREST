@@ -100,8 +100,9 @@ def test_output_raw_files_path_traversal(
     client: TestClient, user_access_token: str, internal_study_id: str, tmp_path: Path
 ) -> None:
     """
-    At endpoint level, `SanitizedStr` only rejects line breaks: output ids like ".." and paths like "../x"
-    are accepted, so the storage must prevent them from escaping the output folder.
+    The `output_id` is validated at the endpoint by the `OutputId` type, so ids like ".." are rejected
+    with a 422 before reaching the service. The file `path` is only a `SanitizedStr` (it rejects line
+    breaks, not "../x"), so the storage must still prevent it from escaping the output folder.
     """
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
     output_id = "20201014-1427eco"
@@ -118,14 +119,14 @@ def test_output_raw_files_path_traversal(
         assert res.status_code == 404, (path, res.content)
         assert res.json()["exception"] == "OutputFileNotFound"
 
-    # Output ids that are not a direct child of the outputs folder
+    # Output ids that are not a direct child of the outputs folder are rejected at the endpoint (422)
     for output_id_outside in ["%2E%2E", "%2E%2E%5C", "%2E"]:
         res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id_outside}/raw-files")
-        assert res.status_code == 404, res.content
-        assert res.json()["exception"] == "OutputNotFound"
+        assert res.status_code == 422, res.content
+        assert res.json()["exception"] == "RequestValidationError"
         res = client.get(
             f"/v1/studies/{internal_study_id}/outputs/{output_id_outside}/raw-files/content",
             params={"path": f"{output_id}/info.antares-output"},
         )
-        assert res.status_code == 404, res.content
-        assert res.json()["exception"] == "OutputNotFound"
+        assert res.status_code == 422, res.content
+        assert res.json()["exception"] == "RequestValidationError"

@@ -66,6 +66,7 @@ from antarest.output.model import (
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
 from antarest.output.model.gems_views import GemsTaxonomyViews
+from antarest.output.model.output_id import is_valid_output_id
 from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -235,6 +236,8 @@ class OutputService:
         OutputVariablesMatrixUsageProvider(self._matrix_service)
 
     def _find_output_storage(self, study_id: str, output_id: str) -> IOutputStorage:
+        if not is_valid_output_id(output_id):
+            raise OutputNotFound(output_id)
         for storage in self._storages:
             if storage.output_exists(study_id, output_id):
                 return storage
