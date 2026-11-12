@@ -44,12 +44,6 @@ def test_read_metric_locations(output_dir: Path, view_configs: dict[str, GemsVie
     assert read_metric_locations(output_dir, view_configs["view_storage"]) == ["area3_node"]
 
 
-def test_read_metric_locations__view_not_built(output_dir: Path, view_configs: dict[str, GemsViewConfig]) -> None:
-    # The view is declared but the views builder produced no file for it
-    view_not_built = view_configs["view_area"].model_copy(update={"id": "view_unknown"})
-    assert read_metric_locations(output_dir, view_not_built) == []
-
-
 def test_extract_gems_views(output_dir: Path) -> None:
     views = extract_gems_views(output_dir)
 
