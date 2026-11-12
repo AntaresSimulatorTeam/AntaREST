@@ -9,7 +9,7 @@ authors = [{name="RTE, Antares Web Team", email="andrea.sgattoni@rte-france.com"
 description="Antares Server"
 readme = {file = "README.md", content-type = "text/markdown"}
 license = {file = "LICENSE"}
-requires-python = ">=3.14"
+requires-python = "==3.14.*"
 classifiers=[
         "Programming Language :: Python :: 3 :: Only",
         "Programming Language :: Python :: 3.14",
