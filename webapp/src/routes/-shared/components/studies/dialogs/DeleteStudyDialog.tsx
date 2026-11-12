@@ -24,14 +24,10 @@ import { Typography } from "@mui/material";
 import { useMatch, useNavigate } from "@tanstack/react-router";
 import { Trans, useTranslation } from "react-i18next";
 
-// Only to allow clicking on the link in the JSDoc
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { StudyActionsMenuProps } from "../StudyActionsMenu";
-
 interface Props {
   study: StudyMetadata;
   /**
-   * @see {@link StudyActionsMenuProps.studyInfo} for more details on how this prop is derived.
+   * @see StudyActionsMenuProps.studyInfo for more details on how this prop is derived.
    */
   studyInfo?: {
     parentStudy?: Study;

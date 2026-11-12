@@ -14,10 +14,12 @@
 
 import EmptyView from "@/components/page/EmptyView";
 import TabsView from "@/components/page/TabsView";
+import RouterButton from "@/components/router/RouterButton";
+import RouterLink from "@/components/router/RouterLink";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
-import { Button } from "@mui/material";
+import { Alert, Stack } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import useStudy from "../-hooks/useStudy";
 import useStudyInfo from "../-hooks/useStudyInfo";
 
@@ -29,31 +31,37 @@ function StudyExploreLayout() {
   const { t } = useTranslation();
   const params = Route.useParams();
   const study = useStudy();
-  const navigate = Route.useNavigate();
 
   const {
-    data: { isArchived },
+    data: { isArchived, isVariant, referenceStudy },
   } = useStudyInfo({ studyId: study.id });
 
   if (isArchived) {
     return (
-      <EmptyView
-        icon={ArchiveOutlinedIcon}
-        title={t("study.archived")}
-        primaryActions={
-          <Button
-            variant="contained"
-            onClick={() => {
-              navigate({
-                to: "/studies/$studyId",
-                params: { studyId: study.id },
-              });
-            }}
-          >
-            {t("button.back")}
-          </Button>
-        }
-      />
+      <Stack direction="column" sx={{ height: 1 }}>
+        {isVariant && (
+          <Alert severity="warning">
+            <Trans
+              i18nKey="variants.unarchive.warning"
+              values={{ referenceStudyName: referenceStudy.name }}
+              components={{
+                referenceStudyLink: (
+                  <RouterLink to="/studies/$studyId" params={{ studyId: referenceStudy.id }} />
+                ),
+              }}
+            />
+          </Alert>
+        )}
+        <EmptyView
+          icon={ArchiveOutlinedIcon}
+          title={t("study.archived")}
+          primaryActions={
+            <RouterButton variant="contained" to="/studies/$studyId" params={{ studyId: study.id }}>
+              {t("button.back")}
+            </RouterButton>
+          }
+        />
+      </Stack>
     );
   }
 

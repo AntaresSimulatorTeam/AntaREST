@@ -94,12 +94,10 @@ function Details() {
         <InfoOutlinedIcon fontSize="small" sx={{ color: "text.secondary", cursor: "pointer" }} />
       </Tooltip>
       <TinyText>{`v${compactSemanticVersion(study.version)}`}</TinyText>
-      {typeof descendantCount === "number" && (
-        <Stack spacing={1}>
-          <AccountTreeOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
-          <TinyText>{descendantCount}</TinyText>
-        </Stack>
-      )}
+      <Stack spacing={1}>
+        <AccountTreeOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
+        <TinyText>{descendantCount}</TinyText>
+      </Stack>
       <CustomScrollbar>
         <Stack spacing={1}>
           {study.managed ? (

@@ -79,6 +79,24 @@ export const getStudyIds = studiesSelectors.selectIds;
 
 export const getStudy = studiesSelectors.selectById;
 
+export const getReferenceStudy = createSelector(getStudiesById, getStudy, (studiesById, study) => {
+  let topStudy = study;
+  let parentId = study.parentId;
+
+  while (parentId) {
+    const parent = studiesById[parentId];
+
+    if (!parent) {
+      break;
+    }
+
+    topStudy = parent;
+    parentId = parent.parentId;
+  }
+
+  return topStudy;
+});
+
 export const getStudyFilters = (state: AppState): StudyFilters => {
   return getStudiesState(state).filters;
 };

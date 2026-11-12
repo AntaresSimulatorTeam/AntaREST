@@ -42,7 +42,7 @@ function useStudyInfo({ studyId }: Params) {
     [studyId],
   );
 
-  return useStudyVariantTree({ studyId, select: select });
+  return useStudyVariantTree({ studyId, select });
 }
 
 export default useStudyInfo;

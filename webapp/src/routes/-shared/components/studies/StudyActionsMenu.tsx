@@ -14,7 +14,7 @@
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getLatestStudyVersion } from "@/redux/selectors";
+import { getLatestStudyVersion, getReferenceStudy } from "@/redux/selectors";
 import type { Study } from "@/services/api/studies/types";
 import { archiveStudy, unarchiveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
@@ -41,10 +41,6 @@ import MoveStudyDialog from "./dialogs/MoveStudyDialog";
 import UpdateStudyDialog from "./dialogs/UpdateStudyDialog";
 import UpgradeStudyDialog from "./dialogs/UpgradeStudyDialog";
 
-// Only to allow clicking on the link in the JSDoc
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type useStudyInfo from "@/routes/_authenticated/studies/$studyId/-hooks/useStudyInfo";
-
 export type DialogType =
   | "launch"
   | "properties"
@@ -67,12 +63,11 @@ export interface StudyActionsMenuProps {
    * Outside this route, the descendant count is unavailable, and all study
    * variants are treated as archived to prevent unauthorized actions.
    *
-   * @see {@link useStudyInfo} for more details.
+   * @see useStudyInfo for more details.
    */
   studyInfo?: {
     parentStudy?: Study;
     descendantCount?: number;
-    isArchived?: boolean;
   };
 }
 
@@ -81,16 +76,13 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, studyInfo }: StudyAc
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
   const latestVersion = useAppSelector(getLatestStudyVersion);
+  const referenceStudy = useAppSelector((state) => getReferenceStudy(state, study.id));
 
   const isLatestVersion = study.version === latestVersion;
   const isManaged = study.managed;
   const isReference = study.type === "rawstudy";
   const isVariant = !isReference;
-  /**
-   * @see {@link StudyActionsMenuProps.studyInfo} comment to understand
-   * why variant studies are considered archived by default
-   */
-  const isArchived = isReference ? study.archived : (studyInfo?.isArchived ?? true);
+  const isArchived = referenceStudy.archived;
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -116,8 +108,12 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, studyInfo }: StudyAc
   };
 
   const handleUnarchive = () => {
-    unarchiveStudy(study.id).catch((err) => {
-      enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), toError(err));
+    // Only the reference study can be unarchived, not its variants
+    unarchiveStudy(referenceStudy.id).catch((err) => {
+      enqueueErrorSnackbar(
+        t("studies.error.unarchive", { studyname: referenceStudy.name }),
+        toError(err),
+      );
     });
 
     onClose();
@@ -164,9 +160,8 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, studyInfo }: StudyAc
           menuItem(isManaged && isReference, t("global.move"), DriveFileMoveIcon, "move"),
           menuItem(!isArchived, t("global.export"), DownloadOutlinedIcon, "export"),
           menuItem(
-            // Only the reference study can be unarchived, not its variants
-            isArchived && isReference,
-            t("global.unarchive"),
+            isArchived,
+            isReference ? t("global.unarchive") : t("variants.unarchive"),
             UnarchiveOutlinedIcon,
             handleUnarchive,
           ),

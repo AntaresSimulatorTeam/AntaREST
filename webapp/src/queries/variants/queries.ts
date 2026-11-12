@@ -24,7 +24,7 @@ export const variantQueries = {
     return queryOptions({
       queryKey: variantKeys.treeDetail(studyId),
       queryFn: async ({ client, signal }) => {
-        const tree = await getVariantTree({ studyId, signal });
+        const tree = await getVariantTree({ studyId, fromRoot: true, signal });
 
         // Update the cache for all studies in the tree except the current one.
         // `getVariantTree` returns the same tree structure for all studies in the tree.

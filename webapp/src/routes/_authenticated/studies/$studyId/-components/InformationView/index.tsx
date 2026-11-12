@@ -40,7 +40,7 @@ function InformationView() {
   const study = useStudy();
 
   const {
-    data: { variantTree, referenceStudy, isReference, isArchived },
+    data: { variantTree, referenceStudy, isReference, isVariant, isArchived },
   } = useStudyInfo({ studyId: study.id });
 
   ////////////////////////////////////////////////////////////////
@@ -59,12 +59,15 @@ function InformationView() {
     }
   };
 
-  const handleUnarchiveStudyReference = async () => {
+  const handleUnarchiveReferenceStudy = async () => {
     try {
       // Only the reference study can be archived/unarchived
       await unarchiveStudy(referenceStudy.id);
     } catch (err) {
-      enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), toError(err));
+      enqueueErrorSnackbar(
+        t("studies.error.unarchive", { studyname: referenceStudy.name }),
+        toError(err),
+      );
     }
   };
 
@@ -90,7 +93,7 @@ function InformationView() {
 
   return (
     <ViewWrapper flex={{ gap: 2 }}>
-      {isArchived && !isReference && (
+      {isArchived && isVariant && (
         <Alert severity="warning">
           <Trans
             i18nKey="variants.unarchive.warning"
@@ -145,7 +148,7 @@ function InformationView() {
             {isArchived ? (
               <Button
                 variant="contained"
-                onClick={handleUnarchiveStudyReference}
+                onClick={handleUnarchiveReferenceStudy}
                 startIcon={<UnarchiveOutlinedIcon />}
               >
                 {isReference ? t("global.unarchive") : t("variants.unarchive")}

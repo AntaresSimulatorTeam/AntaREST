@@ -97,10 +97,6 @@ function VariantsTree() {
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleHover = (id: string | null) => {
-    setHoverId(id);
-  };
-
   const handleClick = (studyId: Study["id"]) => {
     navigate({ to: "/studies/$studyId", params: { studyId } });
   };
@@ -119,6 +115,8 @@ function VariantsTree() {
         overflow: "hidden",
         position: "relative",
       }}
+      // Prevent keyboard interaction with the container when fetching
+      inert={isFetching}
     >
       {/* Prevents interaction with an outdated tree during background refetches */}
       <BackdropLoading open={isFetching} />
@@ -151,7 +149,7 @@ function VariantsTree() {
               currentStudyId={study.id}
               isDarkMode={isDarkMode}
               onClick={handleClick}
-              onHover={handleHover}
+              onHover={setHoverId}
             />
           </Box>
           <svg
@@ -171,7 +169,7 @@ function VariantsTree() {
               hoverId={hoverId}
               currentStudyId={study.id}
               onClick={handleClick}
-              onHover={handleHover}
+              onHover={setHoverId}
             />
           </svg>
         </Box>
