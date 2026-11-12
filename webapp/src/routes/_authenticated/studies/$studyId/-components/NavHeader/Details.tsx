@@ -16,7 +16,10 @@ import CustomScrollbar from "@/components/CustomScrollbar";
 import EditorIcon from "@/components/icons/EditorIcon";
 import RouterLink from "@/components/router/RouterLink";
 import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
-import { buildModificationDate, convertUTCToLocalTime } from "@/services/utils";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getParentStudy } from "@/redux/selectors";
+import type { VariantTree } from "@/services/api/studies/variants/types";
+import { buildModificationDate, convertUTCToLocalTime, getDescendantCount } from "@/services/utils";
 import { truncateTextSx } from "@/utils/muiUtils";
 import { compactSemanticVersion } from "@/utils/versionUtils";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
@@ -26,9 +29,10 @@ import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import { Chip, Divider, Stack, Tooltip, Typography, styled } from "@mui/material";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
-import useStudyInfo from "../../-hooks/useStudyInfo";
+import useStudyVariantTree from "../../-hooks/useStudyVariantTree";
 
 const TinyText = styled(Typography)(({ theme }) => ({
   fontSize: 12,
@@ -38,12 +42,20 @@ const TinyText = styled(Typography)(({ theme }) => ({
 function Details() {
   const study = useStudy();
   const [t, i18n] = useTranslation();
+  const parentStudy = useAppSelector((state) => getParentStudy(state, study.id));
+
+  const selectDescendantCount = useCallback(
+    (variantTree: VariantTree) => getDescendantCount(variantTree, study.id),
+    [study.id],
+  );
+
+  const { data: descendantCount } = useStudyVariantTree({
+    studyId: study.id,
+    select: selectDescendantCount,
+  });
+
   const publicModeLabel =
     PUBLIC_MODE_LIST.find((mode) => mode.id === study?.publicMode)?.name || "";
-
-  const {
-    data: { parentStudy, descendantCount },
-  } = useStudyInfo({ studyId: study.id });
 
   ////////////////////////////////////////////////////////////////
   // JSX

@@ -16,12 +16,13 @@ import EmptyView from "@/components/page/EmptyView";
 import TabsView from "@/components/page/TabsView";
 import RouterButton from "@/components/router/RouterButton";
 import RouterLink from "@/components/router/RouterLink";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getReferenceStudy } from "@/redux/selectors";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
 import { Alert, Stack } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
 import { Trans, useTranslation } from "react-i18next";
 import useStudy from "../-hooks/useStudy";
-import useStudyInfo from "../-hooks/useStudyInfo";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore")({
   component: StudyExploreLayout,
@@ -31,10 +32,11 @@ function StudyExploreLayout() {
   const { t } = useTranslation();
   const params = Route.useParams();
   const study = useStudy();
+  const referenceStudy = useAppSelector((state) => getReferenceStudy(state, study.id));
 
-  const {
-    data: { isArchived, isVariant, referenceStudy },
-  } = useStudyInfo({ studyId: study.id });
+  // When the reference study is archived, all its variants are considered archived as well
+  const isArchived = referenceStudy.archived;
+  const isVariant = study.type === "variantstudy";
 
   if (isArchived) {
     return (

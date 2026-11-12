@@ -15,7 +15,6 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getLatestStudyVersion, getReferenceStudy } from "@/redux/selectors";
-import type { Study } from "@/services/api/studies/types";
 import { archiveStudy, unarchiveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
@@ -55,23 +54,16 @@ export interface StudyActionsMenuProps {
   anchorEl: MenuProps["anchorEl"];
   onClose: VoidFunction;
   study: StudyMetadata;
-  /**
-   * This prop is derived from the `useStudyInfo` hook, which can only be called
-   * within the `/_authenticated/studies/$studyId` route because it relies on
-   * study tree details available only in that context for performance reasons.
-   *
-   * Outside this route, the descendant count is unavailable, and all study
-   * variants are treated as archived to prevent unauthorized actions.
-   *
-   * @see useStudyInfo for more details.
-   */
-  studyInfo?: {
-    parentStudy?: Study;
-    descendantCount?: number;
-  };
+  descendantCount?: number;
 }
 
-function StudyActionsMenu({ open, anchorEl, onClose, study, studyInfo }: StudyActionsMenuProps) {
+function StudyActionsMenu({
+  open,
+  anchorEl,
+  onClose,
+  study,
+  descendantCount,
+}: StudyActionsMenuProps) {
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
@@ -82,6 +74,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, studyInfo }: StudyAc
   const isManaged = study.managed;
   const isReference = study.type === "rawstudy";
   const isVariant = !isReference;
+  // When the reference study is archived, all its variants are considered archived as well
   const isArchived = referenceStudy.archived;
 
   ////////////////////////////////////////////////////////////////
@@ -186,7 +179,12 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, studyInfo }: StudyAc
       {openDialog === "move" && <MoveStudyDialog open studies={[study]} onClose={closeDialog} />}
       {openDialog === "copy" && <CopyStudyDialog open study={study} onClose={closeDialog} />}
       {openDialog === "delete" && (
-        <DeleteStudyDialog open study={study} studyInfo={studyInfo} onClose={closeDialog} />
+        <DeleteStudyDialog
+          open
+          study={study}
+          descendantCount={descendantCount}
+          onClose={closeDialog}
+        />
       )}
     </>
   );

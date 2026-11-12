@@ -55,5 +55,11 @@ export async function getStudyParents({ studyId, direct }: GetStudyParentsParams
   const { data } = await client.get(`/v1/studies/${studyId}/parents`, {
     params: { direct },
   });
+
+  // `data` is `null` if there is no direct parent
+  if (direct && data === null) {
+    return null;
+  }
+
   return direct ? studySchema.parse(data) : studiesSchema.parse(data);
 }

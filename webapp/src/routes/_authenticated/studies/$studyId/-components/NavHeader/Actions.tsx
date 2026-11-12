@@ -15,16 +15,18 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import FavoriteStudyToggle from "@/routes/-shared/components/studies/FavoriteToggle/FavoriteStudyToggle";
 import StudyActionsMenu from "@/routes/-shared/components/studies/StudyActionsMenu";
+import type { VariantTree } from "@/services/api/studies/variants/types";
+import { getDescendantCount } from "@/services/utils";
 import { toError } from "@/utils/fnUtils";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { Button, Divider, IconButton, Stack, Tooltip } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
-import useStudyInfo from "../../-hooks/useStudyInfo";
+import useStudyVariantTree from "../../-hooks/useStudyVariantTree";
 import CommandsDrawer from "./CommandsDrawer";
 
 export type DialogType = "commands";
@@ -35,7 +37,16 @@ function Actions() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
-  const { data: studyInfo } = useStudyInfo({ studyId: study.id });
+
+  const selectDescendantCount = useCallback(
+    (variantTree: VariantTree) => getDescendantCount(variantTree, study.id),
+    [study.id],
+  );
+
+  const { data: descendantCount } = useStudyVariantTree({
+    studyId: study.id,
+    select: selectDescendantCount,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -72,7 +83,7 @@ function Actions() {
           </IconButton>
         </Tooltip>
         <Divider flexItem orientation="vertical" />
-        {studyInfo.isVariant && (
+        {study.type === "variantstudy" && (
           <IconButton color="primary" onClick={() => setOpenDialog("commands")}>
             <HistoryOutlinedIcon />
           </IconButton>
@@ -89,8 +100,8 @@ function Actions() {
         open={!!anchorEl}
         anchorEl={anchorEl}
         study={study}
-        studyInfo={studyInfo}
         onClose={() => setAnchorEl(null)}
+        descendantCount={descendantCount}
       />
       <CommandsDrawer open={openDialog === "commands"} studyId={study.id} onClose={closeDialog} />
     </>

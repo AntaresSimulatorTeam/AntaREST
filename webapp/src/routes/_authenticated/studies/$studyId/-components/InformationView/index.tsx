@@ -18,6 +18,8 @@ import RouterButton from "@/components/router/RouterButton";
 import RouterLink from "@/components/router/RouterLink";
 import useDialog from "@/hooks/useDialog";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getReferenceStudy } from "@/redux/selectors";
 import { copyStudy } from "@/services/api/studies";
 import { unarchiveStudy } from "@/services/api/study";
 import { toError } from "@/utils/fnUtils";
@@ -26,7 +28,7 @@ import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import { Alert, Box, Button, Divider, Stack } from "@mui/material";
 import { Trans, useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
-import useStudyInfo from "../../-hooks/useStudyInfo";
+import useStudyVariantTree from "../../-hooks/useStudyVariantTree";
 import LaunchStudiesDialog from "../../../../../-shared/components/studies/dialogs/LaunchStudiesDialog";
 import CreateStudyVariantDialog from "./CreateStudyVariantDialog";
 import DetailsList from "./DetailsList";
@@ -38,10 +40,12 @@ function InformationView() {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { openDialog } = useDialog();
   const study = useStudy();
+  const { data: variantTree } = useStudyVariantTree({ studyId: study.id });
+  const referenceStudy = useAppSelector((state) => getReferenceStudy(state, study.id));
 
-  const {
-    data: { variantTree, referenceStudy, isReference, isVariant, isArchived },
-  } = useStudyInfo({ studyId: study.id });
+  // When the reference study is archived, all its variants are considered archived as well
+  const isArchived = referenceStudy.archived;
+  const isVariant = study.type === "variantstudy";
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -151,7 +155,7 @@ function InformationView() {
                 onClick={handleUnarchiveReferenceStudy}
                 startIcon={<UnarchiveOutlinedIcon />}
               >
-                {isReference ? t("global.unarchive") : t("variants.unarchive")}
+                {isVariant ? t("variants.unarchive") : t("global.unarchive")}
               </Button>
             ) : (
               <Button variant="contained" onClick={handleLaunchStudy} startIcon={<BoltIcon />}>

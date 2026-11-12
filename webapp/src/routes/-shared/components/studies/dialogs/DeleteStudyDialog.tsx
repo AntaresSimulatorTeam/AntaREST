@@ -16,7 +16,8 @@ import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { deleteStudy } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import type { Study } from "@/services/api/studies/types";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getParentStudy } from "@/redux/selectors";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
 import DeleteOutlinedIcon from "@mui/icons-material/DeleteOutlined";
@@ -26,24 +27,18 @@ import { Trans, useTranslation } from "react-i18next";
 
 interface Props {
   study: StudyMetadata;
-  /**
-   * @see StudyActionsMenuProps.studyInfo for more details on how this prop is derived.
-   */
-  studyInfo?: {
-    parentStudy?: Study;
-    descendantCount?: number;
-  };
+  descendantCount?: number;
   open: boolean;
   onClose: VoidFunction;
 }
 
-function DeleteStudyDialog({ study, studyInfo, open, onClose }: Props) {
+function DeleteStudyDialog({ study, descendantCount, open, onClose }: Props) {
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const isStudyRoute = !!useMatch({ from: "/_authenticated/studies/$studyId", shouldThrow: false });
-  const { parentStudy, descendantCount } = studyInfo ?? {};
+  const parentStudy = useAppSelector((state) => getParentStudy(state, study.id));
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers

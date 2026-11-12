@@ -97,6 +97,13 @@ export const getReferenceStudy = createSelector(getStudiesById, getStudy, (studi
   return topStudy;
 });
 
+export const getParentStudy = createSelector(getStudiesById, getStudy, (studiesById, study) => {
+  if (!study.parentId) {
+    return undefined;
+  }
+  return studiesById[study.parentId];
+});
+
 export const getStudyFilters = (state: AppState): StudyFilters => {
   return getStudiesState(state).filters;
 };
