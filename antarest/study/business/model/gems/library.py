@@ -42,7 +42,7 @@ class _GemsThermalCapacityConnection(AntaresBaseModel):
 class _GemsPortType(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
-    id: str
+    id: GemsId
     description: str | None = None
     fields: list[_GemsPortTypeField] = Field(default_factory=list)
     area_connection: _GemsAreaConnection | None = None
