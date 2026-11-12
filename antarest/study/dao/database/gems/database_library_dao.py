@@ -198,8 +198,11 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
             session.execute(insert(GEMS_PORT_TYPES_TABLE), port_type_values)
 
         model_values = []
-        model_port_values = []
-        model_parameter_values = []
+        port_values = []
+        parameter_values = []
+        variables_values = []
+        constraints_values = []
+        objective_contributions_values = []
         for model in library.models:
             model_dump = model.model_dump(mode="json")
             model_values.append(
@@ -209,45 +212,70 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                     "id": model.id,
                     "description": model.description,
                     "taxonomy_category": model.taxonomy_category,
-                    "properties": json.dumps(model_dump["properties"]),
                     # These fields are dumped as is as we do not care about them for the moment.
-                    "variables": json.dumps(model_dump["variables"]),
+                    "properties": json.dumps(model_dump["properties"]),
                     "binding_constraints": json.dumps(model_dump["binding_constraints"]),
-                    "constraints": json.dumps(model_dump["constraints"]),
-                    "objective_contributions": json.dumps(model_dump["objective_contributions"]),
                     "extra_outputs": json.dumps(model_dump["extra_outputs"]),
                     "port_field_definitions": json.dumps(model_dump["port_field_definitions"]),
                 }
             )
 
-            for model_port in model_dump.get("ports", []):
-                model_port_values.append(
+            for port in model.ports:
+                port_values.append(
                     {
                         "study_data_id": study_data_id,
                         "library_id": library.id,
                         "model_id": model.id,
-                        "port_id": model_port["id"],
-                        "type": model_port["type"],
+                        "port_id": port.id,
+                        "type": port.type,
                     }
                 )
 
-            for model_parameter in model_dump.get("parameters", []):
-                model_parameter_values.append(
+            for parameter in model.parameters:
+                parameter_values.append(
                     {
                         "study_data_id": study_data_id,
                         "library_id": library.id,
                         "model_id": model.id,
-                        "parameter_id": model_parameter["id"],
-                        "time_dependent": model_parameter["time_dependent"],
-                        "scenario_dependent": model_parameter["scenario_dependent"],
+                        **parameter.model_dump(),
+                    }
+                )
+
+            for variable in model.variables:
+                variables_values.append(
+                    {
+                        "study_data_id": study_data_id,
+                        "library_id": library.id,
+                        "model_id": model.id,
+                        **variable.model_dump(mode="json"),
+                    }
+                )
+
+            for constraint in model.constraints:
+                constraints_values.append(
+                    {
+                        "study_data_id": study_data_id,
+                        "library_id": library.id,
+                        "model_id": model.id,
+                        **constraint.model_dump(),
+                    }
+                )
+
+            for objective_contribution in model.objective_contributions:
+                objective_contributions_values.append(
+                    {
+                        "study_data_id": study_data_id,
+                        "library_id": library.id,
+                        "model_id": model.id,
+                        **objective_contribution.model_dump(),
                     }
                 )
 
         if model_values:
             session.execute(insert(GEMS_MODELS_TABLE), model_values)
-        if model_port_values:
-            session.execute(insert(GEMS_MODELS_PORTS_TABLE), model_port_values)
-        if model_parameter_values:
-            session.execute(insert(GEMS_MODELS_PARAMETERS_TABLE), model_parameter_values)
+        if port_values:
+            session.execute(insert(GEMS_MODELS_PORTS_TABLE), port_values)
+        if parameter_values:
+            session.execute(insert(GEMS_MODELS_PARAMETERS_TABLE), parameter_values)
 
         session.commit()
