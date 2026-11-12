@@ -40,6 +40,7 @@ interface Props {
   isRootSelected?: boolean;
   /** sessionStorage key used to persist and restore scroll position across navigations. */
   scrollKey?: string;
+  headerContent?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -52,6 +53,7 @@ function TreeSection({
   onRootClick,
   isRootSelected = false,
   scrollKey,
+  headerContent,
   children,
 }: Props) {
   const { container, iconColor, titleColor } = variantStyles[variant];
@@ -65,21 +67,25 @@ function TreeSection({
   return (
     <>
       <Box sx={container}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
+        <Stack direction="row" alignItems="center" spacing={0.5}>
           <Stack
             direction="row"
             spacing={1}
             alignItems="center"
             onClick={onToggleCollapse}
-            sx={{ cursor: "pointer" }}
+            sx={{ cursor: "pointer", flex: 1, minWidth: 0 }}
           >
-            <Box sx={{ color: iconColor, fontSize: ICON_SIZE, lineHeight: 0 }}>{icon}</Box>
-            <Typography variant="subtitle2" sx={[titleStyles, { color: titleColor }]}>
+            <Box sx={{ color: iconColor, fontSize: ICON_SIZE, lineHeight: 0, flexShrink: 0 }}>
+              {icon}
+            </Box>
+            <Typography variant="subtitle2" noWrap sx={[titleStyles, { color: titleColor }]}>
               {title}
             </Typography>
           </Stack>
 
-          <Stack direction="row">
+          {headerContent}
+
+          <Stack direction="row" sx={{ flexShrink: 0 }}>
             {onAddDirectory && (
               <Tooltip title={t("studies.tree.addRootDirectory")} placement="top" arrow>
                 <IconButton
