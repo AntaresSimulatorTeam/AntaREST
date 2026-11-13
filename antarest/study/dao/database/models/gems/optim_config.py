@@ -9,7 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from sqlalchemy import Boolean, Column, ForeignKeyConstraint, Integer, String, Table
+from sqlalchemy import Column, ForeignKeyConstraint, Integer, String, Table
 
 from antarest.dbmodel import Base
 from antarest.study.dao.database.models import study_data_id_col
@@ -20,20 +20,10 @@ GEMS_OPTIM_CONFIG_TABLE = Table(
     "gems_optim_config",
     metadata,
     study_data_id_col(),
-    # time-scope
-    Column("first_time_step", Integer(), nullable=True),
-    Column("last_time_step", Integer(), nullable=True),
-    # scenario-scope, stored as JSON as it is a simple mapping of lists
+    Column("time_scope", String(), nullable=True),
     Column("scenario_scope", String(), nullable=True),
-    # solver-options
-    Column("solver_name", String(255), nullable=True),
-    Column("solver_logs", Boolean(), nullable=True),
-    Column("solver_parameters", String(), nullable=True),
-    # resolution
-    Column("resolution_mode", String(255), nullable=True),
-    Column("block_length", Integer(), nullable=True),
-    Column("block_overlap", Integer(), nullable=True),
-    Column("carry_over_length", Integer(), nullable=True),
+    Column("solver_options", String(), nullable=True),
+    Column("resolution", String(), nullable=True),
     ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
 )
 

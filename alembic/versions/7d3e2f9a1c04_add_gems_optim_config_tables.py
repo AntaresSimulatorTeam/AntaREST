@@ -21,17 +21,11 @@ def upgrade():
     op.create_table(
         "gems_optim_config",
         study_data_id_col(),
-        sa.Column("first_time_step", sa.Integer(), nullable=True),
-        sa.Column("last_time_step", sa.Integer(), nullable=True),
+        sa.Column("time_scope", sa.String(), nullable=True),
         sa.Column("scenario_scope", sa.String(), nullable=True),
-        sa.Column("solver_name", sa.String(length=255), nullable=True),
-        sa.Column("solver_logs", sa.Boolean(), nullable=True),
-        sa.Column("solver_parameters", sa.String(), nullable=True),
-        sa.Column("resolution_mode", sa.String(length=255), nullable=True),
-        sa.Column("block_length", sa.Integer(), nullable=True),
-        sa.Column("block_overlap", sa.Integer(), nullable=True),
-        sa.Column("carry_over_length", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], ondelete="CASCADE"),
+        sa.Column("solver_options", sa.String(), nullable=True),
+        sa.Column("resolution", sa.String(), nullable=True),
+        sa.ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], name="fk_gems_optim_config", ondelete="CASCADE"),
     )
 
     op.create_table(
