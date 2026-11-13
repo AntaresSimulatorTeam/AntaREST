@@ -47,8 +47,24 @@ def test_output_gems_views(
     assert output_types[output_id] == "GEMS_VIEWS"
     assert output_types["20201014-1427eco"] == "LEGACY"
 
-    # Nominal case
-    res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id}/gems-views")
+    url = f"/v1/studies/{internal_study_id}/outputs/{output_id}/gems-views"
+
+    # Ensures asking for the views before they were materialized returns a HTTP 404 with a status `NOT_FOUND`
+    res = client.get(url)
+    assert res.json() == {"status": "NOT_FOUND", "task_id": None}
+    assert res.status_code == 404
+    # Materialize the views
+    task_id = client.post(f"{url}/materialize").json()
+    res = client.get(url)
+    if res.status_code == 404:
+        assert res.json() == {"status": "IN_PROGRESS", "task_id": task_id}
+    else:
+        assert res.status_code == 200
+    # Wait for materializing to end
+    task = wait_task_completion(client, user_access_token, task_id)
+    assert task.status == TaskStatus.COMPLETED
+    # Asks for the views. This time, it should succeed.
+    res = client.get(url)
     assert res.status_code == 200, res.json()
     assert res.json() == [
         {
@@ -101,20 +117,29 @@ def test_output_gems_views(
     assert len(parquet_files) == 8
     for parquet_file in parquet_files:
         parquet_file.unlink()
-    res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id}/gems-views")
+    res = client.get(url)
     assert res.status_code == 200, res.json()
     assert res.json() == expected_views
 
+    # Try to materialize even if the views are already in the database. Should raise an exception
+    res = client.post(f"{url}/materialize")
+    assert res.status_code == 417, res.json()
+    assert res.json() == {
+        "description": "The output GEMS views are already materialized in DB",
+        "exception": "HTTPException",
+    }
+
     # Legacy output
-    res = client.get(f"/v1/studies/{internal_study_id}/outputs/20201014-1427eco/gems-views")
-    assert res.status_code == 404, res.json()
-    assert res.json()["exception"] == "OutputGemsViewsNotFound"
+    legacy_url = f"/v1/studies/{internal_study_id}/outputs/20201014-1427eco/gems-views"
+    for res in (client.get(legacy_url), client.post(f"{legacy_url}/materialize")):
+        assert res.status_code == 404, res.json()
+        assert res.json()["exception"] == "OutputGemsViewsNotFound"
 
     # Archived output
     res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/_archive")
     assert res.status_code == 200, res.json()
     task = wait_task_completion(client, user_access_token, res.json())
     assert task.status == TaskStatus.COMPLETED
-    res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id}/gems-views")
-    assert res.status_code == 400, res.json()
-    assert res.json()["exception"] == "UnsupportedOperationOnArchivedOutput"
+    for res in (client.get(url), client.post(f"{url}/materialize")):
+        assert res.status_code == 400, res.json()
+        assert res.json()["exception"] == "UnsupportedOperationOnArchivedOutput"

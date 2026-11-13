@@ -51,14 +51,13 @@ def parse_gems_view_configs(output_dir: Path) -> list[GemsViewConfig]:
     return configs
 
 
-def read_metric_locations(output_dir: Path, view: GemsViewConfig) -> list[str]:
+def read_metric_locations(output_dir: Path, view_config: GemsViewConfig) -> list[GemsMetricLocation]:
     """
     Returns the sorted, distinct locations (areas, links...) found in the files built for the given view.
     """
     views_output_dir = output_dir / GEMS_VIEWS_DIR / _VIEWS_OUTPUT_DIR
     locations: set[str] = set()
-    # File name: <view_id>--<aggregation_id>--<timestamp>.parquet
-    prefixes = tuple(f"{view.id}--{aggregation.id}--" for aggregation in view.aggregations_patterns)
+    prefixes = tuple(f"{view_config.id}--{aggregation.id}--" for aggregation in view_config.aggregations_patterns)
     for parquet_path in views_output_dir.glob("*.parquet"):
         if not parquet_path.name.startswith(prefixes):
             continue
@@ -69,7 +68,7 @@ def read_metric_locations(output_dir: Path, view: GemsViewConfig) -> list[str]:
             .collect(engine="streaming")
         )
         locations.update(df[_METRIC_LOCATION_COL].to_list())
-    return sorted(locations)
+    return [GemsMetricLocation(id=location) for location in sorted(locations)]
 
 
 def extract_gems_views(output_dir: Path) -> list[GemsTaxonomyViews]:
@@ -77,15 +76,15 @@ def extract_gems_views(output_dir: Path) -> list[GemsTaxonomyViews]:
     Returns the views of the output grouped by taxonomy category, with the locations available for each view.
     """
     views_by_taxonomy: dict[str, dict[ViewId, GemsViewLocations]] = {}
-    for view in parse_gems_view_configs(output_dir):
-        locations = [GemsMetricLocation(id=location) for location in read_metric_locations(output_dir, view)]
+    for view_config in parse_gems_view_configs(output_dir):
+        locations = read_metric_locations(output_dir, view_config)
         aggregation_patterns = [
             GemsAggregationPattern(
                 id=aggregation.id, scenario=aggregation.scenario, time_granularity=aggregation.time_granularity
             )
-            for aggregation in view.aggregations_patterns
+            for aggregation in view_config.aggregations_patterns
         ]
-        views_by_taxonomy.setdefault(view.taxonomy_category, {})[view.id] = GemsViewLocations(
+        views_by_taxonomy.setdefault(view_config.taxonomy_category, {})[view_config.id] = GemsViewLocations(
             metrics_location=locations, aggregation_patterns=aggregation_patterns
         )
     return [GemsTaxonomyViews(taxonomy=taxonomy, view_ids=views) for taxonomy, views in views_by_taxonomy.items()]

@@ -10,14 +10,12 @@
 #
 # This file is part of the Antares project.
 import gzip
-from typing import cast
 
 from pydantic import TypeAdapter
-from sqlalchemy import ForeignKey, Integer, LargeBinary, PrimaryKeyConstraint, String, Table, delete, select
+from sqlalchemy import ForeignKey, Integer, LargeBinary, PrimaryKeyConstraint, String, delete, insert, select
 from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.utils.fastapi_sqlalchemy import db
-from antarest.core.utils.sql_utils import upsert_one
 from antarest.dbmodel import Base
 from antarest.output.model import OutputVariablesList
 from antarest.output.model.gems_views import GemsTaxonomyViews
@@ -101,16 +99,13 @@ class FileOutputRepository:
         return _GEMS_VIEWS_ADAPTER.validate_json(views) if views is not None else None
 
     def save_output_gems_views(self, study_id: str, output_id: str, views: list[GemsTaxonomyViews]) -> None:
-        upsert_one(
-            db.session,
-            cast(Table, DbOutputGemsViews.__table__),
-            {
-                "study_id": study_id,
-                "output_id": output_id,
-                "views_version": 1,
-                "views": _GEMS_VIEWS_ADAPTER.dump_json(views).decode("utf-8"),
-            },
+        stmt = insert(DbOutputGemsViews).values(
+            study_id=study_id,
+            output_id=output_id,
+            views_version=1,
+            views=_GEMS_VIEWS_ADAPTER.dump_json(views).decode("utf-8"),
         )
+        db.session.execute(stmt)
         db.session.commit()
 
     def delete_output_gems_views(self, study_id: str, output_id: str) -> None:

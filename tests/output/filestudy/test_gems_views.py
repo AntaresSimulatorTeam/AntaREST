@@ -18,6 +18,7 @@ import pytest
 from pydantic import ValidationError
 
 from antarest.output.filestudy.gems_views import extract_gems_views, parse_gems_view_configs, read_metric_locations
+from antarest.output.model.gems_views import GemsMetricLocation
 from antarest.study.business.model.gems.view import GemsTimeGranularity, GemsViewConfig
 
 
@@ -58,9 +59,13 @@ def view_configs(output_dir: Path) -> dict[str, GemsViewConfig]:
 
 def test_read_metric_locations(output_dir: Path, view_configs: dict[str, GemsViewConfig]) -> None:
     # Locations are deduplicated and sorted
-    assert read_metric_locations(output_dir, view_configs["view_area"]) == ["area1_node", "area2_node", "area3_node"]
+    assert read_metric_locations(output_dir, view_configs["view_area"]) == [
+        GemsMetricLocation(id="area1_node"),
+        GemsMetricLocation(id="area2_node"),
+        GemsMetricLocation(id="area3_node"),
+    ]
     # Only the locations having a component of this kind appear
-    assert read_metric_locations(output_dir, view_configs["view_storage"]) == ["area3_node"]
+    assert read_metric_locations(output_dir, view_configs["view_storage"]) == [GemsMetricLocation(id="area3_node")]
 
 
 def test_read_metric_locations_ignores_null_locations(tmp_path: Path, view_configs: dict[str, GemsViewConfig]) -> None:
@@ -70,7 +75,7 @@ def test_read_metric_locations_ignores_null_locations(tmp_path: Path, view_confi
         views_output_dir / "view_area--annual_all_scenario--20261104T153938.parquet"
     )
 
-    assert read_metric_locations(tmp_path, view_configs["view_area"]) == ["area1_node"]
+    assert read_metric_locations(tmp_path, view_configs["view_area"]) == [GemsMetricLocation(id="area1_node")]
 
 
 def test_extract_gems_views(output_dir: Path) -> None:

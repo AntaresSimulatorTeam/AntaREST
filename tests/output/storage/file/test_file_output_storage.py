@@ -585,13 +585,17 @@ def test_raw_files(output_storage: IOutputStorage) -> None:
             output_storage.read_raw_file("STA-mini", output_id, PurePosixPath("20201014-1427eco/info.antares-output"))
 
 
-def test_get_gems_views(output_storage: IOutputStorage) -> None:
+def test_gems_views_materialization(output_storage: IOutputStorage) -> None:
     # `import_output` copies the directory: the asset is left untouched.
     # The output name depends on the local timezone, so we use the returned one.
     gems_output_dir = Path(__file__).parents[2] / "filestudy" / "data" / "20261104-1636eco-gems_views"
     output_id = output_storage.import_output("STA-mini", gems_output_dir)
 
+    assert output_storage.get_gems_views("STA-mini", output_id) is None
+
+    output_storage.materialize_gems_views("STA-mini", output_id)
     views = output_storage.get_gems_views("STA-mini", output_id)
+    assert views is not None
     assert [v.taxonomy for v in views] == ["balance", "link"]
     assert list(views[0].view_ids) == ["view_area", "view_storage", "view_thermal"]
     assert [location.id for location in views[1].view_ids["view_link"].metrics_location] == [
@@ -603,9 +607,11 @@ def test_get_gems_views(output_storage: IOutputStorage) -> None:
     # Legacy output: no views
     with pytest.raises(OutputGemsViewsNotFound):
         output_storage.get_gems_views("STA-mini", "20201014-1427eco")
+    with pytest.raises(OutputGemsViewsNotFound):
+        output_storage.materialize_gems_views("STA-mini", "20201014-1427eco")
 
 
-def test_get_gems_views_are_computed_once(output_storage: IOutputStorage, tmp_path: Path) -> None:
+def test_materialized_gems_views_lifecycle(output_storage: IOutputStorage, tmp_path: Path) -> None:
     gems_output_dir = Path(__file__).parents[2] / "filestudy" / "data" / "20261104-1636eco-gems_views"
     output_id = output_storage.import_output("STA-mini", gems_output_dir)
     if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
@@ -613,9 +619,11 @@ def test_get_gems_views_are_computed_once(output_storage: IOutputStorage, tmp_pa
     else:
         outputs_path = tmp_path / "outputs" / "STA-mini"
 
+    output_storage.materialize_gems_views("STA-mini", output_id)
     views = output_storage.get_gems_views("STA-mini", output_id)
+    assert views is not None
 
-    # Once computed, the views do not depend on the parquet files anymore
+    # Once materialized, the views do not depend on the parquet files anymore
     shutil.rmtree(outputs_path / output_id / "views" / "output")
     assert output_storage.get_gems_views("STA-mini", output_id) == views
 
@@ -626,8 +634,11 @@ def test_get_gems_views_are_computed_once(output_storage: IOutputStorage, tmp_pa
     for parquet_path in other_output_dir.glob("views/output/view_link--*.parquet"):
         parquet_path.unlink()
     assert output_storage.import_output("STA-mini", other_output_dir) == output_id
+    assert output_storage.get_gems_views("STA-mini", output_id) is None
 
+    output_storage.materialize_gems_views("STA-mini", output_id)
     other_views = output_storage.get_gems_views("STA-mini", output_id)
+    assert other_views is not None
     assert other_views[1].view_ids["view_link"].metrics_location == []
     assert other_views[0] == views[0]
 

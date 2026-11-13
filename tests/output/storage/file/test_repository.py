@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 from sqlalchemy import delete, select
+from sqlalchemy.exc import IntegrityError
 
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.output.filestudy.gems_views import extract_gems_views
@@ -46,8 +47,10 @@ def test_gems_views_round_trip(study_id: str, gems_views: list[GemsTaxonomyViews
 
         assert repository.get_output_gems_views(study_id, "other-output") is None
 
-        repository.save_output_gems_views(study_id, "output", [])
-        assert repository.get_output_gems_views(study_id, "output") == []
+        with pytest.raises(IntegrityError):
+            repository.save_output_gems_views(study_id, "output", [])
+        db.session.rollback()
+        assert repository.get_output_gems_views(study_id, "output") == gems_views
 
 
 def test_delete_output_gems_views(study_id: str, gems_views: list[GemsTaxonomyViews]) -> None:

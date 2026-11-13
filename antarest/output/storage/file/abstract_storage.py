@@ -654,23 +654,22 @@ class AbstractFileOutputStorage(IOutputStorage):
             raise OutputFileNotFound(output_id, path.as_posix())
         return file_path.read_bytes()
 
-    @override
-    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews]:
+    def _require_gems_output_path(self, study_id: str, output_id: str) -> Path:
         output_path = self._require_unarchived_output_path(study_id, output_id)
         if OutputType.from_output_dir(output_path) != OutputType.GEMS_VIEWS:
             raise OutputGemsViewsNotFound(output_id)
+        return output_path
 
-        views = self._repository.get_output_gems_views(study_id, output_id)
-        if views is not None:
-            return views
+    @override
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | None:
+        self._require_gems_output_path(study_id, output_id)
+        return self._repository.get_output_gems_views(study_id, output_id)
 
-        # Fetches the views from stored output
+    @override
+    def materialize_gems_views(self, study_id: str, output_id: str) -> None:
+        output_path = self._require_gems_output_path(study_id, output_id)
         views = extract_gems_views(output_path)
-
-        # Save the views inside DB for next calls
         self._repository.save_output_gems_views(study_id, output_id, views)
-
-        return views
 
     def _build_output_node(self, study_id: str, output_id: str) -> Output:
         study_outputs = self._outputs_provider.get_outputs(study_id)

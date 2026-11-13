@@ -338,9 +338,21 @@ class IOutputStorage(ABC):
         """
 
     @abstractmethod
-    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews]:
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | None:
         """
-        Returns the GEMS views of the output grouped by taxonomy category, with their available locations.
+        Returns the materialized GEMS views of the output grouped by taxonomy category, with their available locations.
+        Returns None if they have not been materialized yet, see `materialize_gems_views`.
+        The output must not be archived.
+
+        Raises:
+            OutputNotFound: if the unarchived output does not exist.
+            OutputGemsViewsNotFound: if the output does not contain GEMS views.
+        """
+
+    @abstractmethod
+    def materialize_gems_views(self, study_id: str, output_id: str) -> None:
+        """
+        Reads the GEMS views from the output and stores them, to be fetched with `get_gems_views`.
         The output must not be archived.
 
         Raises:

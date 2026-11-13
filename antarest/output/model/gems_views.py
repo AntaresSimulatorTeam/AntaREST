@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from enum import StrEnum
 from typing import TypeAlias
 
 from pydantic import ConfigDict
@@ -47,3 +48,13 @@ class GemsTaxonomyViews(AntaresBaseModel):
 
     taxonomy: str
     view_ids: dict[ViewId, GemsViewLocations]
+
+
+class OutputGemsViewsStatus(StrEnum):
+    NOT_FOUND = "NOT_FOUND"
+    IN_PROGRESS = "IN_PROGRESS"
+
+
+class OutputGemsViewsResponse(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
+    status: OutputGemsViewsStatus
+    task_id: str | None

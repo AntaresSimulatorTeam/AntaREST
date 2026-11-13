@@ -458,7 +458,11 @@ class V2OutputStorage(IOutputStorage):
         raise NotImplementedError()
 
     @override
-    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews]:
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | None:
+        raise OutputGemsViewsNotFound(output_id)
+
+    @override
+    def materialize_gems_views(self, study_id: str, output_id: str) -> None:
         raise OutputGemsViewsNotFound(output_id)
 
     @override

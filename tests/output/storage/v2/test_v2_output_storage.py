@@ -148,6 +148,8 @@ def test_get_gems_views(storage: V2OutputStorage, study_id: str, output_path: Pa
         output_name = storage.import_output("my-study", output_path)
         with pytest.raises(OutputGemsViewsNotFound):
             storage.get_gems_views("my-study", output_name)
+        with pytest.raises(OutputGemsViewsNotFound):
+            storage.materialize_gems_views("my-study", output_name)
 
 
 def create_archive(archive_format: ArchiveFormat, nested: bool, output_path: Path, tmp_path: Path) -> Path:
