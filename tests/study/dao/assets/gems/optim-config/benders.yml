@@ -1,0 +1,42 @@
+time-scope:
+  first-time-step: 0
+  last-time-step: 167
+
+scenario-scope:
+  include:
+    - "0-9"                    # ten scenarios sharing one investment decision
+
+resolution:
+  mode: benders-decomposition
+
+models:
+  - id: investment_library.candidate_generator
+    model-decomposition:
+      variables:
+        # Installed capacity is chosen once by the master and used by every subproblem.
+        - id: p_installed
+          location: master-and-subproblems
+        # generation is time-dependent and stays in the subproblems (default).
+      objective-contributions:
+        - id: investment_cost_installation
+          location: master
+        - id: expected_operating_cost
+          location: subproblems
+      # capacity_limit (generation <= p_installed) stays in the subproblems (default):
+      # it bounds an operational variable, using the capacity fixed by the master.
+
+  - id: investment_library.candidate_storage
+    model-decomposition:
+      variables:
+        - id: p_installed
+          location: master-and-subproblems
+      objective-contributions:
+        - id: investment_cost_installation
+          location: master
+    # level_equation reads level[t+1], out of bounds at the last time step. Dropping it
+    # there leaves the final level free, as intended: the level is pinned at the start of
+    # the horizon by initial_level_constraint, not at its end.
+    out-of-bounds-processing:
+      constraints:
+        - id: level_equation
+          mode: drop

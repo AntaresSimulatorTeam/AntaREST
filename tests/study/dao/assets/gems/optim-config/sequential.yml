@@ -1,0 +1,23 @@
+time-scope:
+  first-time-step: 0
+  last-time-step: 8759         # 8760 hourly time steps: one year
+
+scenario-scope:
+  include:
+    - 0
+
+resolution:
+  mode: sequential-subproblems
+  block-length: 168            # one week per block
+  block-overlap: 24            # each block reaches one day into the previous one
+  carry-over-length: 24        # that whole day is fixed to the previous block's values
+
+# The overlap already gives level_equation a real level[t-1] inside each block, except at
+# the very first one. Dropping the constraint at boundary time steps avoids wrapping a
+# weekly block's level onto itself, which would be meaningless mid-year.
+models:
+  - id: antares_legacy_models.short_term_storage
+    out-of-bounds-processing:
+      constraints:
+        - id: level_equation
+          mode: drop

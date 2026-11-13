@@ -1,0 +1,24 @@
+time-scope:
+  first-time-step: 0
+  last-time-step: 167          # 168 hourly time steps
+
+scenario-scope:
+  include:
+    - "0-2"                    # scenarios 0, 1 and 2
+
+solver-options:
+  name: highs
+  logs: false
+
+resolution:
+  mode: frontal
+
+# level_equation reads level[t-1]; at the first time step of the horizon that index is
+# out of bounds. Wrapping it to the last time step closes the storage cycle over the week,
+# consistently with the library's initial_level_constraint on level[167].
+models:
+  - id: antares_legacy_models.short_term_storage
+    out-of-bounds-processing:
+      constraints:
+        - id: level_equation
+          mode: cyclic
