@@ -9,6 +9,13 @@ It is a client of the Antares Web REST API and has its own environment, independ
 uv run antares-web-mcp --help
 ```
 
+It also contains the agent of the Antares Web assistant (`/v1/assistant` endpoints) and a command-line
+client for it:
+
+```bash
+uv run antares-assistant "Which studies do I have?"
+```
+
 See the full documentation in [`docs/mcp-server.md`](../docs/mcp-server.md).
 
 ## Development

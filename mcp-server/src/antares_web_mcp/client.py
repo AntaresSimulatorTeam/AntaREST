@@ -23,6 +23,7 @@ several calls, choosing defaults, compacting outputs) belongs to the MCP tools.
 
 import asyncio
 import contextlib
+from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
@@ -85,6 +86,7 @@ class AntaresWebClient:
         *,
         params: dict[str, Any] | None = None,
         json: Any = None,
+        files: dict[str, Any] | None = None,
         timeout: float | None = None,
     ) -> httpx2.Response:
         lock: contextlib.AbstractAsyncContextManager[Any] = (
@@ -93,7 +95,12 @@ class AntaresWebClient:
         try:
             async with lock:
                 response = await self._http.request(
-                    method, path, params=params, json=json, timeout=timeout if timeout is not None else self.timeout
+                    method,
+                    path,
+                    params=params,
+                    json=json,
+                    files=files,
+                    timeout=timeout if timeout is not None else self.timeout,
                 )
         except httpx2.TimeoutException as e:
             raise AntaresWebError(f"Antares Web at {self.base_url} did not answer in time ({method} {path}).") from e
@@ -111,9 +118,10 @@ class AntaresWebClient:
         *,
         params: dict[str, Any] | None = None,
         json: Any = None,
+        files: dict[str, Any] | None = None,
         timeout: float | None = None,
     ) -> Any:
-        response = await self._send(method, path, params=params, json=json, timeout=timeout)
+        response = await self._send(method, path, params=params, json=json, files=files, timeout=timeout)
         if not response.content:
             return None
         return response.json()
@@ -170,6 +178,20 @@ class AntaresWebClient:
         params = {"study_name": new_name, "with_outputs": with_outputs, "use_task": True}
         task_id: str = await self._request("POST", f"/studies/{_seg(study_id)}/copy", params=params)
         return task_id
+
+    async def import_study(self, archive: Path, *, groups: list[str] | None = None, timeout: float) -> str:
+        """Uploads a study archive (``.zip`` or ``.7z``) and returns the id of the imported study."""
+        content_type = "application/x-7z-compressed" if archive.suffix.lower() == ".7z" else "application/zip"
+        params = {"groups": ",".join(groups)} if groups else None
+        with archive.open("rb") as stream:
+            study_id: str = await self._request(
+                "POST",
+                "/studies/_import",
+                params=params,
+                files={"study": (archive.name, stream, content_type)},
+                timeout=timeout,
+            )
+        return study_id
 
     async def create_variant(self, study_id: str, name: str) -> str:
         variant_id: str = await self._request("POST", f"/studies/{_seg(study_id)}/variants", params={"name": name})

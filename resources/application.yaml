@@ -69,3 +69,13 @@ debug: False
 # You only need to configure celery-specific settings here if you want to override defaults.
 # celery:
 #   result_expires: 86400  # 24 hours
+
+# AI assistant (/v1/assistant): an agent answering questions about studies with the tools of the MCP server.
+# See docs/mcp-server.md
+assistant:
+  # API key of the model provider. Leave empty to use the ANTHROPIC_API_KEY environment variable of the server.
+  # Never commit a real key.
+  anthropic_api_key: ""
+  # model: claude-opus-5-5
+  # If true, the assistant can only read studies
+  read_only: true

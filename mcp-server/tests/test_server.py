@@ -57,6 +57,7 @@ READ_TOOLS = {
 }
 WRITE_TOOLS = {
     "create_study",
+    "import_study",
     "copy_study",
     "create_variant",
     "update_simulation_settings",

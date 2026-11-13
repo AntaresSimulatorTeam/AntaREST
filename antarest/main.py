@@ -30,6 +30,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from antarest import __version__
+from antarest.assistant.web import create_assistant_api
 from antarest.core.cli import PathType
 from antarest.core.config import Config
 from antarest.core.core_blueprint import create_utils_routes
@@ -264,6 +265,7 @@ def create_routes(api_prefix: str) -> APIRouter:
     api_root.include_router(create_output_routes())
     api_root.include_router(create_favorite_routes())
     api_root.include_router(create_table_routes())
+    api_root.include_router(create_assistant_api())
 
     register_websocket_routes(api_root)
 

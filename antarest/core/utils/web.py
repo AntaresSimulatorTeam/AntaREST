@@ -30,6 +30,7 @@ class APITag:
     filesystem = "Filesystem Management"
     explorer = "Explore external disks"
     table_mode = "Table mode"
+    assistant = "AI assistant"
 
 
 tags_metadata = [

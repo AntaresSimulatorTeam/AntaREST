@@ -10,8 +10,9 @@
 #
 # This file is part of the Antares project.
 
-"""Tools for the study lifecycle: find, describe, create, copy, configure and delete studies."""
+"""Tools for the study lifecycle: find, describe, create, import, copy, configure and delete studies."""
 
+from pathlib import Path
 from typing import Annotated, Any
 
 from mcp.server.mcpserver import MCPServer
@@ -23,6 +24,8 @@ from antares_web_mcp.enums import SimulationModeValue
 from antares_web_mcp.tools.common import ADDITIVE, DESTRUCTIVE, READ_ONLY, UPDATE, StudyId, guard, without_none
 
 COPY_TIMEOUT_SECONDS = 600
+IMPORT_TIMEOUT_SECONDS = 1800
+IMPORT_SUFFIXES = {".zip", ".7z"}
 
 
 class StudySummary(BaseModel):
@@ -171,6 +174,34 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
     ) -> StudySummary:
         """Create a new empty study (no area). Returns the created study."""
         study_id = await guard(client.create_study(name, version=version, directory=directory))
+        return StudySummary.from_api(await guard(client.get_study(study_id)))
+
+    @mcp.tool(annotations=ADDITIVE)
+    async def import_study(
+        path: Annotated[
+            str,
+            Field(
+                min_length=1,
+                description=(
+                    "Path of a study archive (.zip or .7z) on the machine running this MCP server, "
+                    "e.g. '/home/user/Downloads/my_study.zip'."
+                ),
+            ),
+        ],
+        groups: Annotated[
+            list[str] | None, Field(description="Ids of the user groups to share the imported study with.")
+        ] = None,
+    ) -> StudySummary:
+        """
+        Import a study from a local archive (.zip or .7z) into Antares Web, as a new raw study
+        (waits for the upload: a large archive can take minutes). The study name comes from the archive.
+        """
+        archive = Path(path).expanduser()
+        if archive.suffix.lower() not in IMPORT_SUFFIXES:
+            raise ToolError(f"'{archive.name}' is not a study archive: expected a .zip or .7z file.")
+        if not archive.is_file():
+            raise ToolError(f"No such file on the MCP server machine: '{archive}'.")
+        study_id = await guard(client.import_study(archive, groups=groups, timeout=IMPORT_TIMEOUT_SECONDS))
         return StudySummary.from_api(await guard(client.get_study(study_id)))
 
     @mcp.tool(annotations=ADDITIVE)

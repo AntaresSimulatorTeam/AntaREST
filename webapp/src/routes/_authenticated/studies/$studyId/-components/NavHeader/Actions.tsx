@@ -28,6 +28,7 @@ import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
 import useStudyVariantTree from "../../-hooks/useStudyVariantTree";
 import CommandsDrawer from "./CommandsDrawer";
+import StudyCheck from "./StudyCheck";
 
 export type DialogType = "commands";
 
@@ -88,6 +89,8 @@ function Actions() {
             <HistoryOutlinedIcon />
           </IconButton>
         )}
+        {/* The key resets the check when navigating to another study */}
+        {!study.archived && <StudyCheck key={study.id} studyId={study.id} />}
         <Button
           variant="outlined"
           onClick={(event) => setAnchorEl(event.currentTarget)}
