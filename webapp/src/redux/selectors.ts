@@ -79,6 +79,34 @@ export const getStudyIds = studiesSelectors.selectIds;
 
 export const getStudy = studiesSelectors.selectById;
 
+export const getReferenceStudy = createSelector(getStudiesById, getStudy, (studiesById, study) => {
+  let topStudy = study;
+  let parentId = study.parentId;
+
+  while (parentId) {
+    const parent = studiesById[parentId];
+
+    // TODO: The parent may be missing from the store (e.g. the user can't access it).
+    // In that case, we stop at the highest known ancestor, which may not be the actual reference study.
+    // The API should expose this info on variant studies (e.g. a flag indicating whether the reference is archived).
+    if (!parent) {
+      break;
+    }
+
+    topStudy = parent;
+    parentId = parent.parentId;
+  }
+
+  return topStudy;
+});
+
+export const getParentStudy = createSelector(getStudiesById, getStudy, (studiesById, study) => {
+  if (!study.parentId) {
+    return undefined;
+  }
+  return studiesById[study.parentId];
+});
+
 export const getStudyFilters = (state: AppState): StudyFilters => {
   return getStudiesState(state).filters;
 };
