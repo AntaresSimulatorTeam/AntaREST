@@ -1,7 +1,7 @@
 """create_output_gems_views_table
 
 Revision ID: c4d7e9a1f3b2
-Revises: b8e5c1a7d902
+Revises: 1c8b0b189035
 Create Date: 2026-11-13 12:04:01.956744
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = "c4d7e9a1f3b2"
-down_revision = "b8e5c1a7d902"
+down_revision = "1c8b0b189035"
 branch_labels = None
 depends_on = None
 
