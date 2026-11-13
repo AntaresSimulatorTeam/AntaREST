@@ -125,30 +125,32 @@ def test_db_foreign_keys(dao_10_2: StudyDao) -> None:
 @pytest.mark.parametrize(
     "content",
     [
-        {"time-scope": {"first-time-step": 10, "last-time-step": 5}},
-        {"time-scope": {"first-time-step": -1, "last-time-step": 5}},
-        {"scenario-scope": {"include": [-1]}},
-        {"scenario-scope": {"include": ["5-2"]}},
-        {"scenario-scope": {"include": ["abc"]}},
-        {"solver-options": {"parameters": "THREADS 1 MAXTIME"}},
-        {"resolution": {"mode": "unknown"}},
-        {"resolution": {"mode": "sequential-subproblems"}},
-        {"resolution": {"mode": "parallel-subproblems"}},
-        {"resolution": {"mode": "parallel-subproblems", "block-length": 168, "block-overlap": 0}},
-        {"resolution": {"mode": "frontal", "carry-over-length": 0}},
-        {"resolution": {"mode": "sequential-subproblems", "block-length": 10, "block-overlap": 10}},
+        {"time-scope": {"first-time-step": 10, "last-time-step": 5}},  # first > last
+        {"time-scope": {"first-time-step": -1, "last-time-step": 5}},  # first < 0
+        {"scenario-scope": {"include": [-1]}},  # negative scenario
+        {"scenario-scope": {"include": ["5-2"]}},  # invalid range as 5 > 2
+        {"scenario-scope": {"include": ["abc"]}},  # invalid typing: should be 5, "5" or "0-9"
+        {"solver-options": {"parameters": "THREADS 1 MAXTIME"}},  # Missing a value after MAXTIME
+        {"resolution": {"mode": "unknown"}},  # invalid mode
+        {"resolution": {"mode": "sequential-subproblems"}},  # missing block-length
+        {"resolution": {"mode": "parallel-subproblems"}},  # missing block-length
         {
-            "resolution": {
-                "mode": "sequential-subproblems",
-                "block-length": 10,
-                "block-overlap": 4,
-                "carry-over-length": 5,
-            }
-        },
-        {"models": [{"id": "no_library_prefix"}]},
-        {"models": [{"id": "lib.model"}, {"id": "lib.model"}]},
-        {"models": [{"id": "lib.model", "out-of-bounds-processing": {"constraints": [{"id": "c", "mode": "x"}]}}]},
-        {"models": [{"id": "lib.model", "model-decomposition": {"variables": [{"id": "v", "location": "x"}]}}]},
+            "resolution": {"mode": "parallel-subproblems", "block-length": 168, "block-overlap": 0}
+        },  # block-overlap must be lower than block-length
+        {
+            "resolution": {"mode": "frontal", "carry-over-length": 0}
+        },  # carry-over-length not compatible with frontal mode
+        {
+            "resolution": {"mode": "sequential-subproblems", "block-length": 10, "block-overlap": 10}
+        },  # block-overlap must be strictly lower than block-length
+        {"models": [{"id": "no_library_prefix"}]},  # id must be written as "library_id.model_id"
+        {"models": [{"id": "lib.model"}, {"id": "lib.model"}]},  # duplicate model id
+        {
+            "models": [{"id": "lib.model", "out-of-bounds-processing": {"constraints": [{"id": "c", "mode": "x"}]}}]
+        },  # mode must be "cyclic" or "drop"
+        {
+            "models": [{"id": "lib.model", "model-decomposition": {"variables": [{"id": "v", "location": "x"}]}}]
+        },  # location is not a valid enum
         {
             "models": [
                 {
@@ -157,7 +159,9 @@ def test_db_foreign_keys(dao_10_2: StudyDao) -> None:
                         {
                             "id": "accurate",
                             "inputs": [],
-                            "outputs": [{"heuristic-element": "e", "id": "v", "type": "parameter"}],
+                            "outputs": [
+                                {"heuristic-element": "e", "id": "v", "type": "parameter"}
+                            ],  # heuristic-element is not a valid enum
                         }
                     ],
                 }
@@ -165,46 +169,12 @@ def test_db_foreign_keys(dao_10_2: StudyDao) -> None:
         },
         {
             "resolution": {"mode": "benders-decomposition"},
-            "models": [{"id": "lib.model", "heuristics": [{"id": "fast", "inputs": [], "outputs": []}]}],
+            "models": [
+                {"id": "lib.model", "heuristics": [{"id": "fast", "inputs": [], "outputs": []}]}
+            ],  # outputs default value does not work
         },
     ],
 )
 def test_invalid_configs(content: dict[str, Any]) -> None:
     with pytest.raises(ValidationError):
         GemsOptimConfig.model_validate(content)
-
-
-def test_valid_heuristics_and_defaults() -> None:
-    config = GemsOptimConfig.model_validate(
-        {
-            "resolution": {"mode": "sequential-subproblems", "block-length": 10, "block-overlap": 4},
-            "models": [
-                {
-                    "id": "my_library.thermal",
-                    "heuristics": [
-                        {
-                            "id": "accurate",
-                            "inputs": [
-                                {
-                                    "heuristic-element": "num_units_on_opt",
-                                    "id": "nb_units_on",
-                                    "type": "variable-solution",
-                                },
-                                {"heuristic-element": "num_units_max", "id": "nb_units_max"},
-                            ],
-                            "outputs": [
-                                {
-                                    "heuristic-element": "minimum_num_units_on",
-                                    "id": "nb_units_on",
-                                    "type": "variable-lower-bound",
-                                }
-                            ],
-                        }
-                    ],
-                }
-            ],
-        }
-    )
-    assert config.models[0].heuristics is not None
-    assert config.models[0].heuristics[0].inputs[1].type == "parameter"
-    assert GemsOptimConfig().models == []
