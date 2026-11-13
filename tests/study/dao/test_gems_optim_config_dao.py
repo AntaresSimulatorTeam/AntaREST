@@ -65,7 +65,8 @@ def test_examples_are_valid(example: str) -> None:
 def test_examples_content() -> None:
     frontal = _load_example("frontal")
     assert frontal.time_scope is not None and frontal.time_scope.last_time_step == 167
-    assert frontal.scenario_scope is not None and frontal.scenario_scope.get_scenarios() == [0, 1, 2]
+    assert frontal.scenario_scope is not None
+    assert frontal.scenario_scope.include == ["0-2"] and frontal.scenario_scope.exclude is None
     assert frontal.solver_options is not None and frontal.solver_options.name == "highs"
 
     sequential = _load_example("sequential")
@@ -74,7 +75,8 @@ def test_examples_content() -> None:
     assert sequential.resolution.carry_over_length == 24
 
     benders = _load_example("benders")
-    assert benders.scenario_scope is not None and benders.scenario_scope.get_scenarios() == list(range(10))
+    assert benders.scenario_scope is not None
+    assert benders.scenario_scope.include == ["0-9"] and benders.scenario_scope.exclude is None
     decomposition = benders.models[0].model_decomposition
     assert decomposition is not None
     assert decomposition.variables[0].location == "master-and-subproblems"
