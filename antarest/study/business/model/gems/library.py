@@ -9,10 +9,13 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any
+import math
+from enum import StrEnum
+from typing import Annotated, Any, TypeAlias
 
-from pydantic import ConfigDict, Field
+from pydantic import BeforeValidator, ConfigDict, Field
 
+from antarest.core.model import GemsId
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 
@@ -40,7 +43,7 @@ class _GemsThermalCapacityConnection(AntaresBaseModel):
 class _GemsPortType(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
-    id: str
+    id: GemsId
     description: str | None = None
     fields: list[_GemsPortTypeField] = Field(default_factory=list)
     area_connection: _GemsAreaConnection | None = None
@@ -68,22 +71,66 @@ class _GemsModelsPorts(AntaresBaseModel):
     type: str
 
 
+class VariableType(StrEnum):
+    CONTINUOUS = "continuous"
+    INTEGER = "integer"
+    BINARY = "binary"
+
+
+class _GemsModelConstraints(AntaresBaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    id: GemsId
+    expression: str
+
+
+class _GemsModelObjectiveContributions(AntaresBaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    id: GemsId
+    expression: str
+
+
+def _validate_bound(value: str | float | None) -> str | float | None:
+    """
+    The bounds are saved as strings inside DB even if the value is a float.
+    So, they need to be converted to float when deserializing them inside the YAML file.
+    """
+    if not isinstance(value, str):
+        return value
+    try:
+        number = float(value)
+    except ValueError:
+        return value
+    return number if math.isfinite(number) else value
+
+
+VariablesBound: TypeAlias = Annotated[str | float | None, BeforeValidator(_validate_bound)]
+
+
+class _GemsModelVariables(AntaresBaseModel):
+    model_config = ConfigDict(extra="forbid", populate_by_name=True, alias_generator=to_kebab_case)
+
+    id: GemsId
+    type: VariableType = Field(alias="variable-type")
+    lower_bound: VariablesBound = None
+    upper_bound: VariablesBound = None
+
+
 class _GemsModels(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
-    id: str
+    id: GemsId
     description: str | None = None
     taxonomy_category: str | None = None
     properties: list[_GemsModelsProperties] = Field(default_factory=list)
     parameters: list[_GemsModelsParameters] = Field(default_factory=list)
     ports: list[_GemsModelsPorts] = Field(default_factory=list)
+    constraints: list[_GemsModelConstraints] = Field(default_factory=list)
+    objective_contributions: list[_GemsModelObjectiveContributions] = Field(default_factory=list)
+    variables: list[_GemsModelVariables] = Field(default_factory=list)
 
     # These fields are not used in the current implementation
     # That's why they are treated as unknown data
-    variables: Any | None = None
     binding_constraints: Any | None = None
-    constraints: Any | None = None
-    objective_contributions: Any | None = None
     extra_outputs: Any | None = None
     port_field_definitions: Any | None = None
 

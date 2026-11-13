@@ -62,6 +62,6 @@ def test_taxonomy_foreign_keys(dao_10_2: StudyDao) -> None:
     with pytest.raises(GemsTaxonomyNotFound, match="Taxonomy 'fake taxonomy' not found inside study"):
         dao.save_library(library)
 
-    # Create a Library referencing the righ taxonomy -> Should succeed
+    # Create a Library referencing the right taxonomy -> Should succeed
     library = GemsLibrary(id="library", taxonomy=taxonomy.id)
     dao.save_library(library)
