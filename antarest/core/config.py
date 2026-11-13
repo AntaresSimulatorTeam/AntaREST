@@ -18,11 +18,11 @@ import tempfile
 from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Literal
 
 import yaml
 from antares.study.version import SolverVersion
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
 from antarest.core.roles import RoleType
 from antarest.core.utils.archives import ArchiveFormat
@@ -595,6 +595,31 @@ class CeleryConfig(ConfigBaseModel):
         return data
 
 
+class AssistantConfig(ConfigBaseModel):
+    """
+    Sub config object dedicated to the AI assistant (`/v1/assistant`), an agent that answers questions
+    about studies with the tools of the MCP server (`mcp-server/`).
+    """
+
+    enabled: bool = True
+    # Model provider implemented by the agent (see `mcp-server/src/antares_web_mcp/assistant/providers.py`)
+    provider: str = "anthropic"
+    # API key of the provider. If empty, the ANTHROPIC_API_KEY environment variable of the server is used.
+    anthropic_api_key: SecretStr = SecretStr("")
+    # Model id; empty for the default model of the provider
+    model: str = ""
+    effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
+    # If True, the assistant can only read studies: it cannot modify them nor launch simulations
+    read_only: bool = True
+    # Command starting the agent process. Empty: `uv run antares-web-assistant` in the `mcp-server` directory
+    command: list[str] = Field(default_factory=list)
+    # URL used by the agent to call this server. Empty: http://127.0.0.1:<port of the request>
+    antares_url: str = ""
+    # Maximum duration of one answer, in seconds
+    timeout: int = 900
+    max_tool_rounds: int = 40
+
+
 class Config(ConfigBaseModel):
     """
     Root server config
@@ -614,6 +639,7 @@ class Config(ConfigBaseModel):
     tasks: TaskConfig = Field(default_factory=TaskConfig)
     metrics: MetricsConfig = Field(default_factory=MetricsConfig)
     celery: CeleryConfig = Field(default_factory=CeleryConfig)
+    assistant: AssistantConfig = Field(default_factory=AssistantConfig)
     root_path: str = ""
     api_prefix: str = ""
     desktop_mode: bool = False

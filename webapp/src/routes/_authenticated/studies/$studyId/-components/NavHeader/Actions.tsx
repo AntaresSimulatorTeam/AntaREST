@@ -28,6 +28,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
 import CommandsDrawer from "./CommandsDrawer";
+import StudyCheck from "./StudyCheck";
 
 export type DialogType = "commands";
 
@@ -105,6 +106,8 @@ function Actions({ parentStudy, variantNb, isExplorer }: Props) {
             {t("global.unarchive")}
           </Button>
         )}
+        {/* The key resets the check when navigating to another study */}
+        {!isArchived && <StudyCheck key={study.id} studyId={study.id} />}
         <Button
           variant="outlined"
           onClick={(event) => setAnchorEl(event.currentTarget)}

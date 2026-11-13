@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -136,3 +137,42 @@ async def test_delete_study(fake_api: FakeAntaresWeb, api_client: AntaresWebClie
 
     assert "'Old'" in data(result)
     assert fake_api.requests_to("DELETE", f"/v1/studies/{STUDY_ID}")[0].url.params["children"] == "true"
+
+
+async def test_import_study_uploads_the_archive(
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient, tmp_path: Path
+) -> None:
+    archive = tmp_path / "My study.zip"
+    archive.write_bytes(b"PK fake zip content")
+    fake_api.route("POST", "/v1/studies/_import", json_body=NEW_ID)
+    fake_api.route("GET", f"/v1/studies/{NEW_ID}", json_body=study(NEW_ID, "My study"))
+
+    result = await call(api_client, "import_study", {"path": str(archive), "groups": ["team-a", "team-b"]})
+
+    assert data(result)["id"] == NEW_ID
+    request = fake_api.requests_to("POST", "/v1/studies/_import")[0]
+    assert request.url.params["groups"] == "team-a,team-b"
+    body = request.read()
+    assert b'name="study"; filename="My study.zip"' in body
+    assert b"PK fake zip content" in body
+
+
+async def test_import_study_rejects_missing_file(
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient, tmp_path: Path
+) -> None:
+    result = await call(api_client, "import_study", {"path": str(tmp_path / "missing.zip")})
+
+    assert "No such file" in error_text(result)
+    assert not fake_api.requests
+
+
+async def test_import_study_rejects_non_archive(
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient, tmp_path: Path
+) -> None:
+    notes = tmp_path / "notes.txt"
+    notes.write_text("hello")
+
+    result = await call(api_client, "import_study", {"path": str(notes)})
+
+    assert ".zip or .7z" in error_text(result)
+    assert not fake_api.requests

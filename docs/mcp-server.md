@@ -42,6 +42,7 @@ in a single conversation, for instance:
 | `list_study_versions`        | Study versions that can be created                             | read-only   |
 | `get_simulation_settings`    | Mode, Monte-Carlo years, simulated period...                   | read-only   |
 | `create_study`               | Create an empty study                                          | write       |
+| `import_study`               | Import a study from a local .zip / .7z archive                 | write       |
 | `copy_study`                 | Copy a study (waits for the copy)                              | write       |
 | `create_variant`             | Create a variant of a study                                    | write       |
 | `update_simulation_settings` | Change mode, Monte-Carlo years, period...                      | write       |
@@ -119,7 +120,7 @@ Rules of `check_study` (each finding is a *possible* issue, some are deliberate 
 | `isolated_areas`           | Areas without any link                                                               |
 | `constraint_references`    | Binding constraint terms on missing or disabled objects                              |
 | `relaxable_helper_terms`   | Constraints relaxed by lowering a free, optional helper production (never binding)   |
-| `hydro_generation_power`*  | Hydro inflows without generating power (e.g. empty 9.2+ series next to legacy files) |
+| `hydro_generation_power`*  | Hydro inflows without generating power, in the file the solver reads (`hydro-pmax`)  |
 | `thermal_availability`*    | Null availability, or availability above the installed capacity                      |
 | `renewable_series`*        | Null series, production factors outside [0, 1]                                       |
 | `link_capacities`*         | Links with 0 MW in both directions                                                   |
@@ -234,6 +235,104 @@ uv run --directory mcp-server antares-web-mcp --transport streamable-http --host
 !!! warning
     In this mode, every MCP client reaching the port acts with the server token: do not expose it
     outside a trusted network without an authenticating reverse proxy.
+
+## Assistant endpoint (experimental)
+
+Antares Web can also answer questions itself, without any AI client on the user side: the
+`/v1/assistant` endpoints run an AI agent which uses the same MCP tools.
+
+```
+User (CLI, UI, curl) ──▶ POST /v1/assistant/chat ──▶ agent process ──▶ model API (API key of the server)
+                         (Antares Web backend)        │
+                                                      └─ MCP tools ──REST, token of the user──▶ Antares Web
+```
+
+- The **agent** lives in the `mcp-server` package (`antares_web_mcp.assistant`). The backend starts it
+  as a separate process for each request (`uv run antares-web-assistant`), so the model and MCP SDKs
+  never enter the backend environment, and a stuck answer is killed after `assistant.timeout` seconds.
+- The agent calls the REST API **with the token of the caller**: the permissions of the user apply.
+- It is **read-only by default**: it cannot modify studies nor launch simulations.
+- The **API key stays on the server**. It is passed to the agent through its environment, never
+  through the command line nor the request.
+
+!!! warning
+    The content of the studies read by the tools is sent to the model provider. Check your data
+    policy before enabling the assistant on a server which hosts sensitive studies.
+
+### Assistant configuration
+
+In the configuration file of the server (`application.yaml`):
+
+```yaml
+assistant:
+  # Leave empty to use the ANTHROPIC_API_KEY environment variable of the server. Never commit a key.
+  anthropic_api_key: "sk-ant-..."
+  read_only: true            # false: the assistant can also modify studies and launch simulations
+  # enabled: true
+  # model: claude-opus-5-5   # default model of the provider
+  # effort: medium           # low | medium | high | xhigh | max
+  # timeout: 900             # maximum duration of one answer, in seconds
+  # max_tool_rounds: 40
+  # antares_url: ""          # URL used by the agent to call the server; default http://127.0.0.1:<port>
+  # command: []              # command of the agent; default `uv run antares-web-assistant` in mcp-server/
+```
+
+`uv` must be installed on the server. `GET /v1/assistant` tells whether the assistant is available,
+and why if it is not.
+
+### Endpoints
+
+| Endpoint                         | Description                                                             |
+|----------------------------------|-------------------------------------------------------------------------|
+| `GET /v1/assistant`              | Status: `available`, `reason`, `provider`, `model`, `read_only`         |
+| `POST /v1/assistant/chat`        | Ask a question; returns the answer, the tool calls made and a `history` |
+| `POST /v1/assistant/chat/stream` | Same, as a stream of JSON lines to follow the progress of the agent     |
+| `POST /v1/assistant/studies/{study_id}/check` | Check a study (`check_study` with the time series, then an explanation of the findings), as a stream of JSON lines. Query parameter: `language` (`en` or `fr`) |
+
+```bash
+curl -X POST http://localhost:8080/v1/assistant/chat -H "Content-Type: application/json" \
+  -d '{"message": "What is this study for? Any inconsistency?", "study_id": "<study id>"}'
+```
+
+To continue a conversation, send back the `history` of the previous answer, unchanged, with the next
+`message`. The server keeps no conversation state.
+
+Events of the streams (one JSON object per line): `tool_call` (`name`, `input`), `tool_progress`
+(`name`, `progress`, `total`, `message`, for long tools), `tool_result` (`name`, `is_error`,
+`duration_s`, `content`), `text` (progress note), then `done` (`answer`, `history`, `usage`...) or
+`error` (`message`).
+
+### In the web interface
+
+When the assistant is available, the header of a study shows a **Check study** button. It calls the
+check endpoint and opens a panel with:
+
+- the progress: a percentage while the rules run on the time series (the only step whose duration
+  can be predicted), an indeterminate bar while the assistant starts and writes;
+- the findings of the rules, by severity, as soon as the rules have run;
+- then the analysis written by the assistant.
+
+The result stays available from the button (with the number of errors and warnings) as long as the
+user stays on the study.
+
+### Command-line client
+
+```bash
+cd mcp-server
+uv run antares-assistant "Which studies do I have?"
+uv run antares-assistant --study <study id> "Check this study and explain each finding."
+uv run antares-assistant                      # interactive conversation
+```
+
+Options: `--url` (default `http://localhost:8080`, or `ANTARES_WEB_URL`), `--token` (or
+`ANTARES_WEB_TOKEN`). The client only talks to Antares Web: it needs no API key.
+
+### Using another model provider
+
+Only `mcp-server/src/antares_web_mcp/assistant/anthropic_provider.py` depends on a vendor. To use
+another one, implement the `ChatProvider` protocol (`provider.py`: one `run_turn` method running the
+tool loop in the vendor's message format), register it in `providers.py` with the environment
+variable of its key, and set `assistant.provider`. The endpoint, the agent and the tools do not change.
 
 ## Development and tests
 

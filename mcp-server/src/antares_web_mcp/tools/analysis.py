@@ -622,7 +622,9 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
                     "'input/links/<area1>/capacities/<area2>_direct' (or _indirect, area1 < area2), "
                     "'input/bindingconstraints/<id>_lt' (or _gt, _eq: right-hand side), "
                     "'input/hydro/series/<area>/mod' (daily inflows, MWh), '.../ror' (run of river, MW), "
-                    "'.../maxHourlyGenPower' (MW, v9.2+), 'input/misc-gen/miscgen-<area>'."
+                    "'.../maxHourlyGenPower' (MW, read by the solver only if `hydro-pmax = hourly`, v9.2+), "
+                    "'input/hydro/common/capacity/maxpower_<area>' (1st column: generating power in MW, "
+                    "used otherwise), 'input/misc-gen/miscgen-<area>'."
                 )
             ),
         ] = None,

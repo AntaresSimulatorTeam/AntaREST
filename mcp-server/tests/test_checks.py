@@ -33,6 +33,7 @@ from antares_web_mcp.tools.checks import (
     check_thermal_market_bid,
     check_thermal_min_stable_power,
     check_unsupplied_energy_cost,
+    load_study_data,
 )
 from tests.fake_antares_web import FakeAntaresWeb
 from tests.helpers import STUDY_ID, call, data
@@ -209,9 +210,9 @@ def test_relaxable_helper_terms() -> None:
 # ----------------------------------------------------------------------
 
 
-@pytest.mark.anyio
-async def test_hydro_inflows_without_generating_power() -> None:
-    reader = FakeReader(
+def hydro_reader() -> FakeReader:
+    """`fr` declares its generating power in the legacy file only, `de` in the hourly series only."""
+    return FakeReader(
         {
             "input/hydro/series/fr/mod": constant(1000.0, rows=365),
             "input/hydro/common/capacity/maxpower_fr": constant(4666.0, columns=4, rows=365),
@@ -220,9 +221,29 @@ async def test_hydro_inflows_without_generating_power() -> None:
         }
     )
 
-    (finding,) = await check_hydro_generation_power(study(), reader)
+
+@pytest.mark.anyio
+@pytest.mark.parametrize("compatibility", [{}, {"hydroPmax": "daily"}])
+async def test_hydro_power_is_read_in_maxpower_by_default(compatibility: dict[str, Any]) -> None:
+    """
+    Since 9.2 the solver still reads `maxpower_<area>` unless `hydro-pmax = hourly`: the hourly series
+    are ignored, even filled (`de`), and empty ones are not an error (`fr`).
+    """
+    (finding,) = await check_hydro_generation_power(study(compatibility=compatibility), hydro_reader())
+
+    assert (finding.severity, finding.objects) == ("error", ["de"])
+    assert "maxpower_<area>" in finding.message
+    assert "still declare" not in finding.message
+
+
+@pytest.mark.anyio
+async def test_hydro_power_is_read_in_hourly_series_when_hydro_pmax_is_hourly() -> None:
+    data_ = study(compatibility={"hydroPmax": "hourly"})
+
+    (finding,) = await check_hydro_generation_power(data_, hydro_reader())
 
     assert (finding.severity, finding.objects) == ("error", ["fr"])
+    assert "maxHourlyGenPower" in finding.message
     assert "still declare 4,666 MW" in finding.message
 
 
@@ -279,8 +300,7 @@ async def test_link_capacities_and_scenarised_constraints() -> None:
 # ----------------------------------------------------------------------
 
 
-@pytest.mark.anyio
-async def test_check_study_tool(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
+def route_study(fake_api: FakeAntaresWeb) -> str:
     base = f"/v1/studies/{STUDY_ID}"
     fake_api.route("GET", base, json_body={"id": STUDY_ID, "name": "Base case", "version": "9.2"})
     fake_api.route(
@@ -292,6 +312,32 @@ async def test_check_study_tool(fake_api: FakeAntaresWeb, api_client: AntaresWeb
     fake_api.route("GET", f"{base}/table-mode/renewables", json_body={})
     fake_api.route("GET", f"{base}/table-mode/st-storages", json_body={})
     fake_api.route("GET", f"{base}/bindingconstraints", json_body=[])
+    return base
+
+
+@pytest.mark.anyio
+async def test_load_study_data_reads_the_compatibility_flags(
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient
+) -> None:
+    base = route_study(fake_api)
+    fake_api.route("GET", f"{base}/config/compatibility/form", json_body={"hydroPmax": "hourly"})
+
+    assert (await load_study_data(api_client, STUDY_ID)).compatibility == {"hydroPmax": "hourly"}
+
+
+@pytest.mark.anyio
+async def test_load_study_data_without_compatibility_form(
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient
+) -> None:
+    """Older Antares Web servers do not serve the compatibility form: the solver defaults apply."""
+    route_study(fake_api)
+
+    assert (await load_study_data(api_client, STUDY_ID)).compatibility == {}
+
+
+@pytest.mark.anyio
+async def test_check_study_tool(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
+    route_study(fake_api)
 
     report = data(await call(api_client, "check_study", {"study_id": STUDY_ID}))
 

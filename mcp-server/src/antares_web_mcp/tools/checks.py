@@ -33,7 +33,7 @@ from pydantic import BaseModel, Field
 
 from antares_web_mcp.client import AntaresWebClient, AntaresWebError
 from antares_web_mcp.tools.analysis import matrix_stats, optional, rhs_paths
-from antares_web_mcp.tools.common import READ_ONLY, StudyId, guard, parse_version
+from antares_web_mcp.tools.common import READ_ONLY, StudyId, guard
 
 Severity = Literal["error", "warning", "info"]
 SEVERITY_ORDER = {"error": 0, "warning": 1, "info": 2}
@@ -98,6 +98,8 @@ class StudyData:
     storages: dict[str, dict[str, Any]]
     constraints: list[dict[str, Any]]
     scenario_builder: dict[str, Any] = field(default_factory=dict)
+    # Compatibility flags of the solver (9.2+), e.g. {"hydroPmax": "daily"}: empty when not served.
+    compatibility: dict[str, Any] = field(default_factory=dict)
 
     @property
     def linked_areas(self) -> set[str]:
@@ -433,12 +435,14 @@ async def check_hydro_generation_power(data: StudyData, reader: MatrixReader) ->
         for area, matrix in zip(areas, inflows, strict=True)
         if matrix is not None and (stats := matrix_stats(matrix)).max is not None and stats.max > 0
     ]
-    if parse_version(data.version) >= (9, 2):
+    # The solver reads the 1st column of maxpower_<area>, unless the compatibility flag `hydro-pmax` (9.2+)
+    # is `hourly`: only then are the hourly series read. The version alone does not tell which file is used.
+    hourly = str(data.compatibility.get("hydroPmax", "daily")).lower() == "hourly"
+    if hourly:
         powers = await reader.read_all([f"input/hydro/series/{area}/maxHourlyGenPower" for area in with_inflows])
     else:
         powers = await reader.read_all([f"input/hydro/common/capacity/maxpower_{area}" for area in with_inflows])
-    # Since 9.2, the hourly series hold the generating power; before, the 1st column of maxpower_<area>.
-    columns = slice(None) if parse_version(data.version) >= (9, 2) else slice(0, 1)
+    columns = slice(None) if hourly else slice(0, 1)
     blocked = [
         area
         for area, matrix in zip(with_inflows, powers, strict=True)
@@ -447,15 +451,20 @@ async def check_hydro_generation_power(data: StudyData, reader: MatrixReader) ->
     if not blocked:
         return []
     message = "Hydro inflows but no generating power: the reservoir cannot be turbined."
-    if parse_version(data.version) >= (9, 2):
+    if hourly:
+        message += " Power read in 'input/hydro/series/<area>/maxHourlyGenPower' (`hydro-pmax = hourly`)."
         legacy = await reader.read_all([f"input/hydro/common/capacity/maxpower_{area}" for area in blocked])
         legacy_mw = sum((matrix_stats([row[:1] for row in m]).max or 0) for m in legacy if m)
         if legacy_mw > 0:
             message += (
-                f" The legacy files maxpower_<area> (format before 9.2) still declare {legacy_mw:,.0f} MW in "
-                "total, while 'input/hydro/series/<area>/maxHourlyGenPower' (read since 9.2) is empty: probably "
-                "an incomplete version upgrade, or a study generated with the old format."
+                f" The legacy files maxpower_<area> still declare {legacy_mw:,.0f} MW in total but are ignored "
+                "in this mode: the switch to `hourly` probably did not migrate their values."
             )
+    else:
+        message += (
+            " Power read in the 1st column of 'input/hydro/common/capacity/maxpower_<area>' (`hydro-pmax` is "
+            "not `hourly`: the hourly series are ignored)."
+        )
     return [finding("hydro_generation_power", "error", message, blocked)]
 
 
@@ -605,6 +614,7 @@ async def load_study_data(client: AntaresWebClient, study_id: str) -> StudyData:
         storages,
         constraints,
         scenario_builder,
+        compatibility,
     ) = await asyncio.gather(
         client.get_config_form(study_id, "general"),
         optional(client.get_config_form(study_id, "playlist")),
@@ -615,6 +625,7 @@ async def load_study_data(client: AntaresWebClient, study_id: str) -> StudyData:
         client.get_table(study_id, "st-storages"),
         client.list_binding_constraints(study_id),
         optional(client.get_scenario_builder(study_id)),
+        optional(client.get_config_form(study_id, "compatibility")),
     )
     return StudyData(
         name=study.get("name", ""),
@@ -628,6 +639,7 @@ async def load_study_data(client: AntaresWebClient, study_id: str) -> StudyData:
         storages=storages,
         constraints=constraints,
         scenario_builder=scenario_builder or {},
+        compatibility=compatibility or {},
     )
 
 
