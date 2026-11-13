@@ -146,24 +146,11 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         # The configuration is replaced as a whole
         session.execute(delete(GEMS_OPTIM_CONFIG_TABLE).where(GEMS_OPTIM_CONFIG_TABLE.c.study_data_id == study_data_id))
 
-        time_scope = optim_config.time_scope
-        scenario_scope = optim_config.scenario_scope
-        solver = optim_config.solver_options
-        resolution = optim_config.resolution
-        config_values = {
+        optim_config_values = {
             "study_data_id": study_data_id,
-            "first_time_step": time_scope.first_time_step if time_scope else None,
-            "last_time_step": time_scope.last_time_step if time_scope else None,
-            "scenario_scope": scenario_scope.model_dump_json(exclude_none=True) if scenario_scope else None,
-            "solver_name": solver.name if solver else None,
-            "solver_logs": solver.logs if solver else None,
-            "solver_parameters": solver.parameters if solver else None,
-            "resolution_mode": resolution.mode if resolution else None,
-            "block_length": resolution.block_length if resolution else None,
-            "block_overlap": resolution.block_overlap if resolution else None,
-            "carry_over_length": resolution.carry_over_length if resolution else None,
+            **optim_config.model_dump(mode="json", exclude={"models"}),
         }
-        session.execute(insert(GEMS_OPTIM_CONFIG_TABLE), config_values)
+        session.execute(insert(GEMS_OPTIM_CONFIG_TABLE), optim_config_values)
 
         model_values = [row for model in optim_config.models for row in _model_to_rows(study_data_id, model)]
         if model_values:
