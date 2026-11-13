@@ -86,7 +86,6 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         del optim_config_data["study_data_id"]
 
         # Models part
-
         models_table = GEMS_OPTIM_CONFIG_MODELS_TABLE
         model_rows = session.execute(
             select(models_table).where(models_table.c.study_data_id == study_data_id).order_by(models_table.c.id)
@@ -137,6 +136,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
 
         session.execute(insert(GEMS_OPTIM_CONFIG_TABLE), optim_config_values)
 
+        # Models part
         model_values = [row for model in optim_config.models for row in _model_to_rows(study_data_id, model)]
         if model_values:
             try:
