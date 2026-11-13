@@ -64,7 +64,7 @@ class TestUpdateThematicTrimming:
         # Disable all values
         args = {}
         for field in ThematicTrimmingUpdate.model_fields:
-            if field not in {"sts_by_group", "dispatch_gen", "renewable_gen"}:
+            if field not in {"sts_by_group", "dispatch_gen", "renewable_gen", "npcap_hours_csr"}:
                 args[field] = False
         parameters = ThematicTrimmingUpdate.model_validate(args)
 
