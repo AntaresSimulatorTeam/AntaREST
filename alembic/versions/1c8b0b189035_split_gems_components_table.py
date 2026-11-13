@@ -27,7 +27,7 @@ def upgrade():
 
     op.create_table(
         "gems_models_variables",
-        study_data_id_col(),
+        study_data_id_col(primary_key=False),
         sa.Column("library_id", sa.String(length=255), nullable=False),
         sa.Column("model_id", sa.String(length=255), nullable=False),
         sa.Column("id", sa.String(length=255), nullable=False),
@@ -45,7 +45,7 @@ def upgrade():
 
     op.create_table(
         "gems_models_contraints",
-        study_data_id_col(),
+        study_data_id_col(primary_key=False),
         sa.Column("library_id", sa.String(length=255), nullable=False),
         sa.Column("model_id", sa.String(length=255), nullable=False),
         sa.Column("id", sa.String(length=255), nullable=False),
@@ -61,7 +61,7 @@ def upgrade():
 
     op.create_table(
         "gems_models_objective_contributions",
-        study_data_id_col(),
+        study_data_id_col(primary_key=False),
         sa.Column("library_id", sa.String(length=255), nullable=False),
         sa.Column("model_id", sa.String(length=255), nullable=False),
         sa.Column("id", sa.String(length=255), nullable=False),
