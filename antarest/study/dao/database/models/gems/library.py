@@ -113,7 +113,7 @@ GEMS_MODELS_VARIABLES_TABLE = Table(
     Column("library_id", String(255), primary_key=True),
     Column("model_id", String(255), primary_key=True),
     Column("id", String(255), primary_key=True),
-    Column("type", enum_col(VariableType), nullable=False),
+    Column("type", enum_col(VariableType, name="variablestype"), nullable=False),
     Column("lower_bound", String(), nullable=True),
     Column("upper_bound", String(), nullable=True),
     ForeignKeyConstraint(

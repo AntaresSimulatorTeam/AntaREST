@@ -9,6 +9,7 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import math
 from enum import StrEnum
 from typing import Annotated, Any, TypeAlias
 
@@ -93,12 +94,13 @@ def _validate_bound(value: str | float | None) -> str | float | None:
     The bounds are saved as strings inside DB even if the value is a float.
     So, they need to be converted to float when deserializing them inside the YAML file.
     """
-    if value is None:
-        return None
+    if not isinstance(value, str):
+        return value
     try:
-        return float(value)
+        number = float(value)
     except ValueError:
         return value
+    return number if math.isfinite(number) else value
 
 
 VariablesBound: TypeAlias = Annotated[str | float | None, BeforeValidator(_validate_bound)]
