@@ -93,7 +93,7 @@ class _IntegerStrategy(AntaresBaseModel):
         return self
 
 
-_MODEL_ID_REGEX = r"^[a-z0-9_]+\.[a-z0-9_]+$"  # library_id.model_id
+_MODEL_ID_REGEX = r"^[a-z0-9_-]+\.[a-z0-9_-]+$"  # library_id.model_id
 ModelId: TypeAlias = Annotated[str, Field(pattern=_MODEL_ID_REGEX)]
 
 
