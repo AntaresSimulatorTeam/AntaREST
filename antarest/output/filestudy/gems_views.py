@@ -66,7 +66,7 @@ def read_metric_locations(output_dir: Path, view: GemsViewConfig) -> list[str]:
         df = (
             pl.scan_parquet(parquet_path, glob=False)
             .select(pl.col(_METRIC_LOCATION_COL).drop_nulls().unique())
-            .collect()
+            .collect(engine="streaming")
         )
         locations.update(df[_METRIC_LOCATION_COL].to_list())
     return sorted(locations)
