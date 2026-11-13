@@ -128,10 +128,13 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         # The configuration is replaced as a whole
         session.execute(delete(GEMS_OPTIM_CONFIG_TABLE).where(GEMS_OPTIM_CONFIG_TABLE.c.study_data_id == study_data_id))
 
-        optim_config_values = {
-            "study_data_id": study_data_id,
-            **optim_config.model_dump(mode="json", exclude={"models"}),
-        }
+        optim_config_values: dict[str, Any] = {"study_data_id": study_data_id}
+        for parameter in ["time_scope", "scenario_scope", "solver_options", "resolution"]:
+            if value := getattr(optim_config, parameter):
+                optim_config_values[parameter] = value.model_dump_json(exclude_none=True)
+            else:
+                optim_config_values[parameter] = None
+
         session.execute(insert(GEMS_OPTIM_CONFIG_TABLE), optim_config_values)
 
         model_values = [row for model in optim_config.models for row in _model_to_rows(study_data_id, model)]
