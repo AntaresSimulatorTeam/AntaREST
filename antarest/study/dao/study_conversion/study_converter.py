@@ -16,6 +16,7 @@ from antarest.core.exceptions import ChildNotFoundError, XpansionConfigurationDo
 from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.business.model.area_model import AreaUI
 from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax, HydroRuleCurves
+from antarest.study.business.model.gems.optim_config import GemsOptimConfig
 from antarest.study.business.model.renewable_cluster_model import RenewableCluster
 from antarest.study.business.model.sts_model import (
     STStorage,
@@ -107,6 +108,11 @@ class StudyConverter:
             calendar = self._source_dao.get_gems_calendar()
             if calendar is not None:
                 self._new_dao.save_gems_calendar(calendar)
+
+            # The simulator always need a `optim-config.yml` file to run
+            # Thus, we save one even if it does not exist in the first place
+            optim_config = self._source_dao.get_optim_config() or GemsOptimConfig()
+            self._new_dao.save_optim_config(optim_config)
 
     def _convert_settings(self) -> None:
         self._new_dao.save_general_config(self._source_dao.get_general_config())
