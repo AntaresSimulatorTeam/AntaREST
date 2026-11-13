@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 from enum import StrEnum
-from typing import Any, TypeAlias
+from typing import Annotated, Any, TypeAlias
 
-from pydantic import ConfigDict, Field
+from pydantic import BeforeValidator, ConfigDict, Field
 
 from antarest.core.model import GemsId
 from antarest.core.serde import AntaresBaseModel
@@ -88,7 +88,20 @@ class _GemsModelObjectiveContributions(AntaresBaseModel):
     expression: str
 
 
-VariablesBound: TypeAlias = str | float | None
+def _validate_bound(value: str | float | None) -> str | float | None:
+    """
+    The bounds are saved as strings inside DB even if the value is a float.
+    So, they need to be converted to float when deserializing them inside the YAML file.
+    """
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return value
+
+
+VariablesBound: TypeAlias = Annotated[str | float | None, BeforeValidator(_validate_bound)]
 
 
 class _GemsModelVariables(AntaresBaseModel):
