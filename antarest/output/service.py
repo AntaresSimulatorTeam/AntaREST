@@ -65,6 +65,7 @@ from antarest.output.model import (
     OutputVariablesViewStatus,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
+from antarest.output.model.gems_views import GemsTaxonomyViews, OutputGemsViewsResponse, OutputGemsViewsStatus
 from antarest.output.model.output_id import is_valid_output_id
 from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
@@ -197,6 +198,29 @@ class OutputVariablesViewMaterializationTask:
     __call__ = run_task
 
 
+class OutputGemsViewsMaterializationTask:
+    """
+    Task to materialize the GEMS views of an output
+    """
+
+    def __init__(self, study_id: str, output_id: str, output_service: "OutputService") -> None:
+        self._study_id = study_id
+        self._output_id = output_id
+        self._output_service = output_service
+
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
+        msg = f"Materializing GEMS views for study '{self._study_id}' and output '{self._output_id}'"
+        notifier.notify_message(msg)
+        storage = self._output_service._find_output_storage(self._study_id, self._output_id)
+        storage.materialize_gems_views(self._study_id, self._output_id)
+        msg = f"Successfully materialized GEMS views for study '{self._study_id}' and output '{self._output_id}'"
+        notifier.notify_message(msg)
+        return TaskResult(success=True, message=msg)
+
+    # Make `OutputGemsViewsMaterializationTask` object callable
+    __call__ = run_task
+
+
 class OutputService:
     """
     Service to manage the outputs of studies.
@@ -269,6 +293,20 @@ class OutputService:
             TaskListFilter(
                 ref_id=study_id,
                 type=[TaskType.OUTPUT_VARIABLES_VIEW_MATERIALIZATION],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+                name=task_name,
+            )
+        )
+        if len(study_tasks) > 0:
+            return study_tasks[0].id, task_name
+        return None, task_name
+
+    def _get_ongoing_gems_views_materialization_task(self, study_id: str, output_id: str) -> tuple[str | None, str]:
+        task_name = f"Materializing GEMS views for study `{study_id}`, output `{output_id}`"
+        study_tasks = self._task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study_id,
+                type=[TaskType.OUTPUT_GEMS_VIEWS_MATERIALIZATION],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
                 name=task_name,
             )
@@ -933,3 +971,51 @@ class OutputService:
         if storage.is_output_archived(study_id, output_id):
             raise UnsupportedOperationOnArchivedOutput(output_id)
         return storage.read_raw_file(study_id, output_id, path)
+
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | OutputGemsViewsResponse:
+        """
+        If the GEMS views of the output are already registered in DB, returns them.
+        Else, returns a pydantic model specifying if the views materialization is in progress or not.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.is_output_archived(study_id, output_id):
+            raise UnsupportedOperationOnArchivedOutput(output_id)
+
+        views = storage.get_gems_views(study_id, output_id)
+        if views is not None:
+            return views
+
+        # Return a 404 Response with a body specifying if the materialization is in progress or not.
+        task_id, _ = self._get_ongoing_gems_views_materialization_task(study_id, output_id)
+        status = OutputGemsViewsStatus.IN_PROGRESS if task_id else OutputGemsViewsStatus.NOT_FOUND
+        return OutputGemsViewsResponse(status=status, task_id=task_id)
+
+    def materialize_gems_views(self, study_id: str, output_id: str) -> str:
+        """
+        If the GEMS views of the output are already registered in DB, raise an HTTP Conflict error.
+        Else, launch a task that reads them from the output and stores them inside the database.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.is_output_archived(study_id, output_id):
+            raise UnsupportedOperationOnArchivedOutput(output_id)
+
+        if storage.get_gems_views(study_id, output_id) is not None:
+            raise HTTPException(status_code=417, detail="The output GEMS views are already materialized in DB")
+
+        # If a task materializing the same views is already running, returns its id
+        task_id, task_name = self._get_ongoing_gems_views_materialization_task(study_id, output_id)
+        if task_id:
+            return task_id
+
+        task = OutputGemsViewsMaterializationTask(study_id, output_id, self)
+
+        return self._task_service.add_task(
+            task,
+            task_name,
+            task_type=TaskType.OUTPUT_GEMS_VIEWS_MATERIALIZATION,
+            ref_id=study_id,
+            progress=0,
+            custom_event_messages=None,
+        )

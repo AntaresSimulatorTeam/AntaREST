@@ -1,0 +1,25 @@
+view:
+
+  id: view_thermal
+
+  scope:
+    location:
+      taxonomy-category: balance # category of the taxonomy, the components of which serves as locational objects. Main case is 'area'.
+
+  taxonomy: antares_legacy_taxonomy
+  
+  aggregations-patterns:
+    - id: annual_all_scenario
+      time-granularity: year #hour, day, week, month ou year.
+      scenario: true
+    - id: hourly_per_scenario
+      time-granularity: hour #hour, day, week, month ou year.
+      scenario: false
+
+  metrics:  #reference to the selected metric among the catalog
+      - id: antares_legacy_thermal_cluster_catalog.GENERATION
+      - id: antares_legacy_thermal_cluster_catalog.MIN_GEN
+      - id: antares_legacy_thermal_cluster_catalog.PROFIT
+      - id: antares_legacy_thermal_cluster_catalog.NODU 
+      - id: antares_legacy_thermal_cluster_catalog.NP_COST
+
