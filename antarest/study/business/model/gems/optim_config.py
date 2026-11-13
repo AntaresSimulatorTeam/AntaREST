@@ -17,7 +17,7 @@ See https://gems-energy.readthedocs.io/en/latest/user-guide/input-files/optimiza
 
 import re
 from enum import StrEnum
-from typing import Annotated, Self, TypeAlias
+from typing import Annotated, Any, Self, TypeAlias
 
 from pydantic import AfterValidator, ConfigDict, Field, NonNegativeInt, PositiveInt, model_validator
 
@@ -150,11 +150,10 @@ class GemsOutOfBoundsConstraint(AntaresBaseModel):
     mode: GemsOutOfBoundsMode = GemsOutOfBoundsMode.CYCLIC
 
 
-def _check_unique_ids(items: list[AntaresBaseModel], context: str) -> None:
-    ids = [getattr(item, "id") for item in items]
-    duplicates = sorted({i for i in ids if ids.count(i) > 1})
-    if duplicates:
-        raise ValueError(f"Duplicated ids in {context}: {duplicates}")
+def _check_unique_ids(items: list[Any], context: str) -> None:
+    ids = {getattr(item, "id") for item in items}
+    if len(ids) != len(items):
+        raise ValueError(f"Duplicated ids in {context}")
 
 
 class GemsOutOfBoundsProcessing(AntaresBaseModel):
@@ -164,7 +163,7 @@ class GemsOutOfBoundsProcessing(AntaresBaseModel):
 
     @model_validator(mode="after")
     def _check_unique(self) -> Self:
-        _check_unique_ids(list(self.constraints), "'out-of-bounds-processing' constraints")
+        _check_unique_ids(self.constraints, "'out-of-bounds-processing' constraints")
         return self
 
 
@@ -190,9 +189,9 @@ class _GemsModelDecomposition(AntaresBaseModel):
 
     @model_validator(mode="after")
     def _check_unique(self) -> Self:
-        _check_unique_ids(list(self.variables), "'model-decomposition' variables")
-        _check_unique_ids(list(self.constraints), "'model-decomposition' constraints")
-        _check_unique_ids(list(self.objective_contributions), "'model-decomposition' objective-contributions")
+        _check_unique_ids(self.variables, "'model-decomposition' variables")
+        _check_unique_ids(self.constraints, "'model-decomposition' constraints")
+        _check_unique_ids(self.objective_contributions, "'model-decomposition' objective-contributions")
         return self
 
 
@@ -255,7 +254,7 @@ class GemsOptimConfigModel(AntaresBaseModel):
     @model_validator(mode="after")
     def _check_heuristics(self) -> Self:
         if self.heuristics:
-            _check_unique_ids(list(self.heuristics), f"heuristics of model '{self.id}'")
+            _check_unique_ids(self.heuristics, f"heuristics of model '{self.id}'")
         return self
 
 
@@ -270,7 +269,7 @@ class GemsOptimConfig(AntaresBaseModel):
 
     @model_validator(mode="after")
     def _check_consistency(self) -> Self:
-        _check_unique_ids(list(self.models), "'models'")
+        _check_unique_ids(self.models, "'models'")
 
         if self.resolution is not None and self.resolution.mode == GemsResolutionMode.BENDERS_DECOMPOSITION:
             for model in self.models:
