@@ -27,7 +27,7 @@ def upgrade():
     with op.batch_alter_table("gems_models", schema=None) as batch_op:
         batch_op.drop_column("variables")
         batch_op.drop_column("constraints")
-        batch_op.drop_column("objective-contributions")
+        batch_op.drop_column("objective_contributions")
 
     op.create_table(
         "gems_models_variables",
@@ -84,7 +84,7 @@ def downgrade():
     with op.batch_alter_table("gems_models", schema=None) as batch_op:
         batch_op.add_column(sa.Column("variables", sa.String(), nullable=False))
         batch_op.add_column(sa.Column("constraints", sa.String(), nullable=False))
-        batch_op.add_column(sa.Column("objective-contributions", sa.String(), nullable=False))
+        batch_op.add_column(sa.Column("objective_contributions", sa.String(), nullable=False))
 
     op.drop_table("gems_models_variables")
     op.drop_table("gems_models_constraints")
