@@ -18,6 +18,7 @@ from sqlalchemy.exc import IntegrityError
 
 from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.optim_config import GemsOptimConfig, GemsResolutionMode
+from antarest.study.business.model.gems.system import split_library_and_model_id
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 
@@ -31,7 +32,7 @@ def _load_example(name: str) -> GemsOptimConfig:
 
 def _build_library(config: GemsOptimConfig) -> GemsLibrary:
     """Builds a library containing every element referenced by the configuration."""
-    library_ids = {model.library_id for model in config.models}
+    library_ids = {split_library_and_model_id(model.id)[0] for model in config.models}
     assert len(library_ids) == 1
     models = []
     for model in config.models:
@@ -46,7 +47,7 @@ def _build_library(config: GemsOptimConfig) -> GemsLibrary:
             contributions |= {o.id for o in model.model_decomposition.objective_contributions}
         models.append(
             {
-                "id": model.model_id,
+                "id": split_library_and_model_id(model.id)[1],
                 "variables": [{"id": v, "variable-type": "continuous"} for v in variables],
                 "constraints": [{"id": c, "expression": "x = 0"} for c in constraints],
                 "objective-contributions": [{"id": o, "expression": "x"} for o in contributions],

@@ -16,6 +16,7 @@ from sqlalchemy import delete, insert, select
 from typing_extensions import override
 
 from antarest.study.business.model.gems.optim_config import GemsOptimConfig, GemsOptimConfigModel
+from antarest.study.business.model.gems.system import split_library_and_model_id
 from antarest.study.dao.api.gems_optim_config_dao import GemsOptimConfigDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.optim_config import (
@@ -25,10 +26,11 @@ from antarest.study.dao.database.models.gems.optim_config import (
 
 
 def _model_to_rows(study_data_id: int, model: GemsOptimConfigModel) -> list[dict[str, Any]]:
+    library_id, model_id = split_library_and_model_id(model.id)
     base = {
         "study_data_id": study_data_id,
-        "library_id": model.library_id,
-        "model_id": model.model_id,
+        "library_id": library_id,
+        "model_id": model_id,
         "variable_id": None,
         "constraint_id": None,
         "objective_contribution_id": None,

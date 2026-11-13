@@ -24,6 +24,7 @@ from pydantic import AfterValidator, ConfigDict, Field, NonNegativeInt, Positive
 from antarest.core.model import GemsId
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
+from antarest.study.business.model.gems.system import ModelId
 
 _SCENARIO_RANGE_REGEX = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s*$")
 _SCENARIO_INDEX_REGEX = re.compile(r"^\s*(\d+)\s*$")
@@ -51,25 +52,11 @@ def _validate_scenario_entry(value: int | str) -> int | str:
 ScenarioEntry: TypeAlias = Annotated[int | str, AfterValidator(_validate_scenario_entry)]
 
 
-def _expand_scenario_entries(entries: list[ScenarioEntry]) -> set[int]:
-    indices: set[int] = set()
-    for entry in entries:
-        if isinstance(entry, int):
-            indices.add(entry)
-            continue
-        match = _SCENARIO_RANGE_REGEX.match(entry)
-        if match:
-            indices.update(range(int(match.group(1)), int(match.group(2)) + 1))
-        else:
-            indices.add(int(entry))
-    return indices
-
-
-class GemsTimeScope(AntaresBaseModel):
+class _GemsTimeScope(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
-    first_time_step: NonNegativeInt
-    last_time_step: NonNegativeInt
+    first_time_step: NonNegativeInt = 0
+    last_time_step: NonNegativeInt = 0
 
     @model_validator(mode="after")
     def _check_time_steps(self) -> Self:
@@ -78,20 +65,11 @@ class GemsTimeScope(AntaresBaseModel):
         return self
 
 
-class GemsScenarioScope(AntaresBaseModel):
+class _GemsScenarioScope(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     include: list[ScenarioEntry] | None = None
     exclude: list[ScenarioEntry] | None = None
-
-    def get_scenarios(self) -> list[int]:
-        """
-        Returns the sorted list of selected scenarios.
-        Without `include`, the base set is the scenario 0.
-        """
-        base = _expand_scenario_entries(self.include) if self.include else {0}
-        excluded = _expand_scenario_entries(self.exclude) if self.exclude else set()
-        return sorted(base - excluded)
 
 
 class GemsSolverOptions(AntaresBaseModel):
@@ -252,24 +230,13 @@ class GemsHeuristic(AntaresBaseModel):
         return self
 
 
-_MODEL_ID_REGEX = r"^[a-z0-9_]+\.[a-z0-9_]+$"
-
-
 class GemsOptimConfigModel(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
-    id: Annotated[str, Field(pattern=_MODEL_ID_REGEX)]
+    id: ModelId
     out_of_bounds_processing: GemsOutOfBoundsProcessing | None = None
     model_decomposition: GemsModelDecomposition | None = None
     heuristics: list[GemsHeuristic] | None = None
-
-    @property
-    def library_id(self) -> str:
-        return self.id.split(".")[0]
-
-    @property
-    def model_id(self) -> str:
-        return self.id.split(".")[1]
 
     @model_validator(mode="after")
     def _check_heuristics(self) -> Self:
@@ -281,8 +248,8 @@ class GemsOptimConfigModel(AntaresBaseModel):
 class GemsOptimConfig(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
-    time_scope: GemsTimeScope | None = None
-    scenario_scope: GemsScenarioScope | None = None
+    time_scope: _GemsTimeScope | None = None
+    scenario_scope: _GemsScenarioScope | None = None
     solver_options: GemsSolverOptions | None = None
     resolution: GemsResolution | None = None
     models: list[GemsOptimConfigModel] = Field(default_factory=list)
