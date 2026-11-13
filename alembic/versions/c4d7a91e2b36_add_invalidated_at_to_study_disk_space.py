@@ -1,7 +1,7 @@
 """add_invalidated_at_to_study_disk_space
 
 Revision ID: c4d7a91e2b36
-Revises: b8e5c1a7d902
+Revises: 1c8b0b189035
 Create Date: 2026-11-13 09:45:00.000000
 
 """
@@ -13,7 +13,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "c4d7a91e2b36"
-down_revision = "b8e5c1a7d902"
+down_revision = "1c8b0b189035"
 branch_labels = None
 depends_on = None
 
