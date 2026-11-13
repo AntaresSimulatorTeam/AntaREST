@@ -15,6 +15,7 @@ from typing import Any
 from sqlalchemy import delete, insert, select
 from typing_extensions import override
 
+from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.gems.optim_config import GemsOptimConfig, GemsOptimConfigModel
 from antarest.study.business.model.gems.system import split_library_and_model_id
 from antarest.study.dao.api.gems_optim_config_dao import GemsOptimConfigDao
@@ -76,12 +77,16 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         study_data_id = self._study_data_id
         session = self._db_session
 
-        config_table = GEMS_OPTIM_CONFIG_TABLE
-        config_row = session.execute(
-            select(config_table).where(config_table.c.study_data_id == study_data_id)
-        ).fetchone()
+        table = GEMS_OPTIM_CONFIG_TABLE
+        config_row = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchone()
         if not config_row:
             return None
+
+        data = get_row_representation_as_dict(config_row)
+        del data["study_data_id"]
+        optim_config = GemsOptimConfig(**data)
+
+        # Models part
 
         models_table = GEMS_OPTIM_CONFIG_MODELS_TABLE
         model_rows = session.execute(
@@ -136,6 +141,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
             }
             content["resolution"] = {k: v for k, v in resolution.items() if v is not None}
 
+        print(optim_config)
         return GemsOptimConfig.model_validate(content)
 
     @override
