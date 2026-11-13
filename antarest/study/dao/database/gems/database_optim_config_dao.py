@@ -144,11 +144,6 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         session = self._db_session
 
         # The configuration is replaced as a whole
-        session.execute(
-            delete(GEMS_OPTIM_CONFIG_MODELS_TABLE).where(
-                GEMS_OPTIM_CONFIG_MODELS_TABLE.c.study_data_id == study_data_id
-            )
-        )
         session.execute(delete(GEMS_OPTIM_CONFIG_TABLE).where(GEMS_OPTIM_CONFIG_TABLE.c.study_data_id == study_data_id))
 
         time_scope = optim_config.time_scope
