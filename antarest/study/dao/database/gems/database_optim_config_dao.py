@@ -84,6 +84,8 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
 
         optim_config_data = get_row_representation_as_dict(config_row)
         del optim_config_data["study_data_id"]
+        for key in optim_config_data:
+            optim_config_data[key] = json.loads(optim_config_data[key]) if optim_config_data[key] is not None else None
 
         # Models part
         models_table = GEMS_OPTIM_CONFIG_MODELS_TABLE
