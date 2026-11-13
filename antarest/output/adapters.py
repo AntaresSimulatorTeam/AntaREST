@@ -82,4 +82,8 @@ def study_service_as_studies_repository(study_service: StudyService) -> IStudyMe
             assert_permission(study, permission)
             study_service.assert_study_unarchived(study)
 
+        @override
+        def invalidate_disk_space(self, study_id: str) -> None:
+            study_service.invalidate_disk_space(study_id)
+
     return StudyServiceAdapter()

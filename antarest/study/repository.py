@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import enum
+from datetime import datetime
 from typing import Optional, Sequence, cast
 
 from pydantic import NonNegativeInt
@@ -647,13 +648,29 @@ class StudyDiskSpaceRepository:
 
         return disk_analysis
 
-    def update(self, study_id: str, disk_space: int) -> None:
+    def update(self, study_id: str, disk_space: int, analysis_date: datetime) -> None:
         session = self.session
 
         stmt = (
             update(StudyDiskSpaceAnalysis)
             .where(StudyDiskSpaceAnalysis.study_id == study_id)
-            .values(disk_space_bytes=disk_space, last_analysis_date=current_time())
+            .values(disk_space_bytes=disk_space, last_analysis_date=analysis_date)
+        )
+
+        session.execute(stmt)
+        session.commit()
+
+    def invalidate(self, study_id: str) -> None:
+        """
+        Marks the disk space of the study as outdated, so that it is analyzed again by the next analysis.
+        Does nothing if the study has no analysis yet (it will be analyzed anyway).
+        """
+        session = self.session
+
+        stmt = (
+            update(StudyDiskSpaceAnalysis)
+            .where(StudyDiskSpaceAnalysis.study_id == study_id)
+            .values(invalidated_at=current_time())
         )
 
         session.execute(stmt)
