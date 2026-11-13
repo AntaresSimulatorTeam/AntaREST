@@ -32,6 +32,7 @@ from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
+from antarest.output.model.gems_views import GemsTaxonomyViews
 from antarest.output.model.output_type import OutputType
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
@@ -83,6 +84,22 @@ class OutOfStudyFileOutputProvider(IFileOutputsProvider):
         return FileStudyOutputs(outputs_path=self._outputs_dir / study_id, study_workspace=DEFAULT_WORKSPACE_NAME)
 
 
+def _build_repository_mock() -> Mock:
+    """
+    Mock of the DB repository, except for the GEMS views which are actually stored (in memory).
+    """
+    repository = Mock()
+    gems_views: dict[tuple[str, str], list[GemsTaxonomyViews]] = {}
+    repository.get_output_gems_views.side_effect = lambda study_id, output_id: gems_views.get((study_id, output_id))
+    repository.save_output_gems_views.side_effect = lambda study_id, output_id, views: gems_views.update(
+        {(study_id, output_id): views}
+    )
+    repository.delete_output_gems_views.side_effect = lambda study_id, output_id: gems_views.pop(
+        (study_id, output_id), None
+    )
+    return repository
+
+
 @pytest.fixture(params=[OutputStorageType.IN_STUDY_FILE_TREE, OutputStorageType.OUT_OF_STUDY_FILE_TREE])
 def output_storage(request: pytest.FixtureRequest, tmp_path: Path, sta_mini_zip_path: Path) -> IOutputStorage:
     executor = Mock(spec=IRemoteExecutor)
@@ -111,7 +128,7 @@ def output_storage(request: pytest.FixtureRequest, tmp_path: Path, sta_mini_zip_
         cache=LocalCache(),
         config=Mock(),
         remote_executor=executor,
-        repository=Mock(),
+        repository=_build_repository_mock(),
     )
 
 
@@ -586,6 +603,33 @@ def test_get_gems_views(output_storage: IOutputStorage) -> None:
     # Legacy output: no views
     with pytest.raises(OutputGemsViewsNotFound):
         output_storage.get_gems_views("STA-mini", "20201014-1427eco")
+
+
+def test_get_gems_views_are_computed_once(output_storage: IOutputStorage, tmp_path: Path) -> None:
+    gems_output_dir = Path(__file__).parents[2] / "filestudy" / "data" / "20261104-1636eco-gems_views"
+    output_id = output_storage.import_output("STA-mini", gems_output_dir)
+    if output_storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+        outputs_path = tmp_path / "studies" / "STA-mini" / "output"
+    else:
+        outputs_path = tmp_path / "outputs" / "STA-mini"
+
+    views = output_storage.get_gems_views("STA-mini", output_id)
+
+    # Once computed, the views do not depend on the parquet files anymore
+    shutil.rmtree(outputs_path / output_id / "views" / "output")
+    assert output_storage.get_gems_views("STA-mini", output_id) == views
+
+    # The stored views are dropped with the output: a different output with the same id gets its own views
+    output_storage.delete_output("STA-mini", output_id)
+    other_output_dir = tmp_path / "other_output"
+    shutil.copytree(gems_output_dir, other_output_dir)
+    for parquet_path in other_output_dir.glob("views/output/view_link--*.parquet"):
+        parquet_path.unlink()
+    assert output_storage.import_output("STA-mini", other_output_dir) == output_id
+
+    other_views = output_storage.get_gems_views("STA-mini", output_id)
+    assert other_views[1].view_ids[0]["view_link"].metrics_location == []
+    assert other_views[0] == views[0]
 
 
 def test_get_logs(output_storage: IOutputStorage, tmp_path: Path) -> None:

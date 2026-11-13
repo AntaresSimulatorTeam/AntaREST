@@ -381,6 +381,8 @@ class AbstractFileOutputStorage(IOutputStorage):
         if not _output_exists(study_outputs.outputs_path, output_id):
             raise OutputNotFound(output_id)
 
+        self._repository.delete_output_gems_views(study_id, output_id)
+
         output_path, archived_output_path = _output_paths(study_outputs.outputs_path, output_id)
         if output_path.exists() and output_path.is_dir():
             shutil.rmtree(output_path, ignore_errors=True)
@@ -657,7 +659,18 @@ class AbstractFileOutputStorage(IOutputStorage):
         output_path = self._require_unarchived_output_path(study_id, output_id)
         if OutputType.from_output_dir(output_path) != OutputType.GEMS_VIEWS:
             raise OutputGemsViewsNotFound(output_id)
-        return extract_gems_views(output_path)
+
+        views = self._repository.get_output_gems_views(study_id, output_id)
+        if views is not None:
+            return views
+
+        # Fetches the views from stored output
+        views = extract_gems_views(output_path)
+
+        # Save the views inside DB for next calls
+        self._repository.save_output_gems_views(study_id, output_id, views)
+
+        return views
 
     def _build_output_node(self, study_id: str, output_id: str) -> Output:
         study_outputs = self._outputs_provider.get_outputs(study_id)

@@ -10,13 +10,19 @@
 #
 # This file is part of the Antares project.
 import gzip
+from typing import cast
 
-from sqlalchemy import ForeignKey, Integer, LargeBinary, PrimaryKeyConstraint, String
+from pydantic import TypeAdapter
+from sqlalchemy import ForeignKey, Integer, LargeBinary, PrimaryKeyConstraint, String, Table, delete, select
 from sqlalchemy.orm import Mapped, mapped_column
 
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.sql_utils import upsert_one
 from antarest.dbmodel import Base
 from antarest.output.model import OutputVariablesList
+from antarest.output.model.gems_views import GemsTaxonomyViews
+
+_GEMS_VIEWS_ADAPTER: TypeAdapter[list[GemsTaxonomyViews]] = TypeAdapter(list[GemsTaxonomyViews])
 
 
 class DbOutputVariables(Base):
@@ -49,9 +55,30 @@ class DbOutputVariables(Base):
         )
 
 
+class DbOutputGemsViews(Base):
+    """
+    Table for storing the GEMS views of an output, as a JSON string.
+
+    Reading them from the output files is costly (every parquet file of the views is scanned),
+    and an output never changes once written: they are computed once, then read from here.
+    """
+
+    __tablename__ = "output_gems_views"
+
+    study_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("study.id", name="fk_output_gems_views_study_id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False,
+    )
+    output_id: Mapped[str] = mapped_column(String(), primary_key=True, nullable=False)
+    views_version: Mapped[int] = mapped_column(Integer(), nullable=False)
+    views: Mapped[str] = mapped_column(String(), nullable=False)
+
+
 class FileOutputRepository:
     """
-    DB data for file output storage: stores variables list and variable views definitions.
+    DB data for file output storage: stores variables list, variable views definitions and GEMS views.
     """
 
     def get_output_variables_list(self, study_id: str, output_id: str) -> OutputVariablesList | None:
@@ -61,4 +88,34 @@ class FileOutputRepository:
     def save_output_variables_list(self, study_id: str, output_id: str, variables_list: OutputVariablesList) -> None:
         db_model = DbOutputVariables.from_model(study_id, output_id, variables_list)
         db.session.add(db_model)
+        db.session.commit()
+
+    def get_output_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | None:
+        """
+        Returns the stored GEMS views of the output, or None if they are not stored.
+        """
+        stmt = select(DbOutputGemsViews.views).where(
+            DbOutputGemsViews.study_id == study_id, DbOutputGemsViews.output_id == output_id
+        )
+        views = db.session.execute(stmt).scalar_one_or_none()
+        return _GEMS_VIEWS_ADAPTER.validate_json(views) if views is not None else None
+
+    def save_output_gems_views(self, study_id: str, output_id: str, views: list[GemsTaxonomyViews]) -> None:
+        upsert_one(
+            db.session,
+            cast(Table, DbOutputGemsViews.__table__),
+            {
+                "study_id": study_id,
+                "output_id": output_id,
+                "views_version": 1,
+                "views": _GEMS_VIEWS_ADAPTER.dump_json(views).decode("utf-8"),
+            },
+        )
+        db.session.commit()
+
+    def delete_output_gems_views(self, study_id: str, output_id: str) -> None:
+        stmt = delete(DbOutputGemsViews).where(
+            DbOutputGemsViews.study_id == study_id, DbOutputGemsViews.output_id == output_id
+        )
+        db.session.execute(stmt)
         db.session.commit()

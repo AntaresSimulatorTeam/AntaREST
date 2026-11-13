@@ -31,7 +31,7 @@ def _zip_directory(directory: Path) -> io.BytesIO:
 
 
 def test_output_gems_views(
-    client: TestClient, user_access_token: str, internal_study_id: str, project_path: Path
+    client: TestClient, user_access_token: str, internal_study_id: str, project_path: Path, tmp_path: Path
 ) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
@@ -92,6 +92,16 @@ def test_output_gems_views(
             ],
         },
     ]
+
+    # Once computed, the views do not depend on the parquet files anymore
+    expected_views = res.json()
+    parquet_files = list((tmp_path / "ext_workspace/STA-mini/output" / output_id / "views/output").glob("*.parquet"))
+    assert len(parquet_files) == 8
+    for parquet_file in parquet_files:
+        parquet_file.unlink()
+    res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id}/gems-views")
+    assert res.status_code == 200, res.json()
+    assert res.json() == expected_views
 
     # Legacy output
     res = client.get(f"/v1/studies/{internal_study_id}/outputs/20201014-1427eco/gems-views")
