@@ -22,16 +22,17 @@ Expected layout, as written by the Simulator and the GEMS views builder:
 from pathlib import Path
 
 import polars as pl
-import yaml
 
 from antarest.output.model.gems_views import (
     GemsAggregationPattern,
     GemsMetricLocation,
     GemsTaxonomyViews,
-    GemsViewConfig,
     GemsViewLocations,
+    ViewId,
 )
 from antarest.output.model.output_type import GEMS_VIEWS_DIR
+from antarest.study.business.model.gems.view import GemsViewConfig
+from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 
 _VIEWS_INPUT_DIR = "input"
 _VIEW_CONFIG_PATTERN = "view_config_*.yml"
@@ -46,8 +47,7 @@ def parse_gems_view_configs(output_dir: Path) -> list[GemsViewConfig]:
     input_dir = output_dir / GEMS_VIEWS_DIR / _VIEWS_INPUT_DIR
     configs = []
     for config_path in sorted(input_dir.glob(_VIEW_CONFIG_PATTERN)):
-        content = yaml.safe_load(config_path.read_text(encoding="utf-8"))
-        configs.append(GemsViewConfig.model_validate(content["view"]))
+        configs.append(GemsViewConfig.model_validate(YAMLReader().read(config_path)["view"]))
     return configs
 
 
@@ -76,7 +76,7 @@ def extract_gems_views(output_dir: Path) -> list[GemsTaxonomyViews]:
     """
     Returns the views of the output grouped by taxonomy category, with the locations available for each view.
     """
-    views_by_taxonomy: dict[str, dict[str, GemsViewLocations]] = {}
+    views_by_taxonomy: dict[str, dict[ViewId, GemsViewLocations]] = {}
     for view in parse_gems_view_configs(output_dir):
         locations = [GemsMetricLocation(id=location) for location in read_metric_locations(output_dir, view)]
         aggregation_patterns = [
@@ -88,4 +88,4 @@ def extract_gems_views(output_dir: Path) -> list[GemsTaxonomyViews]:
         views_by_taxonomy.setdefault(view.taxonomy_category, {})[view.id] = GemsViewLocations(
             metrics_location=locations, aggregation_patterns=aggregation_patterns
         )
-    return [GemsTaxonomyViews(taxonomy=taxonomy, view_ids=[views]) for taxonomy, views in views_by_taxonomy.items()]
+    return [GemsTaxonomyViews(taxonomy=taxonomy, view_ids=views) for taxonomy, views in views_by_taxonomy.items()]

@@ -24,6 +24,7 @@ from typing_extensions import override
 from antarest.core.exceptions import (
     OutputAggregationError,
     OutputAlreadyExists,
+    OutputGemsViewsNotFound,
     OutputNotFound,
     ShouldNotHappenException,
 )
@@ -458,7 +459,7 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews]:
-        raise NotImplementedError()
+        raise OutputGemsViewsNotFound(output_id)
 
     @override
     def get_matrix_aggregation_result(

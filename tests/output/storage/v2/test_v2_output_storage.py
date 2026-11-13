@@ -18,6 +18,7 @@ import polars as pl
 import pytest
 from sqlalchemy import Engine
 
+from antarest.core.exceptions import OutputGemsViewsNotFound
 from antarest.core.utils.archives import ArchiveFormat, archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
@@ -140,6 +141,13 @@ def test_storage(
         assert not storage.output_exists(study_id="my-study", output_id=f"{EXPECTED_DATE}eco")
         assert storage.list_outputs(study_id="my-study") == []
         assert lfs.list_files() == []
+
+
+def test_get_gems_views(storage: V2OutputStorage, study_id: str, output_path: Path) -> None:
+    with db():
+        output_name = storage.import_output("my-study", output_path)
+        with pytest.raises(OutputGemsViewsNotFound):
+            storage.get_gems_views("my-study", output_name)
 
 
 def create_archive(archive_format: ArchiveFormat, nested: bool, output_path: Path, tmp_path: Path) -> Path:

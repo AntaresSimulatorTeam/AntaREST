@@ -593,8 +593,8 @@ def test_get_gems_views(output_storage: IOutputStorage) -> None:
 
     views = output_storage.get_gems_views("STA-mini", output_id)
     assert [v.taxonomy for v in views] == ["balance", "link"]
-    assert [list(views_by_id) for views_by_id in views[0].view_ids] == [["view_area", "view_storage", "view_thermal"]]
-    assert [location.id for location in views[1].view_ids[0]["view_link"].metrics_location] == [
+    assert list(views[0].view_ids) == ["view_area", "view_storage", "view_thermal"]
+    assert [location.id for location in views[1].view_ids["view_link"].metrics_location] == [
         "area1_area2_link",
         "area1_area3_link",
         "area2_area3_link",
@@ -628,7 +628,7 @@ def test_get_gems_views_are_computed_once(output_storage: IOutputStorage, tmp_pa
     assert output_storage.import_output("STA-mini", other_output_dir) == output_id
 
     other_views = output_storage.get_gems_views("STA-mini", output_id)
-    assert other_views[1].view_ids[0]["view_link"].metrics_location == []
+    assert other_views[1].view_ids["view_link"].metrics_location == []
     assert other_views[0] == views[0]
 
 

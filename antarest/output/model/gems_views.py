@@ -10,32 +10,15 @@
 #
 # This file is part of the Antares project.
 
-from pydantic import AliasPath, ConfigDict, Field
+from typing import TypeAlias
+
+from pydantic import ConfigDict
 from pydantic.alias_generators import to_camel
 
 from antarest.core.serde import AntaresBaseModel
-from antarest.core.utils.string import to_kebab_case
+from antarest.study.business.model.gems.view import GemsTimeGranularity
 
-# Inputs
-
-
-class _GemsViewConfigAggregationPattern(AntaresBaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore", alias_generator=to_kebab_case)
-
-    id: str
-    scenario: bool
-    time_granularity: str
-
-
-class GemsViewConfig(AntaresBaseModel):
-    model_config = ConfigDict(populate_by_name=True, extra="ignore", alias_generator=to_kebab_case)
-
-    id: str
-    taxonomy_category: str = Field(validation_alias=AliasPath("scope", "location", "taxonomy-category"))
-    aggregations_patterns: list[_GemsViewConfigAggregationPattern]
-
-
-# Outputs
+ViewId: TypeAlias = str
 
 
 class GemsMetricLocation(AntaresBaseModel):
@@ -49,7 +32,7 @@ class GemsAggregationPattern(AntaresBaseModel):
 
     id: str
     scenario: bool
-    time_granularity: str
+    time_granularity: GemsTimeGranularity
 
 
 class GemsViewLocations(AntaresBaseModel):
@@ -63,4 +46,4 @@ class GemsTaxonomyViews(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_camel)
 
     taxonomy: str
-    view_ids: list[dict[str, GemsViewLocations]]
+    view_ids: dict[ViewId, GemsViewLocations]

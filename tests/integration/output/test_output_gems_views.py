@@ -41,55 +41,57 @@ def test_output_gems_views(
     assert res.status_code == 202, res.json()
     output_id = res.json()
 
+    res = client.get(f"/v1/studies/{internal_study_id}/outputs")
+    assert res.status_code == 200, res.json()
+    output_types = {output["id"]: output["outputType"] for output in res.json()}
+    assert output_types[output_id] == "GEMS_VIEWS"
+    assert output_types["20201014-1427eco"] == "LEGACY"
+
     # Nominal case
     res = client.get(f"/v1/studies/{internal_study_id}/outputs/{output_id}/gems-views")
     assert res.status_code == 200, res.json()
     assert res.json() == [
         {
             "taxonomy": "balance",
-            "viewIds": [
-                {
-                    "view_area": {
-                        "metricsLocation": [{"id": "area1_node"}, {"id": "area2_node"}, {"id": "area3_node"}],
-                        "aggregationPatterns": [
-                            {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
-                            {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
-                        ],
-                    },
-                    "view_storage": {
-                        "metricsLocation": [{"id": "area3_node"}],
-                        "aggregationPatterns": [
-                            {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
-                            {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
-                        ],
-                    },
-                    "view_thermal": {
-                        "metricsLocation": [{"id": "area1_node"}, {"id": "area2_node"}, {"id": "area3_node"}],
-                        "aggregationPatterns": [
-                            {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
-                            {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
-                        ],
-                    },
-                }
-            ],
+            "viewIds": {
+                "view_area": {
+                    "metricsLocation": [{"id": "area1_node"}, {"id": "area2_node"}, {"id": "area3_node"}],
+                    "aggregationPatterns": [
+                        {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
+                        {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
+                    ],
+                },
+                "view_storage": {
+                    "metricsLocation": [{"id": "area3_node"}],
+                    "aggregationPatterns": [
+                        {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
+                        {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
+                    ],
+                },
+                "view_thermal": {
+                    "metricsLocation": [{"id": "area1_node"}, {"id": "area2_node"}, {"id": "area3_node"}],
+                    "aggregationPatterns": [
+                        {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
+                        {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
+                    ],
+                },
+            },
         },
         {
             "taxonomy": "link",
-            "viewIds": [
-                {
-                    "view_link": {
-                        "metricsLocation": [
-                            {"id": "area1_area2_link"},
-                            {"id": "area1_area3_link"},
-                            {"id": "area2_area3_link"},
-                        ],
-                        "aggregationPatterns": [
-                            {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
-                            {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
-                        ],
-                    },
-                }
-            ],
+            "viewIds": {
+                "view_link": {
+                    "metricsLocation": [
+                        {"id": "area1_area2_link"},
+                        {"id": "area1_area3_link"},
+                        {"id": "area2_area3_link"},
+                    ],
+                    "aggregationPatterns": [
+                        {"id": "annual_all_scenario", "scenario": True, "timeGranularity": "year"},
+                        {"id": "hourly_per_scenario", "scenario": False, "timeGranularity": "hour"},
+                    ],
+                },
+            },
         },
     ]
 
