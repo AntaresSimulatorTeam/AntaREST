@@ -13,15 +13,24 @@
  */
 
 import TreeItemEnhanced from "@/components/TreeItemEnhanced";
+import { useAppMode } from "@/hooks/useAppMode";
 import FavoriteExternalDirectoryToggle from "@/routes/-shared/components/studies/FavoriteToggle/FavoriteExternalDirectoryToggle";
 import { sortByName } from "@/services/utils";
 import RadarIcon from "@mui/icons-material/Radar";
-import { Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import * as R from "ramda";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import DiskUsageIndicator from "../DiskUsageIndicator";
 import { actionButtonStyles, nodeActionsContainerStyles } from "../styles";
-import { treeItemStyles, treeNodeIcons, workspaceItemStyles } from "./styles";
+import {
+  nodeLabelStyles,
+  nodeNameStyles,
+  treeItemStyles,
+  treeNodeIcons,
+  workspaceDiskUsageStyles,
+  workspaceItemStyles,
+} from "./styles";
 import type { ExternalTreeNodeMetadata, ExternalTreeNodeProps } from "./types";
 
 const filterScannedStudies = R.reject<ExternalTreeNodeMetadata>(
@@ -34,12 +43,28 @@ const isWorkspacePath = (path: string): boolean =>
 const getWorkspaceAndRelativePath = (path: string) => {
   const [workspace, ...rest] = path.split("/").filter(Boolean);
   const relativePath = rest.join("/");
+
   return [workspace, relativePath] as const;
 };
+
+////////////////////////////////////////////////////////////////
+// Event Handlers
+////////////////////////////////////////////////////////////////
+
+function handleIndicatorMouseEvent(event: React.MouseEvent) {
+  event.stopPropagation();
+}
+
+function handleIndicatorKeyDown(event: React.KeyboardEvent) {
+  if (event.key !== "Tab" && event.key !== "Escape") {
+    event.stopPropagation();
+  }
+}
 
 function ExternalTreeNode({ node, itemsLoading, exploredFolders }: ExternalTreeNodeProps) {
   const { hasChildren, children, path, name, isStudyFolder, alias } = node;
   const { t } = useTranslation();
+  const { isWebMode } = useAppMode();
 
   const isLoading = itemsLoading.includes(path);
   const hasUnloadedChildren =
@@ -85,21 +110,36 @@ function ExternalTreeNode({ node, itemsLoading, exploredFolders }: ExternalTreeN
   return (
     <TreeItemEnhanced
       itemId={path}
+      aria-label={label}
       label={
-        <Stack justifyContent="space-between" spacing={1}>
-          <Typography variant="body2" noWrap>
+        <Stack direction="row" alignItems="center" sx={nodeLabelStyles}>
+          <Typography variant="body2" noWrap sx={nodeNameStyles}>
             {label}
           </Typography>
-          <Stack spacing={0.25} sx={nodeActionsContainerStyles}>
-            {!isWorkspace && (
+          {!isWorkspace && (
+            <Stack spacing={0.25} sx={nodeActionsContainerStyles}>
               <FavoriteExternalDirectoryToggle
                 workspace={workspace}
                 path={relativePath}
                 slotProps={{ icon: { fontSize: "extra-small" } }}
                 sx={actionButtonStyles}
               />
-            )}
-          </Stack>
+            </Stack>
+          )}
+          {isWorkspace && isWebMode && (
+            <Box
+              onClick={handleIndicatorMouseEvent}
+              onMouseDown={handleIndicatorMouseEvent}
+              onDoubleClick={handleIndicatorMouseEvent}
+              onKeyDown={handleIndicatorKeyDown}
+              sx={workspaceDiskUsageStyles}
+            >
+              <DiskUsageIndicator
+                workspace={workspace}
+                label={t("studies.tree.diskUsage.workspaceLabel", { workspace: label })}
+              />
+            </Box>
+          )}
         </Stack>
       }
       loading={isLoading}

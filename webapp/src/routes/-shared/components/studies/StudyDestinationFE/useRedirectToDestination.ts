@@ -16,7 +16,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
+import { getDescendantIds } from "@/utils/directoryUtils";
 import type { Directory } from "@/services/api/directories/types";
 import type { DirectoryDestination } from "./types";
 import { resolveRedirectDirectoryId } from "./utils";

@@ -17,49 +17,76 @@ import * as R from "ramda";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudyFilters } from "@/redux/selectors";
+import { getStudyFilters, getStudyFolderRevealRequest } from "@/redux/selectors";
 import { getParentPaths } from "@/utils/pathUtils";
 import { SimpleTreeView } from "@mui/x-tree-view";
 import { useCallback, useMemo, useState } from "react";
+import useRevealTreeItem from "../hooks/useRevealTreeItem";
 import ExternalTreeNode from "./ExternalTreeNode";
 import { useFolderExplorer } from "./hooks/useFolderExplorer";
+import usePrepareFolderReveal from "./hooks/usePrepareFolderReveal";
 import { useStudyTree } from "./hooks/useStudyTree";
 import { useWorkspaces } from "./hooks/useWorkspaces";
 import type { ExternalTreeProps } from "./types";
 
 function ExternalTree({ studies }: ExternalTreeProps) {
   const dispatch = useAppDispatch();
-  // Get current folder filter - allows to display studies in the current folder
   const path = useAppSelector((state) => getStudyFilters(state).external.path);
   const isActive = useAppSelector((state) => getStudyFilters(state).activeTree === "external");
+  const revealRequest = useAppSelector(getStudyFolderRevealRequest);
+  const request = revealRequest?.tree === "external" ? revealRequest : null;
+  const requestId = request?.requestId;
+  const requestedPath = request?.path;
+  const requestedWorkspace = requestedPath?.split("/")[1];
 
-  // Fetch workspaces (only in desktop mode)
-  const { data: workspaces } = useWorkspaces();
+  const workspaceQuery = useWorkspaces({
+    enabled: !!request && !studies.some((study) => study.workspace === requestedWorkspace),
+  });
+  const { data: workspaces } = workspaceQuery;
   const workspacesStable = useMemo(() => workspaces ?? [], [workspaces]);
 
-  // Manage folder exploration
-  const { explorePath, exploredFolders, itemsLoading } = useFolderExplorer();
+  const { explorePath, markPathExplored, exploredFolders, itemsLoading } = useFolderExplorer();
 
-  // Manage study tree state
   const { studiesTree, updateTreeWithFolders } = useStudyTree({
     studies,
     workspaces: workspacesStable,
   });
 
   const prevPath = usePrevious(path);
+  const prevRequestId = usePrevious(requestId);
   const [expandedItems, setExpandedItems] = useState<string[]>(() =>
     [...getParentPaths(path), path].filter(Boolean),
   );
 
-  // When `path` changes externally (e.g. from a study card's folder link),
-  // ensure all ancestors of the newly selected path are expanded.
-  if (prevPath !== path) {
+  // Links outside the tree must also expand the selected folder's ancestors.
+  if (prevPath !== path || (requestId && prevRequestId !== requestId)) {
     const required = [...getParentPaths(path), path].filter(Boolean);
     const missing = R.difference(required, expandedItems);
+
     if (missing.length > 0) {
       setExpandedItems([...expandedItems, ...missing]);
     }
   }
+
+  const workspaceReady =
+    studiesTree.children.some((node) => node.path === `/${requestedWorkspace}`) ||
+    (workspaceQuery.isFetched && !workspaceQuery.isFetching);
+
+  const isReadyToReveal = usePrepareFolderReveal({
+    request,
+    studiesTree,
+    workspaceReady,
+    workspaceError: workspaceQuery.error,
+    explorePath,
+    markPathExplored,
+    updateTreeWithFolders,
+  });
+
+  const { treeRef, apiRef } = useRevealTreeItem({
+    requestId,
+    itemId: path,
+    ready: isReadyToReveal,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -84,9 +111,10 @@ function ExternalTree({ studies }: ExternalTreeProps) {
 
       if (folders) {
         updateTreeWithFolders(folders, itemId);
+        markPathExplored(itemId);
       }
     },
-    [explorePath, updateTreeWithFolders],
+    [explorePath, markPathExplored, updateTreeWithFolders],
   );
 
   const handleItemClick = (_event: React.MouseEvent, itemId: string) => {
@@ -104,6 +132,8 @@ function ExternalTree({ studies }: ExternalTreeProps) {
 
   return (
     <SimpleTreeView
+      ref={treeRef}
+      apiRef={apiRef}
       expandedItems={expandedItems}
       onExpandedItemsChange={(_event, itemIds) => setExpandedItems(itemIds)}
       selectedItems={isActive ? path : ""}
