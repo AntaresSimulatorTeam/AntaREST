@@ -653,7 +653,21 @@ class StudyDiskSpaceRepository:
         stmt = (
             update(StudyDiskSpaceAnalysis)
             .where(StudyDiskSpaceAnalysis.study_id == study_id)
-            .values(disk_space_bytes=disk_space, last_analysis_date=current_time())
+            .values(disk_space_bytes=disk_space, last_analysis_date=current_time(), needs_rescan=False)
+        )
+
+        session.execute(stmt)
+        session.commit()
+
+    def invalidate(self, study_id: str) -> None:
+        """
+        Flags the study so that its disk space is analyzed again by the next analysis.
+        Does nothing if the study has no analysis yet (it will be analyzed anyway).
+        """
+        session = self.session
+
+        stmt = (
+            update(StudyDiskSpaceAnalysis).where(StudyDiskSpaceAnalysis.study_id == study_id).values(needs_rescan=True)
         )
 
         session.execute(stmt)

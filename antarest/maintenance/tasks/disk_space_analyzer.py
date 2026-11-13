@@ -38,6 +38,12 @@ class DiskSpaceAnalyzerTaskResult(BaseModel):
 def disk_space_analysis(
     service: StudyService, disk_repo: StudyDiskSpaceRepository, lock_folder: Path
 ) -> DiskSpaceAnalyzerTaskResult:
+    """
+    Analyzes the disk space of managed studies.
+
+    A study is analyzed again if it was flagged with `needs_rescan` (see `StudyDiskSpaceRepository.invalidate`)
+    or if its `updated_at` is more recent than its last analysis.
+    """
     start_time = time.time()
 
     updated_studies = 0
@@ -69,7 +75,9 @@ def disk_space_analysis(
                             disk_repo.save(study_disk_analysis)
                             updated_studies += 1
 
-                        elif updated_at is not None and (filtered_analysis.last_analysis_date < updated_at):
+                        elif filtered_analysis.needs_rescan or (
+                            updated_at is not None and filtered_analysis.last_analysis_date < updated_at
+                        ):
                             logger.info(f"Updating disk space analysis for study {study_id}")
 
                             usage = service.get_disk_usage(study_id)

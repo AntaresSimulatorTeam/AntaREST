@@ -39,6 +39,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     String,
 )
+from sqlalchemy import false as sa_false
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from sqlalchemy.sql.sqltypes import BigInteger
 from typing_extensions import override
@@ -472,6 +473,7 @@ class StudyDiskSpaceAnalysis(Base):
     )
     disk_space_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
     last_analysis_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    needs_rescan: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=sa_false())
     study: Mapped["Study"] = relationship("Study", uselist=False)
 
 
