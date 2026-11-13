@@ -20,10 +20,6 @@ depends_on = None
 def upgrade():
     variables_type_enum = sa.Enum("continuous", "integer", "binary", name="variablestype")
 
-    bind = op.get_bind()
-    if bind.dialect.name == "postgresql":
-        variables_type_enum.create(bind, checkfirst=True)
-
     with op.batch_alter_table("gems_models", schema=None) as batch_op:
         batch_op.drop_column("variables")
         batch_op.drop_column("constraints")
@@ -41,7 +37,7 @@ def upgrade():
         sa.PrimaryKeyConstraint("study_data_id", "library_id", "model_id", "id", name="pk_gems_model_variables"),
         sa.ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id"],
-            ["gems_models.study_data_id", "gems_models.library_id", "gems_models.model_id"],
+            ["gems_models.study_data_id", "gems_models.library_id", "gems_models.id"],
             name=op.f("fk_gems_model_variables"),
             ondelete="CASCADE",
         ),
@@ -57,7 +53,7 @@ def upgrade():
         sa.PrimaryKeyConstraint("study_data_id", "library_id", "model_id", "id", name="pk_gems_model_constraints"),
         sa.ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id"],
-            ["gems_models.study_data_id", "gems_models.library_id", "gems_models.model_id"],
+            ["gems_models.study_data_id", "gems_models.library_id", "gems_models.id"],
             name=op.f("fk_gems_model_constraints"),
             ondelete="CASCADE",
         ),
@@ -73,7 +69,7 @@ def upgrade():
         sa.PrimaryKeyConstraint("study_data_id", "library_id", "model_id", "id", name="pk_gems_model_objective_contributions"),
         sa.ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id"],
-            ["gems_models.study_data_id", "gems_models.library_id", "gems_models.model_id"],
+            ["gems_models.study_data_id", "gems_models.library_id", "gems_models.id"],
             name=op.f("fk_gems_model_objective_contributions"),
             ondelete="CASCADE",
         ),
