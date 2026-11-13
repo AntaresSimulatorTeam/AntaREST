@@ -82,9 +82,8 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         if not config_row:
             return None
 
-        data = get_row_representation_as_dict(config_row)
-        del data["study_data_id"]
-        optim_config = GemsOptimConfig(**data)
+        optim_config_data = get_row_representation_as_dict(config_row)
+        del optim_config_data["study_data_id"]
 
         # Models part
 
@@ -118,30 +117,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
             elif row.heuristics is not None:
                 model["heuristics"] = json.loads(row.heuristics)
 
-        content: dict[str, Any] = {"models": list(models.values())}
-        if config_row.first_time_step is not None:
-            content["time_scope"] = {
-                "first_time_step": config_row.first_time_step,
-                "last_time_step": config_row.last_time_step,
-            }
-        if config_row.scenario_scope is not None:
-            content["scenario_scope"] = json.loads(config_row.scenario_scope)
-        if config_row.solver_name is not None:
-            content["solver_options"] = {
-                "name": config_row.solver_name,
-                "logs": config_row.solver_logs,
-                "parameters": config_row.solver_parameters,
-            }
-        if config_row.resolution_mode is not None:
-            resolution = {
-                "mode": config_row.resolution_mode,
-                "block_length": config_row.block_length,
-                "block_overlap": config_row.block_overlap,
-                "carry_over_length": config_row.carry_over_length,
-            }
-            content["resolution"] = {k: v for k, v in resolution.items() if v is not None}
-
-        print(optim_config)
+        content = {"models": list(models.values()), **optim_config_data}
         return GemsOptimConfig.model_validate(content)
 
     @override
