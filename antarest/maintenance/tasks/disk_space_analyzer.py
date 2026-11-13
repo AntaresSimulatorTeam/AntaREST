@@ -41,8 +41,11 @@ def disk_space_analysis(
     """
     Analyzes the disk space of managed studies.
 
-    A study is analyzed again if it was flagged with `needs_rescan` (see `StudyDiskSpaceRepository.invalidate`)
+    A study is analyzed again if its analysis was invalidated (see `StudyDiskSpaceRepository.invalidate`)
     or if its `updated_at` is more recent than its last analysis.
+
+    The analysis date is the date the analysis starts, so a change happening during the measure
+    is detected by the next analysis.
     """
     start_time = time.time()
 
@@ -62,26 +65,27 @@ def disk_space_analysis(
                 for study in studies:
                     try:
                         study_id = study.id
-                        updated_at = study.updated_at
                         filtered_analysis = dict_analysis.get(study_id, None)
+                        analysis_date = current_time()
 
                         if not filtered_analysis:
                             logger.info(f"Creating a disk space analysis for study {study_id}")
                             study_disk_analysis = StudyDiskSpaceAnalysis(
                                 study_id=study_id,
                                 disk_space_bytes=service.get_disk_usage(study_id),
-                                last_analysis_date=current_time(),
+                                last_analysis_date=analysis_date,
                             )
                             disk_repo.save(study_disk_analysis)
                             updated_studies += 1
 
-                        elif filtered_analysis.needs_rescan or (
-                            updated_at is not None and filtered_analysis.last_analysis_date < updated_at
+                        elif (
+                            filtered_analysis.invalidated_at is not None
+                            and filtered_analysis.last_analysis_date < filtered_analysis.invalidated_at
                         ):
                             logger.info(f"Updating disk space analysis for study {study_id}")
 
                             usage = service.get_disk_usage(study_id)
-                            disk_repo.update(study_id, usage)
+                            disk_repo.update(study_id, usage, analysis_date)
                             updated_studies += 1
 
                     except Exception as e:
