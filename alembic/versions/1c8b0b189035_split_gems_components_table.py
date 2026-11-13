@@ -44,7 +44,7 @@ def upgrade():
     )
 
     op.create_table(
-        "gems_models_contraints",
+        "gems_models_constraints",
         study_data_id_col(primary_key=False),
         sa.Column("library_id", sa.String(length=255), nullable=False),
         sa.Column("model_id", sa.String(length=255), nullable=False),
