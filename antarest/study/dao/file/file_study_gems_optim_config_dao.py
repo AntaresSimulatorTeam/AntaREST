@@ -35,7 +35,7 @@ class FileStudyGemsOptimConfigDao(GemsOptimConfigDao, ABC):
         file_path = _get_gems_optim_config_file_path(file_study.config.study_path)
         if not file_path.exists():
             return None
-        yaml_content = YAMLReader().read(file_path) or {}
+        yaml_content = YAMLReader().read(file_path)
         return GemsOptimConfig.model_validate(yaml_content)
 
     @override
