@@ -26,27 +26,35 @@ from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.string import to_kebab_case
 from antarest.study.business.model.gems.system import ModelId
 
-_SCENARIO_RANGE_REGEX = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s*$")
-_SCENARIO_INDEX_REGEX = re.compile(r"^\s*(\d+)\s*$")
+_SCENARIO_RANGE_REGEX = re.compile(r"^\s*(\d+)\s*-\s*(\d+)\s*$")  # ex: "4-35"
 
 
 def _validate_scenario_entry(value: int | str) -> int | str:
     """
     A scenario entry is either a non-negative integer or a string holding an integer or a range `"a-b"`, with a <= b.
     """
+
+    def _validate_integer(v: int) -> int:
+        if v < 0:
+            raise ValueError(f"Scenario index must be greater than or equal to 0, got {v}")
+        return v
+
     if isinstance(value, int):
-        if value < 0:
-            raise ValueError(f"Scenario index must be greater than or equal to 0, got {value}")
+        return _validate_integer(value)
+
+    try:
+        integer = int(value)
+
+    except ValueError:
+        match = _SCENARIO_RANGE_REGEX.match(value)
+        if not match:
+            raise ValueError(f"Invalid scenario entry '{value}': expected a range 'a-b'")
+        start, end = int(match.group(1)), int(match.group(2))
+        if start > end:
+            raise ValueError(f"Invalid scenario range '{value}': start must be lower than or equal to end")
         return value
-    if _SCENARIO_INDEX_REGEX.match(value):
-        return value
-    match = _SCENARIO_RANGE_REGEX.match(value)
-    if not match:
-        raise ValueError(f"Invalid scenario entry '{value}': expected an integer or a range 'a-b'")
-    start, end = int(match.group(1)), int(match.group(2))
-    if start > end:
-        raise ValueError(f"Invalid scenario range '{value}': start must be lower than or equal to end")
-    return value
+
+    return _validate_integer(integer)
 
 
 ScenarioEntry: TypeAlias = Annotated[int | str, AfterValidator(_validate_scenario_entry)]
@@ -72,10 +80,16 @@ class _GemsScenarioScope(AntaresBaseModel):
     exclude: list[ScenarioEntry] | None = None
 
 
-class GemsSolverOptions(AntaresBaseModel):
+class SolverName(StrEnum):
+    HIGHS = "highs"
+    XPRESS = "xpress"
+    GUROBI = "gurobi"
+
+
+class _GemsSolverOptions(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
-    name: str = "highs"
+    name: SolverName = SolverName.HIGHS
     logs: bool = False
     parameters: str = ""
 
@@ -93,7 +107,7 @@ class GemsResolutionMode(StrEnum):
     BENDERS_DECOMPOSITION = "benders-decomposition"
 
 
-class GemsResolution(AntaresBaseModel):
+class _GemsResolution(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     mode: GemsResolutionMode = GemsResolutionMode.FRONTAL
@@ -115,7 +129,7 @@ class GemsResolution(AntaresBaseModel):
                 )
             return self
 
-        assert self.block_length is not None
+        assert self.block_length is not None  # Just for mypy, we know it's not None here due to the first validation
         overlap = self.block_overlap or 0
         if overlap >= self.block_length:
             raise ValueError("'block-overlap' must be lower than 'block-length'")
@@ -160,19 +174,19 @@ class GemsDecompositionLocation(StrEnum):
     MASTER_AND_SUBPROBLEMS = "master-and-subproblems"
 
 
-class GemsDecompositionElement(AntaresBaseModel):
+class _GemsDecompositionElement(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     id: GemsId
     location: GemsDecompositionLocation = GemsDecompositionLocation.SUBPROBLEMS
 
 
-class GemsModelDecomposition(AntaresBaseModel):
+class _GemsModelDecomposition(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
-    variables: list[GemsDecompositionElement] = Field(default_factory=list)
-    constraints: list[GemsDecompositionElement] = Field(default_factory=list)
-    objective_contributions: list[GemsDecompositionElement] = Field(default_factory=list)
+    variables: list[_GemsDecompositionElement] = Field(default_factory=list)
+    constraints: list[_GemsDecompositionElement] = Field(default_factory=list)
+    objective_contributions: list[_GemsDecompositionElement] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _check_unique(self) -> Self:
@@ -194,7 +208,7 @@ class GemsHeuristicElementType(StrEnum):
     VARIABLE_UPPER_BOUND = "variable-upper-bound"
 
 
-class GemsHeuristicElement(AntaresBaseModel):
+class _GemsHeuristicElement(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     heuristic_element: str
@@ -202,19 +216,19 @@ class GemsHeuristicElement(AntaresBaseModel):
     type: GemsHeuristicElementType = GemsHeuristicElementType.PARAMETER
 
 
-def _check_unique_heuristic_elements(elements: list[GemsHeuristicElement], context: str) -> None:
+def _check_unique_heuristic_elements(elements: list[_GemsHeuristicElement], context: str) -> None:
     names = [e.heuristic_element for e in elements]
     duplicates = sorted({n for n in names if names.count(n) > 1})
     if duplicates:
         raise ValueError(f"Heuristic elements must appear only once in {context}: {duplicates}")
 
 
-class GemsHeuristic(AntaresBaseModel):
+class _GemsHeuristic(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     id: GemsHeuristicId
-    inputs: list[GemsHeuristicElement]
-    outputs: list[GemsHeuristicElement]
+    inputs: list[_GemsHeuristicElement]
+    outputs: list[_GemsHeuristicElement]
 
     @model_validator(mode="after")
     def _check_elements(self) -> Self:
@@ -235,8 +249,8 @@ class GemsOptimConfigModel(AntaresBaseModel):
 
     id: ModelId
     out_of_bounds_processing: GemsOutOfBoundsProcessing | None = None
-    model_decomposition: GemsModelDecomposition | None = None
-    heuristics: list[GemsHeuristic] | None = None
+    model_decomposition: _GemsModelDecomposition | None = None
+    heuristics: list[_GemsHeuristic] | None = None
 
     @model_validator(mode="after")
     def _check_heuristics(self) -> Self:
@@ -250,8 +264,8 @@ class GemsOptimConfig(AntaresBaseModel):
 
     time_scope: _GemsTimeScope | None = None
     scenario_scope: _GemsScenarioScope | None = None
-    solver_options: GemsSolverOptions | None = None
-    resolution: GemsResolution | None = None
+    solver_options: _GemsSolverOptions | None = None
+    resolution: _GemsResolution | None = None
     models: list[GemsOptimConfigModel] = Field(default_factory=list)
 
     @model_validator(mode="after")
