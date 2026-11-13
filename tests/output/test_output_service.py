@@ -70,6 +70,10 @@ def _studies_repository(study: Study) -> IStudyMetadataProvider:
         def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
             pass
 
+        @override
+        def invalidate_disk_space(self, study_id: str) -> None:
+            pass
+
     return Impl()
 
 
@@ -350,6 +354,45 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
     assert (tmp_path / "output" / f"{output_unzipped}.zip").is_file()
     assert not list((tmp_path / "output").glob("~archive-*.tmp"))
     output_repository.invalidate_disk_usage.assert_called_once_with(study_id, output_unzipped)
+
+
+def _output_service(storage: Mock, studies_repo: Mock) -> OutputService:
+    return OutputService(
+        storages=[storage],
+        matrix_service=Mock(),
+        file_transfer_manager=Mock(),
+        tmp_dir=Mock(),
+        studies_repository=studies_repo,
+        task_service=Mock(),
+        output_repository=Mock(),
+    )
+
+
+def test_delete_output_invalidates_disk_space() -> None:
+    storage = Mock(spec=IOutputStorage, storage_type=OutputStorageType.IN_STUDY_FILE_TREE)
+    studies_repo = Mock(spec=IStudyMetadataProvider)
+
+    _output_service(storage, studies_repo).delete_output("study", "output")
+
+    storage.delete_output.assert_called_once_with("study", "output")
+    studies_repo.invalidate_disk_space.assert_called_once_with("study")
+
+
+def test_import_output_invalidates_disk_space_only_on_success() -> None:
+    storage = Mock(spec=IOutputStorage, storage_type=OutputStorageType.IN_STUDY_FILE_TREE)
+    storage.import_output.return_value = "output_id"
+    studies_repo = Mock(spec=IStudyMetadataProvider)
+    studies_repo.get_study_metadata.return_value = StudyMetadata("id", "name", StorageMode.FILESYSTEM)
+    service = _output_service(storage, studies_repo)
+
+    service.import_output("id", BytesIO())
+    studies_repo.invalidate_disk_space.assert_called_once_with("id")
+
+    studies_repo.invalidate_disk_space.reset_mock()
+    storage.import_output.side_effect = RuntimeError("boom")
+    with pytest.raises(RuntimeError):
+        service.import_output("id", BytesIO())
+    studies_repo.invalidate_disk_space.assert_not_called()
 
 
 def test_already_existing_study_raises_error_and_deletes_output() -> None:

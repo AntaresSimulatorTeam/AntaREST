@@ -153,6 +153,7 @@ from antarest.study.model import (
     StudyRepairType,
 )
 from antarest.study.repository import (
+    StudyDiskSpaceRepository,
     StudyFilter,
     StudyMetadataRepository,
     StudyPagination,
@@ -639,11 +640,13 @@ class StudyService:
         task_service: ITaskService,
         cache_service: ICache,
         config: Config,
+        disk_space_repository: StudyDiskSpaceRepository | None = None,
     ):
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
         self.directory_service = directory_service
         self.repository = repository
+        self.disk_space_repository = disk_space_repository or StudyDiskSpaceRepository()
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
@@ -2049,6 +2052,7 @@ class StudyService:
                 study_db.archived = True
                 self.repository.save(study_db)
                 notify_study_edition(self.event_bus, study_db)
+            self.disk_space_repository.invalidate(study_to_archive.id)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2093,6 +2097,7 @@ class StudyService:
                 study_db.last_access = current_time()
                 self.repository.save(study_db)
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
+                self.disk_space_repository.invalidate(study_db.id)
                 self._get_outputs_access().on_study_unarchived(uuid)
                 notify_study_edition(self.event_bus, study_db)
 
@@ -2598,6 +2603,14 @@ class StudyService:
             progress=None,
             custom_event_messages=None,
         )
+
+    def invalidate_disk_space(self, study_id: str) -> None:
+        """
+        Flags the study so that its disk space is analyzed again.
+        Must be called after any change on the study disk space that doesn't update the study `updated_at`.
+        No permission check is done: it is meant to be called by internal services.
+        """
+        self.disk_space_repository.invalidate(study_id)
 
     def get_disk_usage(self, uuid: str) -> int:
         """

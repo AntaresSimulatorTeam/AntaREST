@@ -116,6 +116,28 @@ class TestDiskSpaceAnalyzerIntegration:
 
             assert result.updated_studies == 1
 
+    def test_invalidated_study_is_analyzed_again(
+        self, study_disk_repo: StudyDiskSpaceRepository, study_service: StudyService
+    ) -> None:
+        with current_user_context(DEFAULT_ADMIN_USER):
+            with db():
+                study_id = study_service.create_study("my_study", version=StudyVersion(8, 8, 0), group_ids=[])
+
+            def analyze() -> int:
+                return disk_space_analysis(
+                    service=study_service, disk_repo=study_disk_repo, lock_folder=Path(tempfile.gettempdir())
+                ).updated_studies
+
+            assert analyze() >= 1
+            assert analyze() == 0
+
+            # A change on the disk space which doesn't update the study (e.g. output deletion)
+            with db():
+                study_service.invalidate_disk_space(study_id)
+
+            assert analyze() == 1
+            assert analyze() == 0
+
     def test_returns_skipped_when_lock_held(
         self, study_service: StudyService, study_disk_repo: StudyDiskSpaceRepository
     ) -> None:
