@@ -110,3 +110,29 @@ do not repeat the lists of objects, refer to a finding by its rule name. Do not 
 
 def build_check_prompt(language: str) -> str:
     return CHECK_PROMPT.format(language=CHECK_LANGUAGES[language])
+
+
+EXPLAIN_JOB_PROMPT = """\
+A simulation failed: explain why to the user who launched it. The id of the job is {job_id}.
+
+1. Call `diagnose_job` on this job. Call it once.
+2. If its probable causes are not enough to explain the failure, read more of the logs with
+   `get_job_logs`. When a cause points to the data of the study, look at the object named in the logs
+   (for instance with `get_table`, `get_matrix_stats` or `check_study`). Keep it to a few calls.
+
+Then write your explanation, in {language}:
+- First, one sentence: the most probable reason of the failure, and whether it comes from the data of
+  the study or from the server.
+- Then the reasoning: the evidence found in the logs (quote the decisive lines) and how sure you are.
+  If several causes are possible, give the most probable first.
+- Last, what to do: concrete steps for the user, and when to contact the administrator of Antares Web
+  instead.
+
+If the logs do not allow a conclusion, say so plainly, and say what would be needed to conclude.
+The user interface shows the probable causes and the log lines next to your explanation: do not copy
+them in full. Do not use Markdown tables.
+"""
+
+
+def build_explain_job_prompt(job_id: str, language: str) -> str:
+    return EXPLAIN_JOB_PROMPT.format(job_id=job_id, language=CHECK_LANGUAGES[language])

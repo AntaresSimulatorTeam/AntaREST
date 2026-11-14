@@ -280,6 +280,21 @@ def test_check_study_endpoint_rejects_invalid_parameters(client: TestClient) -> 
     assert bad_study_id.status_code in (HTTPStatus.UNPROCESSABLE_ENTITY, HTTPStatus.NOT_FOUND)
 
 
+def test_explain_job_endpoint(client: TestClient) -> None:
+    job_id = "faad6c7b-e93d-4a4c-9973-c578c5a4202b"
+
+    response = client.post(f"/v1/assistant/jobs/{job_id}/explain", params={"language": "fr"})
+    invalid = client.post("/v1/assistant/jobs/not-a-job-id/explain")
+
+    assert response.status_code == HTTPStatus.OK, response.text
+    request = json.loads(response.text.splitlines()[-1])["received"]["request"]
+    assert request["study_id"] is None
+    assert f"The id of the job is {job_id}." in request["message"]
+    assert "Call `diagnose_job` on this job" in request["message"]
+    assert "in French" in request["message"]
+    assert invalid.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
 def test_chat_endpoint_errors(client: TestClient) -> None:
     empty = client.post("/v1/assistant/chat", json={"message": ""})
     unknown_field = client.post("/v1/assistant/chat", json={"message": "Hello", "model": "other"})

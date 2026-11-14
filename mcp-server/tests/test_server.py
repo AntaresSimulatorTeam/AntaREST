@@ -54,6 +54,7 @@ READ_TOOLS = {
     "list_binding_constraints",
     "read_study_file",
     "check_study",
+    "diagnose_job",
 }
 WRITE_TOOLS = {
     "create_study",

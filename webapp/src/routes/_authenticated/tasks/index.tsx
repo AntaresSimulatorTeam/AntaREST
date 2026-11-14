@@ -60,6 +60,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMount } from "react-use";
 import JobTableView from "./-components/JobTableView";
+import JobFailureExplanation from "./-components/JobFailureExplanation";
 import LaunchJobLogView from "./-components/LaunchJobLogView";
 import { TASK_TYPES_MANAGED } from "./-components/utils";
 import useDebounce from "@/hooks/useDebounce";
@@ -345,6 +346,7 @@ function Tasks() {
                 <Box />
               )}
             </Box>
+            {job.status === "failed" && <JobFailureExplanation jobId={job.id} />}
             <LaunchJobLogView job={job} logButton logErrorButton />
           </Box>
         ),

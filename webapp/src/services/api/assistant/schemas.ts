@@ -48,6 +48,8 @@ export const assistantEventSchema = z.discriminatedUnion("type", [
     answer: z.string(),
     model: z.string().optional(),
     stop_reason: z.string().optional(),
+    // Opaque state of the conversation, to send back with the next message
+    history: z.array(z.unknown()).optional(),
   }),
   z.object({
     type: z.literal("error"),
@@ -86,4 +88,32 @@ export const checkReportSchema = z
     notes: report.notes,
     rulesRun: report.rules_run,
     rulesSkipped: report.rules_skipped,
+  }));
+
+////////////////////////////////////////////////////////////////
+// Result of the `diagnose_job` tool
+////////////////////////////////////////////////////////////////
+
+export const jobFailureCauseSchema = z.object({
+  code: z.string(),
+  confidence: z.enum(["high", "medium", "low"]),
+  title: z.string(),
+  explanation: z.string(),
+  suggestion: z.string(),
+  // Log lines or facts the cause relies on
+  evidence: z.array(z.string()),
+});
+
+export const jobDiagnosisSchema = z
+  .object({
+    causes: z.array(jobFailureCauseSchema),
+    error_lines: z.array(z.string()),
+    last_lines: z.array(z.string()),
+    notes: z.array(z.string()),
+  })
+  .transform((diagnosis) => ({
+    causes: diagnosis.causes,
+    notes: diagnosis.notes,
+    errorLines: diagnosis.error_lines,
+    lastLines: diagnosis.last_lines,
   }));
