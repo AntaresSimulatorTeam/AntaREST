@@ -16,7 +16,14 @@ import { refresh } from "@/redux/ducks/auth";
 import store from "@/redux/store";
 import client from "../client";
 import { assistantEventSchema } from "./schemas";
-import type { AssistantStatus, AssistantStatusDTO, StreamStudyCheckParams } from "./types";
+import type {
+  AssistantEvent,
+  AssistantStatus,
+  AssistantStatusDTO,
+  StreamAssistantChatParams,
+  StreamJobExplanationParams,
+  StreamStudyCheckParams,
+} from "./types";
 
 const BASE_URL = "/v1/assistant";
 
@@ -66,24 +73,35 @@ async function getErrorMessage(response: Response): Promise<string> {
   }
 }
 
+interface StreamParams {
+  /** Path of the endpoint, after `/v1/assistant`. */
+  path: string;
+  /** JSON body of the request, if any. */
+  body?: unknown;
+  signal: AbortSignal;
+  onEvent: (event: AssistantEvent) => void;
+}
+
 /**
- * Checks a study with the AI assistant, calling `onEvent` for each event of the assistant as it
- * happens: progress of the rules, findings, then the report (or an error).
+ * Calls a streaming endpoint of the assistant, calling `onEvent` for each event as it happens.
  *
  * Axios cannot read a response while it is being received in a browser, hence `fetch`.
  *
- * @param params - Study, language of the analysis, abort signal and event callback.
+ * @param params - Endpoint, body, abort signal and event callback.
  * @throws If the request fails (the server explains why), or if it is aborted with `signal`.
  */
-export async function streamStudyCheck(params: StreamStudyCheckParams): Promise<void> {
-  const { studyId, language, signal, onEvent } = params;
+async function streamAssistant(params: StreamParams): Promise<void> {
+  const { path, body, signal, onEvent } = params;
   // Same as the axios client: refresh the access token if it is expired
   const user = await store.dispatch(refresh()).unwrap();
-  const url = `${client.defaults.baseURL ?? ""}${BASE_URL}/studies/${encodeURIComponent(studyId)}/check?language=${language}`;
 
-  const response = await fetch(url, {
+  const response = await fetch(`${client.defaults.baseURL ?? ""}${BASE_URL}${path}`, {
     method: "POST",
-    headers: user ? { Authorization: `Bearer ${user.accessToken}` } : undefined,
+    headers: {
+      ...(user && { Authorization: `Bearer ${user.accessToken}` }),
+      ...(body !== undefined && { "Content-Type": "application/json" }),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
     signal,
   });
 
@@ -118,4 +136,58 @@ export async function streamStudyCheck(params: StreamStudyCheckParams): Promise<
   }
 
   splitter.flush().forEach(handleLine);
+}
+
+/**
+ * Checks a study with the AI assistant: progress of the rules, findings, then the analysis.
+ *
+ * @param params - Study, language of the analysis, abort signal and event callback.
+ * @returns A promise resolved when the assistant has finished.
+ * @throws If the request fails or is aborted.
+ */
+export function streamStudyCheck(params: StreamStudyCheckParams): Promise<void> {
+  const { studyId, language, signal, onEvent } = params;
+
+  return streamAssistant({
+    path: `/studies/${encodeURIComponent(studyId)}/check?language=${language}`,
+    signal,
+    onEvent,
+  });
+}
+
+/**
+ * Asks the AI assistant why a simulation failed: probable causes, then the explanation.
+ *
+ * @param params - Job, language of the explanation, abort signal and event callback.
+ * @returns A promise resolved when the assistant has finished.
+ * @throws If the request fails or is aborted.
+ */
+export function streamJobExplanation(params: StreamJobExplanationParams): Promise<void> {
+  const { jobId, language, signal, onEvent } = params;
+
+  return streamAssistant({
+    path: `/jobs/${encodeURIComponent(jobId)}/explain?language=${language}`,
+    signal,
+    onEvent,
+  });
+}
+
+/**
+ * Sends a message to the AI assistant, in a conversation.
+ *
+ * @param params - Message, study the user works on, `history` of the previous answer, abort
+ * signal and event callback.
+ * @returns A promise resolved when the assistant has finished.
+ * @throws If the request fails or is aborted.
+ */
+export function streamAssistantChat(params: StreamAssistantChatParams): Promise<void> {
+  const { message, studyId, history, signal, onEvent } = params;
+
+  return streamAssistant({
+    path: "/chat/stream",
+
+    body: { message, study_id: studyId, history },
+    signal,
+    onEvent,
+  });
 }

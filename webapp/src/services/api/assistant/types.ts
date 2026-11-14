@@ -13,7 +13,13 @@
  */
 
 import type { z } from "zod";
-import type { assistantEventSchema, checkFindingSchema, checkReportSchema } from "./schemas";
+import type {
+  assistantEventSchema,
+  checkFindingSchema,
+  checkReportSchema,
+  jobDiagnosisSchema,
+  jobFailureCauseSchema,
+} from "./schemas";
 
 export interface AssistantStatusDTO {
   available: boolean;
@@ -48,6 +54,31 @@ export type CheckLanguage = "en" | "fr";
 export interface StreamStudyCheckParams {
   studyId: string;
   language: CheckLanguage;
+  signal: AbortSignal;
+  onEvent: (event: AssistantEvent) => void;
+}
+
+/** A probable cause of the failure of a simulation, found by a rule of `diagnose_job`. */
+export type JobFailureCause = z.infer<typeof jobFailureCauseSchema>;
+
+/** Result of the `diagnose_job` tool. */
+export type JobDiagnosis = z.infer<typeof jobDiagnosisSchema>;
+
+export interface StreamJobExplanationParams {
+  jobId: string;
+  language: CheckLanguage;
+  signal: AbortSignal;
+  onEvent: (event: AssistantEvent) => void;
+}
+
+/** State of a conversation, as returned by the server: opaque, sent back with the next message. */
+export type AssistantHistory = unknown[];
+
+export interface StreamAssistantChatParams {
+  message: string;
+  /** Study the user is working on, if any. */
+  studyId?: string;
+  history: AssistantHistory;
   signal: AbortSignal;
   onEvent: (event: AssistantEvent) => void;
 }

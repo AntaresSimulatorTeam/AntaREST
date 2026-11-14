@@ -77,6 +77,7 @@ in a single conversation, for instance:
 | `get_job`, `list_jobs`                 | Status of simulation jobs                                      | read-only   |
 | `wait_for_job`                         | Wait for the end of a job, reporting its progress              | read-only   |
 | `get_job_logs`                         | Last lines (or errors only) of the solver logs                 | read-only   |
+| `diagnose_job`                         | Probable causes of a failed simulation, with their evidence    | read-only   |
 | `list_outputs`                         | Simulation outputs of a study                                  | read-only   |
 | `get_area_results`, `get_link_results` | Key indicators (prices, costs, unsupplied energy, flows...)    | read-only   |
 | `get_storage_results`                  | Charge, discharge and level of each short-term storage         | read-only   |
@@ -288,6 +289,7 @@ and why if it is not.
 | `POST /v1/assistant/chat`        | Ask a question; returns the answer, the tool calls made and a `history` |
 | `POST /v1/assistant/chat/stream` | Same, as a stream of JSON lines to follow the progress of the agent     |
 | `POST /v1/assistant/studies/{study_id}/check` | Check a study (`check_study` with the time series, then an explanation of the findings), as a stream of JSON lines. Query parameter: `language` (`en` or `fr`) |
+| `POST /v1/assistant/jobs/{job_id}/explain` | Explain why a simulation failed (`diagnose_job` on the job and its logs, then an explanation and what to do), as a stream of JSON lines. Query parameter: `language` |
 
 ```bash
 curl -X POST http://localhost:8080/v1/assistant/chat -H "Content-Type: application/json" \
@@ -314,6 +316,17 @@ check endpoint and opens a panel with:
 
 The result stays available from the button (with the number of errors and warnings) as long as the
 user stays on the study.
+
+Next to it, the **Assistant** button opens a conversation about the study: a text field to ask
+questions or request changes ("create an area Spain and link it to France"), with the tool calls made
+by the assistant shown under each message. The assistant only modifies studies if the server sets
+`assistant.read_only: false`; the data displayed is reloaded after a change.
+
+In the **Tasks** page, each failed simulation has an **Explain the failure** button. It calls the
+explanation endpoint and shows the probable causes found by the rules of `diagnose_job` in the logs
+(solver never started, solver version too old, infeasible problem, out of memory, time limit,
+missing file, invalid data...), with their evidence, then the explanation of the assistant and what
+to do.
 
 ### Command-line client
 

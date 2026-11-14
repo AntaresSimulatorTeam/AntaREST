@@ -27,7 +27,7 @@ from mcp.server.mcpserver import MCPServer
 
 from antares_web_mcp import prompts
 from antares_web_mcp.client import AntaresWebClient
-from antares_web_mcp.tools import analysis, checks, inputs, network, results, simulation, studies
+from antares_web_mcp.tools import analysis, checks, diagnosis, inputs, network, results, simulation, studies
 
 SERVER_NAME = "antares-web"
 
@@ -52,7 +52,8 @@ Build a study from scratch, in this order:
 5. `update_simulation_settings` (e.g. 1 Monte-Carlo year for a quick test).
 
 Run and analyse:
-6. `launch_study`, then `wait_for_job`. If the job failed, read `get_job_logs` (errors are in stderr).
+6. `launch_study`, then `wait_for_job`. If the job failed, call `diagnose_job` for its probable causes
+   (then `get_job_logs` to read more of the solver logs).
 7. `get_area_results` / `get_link_results` with the output id of the job.
 
 Understand an existing study (inputs), read-only:
@@ -109,5 +110,6 @@ def create_server(
     results.register(mcp, client, read_only=read_only)
     analysis.register(mcp, client)
     checks.register(mcp, client)
+    diagnosis.register(mcp, client)
     prompts.register(mcp)
     return mcp

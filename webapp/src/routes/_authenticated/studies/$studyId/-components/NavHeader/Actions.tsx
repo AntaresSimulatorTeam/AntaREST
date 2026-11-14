@@ -27,6 +27,7 @@ import { enqueueSnackbar } from "notistack";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
+import AssistantChat from "./AssistantChat";
 import CommandsDrawer from "./CommandsDrawer";
 import StudyCheck from "./StudyCheck";
 
@@ -106,8 +107,9 @@ function Actions({ parentStudy, variantNb, isExplorer }: Props) {
             {t("global.unarchive")}
           </Button>
         )}
-        {/* The key resets the check when navigating to another study */}
+        {/* The keys reset the check and the conversation when navigating to another study */}
         {!isArchived && <StudyCheck key={study.id} studyId={study.id} />}
+        {!isArchived && <AssistantChat key={`chat-${study.id}`} studyId={study.id} />}
         <Button
           variant="outlined"
           onClick={(event) => setAnchorEl(event.currentTarget)}

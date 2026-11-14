@@ -19,7 +19,13 @@ from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
 from starlette.responses import StreamingResponse
 
-from antarest.assistant.model import AssistantStatusDTO, ChatRequestDTO, ChatResponseDTO, build_check_prompt
+from antarest.assistant.model import (
+    AssistantStatusDTO,
+    ChatRequestDTO,
+    ChatResponseDTO,
+    build_check_prompt,
+    build_explain_job_prompt,
+)
 from antarest.assistant.service import AssistantService
 from antarest.core.api_types import UuidStr
 from antarest.core.config import Config
@@ -124,6 +130,32 @@ def create_assistant_api() -> APIRouter:
         """
         logger.info(f"Assistant check of study {study_id}")
         body = ChatRequestDTO(message=build_check_prompt(language), study_id=study_id)
+        events = service.stream(body, antares_url=antares_url(request, config), token=user_token(request))
+        return _ndjson(events)
+
+    @bp.post(
+        "/assistant/jobs/{job_id}/explain",
+        summary="Explain why a simulation failed, with the AI assistant",
+        response_class=StreamingResponse,
+        responses={200: {"content": {"application/x-ndjson": {}}}},
+    )
+    def explain_job(
+        request: Request,
+        job_id: UuidStr,
+        service: AssistantServiceDep,
+        config: ConfigDep,
+        language: Annotated[Literal["en", "fr"], Query(description="Language of the explanation.")] = "en",
+    ) -> StreamingResponse:
+        """
+        Explains why a simulation job failed: the assistant runs the deterministic rules of `diagnose_job`
+        on the job and its logs, digs further if needed, then explains the probable causes and what to do.
+
+        Same stream of events as `/assistant/chat/stream`. The `tool_result` event of `diagnose_job` holds
+        the probable causes and the decisive log lines as JSON in `content`, and the final `done` event
+        holds the explanation of the assistant in `answer`.
+        """
+        logger.info(f"Assistant explanation of job {job_id}")
+        body = ChatRequestDTO(message=build_explain_job_prompt(job_id, language))
         events = service.stream(body, antares_url=antares_url(request, config), token=user_token(request))
         return _ndjson(events)
 
