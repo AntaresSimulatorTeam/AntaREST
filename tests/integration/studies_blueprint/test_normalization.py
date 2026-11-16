@@ -24,7 +24,14 @@ from tests.integration.conftest import run_disk_analysis_task
 
 
 class TestNormalization:
-    def test_endpoint(self, client: TestClient, internal_study_id: str, user_access_token: str, tmp_path: Path, study_service: StudyService) -> None:
+    def test_endpoint(
+        self,
+        client: TestClient,
+        internal_study_id: str,
+        user_access_token: str,
+        tmp_path: Path,
+        study_service: StudyService,
+    ) -> None:
         client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # imports a study

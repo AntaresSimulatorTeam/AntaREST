@@ -9,8 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import tempfile
-from pathlib import Path
 
 from starlette.testclient import TestClient
 
@@ -20,7 +18,9 @@ from tests.integration.conftest import run_disk_analysis_task
 from tests.integration.utils import wait_task_completion
 
 
-def test_output_archive_and_unarchive_disk_usage(admin_client: TestClient, internal_study_id: str, study_service: StudyService) -> None:
+def test_output_archive_and_unarchive_disk_usage(
+    admin_client: TestClient, internal_study_id: str, study_service: StudyService
+) -> None:
 
     res = admin_client.post(
         f"/v1/studies/{internal_study_id}/copy",
@@ -56,4 +56,3 @@ def test_output_archive_and_unarchive_disk_usage(admin_client: TestClient, inter
     run_disk_analysis_task(study_service)
     res_current_study_disk_usage_after_unarchive = admin_client.get(f"/v1/studies/{copied_study_id}/disk-usage").json()
     assert res_current_study_disk_usage == res_current_study_disk_usage_after_unarchive
-

@@ -40,7 +40,7 @@ from antarest.main import (
 from antarest.maintenance.tasks.common import BackGroundTaskStatus
 from antarest.maintenance.tasks.disk_space_analyzer import disk_space_analysis
 from antarest.service_creator import Services
-from antarest.study.repository import AccessPermissions, StudyFilter, StudyDiskSpaceRepository
+from antarest.study.repository import AccessPermissions, StudyDiskSpaceRepository, StudyFilter
 from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
@@ -252,7 +252,8 @@ def output_zip(tmp_path_factory: pytest.TempPathFactory, sta_mini_zip_path: Path
     archive_dir(output_dir, output_zip, remove_source_dir=True)
     return output_zip
 
-def run_disk_analysis_task(study_service: StudyService):
+
+def run_disk_analysis_task(study_service: StudyService) -> None:
     # Run the disk space analysis to compute the disk usage of the variant
     with current_user_context(DEFAULT_ADMIN_USER):
         analysis = disk_space_analysis(
