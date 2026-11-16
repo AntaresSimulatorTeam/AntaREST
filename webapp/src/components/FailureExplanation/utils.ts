@@ -15,15 +15,15 @@
 import { jobDiagnosisSchema } from "@/services/api/assistant/schemas";
 import type { AssistantEvent, JobDiagnosis } from "@/services/api/assistant/types";
 
-/** Tool of the assistant which finds the probable causes of a failure. */
-export const DIAGNOSE_TOOL = "diagnose_job";
+/** Tools of the assistant which find the probable causes of a failure: from a job, or from logs. */
+export const DIAGNOSE_TOOLS: readonly string[] = ["diagnose_job", "diagnose_logs"];
 
 export type ExplanationStatus = "idle" | "running" | "success" | "error";
 
 /**
  * Steps of an explanation:
  * - `starting`: the assistant starts
- * - `diagnosing`: the rules read the job and its logs
+ * - `diagnosing`: the rules read the logs
  * - `explaining`: the probable causes are available, the assistant digs and writes
  */
 export type ExplanationPhase = "starting" | "diagnosing" | "explaining";
@@ -55,7 +55,7 @@ export const RUNNING_EXPLANATION_STATE: JobExplanationState = {
 };
 
 /**
- * Parses the JSON result of the `diagnose_job` tool.
+ * Parses the JSON result of the `diagnose_job` or `diagnose_logs` tool.
  *
  * @param content - Result of the tool, as received by the assistant.
  * @returns The diagnosis, or `undefined` if the content is not one.
@@ -85,12 +85,12 @@ export function reduceExplanationEvent(
 ): JobExplanationState {
   switch (event.type) {
     case "tool_call":
-      return event.name === DIAGNOSE_TOOL
+      return DIAGNOSE_TOOLS.includes(event.name)
         ? { ...state, phase: "diagnosing" }
         : { ...state, extraTools: [...state.extraTools, event.name] };
 
     case "tool_result": {
-      if (event.name !== DIAGNOSE_TOOL) {
+      if (!DIAGNOSE_TOOLS.includes(event.name)) {
         return state;
       }
       const diagnosis = event.is_error ? undefined : parseJobDiagnosis(event.content);

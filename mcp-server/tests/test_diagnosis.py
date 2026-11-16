@@ -10,15 +10,22 @@
 #
 # This file is part of the Antares project.
 
+import json
 from typing import Any
 
 import pytest
 
 from antares_web_mcp.client import AntaresWebClient
-from antares_web_mcp.tools.diagnosis import JobFacts, diagnose, duration_between, format_duration
+from antares_web_mcp.tools.diagnosis import (
+    JobFacts,
+    diagnose,
+    diagnose_log_lines,
+    duration_between,
+    format_duration,
+)
 from antares_web_mcp.tools.simulation import JobInfo
 from tests.fake_antares_web import FakeAntaresWeb
-from tests.helpers import STUDY_ID, call, data
+from tests.helpers import STUDY_ID, call, data, error_text
 
 JOB_ID = "faad6c7b-e93d-4a4c-9973-c578c5a4202b"
 PREPARATION = ["Extracting study " + STUDY_ID, "Study extracted"]
@@ -192,3 +199,84 @@ async def test_diagnose_job_of_a_deleted_study(fake_api: FakeAntaresWeb, api_cli
     assert diagnosis["study_version"] is None
     assert [cause["code"] for cause in diagnosis["causes"]] == ["solver_not_started"]
     assert "cannot be read" in diagnosis["notes"][-1]
+
+
+CLUSTER_LOGS = """\
+[2026-11-09 11:15:10][solver][infos] Antares Solver v8.8.6 (f10fa2b)
+[2026-11-09 11:15:12][solver][infos] Loading the area 1/2: fr
+[2026-11-09 18:40:02][solver]\x1b[0;31m[error]\x1b[0m Year 12, week 37: infeasible linear problem encountered
+[2026-11-09 18:40:02][solver]\x1b[0;31m[fatal]\x1b[0m The simulation must stop.
+"""
+
+
+def test_diagnose_log_lines_without_a_job() -> None:
+    diagnosis = diagnose_log_lines(CLUSTER_LOGS.splitlines(), source="solver.log", study_version="9.2")
+
+    # The solver version is read in the logs, and compared with the study version
+    assert diagnosis.solver_version == "8.8.6"
+    assert [cause.code for cause in diagnosis.causes] == ["infeasible_problem", "solver_older_than_study"]
+    assert "solver 8.8.6" in diagnosis.causes[1].explanation
+    assert diagnosis.line_count == 4
+    assert diagnosis.notes == []
+
+
+def test_solver_version_of_the_logs_against_the_study_version() -> None:
+    def codes_for(study_version: str, solver_version: str | None = None) -> list[str]:
+        lines = ["[solver][infos] Antares Solver v8.8.6 (f10fa2b)"]
+        diagnosis = diagnose_log_lines(lines, source="text", study_version=study_version, solver_version=solver_version)
+        return [cause.code for cause in diagnosis.causes]
+
+    assert codes_for("8.8") == []  # the patch version of the solver does not matter
+    assert codes_for("880") == []
+    assert codes_for("9.2") == ["solver_older_than_study"]
+    assert codes_for("9.2", solver_version="10.2") == []  # the given version wins over the logs
+
+
+def test_diagnose_log_lines_which_are_not_solver_logs() -> None:
+    diagnosis = diagnose_log_lines(["Extracting study x", "Study extracted"], source="text")
+
+    assert diagnosis.causes == []
+    assert "no line written by the solver" in diagnosis.notes[0]
+    assert "No study given" in diagnosis.notes[-1]
+
+
+@pytest.mark.anyio
+async def test_diagnose_logs_tool_with_an_attachment(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
+    fake_api.route("GET", f"/v1/studies/{STUDY_ID}", json_body={"id": STUDY_ID, "name": "FE60", "version": "8.8"})
+    attachments = {"solver.log": CLUSTER_LOGS}
+
+    diagnosis = data(
+        await call(
+            api_client,
+            "diagnose_logs",
+            {"study_id": STUDY_ID, "attachment": "solver.log"},
+            attachments=attachments,
+        )
+    )
+
+    assert (diagnosis["source"], diagnosis["study_name"], diagnosis["study_version"]) == ("solver.log", "FE60", "8.8")
+    assert [cause["code"] for cause in diagnosis["causes"]] == ["infeasible_problem"]
+    assert diagnosis["error_lines"][0].endswith("Year 12, week 37: infeasible linear problem encountered")
+
+    lines = data(
+        await call(api_client, "read_attachment", {"name": "solver.log", "pattern": "area"}, attachments=attachments)
+    )
+    assert lines == ["[2026-11-09 11:15:12][solver][infos] Loading the area 1/2: fr"]
+
+
+@pytest.mark.anyio
+async def test_diagnose_logs_tool_errors(api_client: AntaresWebClient) -> None:
+    missing = await call(api_client, "diagnose_logs", {"attachment": "x.log"}, attachments={"solver.log": "a"})
+    assert "Attached files: solver.log" in error_text(missing)
+
+    nothing = await call(api_client, "diagnose_logs", {})
+    assert "Give the logs" in error_text(nothing)
+
+    text = data(await call(api_client, "diagnose_logs", {"logs": "[solver][error] Found 2 errors: bad_alloc"}))
+    assert [cause["code"] for cause in text["causes"]] == ["out_of_memory"]
+
+    # Logs saved from the REST API of Antares Web: a JSON string
+    saved = json.dumps("Extracting study\n[solver][fatal] std::bad_alloc\n")
+    decoded = data(await call(api_client, "diagnose_logs", {"logs": saved}))
+    assert decoded["line_count"] == 2
+    assert decoded["error_lines"] == ["[solver][fatal] std::bad_alloc"]

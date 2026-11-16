@@ -50,6 +50,19 @@ class ChatRequestDTO(AntaresBaseModel, extra="forbid"):
     )
 
 
+MAX_LOGS_CHARS = 20_000_000
+
+
+class ExplainLogsRequestDTO(AntaresBaseModel, extra="forbid"):
+    logs: str = Field(min_length=1, max_length=MAX_LOGS_CHARS, description="Logs of the failed simulation.")
+    file_name: str = Field(
+        default="logs.txt", min_length=1, max_length=200, description="Name of the log file, shown to the assistant."
+    )
+    solver_version: str | None = Field(
+        default=None, max_length=20, description="Version of the solver which ran the simulation, if known."
+    )
+
+
 class ToolCallDTO(AntaresBaseModel):
     """A call made by the assistant to a tool of the MCP server."""
 
@@ -136,3 +149,32 @@ them in full. Do not use Markdown tables.
 
 def build_explain_job_prompt(job_id: str, language: str) -> str:
     return EXPLAIN_JOB_PROMPT.format(job_id=job_id, language=CHECK_LANGUAGES[language])
+
+
+EXPLAIN_LOGS_PROMPT = """\
+A simulation of this study failed on another server, and the user attached its logs, in the file
+{file_name!r}. Explain why it failed. {solver}
+
+1. Call `diagnose_logs` with the study and the attached file. Call it once.
+2. If its probable causes are not enough to explain the failure, read more of the logs with
+   `read_attachment` (for instance the lines around the first error). When a cause points to the data of
+   the study, look at the object named in the logs (for instance with `get_table`, `get_matrix_stats`,
+   `list_binding_constraints` or `check_study`). The study in Antares Web may differ a little from the
+   one which was simulated. Keep it to a few calls.
+
+Then write your explanation, in {language}:
+- First, one sentence: the most probable reason of the failure, and whether it comes from the data of
+  the study or from the server which ran it.
+- Then the reasoning: the evidence found in the logs (quote the decisive lines) and how sure you are.
+  If several causes are possible, give the most probable first.
+- Last, what to do: concrete steps for the user.
+
+If the logs do not allow a conclusion, say so plainly, and say what would be needed to conclude.
+The user interface shows the probable causes and the log lines next to your explanation: do not copy
+them in full. Do not use Markdown tables.
+"""
+
+
+def build_explain_logs_prompt(file_name: str, solver_version: str | None, language: str) -> str:
+    solver = f"The simulation was run with the solver {solver_version}." if solver_version else ""
+    return EXPLAIN_LOGS_PROMPT.format(file_name=file_name, solver=solver, language=CHECK_LANGUAGES[language])

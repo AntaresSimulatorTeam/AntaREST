@@ -125,6 +125,7 @@ def test_agent_receives_the_user_token_and_the_configuration(
         "model": None,
         "effort": "medium",
         "max_tool_rounds": 40,
+        "attachments": {},
     }
     assert received["api_key"] == "sk-test"
     assert received["virtual_env"] is None  # the agent has its own environment
@@ -293,6 +294,24 @@ def test_explain_job_endpoint(client: TestClient) -> None:
     assert "Call `diagnose_job` on this job" in request["message"]
     assert "in French" in request["message"]
     assert invalid.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_explain_logs_endpoint(client: TestClient) -> None:
+    study_id = "5cd43163-92c4-4315-9249-0cff8719a86f"
+    body = {"logs": "[solver][error] infeasible\n", "file_name": "solver.log", "solver_version": "8.8"}
+
+    response = client.post(f"/v1/assistant/studies/{study_id}/explain-logs", params={"language": "fr"}, json=body)
+    empty = client.post(f"/v1/assistant/studies/{study_id}/explain-logs", json={"logs": ""})
+
+    assert response.status_code == HTTPStatus.OK, response.text
+    request = json.loads(response.text.splitlines()[-1])["received"]["request"]
+    assert request["study_id"] == study_id
+    # The logs go to the agent as an attachment, not in the message
+    assert request["attachments"] == {"solver.log": "[solver][error] infeasible\n"}
+    assert "Call `diagnose_logs`" in request["message"]
+    assert "the solver 8.8" in request["message"]
+    assert "in French" in request["message"]
+    assert empty.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
 
 def test_chat_endpoint_errors(client: TestClient) -> None:
