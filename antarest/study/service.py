@@ -140,6 +140,7 @@ from antarest.study.model import (
     StorageMode,
     Study,
     StudyContentStatus,
+    StudyDiskSpaceAnalysis,
     StudyFolder,
     StudyMetadataCopy,
     StudyMetadataDTO,
@@ -2612,7 +2613,7 @@ class StudyService:
         """
         self.disk_space_repository.invalidate(study_id)
 
-    def get_disk_usage(self, uuid: str) -> int:
+    def compute_disk_usage(self, uuid: str) -> int:
         """
         Calculates the size of the disk used to store the study if the user has permissions.
 
@@ -2635,6 +2636,23 @@ class StudyService:
         for output in self._get_outputs_access().list_outputs(study.id):
             disk_usage += self._get_outputs_access().get_disk_usage(study.id, output.id)
         return disk_usage
+
+    def get_disk_usage(self, uuid: str) -> int:
+        study_analysis = self.disk_space_repository.get(uuid)
+
+        if study_analysis is None:
+            disk_usage = self.compute_disk_usage(uuid)
+            study_disk_analysis = StudyDiskSpaceAnalysis(
+                study_id=uuid,
+                disk_space_bytes=disk_usage,
+                last_analysis_date=current_time(),
+            )
+            self.disk_space_repository.save(study_disk_analysis)
+            return disk_usage
+
+        study = self.get_study(uuid=uuid)
+        assert_permission(study, StudyPermissionType.READ)
+        return study_analysis.disk_space_bytes
 
     def get_matrix_with_index_and_header(
         self, *, study_id: str, path: str, with_index: bool, with_header: bool

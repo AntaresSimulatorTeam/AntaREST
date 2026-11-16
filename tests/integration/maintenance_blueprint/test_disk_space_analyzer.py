@@ -168,7 +168,7 @@ class TestDiskSpaceAnalyzerIntegration:
                 study_service.invalidate_disk_space(study_id)
 
             # The study is invalidated again while its disk space is being measured
-            real_get_disk_usage = study_service.get_disk_usage
+            real_get_disk_usage = study_service.compute_disk_usage
 
             def get_disk_usage_and_invalidate(uuid: str) -> int:
                 usage = real_get_disk_usage(uuid)
@@ -176,7 +176,7 @@ class TestDiskSpaceAnalyzerIntegration:
                 return usage
 
             with monkeypatch.context() as ctx:
-                ctx.setattr(study_service, "get_disk_usage", get_disk_usage_and_invalidate)
+                ctx.setattr(study_service, "compute_disk_usage", get_disk_usage_and_invalidate)
                 assert analyze() == 1
 
             # The last invalidation happened after the analysis started: it must be analyzed again
