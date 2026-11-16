@@ -85,11 +85,11 @@ class OutputVariablesType(StrEnum):
     SHORT_TERM_STORAGE = "st_storage"
 
 
-class OutputVariablesViewStatus(StrEnum):
+class OutputViewStatus(StrEnum):
     NOT_FOUND = "NOT_FOUND"
     IN_PROGRESS = "IN_PROGRESS"
 
 
-class OutputVariablesViewResponse(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
-    status: OutputVariablesViewStatus
+class OutputViewResponse(AntaresBaseModel, extra="forbid", alias_generator=to_camel, populate_by_name=True):
+    status: OutputViewStatus
     task_id: str | None

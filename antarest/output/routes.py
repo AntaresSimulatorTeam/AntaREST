@@ -40,10 +40,10 @@ from antarest.output.model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
-    OutputVariablesViewResponse,
+    OutputViewResponse,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
-from antarest.output.model.gems_views import GemsTaxonomyViews, OutputGemsViewsResponse
+from antarest.output.model.gems_views import GemsTaxonomyViews
 from antarest.output.model.output_id import OutputId
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.output.variable_view.model import OutputItemId
@@ -269,7 +269,7 @@ def create_output_routes() -> APIRouter:
         response_model=list[GemsTaxonomyViews],
         responses={
             400: {"description": "The output is archived"},
-            404: {"model": OutputGemsViewsResponse},
+            404: {"model": OutputViewResponse},
         },
     )
     def get_output_gems_views(
@@ -282,7 +282,7 @@ def create_output_routes() -> APIRouter:
         """
         logger.info(f"Fetching GEMS views of the output {output_id} for study {study_id}")
         views = output_service.get_gems_views(study_id, output_id)
-        if isinstance(views, OutputGemsViewsResponse):
+        if isinstance(views, OutputViewResponse):
             return Response(status_code=404, content=to_json(views), media_type="application/json")
         return views
 
@@ -626,7 +626,7 @@ def create_output_routes() -> APIRouter:
         "/studies/{uuid}/output/{output_id}/variables-views/data",
         summary="Fetches the variables view for a given output and a given configuration",
         responses={
-            404: {"model": OutputVariablesViewResponse},
+            404: {"model": OutputViewResponse},
             200: {"data": [[4], [5]], "columns": [0, 1]},
         },
     )

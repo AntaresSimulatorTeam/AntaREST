@@ -61,11 +61,11 @@ from antarest.output.filestudy.model import (
 from antarest.output.model import (
     OutputVariablesInformation,
     OutputVariablesList,
-    OutputVariablesViewResponse,
-    OutputVariablesViewStatus,
+    OutputViewResponse,
+    OutputViewStatus,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
-from antarest.output.model.gems_views import GemsTaxonomyViews, OutputGemsViewsResponse, OutputGemsViewsStatus
+from antarest.output.model.gems_views import GemsTaxonomyViews
 from antarest.output.model.output_id import is_valid_output_id
 from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
@@ -809,7 +809,7 @@ class OutputService:
         variable_name: str,
         frequency: MatrixFrequency,
         with_index: bool = False,
-    ) -> pd.DataFrame | OutputVariablesViewResponse:
+    ) -> pd.DataFrame | OutputViewResponse:
         """
         If the view is already registered in DB, updates its `last_read` value and returns it.
         Else, returns a pydantic model specifying if the view materialization is in progress or not.
@@ -842,8 +842,8 @@ class OutputService:
         task_id, _ = self._get_ongoing_variables_view_materialization_task(
             output_item_id, study_id, output_id, frequency
         )
-        status = OutputVariablesViewStatus.IN_PROGRESS if task_id else OutputVariablesViewStatus.NOT_FOUND
-        return OutputVariablesViewResponse(status=status, task_id=task_id)
+        status = OutputViewStatus.IN_PROGRESS if task_id else OutputViewStatus.NOT_FOUND
+        return OutputViewResponse(status=status, task_id=task_id)
 
     def materialize_output_variables_view(
         self,
@@ -972,7 +972,7 @@ class OutputService:
             raise UnsupportedOperationOnArchivedOutput(output_id)
         return storage.read_raw_file(study_id, output_id, path)
 
-    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | OutputGemsViewsResponse:
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | OutputViewResponse:
         """
         If the GEMS views of the output are already registered in DB, returns them.
         Else, returns a pydantic model specifying if the views materialization is in progress or not.
@@ -988,8 +988,8 @@ class OutputService:
 
         # Return a 404 Response with a body specifying if the materialization is in progress or not.
         task_id, _ = self._get_ongoing_gems_views_materialization_task(study_id, output_id)
-        status = OutputGemsViewsStatus.IN_PROGRESS if task_id else OutputGemsViewsStatus.NOT_FOUND
-        return OutputGemsViewsResponse(status=status, task_id=task_id)
+        status = OutputViewStatus.IN_PROGRESS if task_id else OutputViewStatus.NOT_FOUND
+        return OutputViewResponse(status=status, task_id=task_id)
 
     def materialize_gems_views(self, study_id: str, output_id: str) -> str:
         """

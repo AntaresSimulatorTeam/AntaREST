@@ -22,13 +22,8 @@ from antarest.output.model.gems_views import GemsMetricLocation
 from antarest.study.business.model.gems.view import GemsTimeGranularity, GemsViewConfig
 
 
-@pytest.fixture
-def output_dir() -> Path:
-    return Path(__file__).parent / "data" / "20261104-1636eco-gems_views"
-
-
-def test_parse_gems_view_configs(output_dir: Path) -> None:
-    configs = parse_gems_view_configs(output_dir)
+def test_parse_gems_view_configs(gems_views_output_dir: Path) -> None:
+    configs = parse_gems_view_configs(gems_views_output_dir)
 
     # One config per `view_config_*.yml` file, sorted by file name
     assert [c.id for c in configs] == ["view_area", "view_link", "view_storage", "view_thermal"]
@@ -53,19 +48,21 @@ def test_view_config_time_granularity() -> None:
 
 
 @pytest.fixture
-def view_configs(output_dir: Path) -> dict[str, GemsViewConfig]:
-    return {config.id: config for config in parse_gems_view_configs(output_dir)}
+def view_configs(gems_views_output_dir: Path) -> dict[str, GemsViewConfig]:
+    return {config.id: config for config in parse_gems_view_configs(gems_views_output_dir)}
 
 
-def test_read_metric_locations(output_dir: Path, view_configs: dict[str, GemsViewConfig]) -> None:
+def test_read_metric_locations(gems_views_output_dir: Path, view_configs: dict[str, GemsViewConfig]) -> None:
     # Locations are deduplicated and sorted
-    assert read_metric_locations(output_dir, view_configs["view_area"]) == [
+    assert read_metric_locations(gems_views_output_dir, view_configs["view_area"]) == [
         GemsMetricLocation(id="area1_node"),
         GemsMetricLocation(id="area2_node"),
         GemsMetricLocation(id="area3_node"),
     ]
     # Only the locations having a component of this kind appear
-    assert read_metric_locations(output_dir, view_configs["view_storage"]) == [GemsMetricLocation(id="area3_node")]
+    assert read_metric_locations(gems_views_output_dir, view_configs["view_storage"]) == [
+        GemsMetricLocation(id="area3_node")
+    ]
 
 
 def test_read_metric_locations_ignores_null_locations(tmp_path: Path, view_configs: dict[str, GemsViewConfig]) -> None:
@@ -78,8 +75,8 @@ def test_read_metric_locations_ignores_null_locations(tmp_path: Path, view_confi
     assert read_metric_locations(tmp_path, view_configs["view_area"]) == [GemsMetricLocation(id="area1_node")]
 
 
-def test_extract_gems_views(output_dir: Path) -> None:
-    views = extract_gems_views(output_dir)
+def test_extract_gems_views(gems_views_output_dir: Path) -> None:
+    views = extract_gems_views(gems_views_output_dir)
 
     assert [v.model_dump() for v in views] == [
         {

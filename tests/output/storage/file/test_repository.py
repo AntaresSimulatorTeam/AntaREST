@@ -25,8 +25,8 @@ from tests.helpers import create_study
 
 
 @pytest.fixture
-def gems_views(project_path: Path) -> list[GemsTaxonomyViews]:
-    return extract_gems_views(project_path / "tests/output/filestudy/data/20261104-1636eco-gems_views")
+def gems_views(gems_views_output_dir: Path) -> list[GemsTaxonomyViews]:
+    return extract_gems_views(gems_views_output_dir)
 
 
 @pytest.fixture
@@ -47,6 +47,7 @@ def test_gems_views_round_trip(study_id: str, gems_views: list[GemsTaxonomyViews
 
         assert repository.get_output_gems_views(study_id, "other-output") is None
 
+        # Views are saved once per output: a second insert for the same (study, output) violates the primary key
         with pytest.raises(IntegrityError):
             repository.save_output_gems_views(study_id, "output", [])
         db.session.rollback()

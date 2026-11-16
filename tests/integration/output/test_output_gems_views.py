@@ -31,13 +31,14 @@ def _zip_directory(directory: Path) -> io.BytesIO:
 
 
 def test_output_gems_views(
-    client: TestClient, user_access_token: str, internal_study_id: str, project_path: Path, tmp_path: Path
+    client: TestClient, user_access_token: str, internal_study_id: str, gems_views_output_dir: Path, tmp_path: Path
 ) -> None:
     client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
     # Import an output containing GEMS views
-    gems_output_dir = project_path / "tests/output/filestudy/data/20261104-1636eco-gems_views"
-    res = client.post(f"/v1/studies/{internal_study_id}/output", files={"output": _zip_directory(gems_output_dir)})
+    res = client.post(
+        f"/v1/studies/{internal_study_id}/output", files={"output": _zip_directory(gems_views_output_dir)}
+    )
     assert res.status_code == 202, res.json()
     output_id = res.json()
 
