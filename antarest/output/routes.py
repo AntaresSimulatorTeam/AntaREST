@@ -40,9 +40,10 @@ from antarest.output.model import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
-    OutputVariablesViewResponse,
+    OutputViewResponse,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
+from antarest.output.model.gems_views import GemsTaxonomyViews
 from antarest.output.model.output_id import OutputId
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.output.variable_view.model import OutputItemId
@@ -261,6 +262,47 @@ def create_output_routes() -> APIRouter:
         logger.info(f"Fetching raw file '{path}' of the output {output_id} for study {uuid}")
         content = output_service.read_raw_file(uuid, output_id, PurePosixPath(path))
         return Response(content=content, media_type="application/octet-stream")
+
+    @bp.get(
+        "/studies/{study_id}/outputs/{output_id}/gems-views",
+        summary="Fetches the GEMS views of a given output, with their available locations",
+        response_model=list[GemsTaxonomyViews],
+        responses={
+            400: {"description": "The output is archived"},
+            404: {"model": OutputViewResponse},
+        },
+    )
+    def get_output_gems_views(
+        output_service: OutputServiceDep, study_id: UuidStr, output_id: OutputId
+    ) -> list[GemsTaxonomyViews] | Response:
+        """
+        Fetches the GEMS views of a given output.
+        If the views do not exist in DB yet, returns an HTTP 404 response.
+        The user will have to use the endpoint `POST /gems-views/materialize` first.
+        """
+        logger.info(f"Fetching GEMS views of the output {output_id} for study {study_id}")
+        views = output_service.get_gems_views(study_id, output_id)
+        if isinstance(views, OutputViewResponse):
+            return Response(status_code=404, content=to_json(views), media_type="application/json")
+        return views
+
+    @bp.post(
+        "/studies/{study_id}/outputs/{output_id}/gems-views/materialize",
+        summary="Materialize the GEMS views of a given output",
+        responses={
+            400: {"description": "The output is archived"},
+            404: {"description": "The output does not exist or does not contain GEMS views"},
+            417: {"description": "The GEMS views are already materialized"},
+        },
+    )
+    def materialize_output_gems_views(output_service: OutputServiceDep, study_id: UuidStr, output_id: OutputId) -> str:
+        """
+        Materializes the GEMS views of a given output.
+        If the views are already registered in DB, raise an HTTP Conflict error.
+        The user should use the endpoint `GET /gems-views`.
+        """
+        logger.info(f"Materializing GEMS views of the output {output_id} for study {study_id}")
+        return output_service.materialize_gems_views(study_id, output_id)
 
     @bp.get(
         "/studies/{study_id}/outputs",
@@ -584,7 +626,7 @@ def create_output_routes() -> APIRouter:
         "/studies/{uuid}/output/{output_id}/variables-views/data",
         summary="Fetches the variables view for a given output and a given configuration",
         responses={
-            404: {"model": OutputVariablesViewResponse},
+            404: {"model": OutputViewResponse},
             200: {"data": [[4], [5]], "columns": [0, 1]},
         },
     )

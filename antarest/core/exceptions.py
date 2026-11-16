@@ -467,6 +467,16 @@ class OutputFileNotFound(HTTPException):
         super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
+class OutputGemsViewsNotFound(HTTPException):
+    """
+    Exception raised when an output does not contain any GEMS views
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"The output '{output_id}' does not contain GEMS views"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
 class InvalidOutputConversionRequest(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
