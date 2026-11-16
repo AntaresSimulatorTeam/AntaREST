@@ -2804,6 +2804,7 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
         self.assert_study_unarchived(study)
 
+        self.disk_space_repository.invalidate(study.id)
         self.storage_service.raw_study_service.normalize_study(study)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
