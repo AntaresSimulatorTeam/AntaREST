@@ -53,7 +53,8 @@ Build a study from scratch, in this order:
 
 Run and analyse:
 6. `launch_study`, then `wait_for_job`. If the job failed, call `diagnose_job` for its probable causes
-   (then `get_job_logs` to read more of the solver logs).
+   (then `get_job_logs` to read more of the solver logs). Without a job (simulation run elsewhere),
+   `diagnose_logs` applies the same rules to logs given by the user.
 7. `get_area_results` / `get_link_results` with the output id of the job.
 
 Understand an existing study (inputs), read-only:
@@ -78,7 +79,11 @@ Notes:
 
 
 def create_server(
-    client: AntaresWebClient, *, read_only: bool = False, allow_study_deletion: bool = False
+    client: AntaresWebClient,
+    *,
+    read_only: bool = False,
+    allow_study_deletion: bool = False,
+    attachments: dict[str, str] | None = None,
 ) -> MCPServer:
     """
     Builds the MCP server.
@@ -87,6 +92,7 @@ def create_server(
         client: Client used to call the Antares Web REST API. It is closed when the server stops.
         read_only: If ``True``, only tools that do not modify anything are registered.
         allow_study_deletion: If ``True`` (and not read-only), the `delete_study` tool is registered.
+        attachments: Files given by the user (name -> text), read by `diagnose_logs` and `read_attachment`.
     """
 
     @asynccontextmanager
@@ -110,6 +116,6 @@ def create_server(
     results.register(mcp, client, read_only=read_only)
     analysis.register(mcp, client)
     checks.register(mcp, client)
-    diagnosis.register(mcp, client)
+    diagnosis.register(mcp, client, attachments=attachments)
     prompts.register(mcp)
     return mcp

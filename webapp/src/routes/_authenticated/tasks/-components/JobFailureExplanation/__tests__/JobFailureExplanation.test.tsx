@@ -19,7 +19,11 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import JobFailureExplanation from "..";
-import { parseJobDiagnosis, reduceExplanationEvent, RUNNING_EXPLANATION_STATE } from "../utils";
+import {
+  parseJobDiagnosis,
+  reduceExplanationEvent,
+  RUNNING_EXPLANATION_STATE,
+} from "@/components/FailureExplanation/utils";
 
 vi.mock("@/services/api/assistant", () => ({
   getAssistantStatus: vi.fn(),

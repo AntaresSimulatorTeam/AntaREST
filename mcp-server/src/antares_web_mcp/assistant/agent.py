@@ -26,7 +26,7 @@ from mcp import Client
 from mcp.types import TextContent
 from pydantic import BaseModel, Field
 
-from antares_web_mcp.assistant.provider import ChatProvider, ChatResult, ToolOutcome, ToolSpec
+from antares_web_mcp.assistant.provider import ChatProvider, ChatResult, ProviderError, ToolOutcome, ToolSpec
 from antares_web_mcp.client import AntaresWebClient
 from antares_web_mcp.server import INSTRUCTIONS, create_server
 
@@ -81,6 +81,9 @@ class AssistantRequest(BaseModel):
     effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
     max_tool_rounds: int = Field(default=40, ge=1, le=200)
     verify_ssl: bool = True
+    attachments: dict[str, str] = Field(
+        default_factory=dict, description="Files given by the user (name -> text), e.g. simulation logs."
+    )
 
 
 Emit = Callable[[dict[str, Any]], Awaitable[None]]
@@ -92,9 +95,13 @@ def build_system_prompt(read_only: bool) -> str:
 
 
 def build_user_message(request: AssistantRequest) -> str:
-    if not request.study_id:
-        return request.message
-    return f"[The user is currently working on the study with id {request.study_id}.]\n\n{request.message}"
+    context = []
+    if request.study_id:
+        context.append(f"[The user is currently working on the study with id {request.study_id}.]")
+    for name, text in request.attachments.items():
+        lines = len(text.splitlines())
+        context.append(f"[The user attached the file {name!r} ({lines} lines): read it with the tools.]")
+    return "\n".join([*context, "", request.message]) if context else request.message
 
 
 def tool_text(content: list[Any]) -> str:
@@ -128,7 +135,7 @@ async def run_assistant(
     client = antares_client or AntaresWebClient(
         request.antares_url, token=request.token, timeout=120.0, verify_ssl=request.verify_ssl
     )
-    server = create_server(client, read_only=request.read_only)
+    server = create_server(client, read_only=request.read_only, attachments=request.attachments)
     async with Client(server) as mcp:
         tools = [
             ToolSpec(name=tool.name, description=tool.description or "", input_schema=tool.input_schema)
@@ -169,12 +176,18 @@ async def run_assistant(
         async def on_text(text: str) -> None:
             await emit({"type": "text", "text": text})
 
-        return await provider.run_turn(
-            system=build_system_prompt(request.read_only),
-            history=request.history,
-            user_message=build_user_message(request),
-            tools=tools,
-            call_tool=call_tool,
-            on_text=on_text,
-            max_tool_rounds=request.max_tool_rounds,
-        )
+        try:
+            return await provider.run_turn(
+                system=build_system_prompt(request.read_only),
+                history=request.history,
+                user_message=build_user_message(request),
+                tools=tools,
+                call_tool=call_tool,
+                on_text=on_text,
+                max_tool_rounds=request.max_tool_rounds,
+            )
+        except ProviderError as e:
+            # Raised below, outside the MCP client: its task group would wrap the error in an
+            # `ExceptionGroup`, and the caller would lose the message meant for the user.
+            provider_error = e
+    raise provider_error

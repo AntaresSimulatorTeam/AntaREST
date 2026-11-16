@@ -29,6 +29,7 @@ import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
 import AssistantChat from "./AssistantChat";
 import CommandsDrawer from "./CommandsDrawer";
+import LogsExplanation from "./LogsExplanation";
 import StudyCheck from "./StudyCheck";
 
 export type DialogType = "commands";
@@ -110,6 +111,7 @@ function Actions({ parentStudy, variantNb, isExplorer }: Props) {
         {/* The keys reset the check and the conversation when navigating to another study */}
         {!isArchived && <StudyCheck key={study.id} studyId={study.id} />}
         {!isArchived && <AssistantChat key={`chat-${study.id}`} studyId={study.id} />}
+        {!isArchived && <LogsExplanation key={`logs-${study.id}`} studyId={study.id} />}
         <Button
           variant="outlined"
           onClick={(event) => setAnchorEl(event.currentTarget)}

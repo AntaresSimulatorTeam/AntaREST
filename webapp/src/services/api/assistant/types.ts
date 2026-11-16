@@ -71,6 +71,19 @@ export interface StreamJobExplanationParams {
   onEvent: (event: AssistantEvent) => void;
 }
 
+export interface StreamLogsExplanationParams {
+  studyId: string;
+  /** Logs of the failed simulation. */
+  logs: string;
+  /** Name of the log file, shown to the assistant. */
+  fileName: string;
+  /** Version of the solver which ran the simulation, if known. */
+  solverVersion?: string;
+  language: CheckLanguage;
+  signal: AbortSignal;
+  onEvent: (event: AssistantEvent) => void;
+}
+
 /** State of a conversation, as returned by the server: opaque, sent back with the next message. */
 export type AssistantHistory = unknown[];
 

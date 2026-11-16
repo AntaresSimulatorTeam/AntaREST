@@ -55,6 +55,7 @@ READ_TOOLS = {
     "read_study_file",
     "check_study",
     "diagnose_job",
+    "diagnose_logs",
 }
 WRITE_TOOLS = {
     "create_study",
