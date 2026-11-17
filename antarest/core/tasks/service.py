@@ -520,12 +520,13 @@ class TaskJobService(ITaskService):
                         exc_info=inner_exc,
                     )
             finally:
-                for listener in self._listeners:
-                    listener.on_task_end(task_id, task_type, status)
-
-                # Task has been updated in database, we can safely remove it from running tasks
+                # Task has been updated in database, we can safely remove it from running tasks.
+                # Done before notifying the listeners, so that a failing listener cannot leak the task.
                 with self._tasks_lock:
                     self.tasks.pop(task_id, None)
+
+                for listener in self._listeners:
+                    listener.on_task_end(task_id, task_type, status)
 
     @override
     def get_task_progress(self, task_id: str) -> int | None:
