@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 import logging
+import threading
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Awaitable, Callable, Sequence
@@ -226,6 +227,9 @@ class TaskJobService(ITaskService):
         self.repo = repository
         self.event_bus = event_bus
         self.tasks: dict[str, Future[None]] = {}
+        # Guards the registration and the removal of the running tasks: a short task may end
+        # before its future is registered, which would leave it in `self.tasks` forever.
+        self._tasks_lock = threading.Lock()
         self.threadpool = ThreadPoolExecutor(max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_")
         self.event_bus.add_listener(self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST])
         self._listeners = list(listeners) if listeners else []
@@ -288,8 +292,11 @@ class TaskJobService(ITaskService):
         for listener in self._listeners:
             listener.on_task_submit(task.id, task_type=task.get_type())
 
-        future = self.threadpool.submit(self._run_task, action, task.id, task.get_type(), user, custom_event_messages)
-        self.tasks[task.id] = future
+        with self._tasks_lock:
+            future = self.threadpool.submit(
+                self._run_task, action, task.id, task.get_type(), user, custom_event_messages
+            )
+            self.tasks[task.id] = future
 
     def create_task_event_callback(self) -> Callable[[Event], Awaitable[None]]:
         async def task_event_callback(event: Event) -> None:  # NOSONAR: the event bus requires async listeners
@@ -323,8 +330,9 @@ class TaskJobService(ITaskService):
 
     def _do_cancel_task(self, task_id: str) -> None:
         task = self.repo.get_or_raise(task_id)
-        if task_id in self.tasks:
-            cancelled = self.tasks[task_id].cancel()
+        future = self.tasks.get(task_id)
+        if future is not None:
+            cancelled = future.cancel()
             # Only updating status when the task is actually cancelled.
             if cancelled:
                 logger.info(f"Successfully cancelled task {task_id}")
@@ -357,10 +365,11 @@ class TaskJobService(ITaskService):
 
     @override
     def await_task(self, task_id: str, timeout_sec: int = DEFAULT_AWAIT_MAX_TIMEOUT) -> None:
-        if task_id in self.tasks:
+        future = self.tasks.get(task_id)
+        if future is not None:
             try:
                 logger.info(f"🤔 Awaiting task '{task_id}' {timeout_sec}s...")
-                self.tasks[task_id].result(timeout_sec)
+                future.result(timeout_sec)
                 logger.info(f"📌 Task '{task_id}' done.")
             except TimeoutError as timeout_exc:
                 error_msg = f"Timeout while awaiting task '{task_id}'"
@@ -517,8 +526,8 @@ class TaskJobService(ITaskService):
                     listener.on_task_end(task_id, task_type, status)
 
                 # Task has been updated in database, we can safely remove it from running tasks
-                if task_id in self.tasks:
-                    del self.tasks[task_id]
+                with self._tasks_lock:
+                    self.tasks.pop(task_id, None)
 
     @override
     def get_task_progress(self, task_id: str) -> int | None:

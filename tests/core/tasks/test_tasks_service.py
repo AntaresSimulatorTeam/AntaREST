@@ -13,8 +13,9 @@
 import datetime
 import time
 import typing as t
+from concurrent.futures import Future, wait
 from pathlib import Path
-from unittest.mock import ANY, Mock
+from unittest.mock import ANY, Mock, patch
 
 import numpy as np
 import pandas as pd
@@ -23,6 +24,7 @@ from antares.study.version import StudyVersion
 from fastapi import HTTPException
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine.base import Engine
+from typing_extensions import override
 
 from antarest.core.config import Config
 from antarest.core.interfaces.eventbus import DummyEventBusService, EventType, IEventBus
@@ -695,6 +697,50 @@ def test_memory_leak_fix(task_service: TaskJobService) -> None:
         # accessing an implementation detail, but no other way to check it
         assert task_id not in task_service.tasks
         assert task_service.status_task(task_id).status == TaskStatus.COMPLETED
+
+
+@with_admin_user
+def test_task_ending_before_registration_is_not_leaked(task_service: TaskJobService) -> None:
+    """
+    A short task may end before `_launch_task` registers its future:
+    it must nevertheless be removed from the running tasks.
+    """
+    real_submit = task_service.threadpool.submit
+
+    def slow_submit(*args: t.Any, **kwargs: t.Any) -> Future[t.Any]:
+        # Gives the task the time to end before the caller registers the future.
+        future = real_submit(*args, **kwargs)
+        wait([future], timeout=0.5)
+        return future
+
+    def dummy_task(notifier: ITaskNotifier) -> TaskResult:
+        return TaskResult(success=True, message="success")
+
+    with db(), patch.object(task_service.threadpool, "submit", side_effect=slow_submit):
+        task_id = task_service.add_task(dummy_task, "a", TaskType.SCAN, None, None, None)
+
+    with db():
+        task_service.await_task(task_id, 5)
+
+        assert task_id not in task_service.tasks
+        assert task_service.status_task(task_id).status == TaskStatus.COMPLETED
+
+
+def test_await_task_removed_concurrently(task_service: TaskJobService) -> None:
+    """
+    A task may end, and be removed from the running tasks, between the moment `await_task` checks
+    its presence and the moment it fetches its future: this must not raise a `KeyError`.
+    """
+
+    class VanishingTasks(dict[str, Future[None]]):
+        # Simulates a task which is removed right after the membership check.
+        @override
+        def __contains__(self, key: object) -> bool:
+            return True
+
+    task_service.tasks = VanishingTasks()
+
+    task_service.await_task("removed-task", 1)
 
 
 def test_task_status_parsing() -> None:
