@@ -227,8 +227,6 @@ class TaskJobService(ITaskService):
         self.repo = repository
         self.event_bus = event_bus
         self.tasks: dict[str, Future[None]] = {}
-        # Guards the registration and the removal of the running tasks: a short task may end
-        # before its future is registered, which would leave it in `self.tasks` forever.
         self._tasks_lock = threading.Lock()
         self.threadpool = ThreadPoolExecutor(max_workers=config.tasks.max_workers, thread_name_prefix="taskjob_")
         self.event_bus.add_listener(self.create_task_event_callback(), [EventType.TASK_CANCEL_REQUEST])
