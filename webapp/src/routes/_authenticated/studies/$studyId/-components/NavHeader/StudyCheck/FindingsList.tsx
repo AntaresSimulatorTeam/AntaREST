@@ -12,6 +12,8 @@
  * This file is part of the Antares project.
  */
 
+import AssistantThread from "@/components/AssistantConversation/AssistantThread";
+import type { ChatState } from "@/components/AssistantConversation/utils";
 import type { CheckFinding, CheckReport, CheckSeverity } from "@/services/api/assistant/types";
 import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -37,17 +39,43 @@ const SEVERITY_ICONS: Record<CheckSeverity, React.ReactElement> = {
   info: <InfoOutlinedIcon color="info" fontSize="small" />,
 };
 
-interface FindingProps {
-  finding: CheckFinding;
+/** Conversations of the user with the AI assistant, one for each finding. */
+export interface FindingDiscussion {
+  /** State of the conversations, by key of finding. */
+  threads: Record<string, ChatState>;
+  /** False while the check runs: a conversation continues the one of the check. */
+  isReady: boolean;
+  /** False if the assistant cannot modify studies on this server. */
+  canModify: boolean;
+  onSend: (key: string, finding: CheckFinding, message: string) => void;
+  onStop: (key: string) => void;
 }
 
-function Finding({ finding }: FindingProps) {
+interface FindingProps {
+  /** Identifies the finding in the report, and its conversation. */
+  id: string;
+  finding: CheckFinding;
+  discussion?: FindingDiscussion;
+}
+
+function Finding({ id, finding, discussion }: FindingProps) {
   const { t } = useTranslation();
   const hiddenObjects = finding.count - finding.objects.length;
 
+  const getHint = ({ isReady, canModify }: FindingDiscussion) => {
+    if (!isReady) {
+      return t("study.check.finding.waitForCheck");
+    }
+    return canModify ? undefined : t("study.check.finding.readOnlyHint");
+  };
+
   return (
     <Accordion disableGutters variant="outlined">
-      <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon />}
+        id={`${id}-header`}
+        aria-controls={`${id}-content`}
+      >
         <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
           {SEVERITY_ICONS[finding.severity]}
           <Typography variant="body2" sx={{ fontWeight: "bold" }}>
@@ -76,6 +104,22 @@ function Finding({ finding }: FindingProps) {
             </Typography>
           )}
         </Box>
+        {discussion && (
+          <Box sx={{ mt: 2 }}>
+            <AssistantThread
+              thread={discussion.threads[id]}
+              onSend={(message) => discussion.onSend(id, finding, message)}
+              onStop={() => discussion.onStop(id)}
+              placeholder={t(
+                discussion.canModify
+                  ? "study.check.finding.ask"
+                  : "study.check.finding.askReadOnly",
+              )}
+              disabled={!discussion.isReady}
+              hint={getHint(discussion)}
+            />
+          </Box>
+        )}
       </AccordionDetails>
     </Accordion>
   );
@@ -83,10 +127,12 @@ function Finding({ finding }: FindingProps) {
 
 interface Props {
   report: CheckReport;
+  /** If given, the user can talk with the AI assistant about each finding. */
+  discussion?: FindingDiscussion;
 }
 
 // Findings of the consistency rules, most severe first.
-function FindingsList({ report }: Props) {
+function FindingsList({ report, discussion }: Props) {
   const { t } = useTranslation();
 
   if (report.findings.length === 0) {
@@ -107,10 +153,11 @@ function FindingsList({ report }: Props) {
         ))}
       </Stack>
       <Box>
-        {report.findings.map((finding, index) => (
+        {report.findings.map((finding, index) => {
           // A rule can report several findings: the index tells them apart, the list never changes
-          <Finding key={`${finding.rule}-${index}`} finding={finding} />
-        ))}
+          const id = `finding-${finding.rule}-${index}`;
+          return <Finding key={id} id={id} finding={finding} discussion={discussion} />;
+        })}
       </Box>
       {report.notes.map((note) => (
         <Alert key={note} severity="info">

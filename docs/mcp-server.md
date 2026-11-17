@@ -78,7 +78,6 @@ in a single conversation, for instance:
 | `wait_for_job`                         | Wait for the end of a job, reporting its progress              | read-only   |
 | `get_job_logs`                         | Last lines (or errors only) of the solver logs                 | read-only   |
 | `diagnose_job`                         | Probable causes of a failed simulation, with their evidence    | read-only   |
-| `diagnose_logs`                        | Same rules on logs given by the user (simulation run elsewhere) | read-only  |
 | `list_outputs`                         | Simulation outputs of a study                                  | read-only   |
 | `get_area_results`, `get_link_results` | Key indicators (prices, costs, unsupplied energy, flows...)    | read-only   |
 | `get_storage_results`                  | Charge, discharge and level of each short-term storage         | read-only   |
@@ -291,7 +290,6 @@ and why if it is not.
 | `POST /v1/assistant/chat/stream` | Same, as a stream of JSON lines to follow the progress of the agent     |
 | `POST /v1/assistant/studies/{study_id}/check` | Check a study (`check_study` with the time series, then an explanation of the findings), as a stream of JSON lines. Query parameter: `language` (`en` or `fr`) |
 | `POST /v1/assistant/jobs/{job_id}/explain` | Explain why a simulation failed (`diagnose_job` on the job and its logs, then an explanation and what to do), as a stream of JSON lines. Query parameter: `language` |
-| `POST /v1/assistant/studies/{study_id}/explain-logs` | Explain why a simulation of the study failed from its logs, when the server has no job for it (simulation run on another server). Body: `logs`, `file_name`, `solver_version` (optional). The logs are attached to the request of the agent, which reads them with `diagnose_logs` and `read_attachment`. Query parameter: `language` |
 
 ```bash
 curl -X POST http://localhost:8080/v1/assistant/chat -H "Content-Type: application/json" \
@@ -319,6 +317,13 @@ check endpoint and opens a panel with:
 The result stays available from the button (with the number of errors and warnings) as long as the
 user stays on the study.
 
+Once the check is finished, each finding has its own conversation with the assistant: a text field
+under the finding to ask a question about it or to request a correction. The conversation continues
+the one of the check (the `history` of its last event, sent to `/v1/assistant/chat/stream`), so the
+assistant already knows the study and the findings. It corrects the study only if the server sets
+`assistant.read_only: false`, and otherwise tells what to correct; after a correction, the panel
+offers to run the check again.
+
 Next to it, the **Assistant** button opens a conversation about the study: a text field to ask
 questions or request changes ("create an area Spain and link it to France"), with the tool calls made
 by the assistant shown under each message. The assistant only modifies studies if the server sets
@@ -328,13 +333,8 @@ In the **Tasks** page, each failed simulation has an **Explain the failure** but
 explanation endpoint and shows the probable causes found by the rules of `diagnose_job` in the logs
 (solver never started, solver version too old, infeasible problem, out of memory, time limit,
 missing file, invalid data...), with their evidence, then the explanation of the assistant and what
-to do.
-
-A large study is often simulated on another server, and an exported study does not carry its tasks.
-For that case, the **Explain logs** button of the study header takes the logs of the simulation (a
-log file, or pasted text) and gives the same explanation: the rules of `diagnose_logs` read the
-logs, and the assistant relates the errors to the study opened in Antares Web. The solver version is
-read in the logs and compared with the version of the study.
+to do. Under the explanation, a text field lets the user ask the assistant for details about the
+cause: the conversation continues the one of the explanation, in the same way.
 
 ### Command-line client
 

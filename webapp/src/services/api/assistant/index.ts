@@ -22,7 +22,6 @@ import type {
   AssistantStatusDTO,
   StreamAssistantChatParams,
   StreamJobExplanationParams,
-  StreamLogsExplanationParams,
   StreamStudyCheckParams,
 } from "./types";
 
@@ -168,26 +167,6 @@ export function streamJobExplanation(params: StreamJobExplanationParams): Promis
 
   return streamAssistant({
     path: `/jobs/${encodeURIComponent(jobId)}/explain?language=${language}`,
-    signal,
-    onEvent,
-  });
-}
-
-/**
- * Asks the AI assistant why a simulation of a study failed, from its logs: for a simulation run on
- * another server, which has no job in Antares Web. Probable causes, then the explanation.
- *
- * @param params - Study, logs and their file name, solver version, language of the explanation,
- * abort signal and event callback.
- * @returns A promise resolved when the assistant has finished.
- * @throws If the request fails or is aborted.
- */
-export function streamLogsExplanation(params: StreamLogsExplanationParams): Promise<void> {
-  const { studyId, logs, fileName, solverVersion, language, signal, onEvent } = params;
-
-  return streamAssistant({
-    path: `/studies/${encodeURIComponent(studyId)}/explain-logs?language=${language}`,
-    body: { logs, file_name: fileName, solver_version: solverVersion || null },
     signal,
     onEvent,
   });

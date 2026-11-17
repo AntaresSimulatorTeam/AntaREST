@@ -25,7 +25,7 @@ import {
   lastTurnMayHaveChangedData,
   reduceChatEvent,
   startTurn,
-} from "../utils";
+} from "@/components/AssistantConversation/utils";
 
 vi.mock("@/services/api/assistant", () => ({
   getAssistantStatus: vi.fn(),

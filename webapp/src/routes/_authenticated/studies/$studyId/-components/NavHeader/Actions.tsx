@@ -29,7 +29,6 @@ import useStudy from "../../-hooks/useStudy";
 import useStudyVariantTree from "../../-hooks/useStudyVariantTree";
 import AssistantChat from "./AssistantChat";
 import CommandsDrawer from "./CommandsDrawer";
-import LogsExplanation from "./LogsExplanation";
 import StudyCheck from "./StudyCheck";
 
 export type DialogType = "commands";
@@ -94,7 +93,6 @@ function Actions() {
         {/* The keys reset the check and the conversation when navigating to another study */}
         {!study.archived && <StudyCheck key={study.id} studyId={study.id} />}
         {!study.archived && <AssistantChat key={`chat-${study.id}`} studyId={study.id} />}
-        {!study.archived && <LogsExplanation key={`logs-${study.id}`} studyId={study.id} />}
         <Button
           variant="outlined"
           onClick={(event) => setAnchorEl(event.currentTarget)}

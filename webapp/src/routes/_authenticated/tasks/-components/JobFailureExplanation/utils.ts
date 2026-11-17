@@ -13,17 +13,21 @@
  */
 
 import { jobDiagnosisSchema } from "@/services/api/assistant/schemas";
-import type { AssistantEvent, JobDiagnosis } from "@/services/api/assistant/types";
+import type {
+  AssistantEvent,
+  AssistantHistory,
+  JobDiagnosis,
+} from "@/services/api/assistant/types";
 
-/** Tools of the assistant which find the probable causes of a failure: from a job, or from logs. */
-export const DIAGNOSE_TOOLS: readonly string[] = ["diagnose_job", "diagnose_logs"];
+/** Tool of the assistant which finds the probable causes of a failure. */
+export const DIAGNOSE_TOOL = "diagnose_job";
 
 export type ExplanationStatus = "idle" | "running" | "success" | "error";
 
 /**
  * Steps of an explanation:
  * - `starting`: the assistant starts
- * - `diagnosing`: the rules read the logs
+ * - `diagnosing`: the rules read the job and its logs
  * - `explaining`: the probable causes are available, the assistant digs and writes
  */
 export type ExplanationPhase = "starting" | "diagnosing" | "explaining";
@@ -39,6 +43,8 @@ export interface JobExplanationState {
   extraTools: string[];
   /** Explanation written by the assistant (Markdown). */
   answer: string;
+  /** Conversation of the explanation, for the server: continued when the user asks for details. */
+  history?: AssistantHistory;
   error?: string;
 }
 
@@ -55,7 +61,7 @@ export const RUNNING_EXPLANATION_STATE: JobExplanationState = {
 };
 
 /**
- * Parses the JSON result of the `diagnose_job` or `diagnose_logs` tool.
+ * Parses the JSON result of the `diagnose_job` tool.
  *
  * @param content - Result of the tool, as received by the assistant.
  * @returns The diagnosis, or `undefined` if the content is not one.
@@ -73,6 +79,16 @@ export function parseJobDiagnosis(content: string | undefined): JobDiagnosis | u
 }
 
 /**
+ * Tells the assistant what the user asks about, when they ask for details after an explanation.
+ *
+ * @param jobId - The failed job.
+ * @returns A note sent before the first question of the user. It is not shown in the conversation.
+ */
+export function buildJobContext(jobId: string): string {
+  return `[The user asks for details about the failure of the simulation job ${jobId}, explained above.]`;
+}
+
+/**
  * Computes the next state of an explanation from an event of the assistant.
  *
  * @param state - Current state of the explanation.
@@ -85,12 +101,12 @@ export function reduceExplanationEvent(
 ): JobExplanationState {
   switch (event.type) {
     case "tool_call":
-      return DIAGNOSE_TOOLS.includes(event.name)
+      return event.name === DIAGNOSE_TOOL
         ? { ...state, phase: "diagnosing" }
         : { ...state, extraTools: [...state.extraTools, event.name] };
 
     case "tool_result": {
-      if (!DIAGNOSE_TOOLS.includes(event.name)) {
+      if (event.name !== DIAGNOSE_TOOL) {
         return state;
       }
       const diagnosis = event.is_error ? undefined : parseJobDiagnosis(event.content);
@@ -103,7 +119,7 @@ export function reduceExplanationEvent(
     }
 
     case "done":
-      return { ...state, status: "success", answer: event.answer };
+      return { ...state, status: "success", answer: event.answer, history: event.history };
 
     case "error":
       return { ...state, status: "error", error: event.message };

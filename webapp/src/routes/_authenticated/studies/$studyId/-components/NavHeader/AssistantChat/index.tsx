@@ -12,27 +12,29 @@
  * This file is part of the Antares project.
  */
 
+import ConversationInput from "@/components/AssistantConversation/ConversationInput";
+import ConversationTurn from "@/components/AssistantConversation/ConversationTurn";
+import {
+  INITIAL_CHAT_STATE,
+  lastTurnMayHaveChangedData,
+  reduceChatEvent,
+  startTurn,
+  type ChatState,
+} from "@/components/AssistantConversation/utils";
 import { assistantQueries } from "@/queries/assistant/queries";
 import { streamAssistantChat } from "@/services/api/assistant";
 import { toError } from "@/utils/fnUtils";
 import AddCommentOutlinedIcon from "@mui/icons-material/AddCommentOutlined";
-import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import SendIcon from "@mui/icons-material/Send";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
-import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 import {
-  Alert,
   Box,
   Button,
   Chip,
-  CircularProgress,
   Divider,
   Drawer,
   IconButton,
   Stack,
-  TextField,
   Toolbar,
   Tooltip,
   Typography,
@@ -40,84 +42,6 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import Markdown from "react-markdown";
-import {
-  INITIAL_CHAT_STATE,
-  lastTurnMayHaveChangedData,
-  reduceChatEvent,
-  startTurn,
-  type ChatState,
-  type ChatTurn,
-  type ToolActivity,
-} from "./utils";
-
-const TOOL_ICONS: Record<ToolActivity["status"], React.ReactElement> = {
-  running: <CircularProgress size={12} color="inherit" />,
-  done: <CheckIcon sx={{ fontSize: 14 }} color="success" />,
-  error: <ErrorOutlineIcon sx={{ fontSize: 14 }} color="error" />,
-};
-
-interface TurnProps {
-  turn: ChatTurn;
-  isRunning: boolean;
-}
-
-function Turn({ turn, isRunning }: TurnProps) {
-  const { t } = useTranslation();
-
-  return (
-    <Stack direction="column" spacing={1}>
-      <Box
-        sx={{
-          alignSelf: "flex-end",
-          maxWidth: "85%",
-          px: 1.5,
-          py: 1,
-          borderRadius: 2,
-          bgcolor: "action.selected",
-          typography: "body2",
-          whiteSpace: "pre-wrap",
-          overflowWrap: "anywhere",
-        }}
-      >
-        {turn.question}
-      </Box>
-      {turn.tools.length > 0 && (
-        <Stack direction="column" spacing={0.25} aria-label={t("study.assistant.actions")}>
-          {turn.tools.map((tool, index) => (
-            <Stack
-              // The calls of a turn are only appended: the index is a stable key
-
-              key={index}
-              direction="row"
-              spacing={0.75}
-              sx={{ alignItems: "center", color: "text.secondary" }}
-            >
-              {TOOL_ICONS[tool.status]}
-              <Typography
-                variant="caption"
-                sx={{ fontFamily: "monospace", overflowWrap: "anywhere" }}
-              >
-                {tool.label}
-              </Typography>
-            </Stack>
-          ))}
-        </Stack>
-      )}
-      {turn.answer && (
-        <Box sx={{ typography: "body2", overflowWrap: "anywhere", "& p:first-of-type": { mt: 0 } }}>
-          <Markdown>{turn.answer}</Markdown>
-        </Box>
-      )}
-      {turn.error && <Alert severity="error">{turn.error}</Alert>}
-      {isRunning && !turn.answer && !turn.error && (
-        <Typography variant="caption" sx={{ color: "text.secondary" }} role="status">
-          {t("study.assistant.working")}
-        </Typography>
-      )}
-    </Stack>
-  );
-}
 
 interface Props {
   studyId: string;
@@ -131,7 +55,6 @@ function AssistantChat({ studyId }: Props) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
   const [state, setState] = useState<ChatState>(INITIAL_CHAT_STATE);
   const controllerRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -154,18 +77,11 @@ function AssistantChat({ studyId }: Props) {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSend = async () => {
-    const message = input.trim();
-
-    if (!message || state.isRunning) {
-      return;
-    }
-
+  const handleSend = async (message: string) => {
     const controller = new AbortController();
     controllerRef.current = controller;
     const isCurrent = () => controllerRef.current === controller;
     let latest = startTurn(state, message);
-    setInput("");
     setState(latest);
 
     try {
@@ -212,14 +128,6 @@ function AssistantChat({ studyId }: Props) {
     controllerRef.current?.abort();
     controllerRef.current = null;
     setState(INITIAL_CHAT_STATE);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent) => {
-    // Enter sends, Shift+Enter adds a line
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      handleSend();
-    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -283,7 +191,7 @@ function AssistantChat({ studyId }: Props) {
             </Typography>
           )}
           {state.turns.map((turn, index) => (
-            <Turn
+            <ConversationTurn
               key={turn.id}
               turn={turn}
               isRunning={state.isRunning && index === state.turns.length - 1}
@@ -292,40 +200,15 @@ function AssistantChat({ studyId }: Props) {
           <div ref={bottomRef} />
         </Stack>
         <Divider />
-        <Stack direction="row" spacing={1} sx={{ p: 2, alignItems: "flex-end" }}>
-          <TextField
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            onKeyDown={handleKeyDown}
+        <Box sx={{ p: 2 }}>
+          <ConversationInput
+            isRunning={state.isRunning}
+            onSend={handleSend}
+            onStop={handleStop}
             placeholder={t("study.assistant.placeholder")}
-            multiline
-            maxRows={6}
-            fullWidth
-            size="small"
             autoFocus
-            slotProps={{ htmlInput: { "aria-label": t("study.assistant.placeholder") } }}
           />
-          {state.isRunning ? (
-            <Tooltip title={t("study.assistant.stop")}>
-              <IconButton onClick={handleStop} color="error" aria-label={t("study.assistant.stop")}>
-                <StopCircleOutlinedIcon />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip title={t("study.assistant.send")}>
-              <span>
-                <IconButton
-                  onClick={handleSend}
-                  color="primary"
-                  disabled={!input.trim()}
-                  aria-label={t("study.assistant.send")}
-                >
-                  <SendIcon />
-                </IconButton>
-              </span>
-            </Tooltip>
-          )}
-        </Stack>
+        </Box>
       </Drawer>
     </>
   );

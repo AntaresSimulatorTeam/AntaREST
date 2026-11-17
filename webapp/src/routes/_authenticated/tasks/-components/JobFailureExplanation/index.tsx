@@ -12,44 +12,110 @@
  * This file is part of the Antares project.
  */
 
+import AssistantThread from "@/components/AssistantConversation/AssistantThread";
+import useAssistantThreads from "@/components/AssistantConversation/useAssistantThreads";
 import { assistantQueries } from "@/queries/assistant/queries";
 import { streamJobExplanation } from "@/services/api/assistant";
+import type { JobFailureCause } from "@/services/api/assistant/types";
 import { toError } from "@/utils/fnUtils";
 import ReplayIcon from "@mui/icons-material/Replay";
 import TroubleshootIcon from "@mui/icons-material/Troubleshoot";
 import {
+  Alert,
+  AlertTitle,
+  Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
+  LinearProgress,
+  Paper,
+  Skeleton,
+  Stack,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import ExplanationContent from "@/components/FailureExplanation/ExplanationContent";
+import Markdown from "react-markdown";
 import {
+  buildJobContext,
   INITIAL_EXPLANATION_STATE,
   reduceExplanationEvent,
   RUNNING_EXPLANATION_STATE,
   type JobExplanationState,
-} from "@/components/FailureExplanation/utils";
+} from "./utils";
+
+/** The questions of the user about an explanation are one conversation. */
+const THREAD = "explanation";
+
+const CONFIDENCE_COLORS = { high: "error", medium: "warning", low: "default" } as const;
+
+const LOG_SX = {
+  m: 0,
+  p: 1,
+  fontFamily: "monospace",
+  fontSize: "0.8em",
+  whiteSpace: "pre-wrap",
+  overflowWrap: "anywhere",
+  maxHeight: 180,
+  overflow: "auto",
+  bgcolor: "action.hover",
+  borderRadius: 1,
+} as const;
+
+interface CauseProps {
+  cause: JobFailureCause;
+  // The texts of the rules are in English: shown only when the assistant could not explain
+  showDetails: boolean;
+}
+
+function Cause({ cause, showDetails }: CauseProps) {
+  const { t } = useTranslation();
+
+  return (
+    <Paper variant="outlined" sx={{ p: 1.5 }}>
+      <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1 }}>
+        <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+          {t(`tasks.explain.cause.${cause.code}`, { defaultValue: cause.title })}
+        </Typography>
+        <Chip
+          label={t(`tasks.explain.confidence.${cause.confidence}`)}
+          color={CONFIDENCE_COLORS[cause.confidence]}
+          variant="outlined"
+          size="small"
+        />
+      </Stack>
+      {showDetails && (
+        <Typography variant="body2" sx={{ mb: 1 }}>
+          {cause.explanation} {cause.suggestion}
+        </Typography>
+      )}
+      <Box component="pre" sx={LOG_SX}>
+        {cause.evidence.join("\n")}
+      </Box>
+    </Paper>
+  );
+}
 
 interface Props {
   jobId: string;
 }
 
 // Button shown on a failed simulation: asks the AI assistant why it failed, and shows the
-// probable causes found in the logs, then the explanation and what to do.
-// Nothing is rendered if the server has no assistant.
+// probable causes found in the logs, then the explanation and what to do. The user can then ask
+// the assistant for details. Nothing is rendered if the server has no assistant.
 function JobFailureExplanation({ jobId }: Props) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const [state, setState] = useState<JobExplanationState>(INITIAL_EXPLANATION_STATE);
   const controllerRef = useRef<AbortController | null>(null);
   const { data: assistant } = useQuery(assistantQueries.status());
+  const threads = useAssistantThreads();
   const language = i18n.language?.startsWith("fr") ? "fr" : "en";
 
   const start = useCallback(async () => {
@@ -90,7 +156,7 @@ function JobFailureExplanation({ jobId }: Props) {
     return null;
   }
 
-  const { status } = state;
+  const { status, phase, diagnosis, diagnosisError, answer, error, extraTools } = state;
   const isRunning = status === "running";
 
   ////////////////////////////////////////////////////////////////
@@ -103,6 +169,12 @@ function JobFailureExplanation({ jobId }: Props) {
     if (status === "idle") {
       start();
     }
+  };
+
+  const handleRestart = () => {
+    // The questions are about the previous explanation
+    threads.reset();
+    start();
   };
 
   const handleClose = () => {
@@ -129,11 +201,108 @@ function JobFailureExplanation({ jobId }: Props) {
       <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
         <DialogTitle>{t("tasks.explain.title")}</DialogTitle>
         <DialogContent dividers>
-          <ExplanationContent state={state} />
+          <Stack direction="column" spacing={3}>
+            {isRunning && (
+              <Stack direction="column" spacing={1} role="status">
+                <Typography variant="body2" sx={{ fontWeight: "bold" }}>
+                  {t(`tasks.explain.phase.${phase}`)}
+                </Typography>
+                <LinearProgress aria-label={t(`tasks.explain.phase.${phase}`)} />
+              </Stack>
+            )}
+
+            {status === "error" && (
+              <Alert severity="error">
+                <AlertTitle>{t("tasks.explain.failed")}</AlertTitle>
+                {error}
+              </Alert>
+            )}
+
+            {diagnosisError !== undefined && (
+              <Alert severity="warning">
+                <AlertTitle>{t("tasks.explain.diagnosisFailed")}</AlertTitle>
+                {diagnosisError}
+              </Alert>
+            )}
+
+            {answer && (
+              <Box component="section">
+                <Typography variant="subtitle1" component="h3" sx={{ fontWeight: "bold" }}>
+                  {t("tasks.explain.explanation")}
+                </Typography>
+                <Box sx={{ typography: "body2", overflowWrap: "anywhere" }}>
+                  <Markdown>{answer}</Markdown>
+                </Box>
+                <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                  {t("tasks.explain.aiDisclaimer")}
+                </Typography>
+              </Box>
+            )}
+
+            {status === "success" && (
+              <AssistantThread
+                thread={threads.threads[THREAD]}
+                onSend={(message) =>
+                  threads.send(THREAD, {
+                    message,
+                    context: buildJobContext(jobId),
+                    // The assistant already knows the job and its logs: the conversation goes on
+                    baseHistory: state.history,
+                  })
+                }
+                onStop={() => threads.stop(THREAD)}
+                placeholder={t("tasks.explain.ask")}
+              />
+            )}
+
+            {isRunning && phase === "explaining" && (
+              <Box component="section">
+                <Typography variant="subtitle1" component="h3" sx={{ fontWeight: "bold" }}>
+                  {t("tasks.explain.explanation")}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "text.secondary", my: 1 }}>
+                  {extraTools.length > 0
+                    ? t("tasks.explain.digging", { count: extraTools.length })
+                    : t("tasks.explain.writing")}
+                </Typography>
+                <Skeleton />
+                <Skeleton />
+                <Skeleton width="60%" />
+              </Box>
+            )}
+
+            {diagnosis && (
+              <Box component="section">
+                <Typography variant="subtitle1" component="h3" sx={{ mb: 1, fontWeight: "bold" }}>
+                  {t("tasks.explain.causes")}
+                </Typography>
+                {diagnosis.causes.length > 0 ? (
+                  <Stack direction="column" spacing={1}>
+                    {diagnosis.causes.map((cause) => (
+                      <Cause key={cause.code} cause={cause} showDetails={status === "error"} />
+                    ))}
+                  </Stack>
+                ) : (
+                  <Alert severity="info">{t("tasks.explain.noKnownCause")}</Alert>
+                )}
+              </Box>
+            )}
+
+            {diagnosis && diagnosis.errorLines.length > 0 && (
+              <Box component="section">
+                <Typography variant="subtitle1" component="h3" sx={{ mb: 1, fontWeight: "bold" }}>
+                  {t("tasks.explain.errorLines")}
+                </Typography>
+                <Box component="pre" sx={LOG_SX}>
+                  {diagnosis.errorLines.join("\n")}
+                </Box>
+              </Box>
+            )}
+          </Stack>
         </DialogContent>
         <DialogActions>
           {!isRunning && status !== "idle" && (
-            <Button startIcon={<ReplayIcon />} onClick={start}>
+            <Button startIcon={<ReplayIcon />} onClick={handleRestart}>
               {t("tasks.explain.restart")}
             </Button>
           )}

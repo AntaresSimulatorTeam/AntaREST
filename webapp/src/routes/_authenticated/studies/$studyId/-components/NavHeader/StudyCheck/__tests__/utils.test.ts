@@ -14,6 +14,7 @@
 
 import type { AssistantEvent } from "@/services/api/assistant/types";
 import {
+  buildFindingContext,
   countIssues,
   extractRule,
   getProgressPercent,
@@ -142,6 +143,13 @@ describe("reduceCheckEvent", () => {
     expect(state.report?.findings).toHaveLength(1);
   });
 
+  test("keeps the conversation of the check, to continue it about a finding", () => {
+    const history = [{ role: "user", content: "Check this study" }];
+    const state = reduce([CALL, result(REPORT_JSON), { type: "done", answer: "Done.", history }]);
+
+    expect(state.history).toEqual(history);
+  });
+
   test("ignores the progress of other tools", () => {
     const state = reduce([
       CALL,
@@ -149,5 +157,36 @@ describe("reduceCheckEvent", () => {
     ]);
 
     expect(state.progress).toBeUndefined();
+  });
+});
+
+describe("buildFindingContext", () => {
+  test("describes the finding for the assistant: rule, severity, message and objects", () => {
+    const context = buildFindingContext({
+      rule: "hydro_generation_power",
+      severity: "error",
+      message: "Hydro inflows but no generating power.",
+      objects: ["fr", "es"],
+      count: 39,
+    });
+
+    expect(context).toContain("hydro_generation_power (error)");
+    expect(context).toContain("Hydro inflows but no generating power.");
+    expect(context).toContain("fr; es");
+    // Only the first objects are listed in a finding
+    expect(context).toContain("the first 2 of 39");
+  });
+
+  test("does not mention hidden objects when all are listed", () => {
+    const context = buildFindingContext({
+      rule: "calendar",
+      severity: "warning",
+      message: "The study uses the 2029 calendar.",
+      objects: ["settings/generaldata.ini"],
+      count: 1,
+    });
+
+    expect(context).toContain("settings/generaldata.ini");
+    expect(context).not.toContain("the first");
   });
 });
