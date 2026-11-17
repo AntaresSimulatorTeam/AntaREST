@@ -14,10 +14,14 @@
 
 import EmptyView from "@/components/page/EmptyView";
 import TabsView from "@/components/page/TabsView";
+import RouterButton from "@/components/router/RouterButton";
+import RouterLink from "@/components/router/RouterLink";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getReferenceStudy } from "@/redux/selectors";
 import ArchiveOutlinedIcon from "@mui/icons-material/ArchiveOutlined";
+import { Alert, Stack } from "@mui/material";
 import { createFileRoute, linkOptions } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import useStudy from "../-hooks/useStudy";
 
 export const Route = createFileRoute("/_authenticated/studies/$studyId/explore")({
@@ -28,20 +32,39 @@ function StudyExploreLayout() {
   const { t } = useTranslation();
   const params = Route.useParams();
   const study = useStudy();
-  const navigate = Route.useNavigate();
+  const referenceStudy = useAppSelector((state) => getReferenceStudy(state, study.id));
 
-  // TODO: move this redirect to the route loader once TanStack Query replaces Redux for fetching study
-  useEffect(() => {
-    if (study.archived) {
-      navigate({
-        to: "/studies/$studyId",
-        params: { studyId: study.id },
-      });
-    }
-  }, [navigate, study]);
+  // When the reference study is archived, all its variants are considered archived as well
+  const isArchived = referenceStudy.archived;
+  const isVariant = study.type === "variantstudy";
 
-  if (study.archived) {
-    return <EmptyView icon={ArchiveOutlinedIcon} title={t("study.archived")} />;
+  if (isArchived) {
+    return (
+      <Stack direction="column" sx={{ height: 1 }}>
+        {isVariant && (
+          <Alert severity="warning">
+            <Trans
+              i18nKey="variants.unarchive.warning"
+              values={{ referenceStudyName: referenceStudy.name }}
+              components={{
+                referenceStudyLink: (
+                  <RouterLink to="/studies/$studyId" params={{ studyId: referenceStudy.id }} />
+                ),
+              }}
+            />
+          </Alert>
+        )}
+        <EmptyView
+          icon={ArchiveOutlinedIcon}
+          title={t("study.archived")}
+          primaryActions={
+            <RouterButton variant="contained" to="/studies/$studyId" params={{ studyId: study.id }}>
+              {t("button.back")}
+            </RouterButton>
+          }
+        />
+      </Stack>
+    );
   }
 
   return (

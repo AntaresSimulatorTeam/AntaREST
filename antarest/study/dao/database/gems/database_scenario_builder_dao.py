@@ -13,7 +13,7 @@
 import json
 from typing import Any
 
-from sqlalchemy import CursorResult, Row, delete, select
+from sqlalchemy import CursorResult, Row, delete, select, update
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
@@ -28,6 +28,7 @@ from antarest.study.business.model.gems.scenario_builder import (
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.scenario_builder import GEMS_SCENARIO_BUILDER_TABLE
+from antarest.study.dao.database.models.gems.system import GEMS_COMPONENTS_TABLE
 
 
 class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
@@ -86,8 +87,19 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
 
     @override
     def remove_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> None:
-        table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
+        # First clean the components table to avoid Foreign Key violations on the scenario group.
+        session.execute(
+            update(GEMS_COMPONENTS_TABLE)
+            .where(
+                (GEMS_COMPONENTS_TABLE.c.study_data_id == self._study_data_id)
+                & (GEMS_COMPONENTS_TABLE.c.scenario_group == scenario_name)
+            )
+            .values(scenario_group=None)
+        )
+
+        # Then delete the scenario group from the scenario builder table.
+        table = GEMS_SCENARIO_BUILDER_TABLE
         result = session.execute(
             delete(table).where(
                 (table.c.study_data_id == self._study_data_id) & (table.c.scenario_group == scenario_name)

@@ -14,10 +14,40 @@
 
 import * as R from "ramda";
 import * as RA from "ramda-adjunct";
-import type { StudyFilters } from "../redux/ducks/studies";
+import type { Directory } from "@/services/api/directories/types";
+import type { StudyFilters, StudyFolder } from "../redux/ducks/studies";
 import { type StudyMetadata, StudyType } from "../types/types";
+import { getDescendantIds } from "./directoryUtils";
 import { isSearchMatching } from "./stringUtils";
 import { validateString } from "./validation/string";
+
+////////////////////////////////////////////////////////////////
+// Folder navigation
+////////////////////////////////////////////////////////////////
+
+export function getExternalStudyParentPath({
+  workspace,
+  folder,
+}: Pick<StudyMetadata, "workspace" | "folder">): string {
+  // folder includes the study's own directory.
+  const parentSegments = folder?.split("/").filter(Boolean).slice(0, -1) ?? [];
+
+  return ["", workspace, ...parentSegments].join("/");
+}
+
+export function getStudyFolder(study: StudyMetadata, directories: Directory[]): StudyFolder {
+  if (study.managed) {
+    const directoryId = study.directoryId ?? null;
+
+    return {
+      tree: "managed",
+      directoryId,
+      directoryIds: directoryId ? getDescendantIds(directoryId, directories) : null,
+    };
+  }
+
+  return { tree: "external", path: getExternalStudyParentPath(study) };
+}
 
 ////////////////////////////////////////////////////////////////
 // Predicates
@@ -62,9 +92,7 @@ const folderPredicate = R.curry((filters: StudyFilters, study: StudyMetadata) =>
     return false;
   }
 
-  const workspace = `/${study.workspace}`;
-  const directory = study.folder ? study.folder.split("/").filter(Boolean).slice(0, -1) : [];
-  const studyPath = directory.length > 0 ? `${workspace}/${directory.join("/")}` : workspace;
+  const studyPath = getExternalStudyParentPath(study);
 
   return external.path === ""
     ? true // home: show all external studies
@@ -81,11 +109,14 @@ const tagsPredicate = R.curry((tags: StudyFilters["tags"], study: StudyMetadata)
   if (tags.length === 0) {
     return true;
   }
+
   if (!study.tags || study.tags.length === 0) {
     return false;
   }
+
   const upperCaseTags = tags.map((tag) => tag.toUpperCase());
   const upperCaseStudyTags = study.tags.map((tag) => tag.toUpperCase());
+
   return R.intersection(upperCaseStudyTags, upperCaseTags).length > 0;
 });
 
@@ -97,6 +128,7 @@ const usersPredicate = R.curry((users: StudyFilters["users"], study: StudyMetada
   if (users.length === 0) {
     return true;
   }
+
   return RA.isNumber(study.owner.id) && users.includes(study.owner.id);
 });
 
@@ -109,9 +141,11 @@ const managementPredicate = R.curry(
     if (management === "managed") {
       return study.managed === true;
     }
+
     if (management === "unmanaged") {
       return study.managed === false;
     }
+
     return true;
   },
 );
@@ -120,9 +154,11 @@ const archivePredicate = R.curry((archive: StudyFilters["archive"], study: Study
   if (archive === "archived") {
     return study.archived === true;
   }
+
   if (archive === "unarchived") {
     return study.archived === false;
   }
+
   return true;
 });
 
@@ -130,9 +166,11 @@ const typePredicate = R.curry((scope: StudyFilters["type"], study: StudyMetadata
   if (scope === "references") {
     return study.type === StudyType.RAW;
   }
+
   if (scope === "variants") {
     return study.type === StudyType.VARIANT;
   }
+
   return true;
 });
 
@@ -152,6 +190,7 @@ export function filterStudies(filters: StudyFilters, studies: StudyMetadata[]): 
     archivePredicate(filters.archive),
     typePredicate(filters.type),
   ] as RA.Pred[];
+
   return R.filter(R.allPass(predicates), studies);
 }
 

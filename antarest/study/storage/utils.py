@@ -53,6 +53,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import extract_archive_from_path, extract_archive_from_stream
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.polars import write_tsv
 from antarest.core.utils.utils import current_time, is_path_safe
 from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_impersonator, require_current_user
@@ -681,4 +682,4 @@ def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
     if df.is_empty() and isinstance(path_or_buf, Path):
         path_or_buf.write_bytes(b"")
     else:
-        df.write_csv(path_or_buf, separator="\t", include_header=False)
+        write_tsv(df, path_or_buf)

@@ -104,6 +104,10 @@ class StudyConverter:
             if system is not None:
                 self._new_dao.save_system(system)
 
+            calendar = self._source_dao.get_gems_calendar()
+            if calendar is not None:
+                self._new_dao.save_gems_calendar(calendar)
+
     def _convert_settings(self) -> None:
         self._new_dao.save_general_config(self._source_dao.get_general_config())
         self._new_dao.save_playlist_config(self._source_dao.get_playlist_config())

@@ -32,6 +32,7 @@ from antarest.study.dao.database.models.binding_constraint import (
     BINDING_CONSTRAINT_LT_MATRIX_TABLE,
     BINDING_CONSTRAINT_VALUES_MATRIX_TABLE,
 )
+from antarest.study.dao.database.models.gems.system import GEMS_COMPONENT_PARAMETERS_TABLE
 from antarest.study.dao.database.models.hydro import (
     HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE,
     HYDRO_CREDIT_MODULATIONS_TABLE,
@@ -145,6 +146,7 @@ MATRIX_TABLES = [
     BINDING_CONSTRAINT_LT_MATRIX_TABLE,
     BINDING_CONSTRAINT_GT_MATRIX_TABLE,
     BINDING_CONSTRAINT_EQ_MATRIX_TABLE,
+    GEMS_COMPONENT_PARAMETERS_TABLE,
 ]
 
 

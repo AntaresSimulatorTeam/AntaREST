@@ -14,8 +14,7 @@
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getLatestStudyVersion } from "@/redux/selectors";
-import type { Study } from "@/services/api/studies/types";
+import { getLatestStudyVersion, getReferenceStudy } from "@/redux/selectors";
 import { archiveStudy, unarchiveStudy } from "@/services/api/study";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
@@ -50,26 +49,33 @@ export type DialogType =
   | "copy"
   | "delete";
 
-interface Props {
+export interface StudyActionsMenuProps {
   open: boolean;
   anchorEl: MenuProps["anchorEl"];
   onClose: VoidFunction;
   study: StudyMetadata;
-  parentStudy?: Study;
-  variantNb?: number;
+  descendantCount?: number;
 }
 
-function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variantNb }: Props) {
+function StudyActionsMenu({
+  open,
+  anchorEl,
+  onClose,
+  study,
+  descendantCount,
+}: StudyActionsMenuProps) {
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
   const latestVersion = useAppSelector(getLatestStudyVersion);
+  const referenceStudy = useAppSelector((state) => getReferenceStudy(state, study.id));
 
   const isLatestVersion = study.version === latestVersion;
-  const isReference = study.type === "rawstudy";
-  const isVariant = study.type === "variantstudy";
   const isManaged = study.managed;
-  const isArchived = study.archived;
+  const isReference = study.type === "rawstudy";
+  const isVariant = !isReference;
+  // When the reference study is archived, all its variants are considered archived as well
+  const isArchived = referenceStudy.archived;
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -95,8 +101,12 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
   };
 
   const handleUnarchive = () => {
-    unarchiveStudy(study.id).catch((err) => {
-      enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), toError(err));
+    // Only the reference study can be unarchived, not its variants
+    unarchiveStudy(referenceStudy.id).catch((err) => {
+      enqueueErrorSnackbar(
+        t("studies.error.unarchive", { studyname: referenceStudy.name }),
+        toError(err),
+      );
     });
 
     onClose();
@@ -142,7 +152,12 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
           ),
           menuItem(isManaged && isReference, t("global.move"), DriveFileMoveIcon, "move"),
           menuItem(!isArchived, t("global.export"), DownloadOutlinedIcon, "export"),
-          menuItem(isArchived, t("global.unarchive"), UnarchiveOutlinedIcon, handleUnarchive),
+          menuItem(
+            isArchived,
+            isReference ? t("global.unarchive") : t("variants.unarchive"),
+            UnarchiveOutlinedIcon,
+            handleUnarchive,
+          ),
           menuItem(
             isManaged && isReference && !isArchived,
             t("global.archive"),
@@ -167,8 +182,7 @@ function StudyActionsMenu({ open, anchorEl, onClose, study, parentStudy, variant
         <DeleteStudyDialog
           open
           study={study}
-          parentStudy={parentStudy}
-          variantNb={variantNb}
+          descendantCount={descendantCount}
           onClose={closeDialog}
         />
       )}

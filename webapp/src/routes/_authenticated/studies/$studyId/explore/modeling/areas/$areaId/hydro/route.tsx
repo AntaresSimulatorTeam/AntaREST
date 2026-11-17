@@ -84,7 +84,7 @@ function HydroLayout() {
             params,
           }),
         },
-        {
+        hydroRuleCurves !== "scenarized" && {
           id: "reservoirLevels",
           label: "Reservoir levels",
           linkOptions: linkOptions({

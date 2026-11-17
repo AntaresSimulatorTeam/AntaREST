@@ -99,7 +99,7 @@ def test_conversion_roundtrip(
     study_path = file_dao.get_file_study().config.study_path
     for path in (study_path / "input/catalogs").glob("*.yaml"):
         path.unlink()
-    (study_path / "input/model-libraries/library.yaml").unlink()
+    (study_path / "input/model-libraries/library.yml").unlink()
     (study_path / "input/taxonomy.yml").unlink()
     assert file_dao.get_catalogs() == []
     # The destination already contains the legacy inputs, only copy GEMS back.
