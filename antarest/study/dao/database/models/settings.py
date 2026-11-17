@@ -109,6 +109,7 @@ ADEQUACY_PATCH_PARAMETERS_TABLE = Table(
     Column("threshold_csr_variable_bounds_relaxation", Integer(), nullable=True),
     Column("ntc_between_physical_areas_out_adequacy_patch", Boolean(), nullable=True),
     Column("redispatch", Boolean(), nullable=True),
+    Column("threshold_ens", Float(), nullable=True),
     ForeignKeyConstraint(
         ["study_data_id"],
         ["study_data.study_data_id"],
