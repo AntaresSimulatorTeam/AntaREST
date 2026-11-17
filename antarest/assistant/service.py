@@ -96,19 +96,10 @@ class AssistantService:
                     )
         raise AssistantError("The assistant stopped without an answer.")
 
-    def stream(
-        self,
-        request: ChatRequestDTO,
-        *,
-        antares_url: str,
-        token: str | None,
-        attachments: dict[str, str] | None = None,
-    ) -> Iterator[dict[str, Any]]:
+    def stream(self, request: ChatRequestDTO, *, antares_url: str, token: str | None) -> Iterator[dict[str, Any]]:
         """
         Runs one turn of conversation, yielding the events of the agent as they happen:
         `tool_call`, `tool_result`, `text`, then `done` or `error`.
-
-        `attachments` are files given by the user (name -> text), that the tools of the agent can read.
 
         Raises:
             AssistantUnavailableError: if the assistant is not configured (raised before the first event).
@@ -125,7 +116,6 @@ class AssistantService:
             "model": self.config.model or None,
             "effort": self.config.effort,
             "max_tool_rounds": self.config.max_tool_rounds,
-            "attachments": attachments or {},
         }
         return self._run_agent(command, payload)
 

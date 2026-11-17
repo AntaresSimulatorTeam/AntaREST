@@ -12,21 +12,26 @@
  * This file is part of the Antares project.
  */
 
-import { getAssistantStatus, streamJobExplanation } from "@/services/api/assistant";
-import type { AssistantEvent, StreamJobExplanationParams } from "@/services/api/assistant/types";
+import {
+  getAssistantStatus,
+  streamAssistantChat,
+  streamJobExplanation,
+} from "@/services/api/assistant";
+import type {
+  AssistantEvent,
+  StreamAssistantChatParams,
+  StreamJobExplanationParams,
+} from "@/services/api/assistant/types";
 import { createQueryClient, createQueryWrapper, deferred } from "@/tests/queryUtils";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import JobFailureExplanation from "..";
-import {
-  parseJobDiagnosis,
-  reduceExplanationEvent,
-  RUNNING_EXPLANATION_STATE,
-} from "@/components/FailureExplanation/utils";
+import { parseJobDiagnosis, reduceExplanationEvent, RUNNING_EXPLANATION_STATE } from "../utils";
 
 vi.mock("@/services/api/assistant", () => ({
   getAssistantStatus: vi.fn(),
+  streamAssistantChat: vi.fn(),
   streamJobExplanation: vi.fn(),
 }));
 
@@ -79,6 +84,47 @@ function mockStream() {
   };
 }
 
+const EXPLANATION_HISTORY = [{ role: "user", content: "Why did the job fail?" }];
+const THREAD_HISTORY = [...EXPLANATION_HISTORY, { role: "user", content: "Which solver?" }];
+const ASK = "tasks.explain.ask";
+
+/**
+ * Replaces the stream of the conversation: each message sent gets its own controllable stream.
+ *
+ * @returns The received requests, and functions to send an event to the last one and to end it.
+ */
+function mockChat() {
+  const requests: StreamAssistantChatParams[] = [];
+  let end = deferred<void>();
+
+  vi.mocked(streamAssistantChat).mockImplementation((params) => {
+    requests.push(params);
+    end = deferred<void>();
+    return end.promise;
+  });
+
+  return {
+    requests,
+    send: (event: AssistantEvent) => act(() => requests.at(-1)?.onEvent(event)),
+    end: () =>
+      act(async () => {
+        end.resolve();
+        await end.promise;
+      }),
+  };
+}
+
+/** Opens the dialog and runs an explanation to its end. */
+async function explain() {
+  const stream = mockStream();
+  renderExplanation();
+  await userEvent.click(await screen.findByRole("button", { name: "tasks.explain.button" }));
+  stream.send(DIAGNOSE_CALL);
+  stream.send(DIAGNOSE_RESULT);
+  stream.send({ type: "done", answer: "The solver is too old.", history: EXPLANATION_HISTORY });
+  stream.end();
+}
+
 function renderExplanation() {
   return render(<JobFailureExplanation jobId="job-1" />, {
     wrapper: createQueryWrapper(createQueryClient()),
@@ -105,6 +151,17 @@ describe("reduceExplanationEvent", () => {
     const done = reduceExplanationEvent(digging, { type: "done", answer: "Solver too old." });
     expect(done.status).toBe("success");
     expect(done.answer).toBe("Solver too old.");
+  });
+
+  test("keeps the conversation of the explanation, to continue it with questions", () => {
+    const history = [{ role: "user", content: "Why did the job fail?" }];
+    const done = reduceExplanationEvent(RUNNING_EXPLANATION_STATE, {
+      type: "done",
+      answer: "Solver too old.",
+      history,
+    });
+
+    expect(done.history).toEqual(history);
   });
 
   test("keeps the reason when the job could not be read", () => {
@@ -181,5 +238,81 @@ describe("JobFailureExplanation", () => {
     expect(screen.getByText("The Anthropic API rate limit is reached.")).toBeInTheDocument();
     // Without the explanation of the assistant, the explanation of the rule is the fallback
     expect(screen.getByText(/Launch again with a more recent solver/)).toBeInTheDocument();
+  });
+
+  describe("questions about the cause", () => {
+    test("continue the conversation of the explanation", async () => {
+      const chat = mockChat();
+      await explain();
+
+      await userEvent.type(screen.getByRole("textbox", { name: ASK }), "Which solver?{Enter}");
+
+      expect(chat.requests[0]).toMatchObject({ history: EXPLANATION_HISTORY });
+      // The assistant is told which job the question is about
+      expect(chat.requests[0].message).toContain("job-1");
+      expect(chat.requests[0].message).toContain("Which solver?");
+      // The user sees their own words only
+      expect(screen.getByText("Which solver?")).toBeInTheDocument();
+
+      chat.send({ type: "tool_call", name: "list_launchers", input: {} });
+      expect(screen.getByText("list_launchers()")).toBeInTheDocument();
+      chat.send({ type: "done", answer: "Use the solver **10.2**.", history: THREAD_HISTORY });
+      await chat.end();
+
+      expect(screen.getByText("10.2")).toBeInTheDocument();
+
+      await userEvent.type(screen.getByRole("textbox", { name: ASK }), "And then?{Enter}");
+
+      expect(chat.requests[1]).toMatchObject({ history: THREAD_HISTORY, message: "And then?" });
+    });
+
+    test("wait for the explanation", async () => {
+      const stream = mockStream();
+      renderExplanation();
+      await userEvent.click(await screen.findByRole("button", { name: "tasks.explain.button" }));
+
+      stream.send(DIAGNOSE_RESULT);
+
+      expect(screen.queryByRole("textbox", { name: ASK })).not.toBeInTheDocument();
+    });
+
+    test("are not offered when the assistant could not explain", async () => {
+      const stream = mockStream();
+      renderExplanation();
+      await userEvent.click(await screen.findByRole("button", { name: "tasks.explain.button" }));
+
+      stream.send({ type: "error", message: "The Anthropic API rate limit is reached." });
+      stream.end();
+
+      expect(screen.queryByRole("textbox", { name: ASK })).not.toBeInTheDocument();
+    });
+
+    test("are kept when the dialog is closed and reopened", async () => {
+      const chat = mockChat();
+      await explain();
+      await userEvent.type(screen.getByRole("textbox", { name: ASK }), "Which solver?{Enter}");
+      chat.send({ type: "done", answer: "Use the solver 10.2.", history: THREAD_HISTORY });
+      await chat.end();
+
+      await userEvent.click(screen.getByRole("button", { name: "global.close" }));
+      await waitFor(() =>
+        expect(screen.queryByText("Use the solver 10.2.")).not.toBeInTheDocument(),
+      );
+      await userEvent.click(screen.getByRole("button", { name: "tasks.explain.button" }));
+
+      expect(screen.getByText("Use the solver 10.2.")).toBeInTheDocument();
+    });
+
+    test("are forgotten when the explanation is run again", async () => {
+      const chat = mockChat();
+      await explain();
+      await userEvent.type(screen.getByRole("textbox", { name: ASK }), "Which solver?{Enter}");
+      chat.send({ type: "done", answer: "Use the solver 10.2.", history: THREAD_HISTORY });
+      await chat.end();
+
+      await userEvent.click(screen.getByRole("button", { name: "tasks.explain.restart" }));
+
+      expect(screen.queryByText("Use the solver 10.2.")).not.toBeInTheDocument();
+    });
   });
 });

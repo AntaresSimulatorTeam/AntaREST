@@ -23,10 +23,8 @@ from antarest.assistant.model import (
     AssistantStatusDTO,
     ChatRequestDTO,
     ChatResponseDTO,
-    ExplainLogsRequestDTO,
     build_check_prompt,
     build_explain_job_prompt,
-    build_explain_logs_prompt,
 )
 from antarest.assistant.service import AssistantService
 from antarest.core.api_types import UuidStr
@@ -159,40 +157,6 @@ def create_assistant_api() -> APIRouter:
         logger.info(f"Assistant explanation of job {job_id}")
         body = ChatRequestDTO(message=build_explain_job_prompt(job_id, language))
         events = service.stream(body, antares_url=antares_url(request, config), token=user_token(request))
-        return _ndjson(events)
-
-    @bp.post(
-        "/assistant/studies/{study_id}/explain-logs",
-        summary="Explain why a simulation failed from its logs, with the AI assistant",
-        response_class=StreamingResponse,
-        responses={200: {"content": {"application/x-ndjson": {}}}},
-    )
-    def explain_logs(
-        request: Request,
-        study_id: UuidStr,
-        logs: ExplainLogsRequestDTO,
-        service: AssistantServiceDep,
-        config: ConfigDep,
-        language: Annotated[Literal["en", "fr"], Query(description="Language of the explanation.")] = "en",
-    ) -> StreamingResponse:
-        """
-        Explains why a simulation of a study failed, from logs given by the user: for a simulation run on
-        another server (a computing cluster), when Antares Web has no job for it. The assistant runs the
-        deterministic rules of `diagnose_logs` on the logs, digs further in the logs and the study if
-        needed, then explains the probable causes and what to do.
-
-        Same stream of events as `/assistant/jobs/{job_id}/explain`, with the tool `diagnose_logs`.
-        """
-        logger.info(f"Assistant explanation of logs for study {study_id} ({len(logs.logs)} characters)")
-        body = ChatRequestDTO(
-            message=build_explain_logs_prompt(logs.file_name, logs.solver_version, language), study_id=study_id
-        )
-        events = service.stream(
-            body,
-            antares_url=antares_url(request, config),
-            token=user_token(request),
-            attachments={logs.file_name: logs.logs},
-        )
         return _ndjson(events)
 
     return bp

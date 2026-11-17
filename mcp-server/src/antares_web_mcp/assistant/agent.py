@@ -81,9 +81,6 @@ class AssistantRequest(BaseModel):
     effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
     max_tool_rounds: int = Field(default=40, ge=1, le=200)
     verify_ssl: bool = True
-    attachments: dict[str, str] = Field(
-        default_factory=dict, description="Files given by the user (name -> text), e.g. simulation logs."
-    )
 
 
 Emit = Callable[[dict[str, Any]], Awaitable[None]]
@@ -95,13 +92,9 @@ def build_system_prompt(read_only: bool) -> str:
 
 
 def build_user_message(request: AssistantRequest) -> str:
-    context = []
-    if request.study_id:
-        context.append(f"[The user is currently working on the study with id {request.study_id}.]")
-    for name, text in request.attachments.items():
-        lines = len(text.splitlines())
-        context.append(f"[The user attached the file {name!r} ({lines} lines): read it with the tools.]")
-    return "\n".join([*context, "", request.message]) if context else request.message
+    if not request.study_id:
+        return request.message
+    return f"[The user is currently working on the study with id {request.study_id}.]\n\n{request.message}"
 
 
 def tool_text(content: list[Any]) -> str:
@@ -135,7 +128,7 @@ async def run_assistant(
     client = antares_client or AntaresWebClient(
         request.antares_url, token=request.token, timeout=120.0, verify_ssl=request.verify_ssl
     )
-    server = create_server(client, read_only=request.read_only, attachments=request.attachments)
+    server = create_server(client, read_only=request.read_only)
     async with Client(server) as mcp:
         tools = [
             ToolSpec(name=tool.name, description=tool.description or "", input_schema=tool.input_schema)

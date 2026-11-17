@@ -11,22 +11,17 @@
 # This file is part of the Antares project.
 
 """
-Diagnosis of a failed simulation (`diagnose_job`, `diagnose_logs`).
+Diagnosis of a failed simulation (`diagnose_job`).
 
-`diagnose_job` gathers what Antares Web knows about a job (status, exit code, duration, logs, study
+The tool gathers what Antares Web knows about a job (status, exit code, duration, logs, study
 version, solver versions of the launcher) and matches it against known failure patterns. Like
 `check_study`, the rules are deterministic and unit tested: the same job always gives the same
 probable causes, and the model then explains them and digs further if needed.
-
-`diagnose_logs` applies the same rules to logs given by the user, without a job: a large study is
-often simulated on another server (a computing cluster), and only its logs are available next to
-the study imported in Antares Web.
 
 The patterns are heuristics on the solver logs: a cause is *probable*, with a confidence level
 and the evidence it relies on, never a certainty.
 """
 
-import json
 import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -34,11 +29,10 @@ from datetime import datetime
 from typing import Any, Literal
 
 from mcp.server.mcpserver import MCPServer
-from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
 
 from antares_web_mcp.client import AntaresWebClient, AntaresWebError
-from antares_web_mcp.tools.common import READ_ONLY, JobId, StudyId, guard, parse_version
+from antares_web_mcp.tools.common import READ_ONLY, JobId, guard, parse_version
 from antares_web_mcp.tools.simulation import ANSI_ESCAPE, JobInfo
 
 Confidence = Literal["high", "medium", "low"]
@@ -54,10 +48,6 @@ ERROR_LINE = re.compile(r"\[(error|fatal|critical)\]|\b(error|fatal|exception|ab
 INFO_LINE = re.compile(r"\[(infos?|notic|notice|check|debug|progress)\]", re.IGNORECASE)
 # Lines written by Antares Web itself before the solver starts.
 PREPARATION_LINES = re.compile(r"^(extracting study|study extracted)", re.IGNORECASE)
-# First lines of the solver: "Antares Solver v8.8.6 (f10fa2b)".
-SOLVER_VERSION_LINE = re.compile(r"antares[ _-]solver v?(\d+(?:\.\d+){1,2})", re.IGNORECASE)
-# Logs given by the user can be the whole output of a long simulation: only the end is kept.
-MAX_LOG_LINES = 50_000
 
 
 class Cause(BaseModel):
@@ -67,20 +57,6 @@ class Cause(BaseModel):
     explanation: str = Field(description="What probably happened.")
     suggestion: str = Field(description="What the user can do.")
     evidence: list[str] = Field(description="Log lines or facts the cause relies on.")
-
-
-class LogsDiagnosis(BaseModel):
-    source: str = Field(description="Where the logs come from: name of the attached file, or 'text'.")
-    study_name: str | None = None
-    study_version: str | None = None
-    solver_version: str | None = Field(
-        default=None, description="Version of the solver which wrote the logs (given, or read in the logs)."
-    )
-    line_count: int = Field(description="Number of non-empty lines read in the logs.")
-    causes: list[Cause] = Field(description="Probable causes of the failure, most likely first.")
-    error_lines: list[str] = Field(description=f"Last log lines mentioning an error (at most {MAX_ERROR_LINES}).")
-    last_lines: list[str] = Field(description=f"Last lines of the logs (at most {MAX_LAST_LINES}).")
-    notes: list[str]
 
 
 class JobDiagnosis(BaseModel):
@@ -97,16 +73,14 @@ class JobDiagnosis(BaseModel):
 
 @dataclass
 class JobFacts:
-    """Everything the rules need, gathered once. `job` is `None` for logs given by the user."""
+    """Everything the rules need, gathered once."""
 
-    job: JobInfo | None
+    job: JobInfo
     stdout: list[str]
     stderr: list[str]
     study_version: str | None
     launcher_versions: list[str]
     duration_seconds: int | None
-    solver_version: str | None = None
-    """Version of the solver which wrote the logs, when known (logs given by the user)."""
 
     @property
     def solver_lines(self) -> list[str]:
@@ -151,7 +125,7 @@ def format_duration(seconds: int) -> str:
 
 def no_solver_output(facts: JobFacts) -> Cause | None:
     """The solver wrote nothing: the failure is on the server side, not in the study."""
-    if facts.solver_lines or facts.job is None:
+    if facts.solver_lines:
         return None
     evidence = ["The logs contain no line written by the solver."]
     if facts.duration_seconds is not None:
@@ -191,11 +165,7 @@ def unreadable_study(facts: JobFacts) -> Cause | None:
     lines = facts.matching(r"not seem to be a valid study|invalid study|unsupported (study )?version")
     if not lines:
         return None
-    versions = ""
-    if facts.solver_version:
-        versions = f" The logs were written by the solver {facts.solver_version}."
-    elif facts.launcher_versions:
-        versions = f" The launcher can run: {', '.join(facts.launcher_versions)}."
+    versions = f" The launcher can run: {', '.join(facts.launcher_versions)}." if facts.launcher_versions else ""
     return Cause(
         code="solver_version_mismatch",
         confidence="high",
@@ -229,32 +199,6 @@ def no_compatible_solver(facts: JobFacts) -> Cause | None:
         ),
         suggestion="Use a launcher with a recent enough solver, or ask the administrator to install one.",
         evidence=[f"Solver versions of the launcher: {', '.join(facts.launcher_versions)}."],
-    )
-
-
-def solver_older_than_study(facts: JobFacts) -> Cause | None:
-    """Logs given by the user: the solver which wrote them is compared with the version of the study."""
-    if not facts.study_version or not facts.solver_version:
-        return None
-    try:
-        # Major and minor only: a study in version 8.8 runs with the solver 8.8.6
-        study = parse_version(facts.study_version)[:2]
-        solver = parse_version(facts.solver_version)[:2]
-    except ValueError:
-        return None
-    if study <= solver:
-        return None
-    return Cause(
-        code="solver_older_than_study",
-        confidence="medium",
-        title="The solver is older than the study",
-        explanation=(
-            f"The logs were written by the solver {facts.solver_version}, but the study is in version "
-            f"{facts.study_version}: an older solver cannot read a newer study. The study may also have been "
-            f"upgraded since that simulation."
-        ),
-        suggestion="Launch again with a solver version equal to or higher than the study version.",
-        evidence=[f"Solver version: {facts.solver_version}. Study version: {facts.study_version}."],
     )
 
 
@@ -372,7 +316,6 @@ RULES: list[Callable[[JobFacts], Cause | None]] = [
     no_solver_output,
     unreadable_study,
     no_compatible_solver,
-    solver_older_than_study,
     infeasible_problem,
     out_of_memory,
     time_limit,
@@ -382,15 +325,9 @@ RULES: list[Callable[[JobFacts], Cause | None]] = [
 ]
 
 
-def find_causes(facts: JobFacts) -> list[Cause]:
+def diagnose(facts: JobFacts, study_name: str | None = None) -> JobDiagnosis:
     causes = [cause for rule in RULES if (cause := rule(facts)) is not None]
     causes.sort(key=lambda cause: CONFIDENCE_ORDER[cause.confidence])  # stable: keeps the order of the rules
-    return causes
-
-
-def diagnose(facts: JobFacts, study_name: str | None = None) -> JobDiagnosis:
-    assert facts.job is not None, "diagnose a job"
-    causes = find_causes(facts)
     error_lines = [line for line in facts.solver_lines if is_error_line(line)]
     notes = []
     if facts.job.status != "failed":
@@ -413,65 +350,6 @@ def diagnose(facts: JobFacts, study_name: str | None = None) -> JobDiagnosis:
     )
 
 
-def logs_text(text: str) -> str:
-    """Logs saved from the REST API of Antares Web are a JSON string: decoded to the text it holds."""
-    if text.lstrip().startswith('"'):
-        try:
-            decoded = json.loads(text)
-        except ValueError:
-            return text
-        if isinstance(decoded, str):
-            return decoded
-    return text
-
-
-def solver_version_in(lines: list[str]) -> str | None:
-    """The version of the solver, as printed in its first lines."""
-    return next((match.group(1) for line in lines if (match := SOLVER_VERSION_LINE.search(line))), None)
-
-
-def diagnose_log_lines(
-    lines: list[str],
-    *,
-    source: str,
-    study_name: str | None = None,
-    study_version: str | None = None,
-    solver_version: str | None = None,
-) -> LogsDiagnosis:
-    """Applies the rules of `diagnose_job` to logs without a job: the solver version replaces the launcher."""
-    solver_version = solver_version or solver_version_in(lines)
-    facts = JobFacts(
-        job=None,
-        stdout=lines[-MAX_LOG_LINES:],
-        stderr=[],
-        study_version=study_version,
-        launcher_versions=[],
-        duration_seconds=None,
-        solver_version=solver_version,
-    )
-    causes = find_causes(facts)
-    notes = []
-    if not facts.solver_lines:
-        notes.append("The logs contain no line written by the solver: check that it is the right file.")
-    elif not causes:
-        notes.append("No known failure pattern was recognised: read `error_lines` and `last_lines`.")
-    if len(lines) > MAX_LOG_LINES:
-        notes.append(f"The logs have {len(lines)} lines: only the last {MAX_LOG_LINES} were analysed.")
-    if study_version is None:
-        notes.append("No study given: the solver version could not be compared with the study version.")
-    return LogsDiagnosis(
-        source=source,
-        study_name=study_name,
-        study_version=study_version,
-        solver_version=solver_version,
-        line_count=len(lines),
-        causes=causes,
-        error_lines=[line for line in facts.solver_lines if is_error_line(line)][-MAX_ERROR_LINES:],
-        last_lines=facts.solver_lines[-MAX_LAST_LINES:],
-        notes=notes,
-    )
-
-
 async def _optional(awaitable: Awaitable[Any]) -> Any:
     """The study of an old job may have been deleted, and logs may be gone: diagnose with what is left."""
     try:
@@ -480,14 +358,7 @@ async def _optional(awaitable: Awaitable[Any]) -> Any:
         return None
 
 
-def register(mcp: MCPServer, client: AntaresWebClient, *, attachments: dict[str, str] | None = None) -> None:
-    """
-    Args:
-        attachments: Files given by the user with their request (name -> text), e.g. logs uploaded in
-            the web interface: `diagnose_logs` and `read_attachment` read them by name.
-    """
-    files = attachments or {}
-
+def register(mcp: MCPServer, client: AntaresWebClient) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def diagnose_job(job_id: JobId) -> JobDiagnosis:
         """
@@ -518,51 +389,3 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, attachments: dict[str,
         if study is None:
             diagnosis.notes.append("The study of this job cannot be read (deleted, or not accessible).")
         return diagnosis
-
-    @mcp.tool(annotations=READ_ONLY)
-    async def diagnose_logs(
-        study_id: StudyId | None = None,
-        attachment: str | None = None,
-        logs: str | None = None,
-        solver_version: str | None = None,
-    ) -> LogsDiagnosis:
-        """
-        Find the probable causes of a failed simulation from its logs, when there is no job in Antares Web
-        (e.g. a large study simulated on another server): same rules as `diagnose_job`. Give the logs
-        either by the name of a file attached by the user (`attachment`), or as text (`logs`, for short
-        excerpts only). Give the study the logs belong to (`study_id`) to compare its version with the
-        solver version (read in the logs when not given).
-        """
-        if attachment is not None:
-            if attachment not in files:
-                names = ", ".join(files) or "none"
-                raise ToolError(f"No attached file named {attachment!r}. Attached files: {names}.")
-            text, source = files[attachment], attachment
-        elif logs is not None:
-            text, source = logs, "text"
-        else:
-            raise ToolError("Give the logs: `attachment` (name of an attached file) or `logs` (text).")
-        study = await guard(client.get_study(study_id)) if study_id else None
-        return diagnose_log_lines(
-            clean_lines(logs_text(text)),
-            source=source,
-            study_name=study.get("name") if study else None,
-            study_version=str(study["version"]) if study else None,
-            solver_version=solver_version,
-        )
-
-    if files:
-
-        @mcp.tool(annotations=READ_ONLY)
-        async def read_attachment(name: str, pattern: str | None = None, last: int = 200) -> list[str]:
-            """
-            Read the lines of a file attached by the user (e.g. simulation logs): the `last` lines, or
-            the last `last` lines matching the regular expression `pattern` (case-insensitive).
-            """
-            if name not in files:
-                raise ToolError(f"No attached file named {name!r}. Attached files: {', '.join(files)}.")
-            lines = clean_lines(logs_text(files[name]))
-            if pattern:
-                regex = re.compile(pattern, re.IGNORECASE)
-                lines = [line for line in lines if regex.search(line)]
-            return lines[-max(1, min(last, 2000)) :]

@@ -295,34 +295,6 @@ async def test_agent_in_read_write_mode(api_client: AntaresWebClient) -> None:
     assert provider.received["user_message"] == "Create a study"
 
 
-async def test_agent_gives_the_attached_files_to_the_tools(api_client: AntaresWebClient) -> None:
-    """Logs uploaded by the user are read by the tools: their content is not put in the conversation."""
-    logs = "[solver][infos] Antares Solver v8.8.6\n[solver][fatal] std::bad_alloc\n"
-    provider = ScriptedProvider(("diagnose_logs", {"attachment": "solver.log"}))
-    request = AssistantRequest(message="Why did it fail?", attachments={"solver.log": logs})
-
-    result, _ = await collect(request, provider, api_client)
-
-    assert "out_of_memory" in result.answer
-    assert provider.received["user_message"] == (
-        "[The user attached the file 'solver.log' (2 lines): read it with the tools.]\n\nWhy did it fail?"
-    )
-    assert "bad_alloc" not in provider.received["user_message"]
-    assert "read_attachment" in provider.received["tools"]
-
-
-async def test_agent_reports_a_provider_error_as_is(api_client: AntaresWebClient) -> None:
-    """The message for the user (e.g. an invalid API key) must not be lost in an `ExceptionGroup`."""
-
-    class FailingProvider(ScriptedProvider):
-        @override
-        async def run_turn(self, **_: Any) -> ChatResult:
-            raise ProviderError("The Anthropic API key is invalid or revoked.")
-
-    with pytest.raises(ProviderError, match="invalid or revoked"):
-        await collect(AssistantRequest(message="Hello"), FailingProvider(), api_client)
-
-
 async def test_agent_forwards_tool_progress_and_results(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     """User interfaces show the progress of long tools and structured results (e.g. the findings of a check)."""
     job_id = "66a81f22-e1e5-482f-a504-49ae660e5ece"
@@ -339,6 +311,18 @@ async def test_agent_forwards_tool_progress_and_results(fake_api: FakeAntaresWeb
     result = events[-1]
     assert result["type"] == "tool_result"
     assert '"finished": true' in result["content"]  # what the model received
+
+
+async def test_agent_reports_a_provider_error_as_is(api_client: AntaresWebClient) -> None:
+    """The message for the user (e.g. an invalid API key) must not be lost in an `ExceptionGroup`."""
+
+    class FailingProvider(ScriptedProvider):
+        @override
+        async def run_turn(self, **_: Any) -> ChatResult:
+            raise ProviderError("The Anthropic API key is invalid or revoked.")
+
+    with pytest.raises(ProviderError, match="invalid or revoked"):
+        await collect(AssistantRequest(message="Hello"), FailingProvider(), api_client)
 
 
 def test_system_prompt_is_stable() -> None:

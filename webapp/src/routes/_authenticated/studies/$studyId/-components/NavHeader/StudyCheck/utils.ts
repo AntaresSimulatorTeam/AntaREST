@@ -13,7 +13,12 @@
  */
 
 import { checkReportSchema } from "@/services/api/assistant/schemas";
-import type { AssistantEvent, CheckReport } from "@/services/api/assistant/types";
+import type {
+  AssistantEvent,
+  AssistantHistory,
+  CheckFinding,
+  CheckReport,
+} from "@/services/api/assistant/types";
 
 /** Tool of the assistant which runs the consistency rules. */
 export const CHECK_TOOL = "check_study";
@@ -48,6 +53,8 @@ export interface StudyCheckState {
   extraTools: string[];
   /** Analysis of the findings by the assistant (Markdown). */
   answer: string;
+  /** Conversation of the check, for the server: continued when the user asks about a finding. */
+  history?: AssistantHistory;
   error?: string;
 }
 
@@ -129,7 +136,13 @@ export function reduceCheckEvent(state: StudyCheckState, event: AssistantEvent):
     }
 
     case "done":
-      return { ...state, status: "success", progress: undefined, answer: event.answer };
+      return {
+        ...state,
+        status: "success",
+        progress: undefined,
+        answer: event.answer,
+        history: event.history,
+      };
 
     case "error":
       return { ...state, status: "error", progress: undefined, error: event.message };
@@ -155,6 +168,26 @@ export function getProgressPercent(state: StudyCheckState): number | undefined {
   }
   const { current, total } = state.progress;
   return Math.min(100, Math.max(0, Math.round((current / total) * 100)));
+}
+
+/**
+ * Describes a finding for the assistant, when the user starts a conversation about it.
+ *
+ * @param finding - The finding the user is looking at.
+ * @returns A note sent before the first message of the user. It is not shown in the conversation.
+ */
+export function buildFindingContext(finding: CheckFinding): string {
+  const listed =
+    finding.count > finding.objects.length
+      ? ` (the first ${finding.objects.length} of ${finding.count})`
+      : "";
+
+  return [
+    "[The user is looking at this finding of the check of the study, and writes about it:",
+    `- rule: ${finding.rule} (${finding.severity})`,
+    `- message: ${finding.message}`,
+    `- objects concerned${listed}: ${finding.objects.join("; ")}]`,
+  ].join("\n");
 }
 
 /**

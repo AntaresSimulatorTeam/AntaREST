@@ -30,12 +30,15 @@ import {
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import CheckProgress from "./CheckProgress";
-import FindingsList from "./FindingsList";
+import FindingsList, { type FindingDiscussion } from "./FindingsList";
 import type { StudyCheckState } from "./utils";
 
 interface Props {
   open: boolean;
   state: StudyCheckState;
+  discussion: FindingDiscussion;
+  /** True if the assistant may have modified the study since the check. */
+  isOutdated: boolean;
   onClose: VoidFunction;
   onStart: VoidFunction;
   onCancel: VoidFunction;
@@ -43,8 +46,16 @@ interface Props {
 
 // Panel of the study check: progress while it runs, then the findings of the rules and the
 // analysis of the assistant. The findings are shown as soon as the rules have run, before the
-// analysis is written.
-function StudyCheckDrawer({ open, state, onClose, onStart, onCancel }: Props) {
+// analysis is written. Each finding has its own conversation with the assistant.
+function StudyCheckDrawer({
+  open,
+  state,
+  discussion,
+  isOutdated,
+  onClose,
+  onStart,
+  onCancel,
+}: Props) {
   const { t } = useTranslation();
   const { status, report, reportError, answer, error, extraTools } = state;
   const isRunning = status === "running";
@@ -69,6 +80,8 @@ function StudyCheckDrawer({ open, state, onClose, onStart, onCancel }: Props) {
       <Stack direction="column" spacing={3} sx={{ p: 2, overflow: "auto", flex: 1 }}>
         {isRunning && <CheckProgress state={state} onCancel={onCancel} />}
 
+        {isOutdated && !isRunning && <Alert severity="info">{t("study.check.outdated")}</Alert>}
+
         {status === "error" && (
           <Alert severity="error">
             <AlertTitle>{t("study.check.failed")}</AlertTitle>
@@ -88,7 +101,7 @@ function StudyCheckDrawer({ open, state, onClose, onStart, onCancel }: Props) {
             <Typography variant="subtitle1" component="h3" sx={{ mb: 1, fontWeight: "bold" }}>
               {t("study.check.findings")}
             </Typography>
-            <FindingsList report={report} />
+            <FindingsList report={report} discussion={discussion} />
           </Box>
         )}
 
