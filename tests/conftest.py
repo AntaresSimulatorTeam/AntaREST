@@ -95,6 +95,11 @@ def project_path() -> Path:
     return PROJECT_DIR
 
 
+@pytest.fixture(scope="session")
+def gems_views_output_dir(project_path: Path) -> Path:
+    return project_path / "tests/output/filestudy/data/20261104-1636eco-gems_views"
+
+
 @pytest.fixture
 def ini_cleaner() -> Callable[[str], str]:
     def cleaner(txt: str) -> str:

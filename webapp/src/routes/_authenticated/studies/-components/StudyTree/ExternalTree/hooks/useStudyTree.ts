@@ -13,12 +13,12 @@
  */
 
 import * as R from "ramda";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FolderDTO, WorkspaceDTO } from "@/queries/explorer/schemas";
 import storage, { StorageKey } from "@/services/utils/localStorage";
 import type { StudyMetadata } from "@/types/types";
 import type { ExternalTreeNodeMetadata } from "../types";
-import { buildExternalTree, insertIfNotExist, isUnscannedStudy } from "../utils";
+import { buildExternalTree, findNodeByPath, insertIfNotExist, isUnscannedStudy } from "../utils";
 
 interface UseStudyTreeOptions {
   studies: StudyMetadata[];
@@ -35,12 +35,11 @@ interface UseStudyTreeOptions {
  * @returns Study tree state and management functions
  */
 export function useStudyTree({ studies, workspaces }: UseStudyTreeOptions) {
-  const [studiesTree, setStudiesTree] = useState<ExternalTreeNodeMetadata>(() =>
-    buildExternalTree(studies),
-  );
   const [subFolders, setSubFolders] = useState<FolderDTO[]>(
     () => storage.getItem(StorageKey.StudyTreeFolders) || [],
   );
+
+  const [missingPaths, setMissingPaths] = useState<string[]>([]);
 
   const filterUnscannedFolders = useCallback(
     (folders: FolderDTO[]): FolderDTO[] =>
@@ -48,48 +47,71 @@ export function useStudyTree({ studies, workspaces }: UseStudyTreeOptions) {
     [studies],
   );
 
-  const updateTreeWithFolders = useCallback(
-    (newFolders: FolderDTO[], parentPath: string) => {
-      // Keep folders from other parent paths
-      const otherSubfolders = R.filter((folder) => folder.parentPath !== parentPath, subFolders);
-
-      // Filter new folders to only include unscanned studies
-      const filteredNewFolders = filterUnscannedFolders(newFolders);
-
-      // Combine and update state
-      const nextSubfolders = [...filteredNewFolders, ...otherSubfolders];
-      setSubFolders(nextSubfolders);
-
-      // Update tree
-      const nextStudyTree = insertIfNotExist(
-        buildExternalTree(studies),
-        workspaces,
-        nextSubfolders,
-      );
-      setStudiesTree(nextStudyTree);
-
-      // Persist to local storage
-      storage.setItem(StorageKey.StudyTreeFolders, nextSubfolders);
-
-      return nextStudyTree;
-    },
-    [subFolders, studies, workspaces, filterUnscannedFolders],
+  const studiesTree = useMemo(
+    () =>
+      removeMissingFolders(
+        insertIfNotExist(
+          buildExternalTree(studies),
+          workspaces,
+          filterUnscannedFolders(subFolders),
+        ),
+        missingPaths,
+      ),
+    [studies, workspaces, filterUnscannedFolders, subFolders, missingPaths],
   );
 
-  // Rebuild tree when studies or workspaces change
+  const updateTreeWithFolders = useCallback(
+    (newFolders: FolderDTO[], parentPath: string) => {
+      const filteredNewFolders = filterUnscannedFolders(newFolders);
+
+      const childPaths = newFolders.map((folder) => `${parentPath}/${folder.name}`);
+      const removedPaths =
+        findNodeByPath(studiesTree, parentPath)
+          ?.children.filter((child) => !childPaths.includes(child.path))
+          .map((child) => child.path) ?? [];
+
+      // Stale scanned studies must not recreate folders removed by a fresh listing.
+      setMissingPaths((previous) => [
+        ...previous.filter((path) => !childPaths.includes(path)),
+        ...removedPaths,
+      ]);
+
+      // Drop removed children and their cached descendants, preserving other branches.
+      setSubFolders((previous) => [
+        ...filteredNewFolders,
+        ...previous.filter((folder) => {
+          const path = `${folder.parentPath}/${folder.name}`;
+
+          return (
+            folder.parentPath !== parentPath &&
+            (!path.startsWith(`${parentPath}/`) ||
+              childPaths.some((childPath) => path.startsWith(`${childPath}/`)))
+          );
+        }),
+      ]);
+    },
+    [filterUnscannedFolders, studiesTree],
+  );
+
   useEffect(() => {
-    const filteredStudyFolders = filterUnscannedFolders(subFolders);
-    const nextStudyTree = insertIfNotExist(
-      buildExternalTree(studies),
-      workspaces,
-      filteredStudyFolders,
-    );
-    setStudiesTree(nextStudyTree);
-  }, [studies, workspaces, filterUnscannedFolders, subFolders]);
+    storage.setItem(StorageKey.StudyTreeFolders, subFolders);
+  }, [subFolders]);
 
   return {
     studiesTree,
     subFolders,
     updateTreeWithFolders,
+  };
+}
+
+function removeMissingFolders(
+  tree: ExternalTreeNodeMetadata,
+  missingPaths: string[],
+): ExternalTreeNodeMetadata {
+  return {
+    ...tree,
+    children: tree.children
+      .filter((child) => !missingPaths.includes(child.path))
+      .map((child) => removeMissingFolders(child, missingPaths)),
   };
 }

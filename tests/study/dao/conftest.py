@@ -455,6 +455,16 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert len(first_model.ports) == 1
     assert first_model.ports[0].id == "balance_port"
     assert first_model.ports[0].type == "flow"
+    assert first_model.constraints == []
+    assert len(first_model.objective_contributions) == 1
+    assert first_model.objective_contributions[0].id == "objective"
+    assert first_model.objective_contributions[0].expression == "sum(curtailment * curtailment_price)"
+    assert len(first_model.variables) == 1
+    assert first_model.variables[0].id == "curtailment"
+    assert first_model.variables[0].lower_bound == 0.0
+    assert first_model.variables[0].upper_bound == "max_load"
+    assert first_model.variables[0].type.value == "continuous"
+
     second_model = library.models[1]
     assert second_model.id == "electrolyser"
     assert second_model.description is None
@@ -472,6 +482,13 @@ def check_8_1_gems_library_integrity(library: GemsLibrary) -> None:
     assert second_model.ports[0].type == "flow"
     assert second_model.ports[1].id == "power_port"
     assert second_model.ports[1].type == "flow"
+    assert second_model.constraints == []
+    assert second_model.objective_contributions == []
+    assert len(second_model.variables) == 1
+    assert second_model.variables[0].id == "power"
+    assert second_model.variables[0].lower_bound == 0.0
+    assert second_model.variables[0].upper_bound == "p_max"
+    assert second_model.variables[0].type.value == "continuous"
 
 
 def check_gems_system_integrity(system: GemsSystem, matrix_service: ISimpleMatrixService) -> None:

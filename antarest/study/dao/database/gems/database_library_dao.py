@@ -10,7 +10,7 @@
 #
 # This file is part of the Antares project.
 import json
-from typing import Any
+from typing import Any, Callable
 
 from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
@@ -22,9 +22,12 @@ from antarest.study.dao.api.gems_library_dao import GemsLibraryDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.library import (
     GEMS_LIBRARY_METADATA_TABLE,
+    GEMS_MODELS_CONSTRAINTS_TABLE,
+    GEMS_MODELS_OBJECTIVE_CONTRIBUTIONS_TABLE,
     GEMS_MODELS_PARAMETERS_TABLE,
     GEMS_MODELS_PORTS_TABLE,
     GEMS_MODELS_TABLE,
+    GEMS_MODELS_VARIABLES_TABLE,
     GEMS_PORT_TYPES_TABLE,
 )
 
@@ -88,6 +91,33 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                 }
             )
 
+        # Variables
+        variables_table = GEMS_MODELS_VARIABLES_TABLE
+        model_variables_stmt = select(variables_table).where(variables_table.c.study_data_id == study_data_id)
+        model_variables_rows = session.execute(model_variables_stmt).fetchall()
+        model_variables: dict[str, list[dict[str, Any]]] = {}
+        for model_variables_row in model_variables_rows:
+            model_variables.setdefault(model_variables_row.model_id, []).append(
+                {
+                    "id": model_variables_row.id,
+                    "type": model_variables_row.type,
+                    "lower_bound": model_variables_row.lower_bound,
+                    "upper_bound": model_variables_row.upper_bound,
+                }
+            )
+
+        ## Constraints and Objective contributions
+        model_constraints: dict[str, list[dict[str, Any]]] = {}
+        model_objective_contributions: dict[str, list[dict[str, Any]]] = {}
+        for table, mapping in [
+            (GEMS_MODELS_CONSTRAINTS_TABLE, model_constraints),
+            (GEMS_MODELS_OBJECTIVE_CONTRIBUTIONS_TABLE, model_objective_contributions),
+        ]:
+            stmt = select(table).where(table.c.study_data_id == study_data_id)
+            rows = session.execute(stmt).fetchall()
+            for row in rows:
+                mapping.setdefault(row.model_id, []).append({"id": row.id, "expression": row.expression})
+
         ## Other data
         models_stmt = select(GEMS_MODELS_TABLE).where(GEMS_MODELS_TABLE.c.study_data_id == study_data_id)
         models = []
@@ -100,11 +130,11 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                     "properties": json.loads(model_row.properties) if model_row.properties is not None else [],
                     "ports": model_ports.get(model_row.id, []),
                     "parameters": model_parameters.get(model_row.id, []),
+                    "constraints": model_constraints.get(model_row.id, []),
+                    "objective_contributions": model_objective_contributions.get(model_row.id, []),
+                    "variables": model_variables.get(model_row.id, []),
                     # These fields were dumped as is, we simply reload them.
-                    "variables": json.loads(model_row.variables),
                     "binding_constraints": json.loads(model_row.binding_constraints),
-                    "constraints": json.loads(model_row.constraints),
-                    "objective_contributions": json.loads(model_row.objective_contributions),
                     "extra_outputs": json.loads(model_row.extra_outputs),
                     "port_field_definitions": json.loads(model_row.port_field_definitions),
                 }
@@ -167,9 +197,25 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
         if port_type_values:
             session.execute(insert(GEMS_PORT_TYPES_TABLE), port_type_values)
 
+        def _convert_model_to_rows(
+            items: list[Any], dump: Callable[[Any], dict[str, Any]] = lambda x: x.model_dump(mode="json")
+        ) -> list[dict[str, Any]]:
+            return [
+                {
+                    "study_data_id": study_data_id,
+                    "library_id": library.id,
+                    "model_id": model.id,
+                    **dump(item),
+                }
+                for item in items
+            ]
+
         model_values = []
-        model_port_values = []
-        model_parameter_values = []
+        port_values = []
+        parameter_values = []
+        variables_values = []
+        constraints_values = []
+        objective_contributions_values = []
         for model in library.models:
             model_dump = model.model_dump(mode="json")
             model_values.append(
@@ -179,45 +225,33 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
                     "id": model.id,
                     "description": model.description,
                     "taxonomy_category": model.taxonomy_category,
-                    "properties": json.dumps(model_dump["properties"]),
                     # These fields are dumped as is as we do not care about them for the moment.
-                    "variables": json.dumps(model_dump["variables"]),
+                    "properties": json.dumps(model_dump["properties"]),
                     "binding_constraints": json.dumps(model_dump["binding_constraints"]),
-                    "constraints": json.dumps(model_dump["constraints"]),
-                    "objective_contributions": json.dumps(model_dump["objective_contributions"]),
                     "extra_outputs": json.dumps(model_dump["extra_outputs"]),
                     "port_field_definitions": json.dumps(model_dump["port_field_definitions"]),
                 }
             )
 
-            for model_port in model_dump.get("ports", []):
-                model_port_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "library_id": library.id,
-                        "model_id": model.id,
-                        "port_id": model_port["id"],
-                        "type": model_port["type"],
-                    }
-                )
-
-            for model_parameter in model_dump.get("parameters", []):
-                model_parameter_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "library_id": library.id,
-                        "model_id": model.id,
-                        "parameter_id": model_parameter["id"],
-                        "time_dependent": model_parameter["time_dependent"],
-                        "scenario_dependent": model_parameter["scenario_dependent"],
-                    }
-                )
+            port_values += _convert_model_to_rows(model.ports, dump=lambda p: {"port_id": p.id, "type": p.type})
+            parameter_values += _convert_model_to_rows(
+                model.parameters, dump=lambda p: {"parameter_id": p.id, **p.model_dump()}
+            )
+            variables_values += _convert_model_to_rows(model.variables)
+            constraints_values += _convert_model_to_rows(model.constraints)
+            objective_contributions_values += _convert_model_to_rows(model.objective_contributions)
 
         if model_values:
             session.execute(insert(GEMS_MODELS_TABLE), model_values)
-        if model_port_values:
-            session.execute(insert(GEMS_MODELS_PORTS_TABLE), model_port_values)
-        if model_parameter_values:
-            session.execute(insert(GEMS_MODELS_PARAMETERS_TABLE), model_parameter_values)
+        if port_values:
+            session.execute(insert(GEMS_MODELS_PORTS_TABLE), port_values)
+        if parameter_values:
+            session.execute(insert(GEMS_MODELS_PARAMETERS_TABLE), parameter_values)
+        if variables_values:
+            session.execute(insert(GEMS_MODELS_VARIABLES_TABLE), variables_values)
+        if constraints_values:
+            session.execute(insert(GEMS_MODELS_CONSTRAINTS_TABLE), constraints_values)
+        if objective_contributions_values:
+            session.execute(insert(GEMS_MODELS_OBJECTIVE_CONTRIBUTIONS_TABLE), objective_contributions_values)
 
         session.commit()

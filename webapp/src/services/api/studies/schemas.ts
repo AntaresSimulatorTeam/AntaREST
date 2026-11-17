@@ -74,6 +74,8 @@ export const studySchema = z
     }),
   );
 
+export const studiesSchema = z.array(studySchema);
+
 export const studyVersionsSchema = z
   .array(z.string())
   .transform((versions) => versions.map(toSemanticVersion));

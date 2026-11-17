@@ -15,7 +15,7 @@
 import { directoryQueries } from "@/queries/directories/queries";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
+import { getDescendantIds } from "@/utils/directoryUtils";
 import { buildKey } from "@/utils/reactUtils";
 import HomeIcon from "@mui/icons-material/Home";
 import { Breadcrumbs } from "@mui/material";

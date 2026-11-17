@@ -17,10 +17,10 @@ import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudy } from "@/redux/selectors";
-import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
 import type { Directory } from "@/services/api/directories/types";
 import type { StudyMetadata } from "@/types/types";
 import { toError } from "@/utils/fnUtils";
+import { getExternalStudyParentPath, getStudyFolder } from "@/utils/studiesUtils";
 import { useNavigate } from "@tanstack/react-router";
 import debug from "debug";
 import { useSnackbar } from "notistack";
@@ -39,15 +39,14 @@ function getStudyDirectoryPath(study: StudyMetadata, directories: Directory[]): 
 
     const collectAncestorNames = (directoryId: string | null): string[] => {
       const directory = directoryId ? directoryById.get(directoryId) : undefined;
+
       return directory ? [...collectAncestorNames(directory.parentId), directory.name] : [];
     };
 
     return collectAncestorNames(study.directoryId ?? null).join("/") || null;
   }
 
-  // External: /${workspace}/...path matches tree item IDs used for navigation.
-  const pathSegments = study.folder?.split("/").filter(Boolean).slice(0, -1) ?? [];
-  return ["", study.workspace, ...pathSegments].join("/");
+  return getExternalStudyParentPath(study);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -94,6 +93,7 @@ export function useStudyCard(
     if (!study) {
       return;
     }
+
     navigate({ to: "/studies/$studyId", params: { studyId: study.id } });
   };
 
@@ -102,14 +102,15 @@ export function useStudyCard(
       return;
     }
 
-    if (study.managed) {
-      const directoryId = study.directoryId ?? null;
+    const folder = getStudyFolder(study, directories);
+
+    if (folder.tree === "managed") {
       dispatch(
         updateStudyFilters({
           activeTree: "managed",
           managed: {
-            directoryId,
-            directoryIds: directoryId ? getDescendantIds(directoryId, directories) : null,
+            directoryId: folder.directoryId,
+            directoryIds: folder.directoryIds,
             collapsed: false,
           },
         }),
@@ -118,7 +119,7 @@ export function useStudyCard(
       dispatch(
         updateStudyFilters({
           activeTree: "external",
-          external: { path: directoryPath ?? "", collapsed: false },
+          external: { path: folder.path, collapsed: false },
         }),
       );
     }

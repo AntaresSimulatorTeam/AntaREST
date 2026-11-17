@@ -27,8 +27,8 @@ from antarest.output.model.variables import (
     OutputVariablesInformation,
     OutputVariablesList,
     OutputVariablesType,
-    OutputVariablesViewResponse,
-    OutputVariablesViewStatus,
+    OutputViewResponse,
+    OutputViewStatus,
     Variables,
 )
 
@@ -43,8 +43,8 @@ __all__ = [
     "OutputVariablesInformation",
     "OutputVariablesList",
     "OutputVariablesType",
-    "OutputVariablesViewResponse",
-    "OutputVariablesViewStatus",
+    "OutputViewResponse",
+    "OutputViewStatus",
     "StudyDownloadDTO",
     "StudyDownloadType",
     "TimeSerie",

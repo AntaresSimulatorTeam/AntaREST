@@ -53,6 +53,6 @@ class FileStudyGemsLibraryDao(GemsLibraryDao, ABC):
         if library_folder_path.exists() and len(list(library_folder_path.iterdir())) > 0:
             raise GemsLibraryAlreadyExists(f"A library already exists for study {file_study.config.study_id}")
 
-        yaml_content = library.model_dump(mode="json", exclude_unset=True, by_alias=True)
+        yaml_content = library.model_dump(mode="json", exclude_unset=True, by_alias=True, exclude_none=True)
         library_folder_path.mkdir(exist_ok=True)
         YAMLWriter().write({"library": yaml_content}, library_folder_path / "library.yml")
