@@ -34,7 +34,6 @@ from antares_web_mcp.tools.common import (
     UPDATE,
     AreaId,
     StudyId,
-    guard,
     without_none,
 )
 
@@ -145,9 +144,9 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
     @mcp.tool(annotations=READ_ONLY)
     async def list_clusters(study_id: StudyId, area_id: AreaId) -> AreaClusters:
         """List the thermal clusters, renewable clusters and short-term storages of an area."""
-        thermal = await guard(client.list_clusters(study_id, area_id, THERMAL))
-        renewable = await guard(client.list_clusters(study_id, area_id, RENEWABLE))
-        storages = await guard(client.list_clusters(study_id, area_id, STORAGE))
+        thermal = await client.list_clusters(study_id, area_id, THERMAL)
+        renewable = await client.list_clusters(study_id, area_id, RENEWABLE)
+        storages = await client.list_clusters(study_id, area_id, STORAGE)
         return AreaClusters(
             thermal=[ThermalCluster.from_api(c) for c in thermal],
             renewable=[RenewableCluster.from_api(c) for c in renewable],
@@ -168,9 +167,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         Set or modify the hourly load (consumption, MW) of an area, applied to all its time series.
         Examples: set a constant 60000 MW load, add 2000 MW, or multiply by 1.1 (+10%).
         """
-        await guard(
-            client.edit_matrix(study_id, f"input/load/series/load_{area_id}", MATRIX_OPERATIONS[operation], value)
-        )
+        await client.edit_matrix(study_id, f"input/load/series/load_{area_id}", MATRIX_OPERATIONS[operation], value)
         return f"Load of '{area_id}': {operation} {value:g} applied to every hour."
 
     @mcp.tool(annotations=ADDITIVE)
@@ -209,9 +206,9 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
                 "co2": co2,
             }
         )
-        cluster = await guard(client.create_cluster(study_id, area_id, THERMAL, payload))
+        cluster = await client.create_cluster(study_id, area_id, THERMAL, payload)
         availability = unit_count * nominal_capacity
-        await guard(client.edit_matrix(study_id, thermal_series_path(area_id, cluster["id"]), "=", availability))
+        await client.edit_matrix(study_id, thermal_series_path(area_id, cluster["id"]), "=", availability)
         return ThermalCreation(cluster=ThermalCluster.from_api(cluster), availability_mw=availability)
 
     @mcp.tool(annotations=UPDATE)
@@ -245,10 +242,10 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         )
         if not changes:
             raise ToolError("Nothing to update: provide at least one property.")
-        cluster = await guard(client.update_cluster(study_id, area_id, THERMAL, cluster_id, changes))
+        cluster = await client.update_cluster(study_id, area_id, THERMAL, cluster_id, changes)
         availability = (cluster.get("unitCount") or 0) * (cluster.get("nominalCapacity") or 0.0)
         if unit_count is not None or nominal_capacity is not None:
-            await guard(client.edit_matrix(study_id, thermal_series_path(area_id, cluster["id"]), "=", availability))
+            await client.edit_matrix(study_id, thermal_series_path(area_id, cluster["id"]), "=", availability)
         return ThermalCreation(cluster=ThermalCluster.from_api(cluster), availability_mw=availability)
 
     @mcp.tool(annotations=ADDITIVE)
@@ -283,8 +280,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
             "nominalCapacity": nominal_capacity,
             "tsInterpretation": "production-factor",
         }
-        cluster = await guard(client.create_cluster(study_id, area_id, RENEWABLE, payload))
-        await guard(client.edit_matrix(study_id, renewable_series_path(area_id, cluster["id"]), "=", capacity_factor))
+        cluster = await client.create_cluster(study_id, area_id, RENEWABLE, payload)
+        await client.edit_matrix(study_id, renewable_series_path(area_id, cluster["id"]), "=", capacity_factor)
         return RenewableCluster.from_api(cluster)
 
     @mcp.tool(annotations=ADDITIVE)
@@ -307,7 +304,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
             "reservoirCapacity": reservoir_capacity,
             "efficiency": efficiency,
         }
-        return Storage.from_api(await guard(client.create_cluster(study_id, area_id, STORAGE, payload)))
+        return Storage.from_api(await client.create_cluster(study_id, area_id, STORAGE, payload))
 
     @mcp.tool(annotations=DESTRUCTIVE)
     async def delete_cluster(
@@ -320,5 +317,5 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         Delete a thermal cluster, renewable cluster or short-term storage. Fails if it is referenced
         by a binding constraint. This cannot be undone on a raw study.
         """
-        await guard(client.delete_clusters(study_id, area_id, CLUSTER_KINDS[kind], [cluster_id]))
+        await client.delete_clusters(study_id, area_id, CLUSTER_KINDS[kind], [cluster_id])
         return f"{kind.capitalize()} '{cluster_id}' deleted from area '{area_id}'."

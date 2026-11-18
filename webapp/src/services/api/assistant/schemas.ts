@@ -14,6 +14,22 @@
 
 import { z } from "zod";
 
+/**
+ * Parses a JSON text received from the assistant: an event of a stream, or the result of a tool.
+ *
+ * @param schema - What the text must hold.
+ * @param text - The JSON text.
+ * @returns The value, or `undefined` if the text is not JSON or does not match the schema.
+ */
+export function parseJson<T>(schema: z.ZodType<T>, text = ""): T | undefined {
+  try {
+    const result = schema.safeParse(JSON.parse(text));
+    return result.success ? result.data : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 ////////////////////////////////////////////////////////////////
 // Stream Events
 ////////////////////////////////////////////////////////////////
@@ -46,8 +62,6 @@ export const assistantEventSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("done"),
     answer: z.string(),
-    model: z.string().optional(),
-    stop_reason: z.string().optional(),
     // Opaque state of the conversation, to send back with the next message
     history: z.array(z.unknown()).optional(),
   }),
@@ -70,25 +84,15 @@ export const checkFindingSchema = z.object({
   count: z.number(),
 });
 
-export const checkReportSchema = z
-  .object({
-    summary: z.object({
-      error: z.number(),
-      warning: z.number(),
-      info: z.number(),
-    }),
-    findings: z.array(checkFindingSchema),
-    rules_run: z.array(z.string()),
-    rules_skipped: z.array(z.string()),
-    notes: z.array(z.string()),
-  })
-  .transform((report) => ({
-    summary: report.summary,
-    findings: report.findings,
-    notes: report.notes,
-    rulesRun: report.rules_run,
-    rulesSkipped: report.rules_skipped,
-  }));
+export const checkReportSchema = z.object({
+  summary: z.object({
+    error: z.number(),
+    warning: z.number(),
+    info: z.number(),
+  }),
+  findings: z.array(checkFindingSchema),
+  notes: z.array(z.string()),
+});
 
 ////////////////////////////////////////////////////////////////
 // Result of the `diagnose_job` tool
@@ -108,12 +112,8 @@ export const jobDiagnosisSchema = z
   .object({
     causes: z.array(jobFailureCauseSchema),
     error_lines: z.array(z.string()),
-    last_lines: z.array(z.string()),
-    notes: z.array(z.string()),
   })
   .transform((diagnosis) => ({
     causes: diagnosis.causes,
-    notes: diagnosis.notes,
     errorLines: diagnosis.error_lines,
-    lastLines: diagnosis.last_lines,
   }));

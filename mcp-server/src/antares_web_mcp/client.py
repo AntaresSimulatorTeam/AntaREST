@@ -28,14 +28,17 @@ from typing import Any
 from urllib.parse import quote
 
 import httpx2
+from mcp.server.mcpserver.exceptions import ToolError
 
 # Status codes of Antares Web background tasks (``antarest.core.tasks.model.TaskStatus``).
 TASK_COMPLETED = 3
-TASK_FINAL_STATUSES = {3, 4, 5, 6}  # completed, failed, timeout, cancelled
 
 
-class AntaresWebError(Exception):
-    """An error reported by Antares Web (or the inability to reach it), with a model-readable message."""
+class AntaresWebError(ToolError):
+    """
+    An error reported by Antares Web (or the inability to reach it). As a ``ToolError``, its message is sent
+    back to the model (so it can fix its call), instead of an opaque "Error executing tool".
+    """
 
 
 class AntaresWebClient:
@@ -111,17 +114,8 @@ class AntaresWebClient:
             raise AntaresWebError(_format_error(response))
         return response
 
-    async def _request(
-        self,
-        method: str,
-        path: str,
-        *,
-        params: dict[str, Any] | None = None,
-        json: Any = None,
-        files: dict[str, Any] | None = None,
-        timeout: float | None = None,
-    ) -> Any:
-        response = await self._send(method, path, params=params, json=json, files=files, timeout=timeout)
+    async def _request(self, method: str, path: str, **kwargs: Any) -> Any:
+        response = await self._send(method, path, **kwargs)
         if not response.content:
             return None
         return response.json()
@@ -200,10 +194,6 @@ class AntaresWebClient:
     async def delete_study(self, study_id: str, *, children: bool = False) -> None:
         await self._request("DELETE", f"/studies/{_seg(study_id)}", params={"children": children})
 
-    async def get_general_config(self, study_id: str) -> dict[str, Any]:
-        result: dict[str, Any] = await self._request("GET", f"/studies/{_seg(study_id)}/config/general/form")
-        return result
-
     async def update_general_config(self, study_id: str, changes: dict[str, Any]) -> None:
         await self._request("PUT", f"/studies/{_seg(study_id)}/config/general/form", json=changes)
 
@@ -249,12 +239,6 @@ class AntaresWebClient:
 
     async def list_binding_constraints(self, study_id: str) -> list[dict[str, Any]]:
         result: list[dict[str, Any]] = await self._request("GET", f"/studies/{_seg(study_id)}/bindingconstraints")
-        return result
-
-    async def get_hydro_form(self, study_id: str, area_id: str) -> dict[str, Any]:
-        result: dict[str, Any] = await self._request(
-            "GET", f"/studies/{_seg(study_id)}/areas/{_seg(area_id)}/hydro/form"
-        )
         return result
 
     async def get_raw(self, study_id: str, path: str, *, depth: int = 1) -> Any:

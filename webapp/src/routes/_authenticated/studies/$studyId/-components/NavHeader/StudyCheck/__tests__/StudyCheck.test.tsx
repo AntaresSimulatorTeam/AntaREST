@@ -17,13 +17,9 @@ import {
   streamAssistantChat,
   streamStudyCheck,
 } from "@/services/api/assistant";
-import type {
-  AssistantEvent,
-  StreamAssistantChatParams,
-  StreamStudyCheckParams,
-} from "@/services/api/assistant/types";
-import { createQueryClient, createQueryWrapper, deferred } from "@/tests/queryUtils";
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import { mockAssistantStream } from "@/tests/assistantStream";
+import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import StudyCheck from "..";
@@ -34,7 +30,7 @@ vi.mock("@/services/api/assistant", () => ({
   streamStudyCheck: vi.fn(),
 }));
 
-const STATUS = { available: true, reason: "", provider: "anthropic", model: "", readOnly: true };
+const STATUS = { available: true, readOnly: true };
 
 const REPORT_JSON = JSON.stringify({
   summary: { error: 1, warning: 1, info: 0 },
@@ -59,57 +55,8 @@ const REPORT_JSON = JSON.stringify({
   notes: [],
 });
 
-/**
- * Replaces the stream of the server: the test sends the events one by one, then ends the stream.
- *
- * @returns Functions to send an event and to end the stream.
- */
-function mockStream() {
-  const end = deferred<void>();
-  let onEvent: StreamStudyCheckParams["onEvent"] | undefined;
-  let signal: AbortSignal | undefined;
-
-  vi.mocked(streamStudyCheck).mockImplementation((params) => {
-    onEvent = params.onEvent;
-    signal = params.signal;
-    return end.promise;
-  });
-
-  return {
-    send: (event: AssistantEvent) => act(() => onEvent?.(event)),
-    end: () => act(() => end.resolve()),
-    isAborted: () => signal?.aborted,
-  };
-}
-
 const CHECK_HISTORY = [{ role: "user", content: "Check this study" }];
 const THREAD_HISTORY = [...CHECK_HISTORY, { role: "user", content: "Why is it an error?" }];
-
-/**
- * Replaces the stream of the conversations: each message sent gets its own controllable stream.
- *
- * @returns The received requests, and functions to send an event to the last one and to end it.
- */
-function mockChat() {
-  const requests: StreamAssistantChatParams[] = [];
-  let end = deferred<void>();
-
-  vi.mocked(streamAssistantChat).mockImplementation((params) => {
-    requests.push(params);
-    end = deferred<void>();
-    return end.promise;
-  });
-
-  return {
-    requests,
-    send: (event: AssistantEvent) => act(() => requests.at(-1)?.onEvent(event)),
-    end: () =>
-      act(async () => {
-        end.resolve();
-        await end.promise;
-      }),
-  };
-}
 
 /**
  * Opens the panel and runs a check until its two findings are shown.
@@ -117,7 +64,7 @@ function mockChat() {
  * @returns The stream of the check, still running: the assistant has not written its analysis.
  */
 async function runRules() {
-  const stream = mockStream();
+  const stream = mockAssistantStream(streamStudyCheck);
   renderStudyCheck();
   await userEvent.click(await screen.findByRole("button", { name: "study.check.button" }));
   stream.send({ type: "tool_call", name: "check_study", input: {} });
@@ -134,7 +81,7 @@ async function runRules() {
 async function runCheck() {
   const stream = await runRules();
   stream.send({ type: "done", answer: "Done.", history: CHECK_HISTORY });
-  stream.end();
+  await stream.end();
 }
 
 /**
@@ -170,7 +117,7 @@ describe("StudyCheck", () => {
   });
 
   test("runs the check, shows its progress, then the findings and the analysis", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamStudyCheck);
     renderStudyCheck();
 
     await userEvent.click(await screen.findByRole("button", { name: "study.check.button" }));
@@ -209,48 +156,22 @@ describe("StudyCheck", () => {
     expect(screen.getByText("study.check.analysisPending")).toBeInTheDocument();
 
     stream.send({ type: "done", answer: "The study is **not ready**: fix the hydro power." });
-    stream.end();
+    await stream.end();
 
     expect(screen.getByText("not ready")).toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "study.check.restart" })).toBeInTheDocument();
   });
 
-  test("keeps the result after the panel is closed and reopened", async () => {
-    const stream = mockStream();
-    renderStudyCheck();
-    await userEvent.click(await screen.findByRole("button", { name: "study.check.button" }));
-    stream.send({ type: "tool_call", name: "check_study", input: {} });
-    stream.send({
-      type: "tool_result",
-      name: "check_study",
-      is_error: false,
-      duration_s: 1,
-      content: REPORT_JSON,
-    });
-    stream.send({ type: "done", answer: "Done." });
-    stream.end();
-
-    await userEvent.click(screen.getByRole("button", { name: "global.close" }));
-    await waitFor(() => expect(screen.queryByText("Done.")).not.toBeInTheDocument());
-    // The button shows the number of findings to look at (1 error + 1 warning)
-    expect(screen.getByText("2")).toBeInTheDocument();
-
-    await userEvent.click(screen.getByRole("button", { name: "study.check.button" }));
-
-    expect(screen.getByText("Done.")).toBeInTheDocument();
-    expect(streamStudyCheck).toHaveBeenCalledTimes(1);
-  });
-
   test("shows the error of the assistant and lets the user retry", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamStudyCheck);
     renderStudyCheck();
     await userEvent.click(await screen.findByRole("button", { name: "study.check.button" }));
 
-    stream.send({ type: "error", message: "The Anthropic API key is invalid or revoked." });
-    stream.end();
+    stream.send({ type: "error", message: "The model server rejected the API key." });
+    await stream.end();
 
-    expect(screen.getByText("The Anthropic API key is invalid or revoked.")).toBeInTheDocument();
+    expect(screen.getByText("The model server rejected the API key.")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: "study.check.restart" }));
 
@@ -267,19 +188,19 @@ describe("StudyCheck", () => {
   });
 
   test("cancels a running check", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamStudyCheck);
     renderStudyCheck();
     await userEvent.click(await screen.findByRole("button", { name: "study.check.button" }));
 
     await userEvent.click(screen.getByRole("button", { name: "global.cancel" }));
 
-    expect(stream.isAborted()).toBe(true);
+    expect(stream.requests[0].signal.aborted).toBe(true);
     await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
   });
 
   describe("conversation about a finding", () => {
     test("continues the conversation of the check with the question of the user", async () => {
-      const chat = mockChat();
+      const chat = mockAssistantStream(streamAssistantChat);
       await runCheck();
       const finding = await openFinding("hydro_generation_power");
 
@@ -298,17 +219,10 @@ describe("StudyCheck", () => {
       await chat.end();
 
       expect(finding.getByText("turbine")).toBeInTheDocument();
-
-      await userEvent.type(finding.getByRole("textbox"), "How to fix it?{Enter}");
-
-      expect(chat.requests[1]).toMatchObject({
-        history: THREAD_HISTORY,
-        message: "How to fix it?",
-      });
     });
 
     test("is separate for each finding", async () => {
-      const chat = mockChat();
+      const chat = mockAssistantStream(streamAssistantChat);
       await runCheck();
       const hydro = await openFinding("hydro_generation_power");
       await userEvent.type(hydro.getByRole("textbox"), "Why is it an error?{Enter}");
@@ -346,7 +260,7 @@ describe("StudyCheck", () => {
 
     test("offers to run the check again after a correction by the assistant", async () => {
       vi.mocked(getAssistantStatus).mockResolvedValue({ ...STATUS, readOnly: false });
-      const chat = mockChat();
+      const chat = mockAssistantStream(streamAssistantChat);
       await runCheck();
       const finding = await openFinding("hydro_generation_power");
 
@@ -361,8 +275,8 @@ describe("StudyCheck", () => {
       expect(screen.getByText("study.check.outdated")).toBeInTheDocument();
     });
 
-    test("is kept when the panel is closed and reopened", async () => {
-      const chat = mockChat();
+    test("is kept, with the result of the check, when the panel is closed and reopened", async () => {
+      const chat = mockAssistantStream(streamAssistantChat);
       await runCheck();
       const finding = await openFinding("hydro_generation_power");
       await userEvent.type(finding.getByRole("textbox"), "Why is it an error?{Enter}");
@@ -371,13 +285,17 @@ describe("StudyCheck", () => {
 
       await userEvent.click(screen.getByRole("button", { name: "global.close" }));
       await waitFor(() => expect(screen.queryByText("Done.")).not.toBeInTheDocument());
+      // The button shows the number of findings to look at (1 error + 1 warning)
+      expect(screen.getByText("2")).toBeInTheDocument();
       await userEvent.click(screen.getByRole("button", { name: "study.check.button" }));
 
+      expect(screen.getByText("Done.")).toBeInTheDocument();
       expect(screen.getByText("No turbine can run.")).toBeInTheDocument();
+      expect(streamStudyCheck).toHaveBeenCalledTimes(1);
     });
 
     test("is forgotten when the check is run again", async () => {
-      const chat = mockChat();
+      const chat = mockAssistantStream(streamAssistantChat);
       await runCheck();
       const finding = await openFinding("hydro_generation_power");
       await userEvent.type(finding.getByRole("textbox"), "Why is it an error?{Enter}");

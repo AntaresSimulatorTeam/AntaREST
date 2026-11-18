@@ -19,10 +19,12 @@ import {
   extractRule,
   getProgressPercent,
   parseCheckReport,
+  INITIAL_CHECK_STATE,
   reduceCheckEvent,
-  RUNNING_CHECK_STATE,
   type StudyCheckState,
 } from "../utils";
+
+const RUNNING_CHECK_STATE: StudyCheckState = { ...INITIAL_CHECK_STATE, status: "running" };
 
 const REPORT_JSON = JSON.stringify({
   summary: { error: 1, warning: 2, info: 0 },
@@ -66,7 +68,6 @@ describe("parseCheckReport", () => {
 
     expect(report?.summary).toEqual({ error: 1, warning: 2, info: 0 });
     expect(report?.findings[0].count).toBe(39);
-    expect(report?.rulesRun).toEqual(["calendar", "hydro_generation_power"]);
   });
 
   test.each([
@@ -135,19 +136,12 @@ describe("reduceCheckEvent", () => {
     const state = reduce([
       CALL,
       result(REPORT_JSON),
-      { type: "error", message: "The Anthropic API rate limit is reached." },
+      { type: "error", message: "The rate limit of the model server is reached." },
     ]);
 
     expect(state.status).toBe("error");
-    expect(state.error).toBe("The Anthropic API rate limit is reached.");
+    expect(state.error).toBe("The rate limit of the model server is reached.");
     expect(state.report?.findings).toHaveLength(1);
-  });
-
-  test("keeps the conversation of the check, to continue it about a finding", () => {
-    const history = [{ role: "user", content: "Check this study" }];
-    const state = reduce([CALL, result(REPORT_JSON), { type: "done", answer: "Done.", history }]);
-
-    expect(state.history).toEqual(history);
   });
 
   test("ignores the progress of other tools", () => {

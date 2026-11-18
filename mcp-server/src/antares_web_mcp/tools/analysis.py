@@ -31,7 +31,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
 
 from antares_web_mcp.client import AntaresWebClient, AntaresWebError
-from antares_web_mcp.tools.common import READ_ONLY, AreaId, StudyId, guard
+from antares_web_mcp.tools.common import READ_ONLY, AreaId, StudyId
 
 TableKind = Literal["areas", "links", "thermals", "renewables", "st-storages", "binding-constraints"]
 
@@ -389,7 +389,7 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         `user/` and `logs/` folders (notes, reports, generation logs of the author, see `read_study_file`).
         Start any analysis of a study with this tool.
         """
-        study = await guard(client.get_study(study_id))
+        study = await client.get_study(study_id)
         comments, parents, districts, user_tree, logs_tree = await asyncio.gather(
             optional(client.get_comments(study_id)),
             optional(client.get_parents(study_id)),
@@ -399,7 +399,7 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         )
         changes: list[str] | None = None
         if study.get("type") == "variantstudy":
-            commands = await guard(client.list_commands(study_id))
+            commands = await client.list_commands(study_id)
             changes = [f"{command['action']}: {json.dumps(command.get('args'))[:400]}" for command in commands]
         user_files = flatten_tree(user_tree, "user") if user_tree else []
         return StudyContext(
@@ -432,7 +432,7 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         the output variables removed by the thematic trimming. Settings that differ from the defaults
         are deliberate choices of the author: explain what each one implies.
         """
-        general = await guard(client.get_config_form(study_id, "general"))
+        general = await client.get_config_form(study_id, "general")
         optimization, advanced, adequacy, playlist, trimming = await asyncio.gather(
             optional(client.get_config_form(study_id, "optimization")),
             optional(client.get_config_form(study_id, "advancedparameters")),
@@ -469,10 +469,10 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         series each year uses, which objects are drawn together (e.g. the same climatic year everywhere)
         and how many really distinct years are simulated.
         """
-        general = await guard(client.get_config_form(study_id, "general"))
+        general = await client.get_config_form(study_id, "general")
         nb_years = int(general.get("nbYears") or 0)
         rules, playlist = await asyncio.gather(
-            guard(client.get_scenario_builder(study_id)), optional(client.get_config_form(study_id, "playlist"))
+            client.get_scenario_builder(study_id), optional(client.get_config_form(study_id, "playlist"))
         )
         summaries, distinct, notes = summarize_scenario_builder(rules or {}, nb_years)
         active = (
@@ -500,9 +500,9 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         and the enabled ones without capacity (often placeholders).
         """
         thermals, renewables, storages = await asyncio.gather(
-            guard(client.get_table(study_id, "thermals")),
-            guard(client.get_table(study_id, "renewables")),
-            guard(client.get_table(study_id, "st-storages")),
+            client.get_table(study_id, "thermals"),
+            client.get_table(study_id, "renewables"),
+            client.get_table(study_id, "st-storages"),
         )
         wanted = set(area_ids) if area_ids else None
         per_area: dict[str, AreaCapacity] = {}
@@ -593,7 +593,7 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         requested = list(columns) if columns else None
         if requested and only_enabled and "enabled" not in requested:
             requested.append("enabled")
-        table = await guard(client.get_table(study_id, kind, requested))
+        table = await client.get_table(study_id, kind, requested)
         rows = [
             {"id": row_id, **values}
             for row_id, values in table.items()
@@ -640,10 +640,10 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         if (path is None) == (matrix_id is None):
             raise ToolError("Give either `path` or `matrix_id`.")
         if matrix_id is not None:
-            data = await guard(client.get_matrix_by_id(matrix_id))
+            data = await client.get_matrix_by_id(matrix_id)
         else:
             assert path is not None
-            data = await guard(client.get_matrix(study_id, path))
+            data = await client.get_matrix(study_id, path)
         return matrix_stats(data)
 
     @mcp.tool(annotations=READ_ONLY)
@@ -658,7 +658,7 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         right-hand side matrices. Binding constraints often encode the core of a study: modulation
         limits, conversion efficiencies, energy budgets, flow-based domains...
         """
-        constraints = await guard(client.list_binding_constraints(study_id))
+        constraints = await client.list_binding_constraints(study_id)
         if name_contains:
             constraints = [bc for bc in constraints if name_contains.lower() in bc["name"].lower()]
         return BindingConstraints(
@@ -699,7 +699,7 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
             regex = re.compile(pattern, re.IGNORECASE) if pattern else None
         except re.error as e:
             raise ToolError(f"Invalid pattern: {e}") from e
-        text = await guard(client.get_raw_text(study_id, path))
+        text = await client.get_raw_text(study_id, path)
         all_lines = text.splitlines()
         lines = [line.rstrip() for line in all_lines if regex is None or regex.search(line)]
         if distinct:

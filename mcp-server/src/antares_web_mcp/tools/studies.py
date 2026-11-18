@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 
 from antares_web_mcp.client import TASK_COMPLETED, AntaresWebClient
 from antares_web_mcp.enums import SimulationModeValue
-from antares_web_mcp.tools.common import ADDITIVE, DESTRUCTIVE, READ_ONLY, UPDATE, StudyId, guard, without_none
+from antares_web_mcp.tools.common import ADDITIVE, DESTRUCTIVE, READ_ONLY, UPDATE, StudyId, without_none
 
 COPY_TIMEOUT_SECONDS = 600
 IMPORT_TIMEOUT_SECONDS = 1800
@@ -95,17 +95,15 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
         limit: Annotated[int, Field(ge=1, le=500, description="Maximum number of studies returned.")] = 50,
     ) -> list[StudySummary]:
         """List the Antares studies visible to the current user, sorted by name."""
-        studies = await guard(
-            client.list_studies(
-                name=name, versions=versions, tags=tags, variant=variant, archived=archived, limit=limit
-            )
+        studies = await client.list_studies(
+            name=name, versions=versions, tags=tags, variant=variant, archived=archived, limit=limit
         )
         return [StudySummary.from_api(s) for s in studies]
 
     @mcp.tool(annotations=READ_ONLY)
     async def get_study(study_id: StudyId) -> dict[str, Any]:
         """Get all the metadata of one study (owner, groups, version, workspace, folder, tags, ...)."""
-        return await guard(client.get_study(study_id))
+        return await client.get_study(study_id)
 
     @mcp.tool(annotations=READ_ONLY)
     async def describe_study(study_id: StudyId) -> StudyDescription:
@@ -113,7 +111,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
         Describe the content of a study in one call: its areas with their clusters, storages and
         links, and the list of its simulation outputs. Prefer it to several `list_*` calls.
         """
-        synthesis = await guard(client.get_study_synthesis(study_id))
+        synthesis = await client.get_study_synthesis(study_id)
         synthesis_areas: dict[str, dict[str, Any]] = synthesis.get("areas") or {}
         # A link is only stored in its first area (alphabetical order): rebuild both directions.
         neighbours: dict[str, set[str]] = {area_id: set() for area_id in synthesis_areas}
@@ -143,7 +141,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
     @mcp.tool(annotations=READ_ONLY)
     async def list_study_versions() -> list[str]:
         """List the Antares study versions that can be created on this server (e.g. "8.8", "9.2")."""
-        return await guard(client.list_study_versions())
+        return await client.list_study_versions()
 
     @mcp.tool(annotations=READ_ONLY)
     async def get_simulation_settings(study_id: StudyId) -> dict[str, Any]:
@@ -151,7 +149,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
         Get the general simulation settings of a study: mode (Economy / Adequacy), number of
         Monte-Carlo years, simulated period (first / last day), calendar, outputs (year-by-year, synthesis).
         """
-        return await guard(client.get_general_config(study_id))
+        return await client.get_config_form(study_id, "general")
 
     if read_only:
         return
@@ -173,8 +171,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
         ] = None,
     ) -> StudySummary:
         """Create a new empty study (no area). Returns the created study."""
-        study_id = await guard(client.create_study(name, version=version, directory=directory))
-        return StudySummary.from_api(await guard(client.get_study(study_id)))
+        study_id = await client.create_study(name, version=version, directory=directory)
+        return StudySummary.from_api(await client.get_study(study_id))
 
     @mcp.tool(annotations=ADDITIVE)
     async def import_study(
@@ -201,8 +199,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
             raise ToolError(f"'{archive.name}' is not a study archive: expected a .zip or .7z file.")
         if not archive.is_file():
             raise ToolError(f"No such file on the MCP server machine: '{archive}'.")
-        study_id = await guard(client.import_study(archive, groups=groups, timeout=IMPORT_TIMEOUT_SECONDS))
-        return StudySummary.from_api(await guard(client.get_study(study_id)))
+        study_id = await client.import_study(archive, groups=groups, timeout=IMPORT_TIMEOUT_SECONDS)
+        return StudySummary.from_api(await client.get_study(study_id))
 
     @mcp.tool(annotations=ADDITIVE)
     async def copy_study(
@@ -214,12 +212,12 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
         Copy a study into a new, independent raw study (waits for the copy to complete).
         Prefer `create_variant` to explore alternatives of a study while keeping track of the changes.
         """
-        task_id = await guard(client.copy_study(study_id, new_name, with_outputs=with_outputs))
-        task = await guard(client.wait_for_task(task_id, timeout=COPY_TIMEOUT_SECONDS))
+        task_id = await client.copy_study(study_id, new_name, with_outputs=with_outputs)
+        task = await client.wait_for_task(task_id, timeout=COPY_TIMEOUT_SECONDS)
         result = task.get("result") or {}
         if task.get("status") != TASK_COMPLETED or not result.get("success"):
             raise ToolError(f"The copy did not complete: {result.get('message') or task}")
-        return StudySummary.from_api(await guard(client.get_study(result["returnValue"])))
+        return StudySummary.from_api(await client.get_study(result["returnValue"]))
 
     @mcp.tool(annotations=ADDITIVE)
     async def create_variant(
@@ -231,8 +229,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
         it is the recommended way to test alternatives (e.g. "what if the interconnection is doubled").
         The variant can be modified and launched like any study.
         """
-        variant_id = await guard(client.create_variant(study_id, name))
-        return StudySummary.from_api(await guard(client.get_study(variant_id)))
+        variant_id = await client.create_variant(study_id, name)
+        return StudySummary.from_api(await client.get_study(variant_id))
 
     @mcp.tool(annotations=UPDATE)
     async def update_simulation_settings(
@@ -262,8 +260,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
         )
         if not changes:
             raise ToolError("Nothing to update: provide at least one setting.")
-        await guard(client.update_general_config(study_id, changes))
-        return await guard(client.get_general_config(study_id))
+        await client.update_general_config(study_id, changes)
+        return await client.get_config_form(study_id, "general")
 
     if not allow_study_deletion:
         return
@@ -276,8 +274,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool, allow
         ] = False,
     ) -> str:
         """Permanently delete a study and its outputs. This cannot be undone: ask the user to confirm first."""
-        study = await guard(client.get_study(study_id))
-        await guard(client.delete_study(study_id, children=with_variants))
+        study = await client.get_study(study_id)
+        await client.delete_study(study_id, children=with_variants)
         return f"Study '{study['name']}' ({study_id}) deleted."
 
 

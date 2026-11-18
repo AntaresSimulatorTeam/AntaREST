@@ -15,12 +15,12 @@
 import { refresh } from "@/redux/ducks/auth";
 import store from "@/redux/store";
 import client from "../client";
-import { assistantEventSchema } from "./schemas";
+import { assistantEventSchema, parseJson } from "./schemas";
 import type {
-  AssistantEvent,
   AssistantStatus,
   AssistantStatusDTO,
   StreamAssistantChatParams,
+  StreamHandlers,
   StreamJobExplanationParams,
   StreamStudyCheckParams,
 } from "./types";
@@ -30,35 +30,7 @@ const BASE_URL = "/v1/assistant";
 export async function getAssistantStatus(): Promise<AssistantStatus> {
   const { data } = await client.get<AssistantStatusDTO>(BASE_URL);
 
-  return {
-    available: data.available,
-    reason: data.reason,
-    provider: data.provider,
-    model: data.model,
-    readOnly: data.read_only,
-  };
-}
-
-/**
- * Splits a stream of text chunks into lines: a chunk can end in the middle of a line.
- *
- * @returns `push` gives the complete lines of a new chunk, `flush` gives the last line, if any.
- */
-export function createLineSplitter() {
-  let buffer = "";
-
-  return {
-    push(chunk: string): string[] {
-      const lines = (buffer + chunk).split("\n");
-      buffer = lines.pop() ?? "";
-      return lines.filter((line) => line.trim() !== "");
-    },
-    flush(): string[] {
-      const rest = buffer;
-      buffer = "";
-      return rest.trim() === "" ? [] : [rest];
-    },
-  };
+  return { available: data.available, readOnly: data.read_only };
 }
 
 async function getErrorMessage(response: Response): Promise<string> {
@@ -73,13 +45,11 @@ async function getErrorMessage(response: Response): Promise<string> {
   }
 }
 
-interface StreamParams {
+interface StreamParams extends StreamHandlers {
   /** Path of the endpoint, after `/v1/assistant`. */
   path: string;
   /** JSON body of the request, if any. */
   body?: unknown;
-  signal: AbortSignal;
-  onEvent: (event: AssistantEvent) => void;
 }
 
 /**
@@ -109,33 +79,28 @@ async function streamAssistant(params: StreamParams): Promise<void> {
     throw new Error(await getErrorMessage(response));
   }
 
-  const handleLine = (line: string) => {
-    let json: unknown;
-    try {
-      json = JSON.parse(line);
-    } catch {
-      return; // Not an event
-    }
-    const event = assistantEventSchema.safeParse(json);
-    // Events added by a newer server are ignored
-    if (event.success) {
-      onEvent(event.data);
-    }
-  };
-
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
-  const splitter = createLineSplitter();
+  let buffer = "";
 
   for (;;) {
     const { done, value } = await reader.read();
+    // A chunk can end in the middle of a line: the rest waits for the next chunk
+    const lines = (buffer + decoder.decode(value, { stream: !done })).split("\n");
+    buffer = done ? "" : (lines.pop() ?? "");
+
+    for (const line of lines) {
+      // Blank lines, and events added by a newer server, are ignored
+      const event = parseJson(assistantEventSchema, line);
+      if (event) {
+        onEvent(event);
+      }
+    }
+
     if (done) {
       break;
     }
-    splitter.push(decoder.decode(value, { stream: true })).forEach(handleLine);
   }
-
-  splitter.flush().forEach(handleLine);
 }
 
 /**

@@ -13,8 +13,8 @@
  */
 
 import { streamAssistantChat } from "@/services/api/assistant";
-import type { AssistantEvent, StreamAssistantChatParams } from "@/services/api/assistant/types";
-import { createQueryClient, createQueryWrapper, deferred } from "@/tests/queryUtils";
+import { mockAssistantStream } from "@/tests/assistantStream";
+import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 import useAssistantThreads from "../useAssistantThreads";
@@ -26,35 +26,6 @@ vi.mock("@/services/api/assistant", () => ({
 const BASE_HISTORY = [{ role: "user", content: "Check this study" }];
 const THREAD_HISTORY = [...BASE_HISTORY, { role: "user", content: "Why?" }];
 const CONTEXT = "[The user is looking at the finding X]";
-
-/**
- * Replaces the stream of the server: each message sent gets its own controllable stream.
- *
- * @returns The received requests, and functions to send an event to a request and to end it
- * (the last request by default).
- */
-function mockStream() {
-  const requests: StreamAssistantChatParams[] = [];
-  const ends: Array<ReturnType<typeof deferred<void>>> = [];
-
-  vi.mocked(streamAssistantChat).mockImplementation((params) => {
-    requests.push(params);
-    const end = deferred<void>();
-    ends.push(end);
-    return end.promise;
-  });
-
-  return {
-    requests,
-    send: (event: AssistantEvent, index = requests.length - 1) =>
-      act(() => requests[index].onEvent(event)),
-    end: (index = ends.length - 1) =>
-      act(async () => {
-        ends[index].resolve();
-        await ends[index].promise;
-      }),
-  };
-}
 
 function renderThreads() {
   const queryClient = createQueryClient();
@@ -79,7 +50,7 @@ describe("useAssistantThreads", () => {
   });
 
   test("starts a thread with its context, continuing the given conversation", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const { result, ask } = renderThreads();
 
     ask("finding-0", "Why?");
@@ -101,7 +72,7 @@ describe("useAssistantThreads", () => {
   });
 
   test("continues a thread with its own history, without repeating the context", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const { ask } = renderThreads();
     ask("finding-0", "Why?");
     stream.send({ type: "done", answer: "Because.", history: THREAD_HISTORY });
@@ -116,13 +87,13 @@ describe("useAssistantThreads", () => {
   });
 
   test("sends the context again when the first message got no answer", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const { result, ask } = renderThreads();
     ask("finding-0", "Why?");
-    stream.send({ type: "error", message: "The Anthropic API rate limit is reached." });
+    stream.send({ type: "error", message: "The rate limit of the model server is reached." });
     await stream.end();
     expect(result.current.threads["finding-0"].turns[0].error).toBe(
-      "The Anthropic API rate limit is reached.",
+      "The rate limit of the model server is reached.",
     );
 
     ask("finding-0", "Why?");
@@ -134,7 +105,7 @@ describe("useAssistantThreads", () => {
   });
 
   test("reports a stream which ends without an answer", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const { result, ask } = renderThreads();
     ask("finding-0", "Why?");
 
@@ -158,7 +129,7 @@ describe("useAssistantThreads", () => {
   });
 
   test("keeps the threads apart", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const { result, ask } = renderThreads();
     ask("finding-0", "Why?");
     ask("finding-1", "And this one?");
@@ -173,7 +144,7 @@ describe("useAssistantThreads", () => {
   });
 
   test("ignores a message sent while the thread is answering", () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const { result, ask } = renderThreads();
     ask("finding-0", "Why?");
 
@@ -184,7 +155,7 @@ describe("useAssistantThreads", () => {
   });
 
   test("stops an answer", () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const { result, ask } = renderThreads();
     ask("finding-0", "Why?");
 
@@ -200,7 +171,7 @@ describe("useAssistantThreads", () => {
   });
 
   test("reloads the data when the assistant may have changed the study", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const { result, ask, invalidateQueries } = renderThreads();
     ask("finding-0", "Fix it");
     stream.send({ type: "tool_call", name: "update_thermal_cluster", input: {} });
@@ -219,9 +190,10 @@ describe("useAssistantThreads", () => {
   });
 
   test("does not reload the data after an answer which only reads", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const { result, ask, invalidateQueries } = renderThreads();
     ask("finding-0", "Why?");
+    stream.send({ type: "tool_call", name: "list_areas", input: {} });
     stream.send({ type: "tool_call", name: "get_table", input: {} });
     stream.send({ type: "done", answer: "Because.", history: THREAD_HISTORY });
 
@@ -232,7 +204,7 @@ describe("useAssistantThreads", () => {
   });
 
   test("reset forgets the threads and stops the running answers", () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const { result, ask } = renderThreads();
     ask("finding-0", "Why?");
 

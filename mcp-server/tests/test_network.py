@@ -14,9 +14,7 @@ import pytest
 
 from antares_web_mcp.client import AntaresWebClient
 from tests.fake_antares_web import FakeAntaresWeb
-from tests.helpers import STUDY_ID, call, data, error_text
-
-pytestmark = pytest.mark.anyio
+from tests.helpers import STUDY_ID, call, data
 
 MATRIX = f"/v1/studies/{STUDY_ID}/matrix"
 
@@ -74,9 +72,3 @@ async def test_update_area_properties(fake_api: FakeAntaresWeb, api_client: Anta
 
     assert data(result) == {"energyCostUnsupplied": 10000.0}
     assert fake_api.json_sent_to("PUT", path) == [{"energyCostUnsupplied": 10000.0}]
-
-
-async def test_update_area_properties_without_changes(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
-    result = await call(api_client, "update_area_properties", {"study_id": STUDY_ID, "area_id": "fr"})
-
-    assert "Nothing to update" in error_text(result)

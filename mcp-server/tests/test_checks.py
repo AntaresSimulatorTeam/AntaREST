@@ -56,7 +56,6 @@ def thermal(**extra: Any) -> dict[str, Any]:
 def study(**changes: Any) -> StudyData:
     base = StudyData(
         name="Base case",
-        version="9.2",
         general={"horizon": "2030", "firstMonth": "january", "firstJanuary": "Tuesday"},  # 1 January 2030
         playlist=None,
         areas={"fr": {"energyCostUnsupplied": 10000.0}, "de": {"energyCostUnsupplied": 10000.0}},
@@ -222,7 +221,6 @@ def hydro_reader() -> FakeReader:
     )
 
 
-@pytest.mark.anyio
 @pytest.mark.parametrize("compatibility", [{}, {"hydroPmax": "daily"}])
 async def test_hydro_power_is_read_in_maxpower_by_default(compatibility: dict[str, Any]) -> None:
     """
@@ -236,7 +234,6 @@ async def test_hydro_power_is_read_in_maxpower_by_default(compatibility: dict[st
     assert "still declare" not in finding.message
 
 
-@pytest.mark.anyio
 async def test_hydro_power_is_read_in_hourly_series_when_hydro_pmax_is_hourly() -> None:
     data_ = study(compatibility={"hydroPmax": "hourly"})
 
@@ -247,7 +244,6 @@ async def test_hydro_power_is_read_in_hourly_series_when_hydro_pmax_is_hourly() 
     assert "still declare 4,666 MW" in finding.message
 
 
-@pytest.mark.anyio
 async def test_thermal_availability() -> None:
     data_ = study(
         thermals={
@@ -269,7 +265,6 @@ async def test_thermal_availability() -> None:
     assert above.objects == ["fr / changed (3,000.0 > 2,000.0 MW)"]
 
 
-@pytest.mark.anyio
 async def test_renewable_series_out_of_range() -> None:
     cluster = {"enabled": True, "unitCount": 1, "nominalCapacity": 100.0, "tsInterpretation": "production-factor"}
     reader = FakeReader({"input/renewables/series/fr/wind/series": constant(80.0)})
@@ -279,7 +274,6 @@ async def test_renewable_series_out_of_range() -> None:
     assert finding.objects == ["fr / wind (factor from 80 to 80)"]
 
 
-@pytest.mark.anyio
 async def test_link_capacities_and_scenarised_constraints() -> None:
     data_ = study(
         links={"de / fr": {"transmissionCapacities": "enabled"}, "be / fr": {"transmissionCapacities": "infinite"}},
@@ -315,27 +309,17 @@ def route_study(fake_api: FakeAntaresWeb) -> str:
     return base
 
 
-@pytest.mark.anyio
+@pytest.mark.parametrize("form", [{"hydroPmax": "hourly"}, None])
 async def test_load_study_data_reads_the_compatibility_flags(
-    fake_api: FakeAntaresWeb, api_client: AntaresWebClient
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient, form: dict[str, Any] | None
 ) -> None:
+    """Older Antares Web servers do not serve the compatibility form (404): the solver defaults apply."""
     base = route_study(fake_api)
-    fake_api.route("GET", f"{base}/config/compatibility/form", json_body={"hydroPmax": "hourly"})
+    fake_api.route("GET", f"{base}/config/compatibility/form", status_code=200 if form else 404, json_body=form)
 
-    assert (await load_study_data(api_client, STUDY_ID)).compatibility == {"hydroPmax": "hourly"}
-
-
-@pytest.mark.anyio
-async def test_load_study_data_without_compatibility_form(
-    fake_api: FakeAntaresWeb, api_client: AntaresWebClient
-) -> None:
-    """Older Antares Web servers do not serve the compatibility form: the solver defaults apply."""
-    route_study(fake_api)
-
-    assert (await load_study_data(api_client, STUDY_ID)).compatibility == {}
+    assert (await load_study_data(api_client, STUDY_ID)).compatibility == (form or {})
 
 
-@pytest.mark.anyio
 async def test_check_study_tool(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     route_study(fake_api)
 

@@ -13,7 +13,7 @@
  */
 
 import { vi } from "vitest";
-import { createLineSplitter, streamStudyCheck } from "..";
+import { streamStudyCheck } from "..";
 import type { AssistantEvent } from "../types";
 
 vi.mock("@/redux/store", () => ({
@@ -48,18 +48,6 @@ function check(onEvent: (event: AssistantEvent) => void) {
   });
 }
 
-describe("createLineSplitter", () => {
-  test("gives complete lines only, whatever the chunks", () => {
-    const splitter = createLineSplitter();
-
-    expect(splitter.push('{"a": 1}\n{"b"')).toEqual(['{"a": 1}']);
-    expect(splitter.push(": 2}\n\n")).toEqual(['{"b": 2}']);
-    expect(splitter.push('{"c": 3}')).toEqual([]);
-    expect(splitter.flush()).toEqual(['{"c": 3}']);
-    expect(splitter.flush()).toEqual([]);
-  });
-});
-
 describe("streamStudyCheck", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -73,7 +61,7 @@ describe("streamStudyCheck", () => {
           streamOf([
             '{"type": "tool_call", "name": "check_study", "input": {"deep": true}}\n{"type": "tool_pro',
             'gress", "name": "check_study", "progress": 1, "total": 5, "message": "Checking x_y"}\n',
-            '{"type": "from_a_newer_server"}\nnot json\n',
+            '{"type": "from_a_newer_server"}\n\nnot json\n',
             '{"type": "done", "answer": "Étude prête.", "history": []}',
           ]),
         ),

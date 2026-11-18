@@ -11,14 +11,13 @@
 # This file is part of the Antares project.
 
 import asyncio
+from typing import Any
 
 import httpx2
 import pytest
 
 from antares_web_mcp.client import AntaresWebClient, AntaresWebError
 from tests.fake_antares_web import BASE_URL, FakeAntaresWeb
-
-pytestmark = pytest.mark.anyio
 
 STUDY_ID = "21cdcee2-fd4a-45ca-9305-46fc89959553"
 
@@ -64,30 +63,21 @@ async def test_path_segments_are_encoded(fake_api: FakeAntaresWeb, api_client: A
     assert fake_api.last_request.url.raw_path.decode() == f"/v1/studies/{STUDY_ID}/areas/..%2F..%2F..%2Fusers%2F1"
 
 
-async def test_antares_error_is_formatted(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
-    fake_api.route(
-        "GET",
-        f"/v1/studies/{STUDY_ID}/links",
-        status_code=404,
-        json_body={"description": STUDY_ID, "exception": "StudyNotFoundError"},
-    )
+@pytest.mark.parametrize(
+    "response, expected",
+    [
+        (
+            {"status_code": 404, "json": {"description": "s1", "exception": "StudyNotFoundError"}},
+            r"HTTP 404 \(StudyNotFoundError\): s1",
+        ),
+        ({"status_code": 422, "json": {"detail": "bad name"}}, "HTTP 422: bad name"),  # FastAPI validation
+        ({"status_code": 502, "text": "Bad Gateway"}, "HTTP 502: Bad Gateway"),
+    ],
+)
+async def test_http_errors_are_formatted(response: dict[str, Any], expected: str) -> None:
+    client = AntaresWebClient(BASE_URL, transport=httpx2.MockTransport(lambda _: httpx2.Response(**response)))
 
-    with pytest.raises(AntaresWebError, match=f"HTTP 404 \\(StudyNotFoundError\\): {STUDY_ID}"):
-        await api_client.list_links(STUDY_ID)
-
-
-async def test_fastapi_validation_error_is_formatted(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
-    fake_api.route("POST", f"/v1/studies/{STUDY_ID}/areas", status_code=422, json_body={"detail": "bad name"})
-
-    with pytest.raises(AntaresWebError, match="HTTP 422: bad name"):
-        await api_client.create_area(STUDY_ID, "")
-
-
-async def test_non_json_error_is_formatted() -> None:
-    transport = httpx2.MockTransport(lambda _: httpx2.Response(502, text="Bad Gateway"))
-    client = AntaresWebClient(BASE_URL, transport=transport)
-
-    with pytest.raises(AntaresWebError, match="HTTP 502: Bad Gateway"):
+    with pytest.raises(AntaresWebError, match=expected):
         await client.get_study(STUDY_ID)
 
 

@@ -13,11 +13,11 @@
  */
 
 import AssistantThread from "@/components/AssistantConversation/AssistantThread";
+import useAssistantRun from "@/components/AssistantConversation/useAssistantRun";
 import useAssistantThreads from "@/components/AssistantConversation/useAssistantThreads";
 import { assistantQueries } from "@/queries/assistant/queries";
 import { streamJobExplanation } from "@/services/api/assistant";
 import type { JobFailureCause } from "@/services/api/assistant/types";
-import { toError } from "@/utils/fnUtils";
 import ReplayIcon from "@mui/icons-material/Replay";
 import TroubleshootIcon from "@mui/icons-material/Troubleshoot";
 import {
@@ -39,16 +39,10 @@ import {
   Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
-import {
-  buildJobContext,
-  INITIAL_EXPLANATION_STATE,
-  reduceExplanationEvent,
-  RUNNING_EXPLANATION_STATE,
-  type JobExplanationState,
-} from "./utils";
+import { INITIAL_EXPLANATION_STATE, reduceExplanationEvent } from "./utils";
 
 /** The questions of the user about an explanation are one conversation. */
 const THREAD = "explanation";
@@ -112,45 +106,14 @@ interface Props {
 function JobFailureExplanation({ jobId }: Props) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState<JobExplanationState>(INITIAL_EXPLANATION_STATE);
-  const controllerRef = useRef<AbortController | null>(null);
   const { data: assistant } = useQuery(assistantQueries.status());
-  const threads = useAssistantThreads();
   const language = i18n.language?.startsWith("fr") ? "fr" : "en";
-
-  const start = useCallback(async () => {
-    controllerRef.current?.abort();
-    const controller = new AbortController();
-    controllerRef.current = controller;
-    setState(RUNNING_EXPLANATION_STATE);
-
-    try {
-      await streamJobExplanation({
-        jobId,
-        language,
-        signal: controller.signal,
-        onEvent: (event) => {
-          // Events of a cancelled or replaced request are ignored
-          if (controllerRef.current === controller) {
-            setState((prev) => reduceExplanationEvent(prev, event));
-          }
-        },
-      });
-
-      if (controllerRef.current === controller) {
-        // The stream ended without a final event
-        setState((prev) => (prev.status === "running" ? { ...prev, status: "error" } : prev));
-      }
-    } catch (err) {
-      if (controllerRef.current === controller) {
-        setState((prev) => ({ ...prev, status: "error", error: toError(err).message }));
-      }
-    }
-  }, [jobId, language]);
-
-  useEffect(() => {
-    return () => controllerRef.current?.abort();
-  }, []);
+  const { state, start, cancel } = useAssistantRun(
+    INITIAL_EXPLANATION_STATE,
+    reduceExplanationEvent,
+    (handlers) => streamJobExplanation({ jobId, language, ...handlers }),
+  );
+  const threads = useAssistantThreads();
 
   if (!assistant?.available) {
     return null;
@@ -179,12 +142,8 @@ function JobFailureExplanation({ jobId }: Props) {
 
   const handleClose = () => {
     setOpen(false);
-
-    if (isRunning) {
-      controllerRef.current?.abort();
-      controllerRef.current = null;
-      setState(INITIAL_EXPLANATION_STATE);
-    }
+    // An explanation still running is dropped: it starts again when the dialog is reopened
+    cancel();
   };
 
   ////////////////////////////////////////////////////////////////
@@ -245,7 +204,7 @@ function JobFailureExplanation({ jobId }: Props) {
                 onSend={(message) =>
                   threads.send(THREAD, {
                     message,
-                    context: buildJobContext(jobId),
+                    context: `[The user asks for details about the failure of the simulation job ${jobId}, explained above.]`,
                     // The assistant already knows the job and its logs: the conversation goes on
                     baseHistory: state.history,
                   })

@@ -41,7 +41,6 @@ from antarest.assistant.model import (
     ChatRequestDTO,
     ChatResponseDTO,
     ToolCallDTO,
-    UsageDTO,
 )
 from antarest.core.config import AssistantConfig
 
@@ -49,7 +48,9 @@ logger = logging.getLogger(__name__)
 
 MCP_SERVER_DIR = Path(__file__).parents[2] / "mcp-server"
 AGENT_SCRIPT = "antares-web-assistant"
-API_KEY_ENV_VARS = {"anthropic": "ANTHROPIC_API_KEY"}
+# The variables that OpenAI-compatible tools already use
+API_KEY_ENV = "OPENAI_API_KEY"
+BASE_URL_ENV = "OPENAI_BASE_URL"
 TERMINAL_EVENTS = {"done", "error"}
 LOG_TAIL_CHARS = 4000
 
@@ -85,15 +86,7 @@ class AssistantService:
                 case "error":
                     raise AssistantError(event["message"])
                 case "done":
-                    return ChatResponseDTO(
-                        answer=event["answer"],
-                        tool_calls=tool_calls,
-                        history=event["history"],
-                        provider=event["provider"],
-                        model=event["model"],
-                        stop_reason=event["stop_reason"],
-                        usage=UsageDTO.model_validate(event["usage"]),
-                    )
+                    return ChatResponseDTO.model_validate({**event, "tool_calls": tool_calls})
         raise AssistantError("The assistant stopped without an answer.")
 
     def stream(self, request: ChatRequestDTO, *, antares_url: str, token: str | None) -> Iterator[dict[str, Any]]:
@@ -106,16 +99,11 @@ class AssistantService:
         """
         command = self._check_available()
         payload = {
-            "message": request.message,
-            "history": request.history,
-            "study_id": request.study_id,
+            **request.model_dump(),
+            **self.config.model_dump(include={"read_only", "provider", "model", "max_tool_rounds"}),
+            "base_url": self._base_url(),
             "antares_url": antares_url,
             "token": token,
-            "read_only": self.config.read_only,
-            "provider": self.config.provider,
-            "model": self.config.model or None,
-            "effort": self.config.effort,
-            "max_tool_rounds": self.config.max_tool_rounds,
         }
         return self._run_agent(command, payload)
 
@@ -123,11 +111,17 @@ class AssistantService:
         """Returns the command of the agent, or raises if the assistant cannot be used."""
         if not self.config.enabled:
             raise AssistantUnavailableError("The assistant is disabled on this server (`assistant.enabled`).")
-        key_variable = API_KEY_ENV_VARS.get(self.config.provider)
-        if key_variable and not self._api_key(key_variable):
+        # No default server: the content of the studies must not go to a server nobody chose.
+        if not self._base_url():
             raise AssistantUnavailableError(
-                f"No API key for the assistant: set `assistant.{self.config.provider}_api_key` in the "
-                f"configuration file of the server, or its {key_variable} environment variable."
+                "No model server for the assistant: set `assistant.base_url` in the configuration file of the "
+                f"server (the URL of an OpenAI-compatible API, ending with `/v1`), or its {BASE_URL_ENV} "
+                "environment variable."
+            )
+        if not self.config.model:
+            raise AssistantUnavailableError(
+                "No model for the assistant: set `assistant.model` in the configuration file of the server "
+                f"(`GET {self._base_url().rstrip('/')}/models` lists the models of the server)."
             )
         if self.config.command:
             return self.config.command
@@ -139,17 +133,17 @@ class AssistantService:
             )
         return [uv, "run", "--quiet", "--directory", str(MCP_SERVER_DIR), AGENT_SCRIPT]
 
-    def _api_key(self, variable: str) -> str:
-        return self.config.anthropic_api_key.get_secret_value() or os.environ.get(variable, "")
+    def _base_url(self) -> str:
+        return self.config.base_url or os.environ.get(BASE_URL_ENV, "")
 
     def _agent_environment(self) -> dict[str, str]:
         environment = dict(os.environ)
         # The agent has its own virtual environment: it must not inherit the one of the backend.
         environment.pop("VIRTUAL_ENV", None)
-        key_variable = API_KEY_ENV_VARS.get(self.config.provider)
-        if key_variable:
+        api_key = self.config.api_key.get_secret_value()
+        if api_key:
             # Through the environment, never the command line (visible to the other users of the machine).
-            environment[key_variable] = self._api_key(key_variable)
+            environment[API_KEY_ENV] = api_key
         return environment
 
     def _run_agent(self, command: list[str], payload: dict[str, Any]) -> Iterator[dict[str, Any]]:
@@ -183,7 +177,6 @@ class AssistantService:
 
             watchdog = threading.Timer(self.config.timeout, kill_on_timeout)
             watchdog.start()
-            finished = False
             try:
                 try:
                     agent_input.write(json.dumps(payload))
@@ -200,9 +193,8 @@ class AssistantService:
                         continue
                     yield event
                     if event.get("type") in TERMINAL_EVENTS:
-                        finished = True
                         break
-                if not finished:
+                else:
                     exit_code = process.wait()
                     agent_logs.seek(0)
                     logger.error(

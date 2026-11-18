@@ -10,13 +10,10 @@
 #
 # This file is part of the Antares project.
 
-import pytest
 
 from antares_web_mcp.client import AntaresWebClient
 from tests.fake_antares_web import FakeAntaresWeb
 from tests.helpers import STUDY_ID, call, data, error_text
-
-pytestmark = pytest.mark.anyio
 
 OUTPUT_ID = "20261107-1121eco"
 AGGREGATE = f"/v1/studies/{STUDY_ID}/outputs/{OUTPUT_ID}/aggregate"

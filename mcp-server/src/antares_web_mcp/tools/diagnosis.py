@@ -23,7 +23,7 @@ and the evidence it relies on, never a certainty.
 """
 
 import re
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Literal
@@ -31,8 +31,9 @@ from typing import Any, Literal
 from mcp.server.mcpserver import MCPServer
 from pydantic import BaseModel, Field
 
-from antares_web_mcp.client import AntaresWebClient, AntaresWebError
-from antares_web_mcp.tools.common import READ_ONLY, JobId, guard, parse_version
+from antares_web_mcp.client import AntaresWebClient
+from antares_web_mcp.tools.analysis import optional
+from antares_web_mcp.tools.common import READ_ONLY, JobId, parse_version
 from antares_web_mcp.tools.simulation import ANSI_ESCAPE, JobInfo
 
 Confidence = Literal["high", "medium", "low"]
@@ -202,90 +203,25 @@ def no_compatible_solver(facts: JobFacts) -> Cause | None:
     )
 
 
-def infeasible_problem(facts: JobFacts) -> Cause | None:
-    lines = facts.matching(
-        r"\[(error|fatal)\].*(infeasib|unfeasib|no solution|unbounded|optimi[sz]ation failed|failed at week)"
-    )
-    if not lines:
-        return None
-    return Cause(
-        code="infeasible_problem",
-        confidence="high",
-        title="The optimisation problem has no solution",
-        explanation=(
-            "For at least one week, the constraints of the study cannot all be satisfied together. Usual "
-            "suspects: binding constraints, minimum stable power or must-run of thermal clusters, hydro "
-            "reservoir levels and minimum generation, storage constraints, link capacities."
-        ),
-        suggestion=(
-            "Find the year and week in the lines below, then check the constraints active at that time. "
-            "`check_study` detects several classical inconsistencies. To investigate further, set the "
-            "optimisation preference 'unfeasible problem behaviour' to export the MPS of the failing problem."
-        ),
-        evidence=lines,
-    )
+def log_rule(
+    pattern: str, *, code: str, confidence: Confidence, title: str, explanation: str, suggestion: str
+) -> Callable[[JobFacts], Cause | None]:
+    """A rule recognising a failure from the solver lines matching `pattern`, kept as its evidence."""
 
+    def rule(facts: JobFacts) -> Cause | None:
+        lines = facts.matching(pattern)
+        if not lines:
+            return None
+        return Cause(
+            code=code,
+            confidence=confidence,
+            title=title,
+            explanation=explanation,
+            suggestion=suggestion,
+            evidence=lines,
+        )
 
-def out_of_memory(facts: JobFacts) -> Cause | None:
-    lines = facts.matching(r"bad_alloc|out of memory|cannot allocate|not enough memory|oom[- ]kill|memory allocation")
-    if not lines:
-        return None
-    return Cause(
-        code="out_of_memory",
-        confidence="high",
-        title="The solver ran out of memory",
-        explanation="The simulation needs more memory than the machine or the job was allowed to use.",
-        suggestion=(
-            "Reduce the number of years simulated in parallel (number of cores of the launch), or the size of "
-            "the simulation (Monte-Carlo years, year-by-year outputs, output variables kept)."
-        ),
-        evidence=lines,
-    )
-
-
-def time_limit(facts: JobFacts) -> Cause | None:
-    lines = facts.matching(r"time limit|timed? ?out|walltime|cancelled at .* due to")
-    if not lines:
-        return None
-    return Cause(
-        code="time_limit",
-        confidence="high",
-        title="The job reached its time limit",
-        explanation="The launcher stopped the simulation because it ran longer than the time limit of the job.",
-        suggestion="Launch again with a higher time limit, or with more cores.",
-        evidence=lines,
-    )
-
-
-def missing_file(facts: JobFacts) -> Cause | None:
-    lines = facts.matching(r"no such file|cannot open|could not open|failed to open|impossible to (open|read|load)")
-    if not lines:
-        return None
-    return Cause(
-        code="missing_input_file",
-        confidence="medium",
-        title="An input file is missing or unreadable",
-        explanation="The solver could not open a file of the study it needs.",
-        suggestion=(
-            "The lines below name the file: check that the object it belongs to (area, cluster, link, "
-            "constraint) is complete in the study."
-        ),
-        evidence=lines,
-    )
-
-
-def server_storage(facts: JobFacts) -> Cause | None:
-    lines = facts.matching(r"permission denied|access denied|read-only file system|no space left")
-    if not lines:
-        return None
-    return Cause(
-        code="server_storage",
-        confidence="high",
-        title="The solver could not write on the server",
-        explanation="A file permission or disk space problem on the server stopped the simulation.",
-        suggestion="Report it to the administrator of Antares Web: the study data is not the cause.",
-        evidence=lines,
-    )
+    return rule
 
 
 INVALID_DATA_WORDS = re.compile(
@@ -316,11 +252,60 @@ RULES: list[Callable[[JobFacts], Cause | None]] = [
     no_solver_output,
     unreadable_study,
     no_compatible_solver,
-    infeasible_problem,
-    out_of_memory,
-    time_limit,
-    server_storage,
-    missing_file,
+    log_rule(
+        r"\[(error|fatal)\].*(infeasib|unfeasib|no solution|unbounded|optimi[sz]ation failed|failed at week)",
+        code="infeasible_problem",
+        confidence="high",
+        title="The optimisation problem has no solution",
+        explanation=(
+            "For at least one week, the constraints of the study cannot all be satisfied together. Usual "
+            "suspects: binding constraints, minimum stable power or must-run of thermal clusters, hydro "
+            "reservoir levels and minimum generation, storage constraints, link capacities."
+        ),
+        suggestion=(
+            "Find the year and week in the lines below, then check the constraints active at that time. "
+            "`check_study` detects several classical inconsistencies. To investigate further, set the "
+            "optimisation preference 'unfeasible problem behaviour' to export the MPS of the failing problem."
+        ),
+    ),
+    log_rule(
+        r"bad_alloc|out of memory|cannot allocate|not enough memory|oom[- ]kill|memory allocation",
+        code="out_of_memory",
+        confidence="high",
+        title="The solver ran out of memory",
+        explanation="The simulation needs more memory than the machine or the job was allowed to use.",
+        suggestion=(
+            "Reduce the number of years simulated in parallel (number of cores of the launch), or the size of "
+            "the simulation (Monte-Carlo years, year-by-year outputs, output variables kept)."
+        ),
+    ),
+    log_rule(
+        r"time limit|timed? ?out|walltime|cancelled at .* due to",
+        code="time_limit",
+        confidence="high",
+        title="The job reached its time limit",
+        explanation="The launcher stopped the simulation because it ran longer than the time limit of the job.",
+        suggestion="Launch again with a higher time limit, or with more cores.",
+    ),
+    log_rule(
+        r"permission denied|access denied|read-only file system|no space left",
+        code="server_storage",
+        confidence="high",
+        title="The solver could not write on the server",
+        explanation="A file permission or disk space problem on the server stopped the simulation.",
+        suggestion="Report it to the administrator of Antares Web: the study data is not the cause.",
+    ),
+    log_rule(
+        r"no such file|cannot open|could not open|failed to open|impossible to (open|read|load)",
+        code="missing_input_file",
+        confidence="medium",
+        title="An input file is missing or unreadable",
+        explanation="The solver could not open a file of the study it needs.",
+        suggestion=(
+            "The lines below name the file: check that the object it belongs to (area, cluster, link, "
+            "constraint) is complete in the study."
+        ),
+    ),
     invalid_data,
 ]
 
@@ -350,14 +335,6 @@ def diagnose(facts: JobFacts, study_name: str | None = None) -> JobDiagnosis:
     )
 
 
-async def _optional(awaitable: Awaitable[Any]) -> Any:
-    """The study of an old job may have been deleted, and logs may be gone: diagnose with what is left."""
-    try:
-        return await awaitable
-    except AntaresWebError:
-        return None
-
-
 def register(mcp: MCPServer, client: AntaresWebClient) -> None:
     @mcp.tool(annotations=READ_ONLY)
     async def diagnose_job(job_id: JobId) -> JobDiagnosis:
@@ -368,11 +345,11 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         missing file, invalid data...). Start here to explain a failed simulation; each cause comes with
         its evidence and a suggestion. Use `get_job_logs` to read more of the logs.
         """
-        job = JobInfo.from_api(await guard(client.get_job(job_id)))
-        stdout = await _optional(client.get_job_logs(job_id, log_type="STDOUT"))
-        stderr = await _optional(client.get_job_logs(job_id, log_type="STDERR"))
-        study = await _optional(client.get_study(job.study_id))
-        launchers = await _optional(client.list_launchers()) or {}
+        job = JobInfo.from_api(await client.get_job(job_id))
+        stdout = await optional(client.get_job_logs(job_id, log_type="STDOUT"))
+        stderr = await optional(client.get_job_logs(job_id, log_type="STDERR"))
+        study = await optional(client.get_study(job.study_id))
+        launchers = await optional(client.list_launchers()) or {}
         versions: list[Any] = next(
             (item.get("versions", []) for item in launchers.get("launchers", []) if item.get("id") == job.launcher),
             [],

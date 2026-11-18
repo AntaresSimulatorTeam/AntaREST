@@ -22,9 +22,7 @@ from mcp import Client
 from antares_web_mcp.client import AntaresWebClient
 from antares_web_mcp.server import create_server
 from tests.fake_antares_web import FakeAntaresWeb
-from tests.helpers import STUDY_ID, call, error_text
-
-pytestmark = pytest.mark.anyio
+from tests.helpers import STUDY_ID, call, error_text, study
 
 READ_TOOLS = {
     "list_studies",
@@ -130,30 +128,13 @@ async def test_mistyped_study_id_is_rejected_before_any_request(
 
 
 async def test_list_studies_returns_summaries(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
-    fake_api.route(
-        "GET",
-        "/v1/studies",
-        json_body={
-            STUDY_ID: {
-                "id": STUDY_ID,
-                "name": "Base case",
-                "version": "9.2",
-                "type": "rawstudy",
-                "owner": {"id": 1, "name": "admin"},
-                "groups": [{"id": "g1", "name": "group"}],
-                "workspace": "default",
-                "managed": True,
-                "archived": False,
-                "tags": ["demo"],
-                "updated": "2026-10-26 10:29:51",
-                "parent_id": None,
-            }
-        },
-    )
+    api_study = study(groups=[{"id": "g1", "name": "group"}], tags=["demo"], parent_id=None)
+    fake_api.route("GET", "/v1/studies", json_body={STUDY_ID: api_study})
 
     result = await call(api_client, "list_studies", {"name": "base"})
 
     assert not result.is_error
+    # Compact view: the owner by name, no groups
     assert result.structured_content == {
         "result": [
             {
@@ -167,7 +148,7 @@ async def test_list_studies_returns_summaries(fake_api: FakeAntaresWeb, api_clie
                 "archived": False,
                 "parent_id": None,
                 "tags": ["demo"],
-                "updated": "2026-10-26 10:29:51",
+                "updated": "2026-11-07 10:00:00",
             }
         ]
     }
@@ -231,8 +212,19 @@ async def test_update_link_orders_areas(fake_api: FakeAntaresWeb, api_client: An
     assert fake_api.last_json() == {"transmissionCapacities": "infinite"}
 
 
-async def test_update_link_without_changes_is_an_error(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
-    result = await call(api_client, "update_link", {"study_id": STUDY_ID, "area1": "fr", "area2": "de"})
+@pytest.mark.parametrize(
+    "tool, arguments",
+    [
+        ("update_simulation_settings", {}),
+        ("update_area_properties", {"area_id": "fr"}),
+        ("update_link", {"area1": "fr", "area2": "de"}),
+        ("update_thermal_cluster", {"area_id": "fr", "cluster_id": "nuclear"}),
+    ],
+)
+async def test_update_without_changes_is_an_error(
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient, tool: str, arguments: dict[str, str]
+) -> None:
+    result = await call(api_client, tool, {"study_id": STUDY_ID, **arguments})
 
     assert "Nothing to update" in error_text(result)
     assert fake_api.requests == []

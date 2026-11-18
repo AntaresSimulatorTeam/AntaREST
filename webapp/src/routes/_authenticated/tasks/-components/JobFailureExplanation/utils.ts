@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { jobDiagnosisSchema } from "@/services/api/assistant/schemas";
+import type { RunStatus } from "@/components/AssistantConversation/useAssistantRun";
+import { jobDiagnosisSchema, parseJson } from "@/services/api/assistant/schemas";
 import type {
   AssistantEvent,
   AssistantHistory,
@@ -20,9 +21,7 @@ import type {
 } from "@/services/api/assistant/types";
 
 /** Tool of the assistant which finds the probable causes of a failure. */
-export const DIAGNOSE_TOOL = "diagnose_job";
-
-export type ExplanationStatus = "idle" | "running" | "success" | "error";
+const DIAGNOSE_TOOL = "diagnose_job";
 
 /**
  * Steps of an explanation:
@@ -30,10 +29,10 @@ export type ExplanationStatus = "idle" | "running" | "success" | "error";
  * - `diagnosing`: the rules read the job and its logs
  * - `explaining`: the probable causes are available, the assistant digs and writes
  */
-export type ExplanationPhase = "starting" | "diagnosing" | "explaining";
+type ExplanationPhase = "starting" | "diagnosing" | "explaining";
 
 export interface JobExplanationState {
-  status: ExplanationStatus;
+  status: RunStatus;
   phase: ExplanationPhase;
   /** Probable causes found by the rules: available before the explanation of the assistant. */
   diagnosis?: JobDiagnosis;
@@ -55,11 +54,6 @@ export const INITIAL_EXPLANATION_STATE: JobExplanationState = {
   answer: "",
 };
 
-export const RUNNING_EXPLANATION_STATE: JobExplanationState = {
-  ...INITIAL_EXPLANATION_STATE,
-  status: "running",
-};
-
 /**
  * Parses the JSON result of the `diagnose_job` tool.
  *
@@ -67,25 +61,7 @@ export const RUNNING_EXPLANATION_STATE: JobExplanationState = {
  * @returns The diagnosis, or `undefined` if the content is not one.
  */
 export function parseJobDiagnosis(content: string | undefined): JobDiagnosis | undefined {
-  if (!content) {
-    return undefined;
-  }
-  try {
-    const result = jobDiagnosisSchema.safeParse(JSON.parse(content));
-    return result.success ? result.data : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-/**
- * Tells the assistant what the user asks about, when they ask for details after an explanation.
- *
- * @param jobId - The failed job.
- * @returns A note sent before the first question of the user. It is not shown in the conversation.
- */
-export function buildJobContext(jobId: string): string {
-  return `[The user asks for details about the failure of the simulation job ${jobId}, explained above.]`;
+  return parseJson(jobDiagnosisSchema, content);
 }
 
 /**

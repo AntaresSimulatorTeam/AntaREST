@@ -203,6 +203,45 @@ the tools.
 - A token passed with `--token` is stored in the IDE settings and visible in the process list: use a
   dedicated bot token with minimal permissions.
 
+### Codex, OpenCode, Pi and other clients
+
+The server is a standard MCP server on stdio: any MCP client can start it with the same command.
+
+**Codex**: in `~/.codex/config.toml` (or in the `.codex/config.toml` of a trusted project):
+
+```toml
+[mcp_servers.antares-web]
+command = "uv"
+args = ["run", "--directory", "/path/to/AntaREST/mcp-server", "antares-web-mcp"]
+
+[mcp_servers.antares-web.env]
+ANTARES_WEB_URL = "http://localhost:8080"
+ANTARES_WEB_TOKEN = "<bot token>"
+```
+
+**OpenCode**: in `opencode.json` (its newer configuration format declares the servers under
+`mcp.servers`: see its documentation):
+
+```json
+{
+  "mcp": {
+    "antares-web": {
+      "type": "local",
+      "command": ["uv", "run", "--directory", "/path/to/AntaREST/mcp-server", "antares-web-mcp"],
+      "environment": { "ANTARES_WEB_URL": "http://localhost:8080" },
+      "enabled": true
+    }
+  }
+}
+```
+
+**Pi** has no built-in MCP support: install an MCP adapter extension (for instance
+`pi install npm:pi-mcp-adapter`), which reads the `.mcp.json` file of the repository, the same one as
+Claude Code.
+
+These clients work with any model, including one hosted on your own network: the MCP server only
+talks to Antares Web.
+
 ### Without cloning the repository
 
 Any MCP client can run the server straight from GitHub:
@@ -243,22 +282,26 @@ Antares Web can also answer questions itself, without any AI client on the user 
 `/v1/assistant` endpoints run an AI agent which uses the same MCP tools.
 
 ```
-User (CLI, UI, curl) ──▶ POST /v1/assistant/chat ──▶ agent process ──▶ model API (API key of the server)
+User (CLI, UI, curl) ──▶ POST /v1/assistant/chat ──▶ agent process ──▶ model server (OpenAI-compatible API)
                          (Antares Web backend)        │
                                                       └─ MCP tools ──REST, token of the user──▶ Antares Web
 ```
 
 - The **agent** lives in the `mcp-server` package (`antares_web_mcp.assistant`). The backend starts it
-  as a separate process for each request (`uv run antares-web-assistant`), so the model and MCP SDKs
-  never enter the backend environment, and a stuck answer is killed after `assistant.timeout` seconds.
+  as a separate process for each request (`uv run antares-web-assistant`), so the MCP SDK never
+  enters the backend environment, and a stuck answer is killed after `assistant.timeout` seconds.
+- The **model** is served by any server speaking the OpenAI chat completions API: a model hosted on
+  your own network (behind a LiteLLM gateway, vLLM, Ollama, llama.cpp...) or the API of a vendor.
+  There is no default server: the assistant is unavailable until `assistant.base_url` is set.
 - The agent calls the REST API **with the token of the caller**: the permissions of the user apply.
 - It is **read-only by default**: it cannot modify studies nor launch simulations.
 - The **API key stays on the server**. It is passed to the agent through its environment, never
   through the command line nor the request.
 
 !!! warning
-    The content of the studies read by the tools is sent to the model provider. Check your data
-    policy before enabling the assistant on a server which hosts sensitive studies.
+    The content of the studies read by the tools is sent to the model server. With a model hosted
+    on your own network it stays there; with the API of a vendor it leaves it. Check your data
+    policy before pointing the assistant of a server which hosts sensitive studies to a vendor.
 
 ### Assistant configuration
 
@@ -266,12 +309,14 @@ In the configuration file of the server (`application.yaml`):
 
 ```yaml
 assistant:
-  # Leave empty to use the ANTHROPIC_API_KEY environment variable of the server. Never commit a key.
-  anthropic_api_key: "sk-ant-..."
+  # URL of the model server, ending with /v1. Empty: the OPENAI_BASE_URL environment variable of the server.
+  base_url: "https://llm.example.com/v1"
+  # Model id, as listed by `GET <base_url>/models`
+  model: "qwen3.8-27b"
+  # Key of the model server, if it needs one. Empty: the OPENAI_API_KEY environment variable. Never commit a key.
+  api_key: ""
   read_only: true            # false: the assistant can also modify studies and launch simulations
   # enabled: true
-  # model: claude-opus-5-5   # default model of the provider
-  # effort: medium           # low | medium | high | xhigh | max
   # timeout: 900             # maximum duration of one answer, in seconds
   # max_tool_rounds: 40
   # antares_url: ""          # URL used by the agent to call the server; default http://127.0.0.1:<port>
@@ -280,6 +325,16 @@ assistant:
 
 `uv` must be installed on the server. `GET /v1/assistant` tells whether the assistant is available,
 and why if it is not.
+
+The model must support tool calling. Check the server and the key before starting Antares Web:
+
+```bash
+curl -H "Authorization: Bearer <key>" https://llm.example.com/v1/models
+```
+
+The agent uses the proxy and certificate settings of the environment of the server (`HTTPS_PROXY`,
+`NO_PROXY`, `SSL_CERT_FILE`): set them if the model server is only reachable through a proxy, or
+signed by an internal certificate authority.
 
 ### Endpoints
 
@@ -348,12 +403,13 @@ uv run antares-assistant                      # interactive conversation
 Options: `--url` (default `http://localhost:8080`, or `ANTARES_WEB_URL`), `--token` (or
 `ANTARES_WEB_TOKEN`). The client only talks to Antares Web: it needs no API key.
 
-### Using another model provider
+### Using another protocol
 
-Only `mcp-server/src/antares_web_mcp/assistant/anthropic_provider.py` depends on a vendor. To use
-another one, implement the `ChatProvider` protocol (`provider.py`: one `run_turn` method running the
-tool loop in the vendor's message format), register it in `providers.py` with the environment
-variable of its key, and set `assistant.provider`. The endpoint, the agent and the tools do not change.
+`mcp-server/src/antares_web_mcp/assistant/openai_provider.py` talks to OpenAI-compatible servers with
+plain HTTP calls: the agent depends on no vendor SDK. For a server with another protocol, implement
+the `ChatProvider` protocol (`provider.py`: one `run_turn` method running the tool loop in the message
+format of that server), register it in `providers.py` and set `assistant.provider`. The endpoint, the
+agent and the tools do not change.
 
 ## Development and tests
 
@@ -387,5 +443,6 @@ npx @modelcontextprotocol/inspector uv run --directory mcp-server antares-web-mc
    `tests/test_server.py`.
 
 To add a consistency rule, write a `check_<rule>` function in `tools/checks.py` (a quick rule takes
-the `StudyData` loaded once, a deep rule also gets a `MatrixReader`), add it to `QUICK_CHECKS` /
-`QUICK_RULES` (or the deep lists) and test it in `tests/test_checks.py` without any server.
+the `StudyData` loaded once, a deep rule also gets a `MatrixReader`), add it to `QUICK_CHECKS` (or
+`DEEP_CHECKS`) and test it in `tests/test_checks.py` without any server. The name of the rule is the
+name of the function without `check_`.

@@ -23,18 +23,11 @@ import type {
 
 export interface AssistantStatusDTO {
   available: boolean;
-  reason: string;
-  provider: string;
-  model: string;
   read_only: boolean;
 }
 
 export interface AssistantStatus {
   available: boolean;
-  /** Why the assistant is not available. */
-  reason: string;
-  provider: string;
-  model: string;
   readOnly: boolean;
 }
 
@@ -51,11 +44,15 @@ export type CheckReport = z.infer<typeof checkReportSchema>;
 
 export type CheckLanguage = "en" | "fr";
 
-export interface StreamStudyCheckParams {
-  studyId: string;
-  language: CheckLanguage;
+/** What a caller gives to follow a stream of the assistant, and to stop it. */
+export interface StreamHandlers {
   signal: AbortSignal;
   onEvent: (event: AssistantEvent) => void;
+}
+
+export interface StreamStudyCheckParams extends StreamHandlers {
+  studyId: string;
+  language: CheckLanguage;
 }
 
 /** A probable cause of the failure of a simulation, found by a rule of `diagnose_job`. */
@@ -64,21 +61,17 @@ export type JobFailureCause = z.infer<typeof jobFailureCauseSchema>;
 /** Result of the `diagnose_job` tool. */
 export type JobDiagnosis = z.infer<typeof jobDiagnosisSchema>;
 
-export interface StreamJobExplanationParams {
+export interface StreamJobExplanationParams extends StreamHandlers {
   jobId: string;
   language: CheckLanguage;
-  signal: AbortSignal;
-  onEvent: (event: AssistantEvent) => void;
 }
 
 /** State of a conversation, as returned by the server: opaque, sent back with the next message. */
 export type AssistantHistory = unknown[];
 
-export interface StreamAssistantChatParams {
+export interface StreamAssistantChatParams extends StreamHandlers {
   message: string;
   /** Study the user is working on, if any. */
   studyId?: string;
   history: AssistantHistory;
-  signal: AbortSignal;
-  onEvent: (event: AssistantEvent) => void;
 }

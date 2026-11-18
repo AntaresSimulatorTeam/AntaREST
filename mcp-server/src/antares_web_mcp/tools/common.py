@@ -12,14 +12,10 @@
 
 """Building blocks shared by all tool modules."""
 
-from collections.abc import Awaitable
 from typing import Annotated, Any
 
-from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import Field
-
-from antares_web_mcp.client import AntaresWebError
 
 StudyId = Annotated[
     str,
@@ -40,19 +36,6 @@ UPDATE = ToolAnnotations(read_only_hint=False, destructive_hint=False, idempoten
 DESTRUCTIVE = ToolAnnotations(read_only_hint=False, destructive_hint=True, idempotent_hint=True, open_world_hint=False)
 
 MATRIX_OPERATIONS = {"set": "=", "add": "+", "multiply": "*"}
-
-
-async def guard[T](awaitable: Awaitable[T]) -> T:
-    """
-    Converts Antares Web errors into MCP ``ToolError``.
-
-    A ``ToolError`` message is sent back to the model (so it can fix its call, e.g. use the right
-    area id), whereas any other exception is reported as an opaque "Error executing tool".
-    """
-    try:
-        return await awaitable
-    except AntaresWebError as e:
-        raise ToolError(str(e)) from e
 
 
 def without_none(values: dict[str, Any]) -> dict[str, Any]:
