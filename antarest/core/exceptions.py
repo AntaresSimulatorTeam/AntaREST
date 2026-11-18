@@ -482,6 +482,44 @@ class InvalidOutputConversionRequest(HTTPException):
         super().__init__(HTTPStatus.BAD_REQUEST, message)
 
 
+class GemsViewNotFound(HTTPException):
+    """
+    Exception raised when an output has no config for a GEMS view.
+    """
+
+    def __init__(self, output_id: str, view_id: str) -> None:
+        message = f"View '{view_id}' not found in output '{output_id}'"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsViewMatrixNotFound(HTTPException):
+    """
+    Exception raised when a GEMS view has no data for the requested aggregation pattern, location or Monte Carlo year.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class InvalidGemsViewMatrixRequest(HTTPException):
+    """
+    Exception raised when a Monte Carlo year is missing or not allowed for the aggregation pattern of a GEMS view.
+    """
+
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.UNPROCESSABLE_ENTITY, message)
+
+
+class InvalidGemsViewData(HTTPException):
+    """
+    Exception raised when a GEMS view file cannot be read or contradicts the view file contract.
+    """
+
+    def __init__(self, file_name: str, reason: str) -> None:
+        message = f"Invalid GEMS view file '{file_name}': {reason}"
+        super().__init__(HTTPStatus.INTERNAL_SERVER_ERROR, message)
+
+
 class BadZipBinary(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.UNSUPPORTED_MEDIA_TYPE, message)
