@@ -75,7 +75,7 @@ function StorageLayout() {
   ////////////////////////////////////////////////////////////////
 
   checkRouteAvailability({
-    studyVersion: study.version,
+    study,
     minVersion: "8.6.0",
     routePath: Route.path,
   });

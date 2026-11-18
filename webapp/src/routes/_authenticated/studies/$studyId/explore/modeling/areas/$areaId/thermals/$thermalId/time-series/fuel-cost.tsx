@@ -30,7 +30,7 @@ function FuelCost() {
   const { areaId, thermalId } = params;
 
   checkRouteAvailability({
-    studyVersion: study.version,
+    study,
     minVersion: "8.7.0",
     routePath: Route.path,
   });

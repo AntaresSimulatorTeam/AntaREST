@@ -33,7 +33,7 @@ function Parameters() {
   const [area1, area2] = parseLinkId(linkId);
 
   checkRouteAvailability({
-    studyVersion: study.version,
+    study,
     minVersion: TABS_VIEW_MIN_VERSION,
     routePath: Route.path,
   });

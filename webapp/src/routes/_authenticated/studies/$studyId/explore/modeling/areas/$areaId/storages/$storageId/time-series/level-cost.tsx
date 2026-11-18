@@ -32,7 +32,7 @@ function LevelCost() {
   const { areaId, storageId } = params;
 
   checkRouteAvailability({
-    studyVersion: study.version,
+    study,
     minVersion: "9.2.0",
     routePath: Route.path,
   });

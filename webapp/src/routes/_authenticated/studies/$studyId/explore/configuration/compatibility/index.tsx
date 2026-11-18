@@ -12,21 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import Form from "@/components/Form";
 import SelectFE from "@/components/fieldEditors/SelectFE";
 import Fieldset from "@/components/Fieldset";
+import Form from "@/components/Form";
 import ViewWrapper from "@/components/page/ViewWrapper";
+import { checkRouteAvailability } from "@/utils/routerUtils";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
+import useStudy from "../../../-hooks/useStudy";
 import {
   getCompatibilityParamsFormFields,
-  setCompatibilityParamsFormFields,
   HYDRO_PMAX_OPTIONS,
   HYDRO_RULE_CURVES_OPTIONS,
+  setCompatibilityParamsFormFields,
 } from "./-utils";
-import { checkRouteAvailability } from "@/utils/routerUtils";
-import useStudy from "../../../-hooks/useStudy";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/configuration/compatibility/",
@@ -35,12 +35,11 @@ export const Route = createFileRoute(
 });
 
 function Compatibility() {
-  const { studyId } = Route.useParams();
   const [t] = useTranslation();
   const study = useStudy();
 
   checkRouteAvailability({
-    studyVersion: study.version,
+    study,
     minVersion: "9.2.0",
     routePath: Route.path,
   });
@@ -49,9 +48,9 @@ function Compatibility() {
     <ViewWrapper>
       <Form
         config={{
-          defaultValues: () => getCompatibilityParamsFormFields(studyId),
+          defaultValues: () => getCompatibilityParamsFormFields(study.id),
         }}
-        onSubmit={({ dirtyValues }) => setCompatibilityParamsFormFields(studyId, dirtyValues)}
+        onSubmit={({ dirtyValues }) => setCompatibilityParamsFormFields(study.id, dirtyValues)}
         enableUndoRedo
       >
         {({ control }) => (
