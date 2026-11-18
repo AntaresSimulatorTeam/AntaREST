@@ -12,5 +12,5 @@ CUR_DIR=$(cd "$(dirname "$0")" && pwd)
 BASE_DIR=$(dirname "$CUR_DIR")
 
 cd "$BASE_DIR"
-alembic downgrade b60aab4df757
+alembic downgrade c4d7e9a1f3b2
 cd -

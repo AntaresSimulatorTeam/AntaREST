@@ -41,6 +41,7 @@ class AdequacyPatchParametersFileData(AntaresBaseModel):
         default=None, alias="set-to-null-ntc-between-physical-out-for-first-step"
     )
     redispatch: bool | None = None
+    threshold_ens: float | None = None
 
     def to_model(self) -> AdequacyPatchParameters:
         return AdequacyPatchParameters.model_validate(self.model_dump(exclude_none=True))
