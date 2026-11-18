@@ -33,7 +33,7 @@ from pydantic import BaseModel, Field
 
 from antares_web_mcp.client import AntaresWebClient, AntaresWebError
 from antares_web_mcp.tools.analysis import matrix_stats, optional, rhs_paths
-from antares_web_mcp.tools.common import READ_ONLY, StudyId, guard
+from antares_web_mcp.tools.common import READ_ONLY, StudyId
 
 Severity = Literal["error", "warning", "info"]
 SEVERITY_ORDER = {"error": 0, "warning": 1, "info": 2}
@@ -41,26 +41,6 @@ MAX_OBJECTS = 30
 CONCURRENT_DOWNLOADS = 8
 YEAR = re.compile(r"(?<!\d)(?:19|20|21)\d{2}(?!\d)")  # also in "case_2060final"
 WEEKDAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-
-QUICK_RULES = [
-    "calendar",
-    "playlist",
-    "thermal_min_stable_power",
-    "thermal_market_bid",
-    "unsupplied_energy_cost",
-    "storage_efficiency",
-    "disabled_objects",
-    "isolated_areas",
-    "constraint_references",
-    "relaxable_helper_terms",
-]
-DEEP_RULES = [
-    "hydro_generation_power",
-    "thermal_availability",
-    "renewable_series",
-    "link_capacities",
-    "scenarised_constraints",
-]
 
 
 class Finding(BaseModel):
@@ -79,8 +59,11 @@ class CheckReport(BaseModel):
     notes: list[str]
 
 
-def finding(rule: str, severity: Severity, message: str, objects: list[str]) -> Finding:
-    return Finding(rule=rule, severity=severity, message=message, objects=objects[:MAX_OBJECTS], count=len(objects))
+def finding(rule: str, severity: Severity, message: str, objects: list[str]) -> list[Finding]:
+    """A rule reports a finding only when some objects are concerned."""
+    if not objects:
+        return []
+    return [Finding(rule=rule, severity=severity, message=message, objects=objects[:MAX_OBJECTS], count=len(objects))]
 
 
 @dataclass
@@ -88,7 +71,6 @@ class StudyData:
     """Everything the quick rules need, loaded once."""
 
     name: str
-    version: str
     general: dict[str, Any]
     playlist: dict[str, Any] | None
     areas: dict[str, dict[str, Any]]
@@ -139,27 +121,23 @@ def check_calendar(data: StudyData) -> list[Finding]:
 
     findings = []
     if horizon_years and all(january_first(y) != weekday for y in january_years(horizon_years)):
-        findings.append(
-            finding(
-                "calendar",
-                "warning",
-                f"1 January is set to a {weekday}, which does not match the horizon '{general.get('horizon')}'.",
-                ["settings/generaldata.ini"],
-            )
+        findings += finding(
+            "calendar",
+            "warning",
+            f"1 January is set to a {weekday}, which does not match the horizon '{general.get('horizon')}'.",
+            ["settings/generaldata.ini"],
         )
     foreign = [y for y in name_years if y not in horizon_years]
     if foreign and all(january_first(y) != weekday for y in january_years(foreign)):
         matching = [y for y in sorted(january_years(horizon_years)) if january_first(y) == weekday]
         calendar = f"the {matching[0]} calendar" if matching else "another calendar"
-        findings.append(
-            finding(
-                "calendar",
-                "warning",
-                f"The study name refers to {foreign[0]} (1 January {foreign[0]} is a {january_first(foreign[0])}), "
-                f"but the study uses {calendar} (horizon '{general.get('horizon')}', 1 January = {weekday}). "
-                "Check that time series built for that year are aligned with this calendar (weekends, holidays).",
-                ["settings/generaldata.ini"],
-            )
+        findings += finding(
+            "calendar",
+            "warning",
+            f"The study name refers to {foreign[0]} (1 January {foreign[0]} is a {january_first(foreign[0])}), "
+            f"but the study uses {calendar} (horizon '{general.get('horizon')}', 1 January = {weekday}). "
+            "Check that time series built for that year are aligned with this calendar (weekends, holidays).",
+            ["settings/generaldata.ini"],
         )
     return findings
 
@@ -168,16 +146,12 @@ def check_playlist(data: StudyData) -> list[Finding]:
     if not data.playlist or not data.general.get("selectionMode"):
         return []
     inactive = [year for year, value in data.playlist.items() if not value.get("status")]
-    if not inactive:
-        return []
-    return [
-        finding(
-            "playlist",
-            "info",
-            f"{len(inactive)} of {len(data.playlist)} Monte-Carlo years are excluded by the playlist.",
-            [f"year {year}" for year in inactive],
-        )
-    ]
+    return finding(
+        "playlist",
+        "info",
+        f"{len(inactive)} of {len(data.playlist)} Monte-Carlo years are excluded by the playlist.",
+        [f"year {year}" for year in inactive],
+    )
 
 
 def check_thermal_min_stable_power(data: StudyData) -> list[Finding]:
@@ -186,9 +160,7 @@ def check_thermal_min_stable_power(data: StudyData) -> list[Finding]:
         for cluster_id, row in data.thermals.items()
         if _enabled(row) and float(row.get("minStablePower", 0)) > float(row.get("nominalCapacity", 0))
     ]
-    if not wrong:
-        return []
-    return [finding("thermal_min_stable_power", "error", "Min stable power above the unit capacity.", wrong)]
+    return finding("thermal_min_stable_power", "error", "Min stable power above the unit capacity.", wrong)
 
 
 def check_thermal_market_bid(data: StudyData) -> list[Finding]:
@@ -199,17 +171,13 @@ def check_thermal_market_bid(data: StudyData) -> list[Finding]:
         and _capacity(row) > 0
         and float(row.get("marketBidCost", 0)) < float(row.get("marginalCost", 0))
     ]
-    if not wrong:
-        return []
-    return [
-        finding(
-            "thermal_market_bid",
-            "warning",
-            "Market bid below the marginal cost: the merit order uses the bid, so these plants run before "
-            "cheaper ones (intended only to model a subsidy or a must-run contract).",
-            wrong,
-        )
-    ]
+    return finding(
+        "thermal_market_bid",
+        "warning",
+        "Market bid below the marginal cost: the merit order uses the bid, so these plants run before "
+        "cheaper ones (intended only to model a subsidy or a must-run contract).",
+        wrong,
+    )
 
 
 def check_unsupplied_energy_cost(data: StudyData) -> list[Finding]:
@@ -226,26 +194,20 @@ def check_unsupplied_energy_cost(data: StudyData) -> list[Finding]:
         elif cost < max_cost.get(area, 0.0):
             too_low.append(f"{area} ({cost:g} < {max_cost[area]:g} EUR/MWh)")
     findings = []
-    if too_low:
-        findings.append(
-            finding(
-                "unsupplied_energy_cost",
-                "warning",
-                "Unsupplied energy cost below the most expensive plant of the area: the optimiser sheds load "
-                "rather than running these plants.",
-                too_low,
-            )
-        )
-    if free:
-        findings.append(
-            finding(
-                "unsupplied_energy_cost",
-                "info",
-                "Unsupplied energy cost of 0: the load of these areas can be left unserved for free. Usual for "
-                "technical (virtual) nodes modelling an optional consumption, an error for a real area.",
-                free,
-            )
-        )
+    findings += finding(
+        "unsupplied_energy_cost",
+        "warning",
+        "Unsupplied energy cost below the most expensive plant of the area: the optimiser sheds load "
+        "rather than running these plants.",
+        too_low,
+    )
+    findings += finding(
+        "unsupplied_energy_cost",
+        "info",
+        "Unsupplied energy cost of 0: the load of these areas can be left unserved for free. Usual for "
+        "technical (virtual) nodes modelling an optional consumption, an error for a real area.",
+        free,
+    )
     return findings
 
 
@@ -256,17 +218,13 @@ def check_storage_efficiency(data: StudyData) -> list[Finding]:
         withdrawal = float(row.get("efficiencyWithdrawal", 1) or 1)
         if _enabled(row) and (injection > 1 or withdrawal > 1):
             wrong.append(f"{storage_id} (injection {injection:g}, withdrawal {withdrawal:g})")
-    if not wrong:
-        return []
-    return [
-        finding(
-            "storage_efficiency",
-            "warning",
-            "Storage efficiency above 1: the storage returns more energy than it absorbs. Check whether it "
-            "compensates a loss modelled elsewhere.",
-            wrong,
-        )
-    ]
+    return finding(
+        "storage_efficiency",
+        "warning",
+        "Storage efficiency above 1: the storage returns more energy than it absorbs. Check whether it "
+        "compensates a loss modelled elsewhere.",
+        wrong,
+    )
 
 
 def check_disabled_objects(data: StudyData) -> list[Finding]:
@@ -278,33 +236,24 @@ def check_disabled_objects(data: StudyData) -> list[Finding]:
     ):
         disabled = [object_id for object_id, row in table.items() if not _enabled(row)]
         empty = [object_id for object_id, row in table.items() if _enabled(row) and capacity(row) == 0]
-        if disabled:
-            findings.append(
-                finding("disabled_objects", "info", f"{len(disabled)}/{len(table)} {kind} are disabled.", disabled)
-            )
-        if empty:
-            findings.append(
-                finding("disabled_objects", "info", f"{len(empty)} enabled {kind} have no capacity.", empty)
-            )
+        findings += finding("disabled_objects", "info", f"{len(disabled)}/{len(table)} {kind} are disabled.", disabled)
+        findings += finding("disabled_objects", "info", f"{len(empty)} enabled {kind} have no capacity.", empty)
     disabled_constraints = [bc["id"] for bc in data.constraints if not bc.get("enabled", True)]
-    if disabled_constraints:
-        findings.append(finding("disabled_objects", "info", "Disabled binding constraints.", disabled_constraints))
+    findings += finding("disabled_objects", "info", "Disabled binding constraints.", disabled_constraints)
     return findings
 
 
 def check_isolated_areas(data: StudyData) -> list[Finding]:
     isolated = sorted(set(data.areas) - data.linked_areas)
-    if not isolated or not data.links:
+    if not data.links:
         return []
-    return [
-        finding(
-            "isolated_areas",
-            "info",
-            "Areas without any link: their production only serves their own load (or is spilled). Usual for "
-            "helper areas used in binding constraints.",
-            isolated,
-        )
-    ]
+    return finding(
+        "isolated_areas",
+        "info",
+        "Areas without any link: their production only serves their own load (or is spilled). Usual for "
+        "helper areas used in binding constraints.",
+        isolated,
+    )
 
 
 def check_constraint_references(data: StudyData) -> list[Finding]:
@@ -324,20 +273,16 @@ def check_constraint_references(data: StudyData) -> list[Finding]:
             elif "area1" in target and f"{target['area1']} / {target.get('area2')}" not in data.links:
                 missing.append(f"{bc['id']}: {target['area1']} / {target.get('area2')}")
     findings = []
-    if missing:
-        findings.append(
-            finding("constraint_references", "error", "Binding constraint terms on objects that do not exist.", missing)
-        )
-    if disabled:
-        findings.append(
-            finding(
-                "constraint_references",
-                "warning",
-                "Binding constraint terms on disabled clusters: their production is 0, which may make the "
-                "constraint infeasible or meaningless.",
-                disabled,
-            )
-        )
+    findings += finding(
+        "constraint_references", "error", "Binding constraint terms on objects that do not exist.", missing
+    )
+    findings += finding(
+        "constraint_references",
+        "warning",
+        "Binding constraint terms on disabled clusters: their production is 0, which may make the "
+        "constraint infeasible or meaningless.",
+        disabled,
+    )
     return findings
 
 
@@ -372,19 +317,15 @@ def check_relaxable_helper_terms(data: StudyData) -> list[Finding]:
             if key in helpers and lowering_relaxes:
                 relaxable.append(f"{bc['id']} ({operator}, {weight:g} x {key})")
                 break
-    if not relaxable:
-        return []
-    return [
-        finding(
-            "relaxable_helper_terms",
-            "warning",
-            "These constraints use a free and optional production of an isolated (helper) area on the side that "
-            "is relaxed by lowering it: the optimiser can reduce it at no cost, so the constraint probably never "
-            "binds. If the helper stands for an availability, it only works as an upper bound. Check in the "
-            "outputs whether the helper produces less than its availability.",
-            relaxable,
-        )
-    ]
+    return finding(
+        "relaxable_helper_terms",
+        "warning",
+        "These constraints use a free and optional production of an isolated (helper) area on the side that "
+        "is relaxed by lowering it: the optimiser can reduce it at no cost, so the constraint probably never "
+        "binds. If the helper stands for an availability, it only works as an upper bound. Check in the "
+        "outputs whether the helper produces less than its availability.",
+        relaxable,
+    )
 
 
 QUICK_CHECKS: list[Callable[[StudyData], list[Finding]]] = [
@@ -399,6 +340,7 @@ QUICK_CHECKS: list[Callable[[StudyData], list[Finding]]] = [
     check_constraint_references,
     check_relaxable_helper_terms,
 ]
+QUICK_RULES = [check.__name__.removeprefix("check_") for check in QUICK_CHECKS]
 
 
 # ----------------------------------------------------------------------
@@ -465,7 +407,7 @@ async def check_hydro_generation_power(data: StudyData, reader: MatrixReader) ->
             " Power read in the 1st column of 'input/hydro/common/capacity/maxpower_<area>' (`hydro-pmax` is "
             "not `hourly`: the hourly series are ignored)."
         )
-    return [finding("hydro_generation_power", "error", message, blocked)]
+    return finding("hydro_generation_power", "error", message, blocked)
 
 
 async def check_thermal_availability(data: StudyData, reader: MatrixReader) -> list[Finding]:
@@ -487,25 +429,19 @@ async def check_thermal_availability(data: StudyData, reader: MatrixReader) -> l
         elif stats.max is not None and stats.max > _capacity(row) + max(1.0, 0.001 * _capacity(row)):
             above.append(f"{cluster_id} ({stats.max:,.1f} > {_capacity(row):,.1f} MW)")
     findings = []
-    if zero:
-        findings.append(
-            finding(
-                "thermal_availability",
-                "error",
-                "Enabled clusters with a capacity but a null availability series: they never produce.",
-                zero,
-            )
-        )
-    if above:
-        findings.append(
-            finding(
-                "thermal_availability",
-                "warning",
-                "Availability above the installed capacity (unit count x nominal capacity): the capacity was "
-                "probably changed without updating the series.",
-                above,
-            )
-        )
+    findings += finding(
+        "thermal_availability",
+        "error",
+        "Enabled clusters with a capacity but a null availability series: they never produce.",
+        zero,
+    )
+    findings += finding(
+        "thermal_availability",
+        "warning",
+        "Availability above the installed capacity (unit count x nominal capacity): the capacity was "
+        "probably changed without updating the series.",
+        above,
+    )
     return findings
 
 
@@ -523,18 +459,14 @@ async def check_renewable_series(data: StudyData, reader: MatrixReader) -> list[
         elif row.get("tsInterpretation") == "production-factor" and ((stats.max or 0) > 1.0001 or (stats.min or 0) < 0):
             out_of_range.append(f"{cluster_id} (factor from {stats.min:g} to {stats.max:g})")
     findings = []
-    if zero:
-        findings.append(finding("renewable_series", "warning", "Enabled renewable clusters with a null series.", zero))
-    if out_of_range:
-        findings.append(
-            finding(
-                "renewable_series",
-                "error",
-                "Production factors outside [0, 1]: the series is probably in MW while the cluster expects a "
-                "production factor (or the opposite).",
-                out_of_range,
-            )
-        )
+    findings += finding("renewable_series", "warning", "Enabled renewable clusters with a null series.", zero)
+    findings += finding(
+        "renewable_series",
+        "error",
+        "Production factors outside [0, 1]: the series is probably in MW while the cluster expects a "
+        "production factor (or the opposite).",
+        out_of_range,
+    )
     return findings
 
 
@@ -555,17 +487,13 @@ async def check_link_capacities(data: StudyData, reader: MatrixReader) -> list[F
         and matrix_stats(direct).all_zero
         and matrix_stats(indirect).all_zero
     ]
-    if not dead:
-        return []
-    return [
-        finding(
-            "link_capacities",
-            "warning",
-            "Links with a 0 MW capacity in both directions: they carry nothing (placeholders, or capacities "
-            "never filled in).",
-            dead,
-        )
-    ]
+    return finding(
+        "link_capacities",
+        "warning",
+        "Links with a 0 MW capacity in both directions: they carry nothing (placeholders, or capacities "
+        "never filled in).",
+        dead,
+    )
 
 
 async def check_scenarised_constraints(data: StudyData, reader: MatrixReader) -> list[Finding]:
@@ -580,17 +508,13 @@ async def check_scenarised_constraints(data: StudyData, reader: MatrixReader) ->
             if matrix is not None and (stats := matrix_stats(matrix)).columns > 1 and stats.identical_columns
         }
     )
-    if not useless:
-        return []
-    return [
-        finding(
-            "scenarised_constraints",
-            "info",
-            "Constraints of a scenarised group whose right-hand side columns are all identical: the "
-            "scenarisation has no effect.",
-            useless,
-        )
-    ]
+    return finding(
+        "scenarised_constraints",
+        "info",
+        "Constraints of a scenarised group whose right-hand side columns are all identical: the "
+        "scenarisation has no effect.",
+        useless,
+    )
 
 
 DEEP_CHECKS: list[Callable[[StudyData, MatrixReader], Awaitable[list[Finding]]]] = [
@@ -600,47 +524,27 @@ DEEP_CHECKS: list[Callable[[StudyData, MatrixReader], Awaitable[list[Finding]]]]
     check_link_capacities,
     check_scenarised_constraints,
 ]
+DEEP_RULES = [check.__name__.removeprefix("check_") for check in DEEP_CHECKS]
 
 
 async def load_study_data(client: AntaresWebClient, study_id: str) -> StudyData:
     study = await client.get_study(study_id)
-    (
-        general,
-        playlist,
-        areas,
-        links,
-        thermals,
-        renewables,
-        storages,
-        constraints,
-        scenario_builder,
-        compatibility,
-    ) = await asyncio.gather(
-        client.get_config_form(study_id, "general"),
-        optional(client.get_config_form(study_id, "playlist")),
-        client.get_table(study_id, "areas"),
-        client.get_table(study_id, "links"),
-        client.get_table(study_id, "thermals"),
-        client.get_table(study_id, "renewables"),
-        client.get_table(study_id, "st-storages"),
-        client.list_binding_constraints(study_id),
-        optional(client.get_scenario_builder(study_id)),
-        optional(client.get_config_form(study_id, "compatibility")),
-    )
-    return StudyData(
-        name=study.get("name", ""),
-        version=str(study.get("version", "")),
-        general=general,
-        playlist=playlist,
-        areas=areas,
-        links=links,
-        thermals=thermals,
-        renewables=renewables,
-        storages=storages,
-        constraints=constraints,
-        scenario_builder=scenario_builder or {},
-        compatibility=compatibility or {},
-    )
+    sources = {
+        "general": client.get_config_form(study_id, "general"),
+        "playlist": optional(client.get_config_form(study_id, "playlist")),
+        "areas": client.get_table(study_id, "areas"),
+        "links": client.get_table(study_id, "links"),
+        "thermals": client.get_table(study_id, "thermals"),
+        "renewables": client.get_table(study_id, "renewables"),
+        "storages": client.get_table(study_id, "st-storages"),
+        "constraints": client.list_binding_constraints(study_id),
+        "scenario_builder": optional(client.get_scenario_builder(study_id)),
+        "compatibility": optional(client.get_config_form(study_id, "compatibility")),
+    }
+    values: dict[str, Any] = dict(zip(sources, await asyncio.gather(*sources.values()), strict=True))
+    values["scenario_builder"] = values["scenario_builder"] or {}
+    values["compatibility"] = values["compatibility"] or {}
+    return StudyData(name=study.get("name", ""), **values)
 
 
 def register(mcp: MCPServer, client: AntaresWebClient) -> None:
@@ -664,7 +568,7 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         Each finding is a possible issue to explain to the user: some are deliberate modelling choices,
         which only the author of the study can confirm.
         """
-        data = await guard(load_study_data(client, study_id))
+        data = await load_study_data(client, study_id)
         findings = [result for check in QUICK_CHECKS for result in check(data)]
         notes = []
         if deep:

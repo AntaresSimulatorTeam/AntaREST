@@ -17,6 +17,7 @@ from typing import Annotated, Any
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
+from pydantic.alias_generators import to_camel
 
 from antares_web_mcp.client import AntaresWebClient
 from antares_web_mcp.enums import AssetTypeValue, TransmissionCapacityValue
@@ -27,7 +28,6 @@ from antares_web_mcp.tools.common import (
     UPDATE,
     AreaId,
     StudyId,
-    guard,
     without_none,
 )
 
@@ -41,7 +41,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
     @mcp.tool(annotations=READ_ONLY)
     async def list_areas(study_id: StudyId) -> list[AreaSummary]:
         """List the areas (network nodes) of a study."""
-        areas = await guard(client.list_areas(study_id))
+        areas = await client.list_areas(study_id)
         return [AreaSummary(id=a["id"], name=a["name"]) for a in areas]
 
     @mcp.tool(annotations=READ_ONLY)
@@ -50,12 +50,12 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         List the links (network edges between two areas) of a study, with all their properties
         (asset type, transmission capacities mode, hurdle costs, loop flow, phase shifter, display style, ...).
         """
-        return await guard(client.list_links(study_id))
+        return await client.list_links(study_id)
 
     @mcp.tool(annotations=READ_ONLY)
     async def get_area_properties(study_id: StudyId, area_id: AreaId) -> dict[str, Any]:
         """Get the economic properties of an area (unsupplied / spilled energy costs, dispatch options, ...)."""
-        return await guard(client.get_area_properties(study_id, area_id))
+        return await client.get_area_properties(study_id, area_id)
 
     if read_only:
         return
@@ -71,7 +71,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         A new area has no load and an unsupplied energy cost of 0: see `set_area_load` and
         `update_area_properties`.
         """
-        area = await guard(client.create_area(study_id, name))
+        area = await client.create_area(study_id, name)
         return AreaSummary(id=area["id"], name=area["name"])
 
     @mcp.tool(annotations=DESTRUCTIVE)
@@ -81,7 +81,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         Fails if the area is referenced by a binding constraint: remove it from the constraint first.
         This cannot be undone on a raw study.
         """
-        deleted_id = await guard(client.delete_area(study_id, area_id))
+        deleted_id = await client.delete_area(study_id, area_id)
         return f"Area '{deleted_id}' deleted."
 
     @mcp.tool(annotations=UPDATE)
@@ -108,8 +108,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         )
         if not changes:
             raise ToolError("Nothing to update: provide at least one property.")
-        await guard(client.update_area_properties(study_id, area_id, changes))
-        return await guard(client.get_area_properties(study_id, area_id))
+        await client.update_area_properties(study_id, area_id, changes)
+        return await client.get_area_properties(study_id, area_id)
 
     @mcp.tool(annotations=ADDITIVE)
     async def create_link(
@@ -139,18 +139,15 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         Important: a new link has a transmission capacity of 0 MW in both directions,
         so nothing flows through it until `set_link_capacity` is called.
         """
-        payload: dict[str, Any] = {"area1": area1, "area2": area2}
-        payload.update(
-            _link_properties(
-                asset_type=asset_type,
-                transmission_capacities=transmission_capacities,
-                hurdles_cost=hurdles_cost,
-                loop_flow=loop_flow,
-                use_phase_shifter=use_phase_shifter,
-                comments=comments,
-            )
+        payload = {"area1": area1, "area2": area2} | _link_properties(
+            asset_type=asset_type,
+            transmission_capacities=transmission_capacities,
+            hurdles_cost=hurdles_cost,
+            loop_flow=loop_flow,
+            use_phase_shifter=use_phase_shifter,
+            comments=comments,
         )
-        return await guard(client.create_link(study_id, payload))
+        return await client.create_link(study_id, payload)
 
     @mcp.tool(annotations=UPDATE)
     async def update_link(
@@ -181,7 +178,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         if not changes:
             raise ToolError("Nothing to update: provide at least one link property.")
         area_from, area_to = sorted([area1, area2])
-        return await guard(client.update_link(study_id, area_from, area_to, changes))
+        return await client.update_link(study_id, area_from, area_to, changes)
 
     @mcp.tool(annotations=UPDATE)
     async def set_link_capacity(
@@ -204,8 +201,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         area_from, area_to = sorted([area1, area2])
         direct, indirect = (capacity_1_to_2, reverse) if area_from == area1 else (reverse, capacity_1_to_2)
         base = f"input/links/{area_from}/capacities/{area_to}"
-        await guard(client.edit_matrix(study_id, f"{base}_direct", "=", direct))
-        await guard(client.edit_matrix(study_id, f"{base}_indirect", "=", indirect))
+        await client.edit_matrix(study_id, f"{base}_direct", "=", direct)
+        await client.edit_matrix(study_id, f"{base}_indirect", "=", indirect)
         return (
             f"Link {area_from} / {area_to}: {direct:g} MW from {area_from} to {area_to}, "
             f"{indirect:g} MW from {area_to} to {area_from}."
@@ -218,27 +215,10 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         This cannot be undone on a raw study.
         """
         area_from, area_to = sorted([area1, area2])
-        deleted = await guard(client.delete_link(study_id, area_from, area_to))
+        deleted = await client.delete_link(study_id, area_from, area_to)
         return f"Link '{deleted}' deleted."
 
 
-def _link_properties(
-    *,
-    asset_type: str | None,
-    transmission_capacities: str | None,
-    hurdles_cost: bool | None,
-    loop_flow: bool | None,
-    use_phase_shifter: bool | None,
-    comments: str | None,
-) -> dict[str, Any]:
+def _link_properties(**properties: Any) -> dict[str, Any]:
     """Builds the REST payload (camelCase keys, as used by the API) from the provided properties only."""
-    return without_none(
-        {
-            "assetType": asset_type,
-            "transmissionCapacities": transmission_capacities,
-            "hurdlesCost": hurdles_cost,
-            "loopFlow": loop_flow,
-            "usePhaseShifter": use_phase_shifter,
-            "comments": comments,
-        }
-    )
+    return without_none({to_camel(name): value for name, value in properties.items()})

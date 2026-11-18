@@ -140,7 +140,6 @@ def test_durations() -> None:
     assert format_duration(0) == "0 s"
 
 
-@pytest.mark.anyio
 async def test_diagnose_job_tool(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     job: dict[str, Any] = {
         "id": JOB_ID,
@@ -181,7 +180,6 @@ async def test_diagnose_job_tool(fake_api: FakeAntaresWeb, api_client: AntaresWe
     assert diagnosis["error_lines"] == ["[solver][fatal] The folder `/tmp/x` does not seem to be a valid study"]
 
 
-@pytest.mark.anyio
 async def test_diagnose_job_of_a_deleted_study(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     job = {"id": JOB_ID, "study_id": STUDY_ID, "status": "failed", "launcher": "local_id"}
     fake_api.route("GET", f"/v1/launcher/jobs/{JOB_ID}", json_body=job)

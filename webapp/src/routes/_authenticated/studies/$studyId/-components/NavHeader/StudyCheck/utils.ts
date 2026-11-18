@@ -12,7 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import { checkReportSchema } from "@/services/api/assistant/schemas";
+import type { RunStatus } from "@/components/AssistantConversation/useAssistantRun";
+import { checkReportSchema, parseJson } from "@/services/api/assistant/schemas";
 import type {
   AssistantEvent,
   AssistantHistory,
@@ -21,9 +22,7 @@ import type {
 } from "@/services/api/assistant/types";
 
 /** Tool of the assistant which runs the consistency rules. */
-export const CHECK_TOOL = "check_study";
-
-export type CheckStatus = "idle" | "running" | "success" | "error";
+const CHECK_TOOL = "check_study";
 
 /**
  * Steps of a check:
@@ -31,7 +30,7 @@ export type CheckStatus = "idle" | "running" | "success" | "error";
  * - `checking`: the rules run on the study (the only step whose progress is known)
  * - `reporting`: the findings are available, the assistant writes its analysis
  */
-export type CheckPhase = "starting" | "checking" | "reporting";
+type CheckPhase = "starting" | "checking" | "reporting";
 
 export interface CheckProgress {
   /** Number of rule steps done. */
@@ -42,7 +41,7 @@ export interface CheckProgress {
 }
 
 export interface StudyCheckState {
-  status: CheckStatus;
+  status: RunStatus;
   phase: CheckPhase;
   progress?: CheckProgress;
   /** Findings of the rules: available before the analysis of the assistant. */
@@ -65,8 +64,6 @@ export const INITIAL_CHECK_STATE: StudyCheckState = {
   answer: "",
 };
 
-export const RUNNING_CHECK_STATE: StudyCheckState = { ...INITIAL_CHECK_STATE, status: "running" };
-
 /**
  * Parses the JSON result of the `check_study` tool.
  *
@@ -74,15 +71,7 @@ export const RUNNING_CHECK_STATE: StudyCheckState = { ...INITIAL_CHECK_STATE, st
  * @returns The report, or `undefined` if the content is not a report (e.g. cut by the server).
  */
 export function parseCheckReport(content: string | undefined): CheckReport | undefined {
-  if (!content) {
-    return undefined;
-  }
-  try {
-    const result = checkReportSchema.safeParse(JSON.parse(content));
-    return result.success ? result.data : undefined;
-  } catch {
-    return undefined;
-  }
+  return parseJson(checkReportSchema, content);
 }
 
 /**
@@ -136,16 +125,10 @@ export function reduceCheckEvent(state: StudyCheckState, event: AssistantEvent):
     }
 
     case "done":
-      return {
-        ...state,
-        status: "success",
-        progress: undefined,
-        answer: event.answer,
-        history: event.history,
-      };
+      return { ...state, status: "success", answer: event.answer, history: event.history };
 
     case "error":
-      return { ...state, status: "error", progress: undefined, error: event.message };
+      return { ...state, status: "error", error: event.message };
 
     default:
       return state;

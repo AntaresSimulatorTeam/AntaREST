@@ -26,7 +26,7 @@ import pytest
 from fastapi import FastAPI
 from starlette.testclient import TestClient
 
-from antarest.assistant.model import AssistantError, AssistantUnavailableError, ChatRequestDTO
+from antarest.assistant.model import AssistantUnavailableError, ChatRequestDTO
 from antarest.assistant.service import AssistantService
 from antarest.assistant.web import create_assistant_api
 from antarest.core.config import AssistantConfig, Config, SecurityConfig
@@ -46,7 +46,7 @@ if request["message"] == "crash":
 if request["message"] == "hang":
     time.sleep(60)
 if request["message"] == "error":
-    emit({"type": "error", "message": "The Anthropic API key is invalid or revoked."})
+    emit({"type": "error", "message": "The model endpoint rejected the API key."})
     sys.exit(0)
 
 emit({"type": "tool_call", "name": "list_studies", "input": {"name": "Base"}})
@@ -56,13 +56,13 @@ emit({
     "type": "done",
     "answer": "You have 1 study.",
     "history": [{"role": "user", "content": request["message"]}],
-    "provider": "anthropic",
-    "model": "claude-test",
+    "provider": "openai",
+    "model": "qwen-test",
     "stop_reason": "end_turn",
     "usage": {"input_tokens": 10, "output_tokens": 5, "requests": 2},
     "received": {
         "request": request,
-        "api_key": os.environ.get("ANTHROPIC_API_KEY"),
+        "api_key": os.environ.get("OPENAI_API_KEY"),
         "virtual_env": os.environ.get("VIRTUAL_ENV"),
     },
 })
@@ -76,9 +76,12 @@ def agent_command(tmp_path: Path) -> list[str]:
     return [sys.executable, str(script)]
 
 
+MODEL_SERVER = {"base_url": "http://model.test/v1", "model": "qwen-test"}
+
+
 @pytest.fixture
 def assistant_config(agent_command: list[str]) -> AssistantConfig:
-    return AssistantConfig.model_validate({"anthropic_api_key": "sk-test", "command": agent_command})
+    return AssistantConfig.model_validate({**MODEL_SERVER, "api_key": "sk-test", "command": agent_command})
 
 
 def ask(service: AssistantService, message: str = "Which studies do I have?") -> list[dict[str, Any]]:
@@ -89,20 +92,6 @@ def ask(service: AssistantService, message: str = "Which studies do I have?") ->
 # ----------------------------------------------------------------------
 # Service
 # ----------------------------------------------------------------------
-
-
-def test_chat_returns_the_answer_and_the_tool_calls(assistant_config: AssistantConfig) -> None:
-    service = AssistantService(assistant_config)
-
-    response = service.chat(ChatRequestDTO(message="Which studies do I have?"), antares_url="http://x", token=None)
-
-    assert response.answer == "You have 1 study."
-    assert [call.model_dump() for call in response.tool_calls] == [
-        {"name": "list_studies", "input": {"name": "Base"}, "is_error": False, "duration_s": 0.5}
-    ]
-    assert response.history == [{"role": "user", "content": "Which studies do I have?"}]
-    assert (response.provider, response.model, response.stop_reason) == ("anthropic", "claude-test", "end_turn")
-    assert response.usage.model_dump(exclude_defaults=True) == {"input_tokens": 10, "output_tokens": 5, "requests": 2}
 
 
 def test_agent_receives_the_user_token_and_the_configuration(
@@ -121,55 +110,42 @@ def test_agent_receives_the_user_token_and_the_configuration(
         "antares_url": "http://127.0.0.1:8080",
         "token": "user-token",
         "read_only": True,
-        "provider": "anthropic",
-        "model": None,
-        "effort": "medium",
+        "provider": "openai",
+        "base_url": "http://model.test/v1",
+        "model": "qwen-test",
         "max_tool_rounds": 40,
     }
     assert received["api_key"] == "sk-test"
     assert received["virtual_env"] is None  # the agent has its own environment
 
 
-def test_api_key_from_the_environment(agent_command: list[str], monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-from-env")
-    service = AssistantService(AssistantConfig(command=agent_command))
+def test_endpoint_and_key_from_the_environment(agent_command: list[str], monkeypatch: pytest.MonkeyPatch) -> None:
+    """The variables that OpenAI-compatible tools already use on the machine are enough."""
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://env.test/v1")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-from-env")
+    service = AssistantService(AssistantConfig(model="qwen-test", command=agent_command))
 
     assert service.get_status().available
-    assert ask(service)[-1]["received"]["api_key"] == "sk-from-env"
+    received = ask(service)[-1]["received"]
+    assert received["request"]["base_url"] == "http://env.test/v1"
+    assert received["api_key"] == "sk-from-env"
 
 
-def test_unavailable_without_api_key(agent_command: list[str], monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    service = AssistantService(AssistantConfig(command=agent_command))
+def test_no_api_key_is_needed_by_a_local_model_server(
+    agent_command: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    service = AssistantService(AssistantConfig.model_validate({**MODEL_SERVER, "command": agent_command}))
 
-    status = service.get_status()
-    assert not status.available
-    assert "assistant.anthropic_api_key" in status.reason
-    with pytest.raises(AssistantUnavailableError, match="No API key"):
-        ask(service)
+    assert service.get_status().available
+    assert ask(service)[-1]["received"]["api_key"] is None
 
 
 def test_unavailable_when_disabled(agent_command: list[str]) -> None:
-    config = AssistantConfig.model_validate({"enabled": False, "anthropic_api_key": "sk", "command": agent_command})
+    config = AssistantConfig.model_validate({**MODEL_SERVER, "enabled": False, "command": agent_command})
 
     with pytest.raises(AssistantUnavailableError, match="disabled"):
         ask(AssistantService(config))
-
-
-@pytest.mark.parametrize(
-    "message, expected",
-    [
-        ("error", "The Anthropic API key is invalid or revoked."),
-        ("crash", "stopped unexpectedly"),
-    ],
-)
-def test_chat_errors(assistant_config: AssistantConfig, message: str, expected: str) -> None:
-    service = AssistantService(assistant_config)
-
-    with pytest.raises(AssistantError, match=expected) as error:
-        service.chat(ChatRequestDTO(message=message), antares_url="http://x", token=None)
-
-    assert error.value.status_code == HTTPStatus.BAD_GATEWAY
 
 
 def test_agent_is_killed_after_the_timeout(assistant_config: AssistantConfig) -> None:
@@ -181,7 +157,7 @@ def test_agent_is_killed_after_the_timeout(assistant_config: AssistantConfig) ->
 
 
 def test_agent_command_not_found() -> None:
-    config = AssistantConfig.model_validate({"anthropic_api_key": "sk", "command": ["/does/not/exist"]})
+    config = AssistantConfig.model_validate({**MODEL_SERVER, "command": ["/does/not/exist"]})
 
     (event,) = ask(AssistantService(config))
 
@@ -190,9 +166,9 @@ def test_agent_command_not_found() -> None:
 
 
 def test_api_key_is_not_printed_with_the_configuration() -> None:
-    config = Config.model_validate({"assistant": {"anthropic_api_key": "sk-secret"}})
+    config = Config.model_validate({"assistant": {"api_key": "sk-secret"}})
 
-    assert config.assistant.anthropic_api_key.get_secret_value() == "sk-secret"
+    assert config.assistant.api_key.get_secret_value() == "sk-secret"
     assert "sk-secret" not in repr(config)
 
 
@@ -217,8 +193,8 @@ def test_status_endpoint(client: TestClient) -> None:
     assert response.json() == {
         "available": True,
         "reason": "",
-        "provider": "anthropic",
-        "model": "",
+        "provider": "openai",
+        "model": "qwen-test",
         "read_only": True,
     }
 
@@ -229,7 +205,12 @@ def test_chat_endpoint(client: TestClient) -> None:
     assert response.status_code == HTTPStatus.OK, response.text
     body = response.json()
     assert body["answer"] == "You have 1 study."
-    assert [call["name"] for call in body["tool_calls"]] == ["list_studies"]
+    assert body["tool_calls"] == [
+        {"name": "list_studies", "input": {"name": "Base"}, "is_error": False, "duration_s": 0.5}
+    ]
+    assert body["history"] == [{"role": "user", "content": "Which studies do I have?"}]
+    assert (body["provider"], body["model"], body["stop_reason"]) == ("openai", "qwen-test", "end_turn")
+    assert (body["usage"]["input_tokens"], body["usage"]["output_tokens"], body["usage"]["requests"]) == (10, 5, 2)
 
 
 def test_chat_stream_endpoint_forwards_the_bearer_token(client: TestClient) -> None:
@@ -299,21 +280,35 @@ def test_chat_endpoint_errors(client: TestClient) -> None:
     empty = client.post("/v1/assistant/chat", json={"message": ""})
     unknown_field = client.post("/v1/assistant/chat", json={"message": "Hello", "model": "other"})
     failed = client.post("/v1/assistant/chat", json={"message": "error"})
+    crashed = client.post("/v1/assistant/chat", json={"message": "crash"})
 
     assert empty.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert unknown_field.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
     assert failed.status_code == HTTPStatus.BAD_GATEWAY
-    assert failed.json()["detail"] == "The Anthropic API key is invalid or revoked."
+    assert failed.json()["detail"] == "The model endpoint rejected the API key."
+    assert crashed.status_code == HTTPStatus.BAD_GATEWAY
+    assert "stopped unexpectedly" in crashed.json()["detail"]
 
 
-def test_chat_endpoint_without_api_key(agent_command: list[str], monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    config = Config(security=SecurityConfig(disabled=True), assistant=AssistantConfig(command=agent_command))
+@pytest.mark.parametrize(
+    "assistant, expected",
+    [({}, "assistant.base_url"), ({"base_url": "http://model.test/v1"}, "assistant.model")],
+)
+def test_assistant_is_unavailable_without_a_model_server(
+    agent_command: list[str], monkeypatch: pytest.MonkeyPatch, assistant: dict[str, str], expected: str
+) -> None:
+    """No default server: the content of the studies must not go to a server nobody chose."""
+    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
+    assistant_config = AssistantConfig.model_validate({**assistant, "command": agent_command})
+    config = Config(security=SecurityConfig(disabled=True), assistant=assistant_config)
     app = FastAPI(title=__name__)
     app.state.app_state = AppState(config=config, services=Mock(), ws_manager=Mock())
     app.include_router(create_assistant_api())
 
+    status = TestClient(app).get("/v1/assistant").json()
+    assert not status["available"]
+    assert expected in status["reason"]
     for path in ("/v1/assistant/chat", "/v1/assistant/chat/stream"):
         response = TestClient(app).post(path, json={"message": "Hello"})
         assert response.status_code == HTTPStatus.SERVICE_UNAVAILABLE
-        assert "No API key" in response.json()["detail"]
+        assert expected in response.json()["detail"]

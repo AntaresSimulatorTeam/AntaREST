@@ -28,7 +28,6 @@ from antares_web_mcp.tools.common import (
     READ_ONLY,
     JobId,
     StudyId,
-    guard,
     parse_version,
     without_none,
 )
@@ -99,7 +98,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         List the launchers configured on Antares Web (local machine, SLURM cluster, ...) with the
         Antares Simulator versions they can run and their CPU limits.
         """
-        data = await guard(client.list_launchers())
+        data = await client.list_launchers()
         return LaunchersInfo(
             default_launcher=data.get("defaultLauncher", ""),
             launchers=[
@@ -124,7 +123,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         latest: Annotated[int, Field(ge=1, le=100, description="Maximum number of jobs, most recent first.")] = 10,
     ) -> list[JobInfo]:
         """List the most recent simulation jobs, optionally for one study."""
-        jobs = await guard(client.list_jobs(study_id=study_id, latest=latest))
+        jobs = await client.list_jobs(study_id=study_id, latest=latest)
         jobs.sort(key=lambda job: job.get("creation_date") or "", reverse=True)
         return [JobInfo.from_api(job) for job in jobs[:latest]]
 
@@ -167,7 +166,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         streams = ["STDOUT", "STDERR"] if stream == "both" else [stream.upper()]
         logs: dict[str, str] = {}
         for log_type in streams:
-            lines = ANSI_ESCAPE.sub("", await guard(client.get_job_logs(job_id, log_type=log_type))).splitlines()
+            lines = ANSI_ESCAPE.sub("", await client.get_job_logs(job_id, log_type=log_type)).splitlines()
             if errors_only:
                 lines = [line for line in lines if any(marker in line.lower() for marker in ERROR_MARKERS)]
             logs[log_type.lower()] = "\n".join(lines[-tail_lines:])
@@ -203,12 +202,12 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         Launch a simulation of a study. Returns immediately with a job id: then call `wait_for_job`.
         The simulation uses the study settings (see `get_simulation_settings`).
         """
-        launchers = await guard(client.list_launchers())
+        launchers = await client.list_launchers()
         launcher_id = launcher or launchers.get("defaultLauncher")
         known = {item["id"]: item for item in launchers.get("launchers", [])}
         if launcher_id not in known:
             raise ToolError(f"Unknown launcher '{launcher_id}'. Available launchers: {sorted(known)}.")
-        study_version = str((await guard(client.get_study(study_id)))["version"])
+        study_version = str((await client.get_study(study_id))["version"])
         version = solver_version or choose_solver_version(study_version, known[launcher_id].get("versions", []))
 
         parameters = without_none(
@@ -218,15 +217,15 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
                 "time_limit": time_limit_hours * 3600 if time_limit_hours else None,
             }
         )
-        job_id = await guard(
-            client.launch_study(study_id, launcher=launcher_id, solver_version=version, parameters=parameters)
+        job_id = await client.launch_study(
+            study_id, launcher=launcher_id, solver_version=version, parameters=parameters
         )
         return LaunchResult(job_id=job_id, launcher=launcher_id, solver_version=version, study_version=study_version)
 
     @mcp.tool(annotations=DESTRUCTIVE)
     async def kill_job(job_id: JobId) -> str:
         """Stop a pending or running simulation job. Its partial results are lost."""
-        await guard(client.kill_job(job_id))
+        await client.kill_job(job_id)
         return f"Job {job_id} killed."
 
 
@@ -236,8 +235,8 @@ def _now() -> float:
 
 
 async def _job_info(client: AntaresWebClient, job_id: str) -> JobInfo:
-    job = await guard(client.get_job(job_id))
-    progress = await guard(client.get_job_progress(job_id)) if job.get("status") == "running" else None
+    job = await client.get_job(job_id)
+    progress = await client.get_job_progress(job_id) if job.get("status") == "running" else None
     return JobInfo.from_api(job, progress=progress)
 
 

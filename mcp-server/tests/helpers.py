@@ -43,3 +43,19 @@ def data(result: CallToolResult) -> Any:
     content = result.structured_content
     assert content is not None
     return content["result"] if set(content) == {"result"} else content
+
+
+def study(study_id: str = STUDY_ID, name: str = "Base case", **extra: Any) -> dict[str, Any]:
+    """A study, as returned by Antares Web."""
+    return {
+        "id": study_id,
+        "name": name,
+        "version": "9.2",
+        "type": "rawstudy",
+        "owner": {"id": 1, "name": "admin"},
+        "workspace": "default",
+        "managed": True,
+        "archived": False,
+        "updated": "2026-11-07 10:00:00",
+        **extra,
+    }

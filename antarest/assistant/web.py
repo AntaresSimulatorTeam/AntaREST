@@ -12,8 +12,7 @@
 
 import json
 import logging
-from collections.abc import Iterator
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Literal, TypeAlias
 
 from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
@@ -103,9 +102,7 @@ def create_assistant_api() -> APIRouter:
         (answer, history, usage) or `error`.
         """
         logger.info(f"Assistant request, streamed (study: {body.study_id})")
-        # Started here, not in the generator: configuration errors must give an HTTP error status.
-        events = service.stream(body, antares_url=antares_url(request, config), token=user_token(request))
-        return _ndjson(events)
+        return _stream(request, body, service, config)
 
     @bp.post(
         "/assistant/studies/{study_id}/check",
@@ -130,8 +127,7 @@ def create_assistant_api() -> APIRouter:
         """
         logger.info(f"Assistant check of study {study_id}")
         body = ChatRequestDTO(message=build_check_prompt(language), study_id=study_id)
-        events = service.stream(body, antares_url=antares_url(request, config), token=user_token(request))
-        return _ndjson(events)
+        return _stream(request, body, service, config)
 
     @bp.post(
         "/assistant/jobs/{job_id}/explain",
@@ -156,15 +152,14 @@ def create_assistant_api() -> APIRouter:
         """
         logger.info(f"Assistant explanation of job {job_id}")
         body = ChatRequestDTO(message=build_explain_job_prompt(job_id, language))
-        events = service.stream(body, antares_url=antares_url(request, config), token=user_token(request))
-        return _ndjson(events)
+        return _stream(request, body, service, config)
 
     return bp
 
 
-def _ndjson(events: Iterator[dict[str, Any]]) -> StreamingResponse:
-    def lines() -> Iterator[str]:
-        for event in events:
-            yield json.dumps(event, ensure_ascii=False) + "\n"
-
-    return StreamingResponse(lines(), media_type="application/x-ndjson")
+def _stream(request: Request, body: ChatRequestDTO, service: AssistantService, config: Config) -> StreamingResponse:
+    """Runs one turn of conversation, sending the events of the agent as they happen (one JSON object per line)."""
+    # Started here, not in the generator: configuration errors must give an HTTP error status.
+    events = service.stream(body, antares_url=antares_url(request, config), token=user_token(request))
+    lines = (json.dumps(event, ensure_ascii=False) + "\n" for event in events)
+    return StreamingResponse(lines, media_type="application/x-ndjson")

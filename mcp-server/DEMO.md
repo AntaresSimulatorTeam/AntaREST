@@ -31,7 +31,7 @@ de la liste blanche du DDL.
       - Les options passent en arguments (`--url`, `--token`) et non en variables d'environnement :
         la doc JetBrains ne décrit que `command` et `args`.
       - Valider avec **OK**, puis **Apply**.
-- [ ] La colonne *Status* montre `antares-web` connecté, et un clic sur son icône liste **46 outils**.
+- [ ] La colonne *Status* montre `antares-web` connecté, et un clic sur son icône liste **48 outils**.
 - [ ] Dans le chat AI Assistant, repérer le mode qui appelle les outils MCP et choisir un modèle
       solide : l'acte 2 enchaîne une vingtaine d'appels. *À fixer pendant la répétition, la doc
       JetBrains ne le précise pas.*
@@ -200,7 +200,7 @@ Points à présenter :
 
 - **Moindre privilège** : chaque utilisateur se connecte avec son propre *bot token* Antares Web,
   révocable, et les droits Antares s'appliquent.
-- **Mode lecture seule** : `--read-only` ne laisse que les 27 outils de consultation (dont l'analyse d'étude).
+- **Mode lecture seule** : `--read-only` ne laisse que les 28 outils de consultation (dont l'analyse d'étude).
 - **Pas d'accès direct** à la base ni aux fichiers : tout passe par l'API REST, comme l'UI.
 - **Portabilité** : le protocole MCP est standard. Le même serveur se branche aussi sur
   **GitHub Copilot** (VS Code, mode Agent, fichier `.vscode/mcp.json` fourni), l'autre outil de la

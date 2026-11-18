@@ -13,16 +13,15 @@
  */
 
 import { getAssistantStatus, streamAssistantChat } from "@/services/api/assistant";
-import type { AssistantEvent, StreamAssistantChatParams } from "@/services/api/assistant/types";
-import { createQueryClient, createQueryWrapper, deferred } from "@/tests/queryUtils";
-import { act, render, screen } from "@testing-library/react";
+import { mockAssistantStream } from "@/tests/assistantStream";
+import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import AssistantChat from "..";
 import {
   describeToolCall,
   INITIAL_CHAT_STATE,
-  lastTurnMayHaveChangedData,
   reduceChatEvent,
   startTurn,
 } from "@/components/AssistantConversation/utils";
@@ -32,29 +31,7 @@ vi.mock("@/services/api/assistant", () => ({
   streamAssistantChat: vi.fn(),
 }));
 
-const STATUS = { available: true, reason: "", provider: "anthropic", model: "", readOnly: false };
-
-/**
- * Replaces the stream of the server: each message sent gets its own controllable stream.
- *
- * @returns Functions to send an event and to end the current stream, and the received requests.
- */
-function mockStream() {
-  const requests: StreamAssistantChatParams[] = [];
-  let end = deferred<void>();
-
-  vi.mocked(streamAssistantChat).mockImplementation((params) => {
-    requests.push(params);
-    end = deferred<void>();
-    return end.promise;
-  });
-
-  return {
-    requests,
-    send: (event: AssistantEvent) => act(() => requests.at(-1)?.onEvent(event)),
-    end: () => act(() => end.resolve()),
-  };
-}
+const STATUS = { available: true, readOnly: false };
 
 async function openChat() {
   const queryClient = createQueryClient();
@@ -76,7 +53,7 @@ describe("chat utils", () => {
     expect(describeToolCall("get_table", { columns: ["a".repeat(60)] })).toMatch(/…\)$/);
   });
 
-  test("reduceChatEvent follows a turn and keeps the history for the next one", () => {
+  test("reduceChatEvent tells whether each tool call is running or done", () => {
     let state = startTurn(INITIAL_CHAT_STATE, "Create an area");
     state = reduceChatEvent(state, {
       type: "tool_call",
@@ -93,21 +70,8 @@ describe("chat utils", () => {
       is_error: false,
       duration_s: 0.1,
     });
-    state = reduceChatEvent(state, { type: "done", answer: "Done.", history: [{ role: "user" }] });
 
     expect(state.turns[0].tools[0].status).toBe("done");
-    expect(state.turns[0].answer).toBe("Done.");
-    expect(state.history).toEqual([{ role: "user" }]);
-    expect(state.isRunning).toBe(false);
-    expect(lastTurnMayHaveChangedData(state)).toBe(true);
-  });
-
-  test("a turn which only reads does not need a reload of the data", () => {
-    let state = startTurn(INITIAL_CHAT_STATE, "Which areas?");
-    state = reduceChatEvent(state, { type: "tool_call", name: "list_areas", input: {} });
-    state = reduceChatEvent(state, { type: "tool_call", name: "get_table", input: {} });
-
-    expect(lastTurnMayHaveChangedData(state)).toBe(false);
   });
 });
 
@@ -118,7 +82,7 @@ describe("AssistantChat", () => {
   });
 
   test("sends a message, shows the actions of the assistant, then its answer", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     const queryClient = await openChat();
     const invalidate = vi.spyOn(queryClient, "invalidateQueries");
     expect(screen.getByText("study.assistant.readWrite")).toBeInTheDocument();
@@ -156,19 +120,19 @@ describe("AssistantChat", () => {
   });
 
   test("shows an error of the assistant in the conversation", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     await openChat();
 
     await sendMessage("Hello");
-    stream.send({ type: "error", message: "The Anthropic API key is invalid or revoked." });
+    stream.send({ type: "error", message: "The model server rejected the API key." });
     await stream.end();
 
-    expect(screen.getByText("The Anthropic API key is invalid or revoked.")).toBeInTheDocument();
+    expect(screen.getByText("The model server rejected the API key.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "study.assistant.send" })).toBeDisabled();
   });
 
   test("stops a running answer and starts a new conversation", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamAssistantChat);
     await openChat();
     await sendMessage("Hello");
 

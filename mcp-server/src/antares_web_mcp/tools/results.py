@@ -27,7 +27,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import BaseModel, Field
 
 from antares_web_mcp.client import AntaresWebClient
-from antares_web_mcp.tools.common import READ_ONLY, OutputId, StudyId, guard
+from antares_web_mcp.tools.common import READ_ONLY, OutputId, StudyId
 
 Frequency = Literal["annual", "monthly", "weekly", "daily", "hourly"]
 Statistic = Literal["EXP", "STD", "MIN", "MAX"]
@@ -118,7 +118,7 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
     @mcp.tool(annotations=READ_ONLY)
     async def list_outputs(study_id: StudyId) -> list[OutputSummary]:
         """List the simulation outputs (results) of a study."""
-        outputs = await guard(client.list_outputs(study_id))
+        outputs = await client.list_outputs(study_id)
         return [
             OutputSummary(
                 id=output["id"],
@@ -145,10 +145,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         Get the results of a simulation for areas (Monte-Carlo synthesis): costs, marginal prices,
         unsupplied energy, production by group, ... One row per area and time step.
         """
-        content = await guard(
-            client.aggregate_output(
-                study_id, output_id, target="areas", query_file="values", frequency=frequency, ids=areas
-            )
+        content = await client.aggregate_output(
+            study_id, output_id, target="areas", query_file="values", frequency=frequency, ids=areas
         )
         return build_results_table(
             content,
@@ -186,8 +184,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         Get the results of a simulation for links (Monte-Carlo synthesis): flows, congestion fees and
         probabilities, ... One row per link and time step. A positive flow goes from area1 to area2.
         """
-        content = await guard(
-            client.aggregate_output(study_id, output_id, target="links", query_file="values", frequency=frequency)
+        content = await client.aggregate_output(
+            study_id, output_id, target="links", query_file="values", frequency=frequency
         )
         return build_results_table(
             content,
@@ -216,10 +214,8 @@ def register(mcp: MCPServer, client: AntaresWebClient, *, read_only: bool) -> No
         ('cluster' column) and time step. Use an hourly or daily frequency to see when storages charge
         and discharge: this is how to check whether a storage was actually used.
         """
-        content = await guard(
-            client.aggregate_output(
-                study_id, output_id, target="areas", query_file="details-STstorage", frequency=frequency, ids=areas
-            )
+        content = await client.aggregate_output(
+            study_id, output_id, target="areas", query_file="details-STstorage", frequency=frequency, ids=areas
         )
         return build_results_table(
             content,

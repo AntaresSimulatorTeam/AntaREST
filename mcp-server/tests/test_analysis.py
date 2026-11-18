@@ -122,7 +122,6 @@ def test_flatten_tree_and_term_label() -> None:
 # ----------------------------------------------------------------------
 
 
-@pytest.mark.anyio
 async def test_get_study_context_of_a_variant(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     fake_api.route(
         "GET",
@@ -150,7 +149,6 @@ async def test_get_study_context_of_a_variant(fake_api: FakeAntaresWeb, api_clie
     assert context["log_files"] == ["logs/log_generation_study.txt"]
 
 
-@pytest.mark.anyio
 async def test_get_study_configuration(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     fake_api.route("GET", f"{STUDY}/config/general/form", json_body={"mode": "Economy", "thematicTrimming": True})
     fake_api.route("GET", f"{STUDY}/config/optimization/form", json_body={"hurdleCosts": True})
@@ -174,7 +172,6 @@ async def test_get_study_configuration(fake_api: FakeAntaresWeb, api_client: Ant
     assert configuration["disabled_output_variables"] == ["nh3Emis"]
 
 
-@pytest.mark.anyio
 async def test_describe_monte_carlo_scenarios(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     fake_api.route("GET", f"{STUDY}/config/general/form", json_body={"nbYears": 4, "buildingMode": "Custom"})
     fake_api.route(
@@ -191,7 +188,6 @@ async def test_describe_monte_carlo_scenarios(fake_api: FakeAntaresWeb, api_clie
     assert design["rules"][1]["groups"][0]["pattern"] == "always 1"
 
 
-@pytest.mark.anyio
 async def test_summarize_installed_capacity(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     fake_api.route(
         "GET",
@@ -230,7 +226,6 @@ async def test_summarize_installed_capacity(fake_api: FakeAntaresWeb, api_client
     assert summary["enabled_without_capacity"] == {"thermal": 1}
 
 
-@pytest.mark.anyio
 async def test_get_table_filters_rows(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     fake_api.route(
         "GET",
@@ -254,7 +249,6 @@ async def test_get_table_filters_rows(fake_api: FakeAntaresWeb, api_client: Anta
     assert fake_api.last_request.url.params["columns"] == "unitCount,enabled"
 
 
-@pytest.mark.anyio
 async def test_get_matrix_stats(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     fake_api.route("GET", RAW, params={"path": "input/load/series/load_fr"}, json_body={"data": [[1, 2], [3, 4]]})
     fake_api.route("GET", "/v1/matrix/abc123", json_body={"id": "abc123", "data": [[0], [0]]})
@@ -271,7 +265,6 @@ async def test_get_matrix_stats(fake_api: FakeAntaresWeb, api_client: AntaresWeb
     assert "either `path` or `matrix_id`" in error_text(both)
 
 
-@pytest.mark.anyio
 async def test_list_binding_constraints(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     fake_api.route(
         "GET",
@@ -303,7 +296,6 @@ async def test_list_binding_constraints(fake_api: FakeAntaresWeb, api_client: An
     assert constraint["rhs_matrices"] == ["input/bindingconstraints/efficiency_fr_eq"]
 
 
-@pytest.mark.anyio
 async def test_read_study_file_filters_lines(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     log = "Create area : FR\nScenario NA does not exist\nCreate area : DE\nScenario NA does not exist\n"
     fake_api.route("GET", RAW, params={"path": "logs/generation.txt"}, text=log, content_type="text/plain")
@@ -328,7 +320,6 @@ async def test_read_study_file_filters_lines(fake_api: FakeAntaresWeb, api_clien
     assert "is not a text file" in error_text(binary)
 
 
-@pytest.mark.anyio
 async def test_analyse_study_inputs_prompt(api_client: AntaresWebClient) -> None:
     async with Client(create_server(api_client)) as client:
         prompts = {prompt.name for prompt in (await client.list_prompts()).prompts}

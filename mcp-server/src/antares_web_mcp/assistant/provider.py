@@ -67,9 +67,6 @@ class ProviderError(Exception):
 
 
 class ChatProvider(Protocol):
-    name: str
-    model: str
-
     async def run_turn(
         self,
         *,

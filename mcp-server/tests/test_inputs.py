@@ -18,8 +18,6 @@ from antares_web_mcp.client import AntaresWebClient
 from tests.fake_antares_web import FakeAntaresWeb
 from tests.helpers import STUDY_ID, call, data
 
-pytestmark = pytest.mark.anyio
-
 AREA = f"/v1/studies/{STUDY_ID}/areas/fr"
 MATRIX = f"/v1/studies/{STUDY_ID}/matrix"
 

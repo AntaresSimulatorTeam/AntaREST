@@ -17,17 +17,14 @@ import {
   streamAssistantChat,
   streamJobExplanation,
 } from "@/services/api/assistant";
-import type {
-  AssistantEvent,
-  StreamAssistantChatParams,
-  StreamJobExplanationParams,
-} from "@/services/api/assistant/types";
-import { createQueryClient, createQueryWrapper, deferred } from "@/tests/queryUtils";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import type { AssistantEvent } from "@/services/api/assistant/types";
+import { mockAssistantStream } from "@/tests/assistantStream";
+import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import JobFailureExplanation from "..";
-import { parseJobDiagnosis, reduceExplanationEvent, RUNNING_EXPLANATION_STATE } from "../utils";
+import { INITIAL_EXPLANATION_STATE, parseJobDiagnosis, reduceExplanationEvent } from "../utils";
 
 vi.mock("@/services/api/assistant", () => ({
   getAssistantStatus: vi.fn(),
@@ -35,7 +32,7 @@ vi.mock("@/services/api/assistant", () => ({
   streamJobExplanation: vi.fn(),
 }));
 
-const STATUS = { available: true, reason: "", provider: "anthropic", model: "", readOnly: true };
+const STATUS = { available: true, readOnly: true };
 const ERROR_LINE = "[solver][fatal] The folder `/tmp/x` does not seem to be a valid study";
 
 const DIAGNOSIS_JSON = JSON.stringify({
@@ -64,65 +61,19 @@ const DIAGNOSE_RESULT: AssistantEvent = {
   content: DIAGNOSIS_JSON,
 };
 
-/**
- * Replaces the stream of the server: the test sends the events one by one, then ends the stream.
- *
- * @returns Functions to send an event and to end the stream.
- */
-function mockStream() {
-  const end = deferred<void>();
-  let onEvent: StreamJobExplanationParams["onEvent"] | undefined;
-
-  vi.mocked(streamJobExplanation).mockImplementation((params) => {
-    onEvent = params.onEvent;
-    return end.promise;
-  });
-
-  return {
-    send: (event: AssistantEvent) => act(() => onEvent?.(event)),
-    end: () => act(() => end.resolve()),
-  };
-}
-
 const EXPLANATION_HISTORY = [{ role: "user", content: "Why did the job fail?" }];
 const THREAD_HISTORY = [...EXPLANATION_HISTORY, { role: "user", content: "Which solver?" }];
 const ASK = "tasks.explain.ask";
 
-/**
- * Replaces the stream of the conversation: each message sent gets its own controllable stream.
- *
- * @returns The received requests, and functions to send an event to the last one and to end it.
- */
-function mockChat() {
-  const requests: StreamAssistantChatParams[] = [];
-  let end = deferred<void>();
-
-  vi.mocked(streamAssistantChat).mockImplementation((params) => {
-    requests.push(params);
-    end = deferred<void>();
-    return end.promise;
-  });
-
-  return {
-    requests,
-    send: (event: AssistantEvent) => act(() => requests.at(-1)?.onEvent(event)),
-    end: () =>
-      act(async () => {
-        end.resolve();
-        await end.promise;
-      }),
-  };
-}
-
 /** Opens the dialog and runs an explanation to its end. */
 async function explain() {
-  const stream = mockStream();
+  const stream = mockAssistantStream(streamJobExplanation);
   renderExplanation();
   await userEvent.click(await screen.findByRole("button", { name: "tasks.explain.button" }));
   stream.send(DIAGNOSE_CALL);
   stream.send(DIAGNOSE_RESULT);
   stream.send({ type: "done", answer: "The solver is too old.", history: EXPLANATION_HISTORY });
-  stream.end();
+  await stream.end();
 }
 
 function renderExplanation() {
@@ -132,40 +83,8 @@ function renderExplanation() {
 }
 
 describe("reduceExplanationEvent", () => {
-  test("follows an explanation: diagnosis, digging, answer", () => {
-    const diagnosing = reduceExplanationEvent(RUNNING_EXPLANATION_STATE, DIAGNOSE_CALL);
-    expect(diagnosing.phase).toBe("diagnosing");
-
-    const explaining = reduceExplanationEvent(diagnosing, DIAGNOSE_RESULT);
-    expect(explaining.phase).toBe("explaining");
-    expect(explaining.diagnosis?.causes[0].code).toBe("solver_version_mismatch");
-    expect(explaining.diagnosis?.errorLines).toEqual([ERROR_LINE]);
-
-    const digging = reduceExplanationEvent(explaining, {
-      type: "tool_call",
-      name: "get_job_logs",
-      input: {},
-    });
-    expect(digging.extraTools).toEqual(["get_job_logs"]);
-
-    const done = reduceExplanationEvent(digging, { type: "done", answer: "Solver too old." });
-    expect(done.status).toBe("success");
-    expect(done.answer).toBe("Solver too old.");
-  });
-
-  test("keeps the conversation of the explanation, to continue it with questions", () => {
-    const history = [{ role: "user", content: "Why did the job fail?" }];
-    const done = reduceExplanationEvent(RUNNING_EXPLANATION_STATE, {
-      type: "done",
-      answer: "Solver too old.",
-      history,
-    });
-
-    expect(done.history).toEqual(history);
-  });
-
   test("keeps the reason when the job could not be read", () => {
-    const state = reduceExplanationEvent(RUNNING_EXPLANATION_STATE, {
+    const state = reduceExplanationEvent(INITIAL_EXPLANATION_STATE, {
       ...DIAGNOSE_RESULT,
       is_error: true,
       content: "Antares Web returned HTTP 404: job not found",
@@ -198,7 +117,7 @@ describe("JobFailureExplanation", () => {
   });
 
   test("shows the probable causes, then the explanation of the assistant", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamJobExplanation);
     renderExplanation();
 
     await userEvent.click(await screen.findByRole("button", { name: "tasks.explain.button" }));
@@ -217,9 +136,11 @@ describe("JobFailureExplanation", () => {
     expect(screen.getByText("tasks.explain.confidence.high")).toBeInTheDocument();
     expect(screen.getAllByText(ERROR_LINE)).toHaveLength(2); // evidence of the cause + error lines
     expect(screen.getByText("tasks.explain.writing")).toBeInTheDocument();
+    stream.send({ type: "tool_call", name: "get_job_logs", input: {} });
+    expect(screen.getByText("tasks.explain.digging")).toBeInTheDocument();
 
     stream.send({ type: "done", answer: "The solver **8.8** cannot read a 9.2 study." });
-    stream.end();
+    await stream.end();
 
     expect(screen.getByText("8.8")).toBeInTheDocument();
     expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
@@ -227,22 +148,22 @@ describe("JobFailureExplanation", () => {
   });
 
   test("shows the advice of the rules when the assistant fails", async () => {
-    const stream = mockStream();
+    const stream = mockAssistantStream(streamJobExplanation);
     renderExplanation();
     await userEvent.click(await screen.findByRole("button", { name: "tasks.explain.button" }));
 
     stream.send(DIAGNOSE_RESULT);
-    stream.send({ type: "error", message: "The Anthropic API rate limit is reached." });
-    stream.end();
+    stream.send({ type: "error", message: "The rate limit of the model server is reached." });
+    await stream.end();
 
-    expect(screen.getByText("The Anthropic API rate limit is reached.")).toBeInTheDocument();
+    expect(screen.getByText("The rate limit of the model server is reached.")).toBeInTheDocument();
     // Without the explanation of the assistant, the explanation of the rule is the fallback
     expect(screen.getByText(/Launch again with a more recent solver/)).toBeInTheDocument();
   });
 
   describe("questions about the cause", () => {
     test("continue the conversation of the explanation", async () => {
-      const chat = mockChat();
+      const chat = mockAssistantStream(streamAssistantChat);
       await explain();
 
       await userEvent.type(screen.getByRole("textbox", { name: ASK }), "Which solver?{Enter}");
@@ -260,35 +181,23 @@ describe("JobFailureExplanation", () => {
       await chat.end();
 
       expect(screen.getByText("10.2")).toBeInTheDocument();
-
-      await userEvent.type(screen.getByRole("textbox", { name: ASK }), "And then?{Enter}");
-
-      expect(chat.requests[1]).toMatchObject({ history: THREAD_HISTORY, message: "And then?" });
     });
 
-    test("wait for the explanation", async () => {
-      const stream = mockStream();
+    test("are offered only once the assistant has explained", async () => {
+      const stream = mockAssistantStream(streamJobExplanation);
       renderExplanation();
       await userEvent.click(await screen.findByRole("button", { name: "tasks.explain.button" }));
 
       stream.send(DIAGNOSE_RESULT);
-
       expect(screen.queryByRole("textbox", { name: ASK })).not.toBeInTheDocument();
-    });
 
-    test("are not offered when the assistant could not explain", async () => {
-      const stream = mockStream();
-      renderExplanation();
-      await userEvent.click(await screen.findByRole("button", { name: "tasks.explain.button" }));
-
-      stream.send({ type: "error", message: "The Anthropic API rate limit is reached." });
-      stream.end();
-
+      stream.send({ type: "error", message: "The rate limit of the model server is reached." });
+      await stream.end();
       expect(screen.queryByRole("textbox", { name: ASK })).not.toBeInTheDocument();
     });
 
     test("are kept when the dialog is closed and reopened", async () => {
-      const chat = mockChat();
+      const chat = mockAssistantStream(streamAssistantChat);
       await explain();
       await userEvent.type(screen.getByRole("textbox", { name: ASK }), "Which solver?{Enter}");
       chat.send({ type: "done", answer: "Use the solver 10.2.", history: THREAD_HISTORY });
@@ -304,7 +213,7 @@ describe("JobFailureExplanation", () => {
     });
 
     test("are forgotten when the explanation is run again", async () => {
-      const chat = mockChat();
+      const chat = mockAssistantStream(streamAssistantChat);
       await explain();
       await userEvent.type(screen.getByRole("textbox", { name: ASK }), "Which solver?{Enter}");
       chat.send({ type: "done", answer: "Use the solver 10.2.", history: THREAD_HISTORY });

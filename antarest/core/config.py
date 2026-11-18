@@ -18,7 +18,7 @@ import tempfile
 from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar
 
 import yaml
 from antares.study.version import SolverVersion
@@ -602,13 +602,15 @@ class AssistantConfig(ConfigBaseModel):
     """
 
     enabled: bool = True
-    # Model provider implemented by the agent (see `mcp-server/src/antares_web_mcp/assistant/providers.py`)
-    provider: str = "anthropic"
-    # API key of the provider. If empty, the ANTHROPIC_API_KEY environment variable of the server is used.
-    anthropic_api_key: SecretStr = SecretStr("")
-    # Model id; empty for the default model of the provider
+    # Protocol of the model server, implemented by the agent (see `mcp-server/src/antares_web_mcp/assistant/providers.py`)
+    provider: str = "openai"
+    # URL of the model server, ending with `/v1`: any server speaking the OpenAI API (LiteLLM gateway, vLLM, Ollama...).
+    # If empty, the OPENAI_BASE_URL environment variable of the server is used. There is no default server.
+    base_url: str = ""
+    # API key of the model server, if it needs one. If empty, the OPENAI_API_KEY environment variable is used.
+    api_key: SecretStr = SecretStr("")
+    # Model id, as listed by `GET <base_url>/models`
     model: str = ""
-    effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
     # If True, the assistant can only read studies: it cannot modify them nor launch simulations
     read_only: bool = True
     # Command starting the agent process. Empty: `uv run antares-web-assistant` in the `mcp-server` directory

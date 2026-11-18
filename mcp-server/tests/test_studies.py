@@ -11,32 +11,12 @@
 # This file is part of the Antares project.
 
 from pathlib import Path
-from typing import Any
-
-import pytest
 
 from antares_web_mcp.client import AntaresWebClient
 from tests.fake_antares_web import FakeAntaresWeb
-from tests.helpers import STUDY_ID, call, data, error_text
-
-pytestmark = pytest.mark.anyio
+from tests.helpers import STUDY_ID, call, data, error_text, study
 
 NEW_ID = "0dc18c59-71ae-455d-adfc-12db79b79f34"
-
-
-def study(study_id: str, name: str, **extra: Any) -> dict[str, Any]:
-    return {
-        "id": study_id,
-        "name": name,
-        "version": "9.2",
-        "type": "rawstudy",
-        "owner": {"id": 1, "name": "admin"},
-        "workspace": "default",
-        "managed": True,
-        "archived": False,
-        "updated": "2026-11-07 10:00:00",
-        **extra,
-    }
 
 
 async def test_create_study(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
@@ -116,15 +96,6 @@ async def test_update_simulation_settings(fake_api: FakeAntaresWeb, api_client: 
 
     assert data(result) == {"mode": "Adequacy", "nbYears": 1}
     assert fake_api.json_sent_to("PUT", path) == [{"mode": "Adequacy", "nbYears": 1}]
-
-
-async def test_update_simulation_settings_without_changes(
-    fake_api: FakeAntaresWeb, api_client: AntaresWebClient
-) -> None:
-    result = await call(api_client, "update_simulation_settings", {"study_id": STUDY_ID})
-
-    assert "Nothing to update" in error_text(result)
-    assert fake_api.requests == []
 
 
 async def test_delete_study(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:

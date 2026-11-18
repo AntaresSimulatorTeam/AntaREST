@@ -14,16 +14,9 @@
 
 import ConversationInput from "@/components/AssistantConversation/ConversationInput";
 import ConversationTurn from "@/components/AssistantConversation/ConversationTurn";
-import {
-  INITIAL_CHAT_STATE,
-  lastTurnMayHaveChangedData,
-  reduceChatEvent,
-  startTurn,
-  type ChatState,
-} from "@/components/AssistantConversation/utils";
+import useAssistantThreads from "@/components/AssistantConversation/useAssistantThreads";
+import { INITIAL_CHAT_STATE } from "@/components/AssistantConversation/utils";
 import { assistantQueries } from "@/queries/assistant/queries";
-import { streamAssistantChat } from "@/services/api/assistant";
-import { toError } from "@/utils/fnUtils";
 import AddCommentOutlinedIcon from "@mui/icons-material/AddCommentOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
@@ -39,9 +32,12 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+
+/** The conversation of the panel is one thread. */
+const THREAD = "chat";
 
 interface Props {
   studyId: string;
@@ -53,16 +49,11 @@ interface Props {
 // no assistant.
 function AssistantChat({ studyId }: Props) {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState<ChatState>(INITIAL_CHAT_STATE);
-  const controllerRef = useRef<AbortController | null>(null);
+  const { threads, send, stop, reset } = useAssistantThreads(studyId);
+  const state = threads[THREAD] ?? INITIAL_CHAT_STATE;
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const { data: assistant } = useQuery(assistantQueries.status());
-
-  useEffect(() => {
-    return () => controllerRef.current?.abort();
-  }, []);
 
   // Keep the last message visible
   useEffect(() => {
@@ -72,63 +63,6 @@ function AssistantChat({ studyId }: Props) {
   if (!assistant?.available) {
     return null;
   }
-
-  ////////////////////////////////////////////////////////////////
-  // Event handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleSend = async (message: string) => {
-    const controller = new AbortController();
-    controllerRef.current = controller;
-    const isCurrent = () => controllerRef.current === controller;
-    let latest = startTurn(state, message);
-    setState(latest);
-
-    try {
-      await streamAssistantChat({
-        message,
-        studyId,
-        history: state.history,
-        signal: controller.signal,
-        onEvent: (event) => {
-          if (isCurrent()) {
-            latest = reduceChatEvent(latest, event);
-            setState(latest);
-          }
-        },
-      });
-
-      if (isCurrent() && latest.isRunning) {
-        // The stream ended without a final event
-        latest = reduceChatEvent(latest, { type: "error", message: t("study.assistant.noAnswer") });
-        setState(latest);
-      }
-    } catch (err) {
-      if (isCurrent()) {
-        latest = reduceChatEvent(latest, { type: "error", message: toError(err).message });
-        setState(latest);
-      }
-    }
-
-    if (isCurrent() && lastTurnMayHaveChangedData(latest)) {
-      // The assistant may have modified the study: reload what is displayed
-      queryClient.invalidateQueries();
-    }
-  };
-
-  const handleStop = () => {
-    controllerRef.current?.abort();
-    controllerRef.current = null;
-    setState((prev) =>
-      reduceChatEvent(prev, { type: "error", message: t("study.assistant.stopped") }),
-    );
-  };
-
-  const handleNewConversation = () => {
-    controllerRef.current?.abort();
-    controllerRef.current = null;
-    setState(INITIAL_CHAT_STATE);
-  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -170,7 +104,7 @@ function AssistantChat({ studyId }: Props) {
             <Tooltip title={t("study.assistant.newConversation")}>
               <span>
                 <IconButton
-                  onClick={handleNewConversation}
+                  onClick={reset}
                   disabled={state.turns.length === 0}
                   aria-label={t("study.assistant.newConversation")}
                 >
@@ -203,8 +137,8 @@ function AssistantChat({ studyId }: Props) {
         <Box sx={{ p: 2 }}>
           <ConversationInput
             isRunning={state.isRunning}
-            onSend={handleSend}
-            onStop={handleStop}
+            onSend={(message) => send(THREAD, { message })}
+            onStop={() => stop(THREAD)}
             placeholder={t("study.assistant.placeholder")}
             autoFocus
           />

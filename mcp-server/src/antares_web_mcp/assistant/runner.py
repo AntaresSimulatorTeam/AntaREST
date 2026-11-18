@@ -46,7 +46,7 @@ async def handle(raw_request: str, out: TextIO) -> None:
 
     try:
         request = AssistantRequest.model_validate_json(raw_request)
-        provider = build_provider(request.provider, model=request.model, effort=request.effort)
+        provider = build_provider(request.provider, model=request.model, base_url=request.base_url)
         result = await run_assistant(request, provider, emit)
     except ValidationError as e:
         await emit({"type": "error", "message": f"Invalid assistant request: {e}"})
@@ -56,7 +56,7 @@ async def handle(raw_request: str, out: TextIO) -> None:
         logger.exception("Assistant turn failed")
         await emit({"type": "error", "message": f"The assistant failed unexpectedly: {e}"})
     else:
-        await emit({"type": "done", "provider": provider.name, **result.model_dump()})
+        await emit({"type": "done", "provider": request.provider, **result.model_dump()})
 
 
 @click.command()

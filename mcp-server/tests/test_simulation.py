@@ -55,7 +55,6 @@ def test_choose_solver_version_without_compatible_solver() -> None:
         choose_solver_version("10.2", ["8.8"])
 
 
-@pytest.mark.anyio
 async def test_launch_study_picks_a_compatible_solver(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     fake_api.route("GET", "/v1/launcher/launchers", json_body=LAUNCHERS)
     fake_api.route("GET", f"/v1/studies/{STUDY_ID}", json_body={"id": STUDY_ID, "version": "9.2"})
@@ -69,7 +68,6 @@ async def test_launch_study_picks_a_compatible_solver(fake_api: FakeAntaresWeb, 
     assert fake_api.json_sent_to("POST", f"/v1/launcher/run/{STUDY_ID}") == [{"nb_cpu": 4, "time_limit": 7200}]
 
 
-@pytest.mark.anyio
 async def test_launch_study_with_unknown_launcher(fake_api: FakeAntaresWeb, api_client: AntaresWebClient) -> None:
     fake_api.route("GET", "/v1/launcher/launchers", json_body=LAUNCHERS)
 
@@ -78,7 +76,6 @@ async def test_launch_study_with_unknown_launcher(fake_api: FakeAntaresWeb, api_
     assert "Available launchers: ['local_id', 'slurm']" in error_text(result)
 
 
-@pytest.mark.anyio
 async def test_wait_for_job_reports_progress(
     fake_api: FakeAntaresWeb, api_client: AntaresWebClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -101,7 +98,6 @@ async def test_wait_for_job_reports_progress(
     assert reported == [0, 42, 100]
 
 
-@pytest.mark.anyio
 async def test_wait_for_job_timeout(
     fake_api: FakeAntaresWeb, api_client: AntaresWebClient, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -114,7 +110,6 @@ async def test_wait_for_job_timeout(
     assert data(result)["finished"] is False
 
 
-@pytest.mark.anyio
 async def test_get_job_logs_strips_colours_and_filters_errors(
     fake_api: FakeAntaresWeb, api_client: AntaresWebClient
 ) -> None:

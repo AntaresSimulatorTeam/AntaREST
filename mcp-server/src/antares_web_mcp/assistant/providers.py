@@ -13,7 +13,7 @@
 """
 Registry of model providers.
 
-To add a vendor: implement `ChatProvider` in its own module, and add a builder to `PROVIDERS`.
+To add one: implement `ChatProvider` in its own module, and add a builder to `PROVIDERS`.
 Credentials are read from environment variables, set by the Antares Web backend from its
 configuration: they never transit through command-line arguments or request bodies.
 """
@@ -21,29 +21,41 @@ configuration: they never transit through command-line arguments or request bodi
 import os
 from collections.abc import Callable
 
-import anthropic
+import httpx2
 
-from antares_web_mcp.assistant.anthropic_provider import DEFAULT_MODEL, AnthropicProvider, Effort
+from antares_web_mcp.assistant.openai_provider import OpenAICompatibleProvider
 from antares_web_mcp.assistant.provider import ChatProvider, ProviderError
 
-ANTHROPIC_API_KEY_ENV = "ANTHROPIC_API_KEY"
+API_KEY_ENV = "OPENAI_API_KEY"
 
 
-def _build_anthropic(model: str | None, effort: Effort) -> ChatProvider:
-    api_key = os.environ.get(ANTHROPIC_API_KEY_ENV)
-    if not api_key:
+def _build_openai(model: str | None, base_url: str | None) -> ChatProvider:
+    # No default endpoint: the content of the studies must not go to a server nobody chose.
+    if not base_url:
+        raise ProviderError("No model endpoint: set `assistant.base_url` in the Antares Web configuration file.")
+    if not model:
         raise ProviderError(
-            f"No Anthropic API key: set `assistant.anthropic_api_key` in the Antares Web configuration file, "
-            f"or the {ANTHROPIC_API_KEY_ENV} environment variable of the server."
+            f"No model: set `assistant.model` in the Antares Web configuration file "
+            f"(`GET {base_url.rstrip('/')}/models` lists the models of the endpoint)."
         )
-    return AnthropicProvider(anthropic.AsyncAnthropic(api_key=api_key), model=model or DEFAULT_MODEL, effort=effort)
+    api_key = os.environ.get(API_KEY_ENV)  # not needed by a server on the local machine
+    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+    return OpenAICompatibleProvider(
+        httpx2.AsyncClient(base_url=base_url.rstrip("/") + "/", headers=headers), model=model
+    )
 
 
-PROVIDERS: dict[str, Callable[[str | None, Effort], ChatProvider]] = {"anthropic": _build_anthropic}
+PROVIDERS: dict[str, Callable[[str | None, str | None], ChatProvider]] = {"openai": _build_openai}
 
 
-def build_provider(name: str, *, model: str | None, effort: Effort) -> ChatProvider:
+def build_provider(name: str, *, model: str | None, base_url: str | None) -> ChatProvider:
+    """
+    Builds the provider `name` for the model `model` served at `base_url`.
+
+    Raises:
+        ProviderError: if the provider is unknown or not configured.
+    """
     builder = PROVIDERS.get(name)
     if builder is None:
         raise ProviderError(f"Unknown provider '{name}'. Available providers: {sorted(PROVIDERS)}.")
-    return builder(model, effort)
+    return builder(model, base_url)

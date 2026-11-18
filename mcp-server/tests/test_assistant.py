@@ -19,7 +19,6 @@ import io
 import json
 from typing import Any, override
 
-import anthropic
 import httpx2
 import pytest
 
@@ -30,8 +29,8 @@ from antares_web_mcp.assistant.agent import (
     run_assistant,
     tool_text,
 )
-from antares_web_mcp.assistant.anthropic_provider import AnthropicProvider
 from antares_web_mcp.assistant.cli import AssistantClient, AssistantClientError, describe_tool_call
+from antares_web_mcp.assistant.openai_provider import OpenAICompatibleProvider
 from antares_web_mcp.assistant.provider import (
     ChatResult,
     ProviderError,
@@ -41,31 +40,34 @@ from antares_web_mcp.assistant.provider import (
     ToolSpec,
     Usage,
 )
+from antares_web_mcp.assistant.providers import build_provider
 from antares_web_mcp.assistant.runner import handle
 from antares_web_mcp.client import AntaresWebClient
 from tests.fake_antares_web import FakeAntaresWeb
-from tests.helpers import STUDY_ID
-
-pytestmark = pytest.mark.anyio
+from tests.helpers import STUDY_ID, study
 
 TOOLS = [ToolSpec(name="list_studies", description="Find studies.", input_schema={"type": "object", "properties": {}})]
+MODEL = "qwen3.8-27b"
 
 
-def model_response(content: list[dict[str, Any]], stop_reason: str, **extra: Any) -> dict[str, Any]:
-    return {
-        "id": "msg_1",
-        "type": "message",
-        "role": "assistant",
-        "model": "claude-opus-5-5",
-        "content": content,
-        "stop_reason": stop_reason,
-        "stop_sequence": None,
-        "usage": {"input_tokens": 100, "output_tokens": 20, "cache_read_input_tokens": 50},
-    } | extra
+def model_response(message: dict[str, Any], finish_reason: str = "stop") -> httpx2.Response:
+    """An answer of the chat completions API."""
+    body = {
+        "id": "chatcmpl-1",
+        "object": "chat.completion",
+        "model": MODEL,
+        "choices": [{"index": 0, "message": {"role": "assistant", **message}, "finish_reason": finish_reason}],
+        "usage": {"prompt_tokens": 100, "completion_tokens": 20, "prompt_tokens_details": {"cached_tokens": 50}},
+    }
+    return httpx2.Response(200, json=body)
+
+
+def tool_call(arguments: str = '{"name": "Base"}') -> dict[str, Any]:
+    return {"id": "call_1", "type": "function", "function": {"name": "list_studies", "arguments": arguments}}
 
 
 class FakeModelApi:
-    """Stands for the Anthropic API: returns the scripted responses in order and records the requests."""
+    """Stands for an OpenAI-compatible server: returns the scripted responses in order and records the requests."""
 
     def __init__(self, *responses: httpx2.Response) -> None:
         self.responses = list(responses)
@@ -78,17 +80,12 @@ class FakeModelApi:
     def bodies(self) -> list[dict[str, Any]]:
         return [json.loads(request.content) for request in self.requests]
 
-    def provider(self, model: str = "claude-opus-5-5") -> AnthropicProvider:
-        client = anthropic.AsyncAnthropic(
-            api_key="test-key",
-            base_url="http://anthropic.test",
-            max_retries=0,
-            http_client=anthropic.DefaultAsyncHttpxClient(transport=httpx2.MockTransport(self.handler)),
-        )
-        return AnthropicProvider(client, model=model, effort="low")
+    def provider(self) -> OpenAICompatibleProvider:
+        client = httpx2.AsyncClient(base_url="http://model.test/v1/", transport=httpx2.MockTransport(self.handler))
+        return OpenAICompatibleProvider(client, model=MODEL)
 
 
-async def run_turn(provider: AnthropicProvider, **overrides: Any) -> tuple[ChatResult, list[Any]]:
+async def run_turn(provider: OpenAICompatibleProvider, **overrides: Any) -> tuple[ChatResult, list[Any]]:
     seen: list[Any] = []
 
     async def call_tool(name: str, arguments: dict[str, Any]) -> ToolOutcome:
@@ -111,69 +108,80 @@ async def run_turn(provider: AnthropicProvider, **overrides: Any) -> tuple[ChatR
 
 
 # ----------------------------------------------------------------------
-# Anthropic provider
+# Provider for OpenAI-compatible servers
 # ----------------------------------------------------------------------
 
 
-async def test_anthropic_provider_runs_the_tool_loop() -> None:
-    tool_use = {"type": "tool_use", "id": "toolu_1", "name": "list_studies", "input": {"name": "Base"}}
+async def test_provider_runs_the_tool_loop() -> None:
     api = FakeModelApi(
-        httpx2.Response(200, json=model_response([{"type": "text", "text": "Let me look."}, tool_use], "tool_use")),
-        httpx2.Response(200, json=model_response([{"type": "text", "text": "You have 1 study."}], "end_turn")),
+        model_response({"content": "Let me look.", "tool_calls": [tool_call()]}, "tool_calls"),
+        model_response({"content": "You have 1 study."}),
     )
 
     result, seen = await run_turn(api.provider())
 
     assert result.answer == "You have 1 study."
-    assert result.stop_reason == "end_turn"
+    assert (result.stop_reason, result.model) == ("end_turn", MODEL)
     assert seen == ["Let me look.", ("list_studies", {"name": "Base"})]
     assert result.usage == Usage(input_tokens=200, output_tokens=40, cache_read_input_tokens=100, requests=2)
 
+    assert str(api.requests[0].url) == "http://model.test/v1/chat/completions"
     first, second = api.bodies()
-    assert first["model"] == "claude-opus-5-5"
-    assert first["system"] == "You are a test."
-    assert first["tools"] == [TOOLS[0].model_dump()]
-    assert first["output_config"] == {"effort": "low"}
-    assert first["cache_control"] == {"type": "ephemeral"}
-    assert first["fallbacks"] == "default"
-    assert "server-side-fallback-2026-07-01" in api.requests[0].headers["anthropic-beta"]
-    assert "thinking" not in first  # always on for this model: the parameter is left to the API default
-    # The second request carries the whole first answer and the result of its tool call.
-    assert [message["role"] for message in second["messages"]] == ["user", "assistant", "user"]
-    assert second["messages"][1]["content"][1] == tool_use
-    assert second["messages"][2]["content"] == [
-        {"type": "tool_result", "tool_use_id": "toolu_1", "content": '[{"name": "Base case"}]', "is_error": False}
+    assert first["model"] == MODEL
+    assert first["messages"][0] == {"role": "system", "content": "You are a test."}
+    assert first["tools"] == [
+        {
+            "type": "function",
+            "function": {"name": "list_studies", "description": "Find studies.", "parameters": TOOLS[0].input_schema},
+        }
     ]
+    # The second request carries the first answer, with its tool call, and the result of the call.
+    assert [message["role"] for message in second["messages"]] == ["system", "user", "assistant", "tool"]
+    assert second["messages"][2]["tool_calls"] == [tool_call()]
+    assert second["messages"][3] == {"role": "tool", "tool_call_id": "call_1", "content": '[{"name": "Base case"}]'}
     # The history is plain JSON: it goes through the Antares Web endpoint and comes back as is.
     assert json.loads(json.dumps(result.history)) == result.history
-    assert len(result.history) == 4
+    # The instructions are not part of it: they are sent again with each message.
+    assert [message["role"] for message in result.history] == ["user", "assistant", "tool", "assistant"]
 
 
-async def test_anthropic_provider_continues_a_conversation() -> None:
-    api = FakeModelApi(httpx2.Response(200, json=model_response([{"type": "text", "text": "Yes."}], "end_turn")))
-    history = [{"role": "user", "content": "Hello"}, {"role": "assistant", "content": [{"type": "text", "text": "Hi"}]}]
+async def test_provider_continues_a_conversation() -> None:
+    api = FakeModelApi(model_response({"content": "Yes."}))
+    history = [{"role": "user", "content": "Hello"}, {"role": "assistant", "content": "Hi"}]
 
     result, _ = await run_turn(api.provider(), history=history, user_message="Still there?")
 
-    assert api.bodies()[0]["messages"] == [*history, {"role": "user", "content": "Still there?"}]
+    assert api.bodies()[0]["messages"][1:] == [*history, {"role": "user", "content": "Still there?"}]
     assert len(result.history) == 4
 
 
-async def test_anthropic_provider_reports_a_refusal() -> None:
-    refusal = model_response(
-        [], "refusal", stop_details={"type": "refusal", "category": "cyber", "explanation": "Not allowed."}
-    )
-    api = FakeModelApi(httpx2.Response(200, json=refusal))
+async def test_provider_keeps_the_reasoning_of_the_model_out_of_the_answer() -> None:
+    """Some servers leave the reasoning of the model inline (Qwen, DeepSeek...), others give it apart."""
+    message = {"content": "<think>\nThe user wants a list.\n</think>\n\nYou have 1 study.", "reasoning_content": "Hmm."}
+    api = FakeModelApi(model_response(message))
 
     result, _ = await run_turn(api.provider())
 
-    assert result.stop_reason == "refusal"
-    assert result.answer == "The model declined to answer this request (Not allowed.)."
+    assert result.answer == "You have 1 study."
+    assert result.history[-1] == {"role": "assistant", "content": "You have 1 study."}
 
 
-async def test_anthropic_provider_stops_after_max_tool_rounds() -> None:
-    tool_use = {"type": "tool_use", "id": "toolu_1", "name": "list_studies", "input": {}}
-    api = FakeModelApi(*(httpx2.Response(200, json=model_response([tool_use], "tool_use")) for _ in range(3)))
+async def test_provider_gives_unusable_arguments_back_to_the_model() -> None:
+    """A small model can write broken JSON: it gets the error as the result of its call, and can try again."""
+    api = FakeModelApi(
+        model_response({"content": None, "tool_calls": [tool_call('{"name": ')]}, "tool_calls"),
+        model_response({"content": "You have 1 study."}),
+    )
+
+    result, seen = await run_turn(api.provider())
+
+    assert seen == []  # the tool was not called
+    assert "not a JSON object" in api.bodies()[1]["messages"][-1]["content"]
+    assert result.answer == "You have 1 study."
+
+
+async def test_provider_stops_after_max_tool_rounds() -> None:
+    api = FakeModelApi(*(model_response({"tool_calls": [tool_call("{}")]}, "tool_calls") for _ in range(3)))
 
     result, seen = await run_turn(api.provider(), max_tool_rounds=2)
 
@@ -182,25 +190,53 @@ async def test_anthropic_provider_stops_after_max_tool_rounds() -> None:
     assert len(seen) == 3
 
 
-async def test_anthropic_provider_without_fallback_for_other_models() -> None:
-    api = FakeModelApi(httpx2.Response(200, json=model_response([{"type": "text", "text": "ok"}], "end_turn")))
+async def test_provider_tells_when_the_answer_was_cut() -> None:
+    api = FakeModelApi(model_response({"content": "The study has"}, "length"))
 
-    await run_turn(api.provider(model="claude-haiku-5-5"))
+    result, _ = await run_turn(api.provider())
 
-    assert "fallbacks" not in api.bodies()[0]
-    assert "anthropic-beta" not in api.requests[0].headers
+    assert result.stop_reason == "max_tokens"
+    assert result.answer.startswith("The study has") and "was cut" in result.answer
 
 
 @pytest.mark.parametrize(
     "status, expected",
-    [(401, "API key is invalid"), (404, "Unknown model"), (429, "rate limit"), (500, "HTTP 500")],
+    [
+        (401, "rejected the API key"),
+        (404, "HTTP 404.*no such model"),
+        (429, "quota or the rate limit"),
+        (500, "HTTP 500.*no such model"),
+    ],
 )
-async def test_anthropic_provider_errors(status: int, expected: str) -> None:
-    error = {"type": "error", "error": {"type": "some_error", "message": "details"}}
-    api = FakeModelApi(httpx2.Response(status, json=error))
+async def test_provider_errors(status: int, expected: str) -> None:
+    api = FakeModelApi(httpx2.Response(status, json={"error": {"message": "no such model"}}))
 
     with pytest.raises(ProviderError, match=expected):
         await run_turn(api.provider())
+
+
+async def test_provider_tells_when_the_server_cannot_be_reached() -> None:
+    def unreachable(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ConnectError("certificate verify failed", request=request)
+
+    client = httpx2.AsyncClient(base_url="http://model.test/v1/", transport=httpx2.MockTransport(unreachable))
+
+    with pytest.raises(ProviderError, match="Cannot reach .*model.test.*certificate verify failed"):
+        await run_turn(OpenAICompatibleProvider(client, model=MODEL))
+
+
+def test_build_provider_needs_the_endpoint_and_the_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    provider = build_provider("openai", model=MODEL, base_url="http://model.test/v1")
+
+    assert isinstance(provider, OpenAICompatibleProvider)
+    with pytest.raises(ProviderError, match="assistant.base_url"):
+        build_provider("openai", model=MODEL, base_url=None)
+    with pytest.raises(ProviderError, match="assistant.model"):
+        build_provider("openai", model=None, base_url="http://model.test/v1")
+    with pytest.raises(ProviderError, match=r"Available providers: \['openai'\]"):
+        build_provider("nope", model=MODEL, base_url="http://model.test/v1")
 
 
 # ----------------------------------------------------------------------
@@ -211,7 +247,6 @@ async def test_anthropic_provider_errors(status: int, expected: str) -> None:
 class ScriptedProvider:
     """A provider that calls the given tools, then answers with their results."""
 
-    name = "scripted"
     model = "scripted-1"
 
     def __init__(self, *calls: tuple[str, dict[str, Any]]) -> None:
@@ -255,17 +290,7 @@ async def collect(request: AssistantRequest, provider: ScriptedProvider, api_cli
 async def test_agent_gives_the_mcp_tools_to_the_provider(
     fake_api: FakeAntaresWeb, api_client: AntaresWebClient
 ) -> None:
-    study = {
-        "id": STUDY_ID,
-        "name": "Base case",
-        "version": "9.2",
-        "type": "rawstudy",
-        "workspace": "default",
-        "managed": True,
-        "archived": False,
-        "updated": "2026-11-13",
-    }
-    fake_api.route("GET", "/v1/studies", json_body={STUDY_ID: study})
+    fake_api.route("GET", "/v1/studies", json_body={STUDY_ID: study()})
     provider = ScriptedProvider(("list_studies", {}), ("get_study", {"study_id": "not-a-study"}))
     request = AssistantRequest(message="Which studies do I have?", study_id=STUDY_ID)
 
@@ -319,9 +344,9 @@ async def test_agent_reports_a_provider_error_as_is(api_client: AntaresWebClient
     class FailingProvider(ScriptedProvider):
         @override
         async def run_turn(self, **_: Any) -> ChatResult:
-            raise ProviderError("The Anthropic API key is invalid or revoked.")
+            raise ProviderError("The model endpoint rejected the API key.")
 
-    with pytest.raises(ProviderError, match="invalid or revoked"):
+    with pytest.raises(ProviderError, match="rejected the API key"):
         await collect(AssistantRequest(message="Hello"), FailingProvider(), api_client)
 
 
@@ -345,33 +370,22 @@ def test_tool_text_cuts_huge_results_with_a_notice() -> None:
 # ----------------------------------------------------------------------
 
 
-async def test_runner_reports_an_invalid_request() -> None:
+@pytest.mark.parametrize(
+    "request_, expected",
+    [
+        ({"message": ""}, "Invalid assistant request"),
+        ({"message": "Hello"}, "assistant.base_url"),  # no model endpoint given by the backend
+        ({"message": "Hello", "provider": "nope"}, "Available providers: ['openai']"),
+    ],
+)
+async def test_runner_reports_errors(request_: dict[str, Any], expected: str) -> None:
     out = io.StringIO()
 
-    await handle('{"message": ""}', out)
+    await handle(json.dumps(request_), out)
 
     (event,) = [json.loads(line) for line in out.getvalue().splitlines()]
     assert event["type"] == "error"
-    assert "Invalid assistant request" in event["message"]
-
-
-async def test_runner_reports_a_missing_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    out = io.StringIO()
-
-    await handle(json.dumps({"message": "Hello"}), out)
-
-    (event,) = [json.loads(line) for line in out.getvalue().splitlines()]
-    assert event["type"] == "error"
-    assert "assistant.anthropic_api_key" in event["message"]
-
-
-async def test_runner_reports_an_unknown_provider() -> None:
-    out = io.StringIO()
-
-    await handle(json.dumps({"message": "Hello", "provider": "nope"}), out)
-
-    assert "Available providers: ['anthropic']" in json.loads(out.getvalue())["message"]
+    assert expected in event["message"]
 
 
 # ----------------------------------------------------------------------
@@ -407,15 +421,15 @@ def test_cli_client_follows_the_stream() -> None:
 def test_cli_client_errors() -> None:
     responses = iter(
         [
-            ndjson({"type": "error", "message": "The Anthropic API key is invalid or revoked."}),
-            httpx2.Response(503, json={"description": "No API key for the assistant", "exception": "X"}),
+            ndjson({"type": "error", "message": "The model endpoint rejected the API key."}),
+            httpx2.Response(503, json={"description": "No model endpoint for the assistant", "exception": "X"}),
         ]
     )
     client = AssistantClient("http://antares.test", None, transport=httpx2.MockTransport(lambda _: next(responses)))
 
-    with pytest.raises(AssistantClientError, match="API key is invalid"):
+    with pytest.raises(AssistantClientError, match="rejected the API key"):
         client.ask("Hello", study_id=None, history=[])
-    with pytest.raises(AssistantClientError, match="No API key for the assistant"):
+    with pytest.raises(AssistantClientError, match="No model endpoint for the assistant"):
         client.ask("Hello", study_id=None, history=[])
 
 

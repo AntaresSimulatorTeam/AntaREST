@@ -13,24 +13,10 @@
  */
 
 import { Box, Button, LinearProgress, Stack, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useInterval } from "react-use";
 import { getProgressPercent, type StudyCheckState } from "./utils";
-
-function useElapsedSeconds() {
-  const [seconds, setSeconds] = useState(0);
-
-  useEffect(() => {
-    const start = Date.now();
-    const timer = window.setInterval(
-      () => setSeconds(Math.round((Date.now() - start) / 1000)),
-      1000,
-    );
-    return () => window.clearInterval(timer);
-  }, []);
-
-  return seconds;
-}
 
 interface Props {
   state: StudyCheckState;
@@ -41,7 +27,9 @@ interface Props {
 // (the only step whose duration can be predicted), and the elapsed time.
 function CheckProgress({ state, onCancel }: Props) {
   const { t } = useTranslation();
-  const seconds = useElapsedSeconds();
+  const startRef = useRef(Date.now());
+  const [seconds, setSeconds] = useState(0);
+  useInterval(() => setSeconds(Math.round((Date.now() - startRef.current) / 1000)), 1000);
   const percent = getProgressPercent(state);
   const { progress, phase } = state;
 

@@ -17,11 +17,12 @@ Assistant: an AI agent that answers questions about Antares Web studies with the
 POST /v1/assistant/chat (Antares Web)
         │  starts one process per request: `antares-web-assistant` (runner.py)
         ▼
-    agent.py ──── ChatProvider (provider.py) ────▶ model API (anthropic_provider.py)
+    agent.py ──── ChatProvider (provider.py) ────▶ model server (openai_provider.py)
         │
         └── in-memory MCP client ──▶ MCP tools ──REST, with the user's token──▶ Antares Web
 ```
 
-Only `anthropic_provider.py` depends on a model vendor: to use another one, implement
-`ChatProvider` and register it in `providers.py`.
+`openai_provider.py` talks to any server speaking the OpenAI chat completions API (a model hosted on
+your own network, or the API of a vendor). For another protocol, implement `ChatProvider` and
+register it in `providers.py`.
 """

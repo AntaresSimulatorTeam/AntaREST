@@ -16,7 +16,7 @@ import { streamAssistantChat } from "@/services/api/assistant";
 import type { AssistantEvent, AssistantHistory } from "@/services/api/assistant/types";
 import { toError } from "@/utils/fnUtils";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   INITIAL_CHAT_STATE,
@@ -26,7 +26,7 @@ import {
   type ChatState,
 } from "./utils";
 
-export interface ThreadMessage {
+interface ThreadMessage {
   /** Message of the user, as shown in the thread. */
   message: string;
   /**
@@ -64,81 +64,75 @@ function useAssistantThreads(studyId?: string) {
   const threadsRef = useRef(threads);
   const controllersRef = useRef(new Map<string, AbortController>());
 
-  const setThread = useCallback((key: string, state: ChatState) => {
+  const setThread = (key: string, state: ChatState) => {
     threadsRef.current = { ...threadsRef.current, [key]: state };
     setThreads(threadsRef.current);
-  }, []);
+  };
 
-  const send = useCallback(
-    async (key: string, { message, context, baseHistory = [] }: ThreadMessage) => {
-      const thread = threadsRef.current[key] ?? INITIAL_CHAT_STATE;
+  const send = async (key: string, { message, context, baseHistory = [] }: ThreadMessage) => {
+    const thread = threadsRef.current[key] ?? INITIAL_CHAT_STATE;
 
-      if (!message.trim() || thread.isRunning) {
-        return;
+    if (!message.trim() || thread.isRunning) {
+      return;
+    }
+
+    const controller = new AbortController();
+    controllersRef.current.set(key, controller);
+    const isCurrent = () => controllersRef.current.get(key) === controller;
+    // Events of a stopped or replaced answer are ignored
+    const apply = (event: AssistantEvent) => {
+      if (isCurrent()) {
+        setThread(key, reduceChatEvent(threadsRef.current[key], event));
       }
+    };
+    // Without an answer yet, the assistant knows nothing about the subject of the thread
+    const hasOwnHistory = thread.history.length > 0;
+    setThread(key, startTurn(thread, message));
 
-      const controller = new AbortController();
-      controllersRef.current.set(key, controller);
-      const isCurrent = () => controllersRef.current.get(key) === controller;
-      // Events of a stopped or replaced answer are ignored
-      const apply = (event: AssistantEvent) => {
-        if (isCurrent()) {
-          setThread(key, reduceChatEvent(threadsRef.current[key], event));
-        }
-      };
-      // Without an answer yet, the assistant knows nothing about the subject of the thread
-      const hasOwnHistory = thread.history.length > 0;
-      setThread(key, startTurn(thread, message));
+    try {
+      await streamAssistantChat({
+        message: !hasOwnHistory && context ? `${context}\n\n${message}` : message,
+        studyId,
+        history: hasOwnHistory ? thread.history : baseHistory,
+        signal: controller.signal,
+        onEvent: apply,
+      });
 
-      try {
-        await streamAssistantChat({
-          message: !hasOwnHistory && context ? `${context}\n\n${message}` : message,
-          studyId,
-          history: hasOwnHistory ? thread.history : baseHistory,
-          signal: controller.signal,
-          onEvent: apply,
-        });
-
-        if (isCurrent() && threadsRef.current[key].isRunning) {
-          // The stream ended without a final event
-          apply({ type: "error", message: t("study.assistant.noAnswer") });
-        }
-      } catch (err) {
-        apply({ type: "error", message: toError(err).message });
+      if (isCurrent() && threadsRef.current[key].isRunning) {
+        // The stream ended without a final event
+        apply({ type: "error", message: t("study.assistant.noAnswer") });
       }
+    } catch (err) {
+      apply({ type: "error", message: toError(err).message });
+    }
 
-      if (isCurrent() && lastTurnMayHaveChangedData(threadsRef.current[key])) {
-        // The assistant may have modified the study: reload what is displayed
-        setHasChangedData(true);
-        queryClient.invalidateQueries();
-      }
-    },
-    [studyId, queryClient, setThread, t],
-  );
+    if (isCurrent() && lastTurnMayHaveChangedData(threadsRef.current[key])) {
+      // The assistant may have modified the study: reload what is displayed
+      setHasChangedData(true);
+      queryClient.invalidateQueries();
+    }
+  };
 
-  const stop = useCallback(
-    (key: string) => {
-      controllersRef.current.get(key)?.abort();
-      controllersRef.current.delete(key);
-      const thread = threadsRef.current[key];
+  const stop = (key: string) => {
+    controllersRef.current.get(key)?.abort();
+    controllersRef.current.delete(key);
+    const thread = threadsRef.current[key];
 
-      if (thread?.isRunning) {
-        setThread(
-          key,
-          reduceChatEvent(thread, { type: "error", message: t("study.assistant.stopped") }),
-        );
-      }
-    },
-    [setThread, t],
-  );
+    if (thread?.isRunning) {
+      setThread(
+        key,
+        reduceChatEvent(thread, { type: "error", message: t("study.assistant.stopped") }),
+      );
+    }
+  };
 
-  const reset = useCallback(() => {
+  const reset = () => {
     abortAll(controllersRef.current);
     controllersRef.current.clear();
     threadsRef.current = {};
     setThreads({});
     setHasChangedData(false);
-  }, []);
+  };
 
   useEffect(() => {
     const controllers = controllersRef.current;

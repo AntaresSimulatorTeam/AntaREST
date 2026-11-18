@@ -73,9 +73,13 @@ debug: False
 # AI assistant (/v1/assistant): an agent answering questions about studies with the tools of the MCP server.
 # See docs/mcp-server.md
 assistant:
-  # API key of the model provider. Leave empty to use the ANTHROPIC_API_KEY environment variable of the server.
+  # URL of the model server, ending with /v1: any server speaking the OpenAI API (LiteLLM gateway, vLLM, Ollama...).
+  # Leave empty to use the OPENAI_BASE_URL environment variable of the server. Without it, the assistant is off.
+  base_url: ""
+  # Model id, as listed by `GET <base_url>/models`
+  model: ""
+  # API key of the model server. Leave empty to use the OPENAI_API_KEY environment variable of the server.
   # Never commit a real key.
-  anthropic_api_key: ""
-  # model: claude-opus-5-5
+  api_key: ""
   # If true, the assistant can only read studies
   read_only: true

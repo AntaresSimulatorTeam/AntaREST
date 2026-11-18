@@ -20,7 +20,7 @@ an in-memory MCP client: the assistant and the IDE assistants share one definiti
 import logging
 import time
 from collections.abc import Awaitable, Callable
-from typing import Any, Literal
+from typing import Any
 
 from mcp import Client
 from mcp.types import TextContent
@@ -76,11 +76,10 @@ class AssistantRequest(BaseModel):
     antares_url: str = "http://localhost:8080"
     token: str | None = Field(default=None, description="Token of the user: tools act with their permissions.")
     read_only: bool = True
-    provider: str = "anthropic"
+    provider: str = "openai"
+    base_url: str | None = Field(default=None, description="URL of the model server, ending with `/v1`.")
     model: str | None = None
-    effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
     max_tool_rounds: int = Field(default=40, ge=1, le=200)
-    verify_ssl: bool = True
 
 
 Emit = Callable[[dict[str, Any]], Awaitable[None]]
@@ -125,9 +124,7 @@ async def run_assistant(
         antares_client: Client of the Antares Web REST API (built from the request by default).
             It is closed when the turn ends.
     """
-    client = antares_client or AntaresWebClient(
-        request.antares_url, token=request.token, timeout=120.0, verify_ssl=request.verify_ssl
-    )
+    client = antares_client or AntaresWebClient(request.antares_url, token=request.token, timeout=120.0)
     server = create_server(client, read_only=request.read_only)
     async with Client(server) as mcp:
         tools = [
