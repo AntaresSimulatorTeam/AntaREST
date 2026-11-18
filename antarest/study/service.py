@@ -2639,8 +2639,10 @@ class StudyService:
 
     def get_disk_usage(self, uuid: str) -> int:
         study_analysis = self.disk_space_repository.get(uuid)
+        study = self.get_study(uuid=uuid)
+        assert_permission(study, StudyPermissionType.READ)
 
-        if study_analysis is None:
+        if study_analysis is None or not is_managed(study):
             disk_usage = self.compute_disk_usage(uuid)
             study_disk_analysis = StudyDiskSpaceAnalysis(
                 study_id=uuid,
@@ -2650,8 +2652,6 @@ class StudyService:
             self.disk_space_repository.save(study_disk_analysis)
             return disk_usage
 
-        study = self.get_study(uuid=uuid)
-        assert_permission(study, StudyPermissionType.READ)
         return study_analysis.disk_space_bytes
 
     def get_matrix_with_index_and_header(
@@ -2804,8 +2804,8 @@ class StudyService:
             raise UnsupportedOperationOnThisStudyType(study_id, "normalize", "raw")
         self.assert_study_unarchived(study)
 
-        self.disk_space_repository.invalidate(study.id)
         self.storage_service.raw_study_service.normalize_study(study)
+        self.disk_space_repository.invalidate(study.id)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """

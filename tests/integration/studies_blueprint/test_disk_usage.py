@@ -35,27 +35,34 @@ class TestDiskUsage:
     ) -> None:
         client.headers = {"Authorization": f"Bearer {user_access_token}"}
 
+        # Only managed studies are read from the DB (the others are always computed)
+        res = client.post(
+            f"/v1/studies/{internal_study_id}/copy", params={"study_name": "managed", "use_task": "false"}
+        )
+        res.raise_for_status()
+        study_id: str = res.json()
+
         # A value which cannot be the real size of the study on the disk
         stored_size = 123_456_789_012
         with db():
             db.session.merge(
                 StudyDiskSpaceAnalysis(
-                    study_id=internal_study_id, disk_space_bytes=stored_size, last_analysis_date=current_time()
+                    study_id=study_id, disk_space_bytes=stored_size, last_analysis_date=current_time()
                 )
             )
             db.session.commit()
 
         # Check that the endpoint returns the stored value and does not recompute it
         with patch.object(StudyService, "compute_disk_usage") as compute:
-            res = client.get(f"/v1/studies/{internal_study_id}/disk-usage")
+            res = client.get(f"/v1/studies/{study_id}/disk-usage")
             assert res.status_code == 200, res.json()
             assert res.json() == stored_size
             compute.assert_not_called()
 
         # The stored value is the only source: updating it changes the response
         with db():
-            services.study.disk_space_repository.update(internal_study_id, 42, current_time())
-        res = client.get(f"/v1/studies/{internal_study_id}/disk-usage")
+            services.study.disk_space_repository.update(study_id, 42, current_time())
+        res = client.get(f"/v1/studies/{study_id}/disk-usage")
         assert res.status_code == 200, res.json()
         assert res.json() == 42
 
