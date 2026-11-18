@@ -94,6 +94,15 @@ function ConfigurationLayout() {
             params,
           }),
         },
+        semver.gte(study.version, "10.2.0") &&
+          study.storageMode === "database" && {
+            id: "gems",
+            label: t("study.configuration.gems"),
+            linkOptions: linkOptions({
+              to: "/studies/$studyId/explore/configuration/gems",
+              params,
+            }),
+          },
       ].filter(Boolean)}
     />
   );

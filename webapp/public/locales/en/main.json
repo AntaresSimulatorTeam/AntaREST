@@ -564,6 +564,8 @@
   "study.configuration.advancedParameters.simulationCores": "Simulation cores",
   "study.configuration.advancedParameters.renewableGenerationModeling": "Renewable generation modeling",
   "study.configuration.advancedParameters.accurateShavePeaksIncludeShortTermStorage": "Accurate shave peaks include short term storage",
+  "study.configuration.gems": "GEMS",
+  "study.configuration.gems.tab.scenarioBuilder": "Scenario builder",
   "study.configuration.compatibility": "Compatibility",
   "study.configuration.compatibility.hydroPmax": "Hydro Pmax",
   "study.configuration.compatibility.hydroRuleCurves": "Hydro Rule Curves",
