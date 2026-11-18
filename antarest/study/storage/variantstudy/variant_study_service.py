@@ -72,6 +72,7 @@ from antarest.study.storage.utils import (
     get_current_user_name,
     get_user_name_from_id,
     is_managed,
+    remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
@@ -189,6 +190,21 @@ class VariantStudyService(AbstractStudyService):
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
         self._snapshot_manager_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
         self.invalidate_snapshot(variant_study)
+
+    def archive(self, variant_study: VariantStudy) -> None:
+        """
+        Removes the snapshot of the variant and marks it as archived.
+
+        The generation lock is held, so that a running snapshot generation ends before the snapshot is removed.
+        """
+        with self._generation_lock(variant_study.id):
+            self.clear_snapshot(variant_study)
+            remove_from_cache(self.cache, variant_study.id)
+            variant_study.archived = True
+            self.repository.save(variant_study)
+
+    def _generation_lock(self, study_id: str) -> FileLock:
+        return FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock"))
 
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = get_current_user_name()
@@ -636,7 +652,7 @@ class VariantStudyService(AbstractStudyService):
         Generates a variant study synchronously.
         The per-study `FileLock` prevents concurrent callers from generating the same snapshot twice.
         """
-        with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study.id}.lock")):
+        with self._generation_lock(study.id):
             try:
                 self.repository.refresh(study)
 
