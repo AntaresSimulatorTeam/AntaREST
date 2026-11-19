@@ -157,7 +157,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
             model_ids.add(model_id)
 
         # Out of bound processing
-        model_oobs = {}
+        model_oobs: dict[str, Any] = {}
         table = GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE
         oob_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
         for oob_row in oob_rows:
