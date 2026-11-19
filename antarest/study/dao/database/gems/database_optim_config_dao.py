@@ -13,6 +13,7 @@ import json
 from typing import Any, NamedTuple
 
 from sqlalchemy import Table, delete, insert, select
+from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.dbmodel import get_row_representation_as_dict
@@ -28,6 +29,101 @@ from antarest.study.dao.database.models.gems.optim_config import (
     GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE,
     GEMS_OPTIM_CONFIG_TABLE,
 )
+
+
+def _save_models(study_data_id: int, session: Session, models: list[GemsOptimConfigModel]) -> None:
+    if not models:
+        return
+
+    # Heuristics
+    heuristic_values = []
+    for model in models:
+        if not model.heuristics:
+            continue
+        library_id, model_id = split_library_and_model_id(model.id)
+        heuristic_values.append(
+            {
+                "study_data_id": study_data_id,
+                "library_id": library_id,
+                "model_id": model_id,
+                "data": json.dumps([heuristic.model_dump_json() for heuristic in model.heuristics]),
+            }
+        )
+
+    if heuristic_values:
+        try:
+            session.execute(insert(GEMS_OPTIM_CONFIG_HEURISTICS_TABLE), heuristic_values)
+        except Exception:
+            session.rollback()
+            raise
+
+    # Out of bounds processing
+    oob_processing_values = []
+    for model in models:
+        if not model.out_of_bounds_processing or not model.out_of_bounds_processing.constraints:
+            continue
+        library_id, model_id = split_library_and_model_id(model.id)
+        for constraint in model.out_of_bounds_processing.constraints:
+            oob_processing_values.append(
+                {
+                    "study_data_id": study_data_id,
+                    "library_id": library_id,
+                    "model_id": model_id,
+                    "constraint_id": constraint.id,
+                    "mode": constraint.mode,
+                }
+            )
+
+    if oob_processing_values:
+        try:
+            session.execute(insert(GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE), oob_processing_values)
+        except Exception:
+            session.rollback()
+            raise
+
+    # Model decomposition
+    class _ModelDecompositionMapping(NamedTuple):
+        pydantic_attribute: str
+        db_table: Table
+        db_column_name: str
+
+    decomposition_list = [
+        _ModelDecompositionMapping("variables", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE, "variable_id"),
+        _ModelDecompositionMapping(
+            "constraints", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE, "constraint_id"
+        ),
+        _ModelDecompositionMapping(
+            "objective_contributions",
+            GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
+            "objective_contribution_id",
+        ),
+    ]
+
+    rows_by_kind: dict[str, list[dict[str, Any]]] = {d.pydantic_attribute: [] for d in decomposition_list}
+
+    for model in models:
+        if model.model_decomposition:
+            library_id, model_id = split_library_and_model_id(model.id)
+            for decomposition in decomposition_list:
+                rows_by_kind[decomposition.pydantic_attribute].extend(
+                    {
+                        "study_data_id": study_data_id,
+                        "library_id": library_id,
+                        "model_id": model_id,
+                        decomposition.db_column_name: item.id,
+                        "location": item.location,
+                    }
+                    for item in getattr(model.model_decomposition, decomposition.pydantic_attribute)
+                )
+
+    for decomposition in decomposition_list:
+        values = rows_by_kind.get(decomposition.pydantic_attribute)
+        if values:
+            try:
+                session.execute(insert(decomposition.db_table), values)
+            except Exception:
+                session.rollback()
+                raise
 
 
 class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
@@ -102,105 +198,6 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         session.execute(insert(GEMS_OPTIM_CONFIG_TABLE), optim_config_values)
 
         # Models part
-        self._save_models(optim_config.models)
+        _save_models(study_data_id, session, optim_config.models)
 
         session.commit()
-
-    def _save_models(self, models: list[GemsOptimConfigModel]) -> None:
-        if not models:
-            return
-
-        study_data_id = self._study_data_id
-        session = self._db_session
-
-        # Heuristics
-        heuristic_values = []
-        for model in models:
-            if not model.heuristics:
-                continue
-            library_id, model_id = split_library_and_model_id(model.id)
-            heuristic_values.append(
-                {
-                    "study_data_id": study_data_id,
-                    "library_id": library_id,
-                    "model_id": model_id,
-                    "data": json.dumps([heuristic.model_dump_json() for heuristic in model.heuristics]),
-                }
-            )
-
-        if heuristic_values:
-            try:
-                session.execute(insert(GEMS_OPTIM_CONFIG_HEURISTICS_TABLE), heuristic_values)
-            except Exception:
-                session.rollback()
-                raise
-
-        # Out of bounds processing
-        oob_processing_values = []
-        for model in models:
-            if not model.out_of_bounds_processing or not model.out_of_bounds_processing.constraints:
-                continue
-            library_id, model_id = split_library_and_model_id(model.id)
-            for constraint in model.out_of_bounds_processing.constraints:
-                oob_processing_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "library_id": library_id,
-                        "model_id": model_id,
-                        "constraint_id": constraint.id,
-                        "mode": constraint.mode,
-                    }
-                )
-
-        if oob_processing_values:
-            try:
-                session.execute(insert(GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE), oob_processing_values)
-            except Exception:
-                session.rollback()
-                raise
-
-        # Model decomposition
-        class _ModelDecompositionMapping(NamedTuple):
-            pydantic_attribute: str
-            db_table: Table
-            db_column_name: str
-
-        decomposition_list = [
-            _ModelDecompositionMapping(
-                "variables", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE, "variable_id"
-            ),
-            _ModelDecompositionMapping(
-                "constraints", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE, "constraint_id"
-            ),
-            _ModelDecompositionMapping(
-                "objective_contributions",
-                GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
-                "objective_contribution_id",
-            ),
-        ]
-
-        rows_by_kind: dict[str, list[dict[str, Any]]] = {d.pydantic_attribute: [] for d in decomposition_list}
-
-        for model in models:
-            if model.model_decomposition:
-                library_id, model_id = split_library_and_model_id(model.id)
-                for decomposition in decomposition_list:
-                    rows_by_kind[decomposition.pydantic_attribute].extend(
-                        {
-                            "study_data_id": study_data_id,
-                            "library_id": library_id,
-                            "model_id": model_id,
-                            decomposition.db_column_name: item.id,
-                            "location": item.location,
-                        }
-                        for item in getattr(model.model_decomposition, decomposition.pydantic_attribute)
-                    )
-
-        for decomposition in decomposition_list:
-            values = rows_by_kind.get(decomposition.pydantic_attribute)
-            if values:
-                try:
-                    session.execute(insert(decomposition.db_table), values)
-                except Exception:
-                    session.rollback()
-                    raise
