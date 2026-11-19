@@ -12,13 +12,13 @@
 import json
 from typing import Any, NamedTuple
 
-from sqlalchemy import Table, delete, insert, select
+from sqlalchemy import Row, Table, delete, insert, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.gems.optim_config import GemsOptimConfig, GemsOptimConfigModel
-from antarest.study.business.model.gems.system import split_library_and_model_id
+from antarest.study.business.model.gems.system import ModelId, split_library_and_model_id
 from antarest.study.dao.api.gems_optim_config_dao import GemsOptimConfigDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.optim_config import (
@@ -126,6 +126,10 @@ def _save_models(study_data_id: int, session: Session, models: list[GemsOptimCon
                 raise
 
 
+def _build_model_id(db_row: Row[Any]) -> ModelId:
+    return f"{db_row.library_id}.{db_row.model_id}"
+
+
 class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
     """Database implementation of GemsOptimConfigDao"""
 
@@ -152,7 +156,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         table = GEMS_OPTIM_CONFIG_HEURISTICS_TABLE
         heuristic_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
         for heuristic_row in heuristic_rows:
-            model_id = f"{heuristic_row.library_id}.{heuristic_row.model_id}"
+            model_id = _build_model_id(heuristic_row)
             model_heuristics[model_id] = json.loads(heuristic_row.data)
             model_ids.add(model_id)
 
@@ -161,7 +165,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         table = GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE
         oob_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
         for oob_row in oob_rows:
-            model_id = f"{oob_row.library_id}.{oob_row.model_id}"
+            model_id = _build_model_id(oob_row)
             model_oobs.setdefault(model_id, []).append({"id": oob_row.constraint_id, "mode": oob_row.mode})
             model_ids.add(model_id)
 
@@ -179,7 +183,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         for tmp_storage_var, db_table in model_decomposition_mapping:
             db_rows = session.execute(select(db_table).where(db_table.c.study_data_id == study_data_id)).fetchall()
             for db_row in db_rows:
-                model_id = f"{db_row.library_id}.{db_row.model_id}"
+                model_id = _build_model_id(db_row)
                 tmp_storage_var.setdefault(model_id, []).append({"id": db_row.variable_id, "location": db_row.location})
                 model_ids.add(model_id)
 
