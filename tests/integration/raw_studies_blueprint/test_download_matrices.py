@@ -19,8 +19,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from antares.study.version import StudyVersion
+from httpx import Response
 from pandas._testing import assert_frame_equal
-from requests import Response
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
