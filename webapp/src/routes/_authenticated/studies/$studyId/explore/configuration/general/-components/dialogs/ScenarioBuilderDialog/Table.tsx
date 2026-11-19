@@ -12,12 +12,12 @@
  * This file is part of the Antares project.
  */
 
-import DataGridForm from "@/components/DataGridForm";
-import type { SubmitHandlerPlus } from "@/components/Form/types";
+import DataGridForm, { type GridSubmitHandlerPlus } from "@/components/DataGridForm";
 import EmptyView from "@/components/page/EmptyView";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { updateScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
 import type {
+  Level1Data,
   Level1Display,
   ScenarioType,
 } from "@/services/api/studies/config/scenarioBuilder/types";
@@ -100,12 +100,12 @@ function Table({ config, type, areaId }: Props) {
     return undefined;
   }, []);
 
-  const handleSubmit = async ({ dirtyValues }: SubmitHandlerPlus) => {
+  const handleSubmit = async ({ dirtyValues }: GridSubmitHandlerPlus<typeof defaultData>) => {
     try {
       await updateScenarioBuilderForm({
         studyId: study.id,
         scenarioType: type,
-        values: dirtyValues,
+        values: dirtyValues as Level1Data,
         areaId,
       });
     } catch (error) {

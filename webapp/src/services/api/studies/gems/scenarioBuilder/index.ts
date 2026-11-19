@@ -26,6 +26,8 @@ const URL = "/v1/studies/{studyId}/gems/scenario-builder";
 
 export async function getScenarioBuilder({ studyId }: GetScenarioBuilderParams) {
   const { data } = await client.get(format(URL, { studyId }));
+  //! ⚠️ DON'T FORGET TO REMOVE THIS LINE ⚠️
+  await new Promise((res) => setTimeout(() => res(1), 5000));
   return scenarioBuilderSchema.parse(data);
 }
 
@@ -39,6 +41,8 @@ export async function createScenario({ studyId, scenarioName, value }: CreateSce
 
 export async function updateScenario({ studyId, scenarioName, value }: UpdateScenarioParams) {
   const url = format(URL, { studyId });
+  //! ⚠️ DON'T FORGET TO REMOVE THIS LINE ⚠️
+  await new Promise((res) => setTimeout(() => res(1), 5000));
   const { data } = await client.put(url, scenarioSchema.parse(value), {
     params: { scenario_name: scenarioName },
   });
@@ -47,5 +51,5 @@ export async function updateScenario({ studyId, scenarioName, value }: UpdateSce
 
 export async function deleteScenario({ studyId, scenarioName }: DeleteScenarioParams) {
   const url = format(URL, { studyId });
-  await client.delete(url, { params: { scenarioName } });
+  await client.delete(url + 333, { params: { scenarioName } });
 }
