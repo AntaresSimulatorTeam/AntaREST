@@ -31,6 +31,26 @@ from antarest.study.dao.database.models.gems.optim_config import (
 )
 
 
+class _ModelDecompositionMapping(NamedTuple):
+    pydantic_attribute: str
+    db_table: Table
+    db_column_name: str
+
+
+def _build_decomposition_list() -> list[_ModelDecompositionMapping]:
+    return [
+        _ModelDecompositionMapping("variables", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE, "variable_id"),
+        _ModelDecompositionMapping(
+            "constraints", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE, "constraint_id"
+        ),
+        _ModelDecompositionMapping(
+            "objective_contributions",
+            GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
+            "objective_contribution_id",
+        ),
+    ]
+
+
 def _save_models(study_data_id: int, session: Session, models: list[GemsOptimConfigModel]) -> None:
     if not models:
         return
@@ -82,22 +102,7 @@ def _save_models(study_data_id: int, session: Session, models: list[GemsOptimCon
             raise e
 
     # Model decomposition
-    class _ModelDecompositionMapping(NamedTuple):
-        pydantic_attribute: str
-        db_table: Table
-        db_column_name: str
-
-    decomposition_list = [
-        _ModelDecompositionMapping("variables", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE, "variable_id"),
-        _ModelDecompositionMapping(
-            "constraints", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE, "constraint_id"
-        ),
-        _ModelDecompositionMapping(
-            "objective_contributions",
-            GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
-            "objective_contribution_id",
-        ),
-    ]
+    decomposition_list = _build_decomposition_list()
 
     rows_by_kind: dict[str, list[dict[str, Any]]] = {d.pydantic_attribute: [] for d in decomposition_list}
 
@@ -174,17 +179,21 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         model_constraints: dict[str, Any] = {}
         model_objective_contributions: dict[str, Any] = {}
 
+        decomposition_list = _build_decomposition_list()
         model_decomposition_mapping = [
-            (model_variables, GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE),
-            (model_constraints, GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE),
-            (model_objective_contributions, GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE),
+            (model_variables, decomposition_list[0]),
+            (model_constraints, decomposition_list[1]),
+            (model_objective_contributions, decomposition_list[2]),
         ]
 
-        for tmp_storage_var, db_table in model_decomposition_mapping:
+        for tmp_storage_var, decomposition in model_decomposition_mapping:
+            db_table = decomposition.db_table
             db_rows = session.execute(select(db_table).where(db_table.c.study_data_id == study_data_id)).fetchall()
             for db_row in db_rows:
                 model_id = _build_model_id(db_row)
-                tmp_storage_var.setdefault(model_id, []).append({"id": db_row.variable_id, "location": db_row.location})
+                tmp_storage_var.setdefault(model_id, []).append(
+                    {"id": getattr(db_row, decomposition.db_column_name), "location": db_row.location}
+                )
                 model_ids.add(model_id)
 
         model_args = []
