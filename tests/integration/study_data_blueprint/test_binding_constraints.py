@@ -1208,10 +1208,7 @@ class TestBindingConstraints:
         assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
         assert (
-            "the most common width in the group is 3 but we have: {'second bc': "
-            + '"'
-            + "'greater term' has 4 columns"
-            + '"}'
+            "the most common width in the group is 3 but we have: {'second bc': \"'greater term' has 4 columns\"}"
             in description
         )
 
@@ -1256,10 +1253,7 @@ class TestBindingConstraints:
         assert res.json()["exception"] == "MatrixWidthMismatchError"
         description = res.json()["description"]
         assert (
-            "the most common width in the group is 3 but we have: {'third bc': "
-            + '"'
-            + "'less term' has 4 columns"
-            + '"}'
+            "the most common width in the group is 3 but we have: {'third bc': \"'less term' has 4 columns\"}"
             in description
         )
 
@@ -1328,9 +1322,7 @@ class TestBindingConstraints:
         assert (
             description
             == "'group 1': Mismatch widths: the most common width in the group is 3 but we have: {'third bc': "
-            + '"'
-            + "'less term' has 4 columns"
-            + '"}'
+            "\"'less term' has 4 columns\"}"
         )
 
     @pytest.mark.parametrize("study_version", [870])

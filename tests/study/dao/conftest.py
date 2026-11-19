@@ -647,7 +647,7 @@ def check_gems_taxonomy_integrity(taxonomy: GemsTaxonomy) -> None:
     assert len(taxonomy.categories) == 15
 
     categories_by_id = {c.id: c for c in taxonomy.categories}
-    assert sorted(list(categories_by_id)) == [
+    assert sorted(categories_by_id) == [
         "balance",
         "capacity_investment_decisions",
         "consumption",
