@@ -63,63 +63,43 @@ GEMS_OPTIM_CONFIG_HEURISTICS_TABLE = Table(
     ),
 )
 
-GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE = Table(
-    "gems_optim_config_model_decomposition_variables",
-    metadata,
-    study_data_id_col(),
-    Column("library_id", String(length=255), primary_key=True),
-    Column("model_id", String(length=255), primary_key=True),
-    Column("variable_id", String(length=255), primary_key=True),
-    Column("location", String(), nullable=False),
-    ForeignKeyConstraint(
-        ["study_data_id", "library_id", "model_id", "variable_id"],
-        [
-            "gems_models_variables.study_data_id",
-            "gems_models_variables.library_id",
-            "gems_models_variables.model_id",
-            "gems_models_variables.id",
-        ],
-        ondelete="CASCADE",
-    ),
+
+def _create_table(table_name: str, column_name: str, reference_table_name: str) -> Table:
+    return Table(
+        table_name,
+        metadata,
+        study_data_id_col(),
+        Column("library_id", String(length=255), primary_key=True),
+        Column("model_id", String(length=255), primary_key=True),
+        Column(column_name, String(length=255), primary_key=True),
+        Column("location", String(), nullable=False),
+        ForeignKeyConstraint(
+            ["study_data_id", "library_id", "model_id", column_name],
+            [
+                f"{reference_table_name}.study_data_id",
+                f"{reference_table_name}.library_id",
+                f"{reference_table_name}.model_id",
+                f"{reference_table_name}.id",
+            ],
+            ondelete="CASCADE",
+        ),
+    )
+
+
+GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE = _create_table(
+    table_name="gems_optim_config_model_decomposition_variables",
+    column_name="variable_id",
+    reference_table_name="gems_models_variables",
 )
 
-GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE = Table(
-    "gems_optim_config_model_decomposition_constraints",
-    metadata,
-    study_data_id_col(),
-    Column("library_id", String(length=255), primary_key=True),
-    Column("model_id", String(length=255), primary_key=True),
-    Column("constraint_id", String(length=255), primary_key=True),
-    Column("location", String(), nullable=False),
-    ForeignKeyConstraint(
-        ["study_data_id", "library_id", "model_id", "constraint_id"],
-        [
-            "gems_models_constraints.study_data_id",
-            "gems_models_constraints.library_id",
-            "gems_models_constraints.model_id",
-            "gems_models_constraints.id",
-        ],
-        ondelete="CASCADE",
-    ),
+GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE = _create_table(
+    table_name="gems_optim_config_model_decomposition_constraints",
+    column_name="constraint_id",
+    reference_table_name="gems_models_constraints",
 )
 
-GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE = Table(
-    "gems_optim_config_model_decomposition_objective_contributions",
-    metadata,
-    study_data_id_col(),
-    Column("library_id", String(length=255), primary_key=True),
-    Column("model_id", String(length=255), primary_key=True),
-    Column("objective_contribution_id", String(length=255), primary_key=True),
-    Column("location", String(), nullable=False),
-    ForeignKeyConstraint(
-        ["study_data_id", "library_id", "model_id", "objective_contribution_id"],
-        [
-            "gems_models_objective_contributions.study_data_id",
-            "gems_models_objective_contributions.library_id",
-            "gems_models_objective_contributions.model_id",
-            "gems_models_objective_contributions.id",
-        ],
-        name="fk_gems_optim_config_model_decomposition_objective_contribution",
-        ondelete="CASCADE",
-    ),
+GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE = _create_table(
+    table_name="gems_optim_config_model_decomposition_objective_contributions",
+    column_name="objective_contribution_id",
+    reference_table_name="gems_models_objective_contributions",
 )
