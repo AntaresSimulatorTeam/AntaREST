@@ -9,10 +9,11 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
+import dataclasses
 import json
 from typing import Any
 
-from sqlalchemy import delete, insert, select
+from sqlalchemy import Table, delete, insert, select
 from typing_extensions import override
 
 from antarest.dbmodel import get_row_representation_as_dict
@@ -160,69 +161,48 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
                 raise
 
         # Model decomposition
-        variables_values = []
-        constraints_values = []
-        objective_contributions_values = []
+        @dataclasses.dataclass(frozen=True)
+        class ModelDecompositionMapping:
+            pydantic_attribute: str
+            db_table: Table
+            db_column_name: str
+
+        decomposition_list = [
+            ModelDecompositionMapping(
+                "variables", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE, "variable_id"
+            ),
+            ModelDecompositionMapping(
+                "constraints", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE, "constraint_id"
+            ),
+            ModelDecompositionMapping(
+                "objective_contributions",
+                GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
+                "objective_contribution_id",
+            ),
+        ]
+
+        rows_by_kind: dict[str, list[dict[str, Any]]] = {d.pydantic_attribute: [] for d in decomposition_list}
+
         for model in models:
             if model.model_decomposition:
                 library_id, model_id = split_library_and_model_id(model.id)
-
-                # Variables
-                for variable in model.model_decomposition.variables:
-                    variables_values.append(
+                for decomposition in decomposition_list:
+                    rows_by_kind[decomposition.pydantic_attribute].extend(
                         {
                             "study_data_id": study_data_id,
                             "library_id": library_id,
                             "model_id": model_id,
-                            "variable_id": variable.id,
-                            "location": variable.location,
+                            decomposition.db_column_name: item.id,
+                            "location": item.location,
                         }
+                        for item in getattr(model.model_decomposition, decomposition.pydantic_attribute)
                     )
 
-                # Constraints
-                for md_constraint in model.model_decomposition.constraints:
-                    constraints_values.append(
-                        {
-                            "study_data_id": study_data_id,
-                            "library_id": library_id,
-                            "model_id": model_id,
-                            "constraint_id": md_constraint.id,
-                            "location": md_constraint.location,
-                        }
-                    )
-
-                # Objective contributions
-                for objective_contribution in model.model_decomposition.objective_contributions:
-                    objective_contributions_values.append(
-                        {
-                            "study_data_id": study_data_id,
-                            "library_id": library_id,
-                            "model_id": model_id,
-                            "objective_contribution_id": objective_contribution.id,
-                            "location": objective_contribution.location,
-                        }
-                    )
-
-        if variables_values:
-            try:
-                session.execute(insert(GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE), variables_values)
-            except Exception:
-                session.rollback()
-                raise
-
-        if constraints_values:
-            try:
-                session.execute(insert(GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE), constraints_values)
-            except Exception:
-                session.rollback()
-                raise
-
-        if objective_contributions_values:
-            try:
-                session.execute(
-                    insert(GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE),
-                    objective_contributions_values,
-                )
-            except Exception:
-                session.rollback()
-                raise
+        for decomposition in decomposition_list:
+            values = rows_by_kind.get(decomposition.pydantic_attribute)
+            if values:
+                try:
+                    session.execute(insert(decomposition.db_table), values)
+                except Exception:
+                    session.rollback()
+                    raise
