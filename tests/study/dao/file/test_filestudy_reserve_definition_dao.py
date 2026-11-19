@@ -43,15 +43,15 @@ def filestudy_dao_v10_2(empty_study_930: FileStudy, matrix_service: ISimpleMatri
 
 
 def _make_reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overrides: object) -> ReserveDefinition:
-    base: dict[str, object] = dict(
-        name=name,
-        type=reserve_type,
-        failure_cost=10.0,
-        spillage_cost=5.0,
-        reference_activation_duration=3,
-        power_activation_ratio=0.4,
-        energy_activation_ratio=0.9,
-    )
+    base: dict[str, object] = {
+        "name": name,
+        "type": reserve_type,
+        "failure_cost": 10.0,
+        "spillage_cost": 5.0,
+        "reference_activation_duration": 3,
+        "power_activation_ratio": 0.4,
+        "energy_activation_ratio": 0.9,
+    }
     base.update(overrides)
     return ReserveDefinition.model_validate(base)
 

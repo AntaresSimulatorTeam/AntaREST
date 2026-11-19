@@ -158,6 +158,17 @@ def test_nominal_case(dao: StudyDao) -> None:
     assert dao.get_optimization_preferences() == preferences
 
 
+def test_adequacy_patch_parameters_study_version_9_3(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
+    # Create a study in version 9.3 to test the fields only valid from this version onwards (redispatch, threshold_ens)
+    dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)
+    params = AdequacyPatchParameters(
+        redispatch=True,
+        threshold_ens=2.5,
+    )
+    dao.save_adequacy_patch_parameters(params)
+    assert dao.get_adequacy_patch_parameters() == params
+
+
 def test_compatibility_parameters(db_session: Session, matrix_service: ISimpleMatrixService) -> None:
     # Create a study in version 9.3 to test the compatibility parameters
     dao = build_db_dao(db_session, matrix_service, STUDY_VERSION_9_3)

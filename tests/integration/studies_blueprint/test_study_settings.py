@@ -522,6 +522,56 @@ def test_compatibility_settings(client: TestClient, admin_access_token: str) -> 
     assert "Hydro rule curves cannot be set to scenarized before study version 10.2" in res.json()["description"]
 
 
+def test_adequacy_patch_settings_9_3_study(client: TestClient, admin_access_token: str) -> None:
+    client.headers = {"Authorization": f"Bearer {admin_access_token}"}
+
+    created = client.post("/v1/studies", params={"name": "foo", "version": 930})
+    study_id = created.json()
+
+    res = client.get(f"/v1/studies/{study_id}/config/adequacypatch/form")
+    assert res.status_code == 200
+    assert res.json() == {
+        "enableAdequacyPatch": False,
+        "ntcFromPhysicalAreasOutToPhysicalAreasInAdequacyPatch": True,
+        "checkCsrCostFunction": False,
+        "includeHurdleCostCsr": False,
+        "priceTakingOrder": "DENS",
+        "thresholdInitiateCurtailmentSharingRule": 1.0,
+        "thresholdDisplayLocalMatchingRuleViolations": 0.0,
+        "thresholdCsrVariableBoundsRelaxation": 7,
+        "redispatch": False,
+        "thresholdEns": 0.0,
+    }
+
+    res = client.put(
+        f"/v1/studies/{study_id}/config/adequacypatch/form",
+        json={"redispatch": True, "thresholdEns": 2.5},
+    )
+    assert res.status_code == 200
+    res = client.get(f"/v1/studies/{study_id}/config/adequacypatch/form")
+    assert res.status_code == 200
+    adequacy_patch_config = res.json()
+    assert adequacy_patch_config["redispatch"] is True
+    assert adequacy_patch_config["thresholdEns"] == 2.5
+
+    # `thresholdEns` must be >= 0
+    res = client.put(
+        f"/v1/studies/{study_id}/config/adequacypatch/form",
+        json={"thresholdEns": -1},
+    )
+    assert res.status_code == 422
+
+    # `redispatch`/`thresholdEns` are rejected for studies before v9.3
+    created = client.post("/v1/studies", params={"name": "bar", "version": 920})
+    old_study_id = created.json()
+    res = client.put(
+        f"/v1/studies/{old_study_id}/config/adequacypatch/form",
+        json={"thresholdEns": 1.0},
+    )
+    assert res.status_code == 422
+    assert "Field threshold_ens is not a valid field for study version 9.2" in res.json()["description"]
+
+
 def test_compatibility_settings_10_2_study(client: TestClient, admin_access_token: str) -> None:
     client.headers = {"Authorization": f"Bearer {admin_access_token}"}
 

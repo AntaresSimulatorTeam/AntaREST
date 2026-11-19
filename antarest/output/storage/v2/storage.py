@@ -24,6 +24,7 @@ from typing_extensions import override
 from antarest.core.exceptions import (
     OutputAggregationError,
     OutputAlreadyExists,
+    OutputGemsViewsNotFound,
     OutputNotFound,
     ShouldNotHappenException,
 )
@@ -47,6 +48,7 @@ from antarest.output.filestudy.model import QueryFileType
 from antarest.output.filestudy.variables import extract_variables_list
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
+from antarest.output.model.gems_views import GemsTaxonomyViews
 from antarest.output.model.output_type import OutputType
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -454,6 +456,14 @@ class V2OutputStorage(IOutputStorage):
     @override
     def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath) -> bytes:
         raise NotImplementedError()
+
+    @override
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | None:
+        raise OutputGemsViewsNotFound(output_id)
+
+    @override
+    def materialize_gems_views(self, study_id: str, output_id: str) -> None:
+        raise OutputGemsViewsNotFound(output_id)
 
     @override
     def get_matrix_aggregation_result(

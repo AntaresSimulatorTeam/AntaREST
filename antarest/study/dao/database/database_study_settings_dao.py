@@ -139,11 +139,11 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_compatibility_parameters(self, parameters: CompatibilityParameters) -> None:
-        values = dict(
-            study_data_id=self._study_data_id,
-            hydro_pmax=parameters.hydro_pmax,
-            hydro_rule_curves=parameters.hydro_rule_curves,
-        )
+        values = {
+            "study_data_id": self._study_data_id,
+            "hydro_pmax": parameters.hydro_pmax,
+            "hydro_rule_curves": parameters.hydro_rule_curves,
+        }
         session = self._db_session
         upsert_one(session, COMPATIBILITY_PARAMETERS_TABLE, values)
         session.commit()
@@ -171,7 +171,7 @@ class DatabaseStudySettingsDao(
 
     @override
     def save_timeseries_config(self, config: TimeSeriesConfiguration) -> None:
-        values = dict(study_data_id=self._study_data_id, thermal_number=config.thermal.number)
+        values = {"study_data_id": self._study_data_id, "thermal_number": config.thermal.number}
         session = self._db_session
         upsert_one(session, TIMESERIES_CONFIG_TABLE, values)
         session.commit()
@@ -197,7 +197,7 @@ class DatabaseStudySettingsDao(
                 sorted(out_of_range),
             )
         years = {y: v for y, v in playlist.years.items() if 1 <= y <= nb_years}
-        values = dict(study_data_id=self._study_data_id, years=to_json_string(years))
+        values = {"study_data_id": self._study_data_id, "years": to_json_string(years)}
         session = self._db_session
         upsert_one(session, PLAYLIST_TABLE, values)
         session.commit()

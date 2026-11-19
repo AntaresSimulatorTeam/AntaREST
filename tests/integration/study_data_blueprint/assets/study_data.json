@@ -1651,6 +1651,7 @@
                                 "redispatch": false,
                                 "thresholdCsrVariableBoundsRelaxation": 7,
                                 "thresholdDisplayLocalMatchingRuleViolations": 0.0,
+                                "thresholdEns": 0.0,
                                 "thresholdInitiateCurtailmentSharingRule": 1.0},
               "advancedParameters": {"accuracyOnCorrelation": "",
                                      "accurateShavePeaksIncludeShortTermStorage": false,

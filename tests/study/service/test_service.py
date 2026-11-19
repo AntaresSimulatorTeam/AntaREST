@@ -319,7 +319,7 @@ def test_study_listing(db_session: Session) -> None:
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     # verify that we get the expected studies information
-    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [c])}
+    expected_result = {e.id: e for e in (study_to_dto(x) for x in [c])}
     assert expected_result == studies
 
     # retrieve managed studies
@@ -333,7 +333,7 @@ def test_study_listing(db_session: Session) -> None:
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     # verify that we get the expected studies information
-    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a])}
+    expected_result = {e.id: e for e in (study_to_dto(x) for x in [a])}
     assert expected_result == studies
 
     # retrieve studies regardless of whether they are managed or not
@@ -347,7 +347,7 @@ def test_study_listing(db_session: Session) -> None:
     assert len(db_recorder.sql_statements) == 1, str(db_recorder)
 
     # verify that we get the expected studies information
-    expected_result = {e.id: e for e in map(lambda x: study_to_dto(x), [a, c])}
+    expected_result = {e.id: e for e in (study_to_dto(x) for x in [a, c])}
     assert expected_result == studies
 
     # in previous versions cache was used, verify that it is not used anymore
