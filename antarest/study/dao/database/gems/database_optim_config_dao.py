@@ -21,52 +21,13 @@ from antarest.study.business.model.gems.system import split_library_and_model_id
 from antarest.study.dao.api.gems_optim_config_dao import GemsOptimConfigDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.optim_config import (
-    GEMS_OPTIM_CONFIG_MODELS_TABLE,
+    GEMS_OPTIM_CONFIG_HEURISTICS_TABLE,
+    GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE,
+    GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
+    GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE,
+    GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE,
     GEMS_OPTIM_CONFIG_TABLE,
 )
-
-
-def _model_to_rows(study_data_id: int, model: GemsOptimConfigModel) -> list[dict[str, Any]]:
-    library_id, model_id = split_library_and_model_id(model.id)
-    base = {
-        "study_data_id": study_data_id,
-        "library_id": library_id,
-        "model_id": model_id,
-        "variable_id": None,
-        "constraint_id": None,
-        "objective_contribution_id": None,
-        "out_of_bounds_mode": None,
-        "location": None,
-        "heuristics": None,
-    }
-    heuristics = None
-    if model.heuristics is not None:
-        heuristics = json.dumps([h.model_dump(mode="json", by_alias=True) for h in model.heuristics])
-    rows = [{**base, "heuristics": heuristics}]
-
-    # Constraints may appear both in out-of-bounds-processing and model-decomposition: they share the same row.
-    constraint_rows: dict[str, dict[str, Any]] = {}
-    if model.out_of_bounds_processing is not None:
-        for constraint in model.out_of_bounds_processing.constraints:
-            constraint_rows[constraint.id] = {
-                **base,
-                "constraint_id": constraint.id,
-                "out_of_bounds_mode": constraint.mode,
-            }
-    decomposition = model.model_decomposition
-    if decomposition is not None:
-        for decomposed_constraint in decomposition.constraints:
-            row = constraint_rows.setdefault(
-                decomposed_constraint.id, {**base, "constraint_id": decomposed_constraint.id}
-            )
-            row["location"] = decomposed_constraint.location
-        rows += [{**base, "variable_id": v.id, "location": v.location} for v in decomposition.variables]
-        rows += [
-            {**base, "objective_contribution_id": o.id, "location": o.location}
-            for o in decomposition.objective_contributions
-        ]
-    rows += list(constraint_rows.values())
-    return rows
 
 
 class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
@@ -88,6 +49,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
             optim_config_data[key] = json.loads(optim_config_data[key]) if optim_config_data[key] is not None else None
 
         # Models part
+        """
         models_table = GEMS_OPTIM_CONFIG_MODELS_TABLE
         model_rows = session.execute(
             select(models_table).where(models_table.c.study_data_id == study_data_id).order_by(models_table.c.id)
@@ -120,6 +82,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
 
         content = {"models": list(models.values()), **optim_config_data}
         return GemsOptimConfig.model_validate(content)
+        """
 
     @override
     def save_optim_config(self, optim_config: GemsOptimConfig) -> None:
@@ -139,12 +102,127 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         session.execute(insert(GEMS_OPTIM_CONFIG_TABLE), optim_config_values)
 
         # Models part
-        model_values = [row for model in optim_config.models for row in _model_to_rows(study_data_id, model)]
-        if model_values:
+        self._save_models(optim_config.models)
+
+        session.commit()
+
+    def _save_models(self, models: list[GemsOptimConfigModel]) -> None:
+        if not models:
+            return
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        # Heuristics
+        heuristic_values = []
+        for model in models:
+            if not model.heuristics:
+                continue
+            library_id, model_id = split_library_and_model_id(model.id)
+            heuristic_values.append(
+                {
+                    "study_data_id": study_data_id,
+                    "library_id": library_id,
+                    "model_id": model_id,
+                    "data": json.dumps([heuristic.model_dump_json() for heuristic in model.heuristics]),
+                }
+            )
+
+        if heuristic_values:
             try:
-                session.execute(insert(GEMS_OPTIM_CONFIG_MODELS_TABLE), model_values)
+                session.execute(insert(GEMS_OPTIM_CONFIG_HEURISTICS_TABLE), heuristic_values)
             except Exception:
                 session.rollback()
                 raise
 
-        session.commit()
+        # Out of bounds processing
+        oob_processing_values = []
+        for model in models:
+            if not model.out_of_bounds_processing or not model.out_of_bounds_processing.constraints:
+                continue
+            library_id, model_id = split_library_and_model_id(model.id)
+            for constraint in model.out_of_bounds_processing.constraints:
+                oob_processing_values.append(
+                    {
+                        "study_data_id": study_data_id,
+                        "library_id": library_id,
+                        "model_id": model_id,
+                        "constraint_id": constraint.id,
+                        "mode": constraint.mode,
+                    }
+                )
+
+        if oob_processing_values:
+            try:
+                session.execute(insert(GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE), oob_processing_values)
+            except Exception:
+                session.rollback()
+                raise
+
+        # Model decomposition
+        variables_values = []
+        constraints_values = []
+        objective_contributions_values = []
+        for model in models:
+            if model.model_decomposition:
+                library_id, model_id = split_library_and_model_id(model.id)
+
+                # Variables
+                for variable in model.model_decomposition.variables:
+                    variables_values.append(
+                        {
+                            "study_data_id": study_data_id,
+                            "library_id": library_id,
+                            "model_id": model_id,
+                            "variable_id": variable.id,
+                            "location": variable.location,
+                        }
+                    )
+
+                # Constraints
+                for md_constraint in model.model_decomposition.constraints:
+                    constraints_values.append(
+                        {
+                            "study_data_id": study_data_id,
+                            "library_id": library_id,
+                            "model_id": model_id,
+                            "constraint_id": md_constraint.id,
+                            "location": md_constraint.location,
+                        }
+                    )
+
+                # Objective contributions
+                for objective_contribution in model.model_decomposition.objective_contributions:
+                    objective_contributions_values.append(
+                        {
+                            "study_data_id": study_data_id,
+                            "library_id": library_id,
+                            "model_id": model_id,
+                            "objective_contribution_id": objective_contribution.id,
+                            "location": objective_contribution.location,
+                        }
+                    )
+
+        if variables_values:
+            try:
+                session.execute(insert(GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE), variables_values)
+            except Exception:
+                session.rollback()
+                raise
+
+        if constraints_values:
+            try:
+                session.execute(insert(GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE), constraints_values)
+            except Exception:
+                session.rollback()
+                raise
+
+        if objective_contributions_values:
+            try:
+                session.execute(
+                    insert(GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE),
+                    objective_contributions_values,
+                )
+            except Exception:
+                session.rollback()
+                raise

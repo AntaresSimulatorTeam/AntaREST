@@ -13,7 +13,7 @@ from sqlalchemy import Column, ForeignKeyConstraint, String, Table
 
 from antarest.core.utils.sql_utils import enum_col
 from antarest.dbmodel import Base
-from antarest.study.business.model.gems.optim_config import GemsOutOfBoundsMode
+from antarest.study.business.model.gems.optim_config import GemsDecompositionLocation, GemsOutOfBoundsMode
 from antarest.study.dao.database.models import study_data_id_col
 
 metadata = Base.metadata
@@ -72,7 +72,7 @@ def _create_table(table_name: str, column_name: str, reference_table_name: str) 
         Column("library_id", String(length=255), primary_key=True),
         Column("model_id", String(length=255), primary_key=True),
         Column(column_name, String(length=255), primary_key=True),
-        Column("location", String(), nullable=False),
+        Column("location", enum_col(GemsDecompositionLocation, name="gemsdecompositionlocation"), nullable=False),
         ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id", column_name],
             [
