@@ -110,11 +110,18 @@ class ThematicTrimming(AntaresBaseModel):
     # Since v8.8
     sts_cashflow_by_cluster: bool | None = None
     npcap_hours: bool | None = None
+    ov_cost_csr: bool | None = None
+    lold_csr: bool | None = None
+    lolp_csr: bool | None = None
+    mrg_price_csr: bool | None = None
+    unsp_enrg_csr: bool | None = None
+    max_mrg_csr: bool | None = None
     # Since v9.1
     sts_by_group: bool | None = None
     # Since v9.3
     dispatch_gen: bool | None = None
     renewable_gen: bool | None = None
+    npcap_hours_csr: bool | None = None
     # Introduced in v8.6 and removed in v9.1
     psp_open_injection: bool | None = None
     psp_open_withdrawal: bool | None = None
@@ -271,9 +278,16 @@ class ThematicTrimmingUpdate(AntaresBaseModel):
     other5_level: bool | None = None
     sts_cashflow_by_cluster: bool | None = None
     npcap_hours: bool | None = None
+    ov_cost_csr: bool | None = None
+    lold_csr: bool | None = None
+    lolp_csr: bool | None = None
+    mrg_price_csr: bool | None = None
+    unsp_enrg_csr: bool | None = None
+    max_mrg_csr: bool | None = None
     sts_by_group: bool | None = None
     dispatch_gen: bool | None = None
     renewable_gen: bool | None = None
+    npcap_hours_csr: bool | None = None
     lmr_viol: bool | None = None
     dtg_mrg_csr: bool | None = None
     nh3_emis: bool | None = None
@@ -419,7 +433,18 @@ def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> 
         )
 
     if version >= STUDY_VERSION_8_8:
-        fields.update(["sts_cashflow_by_cluster", "npcap_hours"])
+        fields.update(
+            [
+                "sts_cashflow_by_cluster",
+                "npcap_hours",
+                "ov_cost_csr",
+                "lold_csr",
+                "lolp_csr",
+                "mrg_price_csr",
+                "unsp_enrg_csr",
+                "max_mrg_csr",
+            ]
+        )
 
     if version >= STUDY_VERSION_9_1:
         fields.add("sts_by_group")
@@ -455,7 +480,7 @@ def get_thematic_trimming_fields_according_to_version(version: StudyVersion) -> 
             fields.remove(field)
 
     if version >= STUDY_VERSION_9_3:
-        fields.update(["dispatch_gen", "renewable_gen"])
+        fields.update(["dispatch_gen", "renewable_gen", "npcap_hours_csr"])
         for field in [
             # replaces by dispatch_gen
             "nuclear",
