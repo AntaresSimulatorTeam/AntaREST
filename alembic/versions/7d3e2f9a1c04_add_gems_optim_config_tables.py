@@ -88,19 +88,19 @@ def upgrade():
         )
 
     _create_model_decomposition_table(
-        table_name="gems_optim_config_model_decomposition_variables",
+        table_name="gems_optim_config_md_variables",
         column_name="variable_id",
         reference_table_name="gems_models_variables"
     )
 
     _create_model_decomposition_table(
-        table_name="gems_optim_config_model_decomposition_constraints",
+        table_name="gems_optim_config_md_constraints",
         column_name="constraint_id",
         reference_table_name="gems_models_constraints",
     )
 
     _create_model_decomposition_table(
-        table_name="gems_optim_config_model_decomposition_objective_contributions",
+        table_name="gems_optim_config_md_objective_contributions",
         column_name="objective_contribution_id",
         reference_table_name="gems_models_objective_contributions",
     )
@@ -108,7 +108,7 @@ def upgrade():
 def downgrade():
     op.drop_table("gems_optim_config_oob_processing")
     op.drop_table("gems_optim_config_heuristics")
-    op.drop_table("gems_optim_config_model_decomposition_variables")
-    op.drop_table("gems_optim_config_model_decomposition_constraints")
-    op.drop_table("gems_optim_config_model_decomposition_objective_contributions")
+    op.drop_table("gems_optim_config_md_variables")
+    op.drop_table("gems_optim_config_md_constraints")
+    op.drop_table("gems_optim_config_md_objective_contributions")
     op.drop_table("gems_optim_config")

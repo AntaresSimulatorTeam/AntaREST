@@ -23,11 +23,11 @@ from antarest.study.dao.api.gems_optim_config_dao import GemsOptimConfigDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.optim_config import (
     GEMS_OPTIM_CONFIG_HEURISTICS_TABLE,
-    GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE,
-    GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
-    GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE,
     GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE,
     GEMS_OPTIM_CONFIG_TABLE,
+    gems_optim_config_md_constraints_TABLE,
+    gems_optim_config_md_objective_contributions_TABLE,
+    gems_optim_config_md_variables_TABLE,
 )
 
 
@@ -39,13 +39,11 @@ class _ModelDecompositionMapping(NamedTuple):
 
 def _build_decomposition_list() -> list[_ModelDecompositionMapping]:
     return [
-        _ModelDecompositionMapping("variables", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE, "variable_id"),
-        _ModelDecompositionMapping(
-            "constraints", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE, "constraint_id"
-        ),
+        _ModelDecompositionMapping("variables", gems_optim_config_md_variables_TABLE, "variable_id"),
+        _ModelDecompositionMapping("constraints", gems_optim_config_md_constraints_TABLE, "constraint_id"),
         _ModelDecompositionMapping(
             "objective_contributions",
-            GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
+            gems_optim_config_md_objective_contributions_TABLE,
             "objective_contribution_id",
         ),
     ]
@@ -225,9 +223,9 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
             GEMS_OPTIM_CONFIG_TABLE,
             GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE,
             GEMS_OPTIM_CONFIG_HEURISTICS_TABLE,
-            GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE,
-            GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE,
-            GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
+            gems_optim_config_md_variables_TABLE,
+            gems_optim_config_md_constraints_TABLE,
+            gems_optim_config_md_objective_contributions_TABLE,
         ]:
             session.execute(delete(table).where(table.c.study_data_id == study_data_id))
 

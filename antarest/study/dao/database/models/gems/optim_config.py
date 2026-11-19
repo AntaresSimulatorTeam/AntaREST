@@ -86,20 +86,20 @@ def _create_table(table_name: str, column_name: str, reference_table_name: str) 
     )
 
 
-GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE = _create_table(
-    table_name="gems_optim_config_model_decomposition_variables",
+gems_optim_config_md_variables_TABLE = _create_table(
+    table_name="gems_optim_config_md_variables",
     column_name="variable_id",
     reference_table_name="gems_models_variables",
 )
 
-GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE = _create_table(
-    table_name="gems_optim_config_model_decomposition_constraints",
+gems_optim_config_md_constraints_TABLE = _create_table(
+    table_name="gems_optim_config_md_constraints",
     column_name="constraint_id",
     reference_table_name="gems_models_constraints",
 )
 
-GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE = _create_table(
-    table_name="gems_optim_config_model_decomposition_objective_contributions",
+gems_optim_config_md_objective_contributions_TABLE = _create_table(
+    table_name="gems_optim_config_md_objective_contributions",
     column_name="objective_contribution_id",
     reference_table_name="gems_models_objective_contributions",
 )
