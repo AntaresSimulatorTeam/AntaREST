@@ -12,18 +12,16 @@
  * This file is part of the Antares project.
  */
 
-import { format } from "@/utils/stringUtils";
+import { getFileContent } from "@/services/api/files";
+import { filesTreeSchema } from "@/services/api/files/schemas";
+import type { FilesTree } from "@/services/api/files/types";
 import client from "../../client";
-import { filesTreeSchema } from "./schemas";
 import type {
   CreateOrReplaceUserResourceParams,
   DeleteUserResourceParams,
   GetUserResourceContentParams,
   GetUserResourceTreeParams,
-  FilesTree,
 } from "./types";
-
-const BASE_URL = "/v1/studies/{studyId}/user-resources";
 
 /**
  * GET /v1/studies/{studyId}/user-resources - Gets the tree of user resources for the specified study.
@@ -31,11 +29,13 @@ const BASE_URL = "/v1/studies/{studyId}/user-resources";
  * @param params - Parameters.
  * @param params.studyId - The ID of the study.
  * @returns The tree of user resources for the specified study.
+ * @throws If the response does not match the file-tree schema.
  */
 export async function getUserResourcesTree({
   studyId,
 }: GetUserResourceTreeParams): Promise<FilesTree> {
-  const { data } = await client.get(format(BASE_URL, { studyId }));
+  const { data } = await client.get(`/v1/studies/${studyId}/user-resources`);
+
   return filesTreeSchema.parse(data);
 }
 
@@ -47,13 +47,10 @@ export async function getUserResourcesTree({
  * @param params.studyId - The ID of the study.
  * @param params.path - The path of the user resource.
  * @returns The content of the user resource.
+ * @throws If the request fails or the response is not a Blob.
  */
-export async function getUserResourceContent({ studyId, path }: GetUserResourceContentParams) {
-  const { data } = await client.get<Blob>(format(`${BASE_URL}/content`, { studyId }), {
-    params: { path },
-    responseType: "blob",
-  });
-  return data;
+export function getUserResourceContent({ studyId, path }: GetUserResourceContentParams) {
+  return getFileContent(`/v1/studies/${studyId}/user-resources/content`, path);
 }
 
 /**
@@ -72,16 +69,22 @@ export async function createOrReplaceUserResource({
   resourceType,
   file,
 }: CreateOrReplaceUserResourceParams) {
-  const url = format(BASE_URL, { studyId });
   const body = resourceType === "file" ? { file } : {};
 
-  await client.putForm(url, body, {
+  await client.putForm(`/v1/studies/${studyId}/user-resources`, body, {
     params: { path, resource_type: resourceType },
   });
 }
 
+/**
+ * DELETE /v1/studies/{studyId}/user-resources - Deletes a file or folder.
+ *
+ * @param params - Resource to delete.
+ * @param params.studyId - Study identifier.
+ * @param params.path - Path relative to the study's User Resources folder.
+ */
 export async function deleteUserResource({ studyId, path }: DeleteUserResourceParams) {
-  await client.delete(format(BASE_URL, { studyId }), {
+  await client.delete(`/v1/studies/${studyId}/user-resources`, {
     params: { path },
   });
 }

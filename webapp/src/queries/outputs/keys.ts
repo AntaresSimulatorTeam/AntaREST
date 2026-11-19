@@ -12,12 +12,22 @@
  * This file is part of the Antares project.
  */
 
+import type { OutputFileParams } from "@/services/api/studies/outputs/rawFiles/types";
+import type { OutputParams } from "@/services/api/studies/outputs/types";
 import type { Study } from "@/services/api/studies/types";
 import { studyKeys } from "../studies/keys";
 
 export const outputKeys = {
   all: () => [...studyKeys.all(), "outputs"] as const,
   list: (studyId: Study["id"]) => [...outputKeys.all(), { studyId }] as const,
+  detail: ({ studyId, outputId }: OutputParams) =>
+    [...outputKeys.all(), "detail", { studyId, outputId }] as const,
+  gemsViews: (output: OutputParams) => [...outputKeys.detail(output), "gemsViews"] as const,
+  materializeGemsViews: (output: OutputParams) =>
+    [...outputKeys.gemsViews(output), "materialize"] as const,
+  rawFiles: (output: OutputParams) => [...outputKeys.detail(output), "rawFiles"] as const,
+  rawFileContent: ({ studyId, outputId, path }: OutputFileParams) =>
+    [...outputKeys.detail({ studyId, outputId }), "rawFileContent", path] as const,
   delete: (studyId: Study["id"]) => [...outputKeys.list(studyId), "deleteOutput"] as const,
   archive: (studyId: Study["id"]) => [...outputKeys.list(studyId), "archiveOutput"] as const,
   unarchive: (studyId: Study["id"]) => [...outputKeys.list(studyId), "unarchiveOutput"] as const,

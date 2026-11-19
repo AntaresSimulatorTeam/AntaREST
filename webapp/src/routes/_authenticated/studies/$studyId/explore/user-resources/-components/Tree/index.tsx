@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { FilesTree } from "@/services/api/studies/userResources/types";
+import type { FilesTree } from "@/services/api/files/types";
 import { getParentPaths } from "@/utils/pathUtils";
 import { SimpleTreeView } from "@mui/x-tree-view";
 import { useContext } from "react";

@@ -13,8 +13,10 @@
  */
 
 import { queryOptions } from "@tanstack/react-query";
+import { secondsToMilliseconds } from "date-fns";
 import { getTask, getTasks } from "@/services/api/tasks";
 import type { GetTasksParams, Task } from "@/services/api/tasks/types";
+import { isTaskFinished } from "@/services/api/tasks/utils";
 import { taskKeys } from "./keys";
 
 export const taskQueries = {
@@ -28,7 +30,18 @@ export const taskQueries = {
   detail: (id: Task["id"]) => {
     return queryOptions({
       queryKey: taskKeys.detail(id),
-      queryFn: () => getTask({ id }),
+      queryFn: ({ signal }) => getTask({ id }, signal),
     });
   },
+
+  // Polling is opt-in. Both observers share the same task detail cache.
+  monitor: (id: Task["id"]) =>
+    queryOptions({
+      ...taskQueries.detail(id),
+      staleTime: 0,
+      refetchInterval: ({ state }) =>
+        state.status === "success" && state.data && !isTaskFinished(state.data)
+          ? secondsToMilliseconds(2)
+          : false,
+    }),
 };
