@@ -189,17 +189,18 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
 
         model_args = []
         for model_id in model_ids:
-            model_args.append(
-                {
-                    "id": model_id,
-                    "out_of_bounds_processing": {"constraints": model_oobs.get(model_id, [])},
-                    "model_decomposition": {
-                        "variables": model_variables.get(model_id, []),
-                        "constraints": model_constraints.get(model_id, []),
-                        "objective_contributions": model_objective_contributions.get(model_id, []),
-                    },
-                }
-            )
+            args = {"id": model_id, "out_of_bounds_processing": {"constraints": model_oobs.get(model_id, [])}}
+            variables = model_variables.get(model_id, [])
+            constraints = model_constraints.get(model_id, [])
+            objective_contributions = model_objective_contributions.get(model_id, [])
+            if not any([variables, constraints, objective_contributions]):
+                continue  # Allow None values inside the Pydantic model rather than empty lists
+            args["model_decomposition"] = {
+                "variables": variables,
+                "constraints": constraints,
+                "objective_contributions": objective_contributions,
+            }
+            model_args.append(args)
 
         # Build final class
         return GemsOptimConfig.model_validate({"models": model_args, **optim_config_data})
