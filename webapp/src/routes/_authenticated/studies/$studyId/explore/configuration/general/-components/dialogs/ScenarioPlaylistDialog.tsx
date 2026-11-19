@@ -17,11 +17,11 @@ import DataGridForm, {
   type DataGridFormApi,
   type DataGridFormProps,
   type DataGridFormState,
+  type GridSubmitHandlerPlus,
 } from "@/components/DataGridForm";
 import BasicDialog from "@/components/dialogs/BasicDialog";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import NumberSelectionsFE from "@/components/fieldEditors/NumberSelectionsFE";
-import type { SubmitHandlerPlus } from "@/components/Form/types";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import useConfirm from "@/hooks/useConfirm";
 import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/playlist";
@@ -143,7 +143,7 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
     }
   };
 
-  const handleSubmit = (data: SubmitHandlerPlus<PlaylistData>) => {
+  const handleSubmit = (data: GridSubmitHandlerPlus<PlaylistData>) => {
     return setPlaylistData({ studyId: study.id, data: data.values });
   };
 
