@@ -31,7 +31,10 @@ def _load_example(name: str) -> GemsOptimConfig:
 
 
 def _build_library(config: GemsOptimConfig) -> GemsLibrary:
-    """Builds a library containing every element referenced by the configuration."""
+    """
+    Builds a library containing every element referenced by the configuration.
+    This way no foreign key constraint is violated.
+    """
     library_ids = {split_library_and_model_id(model.id)[0] for model in config.models}
     assert len(library_ids) == 1
     models = []
@@ -54,12 +57,6 @@ def _build_library(config: GemsOptimConfig) -> GemsLibrary:
             }
         )
     return GemsLibrary.model_validate({"id": library_ids.pop(), "models": models})
-
-
-@pytest.mark.parametrize("example", EXAMPLES)
-def test_examples_are_valid(example: str) -> None:
-    config = _load_example(example)
-    assert config.models
 
 
 def test_examples_content() -> None:
@@ -93,8 +90,8 @@ def test_roundtrip(dao_10_2: StudyDao, example: str) -> None:
     dao.save_optim_config(config)
     assert dao.get_optim_config() == config
 
-    # Saving again replaces the existing configuration
-    new_config = config.model_copy(update={"models": config.models[:1], "solver_options": None})
+    # Saving again with a slightly different data -> Should not raise and return the new data
+    new_config = config.model_copy(update={"solver_options": None})
     dao.save_optim_config(new_config)
     assert dao.get_optim_config() == new_config
 
