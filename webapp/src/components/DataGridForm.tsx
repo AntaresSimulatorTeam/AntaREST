@@ -489,22 +489,6 @@ function DataGridForm<TData extends Data>({
       id={id}
       onSubmit={handleSubmit}
     >
-      {allowRowDeletion && (
-        <Stack className="DataGridForm__Header" direction="column" gap={1.5} sx={{ mb: 1.5 }}>
-          <Box>
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<DeleteIcon />}
-              size="small"
-              disabled={!canDelete || !hasSelectedRows}
-              onClick={handleDeleteClick}
-            >
-              {t("global.delete")}
-            </Button>
-          </Box>
-        </Stack>
-      )}
       <DataGrid
         getCellContent={getCellContent}
         columns={columnsWithAdjustedSize}
@@ -527,7 +511,7 @@ function DataGridForm<TData extends Data>({
             {error || t("form.submit.error")}
           </Box>
         )}
-        <Box sx={{ display: "flex", alignItems: "center" }}>
+        <Stack gap={1.5}>
           {!hideSubmitButton && (
             <>
               <Button
@@ -540,29 +524,44 @@ function DataGridForm<TData extends Data>({
               >
                 {submitButtonText || t("global.save")}
               </Button>
-              <Divider sx={{ mx: 2 }} orientation="vertical" flexItem />
+              <Divider orientation="vertical" flexItem />
             </>
           )}
-          <Tooltip title={t("global.undo")}>
-            <span>
-              <IconButton onClick={undo} disabled={!canUndo}>
-                <UndoIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title={t("global.redo")}>
-            <span>
-              <IconButton onClick={redo} disabled={!canRedo}>
-                <RedoIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
+          <Box>
+            <Tooltip title={t("global.undo")}>
+              <span>
+                <IconButton onClick={undo} disabled={!canUndo}>
+                  <UndoIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+            <Tooltip title={t("global.redo")}>
+              <span>
+                <IconButton onClick={redo} disabled={!canRedo}>
+                  <RedoIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Box>
+
+          {allowRowDeletion && (
+            <>
+              <Divider orientation="vertical" flexItem />
+              <Tooltip title={t("global.delete")}>
+                <span>
+                  <IconButton onClick={handleDeleteClick} disabled={!canDelete || !hasSelectedRows}>
+                    <DeleteIcon />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </>
+          )}
           {extraActions && (
             <Box sx={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 1 }}>
               {typeof extraActions === "function" ? extraActions({ canSubmit }) : extraActions}
             </Box>
           )}
-        </Box>
+        </Stack>
       </Stack>
     </Box>
   );
