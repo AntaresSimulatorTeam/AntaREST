@@ -145,40 +145,28 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
             optim_config_data[key] = json.loads(optim_config_data[key]) if optim_config_data[key] is not None else None
 
         # Models part
-        """
-        models_table = GEMS_OPTIM_CONFIG_MODELS_TABLE
-        model_rows = session.execute(
-            select(models_table).where(models_table.c.study_data_id == study_data_id).order_by(models_table.c.id)
-        ).fetchall()
-
         models: dict[str, dict[str, Any]] = {}
-        for row in model_rows:
-            model = models.setdefault(f"{row.library_id}.{row.model_id}", {"id": f"{row.library_id}.{row.model_id}"})
-            if row.variable_id is not None:
-                decomposition = model.setdefault("model_decomposition", {})
-                decomposition.setdefault("variables", []).append({"id": row.variable_id, "location": row.location})
-            elif row.objective_contribution_id is not None:
-                decomposition = model.setdefault("model_decomposition", {})
-                decomposition.setdefault("objective_contributions", []).append(
-                    {"id": row.objective_contribution_id, "location": row.location}
-                )
-            elif row.constraint_id is not None:
-                if row.out_of_bounds_mode is not None:
-                    processing = model.setdefault("out_of_bounds_processing", {})
-                    processing.setdefault("constraints", []).append(
-                        {"id": row.constraint_id, "mode": row.out_of_bounds_mode}
-                    )
-                if row.location is not None:
-                    decomposition = model.setdefault("model_decomposition", {})
-                    decomposition.setdefault("constraints", []).append(
-                        {"id": row.constraint_id, "location": row.location}
-                    )
-            elif row.heuristics is not None:
-                model["heuristics"] = json.loads(row.heuristics)
 
-        content = {"models": list(models.values()), **optim_config_data}
-        return GemsOptimConfig.model_validate(content)
-        """
+        # Heuristics
+        table = GEMS_OPTIM_CONFIG_HEURISTICS_TABLE
+        heuristic_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
+        for heuristic_row in heuristic_rows:
+            model_id = f"{heuristic_row.library_id}.{heuristic_row.model_id}"
+            models.setdefault(model_id, {})["heuristics"] = json.loads(heuristic_row.data)
+
+        # Out of bound processing
+        table = GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE
+        oob_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
+        for oob_row in oob_rows:
+            model_id = f"{oob_row.library_id}.{oob_row.model_id}"
+
+            models.setdefault(model_id, {}).setdefault("out_of_bounds_processing", {"constraints": []})[
+                "constraints"
+            ].append({"id": oob_row.constraint_id, "mode": oob_row.mode})
+
+        # Model decomposition
+
+        # todo
 
     @override
     def save_optim_config(self, optim_config: GemsOptimConfig) -> None:
