@@ -156,8 +156,9 @@ indent-width = 4
 target-version = "py314"
 
 [tool.ruff.lint]
-## E4, E7, E9 and F are the default configuration of ruff, "I" is added to handle imports
-select = ["E4", "E7", "E9", "F", "I"]
+## E4, E7, E9 and F are the default configuration of ruff, "I" is added to handle imports.
+## ASYNC, LOG, TID, PLE, ISC and C4 catch likely bugs, RUF100 flags unused `noqa` comments.
+select = ["E4", "E7", "E9", "F", "I", "ASYNC", "LOG", "TID", "PLE", "ISC", "C4", "RUF100"]
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.

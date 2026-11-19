@@ -37,15 +37,15 @@ R4 = ReserveDefinitionId("r4")
 
 
 def _reserve(name: str, reserve_type: ReserveType = ReserveType.UP, **overrides: object) -> ReserveDefinition:
-    base: dict[str, object] = dict(
-        name=name,
-        type=reserve_type,
-        failure_cost=10.0,
-        spillage_cost=5.0,
-        reference_activation_duration=3,
-        power_activation_ratio=0.4,
-        energy_activation_ratio=0.9,
-    )
+    base: dict[str, object] = {
+        "name": name,
+        "type": reserve_type,
+        "failure_cost": 10.0,
+        "spillage_cost": 5.0,
+        "reference_activation_duration": 3,
+        "power_activation_ratio": 0.4,
+        "energy_activation_ratio": 0.9,
+    }
     base.update(overrides)
     return ReserveDefinition.model_validate(base)
 

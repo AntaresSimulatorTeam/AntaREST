@@ -83,7 +83,7 @@ def config() -> FileStudyTreeConfig:
 
 def test_file_study_tree_config_dto(config: FileStudyTreeConfig) -> None:
     config_dto = FileStudyTreeConfigDTO.from_build_config(config)
-    assert sorted(list(config_dto.model_dump())) == sorted(list(config.__dict__))
+    assert sorted(config_dto.model_dump()) == sorted(config.__dict__)
     assert config_dto.to_build_config() == config
 
     config_dict = config_dto.model_dump()
