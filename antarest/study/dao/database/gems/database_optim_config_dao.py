@@ -198,7 +198,9 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
 
         model_args = []
         for model_id in model_ids:
-            args = {"id": model_id, "out_of_bounds_processing": {"constraints": model_oobs.get(model_id, [])}}
+            args: dict[str, Any] = {"id": model_id}
+            if constraints := model_oobs.get(model_id):
+                args["out_of_bounds_processing"] = {"constraints": constraints}
             variables = model_variables.get(model_id, [])
             constraints = model_constraints.get(model_id, [])
             objective_contributions = model_objective_contributions.get(model_id, [])
