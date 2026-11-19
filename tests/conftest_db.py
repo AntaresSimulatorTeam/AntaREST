@@ -18,7 +18,6 @@ from sqlalchemy import StaticPool, create_engine, text
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
-import antarest.output.model
 import antarest.study.model  # noqa
 from antarest.core.utils.fastapi_sqlalchemy.middleware import init_db_singleton
 from antarest.dbmodel import Base
