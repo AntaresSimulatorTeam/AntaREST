@@ -145,57 +145,57 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
             optim_config_data[key] = json.loads(optim_config_data[key]) if optim_config_data[key] is not None else None
 
         # Models part
-        models: dict[str, dict[str, Any]] = {}
+        model_ids = set()
 
         # Heuristics
+        model_heuristics = {}
         table = GEMS_OPTIM_CONFIG_HEURISTICS_TABLE
         heuristic_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
         for heuristic_row in heuristic_rows:
             model_id = f"{heuristic_row.library_id}.{heuristic_row.model_id}"
-            models.setdefault(model_id, {})["heuristics"] = json.loads(heuristic_row.data)
+            model_heuristics[model_id] = json.loads(heuristic_row.data)
+            model_ids.add(model_id)
 
         # Out of bound processing
+        model_oobs = {}
         table = GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE
         oob_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
         for oob_row in oob_rows:
             model_id = f"{oob_row.library_id}.{oob_row.model_id}"
-
-            models.setdefault(model_id, {}).setdefault("out_of_bounds_processing", {"constraints": []})[
-                "constraints"
-            ].append({"id": oob_row.constraint_id, "mode": oob_row.mode})
+            model_oobs.setdefault(model_id, []).append({"id": oob_row.constraint_id, "mode": oob_row.mode})
+            model_ids.add(model_id)
 
         # Model decomposition
+        model_variables: dict[str, Any] = {}
+        model_constraints: dict[str, Any] = {}
+        model_objective_contributions: dict[str, Any] = {}
 
-        table = GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE
-        variables_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
-        for variables_row in variables_rows:
-            model_id = f"{variables_row.library_id}.{variables_row.model_id}"
+        model_decomposition_mapping = [
+            (model_variables, GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE),
+            (model_constraints, GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE),
+            (model_objective_contributions, GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE),
+        ]
 
-            models.setdefault(model_id, {}).setdefault("model_decomposition", {"variables": []})["variables"].append(
-                {"id": variables_row.variable_id, "mode": variables_row.mode}
+        for tmp_storage_var, db_table in model_decomposition_mapping:
+            db_rows = session.execute(select(db_table).where(db_table.c.study_data_id == study_data_id)).fetchall()
+            for db_row in db_rows:
+                model_id = f"{db_row.library_id}.{db_row.model_id}"
+                tmp_storage_var.setdefault(model_id, []).append({"id": db_row.variable_id, "location": db_row.location})
+                model_ids.add(model_id)
+
+        model_args = []
+        for model_id in model_ids:
+            model_args.append(
+                {
+                    "id": model_id,
+                    "out_of_bounds_processing": {"constraints": model_oobs.get(model_id, [])},
+                    "model_decomposition": {
+                        "variables": model_variables.get(model_id, []),
+                        "constraints": model_constraints.get(model_id, []),
+                        "objective_contributions": model_objective_contributions.get(model_id, []),
+                    },
+                }
             )
-
-        table = GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE
-        constraints_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
-        for constraints_row in constraints_rows:
-            model_id = f"{constraints_row.library_id}.{constraints_row.model_id}"
-
-            models.setdefault(model_id, {}).setdefault("model_decomposition", {"constraints": []})[
-                "constraints"
-            ].append({"id": constraints_row.constraint_id, "mode": constraints_row.mode})
-
-        table = GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE
-        objective_contributions_rows = session.execute(
-            select(table).where(table.c.study_data_id == study_data_id)
-        ).fetchall()
-        for objective_contributions_row in objective_contributions_rows:
-            model_id = f"{objective_contributions_row.library_id}.{objective_contributions_row.model_id}"
-
-            models.setdefault(model_id, {}).setdefault("model_decomposition", {"objective_contributions": []})[
-                "objective_contributions"
-            ].append({"id": objective_contributions_row.objective_id, "mode": objective_contributions_row.mode})
-
-        model_args = [{"id": model_id, **models[model_id]} for model_id in models]
 
         # Build final class
         return GemsOptimConfig.model_validate({"models": model_args, **optim_config_data})
