@@ -28,6 +28,7 @@ from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.interfaces.cache import ICache
 from antarest.core.interfaces.eventbus import Event, EventChannelDirectory, EventType, IEventBus
 from antarest.core.model import PermissionInfo, PublicMode, StudyPermissionType
+from antarest.core.permissions import check_permission
 from antarest.core.requests import UserHasNotPermissionError
 from antarest.core.tasks.model import TaskResult, TaskType
 from antarest.core.tasks.service import ITaskNotifier, ITaskService
@@ -365,11 +366,10 @@ class LauncherService:
 
         for job_result in job_results:
             if job_result.study_id in studies:
-                try:
-                    assert_permission(studies[job_result.study_id], StudyPermissionType.RUN)
-                except UserHasNotPermissionError:
-                    continue
-                else:
+                # Use `check_permission` rather than `assert_permission`: filtering a list is not
+                # a permission failure, and the latter logs an error for every job filtered out.
+                permission_info = PermissionInfo.from_study(studies[job_result.study_id])
+                if check_permission(user, permission_info, StudyPermissionType.RUN):
                     allowed_job_results.append(job_result)
             elif user and (user.is_site_admin() or user.is_admin_token()):
                 allowed_job_results.append(job_result)
@@ -672,6 +672,7 @@ class LauncherService:
 
         if launcher is None:
             raise ValueError(f"Job {job_id} has no launcher")
+        self._assert_launcher_is_initialized(launcher)
         launch_progress_json = self.launchers[launcher].cache.get(id=f"Launch_Progress_{job_id}") or {"progress": 0.0}
         return float(launch_progress_json.get("progress", 0.0))
 

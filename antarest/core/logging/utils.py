@@ -113,9 +113,16 @@ def configure_logger(config: Config, handler_cls: str = "logging.FileHandler") -
                 "level": "INFO",
                 "propagate": True,
             },
+            # Child loggers must not declare the "default" handler themselves:
+            # they propagate to the root logger, which would emit every record twice.
             "antarest.study.storage.rawstudy.watcher": {
-                "handlers": ["default"],
                 "level": "WARN",
+                "propagate": True,
+            },
+            # paramiko logs every SSH hiccup at ERROR level (thousands per day when the cluster is flaky),
+            # while SSH failures are already reported, with context, by our own SSH client code.
+            "paramiko": {
+                "level": "CRITICAL",
                 "propagate": True,
             },
         },
