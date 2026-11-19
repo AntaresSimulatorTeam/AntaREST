@@ -162,19 +162,19 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
 
         # Model decomposition
         @dataclasses.dataclass(frozen=True)
-        class ModelDecompositionMapping:
+        class _ModelDecompositionMapping:
             pydantic_attribute: str
             db_table: Table
             db_column_name: str
 
         decomposition_list = [
-            ModelDecompositionMapping(
+            _ModelDecompositionMapping(
                 "variables", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE, "variable_id"
             ),
-            ModelDecompositionMapping(
+            _ModelDecompositionMapping(
                 "constraints", GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE, "constraint_id"
             ),
-            ModelDecompositionMapping(
+            _ModelDecompositionMapping(
                 "objective_contributions",
                 GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
                 "objective_contribution_id",
