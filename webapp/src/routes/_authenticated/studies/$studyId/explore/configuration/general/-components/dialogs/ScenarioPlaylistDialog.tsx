@@ -17,7 +17,7 @@ import DataGridForm, {
   type DataGridFormApi,
   type DataGridFormProps,
   type DataGridFormState,
-  type GridSubmitHandlerPlus,
+  type DataGridFormSubmitData,
 } from "@/components/DataGridForm";
 import BasicDialog from "@/components/dialogs/BasicDialog";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
@@ -143,8 +143,8 @@ function ScenarioPlaylistDialog({ study, open, onClose }: Props) {
     }
   };
 
-  const handleSubmit = (data: GridSubmitHandlerPlus<PlaylistData>) => {
-    return setPlaylistData({ studyId: study.id, data: data.values });
+  const handleSubmit = ({ values }: DataGridFormSubmitData<PlaylistData>) => {
+    return setPlaylistData({ studyId: study.id, data: values });
   };
 
   const handleClose = () => {

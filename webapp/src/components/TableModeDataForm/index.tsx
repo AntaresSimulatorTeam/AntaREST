@@ -24,7 +24,7 @@ import { Box, Typography } from "@mui/material";
 import startCase from "lodash/startCase";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import DataGridForm, { type DataGridFormProps, type GridSubmitHandlerPlus } from "../DataGridForm";
+import DataGridForm, { type DataGridFormProps, type DataGridFormSubmitData } from "../DataGridForm";
 import EmptyView from "../page/EmptyView";
 import UsePromiseCond from "../utils/UsePromiseCond";
 import useUpdateTableModeData from "./hooks/useUpdateTableModeData";
@@ -75,7 +75,7 @@ function TableModeDataForm<T extends TableModeType>({
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = ({ dirtyValues }: GridSubmitHandlerPlus<TableModeData>) => {
+  const handleSubmit = ({ dirtyValues }: DataGridFormSubmitData<TableModeData>) => {
     return updateData.mutateAsync({ studyId, tableType: type, data: dirtyValues });
   };
 

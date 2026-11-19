@@ -16,7 +16,7 @@ import CustomScrollbar from "@/components/CustomScrollbar";
 import DataGridForm, {
   type DataGridFormApi,
   type DataGridFormProps,
-  type GridSubmitHandlerPlus,
+  type DataGridFormSubmitData,
 } from "@/components/DataGridForm";
 import BasicDialog from "@/components/dialogs/BasicDialog";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
@@ -98,7 +98,7 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
   };
 
   const handleSubmit = (
-    { values }: GridSubmitHandlerPlus<OccurrencesData>,
+    { values }: DataGridFormSubmitData<OccurrencesData>,
     event: React.SubmitEvent<HTMLFormElement>,
   ) => {
     // Prevent to submit the constraint form

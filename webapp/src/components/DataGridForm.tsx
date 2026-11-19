@@ -18,6 +18,7 @@ import { getColumnWidth } from "@/utils/dataGridUtils";
 import { toError } from "@/utils/fnUtils";
 import { mergeSxProp } from "@/utils/muiUtils";
 import {
+  CompactSelection,
   GridCellKind,
   type DataEditorProps,
   type GridColumn,
@@ -40,12 +41,13 @@ import {
   type SxProps,
   type Theme,
 } from "@mui/material";
+import { produce } from "immer";
 import * as R from "ramda";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
 import useUndo, { type Actions } from "use-undo";
-import DataGrid, { type DataGridProps, type DataGridRef, type RowMarkers } from "./DataGrid";
+import DataGrid, { type DataGridProps, type RowMarkers } from "./DataGrid";
 import type { SubmitHandlerPlus } from "./Form/types";
 
 type Data = Record<string, Record<string, string | boolean | number>>;
@@ -62,12 +64,18 @@ export interface DataGridFormApi<TData extends Data> {
 }
 
 interface Changes<TData extends Data> {
+  /** Rows present in the current data but not in the saved data, keyed by row ID. */
   added: Partial<TData>;
+  /** Rows present in both, containing only the values that differ from the saved data. */
   updated: Partial<TData>;
-  deleted: Array<keyof TData>;
+  /** IDs of rows present in the saved data but no longer in the current data. */
+  // Typed as `string` rather than `keyof TData`, which can include numbers,
+  // because object keys are always strings at runtime.
+  deleted: string[];
 }
 
-export interface GridSubmitHandlerPlus<TData extends Data = Data> extends SubmitHandlerPlus<TData> {
+export interface DataGridFormSubmitData<TData extends Data = Data>
+  extends SubmitHandlerPlus<TData> {
   /** Row-level changes: added, updated and deleted rows */
   changes: Changes<TData>;
   /**
@@ -75,7 +83,7 @@ export interface GridSubmitHandlerPlus<TData extends Data = Data> extends Submit
    * Useful when `onSubmit` sends several requests: if one fails, the rows
    * already saved won't be included again in the next submit's changes.
    */
-  markAsSaved: (rowName: keyof TData) => void;
+  markAsSaved: (rowName: string) => void;
 }
 
 export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue = unknown> {
@@ -90,17 +98,28 @@ export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue 
     location: Item,
     data: TData[string][keyof TData[string]],
   ) => ReturnType<DataEditorProps["getCellContent"]>;
+  /**
+   * Transforms an edited value before it's stored.
+   *
+   * Called for each edited cell (typing, paste, fill or delete).
+   *
+   * @param location - The edited cell, as `[col, row]`.
+   * @param newValue - The value entered in the cell.
+   * @param data - The data before the edit. When several cells are edited at once
+   * (paste or fill), it doesn't include the new values of the other edited cells.
+   * @returns The value to store instead, or `undefined` to store the entered value as is.
+   */
   transformCellValue?: (
     location: Item,
     newValue: unknown,
     data: TData,
   ) => TData[string][keyof TData[string]] | undefined;
   onSubmit: (
-    data: GridSubmitHandlerPlus<TData>,
+    data: DataGridFormSubmitData<TData>,
     event: React.SubmitEvent<HTMLFormElement>,
   ) => void | Promise<SubmitReturnValue>;
   onSubmitSuccessful?: (
-    data: GridSubmitHandlerPlus<TData>,
+    data: DataGridFormSubmitData<TData>,
     submitResult: SubmitReturnValue,
   ) => void;
   onDataChange?: (data: TData) => void;
@@ -116,6 +135,12 @@ export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue 
   isLoading?: boolean;
   readOnly?: boolean;
   allowRowDeletion?: boolean;
+}
+
+function isValidCellValue<TData extends Data>(
+  value: unknown,
+): value is TData[string][keyof TData[string]] {
+  return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
 }
 
 function DataGridForm<TData extends Data>({
@@ -139,38 +164,36 @@ function DataGridForm<TData extends Data>({
   disableErrorSnackbar = false,
   isLoading = false,
   readOnly = false,
-  allowRowDeletion = false,
+  allowRowDeletion = true,
   ...dataGridProps
 }: DataGridFormProps<TData>) {
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
-  const dataGridRef = useRef<DataGridRef>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [savedData, setSavedData] = useState(defaultData);
   const [error, setError] = useState<string | null>(null);
-  const [hasSelectedRows, setHasSelectedRows] = useState(false);
+  const [selectedRows, setSelectedRows] = useState(CompactSelection.empty());
 
   const [{ present: data }, { set: setData, undo, redo, canUndo: hasUndo, canRedo: hasRedo }] =
     useUndo(defaultData);
   const rowNames = useMemo(() => Object.keys(data), [data]);
-  const changes = useMemo(getChanges, [data, savedData]);
 
-  // Compare contents rather than references (`savedData !== data`):
-  // `markAsSaved` creates a new `savedData` object for each saved row.
-  // After a partially failed submit, `savedData` is therefore never the same
-  // object as `data`, even if the user then reverts the unsaved changes,
-  // so a reference comparison would keep the form dirty.
-  const isDirty =
-    Object.keys(changes.added).length > 0 ||
-    Object.keys(changes.updated).length > 0 ||
-    changes.deleted.length > 0;
+  // Compare contents rather than references (`savedData !== data`) or `getChanges()`:
+  // - `markAsSaved` creates a new `savedData` object for each saved row. After a partially
+  //   failed submit, `savedData` is therefore never the same object as `data`, even if the user
+  //   then reverts the unsaved changes, so a reference comparison would keep the form dirty.
+  // - `getChanges()` doesn't report removed column keys, so it would consider the form clean.
+  // `R.equals` stays cheap: it compares references first at each level, so it returns
+  // immediately when `data` is `savedData` and skips unedited rows.
+  const isDirty = useMemo(() => !R.equals(savedData, data), [savedData, data]);
 
   const canEdit = !isSubmitting && !isLoading && !readOnly;
   const canSubmit = isDirty && canEdit;
   const canUndo = hasUndo && canEdit;
   const canRedo = hasRedo && canEdit;
   const canDelete = allowRowDeletion && canEdit;
+  const hasSelectedRows = selectedRows.length > 0;
 
   const formState = useMemo<DataGridFormState>(
     () => ({
@@ -231,36 +254,49 @@ function DataGridForm<TData extends Data>({
    *
    * @returns An object containing, for each modified row, only its modified columns.
    */
-  function getDirtyValues() {
-    return rowNames.reduce((acc, rowName) => {
+  const getDirtyValues = () => {
+    // Plain loops with a mutable accumulator: a `reduce` spreading the accumulator
+    // would copy it for each row, which gets very slow with many dirty rows
+    const dirtyValues: Changes<TData>["updated"] = {};
+
+    for (const rowName of rowNames) {
       const rowData = data[rowName];
       const savedRowData = savedData[rowName];
 
-      // Added or deleted row: not an update, handled in`getChanges`
-      if (!rowData || !savedRowData) {
-        return acc;
+      // Same reference: the row hasn't been edited (edits always create a new row object)
+      if (rowData === savedRowData) {
+        continue;
       }
 
-      const dirtyColumns = Object.keys(rowData).filter(
-        (columnName) => rowData[columnName] !== savedRowData[columnName],
-      );
-
-      if (dirtyColumns.length > 0) {
-        return {
-          ...acc,
-          [rowName]: dirtyColumns.reduce(
-            (acc, columnName) => ({
-              ...acc,
-              [columnName]: rowData[columnName],
-            }),
-            {},
-          ),
-        };
+      // Added or deleted row: not an update, handled in `getChanges`.
+      // `Object.hasOwn` rather than a truthiness check: for a row missing from the object,
+      // `savedData[rowName]` can return an inherited property (e.g. "constructor").
+      if (!Object.hasOwn(data, rowName) || !Object.hasOwn(savedData, rowName)) {
+        continue;
       }
 
-      return acc;
-    }, {} as Partial<TData>);
-  }
+      let dirtyColumns: Partial<TData[string]> | undefined;
+
+      // `Object.assign` because TypeScript rejects direct writes to generic `TData` keys
+
+      for (const columnName in rowData) {
+        if (!Object.hasOwn(rowData, columnName)) {
+          continue;
+        }
+
+        if (rowData[columnName] !== savedRowData[columnName]) {
+          dirtyColumns ??= {};
+          Object.assign(dirtyColumns, { [columnName]: rowData[columnName] });
+        }
+      }
+
+      if (dirtyColumns) {
+        Object.assign(dirtyValues, { [rowName]: dirtyColumns });
+      }
+    }
+
+    return dirtyValues;
+  };
 
   /**
    * Computes the row-level changes between the saved data and the current data.
@@ -270,20 +306,20 @@ function DataGridForm<TData extends Data>({
    * - `updated`: existing rows, with only their modified columns (same as `getDirtyValues`)
    * - `deleted`: names of the rows that are no longer in the current data
    */
-  function getChanges(): Changes<TData> {
+  const getChanges = (): Changes<TData> => {
     const added: Partial<TData> = {};
-    const deleted: Array<keyof TData> = [];
+    const deleted: string[] = [];
 
     // Row not in saved data → added
     for (const rowName in data) {
-      if (!(rowName in savedData)) {
+      if (!Object.hasOwn(savedData, rowName)) {
         added[rowName] = data[rowName];
       }
     }
 
     // Row in saved data but no longer in current data → deleted
     for (const rowName in savedData) {
-      if (!(rowName in data)) {
+      if (!Object.hasOwn(data, rowName)) {
         deleted.push(rowName);
       }
     }
@@ -293,7 +329,7 @@ function DataGridForm<TData extends Data>({
       updated: getDirtyValues(),
       deleted,
     };
-  }
+  };
 
   /**
    * Marks a row as saved by syncing it in `savedData` with its submitted value.
@@ -303,23 +339,47 @@ function DataGridForm<TData extends Data>({
    *
    * @param rowName - Name of the row whose request succeeded (added, updated or deleted).
    */
-  const markAsSaved = (rowName: keyof TData) => {
-    // Functional update so successive calls don't overwrite each other
-    setSavedData((prev) => {
-      const next = { ...prev };
-      if (rowName in data) {
-        // Added or updated row
-        next[rowName] = data[rowName];
-      } else {
-        // Deleted row
-        delete next[rowName];
-      }
-      return next;
-    });
+  const markAsSaved = (rowName: string) => {
+    // Functional update so successive calls don't overwrite each other.
+    // `produce` returns `prev` when nothing changes.
+    setSavedData((prev) =>
+      produce(prev, (draft) => {
+        if (Object.hasOwn(data, rowName)) {
+          // Added or updated row.
+          // `Object.assign` because TypeScript rejects direct writes to generic `TData` keys.
+          Object.assign(draft, { [rowName]: data[rowName] });
+        } else if (Object.hasOwn(draft, rowName)) {
+          // Deleted row.
+          // The own-property check matters: Immer detects keys through the
+          // prototype chain (`in`), so deleting a missing inherited key such as
+          // "toString" would still produce a new object.
+          delete draft[rowName];
+        }
+      }),
+    );
+  };
+
+  /**
+   * Deletes the given rows.
+   *
+   * @param rowIndexes - Indexes of the rows to delete.
+   */
+  const deleteRows = (rowIndexes: number[]) => {
+    setData(
+      produce(data, (draft) => {
+        for (const rowIndex of rowIndexes) {
+          const rowName = rowNames[rowIndex];
+
+          if (rowName !== undefined && Object.hasOwn(draft, rowName)) {
+            delete draft[rowName];
+          }
+        }
+      }),
+    );
   };
 
   ////////////////////////////////////////////////////////////////
-  // Cells
+  // Content
   ////////////////////////////////////////////////////////////////
 
   const getCellContent = useCallback<DataEditorProps["getCellContent"]>(
@@ -378,67 +438,51 @@ function DataGridForm<TData extends Data>({
 
   const handleCellsEdited: DataEditorProps["onCellsEdited"] = (items) => {
     setData(
-      items.reduce((acc, { location, value }) => {
-        const [rowName, columnName] = getRowAndColumnNames(location);
-        const newValue = value.data;
+      produce(data, (draft) => {
+        for (const { location, value } of items) {
+          const [rowName, columnName] = getRowAndColumnNames(location);
+          const newValue = value.data;
 
-        // If transformCellValue callback is provided, it can transform or validate the new value
-        // before it's stored. Return undefined to use default handling, or return a custom
-        // value to override the cell's new data.
-        if (transformCellValue) {
-          const customValue = transformCellValue(location, newValue, acc);
+          // If transformCellValue callback is provided, it can transform the new value
+          // before it's stored. Return undefined to use default handling, or return a custom
+          // value to override the cell's new data.
+          const customValue = transformCellValue?.(location, newValue, data);
 
           if (customValue !== undefined) {
-            return {
-              ...acc,
-              [rowName]: {
-                ...acc[rowName],
-                [columnName]: customValue,
-              },
-            };
+            draft[rowName][columnName] = customValue;
+          } else if (isValidCellValue(newValue)) {
+            draft[rowName][columnName] = newValue;
           }
         }
-
-        if (R.isNotNil(newValue)) {
-          return {
-            ...acc,
-            [rowName]: {
-              ...acc[rowName],
-              [columnName]: newValue,
-            },
-          };
-        }
-
-        return acc;
-      }, data),
+      }),
     );
 
     return true;
   };
 
   const handleGridSelectionChange = (newSelection: GridSelection) => {
-    setHasSelectedRows(newSelection.rows.length > 0);
+    setSelectedRows(newSelection.rows);
   };
 
   const handleDeleteClick = () => {
-    dataGridRef.current?.editor?.emit("delete");
+    deleteRows(selectedRows.toArray());
   };
 
+  /**
+   * Handles deletion requests from the grid (Delete key).
+   *
+   * @param selection - The selection to delete.
+   * @returns What the grid should clear after this handler:
+   * - `true`: the contents of all selected cells
+   * - `false`: nothing (used here, since rows are deleted manually)
+   * - a `GridSelection`: the contents of this selection only
+   */
   const handleDelete = (selection: GridSelection) => {
-    if (!allowRowDeletion) {
-      return false;
+    if (!allowRowDeletion || selection.rows.length === 0) {
+      return true;
     }
 
-    const newData = { ...data };
-
-    selection.rows.toArray().forEach((rowIndex) => {
-      const rowName = rowNames[rowIndex];
-      if (rowName in newData) {
-        delete newData[rowName];
-      }
-    });
-
-    setData(newData);
+    deleteRows(selection.rows.toArray());
 
     return false;
   };
@@ -446,12 +490,19 @@ function DataGridForm<TData extends Data>({
   const handleSubmit = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    // External submit buttons (`form="..."`) bypass disabled inputs
+    if (!canEdit) {
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
-    const dataArg: GridSubmitHandlerPlus<TData> = {
+    const changes = getChanges();
+
+    const dataArg: DataGridFormSubmitData<TData> = {
       values: data,
-      dirtyValues: getDirtyValues(),
+      dirtyValues: changes.updated,
       changes,
       markAsSaved,
     };
@@ -499,9 +550,9 @@ function DataGridForm<TData extends Data>({
         rowMarkers={rowMarkers}
         isLoading={isLoading}
         readOnly={readOnly || isSubmitting}
-        ref={dataGridRef}
         getCellsForSelection
         fillHandle
+        allowedFillDirections={allowedFillDirections}
         onPaste
         {...dataGridProps}
       />

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import DataGridForm, { type GridSubmitHandlerPlus } from "@/components/DataGridForm";
+import DataGridForm, { type DataGridFormSubmitData } from "@/components/DataGridForm";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { GridColumn } from "@glideapps/glide-data-grid";
 import AddIcon from "@mui/icons-material/Add";
@@ -68,7 +68,7 @@ function Districts() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: GridSubmitHandlerPlus<typeof defaultData>) => {
+  const handleSubmit = (data: DataGridFormSubmitData<typeof defaultData>) => {
     const areasByDistrict: Record<string, string[]> = {};
 
     Object.keys(data.dirtyValues).forEach((areaId) => {

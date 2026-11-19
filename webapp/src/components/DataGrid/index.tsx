@@ -21,8 +21,8 @@ import {
   isEditableGridCell,
   type CellClickedEventArgs,
   type DataEditorProps,
-  type DataEditorRef,
   type EditListItem,
+  type GridColumn,
   type GridSelection,
   type Item,
   type LoadingCell,
@@ -31,9 +31,11 @@ import {
   type ValidatedGridCell,
 } from "@glideapps/glide-data-grid";
 import "@glideapps/glide-data-grid/dist/index.css";
+import { produce } from "immer";
 import * as R from "ramda";
 import { useCallback, useImperativeHandle, useMemo, useRef, useState } from "react";
-import { useUpdateEffect } from "react-use";
+import { usePrevious, useUpdateEffect } from "react-use";
+import DataGridSkeleton from "../DataGridSkeleton";
 import { darkTheme, lightTheme, readOnlyDarkTheme, readOnlyLightTheme } from "../Matrix/styles";
 
 interface StringRowMarkerOptions {
@@ -49,12 +51,7 @@ export type RowMarkers =
 
 type RowMarkersOptions = Exclude<RowMarkers, string>;
 
-export interface DataGridRef {
-  /**
-   * Glide's DataEditor API.
-   * Column indexes include the string row markers column, if any.
-   */
-  readonly editor: DataEditorRef | null;
+export interface DataGridHandle {
   /**
    * Grows the given columns to the new widths (never shrinks them).
    *
@@ -67,7 +64,7 @@ export interface DataGridRef {
 }
 
 export interface DataGridProps extends Omit<DataEditorProps, "rowMarkers" | "theme"> {
-  ref?: React.Ref<DataGridRef>;
+  ref?: React.Ref<DataGridHandle>;
   /** Omit or pass undefined for internal selection state; keep the control mode stable while mounted. */
   gridSelection?: GridSelection;
   /**
@@ -92,12 +89,17 @@ function isStringRowMarkerOptions(
   return rowMarkerOptions.kind === "string" || rowMarkerOptions.kind === "clickable-string";
 }
 
+function buildStringRowMarkerColumn(width?: number): GridColumn {
+  return { id: "", title: "", width };
+}
+
 function DataGrid({
   rowMarkers = { kind: "none" },
   getCellContent,
   columns: columnsFromProps,
   onCellEdited,
   onCellsEdited,
+  onCellClicked,
   onColumnResize,
   onColumnResizeStart,
   onColumnResizeEnd,
@@ -126,18 +128,13 @@ function DataGrid({
     rows: CompactSelection.empty(),
     columns: CompactSelection.empty(),
   });
+  const prevRows = usePrevious(rows);
   const gridSelection = controlledSelection ?? internalSelection;
   // Last row clicked without Shift: starting point of Shift+click range selections
   const rowSelectionAnchorRef = useRef<number | null>(null);
-  const editorRef = useRef<DataEditorRef>(null);
   const canEdit = !readOnly && !isLoading;
 
   useImperativeHandle(ref, () => ({
-    // Getter so the current DataEditor instance is read at access time
-    get editor() {
-      return editorRef.current;
-    },
-
     resizeColumns(updates: Map<string, number>) {
       setColumns((prev) =>
         prev.map((col) => {
@@ -181,11 +178,31 @@ function DataGrid({
 
   useUpdateEffect(() => {
     setColumns(initColumns());
-  }, [columnsFromProps, isStringRowMarkers, rowMarkersOptions.width]);
+    // `rowMarkersOptions.width` omitted: a width change only updates the marker column
+    // (effect below), to keep the user's manual resizes of the data columns.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnsFromProps, isStringRowMarkers]);
 
-  // Row indexes are no longer valid when the number of rows changes
-  // (e.g. after a deletion): clear the row selection and the range anchor
+  // Only update the string row marker column when its width changes,
+  // to keep the user's manual resizes of the data columns
   useUpdateEffect(() => {
+    if (isStringRowMarkers) {
+      setColumns(
+        produce((draft) => {
+          draft[0] = buildStringRowMarkerColumn(rowMarkersOptions.width);
+        }),
+      );
+    }
+  }, [isStringRowMarkers, rowMarkersOptions.width]);
+
+  // Row indexes are no longer valid when rows are removed: clear the row selection
+  // and the range anchor. Appending rows keeps existing indexes valid, so the selection
+  // is kept (e.g. a controlled parent selecting the newly appended row).
+  useUpdateEffect(() => {
+    if (prevRows === undefined || rows >= prevRows) {
+      return;
+    }
+
     rowSelectionAnchorRef.current = null;
 
     if (gridSelection.rows.length > 0) {
@@ -203,7 +220,7 @@ function DataGrid({
 
   function initColumns() {
     return isStringRowMarkers
-      ? [{ id: "", title: "", width: rowMarkersOptions.width }, ...columnsFromProps]
+      ? [buildStringRowMarkerColumn(rowMarkersOptions.width), ...columnsFromProps]
       : columnsFromProps;
   }
 
@@ -215,7 +232,7 @@ function DataGrid({
     onGridSelectionChange?.(selection);
   }
 
-  const ifElseStringRowMarkers = <R1, R2>(
+  const ifElseStringMarkerColumn = <R1, R2>(
     colIndex: number,
     onTrue: (options: StringRowMarkerOptions) => R1,
     onFalse: (colIndex: number) => R2,
@@ -233,8 +250,8 @@ function DataGrid({
     return onFalse(adjustedColIndex);
   };
 
-  const ifNotStringRowMarkers = (colIndex: number, fn: (colIndex: number) => void) => {
-    return ifElseStringRowMarkers(colIndex, voidFn, fn);
+  const ifNotStringMarkerColumn = (colIndex: number, fn: (colIndex: number) => void) => {
+    return ifElseStringMarkerColumn(colIndex, voidFn, fn);
   };
 
   ////////////////////////////////////////////////////////////////
@@ -245,7 +262,7 @@ function DataGrid({
     (cell) => {
       const [colIndex, rowIndex] = cell;
 
-      return ifElseStringRowMarkers(
+      return ifElseStringMarkerColumn(
         colIndex,
         ({ getTitle }) => {
           const title = getTitle ? getTitle(rowIndex) : `Row ${rowIndex + 1}`;
@@ -296,9 +313,11 @@ function DataGrid({
   const handleCellEdited: DataEditorProps["onCellEdited"] = (location, value) => {
     const [colIndex, rowIndex] = location;
 
-    ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
-      onCellEdited?.([adjustedColIndex, rowIndex], value);
-    });
+    if (onCellEdited) {
+      ifNotStringMarkerColumn(colIndex, (adjustedColIndex) => {
+        onCellEdited([adjustedColIndex, rowIndex], value);
+      });
+    }
   };
 
   const handleCellsEdited: DataEditorProps["onCellsEdited"] = (items) => {
@@ -308,7 +327,7 @@ function DataGrid({
           const { location } = item;
           const [colIndex, rowIndex] = location;
 
-          return ifElseStringRowMarkers(
+          return ifElseStringMarkerColumn(
             colIndex,
             () => null,
             (adjustedColIndex): EditListItem => {
@@ -321,6 +340,11 @@ function DataGrid({
       return onCellsEdited(adjustedItems);
     }
   };
+
+  // Glide only shows the trailing row when `onRowAppended` is set, and some callers use it
+  // to display content (e.g. totals): keep it visible but inert when editing is disabled
+  const handleRowAppended: DataEditorProps["onRowAppended"] =
+    onRowAppended && (canEdit ? onRowAppended : voidFn);
 
   ////////////////////////////////////////////////////////////////
   // Resize
@@ -336,7 +360,7 @@ function DataGrid({
           }
 
           if (onColumnResize) {
-            ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
+            ifNotStringMarkerColumn(colIndex, (adjustedColIndex) => {
               onColumnResize(column, newSize, adjustedColIndex, newSizeWithGrow);
             });
           }
@@ -345,7 +369,7 @@ function DataGrid({
 
   const handleColumnResizeStart: DataEditorProps["onColumnResizeStart"] = onColumnResizeStart
     ? (column, newSize, colIndex, newSizeWithGrow) => {
-        ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
+        ifNotStringMarkerColumn(colIndex, (adjustedColIndex) => {
           onColumnResizeStart(column, newSize, adjustedColIndex, newSizeWithGrow);
         });
       }
@@ -353,7 +377,7 @@ function DataGrid({
 
   const handleColumnResizeEnd: DataEditorProps["onColumnResizeEnd"] = onColumnResizeEnd
     ? (column, newSize, colIndex, newSizeWithGrow) => {
-        ifNotStringRowMarkers(colIndex, (adjustedColIndex) => {
+        ifNotStringMarkerColumn(colIndex, (adjustedColIndex) => {
           onColumnResizeEnd(column, newSize, adjustedColIndex, newSizeWithGrow);
         });
       }
@@ -429,8 +453,23 @@ function DataGrid({
   const handleCellClicked = (cell: Item, event: CellClickedEventArgs) => {
     const [col, row] = cell;
 
-    // Only handle clicks on a "clickable-string" row marker, when row selection is enabled
-    if (rowMarkersOptions.kind !== "clickable-string" || col !== 0 || rowSelect === "none") {
+    if (onCellClicked) {
+      // Same indexes as Glide's native row markers: -1 for the marker column
+      ifElseStringMarkerColumn(
+        col,
+        () => onCellClicked([-1, row], event),
+        (adjustedColIndex) => onCellClicked([adjustedColIndex, row], event),
+      );
+    }
+
+    // Only handle clicks on a "clickable-string" row marker of a data row, when row selection is enabled
+    // (`row === rows` is the trailing row used to append rows, handled by Glide)
+    if (
+      rowMarkersOptions.kind !== "clickable-string" ||
+      col !== 0 ||
+      row >= rows ||
+      rowSelect === "none"
+    ) {
       return;
     }
 
@@ -489,6 +528,12 @@ function DataGrid({
   // JSX
   ////////////////////////////////////////////////////////////////
 
+  // `isLoading` displays loading cells, but with no rows there are no cells
+  // to display it: render a skeleton grid instead
+  if (isLoading && rows === 0) {
+    return <DataGridSkeleton readOnly={readOnly} />;
+  }
+
   return (
     <DataEditor
       groupHeaderHeight={35}
@@ -508,7 +553,7 @@ function DataGrid({
       onColumnResize={handleColumnResize}
       onColumnResizeStart={handleColumnResizeStart}
       onColumnResizeEnd={handleColumnResizeEnd}
-      onRowAppended={canEdit ? onRowAppended : undefined}
+      onRowAppended={handleRowAppended}
       onDelete={canEdit ? onDelete : R.F}
       onPaste={canEdit ? onPaste : false}
       gridSelection={gridSelection}
@@ -517,7 +562,6 @@ function DataGrid({
       rowSelect={rowSelect}
       rowSelectionMode={rowSelectionMode}
       fillHandle={canEdit ? fillHandle : false}
-      ref={editorRef}
       {...rest}
     />
   );
