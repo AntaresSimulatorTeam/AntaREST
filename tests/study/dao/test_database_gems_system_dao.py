@@ -113,7 +113,7 @@ def test_cannot_save_components_without_system(dao_10_2: StudyDao) -> None:
 
     assert dao.get_system() is None
 
-    new_component = GemsComponent.model_validate({"id": "comp3", "model": "model3"})
+    new_component = GemsComponent.model_validate({"id": "comp3", "model": "library.model3"})
     with pytest.raises(GemsSystemNotFound, match="No system configuration found for study"):
         dao.save_components([new_component])
 

@@ -33,6 +33,7 @@ from antarest.study.business.model.district_model import District
 from antarest.study.business.model.gems.calendar import GemsCalendar
 from antarest.study.business.model.gems.catalog import GemsCatalog
 from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.optim_config import GemsOptimConfig
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMappings,
     GemsScenarioBuilder,
@@ -85,6 +86,7 @@ from antarest.study.dao.api.district_dao import DistrictDao, ReadOnlyDistrictDao
 from antarest.study.dao.api.gems_calendar_dao import GemsCalendarDao, ReadOnlyGemsCalendarDao
 from antarest.study.dao.api.gems_catalog_dao import GemsCatalogDao, ReadOnlyGemsCatalogDao
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao, ReadOnlyGemsLibraryDao
+from antarest.study.dao.api.gems_optim_config_dao import GemsOptimConfigDao, ReadOnlyGemsOptimConfigDao
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao, ReadOnlyGemsScenarioBuilderDao
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao, ReadOnlyGemsSystemDao
 from antarest.study.dao.api.gems_taxonomy_dao import GemsTaxonomyDao, ReadOnlyGemsTaxonomyDao
@@ -182,6 +184,7 @@ class ReadOnlyStudyDao(
     ReadOnlyGemsTaxonomyDao,
     ReadOnlyGemsScenarioBuilderDao,
     ReadOnlyGemsCalendarDao,
+    ReadOnlyGemsOptimConfigDao,
 ):
     @abstractmethod
     def get_study_id(self) -> str:
@@ -241,6 +244,7 @@ class StudyDao(
     GemsTaxonomyDao,
     GemsScenarioBuilderDao,
     GemsCalendarDao,
+    GemsOptimConfigDao,
 ):
     """
     Abstraction for access to study data. Handles all reading
@@ -1052,3 +1056,7 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_gems_calendar(self) -> GemsCalendar | None:
         return self._adaptee.get_gems_calendar()
+
+    @override
+    def get_optim_config(self) -> GemsOptimConfig | None:
+        return self._adaptee.get_optim_config()
