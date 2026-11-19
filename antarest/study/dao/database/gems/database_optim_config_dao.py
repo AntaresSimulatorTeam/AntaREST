@@ -9,9 +9,8 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-import dataclasses
 import json
-from typing import Any
+from typing import Any, NamedTuple
 
 from sqlalchemy import Table, delete, insert, select
 from typing_extensions import override
@@ -161,8 +160,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
                 raise
 
         # Model decomposition
-        @dataclasses.dataclass(frozen=True)
-        class _ModelDecompositionMapping:
+        class _ModelDecompositionMapping(NamedTuple):
             pydantic_attribute: str
             db_table: Table
             db_column_name: str
