@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import DataGrid, { type DataGridHandle } from "@/components/DataGrid";
+import DataGrid, { type DataGridRef } from "@/components/DataGrid";
 import {
   GridCellKind,
   type EditableGridCell,
@@ -193,7 +193,7 @@ function MatrixGrid({
     getCellValue,
   });
 
-  const dataGridRef = useRef<DataGridHandle>(null);
+  const dataGridRef = useRef<DataGridRef>(null);
 
   const handleBulkPaste = useCallback(
     (newData: number[][]) => {
