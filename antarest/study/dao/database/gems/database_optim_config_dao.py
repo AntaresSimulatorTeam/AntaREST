@@ -193,14 +193,12 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
             variables = model_variables.get(model_id, [])
             constraints = model_constraints.get(model_id, [])
             objective_contributions = model_objective_contributions.get(model_id, [])
-            if not any([variables, constraints, objective_contributions]):
-                model_args.append(args)
-                continue  # Allow None values inside the Pydantic model rather than empty lists
-            args["model_decomposition"] = {
-                "variables": variables,
-                "constraints": constraints,
-                "objective_contributions": objective_contributions,
-            }
+            if any([variables, constraints, objective_contributions]):
+                args["model_decomposition"] = {
+                    "variables": variables,
+                    "constraints": constraints,
+                    "objective_contributions": objective_contributions,
+                }
             model_args.append(args)
 
         # Build final class
