@@ -77,9 +77,9 @@ def _save_models(study_data_id: int, session: Session, models: list[GemsOptimCon
     if oob_processing_values:
         try:
             session.execute(insert(GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE), oob_processing_values)
-        except Exception:
+        except Exception as e:
             session.rollback()
-            raise
+            raise e
 
     # Model decomposition
     class _ModelDecompositionMapping(NamedTuple):
@@ -210,7 +210,15 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         session = self._db_session
 
         # The configuration is replaced as a whole
-        session.execute(delete(GEMS_OPTIM_CONFIG_TABLE).where(GEMS_OPTIM_CONFIG_TABLE.c.study_data_id == study_data_id))
+        for table in [
+            GEMS_OPTIM_CONFIG_TABLE,
+            GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE,
+            GEMS_OPTIM_CONFIG_HEURISTICS_TABLE,
+            GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE,
+            GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE,
+            GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE,
+        ]:
+            session.execute(delete(table).where(table.c.study_data_id == study_data_id))
 
         optim_config_values: dict[str, Any] = {"study_data_id": study_data_id}
         for parameter in ["time_scope", "scenario_scope", "solver_options", "resolution"]:
