@@ -18,10 +18,10 @@ models:
           location: master-and-subproblems
         # generation is time-dependent and stays in the subproblems (default).
       objective-contributions:
-        - id: investment_cost_installation
-          location: master
         - id: expected_operating_cost
           location: subproblems
+        - id: investment_cost_installation
+          location: master
       # capacity_limit (generation <= p_installed) stays in the subproblems (default):
       # it bounds an operational variable, using the capacity fixed by the master.
 
