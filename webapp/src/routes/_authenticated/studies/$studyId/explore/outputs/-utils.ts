@@ -14,6 +14,9 @@
 
 import type { Job } from "@/services/api/launcher/jobs/types";
 import type { Output } from "@/services/api/studies/outputs/types";
+import type { Task } from "@/services/api/tasks/types";
+import { WsChannel, WsEventType } from "@/services/webSocket/constants";
+import { addWsEventListener, subscribeWsChannels } from "@/services/webSocket/ws";
 import { compareDesc, parseISO } from "date-fns";
 
 export type OutputWithJob = Output & {
@@ -54,4 +57,28 @@ export function selectJobsData(jobs: Job[]) {
   const runningJobs = sortJobsByCreationDate(jobs.filter((job) => job.status === "running"));
 
   return { jobsByOutputId, runningJobs };
+}
+
+export function waitForOutputArchiveTask(taskId: Task["id"]): Promise<void> {
+  const unsubscribe = subscribeWsChannels(WsChannel.Task + taskId);
+
+  return new Promise((resolve, reject) => {
+    const removeListener = addWsEventListener((event) => {
+      if (
+        (event.type !== WsEventType.TaskCompleted && event.type !== WsEventType.TaskFailed) ||
+        event.payload.id !== taskId
+      ) {
+        return;
+      }
+
+      removeListener();
+      unsubscribe();
+
+      if (event.type === WsEventType.TaskFailed) {
+        reject(new Error(event.payload.message));
+      } else {
+        resolve();
+      }
+    });
+  });
 }

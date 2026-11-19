@@ -13,11 +13,12 @@
  */
 
 import client from "@/services/api/client";
+import type { Task } from "@/services/api/tasks/types";
 import { isAxiosError } from "axios";
 import z from "zod";
 import type { OutputParams } from "../types";
 import { gemsViewsPreparationSchema, gemsViewsSchema } from "./schemas";
-import type { GemsViews, GemsViewsState } from "./types";
+import type { GemsViewsState } from "./types";
 
 /**
  * GET /v1/studies/{studyId}/outputs/{outputId}/gems-views - Reads the output's navigation metadata.
@@ -34,7 +35,7 @@ export async function getGemsViews(
   signal?: AbortSignal,
 ): Promise<GemsViewsState> {
   try {
-    const { data } = await client.get<GemsViews>(
+    const { data } = await client.get(
       `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/gems-views`,
       { signal },
     );
@@ -65,9 +66,9 @@ export async function getGemsViews(
 export async function materializeGemsViews({
   studyId,
   outputId,
-}: OutputParams): Promise<string | undefined> {
+}: OutputParams): Promise<Task["id"] | undefined> {
   try {
-    const { data } = await client.post<string>(
+    const { data } = await client.post(
       `/v1/studies/${studyId}/outputs/${encodeURIComponent(outputId)}/gems-views/materialize`,
     );
 

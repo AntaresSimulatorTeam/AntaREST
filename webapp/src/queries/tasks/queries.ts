@@ -34,7 +34,13 @@ export const taskQueries = {
     });
   },
 
-  // Polling is opt-in. Both observers share the same task detail cache.
+  /**
+   * Polls the shared task detail query while the task is pending or running.
+   * Polling pauses if fetching the task exhausts its retries.
+   *
+   * @param id - Task to monitor.
+   * @returns Query options for observing the task with polling enabled.
+   */
   monitor: (id: Task["id"]) =>
     queryOptions({
       ...taskQueries.detail(id),
