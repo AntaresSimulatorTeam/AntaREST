@@ -39,7 +39,7 @@ def upgrade():
         sa.Column("model_id", sa.String(length=255), nullable=False),
         sa.Column("constraint_id", sa.String(length=255), nullable=False),
         sa.Column("mode", gems_out_of_bounds_mode_enum, nullable=False),
-        sa.PrimaryKeyConstraint("study_id", "library_id", "model_id", "constraint_id", name="pk_gems_optim_config_oob_processing"),
+        sa.PrimaryKeyConstraint("study_data_id", "library_id", "model_id", "constraint_id", name="pk_gems_optim_config_oob_processing"),
         sa.ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id", "constraint_id"],
             ["gems_models_constraints.study_data_id", "gems_models_constraints.library_id", "gems_models_constraints.model_id", "gems_models_constraints.id"],
@@ -55,7 +55,7 @@ def upgrade():
         sa.Column("library_id", sa.String(length=255), nullable=False),
         sa.Column("model_id", sa.String(length=255), nullable=False),
         sa.Column("data", sa.String(), nullable=False),
-        sa.PrimaryKeyConstraint("study_id", "library_id", "model_id", name="pk_gems_optim_config_heuristics"),
+        sa.PrimaryKeyConstraint("study_data_id", "library_id", "model_id", name="pk_gems_optim_config_heuristics"),
         sa.ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id"],
             ["gems_models.study_data_id", "gems_models.library_id", "gems_models.id"],
@@ -73,7 +73,7 @@ def upgrade():
             sa.Column("model_id", sa.String(length=255), nullable=False),
             sa.Column(column_name, sa.String(length=255), nullable=False),
             sa.Column("location", gems_decomposition_location_enum, nullable=False),
-            sa.PrimaryKeyConstraint("study_id", "library_id", "model_id", column_name,
+            sa.PrimaryKeyConstraint("study_data_id", "library_id", "model_id", column_name,
                                     name=f"pk_{table_name}"),
             sa.ForeignKeyConstraint(
                 ["study_data_id", "library_id", "model_id", column_name],
