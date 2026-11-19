@@ -1,7 +1,7 @@
 """add_gems_optim_config_tables
 
 Revision ID: 7d3e2f9a1c04
-Revises: 1c8b0b189035
+Revises: 55ae4521e871
 Create Date: 2026-11-13 14:30:00.000000
 
 """
@@ -12,7 +12,7 @@ from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = '7d3e2f9a1c04'
-down_revision = '1c8b0b189035'
+down_revision = '55ae4521e871'
 branch_labels = None
 depends_on = None
 
