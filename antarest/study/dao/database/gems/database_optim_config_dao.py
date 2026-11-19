@@ -166,7 +166,39 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
 
         # Model decomposition
 
-        # todo
+        table = GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_VARIABLES_TABLE
+        variables_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
+        for variables_row in variables_rows:
+            model_id = f"{variables_row.library_id}.{variables_row.model_id}"
+
+            models.setdefault(model_id, {}).setdefault("model_decomposition", {"variables": []})["variables"].append(
+                {"id": variables_row.variable_id, "mode": variables_row.mode}
+            )
+
+        table = GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_CONSTRAINTS_TABLE
+        constraints_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
+        for constraints_row in constraints_rows:
+            model_id = f"{constraints_row.library_id}.{constraints_row.model_id}"
+
+            models.setdefault(model_id, {}).setdefault("model_decomposition", {"constraints": []})[
+                "constraints"
+            ].append({"id": constraints_row.constraint_id, "mode": constraints_row.mode})
+
+        table = GEMS_OPTIM_CONFIG_MODEL_DECOMPOSITION_OBJECTIVE_CONTRIBUTIONS_TABLE
+        objective_contributions_rows = session.execute(
+            select(table).where(table.c.study_data_id == study_data_id)
+        ).fetchall()
+        for objective_contributions_row in objective_contributions_rows:
+            model_id = f"{objective_contributions_row.library_id}.{objective_contributions_row.model_id}"
+
+            models.setdefault(model_id, {}).setdefault("model_decomposition", {"objective_contributions": []})[
+                "objective_contributions"
+            ].append({"id": objective_contributions_row.objective_id, "mode": objective_contributions_row.mode})
+
+        model_args = [{"id": model_id, **models[model_id]} for model_id in models]
+
+        # Build final class
+        return GemsOptimConfig.model_validate({"models": model_args, **optim_config_data})
 
     @override
     def save_optim_config(self, optim_config: GemsOptimConfig) -> None:
