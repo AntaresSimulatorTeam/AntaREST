@@ -18,6 +18,8 @@ depends_on = None
 
 
 def upgrade():
+    gems_out_of_bounds_mode_enum = sa.Enum("cyclic", "drop", name="gemsoutofboundsmode")
+
     op.create_table(
         "gems_optim_config",
         study_data_id_col(),
@@ -28,57 +30,101 @@ def upgrade():
         sa.ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], name="fk_gems_optim_config", ondelete="CASCADE"),
     )
 
+    # Out of Bound processing
     op.create_table(
-        "gems_optim_config_models",
-        sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
+        "gems_optim_config_oob_processing",
         study_data_id_col(primary_key=False),
         sa.Column("library_id", sa.String(length=255), nullable=False),
         sa.Column("model_id", sa.String(length=255), nullable=False),
-        sa.Column("variable_id", sa.String(length=255), nullable=True),
-        sa.Column("constraint_id", sa.String(length=255), nullable=True),
-        sa.Column("objective_contribution_id", sa.String(length=255), nullable=True),
-        sa.Column("out_of_bounds_mode", sa.String(length=255), nullable=True),
-        sa.Column("location", sa.String(length=255), nullable=True),
-        sa.Column("heuristics", sa.String(), nullable=True),
-        sa.ForeignKeyConstraint(["study_data_id"], ["gems_optim_config.study_data_id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(
-            ["study_data_id", "model_id", "library_id"],
-            ["gems_models.study_data_id", "gems_models.id", "gems_models.library_id"],
-            ondelete="CASCADE",
-        ),
-        sa.ForeignKeyConstraint(
-            ["study_data_id", "library_id", "model_id", "variable_id"],
-            [
-                "gems_models_variables.study_data_id",
-                "gems_models_variables.library_id",
-                "gems_models_variables.model_id",
-                "gems_models_variables.id",
-            ],
-            ondelete="CASCADE",
-        ),
+        sa.Column("constraint_id", sa.String(length=255), nullable=False),
+        sa.Column("mode", gems_out_of_bounds_mode_enum, nullable=False),
+        sa.PrimaryKeyConstraint("study_id", "library_id", "model_id", "constraint_id", name="pk_gems_optim_config_oob_processing"),
         sa.ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id", "constraint_id"],
-            [
-                "gems_models_constraints.study_data_id",
-                "gems_models_constraints.library_id",
-                "gems_models_constraints.model_id",
-                "gems_models_constraints.id",
-            ],
+            ["gems_models_constraints.study_data_id", "gems_models_constraints.library_id", "gems_models_constraints.model_id", "gems_models_constraints.id"],
+            name="fk_gems_optim_config_oob_processing",
             ondelete="CASCADE",
-        ),
+        )
+    )
+
+    # Heuristics
+    op.create_table(
+        "gems_optim_config_heuristics",
+        study_data_id_col(primary_key=False),
+        sa.Column("library_id", sa.String(length=255), nullable=False),
+        sa.Column("model_id", sa.String(length=255), nullable=False),
+        sa.Column("data", sa.String(), nullable=False),
+        sa.PrimaryKeyConstraint("study_id", "library_id", "model_id", name="pk_gems_optim_config_heuristics"),
+        sa.ForeignKeyConstraint(
+            ["study_data_id", "library_id", "model_id"],
+            ["gems_models.study_data_id", "gems_models.library_id", "gems_models.id"],
+            name="fk_gems_optim_config_heuristics",
+            ondelete="CASCADE",
+        )
+    )
+
+    # Model decomposition
+    ## Variables
+    op.create_table(
+        "gems_optim_config_model_decomposition_variables",
+        study_data_id_col(primary_key=False),
+        sa.Column("library_id", sa.String(length=255), nullable=False),
+        sa.Column("model_id", sa.String(length=255), nullable=False),
+        sa.Column("variable_id", sa.String(length=255), nullable=False),
+        sa.Column("location", sa.String(), nullable=False),
+        sa.PrimaryKeyConstraint("study_id", "library_id", "model_id", "variable_id", name="pk_gems_optim_config_model_decomposition_variables"),
+        sa.ForeignKeyConstraint(
+            ["study_data_id", "library_id", "model_id", "variable_id"],
+            ["gems_models_variables.study_data_id", "gems_models_variables.library_id",
+             "gems_models_variables.model_id", "gems_models_variables.id"],
+            name="fk_gems_optim_config_model_decomposition_variables",
+            ondelete="CASCADE",
+        )
+    )
+
+    ## Constraints
+    op.create_table(
+        "gems_optim_config_model_decomposition_constraints",
+        study_data_id_col(primary_key=False),
+        sa.Column("library_id", sa.String(length=255), nullable=False),
+        sa.Column("model_id", sa.String(length=255), nullable=False),
+        sa.Column("constraint_id", sa.String(length=255), nullable=False),
+        sa.Column("location", sa.String(), nullable=False),
+        sa.PrimaryKeyConstraint("study_id", "library_id", "model_id", "constraint_id",
+                                name="pk_gems_optim_config_model_decomposition_constraints"),
+        sa.ForeignKeyConstraint(
+            ["study_data_id", "library_id", "model_id", "constraint_id"],
+            ["gems_models_constraints.study_data_id", "gems_models_constraints.library_id",
+             "gems_models_constraints.model_id", "gems_models_constraints.id"],
+            name="fk_gems_optim_config_model_decomposition_constraints",
+            ondelete="CASCADE",
+        )
+    )
+
+    ## Objective contribution
+    op.create_table(
+        "gems_optim_config_model_decomposition_objective_contribution",
+        study_data_id_col(primary_key=False),
+        sa.Column("library_id", sa.String(length=255), nullable=False),
+        sa.Column("model_id", sa.String(length=255), nullable=False),
+        sa.Column("objective_contribution_id", sa.String(length=255), nullable=False),
+        sa.Column("location", sa.String(), nullable=False),
+        sa.PrimaryKeyConstraint("study_id", "library_id", "model_id", "objective_contribution_id",
+                                name="pk_gems_optim_config_model_decomposition_objective_contribution"),
         sa.ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id", "objective_contribution_id"],
-            [
-                "gems_models_objective_contributions.study_data_id",
-                "gems_models_objective_contributions.library_id",
-                "gems_models_objective_contributions.model_id",
-                "gems_models_objective_contributions.id",
-            ],
+            ["gems_models_objective_contributions.study_data_id", "gems_models_objective_contributions.library_id",
+             "gems_models_objective_contributions.model_id", "gems_models_objective_contributions.id"],
+            name="fk_gems_optim_config_model_decomposition_objective_contribution",
             ondelete="CASCADE",
-        ),
+        )
     )
 
 
 def downgrade():
-    op.drop_table("gems_optim_config_models")
+    op.drop_table("gems_optim_config_oob_processing")
+    op.drop_table("gems_optim_config_heuristics")
+    op.drop_table("gems_optim_config_model_decomposition_variables")
+    op.drop_table("gems_optim_config_model_decomposition_constraints")
+    op.drop_table("gems_optim_config_model_decomposition_objective_contribution")
     op.drop_table("gems_optim_config")
