@@ -103,19 +103,19 @@ def upgrade():
 
     ## Objective contribution
     op.create_table(
-        "gems_optim_config_model_decomposition_objective_contribution",
+        "gems_optim_config_model_decomposition_objective_contributions",
         study_data_id_col(primary_key=False),
         sa.Column("library_id", sa.String(length=255), nullable=False),
         sa.Column("model_id", sa.String(length=255), nullable=False),
         sa.Column("objective_contribution_id", sa.String(length=255), nullable=False),
         sa.Column("location", sa.String(), nullable=False),
         sa.PrimaryKeyConstraint("study_id", "library_id", "model_id", "objective_contribution_id",
-                                name="pk_gems_optim_config_model_decomposition_objective_contribution"),
+                                name="pk_gems_optim_config_model_decomposition_objective_contributions"),
         sa.ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id", "objective_contribution_id"],
             ["gems_models_objective_contributions.study_data_id", "gems_models_objective_contributions.library_id",
              "gems_models_objective_contributions.model_id", "gems_models_objective_contributions.id"],
-            name="fk_gems_optim_config_model_decomposition_objective_contribution",
+            name="fk_gems_optim_config_model_decomposition_objective_contributions",
             ondelete="CASCADE",
         )
     )
@@ -126,5 +126,5 @@ def downgrade():
     op.drop_table("gems_optim_config_heuristics")
     op.drop_table("gems_optim_config_model_decomposition_variables")
     op.drop_table("gems_optim_config_model_decomposition_constraints")
-    op.drop_table("gems_optim_config_model_decomposition_objective_contribution")
+    op.drop_table("gems_optim_config_model_decomposition_objective_contributions")
     op.drop_table("gems_optim_config")
