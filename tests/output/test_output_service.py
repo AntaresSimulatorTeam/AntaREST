@@ -67,7 +67,9 @@ def _studies_repository(study: Study) -> IStudyMetadataProvider:
             return StudyMetadata(study.id, study.name, study.storage_mode)
 
         @override
-        def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
+        def assert_permission(
+            self, study_id: str, permission: StudyPermissionType, allow_archived: bool = False
+        ) -> None:
             pass
 
         @override
