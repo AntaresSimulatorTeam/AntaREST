@@ -2013,6 +2013,9 @@ class StudyService:
 
         self.assert_study_unarchived(study)
 
+        if isinstance(study, VariantStudy):
+            return self._archive_variant(study)
+
         if not isinstance(study, RawStudy):
             raise UnsupportedOperationOnThisStudyType(study.id, "archive", "raw")
 
@@ -2065,6 +2068,66 @@ class StudyService:
             custom_event_messages=None,
         )
 
+    def _archive_variant(self, variant: VariantStudy) -> str:
+        """
+        Archives a variant study and all its descendants.
+
+        For each of them, the outputs are archived, the snapshot is removed
+        and the study is marked as archived.
+        """
+        # Children come first: an archived variant must never have an unarchived descendant.
+        variant_ids: list[str] = []
+
+        def collect_variant(study: Study) -> None:
+            assert_permission(study, StudyPermissionType.WRITE)
+            variant_ids.append(study.id)
+
+        self.storage_service.variant_study_service.walk_children(variant.id, collect_variant, bottom_first=True)
+
+        for variant_id in variant_ids:
+            if self.task_service.list_tasks(
+                TaskListFilter(
+                    ref_id=variant_id,
+                    type=[TaskType.ARCHIVE, TaskType.UNARCHIVE],
+                    status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+                )
+            ):
+                raise TaskAlreadyRunning()
+
+        def archive_task(notifier: ITaskNotifier) -> TaskResult:
+            for index, variant_id in enumerate(variant_ids, start=1):
+                self._archive_single_variant(variant_id)
+                notifier.notify_message(f"Variant study {variant_id} archived ({index}/{len(variant_ids)})")
+            return TaskResult(success=True, message="ok")
+
+        return self.task_service.add_task(
+            archive_task,
+            f"Study {variant.name} archiving",
+            task_type=TaskType.ARCHIVE,
+            ref_id=variant.id,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    def _archive_single_variant(self, variant_id: str) -> None:
+        with db():
+            if self.get_study(variant_id).archived:
+                return
+
+        # The outputs must be scheduled for archiving before the study is marked as archived.
+        outputs_access = self._get_outputs_access()
+        for output in outputs_access.list_outputs(variant_id):
+            if not output.archived:
+                with contextlib.suppress(TaskAlreadyRunning):
+                    outputs_access.archive_output(variant_id, output.id)
+
+        with db():
+            variant = self.get_study(variant_id)
+            if not isinstance(variant, VariantStudy):
+                raise UnsupportedOperationOnThisStudyType(variant_id, "archive", "variant")
+            self.storage_service.variant_study_service.archive(variant)
+            notify_study_edition(self.event_bus, variant)
+
     def unarchive(self, uuid: str) -> str:
         study = self.get_study(uuid)
         if not study.archived:
@@ -2080,6 +2143,9 @@ class StudyService:
             raise TaskAlreadyRunning()
 
         assert_permission(study, StudyPermissionType.WRITE)
+
+        if isinstance(study, VariantStudy):
+            return self._unarchive_variant(study)
 
         if not isinstance(study, RawStudy):
             raise UnsupportedOperationOnThisStudyType(study.id, "unarchive", "raw")
@@ -2109,6 +2175,37 @@ class StudyService:
             f"Study {study.name} unarchiving",
             task_type=TaskType.UNARCHIVE,
             ref_id=study.id,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    def _unarchive_variant(self, variant: VariantStudy) -> str:
+        """
+        Unarchives a variant study, but not its descendants.
+
+        Its snapshot will be generated the next time the study is accessed, and its outputs stay archived.
+        """
+        # An archived study must never have an unarchived descendant.
+        if variant.parent_id is not None and self.get_study(variant.parent_id).archived:
+            raise UnsupportedOperationOnArchivedStudy(variant.parent_id)
+
+        uuid = variant.id
+
+        def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
+            with db():
+                study_db = self.get_study(uuid)
+                study_db.archived = False
+                study_db.last_access = current_time()
+                self.repository.save(study_db)
+                remove_from_cache(cache=self.cache_service, root_id=uuid)
+                notify_study_edition(self.event_bus, study_db)
+            return TaskResult(success=True, message="ok")
+
+        return self.task_service.add_task(
+            unarchive_task,
+            f"Study {variant.name} unarchiving",
+            task_type=TaskType.UNARCHIVE,
+            ref_id=uuid,
             progress=None,
             custom_event_messages=None,
         )

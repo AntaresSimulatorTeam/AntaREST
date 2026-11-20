@@ -42,9 +42,8 @@ function InformationView() {
   const study = useStudy();
   const { data: variantTree } = useStudyVariantTree({ studyId: study.id });
   const referenceStudy = useAppSelector((state) => getReferenceStudy(state, study.id));
-
-  // When the reference study is archived, all its variants are considered archived as well
-  const isArchived = referenceStudy.archived;
+  const isArchived = study.archived || referenceStudy.archived;
+  const studyToUnarchive = referenceStudy.archived ? referenceStudy : study;
   const isVariant = study.type === "variantstudy";
 
   ////////////////////////////////////////////////////////////////
@@ -63,13 +62,12 @@ function InformationView() {
     }
   };
 
-  const handleUnarchiveReferenceStudy = async () => {
+  const handleUnarchive = async () => {
     try {
-      // Only the reference study can be archived/unarchived
-      await unarchiveStudy(referenceStudy.id);
+      await unarchiveStudy(studyToUnarchive.id);
     } catch (err) {
       enqueueErrorSnackbar(
-        t("studies.error.unarchive", { studyname: referenceStudy.name }),
+        t("studies.error.unarchive", { studyname: studyToUnarchive.name }),
         toError(err),
       );
     }
@@ -97,7 +95,7 @@ function InformationView() {
 
   return (
     <ViewWrapper flex={{ gap: 2 }}>
-      {isArchived && isVariant && (
+      {referenceStudy.archived && isVariant && (
         <Alert severity="warning">
           <Trans
             i18nKey="variants.unarchive.warning"
@@ -152,10 +150,10 @@ function InformationView() {
             {isArchived ? (
               <Button
                 variant="contained"
-                onClick={handleUnarchiveReferenceStudy}
+                onClick={handleUnarchive}
                 startIcon={<UnarchiveOutlinedIcon />}
               >
-                {isVariant ? t("variants.unarchive") : t("global.unarchive")}
+                {studyToUnarchive.id === study.id ? t("global.unarchive") : t("variants.unarchive")}
               </Button>
             ) : (
               <Button variant="contained" onClick={handleLaunchStudy} startIcon={<BoltIcon />}>
