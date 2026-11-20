@@ -324,18 +324,18 @@ class TestThermalManager:
         Every property related to version 860 or above should be None.
         """
         # Given the following arguments
-        props = dict(
-            name="New Cluster",
-            group=ThermalClusterGroup.NUCLEAR,
-            enabled=True,
-            unitCount=350,
-            nominalCapacity=1000,
-            genTs=LocalTSGenerationBehavior.USE_GLOBAL,
-            minStablePower=0,
-            minUpTime=15,
-            minDownTime=20,
-            co2=12.59,
-        )
+        props = {
+            "name": "New Cluster",
+            "group": ThermalClusterGroup.NUCLEAR,
+            "enabled": True,
+            "unitCount": 350,
+            "nominalCapacity": 1000,
+            "genTs": LocalTSGenerationBehavior.USE_GLOBAL,
+            "minStablePower": 0,
+            "minUpTime": 15,
+            "minDownTime": 20,
+            "co2": 12.59,
+        }
         cluster_data = ThermalClusterCreation(**props)
         form = manager.create_cluster(study_interface, area_id="north", cluster_data=cluster_data)
 

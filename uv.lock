@@ -117,7 +117,6 @@ dependencies = [
     { name = "gunicorn" },
     { name = "httpx" },
     { name = "humanize" },
-    { name = "jsonref" },
     { name = "markupsafe" },
     { name = "numexpr" },
     { name = "numpy" },
@@ -157,7 +156,6 @@ windows = [
 [package.dev-dependencies]
 dev = [
     { name = "celery-types" },
-    { name = "checksumdir" },
     { name = "jinja2" },
     { name = "mypy" },
     { name = "pandas-stubs" },
@@ -177,10 +175,8 @@ dev = [
     { name = "types-psycopg2" },
     { name = "types-pyyaml" },
     { name = "types-redis" },
-    { name = "types-requests" },
 ]
 test = [
-    { name = "checksumdir" },
     { name = "jinja2" },
     { name = "pytest" },
     { name = "pytest-cov" },
@@ -205,7 +201,6 @@ requires-dist = [
     { name = "gunicorn", specifier = "~=23.0.0" },
     { name = "httpx", specifier = "~=0.28.1" },
     { name = "humanize", specifier = "~=4.16.0" },
-    { name = "jsonref", specifier = "~=0.2" },
     { name = "markupsafe", specifier = "~=3.0.3" },
     { name = "mike", marker = "extra == 'doc'" },
     { name = "mkdocs", marker = "extra == 'doc'" },
@@ -238,7 +233,6 @@ provides-extras = ["desktop", "windows", "doc"]
 [package.metadata.requires-dev]
 dev = [
     { name = "celery-types", specifier = "~=0.26.0" },
-    { name = "checksumdir", specifier = "~=1.3.0" },
     { name = "jinja2", specifier = "~=3.1.3" },
     { name = "mypy", specifier = "~=2.4.1" },
     { name = "pandas-stubs", specifier = "~=2.3.3" },
@@ -256,12 +250,10 @@ dev = [
     { name = "types-openpyxl", specifier = "~=3.1.5" },
     { name = "types-paramiko", specifier = "~=3.5.0" },
     { name = "types-psycopg2", specifier = "~=2.9.9" },
-    { name = "types-pyyaml", specifier = "~=5.4.1" },
+    { name = "types-pyyaml", specifier = "~=6.0.12" },
     { name = "types-redis", specifier = "~=4.6.0" },
-    { name = "types-requests", specifier = "~=2.33.0" },
 ]
 test = [
-    { name = "checksumdir", specifier = "~=1.3.0" },
     { name = "jinja2", specifier = "~=3.1.3" },
     { name = "pytest", specifier = "~=9.2.0" },
     { name = "pytest-cov", specifier = "~=7.1.0" },
@@ -540,15 +532,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4b/51/8ade005e5ca5b0d80fb4aff72a3775b325bdc3d27408c8113811a7cbe640/charset_normalizer-3.4.4-cp314-cp314-win_amd64.whl", hash = "sha256:8a6562c3700cce886c5be75ade4a5db4214fda19fede41d9792d100288d8f94c", size = 107104, upload-time = "2025-10-14T04:41:51.051Z" },
     { url = "https://files.pythonhosted.org/packages/da/5f/6b8f83a55bb8278772c5ae54a577f3099025f9ade59d0136ac24a0df4bde/charset_normalizer-3.4.4-cp314-cp314-win_arm64.whl", hash = "sha256:de00632ca48df9daf77a2c65a484531649261ec9f25489917f09e455cb09ddb2", size = 100743, upload-time = "2025-10-14T04:41:52.122Z" },
     { url = "https://files.pythonhosted.org/packages/0a/4c/925909008ed5a988ccbb72dcc897407e5d6d3bd72410d69e051fc0c14647/charset_normalizer-3.4.4-py3-none-any.whl", hash = "sha256:7a32c560861a02ff789ad905a2fe94e3f840803362c84fecf1851cb4cf3dc37f", size = 53402, upload-time = "2025-10-14T04:42:31.76Z" },
-]
-
-[[package]]
-name = "checksumdir"
-version = "1.3.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c4/cb/854df78940f24f099b2e2877dd4f32b9cae0c6bba3f2854bc6fc91ed5c6a/checksumdir-1.3.0.tar.gz", hash = "sha256:11693641be49defbfdfb13612a7fd70ce1acd5401db74105f8c486fd72046540", size = 3563, upload-time = "2025-08-15T08:35:59.134Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/35/2e/9b839f7f358f7fb26b9eba9214f7bdd592934d3707c564cecf842f2e8d82/checksumdir-1.3.0-py3-none-any.whl", hash = "sha256:29fd52a6258218752a3d8d2d7c998c6aca5d40dc6828fe1f7e98c631745da098", size = 5491, upload-time = "2025-08-15T08:35:58.015Z" },
 ]
 
 [[package]]
@@ -940,15 +923,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d", size = 245115, upload-time = "2025-03-05T20:05:02.478Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67", size = 134899, upload-time = "2025-03-05T20:05:00.369Z" },
-]
-
-[[package]]
-name = "jsonref"
-version = "0.3.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/2f/d0/8b97b067d5083812bd1b0facebe39c2b392e5e2d95d9caadc2bb1104fce4/jsonref-0.3.0.tar.gz", hash = "sha256:68b330c6815dc0d490dbb3d65ccda265ddde9f7856fd2f3322f971d456ea7549", size = 8645, upload-time = "2022-10-08T20:32:52.74Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/85/23/49374e463cec3cf87154b7f53bd8c7df894802b820e123b0a7e0822d0af1/jsonref-0.3.0-py3-none-any.whl", hash = "sha256:9480ad1b500f7e795daeb0ef29f9c55ae3a9ab38fb8d6659b6f4868acb5a5bc8", size = 8753, upload-time = "2022-10-08T20:32:51.666Z" },
 ]
 
 [[package]]
@@ -2107,14 +2081,14 @@ wheels = [
 
 [[package]]
 name = "types-cffi"
-version = "1.17.0.20250915"
+version = "2.1.0.20260827"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "types-setuptools" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2a/98/ea454cea03e5f351323af6a482c65924f3c26c515efd9090dede58f2b4b6/types_cffi-1.17.0.20250915.tar.gz", hash = "sha256:4362e20368f78dabd5c56bca8004752cc890e07a71605d9e0d9e069dbaac8c06", size = 17229, upload-time = "2025-09-15T03:01:25.31Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/04/bb/dbb844365103e4dc6ea52cdae0946c3ca55a7b8587e6f351710d7ee5bb78/types_cffi-2.1.0.20260827.tar.gz", hash = "sha256:53d1604771ad4ff09a1a90d6f6980ab36bebb6c39476dcc5bbf4896fa510d736", size = 18150, upload-time = "2026-08-27T12:07:21.754Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/aa/ec/092f2b74b49ec4855cdb53050deb9699f7105b8fda6fe034c0781b8687f3/types_cffi-1.17.0.20250915-py3-none-any.whl", hash = "sha256:cef4af1116c83359c11bb4269283c50f0688e9fc1d7f0eeb390f3661546da52c", size = 20112, upload-time = "2025-09-15T03:01:24.187Z" },
+    { url = "https://files.pythonhosted.org/packages/0c/fc/690c243ddac627901f1448f5cb29ca3b5463774a00ac932862c60d7ce5cf/types_cffi-2.1.0.20260827-py3-none-any.whl", hash = "sha256:851b6ffa5b962c577a2330b98ac0b60c56c904d086726276946388f58a0cffaf", size = 20525, upload-time = "2026-08-27T12:07:20.836Z" },
 ]
 
 [[package]]
@@ -2171,11 +2145,11 @@ wheels = [
 
 [[package]]
 name = "types-pyyaml"
-version = "5.4.12"
+version = "6.0.12.20261113"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c2/65/ff51345ff17429c970e7da1485e7c43b873ffad26530361ebf2415903317/types-PyYAML-5.4.12.tar.gz", hash = "sha256:3f4daa754357491625ae8c3a39c9e1b0d7cd5632bc4e1c35e7a7f75a64aa124b", size = 8424, upload-time = "2021-10-15T01:01:22.949Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/8b/ba599d956693dbc98e170f32097128bdea0a17f9d42b0b490fa749c12b1a/types_pyyaml-6.0.12.20261113.tar.gz", hash = "sha256:0828be2580fd94151182364f4d0158e4de62fdbeeb8d4296f7f7d2b6c22bb640", size = 19017, upload-time = "2026-11-13T08:51:21.488Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c2/fc/c1d2e86f303c7c1444921e2ec58473cad90331c987f8e000cb58629cc0ef/types_PyYAML-5.4.12-py3-none-any.whl", hash = "sha256:e06083f85375a5678e4c19452ed6467ce2167b71db222313e1792cb8fc76859a", size = 12825, upload-time = "2021-10-15T01:01:20.912Z" },
+    { url = "https://files.pythonhosted.org/packages/fd/2e/36fc0941a40ef066dbc8abac41bbbefb41389f547c779aef832aea6b873d/types_pyyaml-6.0.12.20261113-py3-none-any.whl", hash = "sha256:3600749e613748afdc4327f0b17c3296cf880cdbc7335f320007abd9dd815f67", size = 21321, upload-time = "2026-11-13T08:51:20.417Z" },
 ]
 
 [[package]]
@@ -2192,24 +2166,12 @@ wheels = [
 ]
 
 [[package]]
-name = "types-requests"
-version = "2.33.0.20260712"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "urllib3" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/db/51/703318f7b7be8bee126ec13bf615050f932d0179b8784420f3a0199cc769/types_requests-2.33.0.20260712.tar.gz", hash = "sha256:2141b67ab534a5c5cd2dac5034f2a35f42e699c5bf185eee608c5246a069d7fb", size = 25084, upload-time = "2026-07-12T05:14:20.455Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/e7/010c87f559e216d83f9dc51e939633fd0d0ead3377340181ab0e223cd3b5/types_requests-2.33.0.20260712-py3-none-any.whl", hash = "sha256:de027e28c171d3da529689cbfa023b0b4eab188c8dfa22fd834eebd2cee6e7bb", size = 21392, upload-time = "2026-07-12T05:14:19.616Z" },
-]
-
-[[package]]
 name = "types-setuptools"
-version = "82.0.0.20260210"
+version = "84.2.0.20261104"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4b/90/796ac8c774a7f535084aacbaa6b7053d16fff5c630eff87c3ecff7896c37/types_setuptools-82.0.0.20260210.tar.gz", hash = "sha256:d9719fbbeb185254480ade1f25327c4654f8c00efda3fec36823379cebcdee58", size = 44768, upload-time = "2026-02-10T04:22:02.107Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d9/08/fe21d9b3e02c6a612ef01ee0212ef82619aec8d2373d74d69c4144ac2934/types_setuptools-84.2.0.20261104.tar.gz", hash = "sha256:1ec758bbeddf88d52f963fe663beabc2117b6aae73cf3d2902d7dd0df81bd76e", size = 46708, upload-time = "2026-11-04T08:14:06.537Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3e/54/3489432b1d9bc713c9d8aa810296b8f5b0088403662959fb63a8acdbd4fc/types_setuptools-82.0.0.20260210-py3-none-any.whl", hash = "sha256:5124a7daf67f195c6054e0f00f1d97c69caad12fdcf9113eba33eff0bce8cd2b", size = 68433, upload-time = "2026-02-10T04:22:00.876Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/50/84d3ea21646c5039660e9fa08d9fb180ac43a8cb93a8f45e045d312c7e2d/types_setuptools-84.2.0.20261104-py3-none-any.whl", hash = "sha256:23e9bf876adca8df2285a68f76c355128b1e679b27cfec4854faf350cd7999e5", size = 70377, upload-time = "2026-11-04T08:14:05.067Z" },
 ]
 
 [[package]]

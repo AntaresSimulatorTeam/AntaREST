@@ -31,7 +31,6 @@ dependencies = [
     "filelock~=4.2.1",
     "gunicorn~=23.0.0",
     "humanize~=4.16.0",
-    "jsonref~=0.2",
     "PyJWT~=2.15.0",
     "MarkupSafe~=3.0.3",
     "numpy~=2.4.2",
@@ -72,11 +71,9 @@ dev = [
     "types-paramiko~=3.5.0",
     "types-psycopg2~=2.9.9",
     "types-redis~=4.6.0",
-    "types-requests~=2.33.0",
-    "types-PyYAML~=5.4.1",
+    "types-PyYAML~=6.0.12",
 ]
 test = [
-    "checksumdir~=1.3.0",
     "pytest~=9.2.0",
     "pytest-rerunfailures~=16.1",
     "pytest-xdist~=3.8.0",
@@ -121,8 +118,6 @@ module = [
     "jsonschema",
     "pytest",
     "httpx",
-    "jsonref",
-    "jsonref",
 ]
 ignore_missing_imports = true
 
@@ -161,8 +156,9 @@ indent-width = 4
 target-version = "py314"
 
 [tool.ruff.lint]
-## E4, E7, E9 and F are the default configuration of ruff, "I" is added to handle imports
-select = ["E4", "E7", "E9", "F", "I"]
+## E4, E7, E9 and F are the default configuration of ruff, "I" is added to handle imports.
+## ASYNC, LOG, TID, PLE, ISC and C4 catch likely bugs, RUF100 flags unused `noqa` comments.
+select = ["E4", "E7", "E9", "F", "I", "ASYNC", "LOG", "TID", "PLE", "ISC", "C4", "RUF100"]
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.

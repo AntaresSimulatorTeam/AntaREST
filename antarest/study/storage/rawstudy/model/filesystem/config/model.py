@@ -278,12 +278,12 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     study_id: str
     version: StudyVersionStr
     output_path: Path | None = None
-    districts: dict[str, District] = dict()
-    areas: dict[str, AreaConfig] = dict()
-    outputs: dict[str, Simulation] = dict()
-    bindings: list[BindingConstraintConfig] = list()
+    districts: dict[str, District] = {}
+    areas: dict[str, AreaConfig] = {}
+    outputs: dict[str, Simulation] = {}
+    bindings: list[BindingConstraintConfig] = []
     store_new_set: bool = False
-    archive_input_series: list[str] = list()
+    archive_input_series: list[str] = []
     enr_modelling: str = str(EnrModelling.AGGREGATED)
     archive_path: Path | None = None
 

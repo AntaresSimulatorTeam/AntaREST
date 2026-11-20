@@ -30,7 +30,7 @@ class GemsScBuilderMapping(AntaresBaseModel):
 
 
 def _check_scenario_duplication(data: list[GemsScBuilderMapping]) -> list[GemsScBuilderMapping]:
-    if len(data) != len(set(mapping.scenario for mapping in data)):
+    if len(data) != len({mapping.scenario for mapping in data}):
         raise ValueError("Found duplicated scenario inside GEMS scenario builder")
     return sorted(data, key=lambda x: x.scenario)
 
