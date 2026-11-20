@@ -12,6 +12,7 @@
 
 import logging
 import re
+import shutil
 import uuid
 from collections.abc import Callable
 from datetime import timedelta
@@ -104,6 +105,11 @@ def _cast_study_to_variant(study: Study) -> VariantStudy:
     return study
 
 
+def _assert_unarchived(study: VariantStudy) -> None:
+    if study.archived:
+        raise UnsupportedOperationOnArchivedStudy(study.id)
+
+
 class VariantStudyService(AbstractStudyService):
     def __init__(
         self,
@@ -166,6 +172,13 @@ class VariantStudyService(AbstractStudyService):
         variant = _cast_study_to_variant(study)
         self.generate(variant)
         self.raw_study_service.export_study_flat(study, dst_path)
+
+    @override
+    def delete_from_filesystem(self, study: Study) -> None:
+        # Unlike raw studies, an archived variant has no archive file: its outputs are still in its directory.
+        if study.path is not None:
+            shutil.rmtree(check_study_path(study), ignore_errors=True)
+        remove_from_cache(self.cache, study.id)
 
     ##########################
     # Specific methods
@@ -263,6 +276,7 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self.repository.get_study_with_commands(study_id, with_lock=True)
         assert_permission(study, StudyPermissionType.WRITE)
+        _assert_unarchived(study)
 
         command_ids = self._modify_commands(study, commands, replace_commands=False)
         self.on_variant_advance(study)
@@ -280,6 +294,7 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self.repository.get_study_with_commands(study_id, with_lock=True)
         assert_permission(study, StudyPermissionType.WRITE)
+        _assert_unarchived(study)
 
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
@@ -335,6 +350,7 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self.repository.get_study_with_commands(study_id, with_lock=True)
         assert_permission(study, StudyPermissionType.WRITE)
+        _assert_unarchived(study)
 
         current_commands = study.commands
 
@@ -367,6 +383,7 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self._get_variant_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
+        _assert_unarchived(study)
 
         # Save the new commands
         current_cmd_version = self.repository.get_commands_list_version(study_id)
@@ -655,6 +672,7 @@ class VariantStudyService(AbstractStudyService):
         with self._generation_lock(study.id):
             try:
                 self.repository.refresh(study)
+                _assert_unarchived(study)
 
                 if not from_scratch and self.repository.is_snapshot_up_to_date(study.id):
                     # Nothing to do
@@ -667,6 +685,8 @@ class VariantStudyService(AbstractStudyService):
                 return generator.generate_snapshot(
                     study.id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
                 )
+            except UnsupportedOperationOnArchivedStudy:
+                raise
             except Exception as e:
                 # raise a EXPECTATION_FAILED error (417)
                 logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)

@@ -43,7 +43,8 @@ def adapt_output_service_to_study_service(output_service: OutputService) -> IOut
 
         @override
         def delete_output(self, study_id: str, output_id: str) -> None:
-            output_service.delete_output(study_id, output_id)
+            # Only used to delete a study, which is allowed for archived ones.
+            output_service.delete_output(study_id, output_id, allow_archived_study=True)
 
         @override
         def write_output_to_dir(self, study_id: str, output_id: str, parent_dir: Path) -> None:

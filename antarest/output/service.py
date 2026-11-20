@@ -112,13 +112,13 @@ class IStudyMetadataProvider(ABC):
         pass
 
     @abstractmethod
-    def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
+    def assert_permission(self, study_id: str, permission: StudyPermissionType, allow_archived: bool = False) -> None:
         """
         Check if the user has the given permission on the study
 
         Raises:
             UserHasNotPermissionError: if the user does not have the permission
-            UnsupportedOperationOnArchivedStudy: if the study is archived
+            UnsupportedOperationOnArchivedStudy: if the study is archived, unless `allow_archived` is set
         """
 
     @abstractmethod
@@ -550,17 +550,19 @@ class OutputService:
 
         return FileResponse(tmp_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
 
-    def delete_output(self, uuid: str, output_name: str) -> None:
+    def delete_output(self, uuid: str, output_name: str, allow_archived_study: bool = False) -> None:
         """
         Delete specific output simulation in study
         Args:
             uuid: study uuid
             output_name: output simulation name
+            allow_archived_study: whether the output may be deleted although its study is archived,
+                which is needed to delete the study itself.
 
         Returns:
 
         """
-        self._studies_repository.assert_permission(uuid, StudyPermissionType.WRITE)
+        self._studies_repository.assert_permission(uuid, StudyPermissionType.WRITE, allow_archived=allow_archived_study)
 
         self._find_output_storage(uuid, output_name).delete_output(uuid, output_name)
 
