@@ -46,13 +46,20 @@ export async function getTasks(params: GetTasksParams) {
  * GET /v1/tasks/{id} - Gets a single task by ID.
  *
  * @param params - The parameters to use when retrieving the task.
+ * @param params.id - Task identifier.
+ * @param params.waitForCompletion - Wait until the task reaches a terminal state.
+ * @param params.withLogs - Include task logs in the response.
+ * @param params.timeout - Maximum number of seconds to wait for completion.
+ * @param signal - Cancels the request when the caller stops observing the task.
  * @returns The task matching the given ID.
  * @throws If the response doesn't match the expected schema.
  */
-export async function getTask(params: GetTaskParams) {
-  const { id, waitForCompletion, withLogs, timeout } = params;
-
+export async function getTask(
+  { id, waitForCompletion, withLogs, timeout }: GetTaskParams,
+  signal?: AbortSignal,
+) {
   const res = await client.get(`/v1/tasks/${id}`, {
+    signal,
     params: {
       wait_for_completion: waitForCompletion,
       with_logs: withLogs,

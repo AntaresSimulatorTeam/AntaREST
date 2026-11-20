@@ -33,4 +33,5 @@ export const TaskType = {
   SnapshotClearing: "SNAPSHOT_CLEARING",
   OutputAggregation: "OUTPUT_AGGREGATION",
   OutputVariablesViewMaterialization: "OUTPUT_VARIABLES_VIEW_MATERIALIZATION",
+  OutputGemsViewsMaterialization: "OUTPUT_GEMS_VIEWS_MATERIALIZATION",
 } as const;

@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import type { FilesTree, FolderTree } from "@/services/api/studies/userResources/types";
+import type { FilesTree, FolderTree } from "@/services/api/files/types";
 import { getFileExtension } from "@/utils/fileUtils";
 import type { SvgIconComponent } from "@mui/icons-material";
 import BlockIcon from "@mui/icons-material/Block";
