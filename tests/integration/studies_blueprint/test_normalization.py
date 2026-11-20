@@ -18,11 +18,20 @@ from httpx import Headers
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
+from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR as INTEGRATION_ASSETS_DIR
+from tests.integration.conftest import run_disk_analysis_task
 
 
 class TestNormalization:
-    def test_endpoint(self, client: TestClient, internal_study_id: str, user_access_token: str, tmp_path: Path) -> None:
+    def test_endpoint(
+        self,
+        client: TestClient,
+        internal_study_id: str,
+        user_access_token: str,
+        tmp_path: Path,
+        study_service: StudyService,
+    ) -> None:
         client.headers = Headers({"Authorization": f"Bearer {user_access_token}"})
 
         # imports a study
@@ -54,6 +63,8 @@ class TestNormalization:
         # Normalize the study
         res = client.put(f"/v1/studies/{study_id}/normalize")
         assert res.status_code == 200
+
+        run_disk_analysis_task(study_service)
 
         # Checks disk usage after. It should be way lower
         res = client.get(f"/v1/studies/{study_id}/disk-usage")

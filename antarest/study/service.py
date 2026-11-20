@@ -140,6 +140,7 @@ from antarest.study.model import (
     StorageMode,
     Study,
     StudyContentStatus,
+    StudyDiskSpaceAnalysis,
     StudyFolder,
     StudyMetadataCopy,
     StudyMetadataDTO,
@@ -153,6 +154,7 @@ from antarest.study.model import (
     StudyRepairType,
 )
 from antarest.study.repository import (
+    StudyDiskSpaceRepository,
     StudyFilter,
     StudyMetadataRepository,
     StudyPagination,
@@ -639,11 +641,13 @@ class StudyService:
         task_service: ITaskService,
         cache_service: ICache,
         config: Config,
+        disk_space_repository: StudyDiskSpaceRepository | None = None,
     ):
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
         self.directory_service = directory_service
         self.repository = repository
+        self.disk_space_repository = disk_space_repository or StudyDiskSpaceRepository()
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
@@ -2049,6 +2053,7 @@ class StudyService:
                 study_db.archived = True
                 self.repository.save(study_db)
                 notify_study_edition(self.event_bus, study_db)
+            self.disk_space_repository.invalidate(study_to_archive.id)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2093,6 +2098,7 @@ class StudyService:
                 study_db.last_access = current_time()
                 self.repository.save(study_db)
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
+                self.disk_space_repository.invalidate(study_db.id)
                 self._get_outputs_access().on_study_unarchived(uuid)
                 notify_study_edition(self.event_bus, study_db)
 
@@ -2599,7 +2605,15 @@ class StudyService:
             custom_event_messages=None,
         )
 
-    def get_disk_usage(self, uuid: str) -> int:
+    def invalidate_disk_space(self, study_id: str) -> None:
+        """
+        Flags the study so that its disk space is analyzed again.
+        Must be called after any change on the study disk space that doesn't update the study `updated_at`.
+        No permission check is done: it is meant to be called by internal services.
+        """
+        self.disk_space_repository.invalidate(study_id)
+
+    def compute_disk_usage(self, uuid: str) -> int:
         """
         Calculates the size of the disk used to store the study if the user has permissions.
 
@@ -2622,6 +2636,27 @@ class StudyService:
         for output in self._get_outputs_access().list_outputs(study.id):
             disk_usage += self._get_outputs_access().get_disk_usage(study.id, output.id)
         return disk_usage
+
+    def get_disk_usage(self, uuid: str) -> int:
+        study_analysis = self.disk_space_repository.get(uuid)
+        study = self.get_study(uuid=uuid)
+        assert_permission(study, StudyPermissionType.READ)
+
+        if not is_managed(study):
+            return self.compute_disk_usage(uuid)
+
+        elif study_analysis is None:
+            disk_usage = self.compute_disk_usage(uuid)
+            study_disk_analysis = StudyDiskSpaceAnalysis(
+                study_id=uuid,
+                disk_space_bytes=disk_usage,
+                last_analysis_date=current_time(),
+            )
+            self.disk_space_repository.save(study_disk_analysis)
+            return disk_usage
+
+        # If the study analysis is present, return the already stored value
+        return study_analysis.disk_space_bytes
 
     def get_matrix_with_index_and_header(
         self, *, study_id: str, path: str, with_index: bool, with_header: bool
@@ -2774,6 +2809,7 @@ class StudyService:
         self.assert_study_unarchived(study)
 
         self.storage_service.raw_study_service.normalize_study(study)
+        self.disk_space_repository.invalidate(study.id)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """

@@ -472,6 +472,9 @@ class StudyDiskSpaceAnalysis(Base):
     )
     disk_space_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
     last_analysis_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    # Date of the last change on the study disk space. A new analysis is needed if it is more recent
+    # than `last_analysis_date`, which is the date the last analysis started.
+    invalidated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     study: Mapped["Study"] = relationship("Study", uselist=False)
 
 
