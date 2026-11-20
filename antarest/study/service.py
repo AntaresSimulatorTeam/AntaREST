@@ -2642,7 +2642,10 @@ class StudyService:
         study = self.get_study(uuid=uuid)
         assert_permission(study, StudyPermissionType.READ)
 
-        if study_analysis is None or not is_managed(study):
+        if not is_managed(study):
+            return self.compute_disk_usage(uuid)
+
+        elif study_analysis is None:
             disk_usage = self.compute_disk_usage(uuid)
             study_disk_analysis = StudyDiskSpaceAnalysis(
                 study_id=uuid,
@@ -2652,6 +2655,7 @@ class StudyService:
             self.disk_space_repository.save(study_disk_analysis)
             return disk_usage
 
+        # If the study analysis is present, return the already stored value
         return study_analysis.disk_space_bytes
 
     def get_matrix_with_index_and_header(
