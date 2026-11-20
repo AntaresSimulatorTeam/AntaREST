@@ -65,7 +65,7 @@ from antarest.output.model import (
     OutputViewStatus,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
-from antarest.output.model.gems_views import GemsTaxonomyViews
+from antarest.output.model.gems_views import GemsTaxonomyViews, GemsViewMatrix
 from antarest.output.model.output_id import is_valid_output_id
 from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
@@ -949,14 +949,23 @@ class OutputService:
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         return self._find_output_storage(study_id, output_id).get_original_file(study_id, output_id, url)
 
+    def _find_unarchived_output_storage(self, study_id: str, output_id: str) -> IOutputStorage:
+        """
+        Raises:
+            OutputNotFound: if the output does not exist.
+            UnsupportedOperationOnArchivedOutput: if the output is archived.
+        """
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.is_output_archived(study_id, output_id):
+            raise UnsupportedOperationOnArchivedOutput(output_id)
+        return storage
+
     def get_raw_files_tree(self, study_id: str, output_id: str) -> FilesTree:
         """
         Returns the tree structure of all the files of the output, as written by the simulator.
         """
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        storage = self._find_output_storage(study_id, output_id)
-        if storage.is_output_archived(study_id, output_id):
-            raise UnsupportedOperationOnArchivedOutput(output_id)
+        storage = self._find_unarchived_output_storage(study_id, output_id)
         builder = FilesTreeBuilder()
         for file in storage.list_raw_files(study_id, output_id):
             builder.add_file(file)
@@ -967,9 +976,7 @@ class OutputService:
         Returns the content of the output file located at `path` (relative to the output root).
         """
         self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
-        storage = self._find_output_storage(study_id, output_id)
-        if storage.is_output_archived(study_id, output_id):
-            raise UnsupportedOperationOnArchivedOutput(output_id)
+        storage = self._find_unarchived_output_storage(study_id, output_id)
         return storage.read_raw_file(study_id, output_id, path)
 
     def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | OutputViewResponse:
@@ -1019,3 +1026,20 @@ class OutputService:
             progress=0,
             custom_event_messages=None,
         )
+
+    def get_gems_view_matrix(
+        self,
+        study_id: str,
+        output_id: str,
+        view_id: str,
+        aggregation_id: str,
+        metric_location: str,
+        mc_year: int | None,
+    ) -> GemsViewMatrix:
+        """
+        Returns one location of an aggregation pattern of a GEMS view as a matrix,
+        for one 1-based Monte Carlo year if the pattern has one set of values per year.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_unarchived_output_storage(study_id, output_id)
+        return storage.get_gems_view_matrix(study_id, output_id, view_id, aggregation_id, metric_location, mc_year)

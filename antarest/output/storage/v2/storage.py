@@ -48,7 +48,7 @@ from antarest.output.filestudy.model import QueryFileType
 from antarest.output.filestudy.variables import extract_variables_list
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
-from antarest.output.model.gems_views import GemsTaxonomyViews
+from antarest.output.model.gems_views import GemsTaxonomyViews, GemsViewMatrix
 from antarest.output.model.output_type import OutputType
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -463,6 +463,18 @@ class V2OutputStorage(IOutputStorage):
 
     @override
     def materialize_gems_views(self, study_id: str, output_id: str) -> None:
+        raise OutputGemsViewsNotFound(output_id)
+
+    @override
+    def get_gems_view_matrix(
+        self,
+        study_id: str,
+        output_id: str,
+        view_id: str,
+        aggregation_id: str,
+        metric_location: str,
+        mc_year: int | None,
+    ) -> GemsViewMatrix:
         raise OutputGemsViewsNotFound(output_id)
 
     @override

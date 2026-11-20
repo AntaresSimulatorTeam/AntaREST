@@ -14,6 +14,7 @@ import io
 import zipfile
 from pathlib import Path
 
+import pytest
 from starlette.testclient import TestClient
 
 from antarest.core.tasks.model import TaskStatus
@@ -144,3 +145,88 @@ def test_output_gems_views(
     for res in (client.get(url), client.post(f"{url}/materialize")):
         assert res.status_code == 400, res.json()
         assert res.json()["exception"] == "UnsupportedOperationOnArchivedOutput"
+
+
+@pytest.mark.parametrize("output_storage", ["IN_STUDY_FILE_TREE", "OUT_OF_STUDY_FILE_TREE"])
+def test_output_gems_view_matrix(
+    client: TestClient,
+    user_access_token: str,
+    internal_study_id: str,
+    gems_views_output_dir: Path,
+    output_storage: str,
+) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    res = client.post(
+        f"/v1/studies/{internal_study_id}/output",
+        files={"output": _zip_directory(gems_views_output_dir)},
+        params={"storage_type": output_storage},
+    )
+    assert res.status_code == 202, res.json()
+    output_id = res.json()
+    outputs = client.get(f"/v1/studies/{internal_study_id}/outputs").json()
+    assert next(output for output in outputs if output["id"] == output_id)["storageType"] == output_storage
+    matrix_url = f"/v1/studies/{internal_study_id}/outputs/{output_id}/gems-views/view_storage/matrix"
+    synthesis = {"aggregation_id": "annual_all_scenario", "metric_location": "area3_node"}
+    year_2 = {"aggregation_id": "hourly_per_scenario", "metric_location": "area3_node", "mc_year": 2}
+    metrics = ["CASHFLOW", "LEVELS", "P_INJECTION", "P_WITHDRAWAL"]
+
+    # Synthesis: the matrix does not need the views to be materialized
+    res = client.get(matrix_url, params=synthesis)
+    assert res.status_code == 200, res.json()
+    matrix = res.json()
+    assert matrix["index"] == {"startDate": "2026-01-01T00:00:00", "steps": 1, "timeGranularity": "year"}
+    assert matrix["columns"] == [
+        [f"area3_short_term_storage_st / {metric}", "", stat]
+        for metric in metrics
+        for stat in ["exp", "std", "min", "max"]
+    ]
+    assert matrix["data"] == [
+        [5145405.5, 2005321.5, 3140084.0, 7150727.0]
+        + [5000.0, 0.0, 5000.0, 5000.0]
+        + [0.0, 0.0, 0.0, 0.0]
+        + [4194.0, 0.0, 4194.0, 4194.0]
+    ]
+
+    # One Monte Carlo year
+    res = client.get(matrix_url, params=year_2)
+    assert res.status_code == 200, res.json()
+    matrix = res.json()
+    assert matrix["index"] == {"startDate": "2026-01-01T00:00:00", "steps": 3, "timeGranularity": "hour"}
+    assert matrix["columns"] == [[f"area3_short_term_storage_st / {metric}", "", ""] for metric in metrics]
+    assert matrix["data"] == [[35.0, 5000.0, 0.0, 7.0], [40.0, 5000.0, 0.0, 8.0], [5.0, 5000.0, 0.0, 1.0]]
+
+    # Year not simulated
+    res = client.get(matrix_url, params={**year_2, "mc_year": 3})
+    assert res.status_code == 404, res.json()
+    assert res.json()["exception"] == "GemsViewMatrixNotFound"
+
+    # Legacy output
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/outputs/20201014-1427eco/gems-views/view_storage/matrix", params=synthesis
+    )
+    assert res.status_code == 404, res.json()
+    assert res.json()["exception"] == "OutputGemsViewsNotFound"
+
+    # Archived output
+    res = client.post(f"/v1/studies/{internal_study_id}/outputs/{output_id}/_archive")
+    assert res.status_code == 200, res.json()
+    task = wait_task_completion(client, user_access_token, res.json())
+    assert task.status == TaskStatus.COMPLETED
+    res = client.get(matrix_url, params=synthesis)
+    assert res.status_code == 400, res.json()
+    assert res.json()["exception"] == "UnsupportedOperationOnArchivedOutput"
+
+
+@pytest.mark.parametrize("storage_type", ["v2"], indirect=True)
+def test_output_gems_view_matrix_v2(
+    client: TestClient, user_access_token: str, internal_study_id: str, storage_type: dict[str, str]
+) -> None:
+    client.headers = {"Authorization": f"Bearer {user_access_token}"}
+    output_id = storage_type["20201014-1427eco"]
+
+    res = client.get(
+        f"/v1/studies/{internal_study_id}/outputs/{output_id}/gems-views/view_storage/matrix",
+        params={"aggregation_id": "annual_all_scenario", "metric_location": "area3_node"},
+    )
+    assert res.status_code == 404, res.json()
+    assert res.json()["exception"] == "OutputGemsViewsNotFound"

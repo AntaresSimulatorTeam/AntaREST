@@ -49,6 +49,7 @@ from antarest.launcher.model import LogType
 from antarest.matrixstore.in_memory import InMemorySimpleMatrixService
 from antarest.output.filestudy.aggregation import AggregatorManager
 from antarest.output.filestudy.download import build_matrix_aggregation_result
+from antarest.output.filestudy.gems_view_matrix import get_view_matrix
 from antarest.output.filestudy.gems_views import extract_gems_views
 from antarest.output.filestudy.matrixfiles import get_start_column, parse_output_file_as_pandas_dataframe
 from antarest.output.filestudy.metadata import parse_output_config
@@ -63,7 +64,7 @@ from antarest.output.model import (
     StudyDownloadDTO,
 )
 from antarest.output.model.download import MatrixIndex
-from antarest.output.model.gems_views import GemsTaxonomyViews
+from antarest.output.model.gems_views import GemsTaxonomyViews, GemsViewMatrix
 from antarest.output.model.output_type import OutputType
 from antarest.output.storage.file.repository import FileOutputRepository
 from antarest.output.storage.output_storage import (
@@ -670,6 +671,19 @@ class AbstractFileOutputStorage(IOutputStorage):
         output_path = self._require_gems_output_path(study_id, output_id)
         views = extract_gems_views(output_path)
         self._repository.save_output_gems_views(study_id, output_id, views)
+
+    @override
+    def get_gems_view_matrix(
+        self,
+        study_id: str,
+        output_id: str,
+        view_id: str,
+        aggregation_id: str,
+        metric_location: str,
+        mc_year: int | None,
+    ) -> GemsViewMatrix:
+        output_path = self._require_gems_output_path(study_id, output_id)
+        return get_view_matrix(output_path, output_id, view_id, aggregation_id, metric_location, mc_year)
 
     def _build_output_node(self, study_id: str, output_id: str) -> Output:
         study_outputs = self._outputs_provider.get_outputs(study_id)

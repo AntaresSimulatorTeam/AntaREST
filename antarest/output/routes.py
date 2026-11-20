@@ -43,7 +43,7 @@ from antarest.output.model import (
     OutputViewResponse,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
-from antarest.output.model.gems_views import GemsTaxonomyViews
+from antarest.output.model.gems_views import GemsTaxonomyViews, GemsViewMatrix
 from antarest.output.model.output_id import OutputId
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.output.variable_view.model import OutputItemId
@@ -303,6 +303,57 @@ def create_output_routes() -> APIRouter:
         """
         logger.info(f"Materializing GEMS views of the output {output_id} for study {study_id}")
         return output_service.materialize_gems_views(study_id, output_id)
+
+    @bp.get(
+        "/studies/{study_id}/outputs/{output_id}/gems-views/{view_id}/matrix",
+        summary="Fetches one location of a GEMS view as a matrix",
+        responses={
+            400: {"description": "The output is archived"},
+            404: {
+                "description": "The output, its GEMS views, the view, the aggregation pattern,"
+                " or its data for these parameters does not exist"
+            },
+            422: {"description": "`mc_year` is missing or not allowed for this aggregation pattern"},
+            500: {"description": "The view config or file is invalid"},
+        },
+    )
+    def get_gems_view_matrix(
+        output_service: OutputServiceDep,
+        study_id: UuidStr,
+        output_id: OutputId,
+        view_id: SanitizedStr,
+        aggregation_id: Annotated[
+            SanitizedStr,
+            Query(description="Id of an aggregation pattern of the view, as listed by `GET .../gems-views`"),
+        ],
+        metric_location: Annotated[SanitizedStr, Query(description="Exact `metric_location` value, e.g. `area1_node`")],
+        mc_year: Annotated[
+            int | None,
+            Query(
+                ge=1,
+                description="1-based Monte Carlo year: required if the pattern has one set of values per year"
+                " (`scenario: false`), not allowed if it has statistics across years (`scenario: true`)",
+            ),
+        ] = None,
+    ) -> GemsViewMatrix:
+        """
+        Returns one location of an aggregation pattern of a GEMS view, in the shape of `GET /raw` matrices:
+
+        - `index`: row `i` is `startDate` (UTC, null if the values have no date) plus `i` steps of `timeGranularity`.
+          Dates come from the view builder calendar, not the study settings.
+        - `columns`: `[variable, unit, stat]`. The variable is the breakdown values followed by the metric id,
+          the unit is always empty, and the stat is empty for one year. The breakdown tells apart the metrics
+          of a location, e.g. `gas / GENERATION` and `nuclear / GENERATION` for the clusters of an area.
+          Columns without breakdown come first, then the columns of each breakdown.
+        - `data`: one row per step, `null` for missing values. Values without date are ignored when others have one.
+        """
+        logger.info(
+            f"Fetching GEMS view '{view_id}' matrix (pattern '{aggregation_id}', location '{metric_location}',"
+            f" mc_year {mc_year}) of the output {output_id} for study {study_id}"
+        )
+        return output_service.get_gems_view_matrix(
+            study_id, output_id, view_id, aggregation_id, metric_location, mc_year
+        )
 
     @bp.get(
         "/studies/{study_id}/outputs",
