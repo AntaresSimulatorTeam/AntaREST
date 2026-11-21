@@ -42,7 +42,7 @@ export interface AdequacyPatchFormFields {
   // Appeared in v8.3 and removed in v9.2
   ntcBetweenPhysicalAreasOutAdequacyPatch?: boolean;
   // Version 9.3
-  redispatch?: boolean;
+  thresholdEns?: number;
 }
 
 ////////////////////////////////////////////////////////////////
