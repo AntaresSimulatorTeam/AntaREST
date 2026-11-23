@@ -23,8 +23,7 @@ DEFAULT_THRESHOLD_ENS = 0.0
 
 
 def upgrade() -> None:
-    # Migration 55ae4521e871 added `threshold_ens` as a nullable column without filling existing rows.
-    # Database studies created before it kept NULL: the API omits the field and the webapp form cannot be saved.
+    # Study versions can be stored in compact or dotted form.
     op.execute(
         text(
             """
@@ -35,10 +34,10 @@ def upgrade() -> None:
                   SELECT sd.study_data_id
                   FROM study_data sd
                   JOIN study s ON s.id = sd.study_id
-                  WHERE CAST(s.version AS INTEGER) >= :min_version
+                  WHERE s.version IN ('930', '9.3', '1020', '10.2', '1030', '10.3')
               )
             """
-        ).bindparams(default=DEFAULT_THRESHOLD_ENS, min_version=MIN_STUDY_VERSION)
+        ).bindparams(default=DEFAULT_THRESHOLD_ENS)
     )
 
 
