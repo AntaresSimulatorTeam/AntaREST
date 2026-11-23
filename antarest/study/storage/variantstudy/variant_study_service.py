@@ -208,6 +208,9 @@ class VariantStudyService(AbstractStudyService):
         """
         Removes the snapshot of the variant and marks it as archived.
 
+        This is a low-level operation on a single variant: it neither archives its outputs
+        nor its descendants. Use `StudyService.archive` instead, which handles both.
+
         The generation lock is held, so that a running snapshot generation ends before the snapshot is removed.
         """
         with self._generation_lock(variant_study.id):
