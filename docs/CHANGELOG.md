@@ -33,6 +33,7 @@ v2.37.0 (2026-11-25)
 * **ui-hydro**: hide reservoir levels tab in scenarized mode [`#3509`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3509)
 * **outputs**: add GEMS output views endpoint [`#3490`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3490)
 * **adequacy-patch**: add field 'threshold-ens' in adequacy patch [`#3513`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3513)
+* **ui-adp**: add thresholdEns field and remove redispatch field [`#3522`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3522)
 
 ### Bug fixes
 
