@@ -42,14 +42,15 @@ export const Route = createFileRoute(
 
 function Constraint() {
   const study = useStudy();
-  const { areaId, storageId, constraintId } = Route.useParams();
+  const params = Route.useParams();
   const { t } = useTranslation();
   const [matrixDialogOpen, toggleMatrixDialogOpen] = useToggle(false);
   const { confirm } = useDialog();
-  const updateConstraint = useUpdateStorageConstraint();
-  const deleteConstraint = useDeleteStorageConstraint();
+  const updateConstraint = useUpdateStorageConstraint(params);
+  const deleteConstraint = useDeleteStorageConstraint(params);
   const constraint = useStorageConstraint();
   const isOptimistic = isQueryListItemOptimistic(constraint);
+  const { areaId, storageId, constraintId } = params;
 
   ////////////////////////////////////////////////////////////////
   // Event handlers
@@ -59,9 +60,6 @@ function Constraint() {
     const { id, name, occurrences, ...rest } = dirtyValues;
 
     return updateConstraint.mutateAsync({
-      studyId: study.id,
-      areaId,
-      storageId,
       constraintId,
       values: occurrences ? { ...rest, occurrences: values.occurrences } : rest,
     });
@@ -77,12 +75,7 @@ function Constraint() {
     });
 
     if (isConfirmed) {
-      deleteConstraint.mutate({
-        studyId: study.id,
-        areaId,
-        storageId,
-        constraintId,
-      });
+      deleteConstraint.mutate({ constraintId });
     }
   };
 
@@ -137,6 +130,7 @@ function Constraint() {
             studyId={study.id}
             title={t("global.timeSeries")}
             url={`input/st-storage/constraints/${areaId}/${storageId}/rhs_${constraintId}`}
+            filterKey={`storages.constraints.${constraint.variable}`}
             // Since v9.3 supports resize, older versions need fixed layout
             {...(semver.lt(study.version, "9.3.0") && {
               isTimeSeries: false,

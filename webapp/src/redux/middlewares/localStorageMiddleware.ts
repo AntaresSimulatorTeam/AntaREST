@@ -18,6 +18,7 @@ import { createListenerMiddleware, isAnyOf } from "@reduxjs/toolkit";
 import type { AppState } from "../ducks";
 import { login, logout, refresh } from "../ducks/auth";
 import {
+  requestStudyFolderReveal,
   updateStudiesFromLocalStorage,
   updateStudyFilters,
   updateStudySortConfig,
@@ -74,7 +75,7 @@ localStorageMiddleware.startListening({
 // Persist navigation state so the selected directory remains open after a page refresh.
 // Search and filter-panel fields are intentionally excluded.
 localStorageMiddleware.startListening({
-  actionCreator: updateStudyFilters,
+  matcher: isAnyOf(updateStudyFilters, requestStudyFolderReveal),
   effect: (_, listenerApi) => {
     const { activeTree, managed, external } = getStudyFilters(listenerApi.getState());
     storage.setItem(StorageKey.StudiesFilters, { activeTree, managed, external });

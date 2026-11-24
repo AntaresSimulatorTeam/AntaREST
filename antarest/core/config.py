@@ -37,7 +37,6 @@ class LauncherType(StrEnum):
 
 class InternalMatrixFormat(StrEnum):
     TSV = "tsv"
-    HDF = "hdf"
     PARQUET = "parquet"
     FEATHER = "feather"
 

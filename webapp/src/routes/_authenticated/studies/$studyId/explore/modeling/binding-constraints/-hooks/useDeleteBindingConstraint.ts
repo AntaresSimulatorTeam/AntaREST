@@ -44,8 +44,8 @@ function useDeleteBindingConstraint() {
       const constraintToDelete = prevConstraints?.find((c) => c.id === constraintToDeleteId);
 
       if (constraintToDelete) {
-        queryClient.setQueryData(queryListKey, (old) => {
-          return old?.filter((constraint) => constraint.id !== constraintToDeleteId);
+        queryClient.setQueryData(queryListKey, (old = []) => {
+          return old.filter((constraint) => constraint.id !== constraintToDeleteId);
         });
       }
 

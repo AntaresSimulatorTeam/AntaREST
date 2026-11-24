@@ -16,7 +16,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { updateStudyFilters } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
+import { getDescendantIds } from "@/utils/directoryUtils";
 import type { Directory } from "@/services/api/directories/types";
 import type { DirectoryDestination } from "./types";
 import { resolveRedirectDirectoryId } from "./utils";
@@ -24,7 +24,7 @@ import { resolveRedirectDirectoryId } from "./utils";
 /**
  * Hook returning a callback that points the studies page at a destination directory.
  *
- * Shared by Move and Import dialogs which both navigate to `/studies` after success.
+ * Shared by creation, move, and import dialogs that navigate to `/studies` after success.
  * The caller is responsible for ensuring `directories` is fresh (invalidating the
  * directory cache when new sub-directories were created).
  *

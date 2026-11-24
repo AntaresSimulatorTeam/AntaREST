@@ -38,46 +38,57 @@ class DiskSpaceAnalyzerTaskResult(BaseModel):
 def disk_space_analysis(
     service: StudyService, disk_repo: StudyDiskSpaceRepository, lock_folder: Path
 ) -> DiskSpaceAnalyzerTaskResult:
+    """
+    Analyzes the disk space of managed studies.
+
+    A study is analyzed again if its analysis was invalidated (see `StudyDiskSpaceRepository.invalidate`)
+    or if its `updated_at` is more recent than its last analysis.
+
+    The analysis date is the date the analysis starts, so a change happening during the measure
+    is detected by the next analysis.
+    """
     start_time = time.time()
 
     updated_studies = 0
 
     try:
-        with db():
-            with create_file_lock(lock_id=LockId.STUDY_DISK_SPACE, lock_folder=lock_folder):
-                # we're giving admin access to the disk space analyzer due to the search_studies method
-                studies = service.repository.get_all(
-                    StudyFilter(access_permissions=AccessPermissions(is_admin=True), managed=True)
-                )
-                disk_analysis = disk_repo.get_all()
+        with db(), create_file_lock(lock_id=LockId.STUDY_DISK_SPACE, lock_folder=lock_folder):
+            # we're giving admin access to the disk space analyzer due to the search_studies method
+            studies = service.repository.get_all(
+                StudyFilter(access_permissions=AccessPermissions(is_admin=True), managed=True)
+            )
+            disk_analysis = disk_repo.get_all()
 
-                dict_analysis = {element.study_id: element for element in disk_analysis}
+            dict_analysis = {element.study_id: element for element in disk_analysis}
 
-                for study in studies:
-                    try:
-                        study_id = study.id
-                        updated_at = study.updated_at
-                        filtered_analysis = dict_analysis.get(study_id, None)
+            for study in studies:
+                try:
+                    study_id = study.id
+                    filtered_analysis = dict_analysis.get(study_id, None)
+                    analysis_date = current_time()
 
-                        if not filtered_analysis:
-                            logger.info(f"Creating a disk space analysis for study {study_id}")
-                            study_disk_analysis = StudyDiskSpaceAnalysis(
-                                study_id=study_id,
-                                disk_space_bytes=service.get_disk_usage(study_id),
-                                last_analysis_date=current_time(),
-                            )
-                            disk_repo.save(study_disk_analysis)
-                            updated_studies += 1
+                    if not filtered_analysis:
+                        logger.info(f"Creating a disk space analysis for study {study_id}")
+                        study_disk_analysis = StudyDiskSpaceAnalysis(
+                            study_id=study_id,
+                            disk_space_bytes=service.compute_disk_usage(study_id),
+                            last_analysis_date=analysis_date,
+                        )
+                        disk_repo.save(study_disk_analysis)
+                        updated_studies += 1
 
-                        elif updated_at is not None and (filtered_analysis.last_analysis_date < updated_at):
-                            logger.info(f"Updating disk space analysis for study {study_id}")
+                    elif (
+                        filtered_analysis.invalidated_at is not None
+                        and filtered_analysis.last_analysis_date < filtered_analysis.invalidated_at
+                    ):
+                        logger.info(f"Updating disk space analysis for study {study_id}")
 
-                            usage = service.get_disk_usage(study_id)
-                            disk_repo.update(study_id, usage)
-                            updated_studies += 1
+                        usage = service.compute_disk_usage(study_id)
+                        disk_repo.update(study_id, usage, analysis_date)
+                        updated_studies += 1
 
-                    except Exception as e:
-                        logger.error(f"Failed to analyze disk space for study {study_id}: {e}", exc_info=e)
+                except Exception as e:
+                    logger.error(f"Failed to analyze disk space for study {study_id}: {e}", exc_info=e)
 
     except LockNotAcquired:
         logger.info("Could not acquire lock, another disk space analysis is probably running")

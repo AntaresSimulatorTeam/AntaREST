@@ -47,6 +47,16 @@ const logError = debug("antares:websocket:error");
 
 const RECONNECTION_DEFAULT_DELAY = 3000;
 
+// TODO: Revisit the timer map and hasEditEvent after creation sets publicMode/tags
+// before emitting StudyCreated. Remove them only once the TanStack Query integration
+// also avoids duplicate refreshes between mutation responses and WebSocket events.
+const STUDY_REFRESH_DELAY = 100;
+
+const pendingStudyRefreshes = new Map<
+  string,
+  { timer: ReturnType<typeof setTimeout>; hasEditEvent: boolean }
+>();
+
 let webSocket: WebSocket | null;
 let eventListeners: WsEventListener[] = [];
 let channelSubscribed = new Set<string>();
@@ -192,6 +202,10 @@ export function closeWs(clean = true) {
   webSocket = null;
 
   if (clean) {
+    for (const { timer } of pendingStudyRefreshes.values()) {
+      clearTimeout(timer);
+    }
+    pendingStudyRefreshes.clear();
     eventListeners = [];
     channelSubscribed = new Set();
     globalListenerAdded = false;
@@ -210,17 +224,30 @@ export function reloadWs(dispatch: AppDispatch, user?: UserInfo) {
 function makeStudyListener(dispatch: AppDispatch): WsEventListener {
   return function listener(e: WsEvent) {
     switch (e.type) {
-      case WsEventType.StudyCreated: {
-        const study = getStudy(store.getState(), e.payload.id);
-        if (!study) {
-          dispatch(setStudy(e.payload));
-        }
+      case WsEventType.StudyCreated:
+      case WsEventType.StudyEdited: {
+        const studyId = e.payload.id;
+        const pending = pendingStudyRefreshes.get(studyId);
+
+        // Group nearby events for this study to avoid repeated GETs.
+        // If Redux already has the study (e.g. added by the create request),
+        // StudyCreated needs no refresh. StudyEdited means that data may be outdated,
+        // so remember the edit and refresh even if a later creation event resets the timer.
+        const hasEditEvent = e.type === WsEventType.StudyEdited || !!pending?.hasEditEvent;
+        clearTimeout(pending?.timer);
+
+        const timer = setTimeout(() => {
+          pendingStudyRefreshes.delete(studyId);
+          if (hasEditEvent || !getStudy(store.getState(), studyId)) {
+            dispatch(setStudy(studyId));
+          }
+        }, STUDY_REFRESH_DELAY);
+        pendingStudyRefreshes.set(studyId, { timer, hasEditEvent });
         break;
       }
-      case WsEventType.StudyEdited:
-        dispatch(setStudy(e.payload));
-        break;
       case WsEventType.StudyDeleted:
+        clearTimeout(pendingStudyRefreshes.get(e.payload.id)?.timer);
+        pendingStudyRefreshes.delete(e.payload.id);
         dispatch(deleteStudy(e.payload));
         break;
     }

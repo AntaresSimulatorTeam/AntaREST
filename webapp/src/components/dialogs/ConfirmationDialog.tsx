@@ -13,13 +13,14 @@
  */
 
 import { Button } from "@mui/material";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import BasicDialog, { type BasicDialogProps } from "./BasicDialog";
 
 export interface ConfirmationDialogProps extends Omit<BasicDialogProps, "actions"> {
   cancelButtonText?: string;
   confirmButtonText?: string;
-  onConfirm: VoidFunction;
+  onConfirm: () => void | Promise<unknown>;
   onCancel: VoidFunction;
   disableConfirm?: boolean;
   onlyCloseOnCancel?: boolean;
@@ -37,12 +38,27 @@ function ConfirmationDialog({
 }: ConfirmationDialogProps) {
   const { t } = useTranslation();
   const { alert } = basicDialogProps;
+  const [loading, setLoading] = useState(false);
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
+  const handleConfirm = async () => {
+    setLoading(true);
+
+    try {
+      await onConfirm();
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClose = (...args: Parameters<NonNullable<BasicDialogProps["onClose"]>>) => {
+    if (loading) {
+      return;
+    }
+
     onCancel();
     onClose?.(...args);
   };
@@ -58,10 +74,16 @@ function ConfirmationDialog({
       {...basicDialogProps}
       actions={
         <>
-          <Button onClick={onCancel} color={alert ? "inherit" : "primary"}>
+          <Button onClick={onCancel} color={alert ? "inherit" : "primary"} disabled={loading}>
             {cancelButtonText || t("global.cancel")}
           </Button>
-          <Button onClick={onConfirm} variant="contained" disabled={disableConfirm} color={alert}>
+          <Button
+            onClick={handleConfirm}
+            variant="contained"
+            disabled={disableConfirm}
+            loading={loading}
+            color={alert}
+          >
             {confirmButtonText || t("global.confirm")}
           </Button>
         </>

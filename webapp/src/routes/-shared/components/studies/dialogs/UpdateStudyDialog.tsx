@@ -28,13 +28,13 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import useEnqueueErrorSnackbar from "../../../../../hooks/useEnqueueErrorSnackbar";
 import usePromiseWithSnackbarError from "../../../../../hooks/usePromiseWithSnackbarError";
-import { updateStudy } from "../../../../../redux/ducks/studies";
+import { updateStudy as updateStudyInStore } from "../../../../../redux/ducks/studies";
 import useAppDispatch from "../../../../../redux/hooks/useAppDispatch";
 import {
   addStudyGroup,
   changePublicMode,
   deleteStudyGroup,
-  updateStudyMetadata,
+  updateStudy,
 } from "../../../../../services/api/study";
 import { getGroups } from "../../../../../services/api/user";
 import type { StudyMetadata } from "../../../../../types/types";
@@ -80,7 +80,7 @@ function UpdateStudyDialog({ open, onClose, study }: Props) {
 
       // Update metadata
       if (name || tags) {
-        await updateStudyMetadata(studyId, {
+        await updateStudy(studyId, {
           name: data.values.name.trim(),
           tags: data.values.tags,
         });
@@ -102,7 +102,7 @@ function UpdateStudyDialog({ open, onClose, study }: Props) {
       }
 
       dispatch(
-        updateStudy({
+        updateStudyInStore({
           id: study.id,
           changes: {
             name: data.values.name.trim(),

@@ -30,6 +30,7 @@ import {
   createAsyncThunk,
   createEntityAdapter,
   createReducer,
+  nanoid,
 } from "@reduxjs/toolkit";
 import { isAxiosError } from "axios";
 import * as R from "ramda";
@@ -64,6 +65,20 @@ export interface StudyFilters {
   tags: string[];
 }
 
+interface ManagedStudyFolder extends Pick<StudyFilters["managed"], "directoryId" | "directoryIds"> {
+  tree: "managed";
+}
+
+interface ExternalStudyFolder extends Pick<StudyFilters["external"], "path"> {
+  tree: "external";
+}
+
+export type StudyFolder = ManagedStudyFolder | ExternalStudyFolder;
+
+export type StudyFolderRevealRequest = StudyFolder & {
+  requestId: string;
+};
+
 export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   current: string;
   prevStudyId: string;
@@ -71,6 +86,7 @@ export interface StudiesState extends AsyncEntityState<StudyMetadata> {
   versionList: string[];
   filters: StudyFilters;
   sort: StudySortConfig;
+  folderRevealRequest: StudyFolderRevealRequest | null;
 }
 
 interface StudyCreator {
@@ -80,6 +96,7 @@ interface StudyCreator {
   publicMode?: StudyPublicMode;
   tags?: string[];
   storageMode?: StorageMode;
+  directory?: string;
 }
 
 interface StudyUpload {
@@ -129,6 +146,7 @@ const initialState = studiesAdapter.getInitialState({
   versionList: [] as string[],
   filters: buildInitialFilters(),
   sort: DEFAULT_STUDY_SORT_CONFIG,
+  folderRevealRequest: null,
 }) as StudiesState;
 
 const n = makeActionName("study");
@@ -152,6 +170,13 @@ export const setStudyScrollPosition = createAction<StudiesState["scrollPosition"
 export const updateStudyFilters = createAction<O.Partial<StudyFilters, "deep">>(
   n("UPDATE_FILTERS"),
 );
+
+/** Selects a folder and creates a new reveal request on every call. */
+export const requestStudyFolderReveal = createAction(n("REVEAL_FOLDER"), (folder: StudyFolder) => ({
+  payload: { ...folder, requestId: nanoid() },
+}));
+
+export const finishStudyFolderReveal = createAction<string>(n("FINISH_FOLDER_REVEAL"));
 
 export const updateStudySortConfig = createAction<Partial<StudySortConfig>>(
   n("UPDATE_SORT_CONFIG"),
@@ -186,17 +211,19 @@ export const createStudy = createAsyncThunk<StudyMetadata, CreateStudyArg, AppAs
       }
 
       // StudyCreator
-      const { name, version, groups, publicMode, tags, storageMode } = arg;
+      const { name, version, groups, publicMode, tags, storageMode, directory } = arg;
 
-      // TODO: add publicMode and tags in createStudy API to prevent multiple WebSocket trigger
-      const studyId = await api.createStudy(name, version, groups, storageMode);
+      // TODO: Accept publicMode and tags in the creation API to avoid follow-up edit events.
+      const studyId = await api.createStudy(name, version, groups, storageMode, directory);
 
-      if (publicMode) {
+      // New studies already use NONE, writing it again emits an unnecessary edit event.
+      if (publicMode && publicMode !== "NONE") {
         await api.changePublicMode(studyId, publicMode);
       }
 
       if (tags && tags.length > 0) {
-        await api.updateStudyMetadata(studyId, { tags });
+        // The update response includes the final metadata, including the public mode above.
+        return api.updateStudy(studyId, { tags });
       }
 
       return api.getStudyMetadata(studyId);
@@ -295,6 +322,35 @@ export default createReducer(initialState, (builder) => {
         action.payload,
       ) as typeof draftState.filters;
       draftState.scrollPosition = 0;
+
+      // A manual navigation supersedes a reveal that may still be loading its path.
+      if (
+        action.payload.activeTree !== undefined ||
+        action.payload.managed?.directoryId !== undefined ||
+        action.payload.external?.path !== undefined
+      ) {
+        draftState.folderRevealRequest = null;
+      }
+    })
+    .addCase(requestStudyFolderReveal, (draftState, { payload }) => {
+      draftState.folderRevealRequest = payload;
+      draftState.filters.activeTree = payload.tree;
+      draftState.scrollPosition = 0;
+
+      if (payload.tree === "managed") {
+        Object.assign(draftState.filters.managed, {
+          directoryId: payload.directoryId,
+          directoryIds: payload.directoryIds,
+          collapsed: false,
+        });
+      } else {
+        Object.assign(draftState.filters.external, { path: payload.path, collapsed: false });
+      }
+    })
+    .addCase(finishStudyFolderReveal, (draftState, { payload }) => {
+      if (draftState.folderRevealRequest?.requestId === payload) {
+        draftState.folderRevealRequest = null;
+      }
     })
     .addCase(updateStudySortConfig, (draftState, action) => {
       Object.assign(draftState.sort, action.payload);

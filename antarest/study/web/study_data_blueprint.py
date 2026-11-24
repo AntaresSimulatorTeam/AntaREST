@@ -23,7 +23,8 @@ from pydantic import Field
 from starlette.responses import RedirectResponse, Response
 
 from antarest.core.api_types import SanitizedStr, UuidStr
-from antarest.core.model import JSON, StudyPermissionType
+from antarest.core.files_tree import FilesTree
+from antarest.core.model import JSON, GemsId, StudyPermissionType
 from antarest.core.utils.web import APITag
 from antarest.dependencies import StudyServiceDep, auth_required
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
@@ -72,6 +73,10 @@ from antarest.study.business.model.district_model import (
     DistrictCreation,
     DistrictDTO,
     DistrictUpdate,
+)
+from antarest.study.business.model.gems.scenario_builder import (
+    GemsScBuilderMappings,
+    GemsScenarioBuilder,
 )
 from antarest.study.business.model.hydro_allocation_model import (
     HydroAllocation,
@@ -129,7 +134,7 @@ from antarest.study.business.model.thermal_cluster_model import (
     ThermalClusterCreation,
     ThermalClusterUpdate,
 )
-from antarest.study.business.model.user_model import ResourceType, UserResourcesTree
+from antarest.study.business.model.user_model import ResourceType
 from antarest.study.business.table_mode_management import TableDataDTO, TableModeType
 from antarest.study.model import CommentsDto
 from antarest.study.storage.rawstudy.model.filesystem.config.identifier import transform_name_to_id
@@ -2416,7 +2421,7 @@ def create_study_data_routes() -> APIRouter:
         return study_service.get_study_data(study_id)
 
     @bp.get("/studies/{uuid}/user-resources", summary="Fetches tree structure of all user resources for a given study")
-    def get_all_user_resources(study_service: StudyServiceDep, uuid: UuidStr) -> UserResourcesTree:
+    def get_all_user_resources(study_service: StudyServiceDep, uuid: UuidStr) -> FilesTree:
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.user_resources_manager.get_all_user_resources(study_interface)
@@ -2452,5 +2457,53 @@ def create_study_data_routes() -> APIRouter:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.user_resources_manager.delete_user_resource(study_interface, PurePosixPath(path))
+
+    @bp.get(
+        "/studies/{uuid}/gems/scenario-builder",
+        summary="Fetches the scenario builder related to GEMS components for a given study",
+    )
+    def get_gems_scenario_builder(study_service: StudyServiceDep, uuid: UuidStr) -> GemsScenarioBuilder:
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.gems_scenario_builder_manager.get_gems_scenario_builder(study_interface)
+
+    @bp.post(
+        "/studies/{uuid}/gems/scenario-builder",
+        summary="Creates a new scenario inside the GEMS scenario builder for a given study",
+    )
+    def add_scenario_to_gems_scenario_builder(
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: GemsId, data: GemsScBuilderMappings
+    ) -> GemsScBuilderMappings:
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.gems_scenario_builder_manager.add_scenario_to_gems_scenario_builder(
+            study_interface, scenario_name, data
+        )
+
+    @bp.put(
+        "/studies/{uuid}/gems/scenario-builder",
+        summary="Updates the mapping of a scenario inside the GEMS scenario builder for a given study",
+    )
+    def update_scenario_from_gems_scenario_builder(
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: GemsId, data: GemsScBuilderMappings
+    ) -> GemsScBuilderMappings:
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.gems_scenario_builder_manager.update_scenario_from_gems_scenario_builder(
+            study_interface, scenario_name, data
+        )
+
+    @bp.delete(
+        "/studies/{uuid}/gems/scenario-builder",
+        summary="Deletes the given scenario from the gems scenario builder for a given study",
+    )
+    def delete_scenario_from_gems_scenario_builder(
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: GemsId
+    ) -> None:
+        study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
+        study_interface = study_service.get_study_interface(study)
+        study_service.gems_scenario_builder_manager.delete_scenario_from_gems_scenario_builder(
+            study_interface, scenario_name
+        )
 
     return bp

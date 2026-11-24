@@ -28,6 +28,7 @@ EXPECTED_PARAMS = AdequacyPatchParameters(
     threshold_csr_variable_bounds_relaxation=7,
     ntc_between_physical_areas_out_adequacy_patch=True,
     redispatch=None,
+    threshold_ens=None,
 )
 
 
@@ -56,3 +57,11 @@ def test_section_not_in_lowercase(empty_study_880: FileStudy, command_context: C
     expected_params = copy.deepcopy(EXPECTED_PARAMS)
     expected_params.price_taking_order = PriceTakingOrder.LOAD
     assert params == expected_params
+
+
+def test_v930_defaults(empty_study_930: FileStudy, command_context: CommandContext) -> None:
+    # Ensures the v9.3+ only fields default to their expected values when unset.
+    manager = AdequacyPatchManager(command_context)
+    params = manager.get_adequacy_patch_parameters(file_study_interface(empty_study_930))
+    assert params.redispatch is False
+    assert params.threshold_ens == 0

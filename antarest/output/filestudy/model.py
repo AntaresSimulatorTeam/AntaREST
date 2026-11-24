@@ -42,7 +42,6 @@ class MCAllAreasQueryFile(StrEnum):
     DETAILS = "details"
     DETAILS_ST_STORAGE = "details-STstorage"
     DETAILS_RES = "details-res"
-    ID = "id"
 
 
 class MCIndLinksQueryFile(StrEnum):
@@ -51,7 +50,6 @@ class MCIndLinksQueryFile(StrEnum):
 
 class MCAllLinksQueryFile(StrEnum):
     VALUES = "values"
-    ID = "id"
 
 
 QueryFileType: TypeAlias = MCIndAreasQueryFile | MCAllAreasQueryFile | MCIndLinksQueryFile | MCAllLinksQueryFile

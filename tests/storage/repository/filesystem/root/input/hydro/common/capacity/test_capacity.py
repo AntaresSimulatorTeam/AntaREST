@@ -98,23 +98,14 @@ class TestInputHydroCommonCapacity:
 
 
 @pytest.mark.parametrize(
-    "version, hydro_pmax, optional",
+    "version, optional",
     [
-        ("9.1", "hourly", False),
-        ("9.2", "daily", False),
-        ("9.2", "hourly", True),
-        ("10.2", None, False),
-        ("10.2", "daily", False),
-        ("10.2", "hourly", True),
+        ("9.1", False),
+        ("9.2", True),
+        ("10.2", True),
     ],
 )
-def test_missing_maxpower_only_allowed_with_hourly_pmax(
-    tmp_path: Path, version: str, hydro_pmax: str | None, optional: bool
-) -> None:
-    if hydro_pmax is not None:
-        settings = tmp_path / "settings"
-        settings.mkdir()
-        (settings / "generaldata.ini").write_text(f"[compatibility]\nhydro-pmax = {hydro_pmax}\n")
+def test_missing_maxpower_only_allowed_since_v92(tmp_path: Path, version: str, optional: bool) -> None:
     capacity_path = tmp_path / "input/hydro/common/capacity"
     capacity_path.mkdir(parents=True)
     config = FileStudyTreeConfig(

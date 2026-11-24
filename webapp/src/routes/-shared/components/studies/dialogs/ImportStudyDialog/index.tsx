@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import { Divider, Typography } from "@mui/material";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,15 +27,16 @@ import { StorageMode } from "@/types/types";
 
 import { StudyDestinationFE } from "../../StudyDestinationFE";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
+import { useDefaultStudyDestination } from "../../StudyDestinationFE/useDefaultStudyDestination";
 import { useRedirectToDestination } from "../../StudyDestinationFE/useRedirectToDestination";
 import { refreshDirectoriesIfNeeded, toDirectoryPath } from "../../StudyDestinationFE/utils";
+import StudyDestinationLayout from "../StudyDestinationLayout";
+import { studyDestinationDialogPaperSx, studyDestinationRedirectSx } from "../styles";
 
 interface Props {
   open: boolean;
   onClose: VoidFunction;
 }
-
-const ROOT_DESTINATION: DirectoryDestination = { directoryId: null, newSubdirectoriesPath: "" };
 
 const STORAGE_MODE_OPTIONS = [
   { value: StorageMode.FILESYSTEM, label: (t) => t("studies.storageMode.filesystem") },
@@ -47,8 +49,9 @@ function ImportStudyDialog({ open, onClose }: Props) {
   const queryClient = useQueryClient();
   const redirectToDestination = useRedirectToDestination();
   const { data: directories } = useSuspenseQuery(directoryQueries.list());
+  const defaultDestination = useDefaultStudyDestination(directories);
 
-  const [destination, setDestination] = useState<DirectoryDestination>(ROOT_DESTINATION);
+  const [destination, setDestination] = useState<DirectoryDestination>(defaultDestination);
   const [redirect, setRedirect] = useState(true);
   const [storageMode, setStorageMode] = useState(StorageMode.FILESYSTEM);
 
@@ -91,14 +94,22 @@ function ImportStudyDialog({ open, onClose }: Props) {
       onImportComplete={handleImportComplete}
       maxWidth="md"
       fullWidth
-      PaperProps={{ sx: { height: "100%" } }}
-      extraContent={
-        <>
-          <StudyDestinationFE
-            value={destination}
-            onChange={(event) => setDestination(event.target.value)}
-            fillHeight
-          />
+      slotProps={{ paper: { sx: studyDestinationDialogPaperSx } }}
+      contentProps={{ sx: { px: 2, overflow: "hidden" } }}
+    >
+      {(uploadArea) => (
+        <StudyDestinationLayout
+          destination={
+            <StudyDestinationFE
+              value={destination}
+              onChange={(event) => setDestination(event.target.value)}
+              fillHeight
+            />
+          }
+        >
+          <Typography component="h3" variant="subtitle2">
+            {t("global.general")}
+          </Typography>
           <SelectFE
             label={t("studies.storageMode")}
             options={STORAGE_MODE_OPTIONS}
@@ -109,18 +120,19 @@ function ImportStudyDialog({ open, onClose }: Props) {
                 ? t("studies.storageMode.gemsCompatible")
                 : undefined
             }
-            size="small"
           />
           <CheckBoxFE
             value={redirect}
             onChange={(_event, checked) => setRedirect(checked)}
             label={t("studies.destination.redirectAfterImport")}
             size="small"
-            sx={{ color: "text.secondary" }}
+            sx={studyDestinationRedirectSx}
           />
-        </>
-      }
-    />
+          <Divider />
+          {uploadArea}
+        </StudyDestinationLayout>
+      )}
+    </UploadDialog>
   );
 }
 

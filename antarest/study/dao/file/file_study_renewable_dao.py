@@ -102,7 +102,7 @@ class FileStudyRenewableDao(RenewableDao, ABC):
         try:
             file_study.tree.get(path.split("/"), depth=1)
             return True
-        except (KeyError, ChildNotFoundError):
+        except KeyError, ChildNotFoundError:
             return False
 
     @override

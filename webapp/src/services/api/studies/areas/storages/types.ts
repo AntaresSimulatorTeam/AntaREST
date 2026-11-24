@@ -12,9 +12,10 @@
  * This file is part of the Antares project.
  */
 
-import type { AreaWithId, StudyMetadata } from "@/types/types";
+import type { AreaWithId } from "@/types/types";
 import type { PartialExceptFor } from "@/utils/tsUtils";
 import type { z } from "zod";
+import type { Study } from "../../types";
 import type {
   storageCreationSchema,
   storageGroupSchema,
@@ -24,20 +25,19 @@ import type {
 
 export type StorageGroup = z.infer<typeof storageGroupSchema>;
 export type Storage = z.infer<typeof storageSchema>;
-export type StorageResponse = z.input<typeof storageSchema>;
 export type StorageCreation = z.input<typeof storageCreationSchema>;
 export type StorageUpdate = z.input<typeof storageUpdateSchema>;
 
-export interface StoragesAreaParams {
-  studyId: StudyMetadata["id"];
+export interface StoragesParams {
+  studyId: Study["id"];
   areaId: AreaWithId["id"];
 }
 
-export interface StorageParams extends StoragesAreaParams {
+export interface StorageParams extends StoragesParams {
   storageId: Storage["id"];
 }
 
-export interface CreateStorageParams extends StoragesAreaParams {
+export interface CreateStorageParams extends StoragesParams {
   values: StorageCreation;
 }
 
@@ -49,7 +49,7 @@ export interface DuplicateStorageParams extends StorageParams {
   newName: Storage["name"];
 }
 
-export interface DeleteStoragesParams extends StoragesAreaParams {
+export interface DeleteStoragesParams extends StoragesParams {
   storageIds: Array<Storage["id"]>;
 }
 

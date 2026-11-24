@@ -104,6 +104,7 @@ class CommandName(Enum):
     REPLACE_HYDRO_ALLOCATION = "replace_hydro_allocation"
     REPLACE_HYDRO_CORRELATION = "replace_hydro_correlation"
     CONVERT_HYDRO_PMAX = "convert_hydro_pmax"
+    CONVERT_HYDRO_RULE_CURVES = "convert_hydro_rule_curves"
     UPDATE_RESERVES_GLOBAL_PARAMETERS = "update_reserves_global_parameters"
     CREATE_RESERVE_DEFINITION = "create_reserve_definition"
     UPDATE_RESERVE_DEFINITIONS = "update_reserve_definitions"
@@ -114,6 +115,9 @@ class CommandName(Enum):
     REPLACE_ST_STORAGE_RESERVE_SYMMETRIES = "replace_st_storage_reserve_symmetries"
     REPLACE_HYDRO_RESERVE_CERTIFICATIONS = "replace_hydro_reserve_certifications"
     REPLACE_HYDRO_RESERVE_SYMMETRIES = "replace_hydro_reserve_symmetries"
+    CREATE_GEMS_SCENARIO = "create_gems_scenario"
+    UPDATE_GEMS_SCENARIO = "update_gems_scenario"
+    REMOVE_GEMS_SCENARIO = "remove_gems_scenario"
 
 
 @dataclass(frozen=True)

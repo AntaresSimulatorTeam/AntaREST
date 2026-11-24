@@ -11,6 +11,8 @@
 # This file is part of the Antares project.
 import uuid
 import zipfile
+from collections.abc import Callable
+from datetime import datetime, timedelta
 from io import BytesIO
 from pathlib import Path
 from unittest.mock import ANY, Mock
@@ -18,16 +20,18 @@ from unittest.mock import ANY, Mock
 import pytest
 from typing_extensions import override
 
-from antarest.core.exceptions import OutputAlreadyExists, TaskAlreadyRunning
+from antarest.core.exceptions import OutputAlreadyExists, OutputNotFound, TaskAlreadyRunning
 from antarest.core.model import PublicMode, StudyPermissionType
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.core.tasks.model import TaskDTO, TaskResult, TaskStatus, TaskType
 from antarest.core.tasks.service import ITaskService
 from antarest.core.utils.utils import current_time
+from antarest.launcher.model import LogType
+from antarest.output.dbmodel import Output
 from antarest.output.service import IStudyMetadataProvider, OutputService, StudyMetadata
 from antarest.output.storage.file.abstract_storage import FileStudyOutputs, IFileOutputsProvider
 from antarest.output.storage.file.in_study import InStudyFileOutputStorage
-from antarest.output.storage.output_storage import IOutputStorage, OutputStorageType
+from antarest.output.storage.output_storage import IOutputStorage, OutputMetadata, OutputStorageType
 from antarest.study.model import (
     RawStudy,
     StorageMode,
@@ -66,6 +70,10 @@ def _studies_repository(study: Study) -> IStudyMetadataProvider:
         def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
             pass
 
+        @override
+        def invalidate_disk_space(self, study_id: str) -> None:
+            pass
+
     return Impl()
 
 
@@ -83,8 +91,9 @@ def _file_outputs_provider(study: RawStudy) -> IFileOutputsProvider:
 
 
 @with_admin_user
+@pytest.mark.parametrize("success", [False, True])
 def test_unarchive_output_for_other_workspace_is_executed_on_remote(
-    tmp_path: Path, command_context: CommandContext
+    tmp_path: Path, command_context: CommandContext, success: bool
 ) -> None:
     # Prepare services and data
     workspace_name = "other_workspace"
@@ -112,12 +121,14 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
     file_outputs_provider = _file_outputs_provider(study_mock)
     output_storage = InStudyFileOutputStorage(
         cache=cache_mock,
+        config=Mock(),
         outputs_provider=file_outputs_provider,
         remote_executor=remote_executor,
         repository=Mock(),
     )
 
     studies_metadata_repository = _studies_repository(study_mock)
+    output_repository = Mock()
     output_service = OutputService(
         matrix_service=Mock(),
         file_transfer_manager=Mock(),
@@ -125,19 +136,25 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
         studies_repository=studies_metadata_repository,
         storages=[output_storage],
         task_service=task_service,
-        output_repository=Mock(),
+        output_repository=output_repository,
     )
 
     output_id = "some-output"
     assert isinstance(remote_executor.execute_remote_task, Mock)
-    remote_executor.execute_remote_task.return_value = TaskResult(success=True, message="OK")
+    remote_executor.execute_remote_task.return_value = TaskResult(success=success, message="result")
     output_dir = Path(study_mock.path) / "output"
     output_dir.mkdir()
     with zipfile.ZipFile(tmp_path / "output" / f"{output_id}.zip", "w") as zf:
         zf.writestr("fake-file", "")
 
     # Asks for unarchive
-    output_service.unarchive_output(study_id, output_id)
+    if success:
+        output_service.unarchive_output(study_id, output_id)
+        output_repository.save_unarchiving_date.assert_called_once_with(study_id, output_id, ANY)
+    else:
+        with pytest.raises(RuntimeError, match="result"):
+            output_service.unarchive_output(study_id, output_id)
+        output_repository.save_unarchiving_date.assert_not_called()
 
     # Check that a remote unarchive task was created
     remote_executor.execute_remote_task.assert_called_once_with(
@@ -146,6 +163,39 @@ def test_unarchive_output_for_other_workspace_is_executed_on_remote(
             src=str(tmp_path / "output" / f"{output_id}.zip"), dest=str(tmp_path / "output" / output_id)
         ).model_dump(),
     )
+
+
+@pytest.mark.parametrize("storage_type", list(OutputStorageType))
+@pytest.mark.parametrize("success", [False, True])
+def test_unarchiving_date_is_saved_only_after_success_for_all_storages(
+    storage_type: OutputStorageType, success: bool
+) -> None:
+    storage = Mock(spec=IOutputStorage, storage_type=storage_type)
+    storage.output_exists.return_value = True
+    storage.is_output_archived.return_value = True
+    if not success:
+        storage.unarchive_study_output.side_effect = RuntimeError("Unarchiving failed")
+    repository = Mock()
+    service = OutputService(
+        matrix_service=Mock(),
+        file_transfer_manager=Mock(),
+        tmp_dir=Mock(),
+        studies_repository=Mock(spec=IStudyMetadataProvider),
+        storages=[storage],
+        task_service=SimpleSyncTaskService(),
+        output_repository=repository,
+    )
+
+    if success:
+        before = current_time()
+        service.unarchive_output("study", "output")
+        repository.save_unarchiving_date.assert_called_once_with("study", "output", ANY)
+        assert before <= repository.save_unarchiving_date.call_args.args[2] <= current_time()
+    else:
+        with pytest.raises(RuntimeError, match="Unarchiving failed"):
+            service.unarchive_output("study", "output")
+        repository.save_unarchiving_date.assert_not_called()
+    repository.delete.assert_not_called()
 
 
 @with_admin_user
@@ -169,9 +219,14 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
 
     cache_mock = Mock()
     task_service = Mock(spec=ITaskService)
+    output_repository = Mock()
     file_outputs_provider = _file_outputs_provider(study_mock)
     output_storage = InStudyFileOutputStorage(
-        cache=cache_mock, outputs_provider=file_outputs_provider, remote_executor=Mock(), repository=Mock()
+        cache=cache_mock,
+        config=Mock(),
+        outputs_provider=file_outputs_provider,
+        remote_executor=Mock(),
+        repository=Mock(),
     )
 
     studies_metadata_repository = _studies_repository(study_mock)
@@ -182,11 +237,11 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         studies_repository=studies_metadata_repository,
         storages=[output_storage],
         task_service=task_service,
-        output_repository=Mock(),
+        output_repository=output_repository,
     )
 
     output_zipped = "some-output_zipped"
-    output_unzipped = "some-output_unzipped"
+    output_unzipped = "20200101-0000eco"
     (tmp_path / "output" / output_unzipped).mkdir(parents=True)
     (tmp_path / "output" / f"{output_zipped}.zip").touch()
     task_service.list_tasks.side_effect = [
@@ -262,6 +317,83 @@ def test_archive_output_locks(tmp_path: Path, command_context: CommandContext) -
         custom_event_messages=None,
     )
 
+    task_service.list_tasks.side_effect = None
+    task_service.list_tasks.return_value = []
+    cutoff = current_time()
+    recent_unarchiving = cutoff + timedelta(seconds=1)
+    # A successful unarchiving before task execution cancels automatic archiving.
+    output_service.archive_output(study_id, output_unzipped, archive_before=cutoff)
+    output_repository.get.side_effect = [Mock(last_unarchiving_date=recent_unarchiving)]
+    task_service.add_task.call_args.args[0](Mock())
+    assert (tmp_path / "output" / output_unzipped).is_dir()
+    assert not (tmp_path / "output" / f"{output_unzipped}.zip").exists()
+    assert not list((tmp_path / "output").glob("~archive-*.tmp"))
+    output_repository.invalidate_disk_usage.assert_not_called()
+
+    # Maintenance must also leave outputs alone while their whole study is being archived.
+    task_service.list_tasks.return_value = [
+        TaskDTO(
+            id="study-archive",
+            name=f"Study {study_name} archiving",
+            status=TaskStatus.RUNNING,
+            creation_date_utc=str(current_time()),
+            type=TaskType.ARCHIVE,
+            ref_id=study_id,
+        )
+    ]
+    with pytest.raises(TaskAlreadyRunning):
+        output_service.archive_output(study_id, output_unzipped, archive_before=cutoff)
+
+    # Archive an output that remains eligible.
+    task_service.list_tasks.return_value = []
+    output_repository.get.side_effect = None
+    output_repository.get.return_value = Mock(last_unarchiving_date=cutoff)
+    output_service.archive_output(study_id, output_unzipped, archive_before=cutoff)
+    task_service.add_task.call_args.args[0](Mock())
+    assert not (tmp_path / "output" / output_unzipped).exists()
+    assert (tmp_path / "output" / f"{output_unzipped}.zip").is_file()
+    assert not list((tmp_path / "output").glob("~archive-*.tmp"))
+    output_repository.invalidate_disk_usage.assert_called_once_with(study_id, output_unzipped)
+
+
+def _output_service(storage: Mock, studies_repo: Mock) -> OutputService:
+    return OutputService(
+        storages=[storage],
+        matrix_service=Mock(),
+        file_transfer_manager=Mock(),
+        tmp_dir=Mock(),
+        studies_repository=studies_repo,
+        task_service=Mock(),
+        output_repository=Mock(),
+    )
+
+
+def test_delete_output_invalidates_disk_space() -> None:
+    storage = Mock(spec=IOutputStorage, storage_type=OutputStorageType.IN_STUDY_FILE_TREE)
+    studies_repo = Mock(spec=IStudyMetadataProvider)
+
+    _output_service(storage, studies_repo).delete_output("study", "output")
+
+    storage.delete_output.assert_called_once_with("study", "output")
+    studies_repo.invalidate_disk_space.assert_called_once_with("study")
+
+
+def test_import_output_invalidates_disk_space_only_on_success() -> None:
+    storage = Mock(spec=IOutputStorage, storage_type=OutputStorageType.IN_STUDY_FILE_TREE)
+    storage.import_output.return_value = "output_id"
+    studies_repo = Mock(spec=IStudyMetadataProvider)
+    studies_repo.get_study_metadata.return_value = StudyMetadata("id", "name", StorageMode.FILESYSTEM)
+    service = _output_service(storage, studies_repo)
+
+    service.import_output("id", BytesIO())
+    studies_repo.invalidate_disk_space.assert_called_once_with("id")
+
+    studies_repo.invalidate_disk_space.reset_mock()
+    storage.import_output.side_effect = RuntimeError("boom")
+    with pytest.raises(RuntimeError):
+        service.import_output("id", BytesIO())
+    studies_repo.invalidate_disk_space.assert_not_called()
+
 
 def test_already_existing_study_raises_error_and_deletes_output() -> None:
     # TODO: remove or at least adapt this test when pre-check of the output id is implemented
@@ -297,3 +429,83 @@ def test_already_existing_study_raises_error_and_deletes_output() -> None:
 
     storage2.import_output.assert_called()
     storage2.delete_output.assert_called_with("id", "output_id")
+
+
+@pytest.mark.parametrize(
+    "output_id, unarchiving_date, eligible",
+    [
+        ("20251001-1200eco", None, True),
+        ("20260102-1200eco", None, False),
+        ("20260101-0000eco", None, True),
+        ("20251001-1200eco", datetime(2026, 1, 2), False),
+        ("20251001-1200eco", datetime(2025, 12, 31), True),
+        ("20260102-1200eco", datetime(2025, 12, 31), True),
+        ("20260102-1200eco", datetime(2026, 1, 1), True),
+        ("invalid", datetime(2025, 12, 31), True),
+        ("invalid", datetime(2026, 1, 2), False),
+        ("invalid", None, False),
+        ("20261301-1200eco", None, False),
+    ],
+)
+def test_select_outputs_by_id_and_unarchiving_date(
+    output_id: str, unarchiving_date: datetime | None, eligible: bool
+) -> None:
+    repository = Mock()
+    repository.get_all.return_value = [
+        Output(study_id="study", output_id=output_id, last_unarchiving_date=unarchiving_date),
+        Output(study_id="study", output_id="other-output", last_unarchiving_date=datetime(2020, 1, 1)),
+    ]
+    storage = Mock(storage_type=OutputStorageType.IN_STUDY_FILE_TREE)
+    storage.list_outputs.return_value = [
+        OutputMetadata(output_id, in_study=True, archived=False),
+        OutputMetadata("20200101-0000eco", in_study=True, archived=True),
+    ]
+    parquet_storage = Mock(storage_type=OutputStorageType.V2)
+    service = OutputService(
+        matrix_service=Mock(),
+        file_transfer_manager=Mock(),
+        tmp_dir=Mock(),
+        studies_repository=Mock(),
+        storages=[storage, parquet_storage],
+        task_service=Mock(),
+        output_repository=repository,
+    )
+
+    assert service.get_outputs_to_archive("study", datetime(2026, 1, 1)) == ([output_id] if eligible else [])
+    parquet_storage.list_outputs.assert_not_called()
+    repository.get_all.assert_called_once_with("study")
+    repository.get.assert_not_called()
+    repository.save_unarchiving_date.assert_not_called()
+
+
+@pytest.mark.parametrize(
+    "output_id", ["", ".", "..", "../x", "a/b", "..\\", "..\\..\\x", "C:", "C:..", "D:other", "c:foo"]
+)
+def test_output_operations_reject_ids_that_escape_the_outputs_folder(output_id: str) -> None:
+    """
+    An invalid id like ".." must never be joined to a path: for database studies with side-by-side
+    outputs it would reach another study's (CWE-639). `_find_output_storage` rejects it before any
+    storage is consulted, so every output endpoint is covered by the single check.
+    """
+    storage = Mock(spec=IOutputStorage, storage_type=OutputStorageType.IN_STUDY_FILE_TREE)
+    storage.output_exists.return_value = True
+    service = OutputService(
+        matrix_service=Mock(),
+        file_transfer_manager=Mock(),
+        tmp_dir=Mock(),
+        studies_repository=Mock(spec=IStudyMetadataProvider),
+        storages=[storage],
+        task_service=SimpleSyncTaskService(),
+        output_repository=Mock(),
+    )
+
+    operations: list[Callable[[], object]] = [
+        lambda: service.delete_output("study", output_id),
+        lambda: service.get_logs("study", output_id, LogType.STDOUT),
+        lambda: service.get_digest_file("study", output_id),
+    ]
+    for operation in operations:
+        with pytest.raises(OutputNotFound):
+            operation()
+
+    storage.output_exists.assert_not_called()

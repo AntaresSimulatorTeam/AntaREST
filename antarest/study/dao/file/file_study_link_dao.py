@@ -75,7 +75,7 @@ class FileStudyLinkDao(LinkDao, ABC):
             area1_id, area2_id = sorted((area1_id, area2_id))
             file_study.tree.get(["input", "links", area1_id, "properties", area2_id])
             return True
-        except (KeyError, ChildNotFoundError):
+        except KeyError, ChildNotFoundError:
             return False
 
     @override
@@ -124,7 +124,7 @@ class FileStudyLinkDao(LinkDao, ABC):
         try:
             area_links = file_study.tree.get(["input", "links", area_from, "properties", area_to])
             return parse_link(area_links, area_from, area_to)
-        except (KeyError, ChildNotFoundError):
+        except KeyError, ChildNotFoundError:
             raise LinkNotFound(f"The link {area_from} -> {area_to} is not present in the study")
 
     @override

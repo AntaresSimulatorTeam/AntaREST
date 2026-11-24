@@ -21,6 +21,7 @@ from typing_extensions import override
 from antarest.core.model import LowerCaseStr
 from antarest.core.serde import AntaresBaseModel
 from antarest.core.utils.utils import DTO
+from antarest.output.model.output_type import OutputType
 from antarest.study.business.enum_ignore_case import EnumIgnoreCase
 from antarest.study.business.model.binding_constraint_model import (
     BindingConstraint,
@@ -106,6 +107,7 @@ class Simulation(AntaresBaseModel):
     playlist: list[int] | None
     archived: bool = False
     xpansion: str
+    output_type: OutputType
 
     def get_file(self) -> str:
         dash = "-" if self.name else ""
@@ -276,12 +278,12 @@ class FileStudyTreeConfigDTO(AntaresBaseModel):
     study_id: str
     version: StudyVersionStr
     output_path: Path | None = None
-    districts: dict[str, District] = dict()
-    areas: dict[str, AreaConfig] = dict()
-    outputs: dict[str, Simulation] = dict()
-    bindings: list[BindingConstraintConfig] = list()
+    districts: dict[str, District] = {}
+    areas: dict[str, AreaConfig] = {}
+    outputs: dict[str, Simulation] = {}
+    bindings: list[BindingConstraintConfig] = []
     store_new_set: bool = False
-    archive_input_series: list[str] = list()
+    archive_input_series: list[str] = []
     enr_modelling: str = str(EnrModelling.AGGREGATED)
     archive_path: Path | None = None
 

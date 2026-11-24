@@ -137,3 +137,6 @@ HYDRO_MAX_HOURLY_GEN_POWER_TABLE = _create_hydro_matrix_table("hydro_max_hourly_
 HYDRO_MAX_HOURLY_PUMP_POWER_TABLE = _create_hydro_matrix_table("hydro_max_hourly_pump_power")
 HYDRO_MAX_DAILY_GEN_ENERGY_TABLE = _create_hydro_matrix_table("hydro_max_daily_gen_energy")
 HYDRO_MAX_DAILY_PUMP_ENERGY_TABLE = _create_hydro_matrix_table("hydro_max_daily_pump_energy")
+HYDRO_MAX_DAILY_RESERVOIR_LEVELS_TABLE = _create_hydro_matrix_table("hydro_max_daily_reservoir_levels")
+HYDRO_MIN_DAILY_RESERVOIR_LEVELS_TABLE = _create_hydro_matrix_table("hydro_min_daily_reservoir_levels")
+HYDRO_AVG_DAILY_RESERVOIR_LEVELS_TABLE = _create_hydro_matrix_table("hydro_avg_daily_reservoir_levels")

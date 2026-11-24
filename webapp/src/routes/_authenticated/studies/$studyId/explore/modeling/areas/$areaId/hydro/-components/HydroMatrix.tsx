@@ -39,6 +39,7 @@ function HydroMatrix({ type }: Props) {
         studyId={study.id}
         title={hydroMatrix.title}
         url={format(hydroMatrix.url, { areaId: area.id })}
+        filterKey={`hydro.${type}`}
         customColumns={hydroMatrix.columns}
         customRowHeaders={hydroMatrix.rowHeaders}
         aggregateColumns={hydroMatrix.aggregates}

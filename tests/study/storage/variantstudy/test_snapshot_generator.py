@@ -1154,7 +1154,7 @@ class TestSnapshotGenerator:
         variant5 = _create_variant(tmp_path, "variant5", variant4.id, with_snapshot=False)
 
         for k, variant in enumerate([variant1, variant2, variant3, variant4, variant5]):
-            args = to_json_string(dict(area_name=f"fr_{variant.id}"))
+            args = to_json_string({"area_name": f"fr_{variant.id}"})
             variant.commands = [
                 CommandBlock(
                     id=str(uuid.uuid4()),
@@ -1163,7 +1163,7 @@ class TestSnapshotGenerator:
                     command="create_area",
                     version=1,
                     args=args,
-                    study_version="9.3",
+                    study_version=variant.version,
                 )
             ]
             variant_study_service.repository.save(variant)

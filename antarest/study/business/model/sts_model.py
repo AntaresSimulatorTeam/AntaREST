@@ -53,7 +53,7 @@ class STStorageGroup(EnumIgnoreCase):
 Capacity: TypeAlias = Annotated[float, Field(ge=0)]
 Efficiency: TypeAlias = Annotated[float, Field(ge=0)]
 InitialLevel: TypeAlias = Annotated[float, Field(ge=0, le=1)]
-Group: TypeAlias = LowerCaseStr | None
+Group: TypeAlias = LowerCaseStr
 
 
 class STStorage(AntaresBaseModel):
@@ -112,7 +112,7 @@ class STStorageCreation(AntaresBaseModel):
     initial_level: InitialLevel | None = None
     initial_level_optim: bool | None = None
     enabled: bool | None = None
-    group: Group = None
+    group: Group | None = None
     efficiency_withdrawal: Efficiency | None = None
     penalize_variation_injection: bool | None = None
     penalize_variation_withdrawal: bool | None = None
@@ -154,7 +154,7 @@ class STStorageUpdate(AntaresBaseModel):
     initial_level: InitialLevel | None = None
     initial_level_optim: bool | None = None
     enabled: bool | None = None
-    group: Group = None
+    group: Group | None = None
     efficiency_withdrawal: Efficiency | None = None
     penalize_variation_injection: bool | None = None
     penalize_variation_withdrawal: bool | None = None

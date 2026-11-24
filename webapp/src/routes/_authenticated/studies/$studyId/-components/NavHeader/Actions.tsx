@@ -15,37 +15,38 @@
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import FavoriteStudyToggle from "@/routes/-shared/components/studies/FavoriteToggle/FavoriteStudyToggle";
 import StudyActionsMenu from "@/routes/-shared/components/studies/StudyActionsMenu";
-import type { Study } from "@/services/api/studies/types";
-import { unarchiveStudy } from "@/services/api/study";
+import type { VariantTree } from "@/services/api/studies/variants/types";
+import { getDescendantCount } from "@/services/utils";
 import { toError } from "@/utils/fnUtils";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import HistoryOutlinedIcon from "@mui/icons-material/HistoryOutlined";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
 import { Button, Divider, IconButton, Stack, Tooltip } from "@mui/material";
 import { enqueueSnackbar } from "notistack";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
+import useStudyVariantTree from "../../-hooks/useStudyVariantTree";
 import CommandsDrawer from "./CommandsDrawer";
 
 export type DialogType = "commands";
 
-interface Props {
-  parentStudy?: Study;
-  variantNb?: number;
-  isExplorer?: boolean;
-}
-
-function Actions({ parentStudy, variantNb, isExplorer }: Props) {
+function Actions() {
   const study = useStudy();
   const { t } = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [openDialog, setOpenDialog] = useState<DialogType | null>(null);
 
-  const isArchived = study.archived;
-  const isVariant = study.type === "variantstudy";
+  const selectDescendantCount = useCallback(
+    (variantTree: VariantTree) => getDescendantCount(variantTree, study.id),
+    [study.id],
+  );
+
+  const { data: descendantCount } = useStudyVariantTree({
+    studyId: study.id,
+    select: selectDescendantCount,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -68,14 +69,6 @@ function Actions({ parentStudy, variantNb, isExplorer }: Props) {
     }
   };
 
-  const handleUnarchive = async () => {
-    try {
-      await unarchiveStudy(study.id);
-    } catch (err) {
-      enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), toError(err));
-    }
-  };
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -90,20 +83,10 @@ function Actions({ parentStudy, variantNb, isExplorer }: Props) {
           </IconButton>
         </Tooltip>
         <Divider flexItem orientation="vertical" />
-        {isVariant && (
+        {study.type === "variantstudy" && (
           <IconButton color="primary" onClick={() => setOpenDialog("commands")}>
             <HistoryOutlinedIcon />
           </IconButton>
-        )}
-        {isExplorer && isArchived && (
-          <Button
-            onClick={handleUnarchive}
-            startIcon={<UnarchiveOutlinedIcon />}
-            variant="contained"
-            size="extra-small"
-          >
-            {t("global.unarchive")}
-          </Button>
         )}
         <Button
           variant="outlined"
@@ -117,9 +100,8 @@ function Actions({ parentStudy, variantNb, isExplorer }: Props) {
         open={!!anchorEl}
         anchorEl={anchorEl}
         study={study}
-        parentStudy={parentStudy}
-        variantNb={variantNb}
         onClose={() => setAnchorEl(null)}
+        descendantCount={descendantCount}
       />
       <CommandsDrawer open={openDialog === "commands"} studyId={study.id} onClose={closeDialog} />
     </>

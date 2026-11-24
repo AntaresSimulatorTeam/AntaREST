@@ -13,7 +13,7 @@
  */
 
 import DriveFileMoveIcon from "@mui/icons-material/DriveFileMove";
-import { type DialogProps } from "@mui/material";
+import { Divider, List, ListItem, ListItemText, Typography, type DialogProps } from "@mui/material";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useSnackbar } from "notistack";
 import { useTranslation } from "react-i18next";
@@ -30,6 +30,12 @@ import { toError } from "@/utils/fnUtils";
 import StudyDestinationFE from "../../StudyDestinationFE";
 import type { DirectoryDestination } from "../../StudyDestinationFE/types";
 import { useRedirectToDestination } from "../../StudyDestinationFE/useRedirectToDestination";
+import StudyDestinationLayout from "../StudyDestinationLayout";
+import {
+  studyDestinationDialogContentSx,
+  studyDestinationDialogPaperSx,
+  studyDestinationRedirectSx,
+} from "../styles";
 import {
   computeAllowSubmitOnPristine,
   formSchema,
@@ -165,7 +171,9 @@ function MoveStudyDialog({ open, studies, onClose, onRun }: Props) {
       title={t("studies.moveStudies", { count: studies.length })}
       titleIcon={DriveFileMoveIcon}
       config={{ defaultValues }}
-      maxWidth="sm"
+      maxWidth="md"
+      slotProps={{ paper: { sx: studyDestinationDialogPaperSx } }}
+      contentProps={{ sx: studyDestinationDialogContentSx }}
       onSubmit={handleSubmit}
       onSubmitSuccessful={handleSubmitSuccessful}
       onCancel={onClose}
@@ -174,16 +182,34 @@ function MoveStudyDialog({ open, studies, onClose, onRun }: Props) {
       submitButtonText={t("global.move")}
     >
       {({ control }) => (
-        <>
-          <StudyDestinationFE name="destination" control={control} />
+        <StudyDestinationLayout
+          destination={<StudyDestinationFE name="destination" control={control} fillHeight />}
+        >
+          <Typography component="h3" variant="subtitle2">
+            {t("global.general")}
+          </Typography>
           <CheckBoxFE
             name="redirect"
             control={control}
             label={t("studies.destination.redirectAfterMove")}
             size="small"
-            sx={{ color: "text.secondary" }}
+            sx={studyDestinationRedirectSx}
           />
-        </>
+          <Divider />
+          <Typography component="h3" variant="subtitle2">
+            {t("global.studies")} ({studies.length})
+          </Typography>
+          <List dense disablePadding aria-label={t("global.studies")}>
+            {studies.map(({ id, name }) => (
+              <ListItem key={id} disableGutters>
+                <ListItemText
+                  primary={name}
+                  slotProps={{ primary: { sx: { overflowWrap: "anywhere" } } }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </StudyDestinationLayout>
       )}
     </FormDialog>
   );

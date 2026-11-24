@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 
 import enum
+from datetime import datetime
 from typing import Optional, Sequence, cast
 
 from pydantic import NonNegativeInt
@@ -380,6 +381,9 @@ class StudyMetadataRepository:
         result = self.session.execute(stmt)
         return list(result.scalars().all())
 
+    def get_all_ids(self) -> set[str]:
+        return set(self.session.scalars(select(Study.id)).all())
+
     def delete(self, id_: str, *ids: str) -> None:
         ids = (id_,) + ids
         session = self.session
@@ -488,7 +492,7 @@ class DirectoryRepository:
 
     def count_studies(self, directory_id: str) -> int:
         stmt = select(func.count(Study.id)).where(Study.directory_id == directory_id)
-        return int(self.session.scalar(stmt))
+        return self.session.execute(stmt).scalar_one()
 
     def check_cycle(self, directory_id: str, new_parent_id: str) -> bool:
         if directory_id == new_parent_id:
@@ -572,7 +576,7 @@ class DirectoryRepository:
         all_directory_ids.extend([d.id for d in descendants])
 
         stmt = select(func.count(Study.id)).where(Study.directory_id.in_(all_directory_ids))
-        return int(self.session.scalar(stmt))
+        return self.session.execute(stmt).scalar_one()
 
     def get_directory_paths_bulk(self, directory_ids: list[str]) -> dict[str, str]:
         """
@@ -644,13 +648,29 @@ class StudyDiskSpaceRepository:
 
         return disk_analysis
 
-    def update(self, study_id: str, disk_space: int) -> None:
+    def update(self, study_id: str, disk_space: int, analysis_date: datetime) -> None:
         session = self.session
 
         stmt = (
             update(StudyDiskSpaceAnalysis)
             .where(StudyDiskSpaceAnalysis.study_id == study_id)
-            .values(disk_space_bytes=disk_space, last_analysis_date=current_time())
+            .values(disk_space_bytes=disk_space, last_analysis_date=analysis_date)
+        )
+
+        session.execute(stmt)
+        session.commit()
+
+    def invalidate(self, study_id: str) -> None:
+        """
+        Marks the disk space of the study as outdated, so that it is analyzed again by the next analysis.
+        Does nothing if the study has no analysis yet (it will be analyzed anyway).
+        """
+        session = self.session
+
+        stmt = (
+            update(StudyDiskSpaceAnalysis)
+            .where(StudyDiskSpaceAnalysis.study_id == study_id)
+            .values(invalidated_at=current_time())
         )
 
         session.execute(stmt)

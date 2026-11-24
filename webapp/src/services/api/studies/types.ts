@@ -13,18 +13,27 @@
  */
 
 import type z from "zod";
-import type { studySchema } from "./schemas";
+import type { studySchema, studyUpdateSchema } from "./schemas";
 
 export type StudyDTO = z.input<typeof studySchema>;
 
 export type Study = z.output<typeof studySchema>;
 
-export interface CopyStudyParams {
+export type StudyUpdate = z.infer<typeof studyUpdateSchema>;
+
+export interface StudyParams {
   studyId: Study["id"];
+}
+
+export interface CopyStudyParams extends StudyParams {
   studyName: string;
   outputIds?: string[];
   withOutputs?: boolean;
   groups?: string;
   useTask?: boolean;
   destinationFolder?: string;
+}
+
+export interface GetStudyParentsParams extends StudyParams {
+  direct?: boolean;
 }

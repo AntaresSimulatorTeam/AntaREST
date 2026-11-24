@@ -112,16 +112,12 @@ const createIndexedValues = R.memoizeWith(
  * @param props - The temporal indexing parameters object
  * @param props.rowFilter - The row filter configuration to apply
  * @param props.datesInfo - Array of date info objects for temporal indexing
- * @param props.isTimeSeries - Whether the data represents a time series
- * @param props.timeFrequency - The time frequency of the data
  * @param props.totalRows - Total number of rows in the dataset
  * @returns Array of row indices that match the filter criteria
  */
 export function getTemporalIndices({
   rowFilter,
   datesInfo,
-  isTimeSeries,
-  timeFrequency,
   totalRows,
 }: TemporalIndexingParams): number[] {
   // Use simple indices when no temporal data is available
@@ -253,6 +249,7 @@ export function getFilteredTemporalOptions(
  * Applies AND logic between different indexingTypes
  *
  * @param filter - The filter state containing row filters configuration
+ * @param filter.rowsFilters - Row filters to combine
  * @param datesInfo - Array of date infos for temporal filtering
  * @param isTimeSeries - Whether the data represents a time series
  * @param timeFrequency - The time frequency of the data
@@ -260,14 +257,12 @@ export function getFilteredTemporalOptions(
  * @returns Array of row indices that match the combined filter criteria
  */
 export function processRowFilters(
-  filter: FilterState,
+  { rowsFilters }: Pick<FilterState, "rowsFilters">,
   datesInfo: DateInfo[] | undefined,
   isTimeSeries: boolean,
   timeFrequency: TimeFrequencyType | undefined,
   totalRows: number,
 ): number[] {
-  const { rowsFilters } = filter;
-
   // Return all indices if no filters defined
   if (!rowsFilters?.length) {
     return getAllRowIndices(totalRows);
@@ -276,7 +271,6 @@ export function processRowFilters(
   // Optimize single filter case
   if (rowsFilters.length === 1) {
     return getTemporalIndices({
-      filter,
       rowFilter: rowsFilters[0],
       datesInfo,
       isTimeSeries,
@@ -291,7 +285,6 @@ export function processRowFilters(
   const groupResults = Object.entries(filtersByType).map(([, filters]) => {
     const filterResults = filters.map((rowFilter) =>
       getTemporalIndices({
-        filter,
         rowFilter,
         datesInfo,
         isTimeSeries,

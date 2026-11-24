@@ -171,7 +171,7 @@ class Watcher(IService):
             raise ScanDisabled("Recursive scan disables when desktop mode is on")
 
         stopwatch = StopWatch()
-        studies: list[StudyFolder] = list()
+        studies: list[StudyFolder] = []
         directory_path: Path | None = None
 
         # max depth when we call rec_scan_for_studies

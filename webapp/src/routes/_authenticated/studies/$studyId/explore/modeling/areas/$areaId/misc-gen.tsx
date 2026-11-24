@@ -45,6 +45,7 @@ function MiscGen() {
       key={areaId}
       studyId={studyId}
       url={url}
+      filterKey="misc-gen"
       customColumns={COLUMNS}
       aggregateColumns={["total"]}
       isTimeSeries={false}

@@ -19,7 +19,7 @@ import os
 import re
 import shutil
 from collections.abc import Sequence
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import StringIO
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, BinaryIO, cast
@@ -53,6 +53,7 @@ from antarest.core.serde.ini_reader import IniReader
 from antarest.core.serde.ini_writer import IniWriter
 from antarest.core.utils.archives import extract_archive_from_path, extract_archive_from_stream
 from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.polars import write_tsv
 from antarest.core.utils.utils import current_time, is_path_safe
 from antarest.login.model import Group, Identity
 from antarest.login.utils import get_user_impersonator, require_current_user
@@ -509,7 +510,7 @@ def has_children(path: Path, filter_in: list[str], filter_out: list[str], show_h
             show = show_hidden_file or not sub_path.name.startswith(".")
             if not should_ignore_folder_for_scan(sub_path, filter_in, filter_out) and show:
                 return True
-        except (PermissionError, OSError):
+        except PermissionError, OSError:
             logger.warning(f"tried to run is_non_study_folder on {sub_path} but no permission")
     return False
 
@@ -649,8 +650,8 @@ def update_study_from_raw_metadata(study: Study, file_study: "FileStudy") -> Non
 
         study.name = raw_meta["caption"]
         study.version = str(raw_meta["version"])
-        study.created_at = datetime.utcfromtimestamp(raw_meta["created"])
-        study.updated_at = datetime.utcfromtimestamp(raw_meta["lastsave"])
+        study.created_at = datetime.fromtimestamp(raw_meta["created"], tz=timezone.utc).replace(tzinfo=None)
+        study.updated_at = datetime.fromtimestamp(raw_meta["lastsave"], tz=timezone.utc).replace(tzinfo=None)
 
         logger.info(f"Reading additional data from files for study {file_study.config.study_id}")
         horizon = file_study.tree.get(url=["settings", "generaldata", "general", "horizon"])
@@ -681,4 +682,4 @@ def dump_dataframe(df: pl.DataFrame, path_or_buf: Path | io.BytesIO) -> None:
     if df.is_empty() and isinstance(path_or_buf, Path):
         path_or_buf.write_bytes(b"")
     else:
-        df.write_csv(path_or_buf, separator="\t", include_header=False)
+        write_tsv(df, path_or_buf)

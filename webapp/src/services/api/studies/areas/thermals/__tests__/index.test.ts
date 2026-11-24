@@ -63,7 +63,7 @@ afterEach(() => {
 test("caches complete cluster properties so consumers can select without a detail request", async () => {
   const response = {
     ...cluster,
-    group: null,
+    group: "",
     so2: null,
     nh3: 0,
     costGeneration: "useCostTimeseries",
@@ -84,7 +84,7 @@ test("caches complete cluster properties so consumers can select without a detai
 test("normalizes detail IDs to match list IDs while preserving display names", async () => {
   vi.mocked(client.get).mockResolvedValue({ data: cluster });
 
-  const detail = await api.getThermalCluster({ studyId, areaId, clusterId });
+  const detail = await api.getThermalCluster({ studyId, areaId, thermalId: clusterId });
 
   expect(detail).toEqual({ ...cluster, id: clusterId });
   expect(client.get).toHaveBeenCalledWith(`${listUrl}/${clusterId}`);
@@ -116,12 +116,14 @@ test("patches only supplied values and normalizes absent response fields", async
   const updated = { ...cluster, ...values, so2: null, costGeneration: null };
   vi.mocked(client.patch).mockResolvedValue({ data: updated });
 
-  expect(await api.updateThermalCluster({ studyId, areaId, clusterId, values })).toEqual({
-    ...updated,
-    id: clusterId,
-    so2: undefined,
-    costGeneration: undefined,
-  });
+  expect(await api.updateThermalCluster({ studyId, areaId, thermalId: clusterId, values })).toEqual(
+    {
+      ...updated,
+      id: clusterId,
+      so2: undefined,
+      costGeneration: undefined,
+    },
+  );
   expect(client.patch).toHaveBeenCalledWith(`${listUrl}/${clusterId}`, values);
 });
 
@@ -131,7 +133,7 @@ test("duplicates through the dedicated endpoint and newName query parameter", as
   const duplicated = await api.duplicateThermalCluster({
     studyId,
     areaId,
-    clusterId,
+    thermalId: clusterId,
     newName: "Copy",
   });
 
@@ -144,7 +146,7 @@ test("duplicates through the dedicated endpoint and newName query parameter", as
 });
 
 test("sends bulk deletion IDs in the request body", async () => {
-  await api.deleteThermalClusters({ studyId, areaId, clusterIds: [clusterId, "other"] });
+  await api.deleteThermalClusters({ studyId, areaId, thermalIds: [clusterId, "other"] });
 
   expect(client.delete).toHaveBeenCalledWith(listUrl, { data: [clusterId, "other"] });
 });
@@ -158,7 +160,12 @@ test("rejects invalid create and update values before sending a request", async 
     }),
   ).rejects.toBeInstanceOf(ZodError);
   await expect(
-    api.updateThermalCluster({ studyId, areaId, clusterId, values: { nominalCapacity: NaN } }),
+    api.updateThermalCluster({
+      studyId,
+      areaId,
+      thermalId: clusterId,
+      values: { nominalCapacity: NaN },
+    }),
   ).rejects.toBeInstanceOf(ZodError);
 
   expect(client.post).not.toHaveBeenCalled();

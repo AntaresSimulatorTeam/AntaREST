@@ -472,6 +472,9 @@ class StudyDiskSpaceAnalysis(Base):
     )
     disk_space_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
     last_analysis_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    # Date of the last change on the study disk space. A new analysis is needed if it is more recent
+    # than `last_analysis_date`, which is the date the last analysis started.
+    invalidated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     study: Mapped["Study"] = relationship("Study", uselist=False)
 
 
@@ -625,6 +628,27 @@ class StudyRepairReport(AntaresBaseModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
 
     study_id: str
+    dry_run: bool
+    issues: list[StudyRepairIssue] = Field(default_factory=list)
+    proposed_actions: list[StudyRepairAction] = Field(default_factory=list)
+    applied_actions: list[StudyRepairAction] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class GlobalStudyRepairType(StrEnum):
+    ORPHAN_ARCHIVES = "orphan_archives"
+
+
+class GlobalStudyRepairRequest(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
+    repairs: list[GlobalStudyRepairType] = Field(default_factory=lambda: [GlobalStudyRepairType.ORPHAN_ARCHIVES])
+    dry_run: bool = True
+
+
+class GlobalStudyRepairReport(AntaresBaseModel):
+    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+
     dry_run: bool
     issues: list[StudyRepairIssue] = Field(default_factory=list)
     proposed_actions: list[StudyRepairAction] = Field(default_factory=list)

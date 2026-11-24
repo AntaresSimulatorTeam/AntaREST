@@ -195,11 +195,13 @@ function General() {
                     </span>
                   </Tooltip>
                   {semver.gte(study.version, "9.3.0") && (
-                    <SwitchFE
-                      label={t("study.configuration.adequacyPatch.redispatch")}
-                      sx={{ textWrap: "nowrap" }}
-                      name="redispatch"
+                    <NumberFE
+                      label={t("study.configuration.adequacyPatch.thresholdEns")}
+                      name="thresholdEns"
                       control={control}
+                      rules={{
+                        validate: (v) => typeof v === "number" && validateNumber(v, { min: 0 }),
+                      }}
                     />
                   )}
                 </Fieldset>

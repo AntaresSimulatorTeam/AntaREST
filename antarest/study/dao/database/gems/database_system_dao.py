@@ -9,30 +9,45 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from typing import Any, List, NoReturn
+import json
+from typing import Any, List, NoReturn, Sequence, TypeAlias
 
+from polars import DataFrame
 from sqlalchemy import Row, delete, insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import (
+    GemsInvalidComponents,
     GemsInvalidConnection,
+    GemsParameterNotFound,
+    GemsParameterValueIsConstantButShouldNotBe,
     GemsSystemAlreadyExists,
     GemsSystemNotFound,
 )
-from antarest.study.business.model.gems.system import GemsComponent, GemsComponentConnection, GemsSystem
+from antarest.study.business.model.gems.system import (
+    GemsAreaConnection,
+    GemsComponent,
+    GemsComponentConnection,
+    GemsSystem,
+    GemsThermalCapacityConnection,
+)
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.library import GEMS_MODELS_PORTS_TABLE
 from antarest.study.dao.database.models.gems.system import (
+    GEMS_AREA_CONNECTIONS_TABLE,
     GEMS_COMPONENT_CONNECTIONS_TABLE,
     GEMS_COMPONENT_PARAMETERS_TABLE,
     GEMS_COMPONENT_PROPERTIES_TABLE,
     GEMS_COMPONENTS_TABLE,
     GEMS_SYSTEM_METADATA_TABLE,
+    GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE,
 )
+from antarest.study.dao.database.models.thermal import THERMAL_CLUSTER_TABLE
 
 METADATA_TABLE = GEMS_SYSTEM_METADATA_TABLE
+DbRows: TypeAlias = list[dict[str, Any]]
 
 
 def _reorder_connection(connection: GemsComponentConnection) -> GemsComponentConnection:
@@ -78,6 +93,23 @@ def _check_connection_does_not_link_port_component_to_itself(connections: list[G
             )
 
 
+def _check_legacy_connections(
+    section: str,
+    connections: Sequence[GemsAreaConnection | GemsThermalCapacityConnection],
+    component_ids: set[str],
+) -> None:
+    connected_ports: set[tuple[str, str]] = set()
+    for connection in connections:
+        if connection.component not in component_ids:
+            raise GemsInvalidConnection(f"{section}: component '{connection.component}' does not exist")
+        port = (connection.component, connection.port)
+        if port in connected_ports:
+            raise GemsInvalidConnection(
+                f"{section}: port '{connection.port}' of component '{connection.component}' is connected more than once"
+            )
+        connected_ports.add(port)
+
+
 class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
     """Database implementation of GemsSystemDao"""
 
@@ -91,6 +123,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         components = self.get_components()
         connections = self._get_connections()
+        area_connections = self._get_area_connections()
+        thermal_capacity_connections = self._get_thermal_capacity_connections()
 
         return GemsSystem.model_validate(
             {
@@ -98,6 +132,8 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                 "description": metadata_row.description,
                 "components": components,
                 "connections": connections,
+                "area_connections": area_connections,
+                "thermal_capacity_connections": thermal_capacity_connections,
             }
         )
 
@@ -127,21 +163,22 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         components = []
         for component_row in all_components_rows:
             model = f"{component_row.library_id}.{component_row.model_id}"
-            current_component = GemsComponent.model_validate(
-                {
-                    "id": component_row.component_id,
-                    "model": model,
-                    "scenario_group": component_row.scenario_group if component_row.scenario_group else None,
-                    "parameters": component_parameters.get(component_row.component_id),
-                    "properties": component_properties.get(component_row.component_id),
-                }
-            )
+            args = {
+                "id": component_row.component_id,
+                "model": model,
+                "scenario_group": component_row.scenario_group if component_row.scenario_group else None,
+                "parameters": component_parameters.get(component_row.component_id, []),
+                "properties": component_properties.get(component_row.component_id, []),
+            }
+            if component_row.integer_strategy:
+                args["integer_strategy"] = json.loads(component_row.integer_strategy)
+            current_component = GemsComponent.model_validate(args)
 
             components.append(current_component)
 
         return components
 
-    def _get_components_parameters(self) -> dict[str, list[dict[str, Any]]]:
+    def _get_components_parameters(self) -> dict[str, DbRows]:
         study_data_id = self._study_data_id
         session = self._db_session
 
@@ -149,19 +186,20 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             GEMS_COMPONENT_PARAMETERS_TABLE.c.study_data_id == study_data_id
         )
         parameters_rows = session.execute(parameters_stmt).fetchall()
-        component_parameters: dict[str, list[dict[str, Any]]] = {}
+        component_parameters: dict[str, DbRows] = {}
         for parameter_row in parameters_rows:
+            is_dataseries = parameter_row.time_dependent or parameter_row.scenario_dependent
             component_parameters.setdefault(parameter_row.component_id, []).append(
                 {
                     "id": parameter_row.parameter_id,
                     "time-dependent": parameter_row.time_dependent,
                     "scenario-dependent": parameter_row.scenario_dependent,
-                    "value": parameter_row.value,
+                    "value": parameter_row.matrix_id if is_dataseries else parameter_row.value,
                 }
             )
         return component_parameters
 
-    def _get_components_properties(self) -> dict[str, list[dict[str, Any]]]:
+    def _get_components_properties(self) -> dict[str, DbRows]:
         study_data_id = self._study_data_id
         session = self._db_session
 
@@ -169,7 +207,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             GEMS_COMPONENT_PROPERTIES_TABLE.c.study_data_id == study_data_id
         )
         properties_rows = session.execute(properties_stmt).fetchall()
-        component_properties: dict[str, list[dict[str, Any]]] = {}
+        component_properties: dict[str, DbRows] = {}
         for property_row in properties_rows:
             component_properties.setdefault(property_row.component_id, []).append(
                 {
@@ -199,6 +237,32 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
             )
         return connections
 
+    def _get_area_connections(self) -> List[GemsAreaConnection]:
+        table = GEMS_AREA_CONNECTIONS_TABLE
+        stmt = select(table.c.component_id, table.c.port_id, table.c.area_id).where(
+            table.c.study_data_id == self._study_data_id
+        )
+        return [
+            GemsAreaConnection.model_validate({"component": row.component_id, "port": row.port_id, "area": row.area_id})
+            for row in self._db_session.execute(stmt)
+        ]
+
+    def _get_thermal_capacity_connections(self) -> List[GemsThermalCapacityConnection]:
+        table = GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE
+        stmt = select(table.c.component_id, table.c.port_id, table.c.area_id, table.c.cluster_id).where(
+            table.c.study_data_id == self._study_data_id
+        )
+        return [
+            GemsThermalCapacityConnection.model_validate(
+                {
+                    "component": row.component_id,
+                    "port": row.port_id,
+                    "thermal_component": {"area": row.area_id, "cluster_id": row.cluster_id},
+                }
+            )
+            for row in self._db_session.execute(stmt)
+        ]
+
     @override
     def save_system(self, system: GemsSystem) -> None:
         study_data_id = self._study_data_id
@@ -219,24 +283,65 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         try:
             self.save_components(system.components)
             self._save_connections(system.connections)
+            self._save_area_connections(system.area_connections)
+            self._save_thermal_capacity_connections(system.thermal_capacity_connections)
         except Exception as e:
             session.rollback()
             raise e
 
     @override
     def save_components(self, components: List[GemsComponent]) -> None:
+        """
+        Saves the components and their parameters and properties in the database.
+        Components given as input must have their time and scenario-dependent parameters filled with matrix ids.
+        """
         study_data_id = self._study_data_id
         session = self._db_session
 
         if not self._get_system_row_if_exists():
             raise GemsSystemNotFound(f"No system configuration found for study {study_data_id}")
 
+        component_values = self._build_component_rows(components)
+        parameter_values = self._build_parameter_rows(components)
+        property_values = self._build_properties_rows(components)
+
         # Clean all existing data regarding components
         session.execute(delete(GEMS_COMPONENTS_TABLE).where(GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id))
 
+        if component_values:
+            try:
+                session.execute(insert(GEMS_COMPONENTS_TABLE), component_values)
+            except IntegrityError as e:
+                session.rollback()
+                raise GemsInvalidComponents("Could not save components, the table is not filled as it should") from e
+        if parameter_values:
+            try:
+                session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
+            except IntegrityError as e:
+                session.rollback()
+                raise GemsInvalidComponents(
+                    "Could not save components parameters, the table is not filled as it should"
+                ) from e
+
+        if property_values:
+            try:
+                session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
+            except IntegrityError as e:
+                session.rollback()
+                raise GemsInvalidComponents(
+                    "Could not save components properties, the table is not filled as it should"
+                ) from e
+
+        session.commit()
+
+    def _build_component_rows(self, components: List[GemsComponent]) -> DbRows:
+        """
+        Builds the rows to insert in `GEMS_COMPONENTS_TABLE
+        """
+        study_data_id = self._study_data_id
+
         component_values = []
-        parameter_values = []
-        property_values = []
+
         for component in components:
             library_id, model_id = component.model.split(".", 1)
 
@@ -247,21 +352,23 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     "component_id": component.id,
                     "model_id": model_id,
                     "scenario_group": component.scenario_group,
+                    "integer_strategy": component.integer_strategy.model_dump_json(exclude_none=True)
+                    if component.integer_strategy
+                    else None,
                 }
             )
 
-            for parameter in component.parameters or []:
-                parameter_values.append(
-                    {
-                        "study_data_id": study_data_id,
-                        "component_id": component.id,
-                        "parameter_id": parameter.id,
-                        "time_dependent": parameter.time_dependent,
-                        "scenario_dependent": parameter.scenario_dependent,
-                        "value": parameter.value,
-                    }
-                )
+        return component_values
 
+    def _build_properties_rows(self, components: List[GemsComponent]) -> DbRows:
+        """
+        Builds the rows to insert in `GEMS_COMPONENT_PROPERTIES_TABLE`
+        """
+        study_data_id = self._study_data_id
+
+        property_values = []
+
+        for component in components:
             for prop in component.properties or []:
                 property_values.append(
                     {
@@ -272,14 +379,151 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
                     }
                 )
 
-        if component_values:
-            session.execute(insert(GEMS_COMPONENTS_TABLE), component_values)
-        if parameter_values:
-            session.execute(insert(GEMS_COMPONENT_PARAMETERS_TABLE), parameter_values)
-        if property_values:
-            session.execute(insert(GEMS_COMPONENT_PROPERTIES_TABLE), property_values)
+        return property_values
 
-        session.commit()
+    def _build_parameter_rows(self, components: List[GemsComponent]) -> DbRows:
+        """
+        Builds the rows to insert in `GEMS_COMPONENT_PARAMETERS_TABLE`.
+        """
+        study_data_id = self._study_data_id
+        parameter_rows: DbRows = []
+
+        for component in components:
+            for parameter in component.parameters or []:
+                row = {
+                    "study_data_id": study_data_id,
+                    "component_id": component.id,
+                    "parameter_id": parameter.id,
+                    "time_dependent": parameter.time_dependent,
+                    "scenario_dependent": parameter.scenario_dependent,
+                    "value": None,
+                    "matrix_id": None,
+                }
+                if parameter.is_dataseries():
+                    row["matrix_id"] = parameter.get_value_as_str()
+                else:
+                    row["value"] = parameter.get_value_as_float()
+                parameter_rows.append(row)
+
+        return parameter_rows
+
+    def _save_area_connections(self, connections: List[GemsAreaConnection]) -> None:
+        if not connections:
+            return
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        rows = []
+        for connection in connections:
+            rows.append(
+                {
+                    "study_data_id": study_data_id,
+                    "component_id": connection.component,
+                    "port_id": connection.port,
+                    "area_id": connection.area,
+                }
+            )
+
+        try:
+            session.execute(insert(GEMS_AREA_CONNECTIONS_TABLE), rows)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            self._raise_the_right_area_connection_exception(connections, e)
+
+    def _save_thermal_capacity_connections(self, connections: List[GemsThermalCapacityConnection]) -> None:
+        if not connections:
+            return
+
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        rows = []
+        for connection in connections:
+            rows.append(
+                {
+                    "study_data_id": study_data_id,
+                    "component_id": connection.component,
+                    "port_id": connection.port,
+                    "area_id": connection.thermal_component.area,
+                    "cluster_id": connection.thermal_component.cluster_id,
+                }
+            )
+
+        try:
+            session.execute(insert(GEMS_THERMAL_CAPACITY_CONNECTIONS_TABLE), rows)
+            session.commit()
+        except IntegrityError as e:
+            session.rollback()
+            self._raise_the_right_thermal_capacity_connection_exception(connections, e)
+
+    def _check_legacy_connections_components_and_ports(
+        self,
+        section: str,
+        connections: Sequence[GemsAreaConnection | GemsThermalCapacityConnection],
+        e: IntegrityError,
+    ) -> None:
+        component_ids = set(self._get_components_library_and_model())
+        try:
+            _check_legacy_connections(section, connections, component_ids)
+        except GemsInvalidConnection as error:
+            raise error from e
+
+    def _raise_the_right_area_connection_exception(
+        self, connections: List[GemsAreaConnection], e: IntegrityError
+    ) -> NoReturn:
+        self._check_legacy_connections_components_and_ports("area-connections", connections, e)
+
+        area_ids = set(self.get_impl().get_all_area_ids())
+        for connection in connections:
+            if connection.area not in area_ids:
+                raise GemsInvalidConnection(
+                    f"Component '{connection.component}' is connected to a non-existing area '{connection.area}'"
+                ) from e
+
+        # All components and areas exist and no port is connected twice.
+        # It means the DB table is not filled as it should.
+        raise ValueError("The area connections table is not filled as it should") from e
+
+    def _raise_the_right_thermal_capacity_connection_exception(
+        self, connections: List[GemsThermalCapacityConnection], e: IntegrityError
+    ) -> NoReturn:
+        self._check_legacy_connections_components_and_ports("thermal-capacity-connections", connections, e)
+
+        table = THERMAL_CLUSTER_TABLE
+        stmt = select(table.c.area_id, table.c.thermal_id).where(table.c.study_data_id == self._study_data_id)
+        cluster_ids = {(row.area_id, row.thermal_id) for row in self._db_session.execute(stmt)}
+        for connection in connections:
+            thermal = connection.thermal_component
+            if (thermal.area, thermal.cluster_id) not in cluster_ids:
+                raise GemsInvalidConnection(
+                    f"Component '{connection.component}' is connected to a non-existing thermal cluster"
+                    f" '{thermal.cluster_id}' in area '{thermal.area}'"
+                ) from e
+
+        # All components and clusters exist and no port is connected twice.
+        # It means the DB table is not filled as it should.
+        raise ValueError("The thermal capacity connections table is not filled as it should") from e
+
+    @override
+    def get_parameter_series(self, component_id: str, parameter_id: str) -> DataFrame:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        stmt = select(GEMS_COMPONENT_PARAMETERS_TABLE).where(
+            GEMS_COMPONENT_PARAMETERS_TABLE.c.study_data_id == study_data_id,
+            GEMS_COMPONENT_PARAMETERS_TABLE.c.component_id == component_id,
+            GEMS_COMPONENT_PARAMETERS_TABLE.c.parameter_id == parameter_id,
+        )
+        parameter_row = session.execute(stmt).fetchone()
+        if parameter_row is None:
+            raise GemsParameterNotFound(f"Parameter '{parameter_id}' not found for component '{component_id}'")
+        if parameter_row.matrix_id is None:
+            raise GemsParameterValueIsConstantButShouldNotBe(parameter_id, parameter_row.value)
+
+        matrix_service = self.get_impl().matrix_service
+        return matrix_service.get(parameter_row.matrix_id)
 
     def _get_components_library_and_model(self) -> dict[str, tuple[str, str]]:
         study_data_id = self._study_data_id

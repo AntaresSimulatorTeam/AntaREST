@@ -20,7 +20,7 @@ import pytest
 
 from antarest.blobstore.service import BlobService
 from antarest.matrixstore.service import MatrixService
-from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax
+from antarest.study.business.model.config.compatibility_parameters_model import HydroPmax, HydroRuleCurves
 from antarest.study.model import (
     STUDY_VERSION_8_6,
     STUDY_VERSION_8_8,
@@ -1073,6 +1073,15 @@ COMMANDS = [
     ),
     pytest.param(
         CommandDTO(
+            action=CommandName.CONVERT_HYDRO_RULE_CURVES.value,
+            args={"hydro_rule_curves": HydroRuleCurves.SCENARIZED},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="convert_hydro_rule_curves",
+    ),
+    pytest.param(
+        CommandDTO(
             action=CommandName.CREATE_RESERVE_DEFINITION.value,
             args={
                 "area_id": "paris",
@@ -1180,6 +1189,33 @@ COMMANDS = [
         ),
         None,
         id="replace_hydro_reserve_symmetries",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.CREATE_GEMS_SCENARIO.value,
+            args={"scenario_name": "my_scenario", "data": [{"scenario": 1, "time_series_index": 2}]},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="create_gems_scenario",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.REMOVE_GEMS_SCENARIO.value,
+            args={"scenario_name": "my_scenario"},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="remove_gems_scenario",
+    ),
+    pytest.param(
+        CommandDTO(
+            action=CommandName.UPDATE_GEMS_SCENARIO.value,
+            args={"scenario_name": "my_scenario", "data": [{"scenario": 1, "time_series_index": 2}]},
+            study_version=STUDY_VERSION_10_2,
+        ),
+        None,
+        id="update_gems_scenario",
     ),
 ]
 

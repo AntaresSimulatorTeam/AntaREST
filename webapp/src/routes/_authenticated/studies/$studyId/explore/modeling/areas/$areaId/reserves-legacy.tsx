@@ -37,6 +37,7 @@ function ReservesLegacy() {
       key={areaId}
       studyId={studyId}
       url={url}
+      filterKey="reserves.legacy"
       customColumns={COLUMNS}
       aggregateColumns={["total"]}
       isTimeSeries={false}

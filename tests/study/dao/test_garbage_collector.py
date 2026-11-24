@@ -35,7 +35,12 @@ from antarest.study.storage.rawstudy.raw_study_matrix_usage_provider import RawS
 from antarest.study.storage.study_storage_interface import IStudyStorage
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 from tests.conftest import build_db_dao, build_filesystem_dao
-from tests.study.dao.conftest import build_real_case_study, build_reserve_definition
+from tests.study.dao.conftest import (
+    add_system_file_to_study_dao,
+    build_db_dao_10_2,
+    build_real_case_study,
+    build_reserve_definition,
+)
 from tests.study.dao.utils import save_area
 
 
@@ -305,3 +310,34 @@ def test_provider_includes_reserve_need_matrix(dao_10_2: StudyDao) -> None:
         provider = _register_provider(dao, db.session, matrix_service)
         used_ids = {ref.matrix_id for ref in provider.get_matrix_usage()}
     assert matrix_id in used_ids
+
+
+def test_garbage_collection_keeps_gems_parameters_matrices(tmp_path: Path, db_session: Session) -> None:
+    matrix_service = MatrixService(
+        repo=MatrixRepository(db_session),
+        repo_dataset=MatrixDataSetRepository(db_session),
+        matrix_content_repository=MatrixContentRepository(tmp_path / "matrix_store", InternalMatrixFormat.FEATHER),
+        file_transfer_manager=Mock(),
+        task_service=Mock(),
+        config=Mock(),
+        user_service=Mock(),
+    )
+    dao = build_db_dao_10_2(db_session, matrix_service)
+    _register_provider(dao, db_session, matrix_service)
+
+    system = add_system_file_to_study_dao(dao)
+    used_matrix_ids = {p.get_value_as_str() for c in system.components for p in c.parameters if p.is_dataseries()}
+    assert used_matrix_ids
+
+    # A matrix referenced by nothing, to ensure the garbage collector actually deletes unused matrices
+    matrix_service.create(pl.DataFrame([[0.0]] * 8760, orient="row"))
+
+    task = clean_matrices(
+        matrix_service=matrix_service, dry_run=False, retention_time=0, lock_folder=Path(tempfile.gettempdir())
+    )
+    assert task.status == BackGroundTaskStatus.SUCCESS
+    assert task.deleted_count == 1
+
+    # The matrices referenced by the GEMS parameters are still available
+    for matrix_id in used_matrix_ids:
+        assert matrix_service.get(matrix_id) is not None

@@ -13,12 +13,22 @@
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from typing_extensions import override
 
-from antarest.study.business.model.gems.scenario_builder import GemsScBuilderMapping, GemsScenarioBuilder
+from antarest.core.exceptions import GemsUnavailableForFileSystemStudies
+from antarest.core.model import GemsId
+from antarest.study.business.model.gems.scenario_builder import (
+    GemsScBuilderMapping,
+    GemsScBuilderMappings,
+    GemsScenarioBuilder,
+)
 from antarest.study.dao.api.gems_scenario_builder_dao import GemsScenarioBuilderDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
+
+if TYPE_CHECKING:
+    from antarest.study.dao.file.file_study_dao import FileStudyTreeDao
 
 
 def _get_gems_scenario_builder_file_path(study_path: Path) -> Path:
@@ -30,13 +40,17 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
     def get_file_study(self) -> FileStudy:
         pass
 
+    @abstractmethod
+    def get_impl(self) -> "FileStudyTreeDao":
+        pass
+
     @override
     def get_gems_scenario_builder(self) -> GemsScenarioBuilder | None:
         path = _get_gems_scenario_builder_file_path(self.get_file_study().config.study_path)
         if not path.exists():
             return None
 
-        groups: dict[str, list[GemsScBuilderMapping]] = {}
+        groups: dict[str, GemsScBuilderMappings] = {}
         seen: set[tuple[str, int]] = set()
         for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
             if not line.strip():
@@ -52,7 +66,11 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
                 raise ValueError(f"Duplicate GEMS scenario builder mapping at line {line_number}: {line!r}")
             seen.add((group, scenario_index))
             mappings.append(GemsScBuilderMapping(scenario=scenario_index, time_series_index=int(column)))
-        return GemsScenarioBuilder(scenarios=groups) if groups else None
+
+        if not groups:
+            return None
+
+        return GemsScenarioBuilder(scenarios=groups)
 
     @override
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
@@ -66,3 +84,19 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
             for group, scenarios in scenario_builder.scenarios.items():
                 for mapping in scenarios:
                     stream.write(f"{group}, {mapping.scenario} = {mapping.time_series_index}\n")
+
+    @override
+    def save_scenario_inside_gems_scenario_builder(self, scenario_name: GemsId, data: GemsScBuilderMappings) -> None:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
+    def remove_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> None:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
+    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
+    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

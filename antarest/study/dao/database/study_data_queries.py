@@ -52,7 +52,8 @@ def yield_matrix_ids(session: Session, tables: Sequence[Table], study_id: str) -
     considered unused and becomes eligible for deletion.
     """
     for table in tables:
-        stmt = select(table.c.matrix_id).where(belongs_to_study(table, study_id))
+        # `matrix_id` is nullable in some tables (e.g. GEMS parameters holding a constant value)
+        stmt = select(table.c.matrix_id).where(belongs_to_study(table, study_id), table.c.matrix_id.isnot(None))
         for row in session.execute(stmt).fetchall():
             yield table, row.matrix_id
 

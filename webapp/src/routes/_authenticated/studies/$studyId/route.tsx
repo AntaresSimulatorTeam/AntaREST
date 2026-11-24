@@ -31,7 +31,7 @@ export const Route = createFileRoute("/_authenticated/studies/$studyId")({
   loader: async ({ context, params: { studyId } }) => {
     // Used in the Breadcrumb of the NavHeader
     await context.queryClient.ensureQueryData(directoryQueries.list());
-    await context.queryClient.ensureQueryData(variantQueries.variantTree(studyId));
+    await context.queryClient.ensureQueryData(variantQueries.treeDetail(studyId));
   },
   component: StudyHomeLayout,
 });
@@ -48,19 +48,6 @@ function StudyHomeLayout() {
     dispatch(setCurrentStudy(studyId));
   }, [dispatch, studyId]);
 
-  // Change the name of the web browser tab
-  useEffect(() => {
-    if (!study) {
-      return;
-    }
-
-    document.title = `Antares Web | ${study.name} (${study.id})`;
-
-    return () => {
-      document.title = "Antares Web";
-    };
-  }, [study]);
-
   ////////////////////////////////////////////////////////////////
   // JSX
   ////////////////////////////////////////////////////////////////
@@ -75,12 +62,18 @@ function StudyHomeLayout() {
   }
 
   return (
-    <Stack direction="column" sx={{ position: "relative", overflow: "auto", height: 1, width: 1 }}>
-      <NavHeader />
-      <Box sx={{ overflow: "auto", height: 1, width: 1 }}>
-        <Outlet />
-      </Box>
-      <FreezeStudy />
-    </Stack>
+    <>
+      <title>{study ? `Antares Web | ${study.name} (${study.id})` : "Antares Web"}</title>
+      <Stack
+        direction="column"
+        sx={{ position: "relative", overflow: "auto", height: 1, width: 1 }}
+      >
+        <NavHeader />
+        <Box sx={{ overflow: "auto", height: 1, width: 1 }}>
+          <Outlet />
+        </Box>
+        <FreezeStudy />
+      </Stack>
+    </>
   );
 }

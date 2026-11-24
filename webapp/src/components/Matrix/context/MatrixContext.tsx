@@ -12,7 +12,7 @@
  * This file is part of the Antares project.
  */
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState } from "react";
 import type { Actions, State } from "use-undo";
 import type { DataState, SetMatrixDataFunction } from "../hooks/useMatrixData";
 import type { AggregateType } from "../shared/types";
@@ -98,22 +98,6 @@ export function MatrixProvider({
       },
     };
   });
-
-  // Update filterPreview criteria when matrix data changes
-  useEffect(() => {
-    if (!filterPreview.active && currentState.data.length > 0) {
-      const totalColumns = currentState.data[0]?.length || 0;
-      const totalRows = currentState.data.length;
-
-      setFilterPreview((prev) => ({
-        ...prev,
-        criteria: {
-          columnsIndices: Array.from({ length: totalColumns }, (_, i) => i),
-          rowsIndices: Array.from({ length: totalRows }, (_, i) => i),
-        },
-      }));
-    }
-  }, [currentState.data, filterPreview.active]);
 
   const value: MatrixContextValue = {
     currentState,

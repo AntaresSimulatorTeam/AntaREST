@@ -1,0 +1,6 @@
+area1
+	area2
+	area3
+area2
+	area3
+area3

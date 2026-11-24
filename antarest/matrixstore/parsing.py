@@ -10,15 +10,13 @@
 #
 # This file is part of the Antares project.
 from pathlib import Path
-from typing import cast
 
 import numpy as np
-import pandas as pd
 import polars as pl
 
 from antarest.core.config import InternalMatrixFormat
 from antarest.core.serde.matrix_export import write_dataframe_in_tsv_format
-from antarest.core.utils.polars import read_input_dataframe
+from antarest.core.utils.polars import read_tsv
 
 
 def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version: int) -> pl.DataFrame:
@@ -28,10 +26,7 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
             df = pl.DataFrame(data=np.loadtxt(path, delimiter="\t", dtype=np.float64, ndmin=2))
             df.columns = [str(k) for k in range(len(df.columns))]
         else:
-            df = read_input_dataframe(path, has_headers=True)
-    elif matrix_format == InternalMatrixFormat.HDF:
-        pandas_df = cast(pd.DataFrame, pd.read_hdf(path))
-        df = pl.from_pandas(pandas_df)
+            df = read_tsv(path, has_headers=True)
     elif matrix_format == InternalMatrixFormat.PARQUET:
         df = pl.read_parquet(path)
     elif matrix_format == InternalMatrixFormat.FEATHER:
@@ -45,8 +40,6 @@ def load_matrix(matrix_format: InternalMatrixFormat, path: Path, matrix_version:
 def save_matrix(matrix_format: InternalMatrixFormat, dataframe: pl.DataFrame, path: Path) -> None:
     if matrix_format == InternalMatrixFormat.TSV:
         write_dataframe_in_tsv_format(dataframe, path, headers=True)
-    elif matrix_format == InternalMatrixFormat.HDF:
-        dataframe.to_pandas().to_hdf(str(path), key="data", index=False)
     elif matrix_format == InternalMatrixFormat.PARQUET:
         dataframe.write_parquet(path)
     elif matrix_format == InternalMatrixFormat.FEATHER:

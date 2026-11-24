@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from antarest.output.model.output_type import OutputType
 from antarest.study.business.model.binding_constraint_model import BindingConstraintFrequency, BindingConstraintOperator
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.business.model.district_model import District
@@ -60,6 +61,7 @@ def config() -> FileStudyTreeConfig:
                 error=True,
                 playlist=[0],
                 xpansion="",
+                output_type=OutputType.LEGACY,
             )
         },
         bindings=[
@@ -81,7 +83,7 @@ def config() -> FileStudyTreeConfig:
 
 def test_file_study_tree_config_dto(config: FileStudyTreeConfig) -> None:
     config_dto = FileStudyTreeConfigDTO.from_build_config(config)
-    assert sorted(list(config_dto.model_dump())) == sorted(list(config.__dict__))
+    assert sorted(config_dto.model_dump()) == sorted(config.__dict__)
     assert config_dto.to_build_config() == config
 
     config_dict = config_dto.model_dump()

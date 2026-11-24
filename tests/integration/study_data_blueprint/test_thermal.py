@@ -325,7 +325,7 @@ class TestThermal:
         pollutants_names = ["nh3", "nmvoc", "nox", "op1", "op2", "op3", "op4", "op5", "pm10", "pm25", "pm5", "so2"]
         pollutants_values = 0.0 if version >= 860 else None
         for existing_cluster in EXISTING_CLUSTERS:
-            existing_cluster.update({p: pollutants_values for p in pollutants_names})
+            existing_cluster.update(dict.fromkeys(pollutants_names, pollutants_values))
             existing_cluster.update(
                 {
                     "costGeneration": "SetManually" if version >= 870 else None,
@@ -426,7 +426,7 @@ class TestThermal:
         expected = {
             **expected,
             "id": fr_gas_conventional_id,
-            **{p: pollutants_values for p in pollutants_names},
+            **dict.fromkeys(pollutants_names, pollutants_values),
         }
         expected = {
             **expected,
@@ -626,7 +626,7 @@ class TestThermal:
         )
         assert res.status_code == 403, res.json()
         description = res.json()["description"]
-        assert all([elm in description for elm in [fr_gas_conventional, "binding constraint"]])
+        assert all(elm in description for elm in [fr_gas_conventional, "binding constraint"])
         assert res.json()["exception"] == "ReferencedObjectDeletionNotAllowed"
 
         # delete the binding constraint

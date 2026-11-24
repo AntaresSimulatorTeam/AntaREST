@@ -15,7 +15,8 @@ import tempfile
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
-from pathlib import Path
+from datetime import datetime
+from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 
 import pandas as pd
@@ -30,7 +31,9 @@ from antarest.core.exceptions import (
     OutputAlreadyUnarchived,
     OutputNotFound,
     TaskAlreadyRunning,
+    UnsupportedOperationOnArchivedOutput,
 )
+from antarest.core.files_tree import FilesTree, FilesTreeBuilder
 from antarest.core.filetransfer.model import FileDownloadTaskDTO
 from antarest.core.filetransfer.service import FileTransferManager
 from antarest.core.model import StudyPermissionType
@@ -45,7 +48,6 @@ from antarest.launcher.adapters.abstractlauncher import SimulationLogs
 from antarest.launcher.model import LogType
 from antarest.login.utils import get_user_id
 from antarest.matrixstore.service import ISimpleMatrixService
-from antarest.output.dbmodel import Output
 from antarest.output.filestudy.aggregation import (
     CLUSTER_ID_COL,
 )
@@ -59,10 +61,12 @@ from antarest.output.filestudy.model import (
 from antarest.output.model import (
     OutputVariablesInformation,
     OutputVariablesList,
-    OutputVariablesViewResponse,
-    OutputVariablesViewStatus,
+    OutputViewResponse,
+    OutputViewStatus,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
+from antarest.output.model.gems_views import GemsTaxonomyViews
+from antarest.output.model.output_id import is_valid_output_id
 from antarest.output.repository import OutputRepository
 from antarest.output.storage.output_storage import (
     IOutputStorage,
@@ -115,6 +119,13 @@ class IStudyMetadataProvider(ABC):
         Raises:
             UserHasNotPermissionError: if the user does not have the permission
             UnsupportedOperationOnArchivedStudy: if the study is archived
+        """
+
+    @abstractmethod
+    def invalidate_disk_space(self, study_id: str) -> None:
+        """
+        Flags the study so that its disk space is analyzed again.
+        Must be called after a change on the outputs of the study.
         """
 
 
@@ -194,6 +205,29 @@ class OutputVariablesViewMaterializationTask:
     __call__ = run_task
 
 
+class OutputGemsViewsMaterializationTask:
+    """
+    Task to materialize the GEMS views of an output
+    """
+
+    def __init__(self, study_id: str, output_id: str, output_service: "OutputService") -> None:
+        self._study_id = study_id
+        self._output_id = output_id
+        self._output_service = output_service
+
+    def run_task(self, notifier: ITaskNotifier) -> TaskResult:
+        msg = f"Materializing GEMS views for study '{self._study_id}' and output '{self._output_id}'"
+        notifier.notify_message(msg)
+        storage = self._output_service._find_output_storage(self._study_id, self._output_id)
+        storage.materialize_gems_views(self._study_id, self._output_id)
+        msg = f"Successfully materialized GEMS views for study '{self._study_id}' and output '{self._output_id}'"
+        notifier.notify_message(msg)
+        return TaskResult(success=True, message=msg)
+
+    # Make `OutputGemsViewsMaterializationTask` object callable
+    __call__ = run_task
+
+
 class OutputService:
     """
     Service to manage the outputs of studies.
@@ -232,6 +266,8 @@ class OutputService:
         OutputVariablesMatrixUsageProvider(self._matrix_service)
 
     def _find_output_storage(self, study_id: str, output_id: str) -> IOutputStorage:
+        if not is_valid_output_id(output_id):
+            raise OutputNotFound(output_id)
         for storage in self._storages:
             if storage.output_exists(study_id, output_id):
                 return storage
@@ -264,6 +300,20 @@ class OutputService:
             TaskListFilter(
                 ref_id=study_id,
                 type=[TaskType.OUTPUT_VARIABLES_VIEW_MATERIALIZATION],
+                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+                name=task_name,
+            )
+        )
+        if len(study_tasks) > 0:
+            return study_tasks[0].id, task_name
+        return None, task_name
+
+    def _get_ongoing_gems_views_materialization_task(self, study_id: str, output_id: str) -> tuple[str | None, str]:
+        task_name = f"Materializing GEMS views for study `{study_id}`, output `{output_id}`"
+        study_tasks = self._task_service.list_tasks(
+            TaskListFilter(
+                ref_id=study_id,
+                type=[TaskType.OUTPUT_GEMS_VIEWS_MATERIALIZATION],
                 status=[TaskStatus.RUNNING, TaskStatus.PENDING],
                 name=task_name,
             )
@@ -307,7 +357,8 @@ class OutputService:
                 stopwatch = StopWatch()
                 storage.unarchive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
-                self._output_repository.delete(study_id, output_id)
+                self._output_repository.save_unarchiving_date(study_id, output_id, current_time())
+                self._studies_repository.invalidate_disk_space(study_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -408,6 +459,7 @@ class OutputService:
                 storage.delete_output(uuid, output_id)
                 raise OutputAlreadyExists(output_id)
 
+        self._studies_repository.invalidate_disk_space(uuid)
         logger.info(f"output added to study {uuid}")
 
         # TODO: as commented elsewhere, that workflow should be refactored to not span multiple files
@@ -513,27 +565,46 @@ class OutputService:
         self._find_output_storage(uuid, output_name).delete_output(uuid, output_name)
 
         self._output_repository.delete(uuid, output_name)
+        self._studies_repository.invalidate_disk_space(uuid)
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
-    def archive_outputs(self, study_id: str) -> list[str]:
-        logger.info(f"Archiving all outputs for study {study_id}")
-        self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
+    def on_study_unarchived(self, study_id: str) -> None:
+        """Renew the grace period of outputs restored with the study."""
+        now = current_time()
+        for storage in self._storages:
+            if storage.storage_type == OutputStorageType.IN_STUDY_FILE_TREE:
+                for output in storage.list_outputs(study_id):
+                    if not output.archived:
+                        self._output_repository.save_unarchiving_date(study_id, output.id, now)
 
-        outputs = self.list_outputs(study_id)
-        task_ids = []
-        for output in outputs:
-            if not output.archived:
-                task_id = self.archive_output(study_id, output.id)
-                if task_id:
-                    task_ids.append(task_id)
-        return task_ids
+    def get_outputs_to_archive(self, study_id: str, cutoff: datetime) -> list[str]:
+        """Select file outputs by their last unarchiving date, falling back to their ID date."""
+        unarchiving_dates = {o.output_id: o.last_unarchiving_date for o in self._output_repository.get_all(study_id)}
+        return [
+            output.id
+            for storage in self._storages
+            if storage.storage_type != OutputStorageType.V2
+            for output in storage.list_outputs(study_id)
+            if not output.archived and self._is_output_older_than(output.id, unarchiving_dates.get(output.id), cutoff)
+        ]
+
+    @staticmethod
+    def _is_output_older_than(output_id: str, last_unarchiving_date: datetime | None, cutoff: datetime) -> bool:
+        if last_unarchiving_date is not None:
+            return last_unarchiving_date <= cutoff
+        try:
+            return datetime.strptime(output_id[:13], "%Y%m%d-%H%M") <= cutoff
+        except ValueError:
+            logger.warning("Skipping automatic archival of output %s: invalid date in output ID", output_id)
+            return False
 
     def archive_output(
         self,
         study_id: str,
         output_id: str,
         force: bool = False,
+        archive_before: datetime | None = None,
     ) -> str | None:
         self._studies_repository.assert_permission(study_id, StudyPermissionType.WRITE)
         metadata = self._studies_repository.get_study_metadata(study_id)
@@ -549,20 +620,32 @@ class OutputService:
             study_tasks = self._task_service.list_tasks(
                 TaskListFilter(
                     ref_id=study_id,
-                    name=task_name,
                     type=[TaskType.UNARCHIVE, TaskType.ARCHIVE],
                     status=[TaskStatus.RUNNING, TaskStatus.PENDING],
                 )
             )
-            if len(list(filter(lambda t: t.name in archive_task_names, study_tasks))):
+            if (archive_before is not None and study_tasks) or any(
+                task.name in archive_task_names for task in study_tasks
+            ):
                 raise TaskAlreadyRunning()
 
         def archive_output_task(notifier: ITaskNotifier) -> TaskResult:
             try:
+                # For automatic archiving, recheck eligibility in case the output was unarchived after selection.
+                if archive_before is not None:
+                    output = self._output_repository.get(study_id, output_id)
+                    last_unarchiving_date = output.last_unarchiving_date if output else None
+                    if not self._is_output_older_than(output_id, last_unarchiving_date, archive_before):
+                        return TaskResult(
+                            success=True,
+                            message="Automatic archiving skipped: output no longer eligible",
+                            return_value="skipped",
+                        )
                 stopwatch = StopWatch()
                 storage.archive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
-                self._output_repository.delete(study_id, output_id)
+                self._output_repository.invalidate_disk_usage(study_id, output_id)
+                self._studies_repository.invalidate_disk_space(study_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
@@ -737,7 +820,7 @@ class OutputService:
         variable_name: str,
         frequency: MatrixFrequency,
         with_index: bool = False,
-    ) -> pd.DataFrame | OutputVariablesViewResponse:
+    ) -> pd.DataFrame | OutputViewResponse:
         """
         If the view is already registered in DB, updates its `last_read` value and returns it.
         Else, returns a pydantic model specifying if the view materialization is in progress or not.
@@ -770,8 +853,8 @@ class OutputService:
         task_id, _ = self._get_ongoing_variables_view_materialization_task(
             output_item_id, study_id, output_id, frequency
         )
-        status = OutputVariablesViewStatus.IN_PROGRESS if task_id else OutputVariablesViewStatus.NOT_FOUND
-        return OutputVariablesViewResponse(status=status, task_id=task_id)
+        status = OutputViewStatus.IN_PROGRESS if task_id else OutputViewStatus.NOT_FOUND
+        return OutputViewResponse(status=status, task_id=task_id)
 
     def materialize_output_variables_view(
         self,
@@ -841,7 +924,7 @@ class OutputService:
             return output.disk_space_bytes
         else:
             disk_usage = self._find_output_storage(study_id, output_id).get_disk_usage(study_id, output_id)
-            self._output_repository.save(Output(study_id=study_id, output_id=output_id, disk_space_bytes=disk_usage))
+            self._output_repository.save_disk_usage(study_id, output_id, disk_usage)
             return disk_usage
 
     def convert_output(self, study_id: str, output_id: str, storage_type: OutputStorageType) -> None:
@@ -862,7 +945,8 @@ class OutputService:
             target_storage.import_output(study_id, tmp_zip)
             current_storage.delete_output(study_id, output_id)
 
-        self._output_repository.delete(study_id, output_id)
+        self._output_repository.invalidate_disk_usage(study_id, output_id)
+        self._studies_repository.invalidate_disk_space(study_id)
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)
@@ -876,3 +960,74 @@ class OutputService:
 
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         return self._find_output_storage(study_id, output_id).get_original_file(study_id, output_id, url)
+
+    def get_raw_files_tree(self, study_id: str, output_id: str) -> FilesTree:
+        """
+        Returns the tree structure of all the files of the output, as written by the simulator.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.is_output_archived(study_id, output_id):
+            raise UnsupportedOperationOnArchivedOutput(output_id)
+        builder = FilesTreeBuilder()
+        for file in storage.list_raw_files(study_id, output_id):
+            builder.add_file(file)
+        return builder.tree
+
+    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath) -> bytes:
+        """
+        Returns the content of the output file located at `path` (relative to the output root).
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.is_output_archived(study_id, output_id):
+            raise UnsupportedOperationOnArchivedOutput(output_id)
+        return storage.read_raw_file(study_id, output_id, path)
+
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | OutputViewResponse:
+        """
+        If the GEMS views of the output are already registered in DB, returns them.
+        Else, returns a pydantic model specifying if the views materialization is in progress or not.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.is_output_archived(study_id, output_id):
+            raise UnsupportedOperationOnArchivedOutput(output_id)
+
+        views = storage.get_gems_views(study_id, output_id)
+        if views is not None:
+            return views
+
+        # Return a 404 Response with a body specifying if the materialization is in progress or not.
+        task_id, _ = self._get_ongoing_gems_views_materialization_task(study_id, output_id)
+        status = OutputViewStatus.IN_PROGRESS if task_id else OutputViewStatus.NOT_FOUND
+        return OutputViewResponse(status=status, task_id=task_id)
+
+    def materialize_gems_views(self, study_id: str, output_id: str) -> str:
+        """
+        If the GEMS views of the output are already registered in DB, raise an HTTP Conflict error.
+        Else, launch a task that reads them from the output and stores them inside the database.
+        """
+        self._studies_repository.assert_permission(study_id, StudyPermissionType.READ)
+        storage = self._find_output_storage(study_id, output_id)
+        if storage.is_output_archived(study_id, output_id):
+            raise UnsupportedOperationOnArchivedOutput(output_id)
+
+        if storage.get_gems_views(study_id, output_id) is not None:
+            raise HTTPException(status_code=417, detail="The output GEMS views are already materialized in DB")
+
+        # If a task materializing the same views is already running, returns its id
+        task_id, task_name = self._get_ongoing_gems_views_materialization_task(study_id, output_id)
+        if task_id:
+            return task_id
+
+        task = OutputGemsViewsMaterializationTask(study_id, output_id, self)
+
+        return self._task_service.add_task(
+            task,
+            task_name,
+            task_type=TaskType.OUTPUT_GEMS_VIEWS_MATERIALIZATION,
+            ref_id=study_id,
+            progress=0,
+            custom_event_messages=None,
+        )

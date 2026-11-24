@@ -12,6 +12,7 @@
  * This file is part of the Antares project.
  */
 
+import type { ThermalCluster } from "@/services/api/studies/areas/thermals/types";
 import type { Study } from "@/services/api/studies/types";
 import type { AreaWithId } from "@/types/types";
 import { areaKeys } from "../areas/keys";
@@ -24,8 +25,8 @@ export const thermalKeys = {
   create: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...thermalKeys.list(studyId, areaId), "createThermalCluster"];
   },
-  update: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
-    return [...thermalKeys.list(studyId, areaId), "updateThermalCluster"];
+  update: (studyId: Study["id"], areaId: AreaWithId["id"], thermalId: ThermalCluster["id"]) => {
+    return [...thermalKeys.list(studyId, areaId), "updateThermalCluster", { thermalId }];
   },
   duplicate: (studyId: Study["id"], areaId: AreaWithId["id"]) => {
     return [...thermalKeys.list(studyId, areaId), "duplicateThermalCluster"];

@@ -23,6 +23,8 @@ import MatrixGrid, { type MatrixGridProps } from "./MatrixGrid";
 
 export interface FilterableMatrixGridProps extends MatrixGridProps {
   timeFrequency?: TimeFrequencyType;
+  /** Remembers this study and view's filters in memory. */
+  filterPersistence?: MatrixFilterProps["persistence"];
   ref?: MatrixFilterProps["ref"];
 }
 
@@ -39,6 +41,7 @@ function FilterableMatrixGrid({
   showPercent,
   showStats = true,
   timeFrequency,
+  filterPersistence,
   ref,
 }: FilterableMatrixGridProps) {
   // Create minimal context value for MatrixProvider
@@ -88,6 +91,7 @@ function FilterableMatrixGrid({
             dateTime={dateTime}
             isTimeSeries={isTimeSeries}
             timeFrequency={timeFrequency}
+            persistence={filterPersistence}
             readOnly={readOnly}
           />
         </Box>

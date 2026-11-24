@@ -22,6 +22,7 @@ export interface VariantTree {
 export interface GetVariantTreeParams {
   studyId: Study["id"];
   fromRoot?: boolean;
+  signal?: AbortSignal;
 }
 
 export interface CreateVariantParams {

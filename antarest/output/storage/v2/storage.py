@@ -14,7 +14,7 @@ import shutil
 import tempfile
 import uuid
 from collections.abc import Iterator, Sequence
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 
 import pandas as pd
@@ -24,6 +24,7 @@ from typing_extensions import override
 from antarest.core.exceptions import (
     OutputAggregationError,
     OutputAlreadyExists,
+    OutputGemsViewsNotFound,
     OutputNotFound,
     ShouldNotHappenException,
 )
@@ -47,6 +48,8 @@ from antarest.output.filestudy.model import QueryFileType
 from antarest.output.filestudy.variables import extract_variables_list
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
+from antarest.output.model.gems_views import GemsTaxonomyViews
+from antarest.output.model.output_type import OutputType
 from antarest.output.storage.output_storage import (
     IOutputStorage,
     OutputDetails,
@@ -150,6 +153,7 @@ def _db_metadata_to_details(metadata: DbOutputMetadataV2) -> OutputDetails:
         nb_years=metadata.nb_years,
         archived=metadata.archived,
         storage_type=OutputStorageType.V2,
+        output_type=OutputType.LEGACY,
     )
 
 
@@ -444,6 +448,22 @@ class V2OutputStorage(IOutputStorage):
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         # todo: implement this
         raise NotImplementedError()
+
+    @override
+    def list_raw_files(self, study_id: str, output_id: str) -> list[PurePosixPath]:
+        raise NotImplementedError()
+
+    @override
+    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath) -> bytes:
+        raise NotImplementedError()
+
+    @override
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | None:
+        raise OutputGemsViewsNotFound(output_id)
+
+    @override
+    def materialize_gems_views(self, study_id: str, output_id: str) -> None:
+        raise OutputGemsViewsNotFound(output_id)
 
     @override
     def get_matrix_aggregation_result(

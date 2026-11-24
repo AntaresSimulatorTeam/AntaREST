@@ -17,11 +17,12 @@ import RouterListItemButton, {
 } from "@/components/router/RouterListItemButton";
 import RouterMenuItem, { type RouterMenuItemProps } from "@/components/router/RouterMenuItem";
 import { directoryQueries } from "@/queries/directories/queries";
-import { updateStudyFilters } from "@/redux/ducks/studies";
+import { requestStudyFolderReveal } from "@/redux/ducks/studies";
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { isMenuOpen } from "@/redux/selectors";
 import FavoriteToggle from "@/routes/-shared/components/studies/FavoriteToggle";
+import { getDescendantIds } from "@/utils/directoryUtils";
 import FolderIcon from "@mui/icons-material/Folder";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import { List, ListItemIcon, ListItemText, Menu, Tooltip, Typography } from "@mui/material";
@@ -29,7 +30,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { linkOptions } from "@tanstack/react-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getDescendantIds } from "../../../studies/-components/StudyTree/ManagedTree/utils";
 import SidebarItem from "../SidebarItem";
 import { type Favorite } from "./types";
 import useFavorites from "./useFavorites";
@@ -56,12 +56,10 @@ function FavoritesMenu() {
         ...linkOptions({ to: "/studies" }),
         onClick: () => {
           dispatch(
-            updateStudyFilters({
-              activeTree: "managed",
-              managed: {
-                directoryId: fav.original.directoryId,
-                directoryIds: getDescendantIds(fav.original.directoryId, directories),
-              },
+            requestStudyFolderReveal({
+              tree: "managed",
+              directoryId: fav.original.directoryId,
+              directoryIds: getDescendantIds(fav.original.directoryId, directories),
             }),
           );
 
@@ -76,11 +74,9 @@ function FavoritesMenu() {
         ...linkOptions({ to: "/studies" }),
         onClick: () => {
           dispatch(
-            updateStudyFilters({
-              activeTree: "external",
-              external: {
-                path: fav.absolutePath,
-              },
+            requestStudyFolderReveal({
+              tree: "external",
+              path: fav.absolutePath,
             }),
           );
 
@@ -120,6 +116,45 @@ function FavoritesMenu() {
     return null;
   };
 
+  ////////////////////////////////////////////////////////////////
+  // Event Handlers
+  ////////////////////////////////////////////////////////////////
+
+  const handleItemClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (!isMainMenuOpen) {
+      setAnchorEl(event.currentTarget);
+    }
+  };
+
+  const handleFavoriteKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    const item = event.currentTarget;
+
+    // MenuList moves between rows with arrows. Start from the row even when an
+    // action button has focus, so it does not navigate between nested buttons.
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      if (event.target !== item) {
+        item.focus();
+      }
+
+      return;
+    }
+
+    if (event.key !== "Tab") {
+      return;
+    }
+
+    const controls = [item, ...item.querySelectorAll<HTMLButtonElement>("button:not(:disabled)")];
+    const focusedIndex = controls.findIndex((control) => control === document.activeElement);
+    const nextControl = controls[focusedIndex + (event.shiftKey ? -1 : 1)];
+
+    // Give secondary actions a keyboard stop before Menu handles Tab by closing.
+    if (nextControl) {
+      event.preventDefault();
+      event.stopPropagation();
+      nextControl.focus();
+    }
+  };
+
   const getFavoriteContent = (fav: Favorite) => (
     <>
       {getFavoriteIcon(fav)}
@@ -137,16 +172,6 @@ function FavoritesMenu() {
       <FavoriteToggle favorite={fav.original} edge="end" tooltipPlacement="right" />
     </>
   );
-
-  ////////////////////////////////////////////////////////////////
-  // Event Handlers
-  ////////////////////////////////////////////////////////////////
-
-  const handleItemClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!isMainMenuOpen) {
-      setAnchorEl(event.currentTarget);
-    }
-  };
 
   ////////////////////////////////////////////////////////////////
   // JSX
@@ -187,7 +212,12 @@ function FavoritesMenu() {
           onClose={closeMenu}
         >
           {favorites.map((fav) => (
-            <RouterMenuItem key={fav.id} dense {...getFavoriteLinkOptions(fav)}>
+            <RouterMenuItem
+              key={fav.id}
+              dense
+              {...getFavoriteLinkOptions(fav)}
+              onKeyDown={handleFavoriteKeyDown}
+            >
               {getFavoriteContent(fav)}
             </RouterMenuItem>
           ))}

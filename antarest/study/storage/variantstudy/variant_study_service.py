@@ -61,7 +61,7 @@ from antarest.study.model import (
     StudyMetadataCopy,
     StudyMetadataDTO,
 )
-from antarest.study.repository import AccessPermissions, StudyFilter
+from antarest.study.repository import AccessPermissions, StudyDiskSpaceRepository, StudyFilter
 from antarest.study.storage.abstract.abstract_study_service import AbstractStudyService
 from antarest.study.storage.database_storage import DatabaseStudyStorage
 from antarest.study.storage.file_study_utils import check_study_path, get_study_path
@@ -115,10 +115,12 @@ class VariantStudyService(AbstractStudyService):
         event_bus: IEventBus,
         config: Config,
         matrix_service: ISimpleMatrixService,
+        disk_space_repository: StudyDiskSpaceRepository | None = None,
     ):
         super().__init__(cache, config)
         self.cache = cache
         self.config = config
+        self.disk_space_repository = disk_space_repository or StudyDiskSpaceRepository()
         self.task_service = task_service
         self.raw_study_service = raw_study_service
         self.repository = repository
@@ -597,6 +599,7 @@ class VariantStudyService(AbstractStudyService):
         def callback(notifier: ITaskNotifier) -> TaskResult:
             study = self._get_variant_study(study_id)
             generate_result = self.generate(study, from_scratch, notifier)
+            self.disk_space_repository.invalidate(study.id)
             return TaskResult(
                 success=generate_result.success,
                 message=(

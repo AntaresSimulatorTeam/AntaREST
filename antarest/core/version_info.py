@@ -77,7 +77,7 @@ def get_last_commit_from_git() -> str:
     command = ["git", "log", "-1", "HEAD", "--format=%H"]
     try:
         return subprocess.check_output(command, encoding="utf-8").strip()
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except subprocess.CalledProcessError, FileNotFoundError:
         return ""
 
 

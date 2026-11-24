@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from collections.abc import Awaitable, Callable
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from antarest.core.interfaces.eventbus import Event, EventType
 from antarest.core.model import PermissionInfo, PublicMode
@@ -82,3 +82,34 @@ def test_lifecycle() -> None:
         queue_name,
     )
     auto_retry_assert(lambda: len(test_bucket) == 1, timeout=2)
+
+
+def test_start_in_current_thread() -> None:
+    """
+    `start(threaded=False)` runs the event loop in the calling thread.
+    On Python 3.14 it used to crash because `asyncio.get_event_loop()`
+    no longer creates a loop implicitly.
+    """
+    event_bus = build_eventbus(autostart=False)
+    test_bucket: list[Event] = []
+
+    async def append_to_bucket(event: Event) -> None:
+        test_bucket.append(event)
+
+    event_bus.add_listener(append_to_bucket)
+    event_bus.push(
+        Event(
+            type=EventType.STUDY_CREATED,
+            payload="foo",
+            permissions=PermissionInfo(public_mode=PublicMode.READ),
+        )
+    )
+
+    # The real loop never ends: process the pending events only once.
+    async def process_events_once() -> None:
+        await event_bus._on_events()
+
+    with patch.object(event_bus, "_run_loop", process_events_once):
+        event_bus.start(threaded=False)
+
+    assert len(test_bucket) == 1

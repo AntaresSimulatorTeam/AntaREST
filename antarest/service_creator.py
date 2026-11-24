@@ -267,6 +267,7 @@ def build_output_service(
     in_study_file_output_storage = InStudyFileOutputStorage(
         outputs_provider=study_service_as_in_study_file_outputs_provider(study_service),
         cache=cache,
+        config=config,
         remote_executor=remote_executor,
         repository=repository,
     )
@@ -274,6 +275,7 @@ def build_output_service(
     out_of_study_file_output_storage = OutOfStudyFileOutputStorage(
         outputs_provider=out_of_study_outputs_provider(config),
         cache=cache,
+        config=config,
         remote_executor=remote_executor,
         repository=repository,
     )
