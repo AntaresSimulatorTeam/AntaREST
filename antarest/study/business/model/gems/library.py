@@ -144,3 +144,16 @@ class GemsLibrary(AntaresBaseModel):
     taxonomy: str | None = None
     port_types: list[_GemsPortType] = Field(default_factory=list)
     models: list[_GemsModels] = Field(default_factory=list)
+
+
+class GemsModelProperty(AntaresBaseModel):
+    """
+    A property that can be set on a GEMS component instantiating a given model.
+
+    Uses a `name` field (instead of a plain string) so that additional metadata can be
+    added to a property in the future without being a breaking change.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, extra="forbid")
+
+    name: str
