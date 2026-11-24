@@ -12,6 +12,7 @@
 
 import logging
 import re
+import shutil
 import uuid
 from collections.abc import Callable
 from datetime import timedelta
@@ -72,6 +73,7 @@ from antarest.study.storage.utils import (
     get_current_user_name,
     get_user_name_from_id,
     is_managed,
+    remove_from_cache,
 )
 from antarest.study.storage.variantstudy.business.utils import transform_command_to_dto
 from antarest.study.storage.variantstudy.command_blob_usage_provider import CommandBlobUsageProvider
@@ -101,6 +103,11 @@ def _cast_study_to_variant(study: Study) -> VariantStudy:
     if not isinstance(study, VariantStudy):
         raise TypeError(f"The type of the study must be {VariantStudy}, not {type(study)}")
     return study
+
+
+def _assert_unarchived(study: VariantStudy) -> None:
+    if study.archived:
+        raise UnsupportedOperationOnArchivedStudy(study.id)
 
 
 class VariantStudyService(AbstractStudyService):
@@ -166,6 +173,13 @@ class VariantStudyService(AbstractStudyService):
         self.generate(variant)
         self.raw_study_service.export_study_flat(study, dst_path)
 
+    @override
+    def delete_from_filesystem(self, study: Study) -> None:
+        # Unlike raw studies, an archived variant has no archive file: its outputs are still in its directory.
+        if study.path is not None:
+            shutil.rmtree(check_study_path(study), ignore_errors=True)
+        remove_from_cache(self.cache, study.id)
+
     ##########################
     # Specific methods
     ##########################
@@ -189,6 +203,24 @@ class VariantStudyService(AbstractStudyService):
     def clear_snapshot(self, variant_study: VariantStudy) -> None:
         self._snapshot_manager_mapping[variant_study.storage_mode].clear_snapshot(variant_study)
         self.invalidate_snapshot(variant_study)
+
+    def archive(self, variant_study: VariantStudy) -> None:
+        """
+        Removes the snapshot of the variant and marks it as archived.
+
+        This is a low-level operation on a single variant: it neither archives its outputs
+        nor its descendants. Use `StudyService.archive` instead, which handles both.
+
+        The generation lock is held, so that a running snapshot generation ends before the snapshot is removed.
+        """
+        with self._generation_lock(variant_study.id):
+            self.clear_snapshot(variant_study)
+            remove_from_cache(self.cache, variant_study.id)
+            variant_study.archived = True
+            self.repository.save(variant_study)
+
+    def _generation_lock(self, study_id: str) -> FileLock:
+        return FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock"))
 
     def _update_editor(self, study: VariantStudy) -> None:
         user_name = get_current_user_name()
@@ -247,6 +279,7 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self.repository.get_study_with_commands(study_id, with_lock=True)
         assert_permission(study, StudyPermissionType.WRITE)
+        _assert_unarchived(study)
 
         command_ids = self._modify_commands(study, commands, replace_commands=False)
         self.on_variant_advance(study)
@@ -264,6 +297,7 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self.repository.get_study_with_commands(study_id, with_lock=True)
         assert_permission(study, StudyPermissionType.WRITE)
+        _assert_unarchived(study)
 
         self._modify_commands(study, commands, replace_commands=True)
         self.on_variant_rebase(study)
@@ -319,6 +353,7 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self.repository.get_study_with_commands(study_id, with_lock=True)
         assert_permission(study, StudyPermissionType.WRITE)
+        _assert_unarchived(study)
 
         current_commands = study.commands
 
@@ -351,6 +386,7 @@ class VariantStudyService(AbstractStudyService):
         """
         study = self._get_variant_study(study_id)
         assert_permission(study, StudyPermissionType.WRITE)
+        _assert_unarchived(study)
 
         # Save the new commands
         current_cmd_version = self.repository.get_commands_list_version(study_id)
@@ -636,9 +672,10 @@ class VariantStudyService(AbstractStudyService):
         Generates a variant study synchronously.
         The per-study `FileLock` prevents concurrent callers from generating the same snapshot twice.
         """
-        with FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study.id}.lock")):
+        with self._generation_lock(study.id):
             try:
                 self.repository.refresh(study)
+                _assert_unarchived(study)
 
                 if not from_scratch and self.repository.is_snapshot_up_to_date(study.id):
                     # Nothing to do
@@ -651,6 +688,8 @@ class VariantStudyService(AbstractStudyService):
                 return generator.generate_snapshot(
                     study.id, dao_factory=dao_factory, from_scratch=from_scratch, notifier=notifier
                 )
+            except UnsupportedOperationOnArchivedStudy:
+                raise
             except Exception as e:
                 # raise a EXPECTATION_FAILED error (417)
                 logger.error(f"⚡ Fail to generate variant study {study.id}", exc_info=e)
