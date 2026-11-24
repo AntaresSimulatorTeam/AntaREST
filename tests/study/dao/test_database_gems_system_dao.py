@@ -31,6 +31,7 @@ from antarest.study.business.model.gems.system import (
     GemsComponent,
     GemsComponentConnection,
     GemsParameters,
+    GemsProperties,
     GemsSystem,
 )
 from antarest.study.business.model.thermal_cluster_model import ThermalCluster, initialize_thermal_cluster
@@ -172,6 +173,54 @@ def test_save_components_fully_replaces_existing_ones(dao_10_2: StudyDao) -> Non
     assert third_component.properties is not None
     assert third_component.properties[0].id == "prop4"
     assert third_component.properties[0].value == "third_component"
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_get_properties_returns_the_properties_of_a_component(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+
+    add_system_file_to_study_dao(dao)
+
+    component_with_properties = GemsComponent.model_validate(
+        {
+            "id": "comp_with_properties",
+            "model": "andromede-v1-models-weo-hybrid.electrolyser",
+            "properties": [
+                {"id": "prop1", "value": "value1"},
+                {"id": "prop2", "value": "value2"},
+            ],
+        }
+    )
+    dao.save_components([component_with_properties])
+
+    properties = dao.get_properties("comp_with_properties")
+    assert properties == [
+        GemsProperties(id="prop1", value="value1"),
+        GemsProperties(id="prop2", value="value2"),
+    ]
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_get_properties_returns_an_empty_list_when_the_component_has_no_properties(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+
+    add_system_file_to_study_dao(dao)
+
+    # `dsr` is a component of the system asset and does not define any properties
+    assert dao.get_properties("dsr") == []
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_get_properties_returns_an_empty_list_for_an_unknown_component(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+
+    add_system_file_to_study_dao(dao)
+
+    with pytest.raises(
+        GemsParameterNotFound,
+        match="Component 'unknown_component' not found for study '*'",
+    ):
+        dao.get_properties("unknown_component")
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)

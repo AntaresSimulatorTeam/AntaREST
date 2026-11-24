@@ -29,6 +29,7 @@ from antarest.study.business.model.gems.system import (
     GemsAreaConnection,
     GemsComponent,
     GemsComponentConnection,
+    GemsProperties,
     GemsSystem,
     GemsThermalCapacityConnection,
 )
@@ -524,6 +525,32 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
 
         matrix_service = self.get_impl().matrix_service
         return matrix_service.get(parameter_row.matrix_id)
+
+    @override
+    def get_properties(self, component_id: str) -> list[GemsProperties]:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        self._assert_component_exists(component_id)
+
+        stmt = select(GEMS_COMPONENT_PROPERTIES_TABLE).where(
+            GEMS_COMPONENT_PROPERTIES_TABLE.c.study_data_id == study_data_id,
+            GEMS_COMPONENT_PROPERTIES_TABLE.c.component_id == component_id,
+        )
+        properties_rows = session.execute(stmt).fetchall()
+        return [GemsProperties.model_validate({"id": row.property_id, "value": row.value}) for row in properties_rows]
+
+    def _assert_component_exists(self, component_id: str) -> None:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        component_stmt = select(GEMS_COMPONENTS_TABLE).where(
+            GEMS_COMPONENTS_TABLE.c.study_data_id == study_data_id,
+            GEMS_COMPONENTS_TABLE.c.component_id == component_id,
+        )
+        component_row = session.execute(component_stmt).fetchone()
+        if component_row is None:
+            raise GemsParameterNotFound(f"Component '{component_id}' not found for study '{self._study_id}' ")
 
     def _get_components_library_and_model(self) -> dict[str, tuple[str, str]]:
         study_data_id = self._study_data_id

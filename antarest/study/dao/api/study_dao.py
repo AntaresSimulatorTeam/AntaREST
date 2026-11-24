@@ -37,7 +37,7 @@ from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMappings,
     GemsScenarioBuilder,
 )
-from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
+from antarest.study.business.model.gems.system import GemsComponent, GemsProperties, GemsSystem
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
@@ -1028,6 +1028,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_system(self) -> GemsSystem | None:
         return self._adaptee.get_system()
+
+    @override
+    def get_properties(self, component_id: str) -> list[GemsProperties]:
+        return self._adaptee.get_properties(component_id)
 
     @override
     def get_taxonomy(self) -> GemsTaxonomy | None:

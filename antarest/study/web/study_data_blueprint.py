@@ -78,6 +78,7 @@ from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMappings,
     GemsScenarioBuilder,
 )
+from antarest.study.business.model.gems.system import GemsProperties
 from antarest.study.business.model.hydro_allocation_model import (
     HydroAllocation,
     HydroAllocationArea,
@@ -2457,6 +2458,17 @@ def create_study_data_routes() -> APIRouter:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.user_resources_manager.delete_user_resource(study_interface, PurePosixPath(path))
+
+    @bp.get(
+        "/studies/{uuid}/gems/{component_id}/properties",
+        summary="Fetches the existing properties (name and value) of a given GEMS component for a given study",
+    )
+    def get_gems_component_properties(
+        study_service: StudyServiceDep, uuid: UuidStr, component_id: str
+    ) -> list[GemsProperties]:
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        return study_service.gems_system_manager.get_component_properties(study_interface, component_id)
 
     @bp.get(
         "/studies/{uuid}/gems/scenario-builder",
