@@ -1,6 +1,83 @@
 Antares Web Changelog
 =====================
 
+v2.37.0 (2026-11-25)
+--------------------
+
+### Features
+
+* **ui-matrix**: persist filters across areas per view [`#3448`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3448)
+* **ui-matrix**: support aggregate column selection statistics [`#3442`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3442)
+* **ui-output**: keep variable field value on area/link change [`#3454`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3454)
+* **ui-matrix**: persist output filters across areas [`#3456`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3456)
+* **outputs**: add new flag to identify gems outputs [`#3451`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3451)
+* **ui-studies**: use current directory for creation and import, and reduce duplicate requests [`#3449`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3449)
+* **gems**: area and thermal connections [`#3430`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3430)
+* **output**: see more files inside debug view [`#3461`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3461)
+* **outputs**: support digest reading for archived outputs [`#3463`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3463)
+* **output**: automatically archive inactive file outputs [`#3458`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3458)
+* **ui-studies**: unify directory selection across study dialogs [`#3464`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3464)
+* **hydro rule curves**: backend implementation of hydro rule curves feature [`#3465`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3465)
+* **ui-modeling**: add TanStack Query with optimistic updates to modeling views [`#3436`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3436)
+* **hydro rule curves**: introduce frontend for hydro rule curves feature [`#3467`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3467)
+* **hydro rule curves**: add new reservoir levels routes and matrices [`#3472`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3472)
+* **output**: add download raw output file endpoints [`#3470`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3470)
+* **gems**: add endpoints for scenario-builder [`#3473`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3473)
+* **outputs**: allow files visualisation even when the simulation failed [`#3488`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3488)
+* **gems**: manage gems data series [`#3443`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3443)
+* **gems**: support `integer-strategy` inside system [`#3497`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3497)
+* **gems**: support calendar file [`#3489`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3489)
+* **ui-studies**: reveal favorites in the study explorer [`#3491`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3491)
+* **ui-studies**: show workspace disk usage [`#3503`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3503)
+* **ui-study**: block access to variants descending from an archived reference study [`#3474`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3474)
+* **ui-hydro**: hide reservoir levels tab in scenarized mode [`#3509`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3509)
+* **outputs**: add GEMS output views endpoint [`#3490`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3490)
+* **adequacy-patch**: add field 'threshold-ens' in adequacy patch [`#3513`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3513)
+
+### Bug fixes
+
+* **xpansion**: allow resource replacement [`#3446`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3446)
+* **clusters**: do not allow group to be none inside swagger [`#3450`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3450)
+* **hydro, db**: save `overflow_spilled_difference` with its default value [`#3455`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3455)
+* **deps**: upgrade node to 22.23.4 [`#3460`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3460)
+* **xpansion**: no crash for first sensitivity run on an output [`#3466`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3466)
+* **ui-studies**: issue with name validation [`#3469`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3469)
+* **sonar**: reliability issues [`#3475`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3475)
+* **router**: regenerate route tree ordering [`#3481`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3481)
+* **study**: delete archive file when deleting an archived study [`#3471`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3471)
+* **deps**: rollback SQLAlchemy to 2.0.x [`#3483`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3483)
+* **ui-user-resources**: render text files without syntax highlighting [`#3482`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3482)
+* **gems**: allow default values inside library [`#3492`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3492)
+* **gems**: add taxonomy field inside library [`#3493`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3493)
+* **gems**: parse input matrices as `tsv` instead of `csv` [`#3499`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3499)
+* **gems**: several issues when launching a study [`#3500`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3500)
+* **gems**: issue with postgresql when deleting hybrid studies [`#3501`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3501)
+* **output**: add global validation for outputs ids [`#3480`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3480)
+* **output**: validate output ids at the api edge [`#3485`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3485)
+* **tasks**: fix race conditions on running tasks registration [`#3512`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3512)
+* **build**: `uv sync` not working with Python 3.15 [`#3506`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3506)
+* **launcher**: reduce log noise from job permission checks, paramiko and watcher [`#3519`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3519)
+* **disk-scan**: update disk space analyzer [`#3507`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3507)
+* **deps**: upgrade node to 22.23.5 [`#3511`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3511)
+
+### Refactorings
+
+* **outputs**: rename gems-views output folder to views [`#3487`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3487)
+* **gems**: split model tables [`#3508`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3508)
+
+### Miscellaneous
+
+* **readme**: update React badge to 19.x [`#3447`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3447)
+* **deps**: update dependency filelock to v4 [SECURITY] [`#3459`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3459)
+* **output**: drop support of `id` files inside aggregation [`#3476`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3476) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **matrices**: drop support of hdf5 for internal matrices [`#3477`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3477) ![Breaking change](https://img.shields.io/badge/-Breaking%20Change-red.svg)
+* **tests**: speed up python test suite [`#3478`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3478)
+* **deps**: update python dependencies (minor/patch) [`#3479`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3479)
+* **version**: support Python 3.14 [`#3214`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3214)
+* **deps**: update certifi, mako and setuptools [SECURITY] [`#3505`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3505)
+* **deps**: remove unused dependencies, update CI actions and extend ruff rules [`#3515`](https://github.com/AntaresSimulatorTeam/AntaREST/pull/3515)
+
+
 v2.36.0 (2026-10-21)
 --------------------
 
