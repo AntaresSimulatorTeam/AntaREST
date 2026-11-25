@@ -71,7 +71,7 @@ def test_archive_variant_and_its_descendants(
         assert res.status_code == 400, res.json()
         assert res.json()["exception"] == "UnsupportedOperationOnArchivedStudy"
         command = {"action": "create_area", "args": {"area_name": "other_area"}}
-        res = client.post(f"/v1/studies/{variant_id}/commands", json=[command])
+        res = client.put(f"/v1/studies/{variant_id}/commands", json=[command])
         assert res.status_code == 400, res.json()
         assert res.json()["exception"] == "UnsupportedOperationOnArchivedStudy"
         assert not (workspace / variant_id / "snapshot").exists()
@@ -87,25 +87,50 @@ def test_archive_variant_and_its_descendants(
     res = client.get(f"/v1/studies/{v2_id}/disk-usage")
     assert res.status_code == 200, res.json()
 
-    # A variant cannot be unarchived while its parent is archived
+    # Unarchiving a variant also unarchives its archived ancestors, but not their outputs
     res = client.put(f"/v1/studies/{v3_id}/unarchive")
-    assert res.status_code == 400, res.json()
-    assert res.json()["exception"] == "UnsupportedOperationOnArchivedStudy"
-
-    # Unarchiving a variant leaves its descendants and its outputs archived
-    res = client.put(f"/v1/studies/{v2_id}/unarchive")
     assert res.status_code == 200, res.json()
     task = wait_task_completion(client, admin_access_token, res.json())
     assert task.result is not None and task.result.success, task
     assert not _is_archived(client, v2_id)
-    assert _is_archived(client, v3_id)
+    assert not _is_archived(client, v3_id)
     assert (workspace / v2_id / "output" / f"{output_id}.zip").is_file()
     # Its snapshot is generated again when the study is read
-    res = client.get(f"/v1/studies/{v2_id}/areas")
+    res = client.get(f"/v1/studies/{v3_id}/areas")
     assert res.status_code == 200, res.json()
-    assert (workspace / v2_id / "snapshot").is_dir()
+    assert (workspace / v3_id / "snapshot").is_dir()
 
     # Deleting an archived variant removes its directory, archived outputs included
+    res = client.put(f"/v1/studies/{v3_id}/archive")
+    wait_task_completion(client, admin_access_token, res.json())
+    assert _is_archived(client, v3_id)
     res = client.delete(f"/v1/studies/{v3_id}")
     assert res.status_code == 200, res.json()
     assert not (workspace / v3_id).exists()
+
+
+def test_archive_reference_study_and_its_variants(
+    admin_client: TestClient, admin_access_token: str, tmp_path: Path, output_zip: Path
+) -> None:
+    client = admin_client
+    raw_id = client.post("/v1/studies?name=raw").json()
+    variant_id = _create_variant(client, raw_id, "variant")
+    variant_dir = tmp_path / "internal_workspace" / variant_id
+    output_dir = variant_dir / "output" / "20201014-1427eco"
+    with zipfile.ZipFile(output_zip) as zf:
+        zf.extractall(output_dir)
+
+    # Archiving the reference study archives its variants: no more snapshot, and archived outputs
+    res = client.put(f"/v1/studies/{raw_id}/archive")
+    wait_task_completion(client, admin_access_token, res.json())
+    assert _is_archived(client, raw_id)
+    assert _is_archived(client, variant_id)
+    assert not (variant_dir / "snapshot").exists()
+    wait_for(lambda: output_dir.with_suffix(".zip").is_file() and not output_dir.exists())
+
+    # Unarchiving the reference study unarchives its variants, but not their outputs
+    res = client.put(f"/v1/studies/{raw_id}/unarchive")
+    wait_task_completion(client, admin_access_token, res.json())
+    assert not _is_archived(client, raw_id)
+    assert not _is_archived(client, variant_id)
+    assert output_dir.with_suffix(".zip").is_file() and not output_dir.exists()

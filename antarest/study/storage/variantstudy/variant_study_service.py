@@ -218,6 +218,8 @@ class VariantStudyService(AbstractStudyService):
             remove_from_cache(self.cache, variant_study.id)
             variant_study.archived = True
             self.repository.save(variant_study)
+            # The snapshot is gone: the disk space of the study must be analyzed again.
+            self.disk_space_repository.invalidate(variant_study.id)
 
     def _generation_lock(self, study_id: str) -> FileLock:
         return FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock"))
@@ -658,6 +660,7 @@ class VariantStudyService(AbstractStudyService):
     def generate_variant_with_task(self, variant_study_id: str, from_scratch: bool) -> str:
         # Get variant study
         variant_study = self._get_variant_study(variant_study_id)
+        _assert_unarchived(variant_study)
 
         # Get parent study
         if variant_study.parent_id is None:

@@ -122,6 +122,39 @@ class TestArchiveOldStudiesIntegration:
                 output = next(o for o in services.output_service.list_outputs(variant_id) if o.id == output_id)
                 assert output.archived is (eligible and not dry_run)
 
+    def test_study_is_archived_only_when_its_variants_are_inactive_too(
+        self, admin_client: TestClient, services: Services, output_zip: Path, tmp_path: Path
+    ) -> None:
+        parent_id = admin_client.post("/v1/studies", params={"name": "Parent study"}).json()
+        variant_id = admin_client.post(f"/v1/studies/{parent_id}/variants", params={"name": "Variant"}).json()
+        now = current_time()
+        old = now - datetime.timedelta(days=90)
+
+        with current_user_context(DEFAULT_ADMIN_USER):
+            with db(), output_zip.open("rb") as output_file:
+                output_id = services.output_service.import_output(
+                    variant_id, output_file, storage_type=OutputStorageType.IN_STUDY_FILE_TREE
+                )
+            assert output_id is not None
+
+            def count_archived_studies(variant_date: datetime.datetime, output_date: datetime.datetime) -> int:
+                with db():
+                    for study_id, date in ((parent_id, old), (variant_id, variant_date)):
+                        study = services.study.get_study(study_id)
+                        study.last_access = study.updated_at = date
+                    db.session.commit()
+                    OutputRepository().save_unarchiving_date(variant_id, output_id, output_date)
+                result = archive_old_studies(services.study, services.output_service, 60, 7, False, tmp_path)
+                assert result.errors == []
+                return result.archived_studies
+
+            # The study is kept while its variant, or an output of its variant, has been used recently
+            assert count_archived_studies(variant_date=old, output_date=now) == 0
+            assert count_archived_studies(variant_date=now, output_date=old) == 0
+            assert count_archived_studies(variant_date=old, output_date=old) == 1
+            with db():
+                assert services.study.get_study(variant_id).archived
+
     def test_unarchived_output_gets_a_new_grace_period(self, services: Services, internal_study_id: str) -> None:
         now = current_time()
         with current_user_context(DEFAULT_ADMIN_USER):

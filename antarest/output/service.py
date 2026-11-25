@@ -591,6 +591,14 @@ class OutputService:
             if not output.archived and self._is_output_older_than(output.id, unarchiving_dates.get(output.id), cutoff)
         ]
 
+    def has_outputs_newer_than(self, study_id: str, date: datetime) -> bool:
+        """Tells whether an output of the study was created or unarchived after the given date."""
+        unarchiving_dates = {o.output_id: o.last_unarchiving_date for o in self._output_repository.get_all(study_id)}
+        return any(
+            not self._is_output_older_than(output.id, unarchiving_dates.get(output.id), date)
+            for output in self.list_outputs(study_id)
+        )
+
     @staticmethod
     def _is_output_older_than(output_id: str, last_unarchiving_date: datetime | None, cutoff: datetime) -> bool:
         if last_unarchiving_date is not None:
