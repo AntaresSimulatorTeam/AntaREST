@@ -66,7 +66,7 @@ export interface DataGridFormApi<TData extends Data> {
 interface Changes<TData extends Data> {
   /** Rows present in the current data but not in the saved data, keyed by row ID. */
   added: Partial<TData>;
-  /** Rows present in both, containing only the values that differ from the saved data. */
+  /** Rows present in both, containing only the values that differ from the saved data, keyed by row ID. */
   updated: Partial<TData>;
   /** IDs of rows present in the saved data but no longer in the current data. */
   // Typed as `string` rather than `keyof TData`, which can include numbers,
@@ -164,7 +164,7 @@ function DataGridForm<TData extends Data>({
   disableErrorSnackbar = false,
   isLoading = false,
   readOnly = false,
-  allowRowDeletion = true,
+  allowRowDeletion = false,
   ...dataGridProps
 }: DataGridFormProps<TData>) {
   const { t } = useTranslation();
