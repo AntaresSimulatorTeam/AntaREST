@@ -27,7 +27,7 @@ from mcp.server.mcpserver import MCPServer
 
 from antares_web_mcp import prompts
 from antares_web_mcp.client import AntaresWebClient
-from antares_web_mcp.tools import analysis, checks, diagnosis, inputs, network, results, simulation, studies
+from antares_web_mcp.tools import analysis, checks, diagnosis, inputs, network, results, simulation, studies, survey
 
 SERVER_NAME = "antares-web"
 
@@ -110,6 +110,7 @@ def create_server(
     results.register(mcp, client, read_only=read_only)
     analysis.register(mcp, client)
     checks.register(mcp, client)
+    survey.register(mcp, client)
     diagnosis.register(mcp, client)
     prompts.register(mcp)
     return mcp

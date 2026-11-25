@@ -29,7 +29,7 @@ from antares_web_mcp.assistant.provider import ChatProvider, ProviderError
 API_KEY_ENV = "OPENAI_API_KEY"
 
 
-def _build_openai(model: str | None, base_url: str | None) -> ChatProvider:
+def _build_openai(model: str | None, base_url: str | None, reasoning_effort: str | None) -> ChatProvider:
     # No default endpoint: the content of the studies must not go to a server nobody chose.
     if not base_url:
         raise ProviderError("No model endpoint: set `assistant.base_url` in the Antares Web configuration file.")
@@ -41,16 +41,23 @@ def _build_openai(model: str | None, base_url: str | None) -> ChatProvider:
     api_key = os.environ.get(API_KEY_ENV)  # not needed by a server on the local machine
     headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
     return OpenAICompatibleProvider(
-        httpx2.AsyncClient(base_url=base_url.rstrip("/") + "/", headers=headers), model=model
+        httpx2.AsyncClient(base_url=base_url.rstrip("/") + "/", headers=headers),
+        model=model,
+        reasoning_effort=reasoning_effort,
     )
 
 
-PROVIDERS: dict[str, Callable[[str | None, str | None], ChatProvider]] = {"openai": _build_openai}
+PROVIDERS: dict[str, Callable[[str | None, str | None, str | None], ChatProvider]] = {"openai": _build_openai}
 
 
-def build_provider(name: str, *, model: str | None, base_url: str | None) -> ChatProvider:
+def build_provider(
+    name: str, *, model: str | None, base_url: str | None, reasoning_effort: str | None = None
+) -> ChatProvider:
     """
     Builds the provider `name` for the model `model` served at `base_url`.
+
+    `reasoning_effort`: how much the model reasons before it answers, for the servers which let a request
+    choose (not sent by default).
 
     Raises:
         ProviderError: if the provider is unknown or not configured.
@@ -58,4 +65,4 @@ def build_provider(name: str, *, model: str | None, base_url: str | None) -> Cha
     builder = PROVIDERS.get(name)
     if builder is None:
         raise ProviderError(f"Unknown provider '{name}'. Available providers: {sorted(PROVIDERS)}.")
-    return builder(model, base_url)
+    return builder(model, base_url, reasoning_effort)

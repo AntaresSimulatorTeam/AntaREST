@@ -13,7 +13,12 @@
  */
 
 import { vi } from "vitest";
-import { streamStudyCheck } from "..";
+import {
+  streamCheckSummary,
+  streamFindingsExplanation,
+  streamStudyCheck,
+  streamStudyReview,
+} from "..";
 import type { AssistantEvent } from "../types";
 
 vi.mock("@/redux/store", () => ({
@@ -92,5 +97,48 @@ describe("streamStudyCheck", () => {
     );
 
     await expect(check(vi.fn())).rejects.toThrow("No API key for the assistant");
+  });
+});
+
+describe("streams about the findings of a check", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const findings = [
+    {
+      rule: "calendar",
+      severity: "warning" as const,
+      message: "1 January is set to a Monday.",
+      objects: ["settings/generaldata.ini"],
+      count: 1,
+    },
+  ];
+
+  test.each([
+    [streamFindingsExplanation, "check/explain"],
+    [streamCheckSummary, "check/summary"],
+    [streamStudyReview, "review"],
+  ])("send the findings back to the server: %o", async (stream, path) => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(streamOf(['{"type": "done", "answer": "RAS", "history": []}'])),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const events: AssistantEvent[] = [];
+
+    await stream({
+      studyId: "study-1",
+      language: "fr",
+      findings,
+      signal: new AbortController().signal,
+      onEvent: (event) => events.push(event),
+    });
+
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe(`http://antares.test/v1/assistant/studies/study-1/${path}?language=fr`);
+    expect(JSON.parse(init.body)).toEqual({ findings });
+    expect(events).toMatchObject([{ type: "done", answer: "RAS" }]);
   });
 });

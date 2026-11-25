@@ -28,7 +28,8 @@ export type RunStatus = "idle" | "running" | "success" | "error";
  * @param initialState - State before the first run, and after a cancelled one.
  * @param reduce - Computes the next state from an event of the assistant.
  * @param stream - Calls the endpoint with the given abort signal and event callback.
- * @returns The state, with `start` (which replaces a previous run) and `cancel`.
+ * @returns The state, with `start` (which replaces a previous run), `cancel` (which stops a running
+ * request) and `reset` (which also forgets the result).
  */
 function useAssistantRun<S extends { status: RunStatus; error?: string }>(
   initialState: S,
@@ -46,6 +47,12 @@ function useAssistantRun<S extends { status: RunStatus; error?: string }>(
     controllerRef.current?.abort();
     controllerRef.current = null;
     setState((prev) => (prev.status === "running" ? initialState : prev));
+  };
+
+  const reset = () => {
+    controllerRef.current?.abort();
+    controllerRef.current = null;
+    setState(initialState);
   };
 
   const start = async () => {
@@ -72,7 +79,7 @@ function useAssistantRun<S extends { status: RunStatus; error?: string }>(
     }
   };
 
-  return { state, start, cancel };
+  return { state, start, cancel, reset };
 }
 
 export default useAssistantRun;

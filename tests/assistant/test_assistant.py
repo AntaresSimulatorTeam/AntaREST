@@ -36,16 +36,17 @@ FAKE_AGENT = """
 import json, os, sys, time
 
 request = json.load(sys.stdin)
+message = request.get("message", "")  # the workflows have no message
 
 def emit(event):
     print(json.dumps(event), flush=True)
 
-if request["message"] == "crash":
+if message == "crash":
     print("Traceback: boom", file=sys.stderr)
     sys.exit(3)
-if request["message"] == "hang":
+if message == "hang":
     time.sleep(60)
-if request["message"] == "error":
+if message == "error":
     emit({"type": "error", "message": "The model endpoint rejected the API key."})
     sys.exit(0)
 
@@ -55,7 +56,7 @@ emit({"type": "text", "text": "One study found."})
 emit({
     "type": "done",
     "answer": "You have 1 study.",
-    "history": [{"role": "user", "content": request["message"]}],
+    "history": [{"role": "user", "content": message}],
     "provider": "openai",
     "model": "qwen-test",
     "stop_reason": "end_turn",
@@ -104,6 +105,7 @@ def test_agent_receives_the_user_token_and_the_configuration(
     assert [event["type"] for event in events] == ["tool_call", "tool_result", "text", "done"]
     received = events[-1]["received"]
     assert received["request"] == {
+        "task": "chat",
         "message": "Which studies do I have?",
         "history": [],
         "study_id": "study-1",
@@ -114,6 +116,7 @@ def test_agent_receives_the_user_token_and_the_configuration(
         "base_url": "http://model.test/v1",
         "model": "qwen-test",
         "max_tool_rounds": 40,
+        "writing_reasoning_effort": None,
     }
     assert received["api_key"] == "sk-test"
     assert received["virtual_env"] is None  # the agent has its own environment
@@ -236,6 +239,15 @@ def test_chat_endpoint_forwards_the_session_cookie(client: TestClient) -> None:
     assert json.loads(response.text.splitlines()[-1])["received"]["request"]["token"] == "cookie-token"
 
 
+FINDING = {
+    "rule": "calendar",
+    "severity": "warning",
+    "message": "1 January is set to a Monday.",
+    "objects": ["settings/generaldata.ini"],
+    "count": 1,
+}
+
+
 def test_check_study_endpoint(client: TestClient) -> None:
     study_id = "26543d1b-1ed1-4c62-a5da-5e7f93f8d7bb"
 
@@ -244,11 +256,43 @@ def test_check_study_endpoint(client: TestClient) -> None:
     assert response.status_code == HTTPStatus.OK, response.text
     assert response.headers["content-type"].startswith("application/x-ndjson")
     request = json.loads(response.text.splitlines()[-1])["received"]["request"]
-    assert request["study_id"] == study_id
-    assert request["history"] == []
-    # The prompt is owned by the server: clients only choose the study and the language of the report.
-    assert "Call `check_study` with `deep` set to true" in request["message"]
-    assert "in French" in request["message"]
+    # The steps of the check belong to the agent: the backend only names the task.
+    assert (request["task"], request["study_id"], request["language"]) == ("check", study_id, "fr")
+    assert "message" not in request and "findings" not in request
+
+
+@pytest.mark.parametrize("task", ["explain", "summary"])
+def test_findings_of_the_check_are_sent_to_the_agent_to_be_explained(client: TestClient, task: str) -> None:
+    study_id = "26543d1b-1ed1-4c62-a5da-5e7f93f8d7bb"
+    url = f"/v1/assistant/studies/{study_id}/check/{task}"
+
+    response = client.post(url, params={"language": "fr"}, json={"findings": [FINDING]})
+    without_findings = client.post(url)
+    unknown_severity = client.post(url, json={"findings": [{**FINDING, "severity": "fatal"}]})
+    too_many = client.post(url, json={"findings": [FINDING] * 501})
+
+    assert response.status_code == HTTPStatus.OK, response.text
+    request = json.loads(response.text.splitlines()[-1])["received"]["request"]
+    assert (request["task"], request["study_id"], request["language"]) == (task, study_id, "fr")
+    assert request["findings"] == [FINDING]
+    # What goes to the model is validated and bounded before the agent starts.
+    assert without_findings.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert unknown_severity.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert too_many.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_review_study_endpoint_knows_the_findings_of_the_check(client: TestClient) -> None:
+    study_id = "26543d1b-1ed1-4c62-a5da-5e7f93f8d7bb"
+
+    response = client.post(f"/v1/assistant/studies/{study_id}/review", json={"findings": [FINDING]})
+    without_body = client.post(f"/v1/assistant/studies/{study_id}/review")
+
+    assert response.status_code == HTTPStatus.OK, response.text
+    request = json.loads(response.text.splitlines()[-1])["received"]["request"]
+    assert (request["task"], request["study_id"], request["language"]) == ("review", study_id, "en")
+    assert request["findings"] == [FINDING]
+    assert without_body.status_code == HTTPStatus.OK, without_body.text
+    assert "findings" not in json.loads(without_body.text.splitlines()[-1])["received"]["request"]
 
 
 def test_check_study_endpoint_rejects_invalid_parameters(client: TestClient) -> None:

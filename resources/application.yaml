@@ -83,3 +83,7 @@ assistant:
   api_key: ""
   # If true, the assistant can only read studies
   read_only: true
+  # `reasoning_effort` sent to the model server when the model only writes (explanation of a rule, summary of a
+  # check). "none" turns off the reasoning of a "thinking" model, which then answers several times faster.
+  # Leave empty for a server which does not accept this parameter.
+  writing_reasoning_effort: ""

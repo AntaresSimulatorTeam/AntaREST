@@ -620,6 +620,10 @@ class AssistantConfig(ConfigBaseModel):
     # Maximum duration of one answer, in seconds
     timeout: int = 900
     max_tool_rounds: int = 40
+    # `reasoning_effort` sent to the model server when the model only writes (explanation of a rule, summary
+    # of a check), e.g. "none" to turn off the reasoning of a "thinking" model: it then answers several times
+    # faster. Empty: not sent. Only for the servers which accept this parameter.
+    writing_reasoning_effort: str = ""
 
 
 class Config(ConfigBaseModel):

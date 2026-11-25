@@ -24,11 +24,22 @@ from typing import Any
 
 from mcp import Client
 from mcp.types import TextContent
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from antares_web_mcp.assistant.provider import ChatProvider, ChatResult, ProviderError, ToolOutcome, ToolSpec
+from antares_web_mcp.assistant.workflows import (
+    MAX_REVIEW_ROUNDS,
+    REVIEW_TOOLS,
+    Language,
+    Task,
+    build_review_message,
+    run_check,
+    run_explanation,
+    run_summary,
+)
 from antares_web_mcp.client import AntaresWebClient
 from antares_web_mcp.server import INSTRUCTIONS, create_server
+from antares_web_mcp.tools.checks import Finding
 
 logger = logging.getLogger(__name__)
 
@@ -70,7 +81,23 @@ READ_WRITE_MODE = (
 class AssistantRequest(BaseModel):
     """One user turn, as sent by the Antares Web backend."""
 
-    message: str = Field(min_length=1)
+    task: Task = Field(
+        default="chat",
+        description=(
+            "`chat`: answer `message` with all the tools. The others are workflows on `study_id`, whose steps "
+            "are fixed by the code (see `workflows.py`): `check` runs the rules without the model, `explain` "
+            "and `summary` have the model explain `findings`, `review` looks beyond the rules."
+        ),
+    )
+    message: str = Field(default="", description="Message of the user: required by the `chat` task only.")
+    language: Language = Field(default="en", description="Language of the report of a workflow.")
+    findings: list[Finding] | None = Field(
+        default=None,
+        description=(
+            "Findings of a previous `check`: those to explain (`explain`, `summary`), or those the `review` must "
+            "not repeat."
+        ),
+    )
     history: list[dict[str, Any]] = Field(default_factory=list, description="`history` of the previous answer.")
     study_id: str | None = Field(default=None, description="Study the user is working on, if any.")
     antares_url: str = "http://localhost:8080"
@@ -80,6 +107,23 @@ class AssistantRequest(BaseModel):
     base_url: str | None = Field(default=None, description="URL of the model server, ending with `/v1`.")
     model: str | None = None
     max_tool_rounds: int = Field(default=40, ge=1, le=200)
+    writing_reasoning_effort: str | None = Field(
+        default=None,
+        description=(
+            "`reasoning_effort` sent to the model server for the tasks where the model only writes (`explain`, "
+            "`summary`), e.g. `none` to turn the reasoning off. Not sent by default, nor for the other tasks."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _check_task_inputs(self) -> "AssistantRequest":
+        if self.task == "chat" and not self.message:
+            raise ValueError("`message` is required by the `chat` task")
+        if self.task != "chat" and not self.study_id:
+            raise ValueError(f"`study_id` is required by the `{self.task}` task")
+        if self.task in ("explain", "summary") and self.findings is None:
+            raise ValueError(f"`findings` is required by the `{self.task}` task")
+        return self
 
 
 Emit = Callable[[dict[str, Any]], Awaitable[None]]
@@ -91,9 +135,13 @@ def build_system_prompt(read_only: bool) -> str:
 
 
 def build_user_message(request: AssistantRequest) -> str:
+    if request.task == "review":
+        message = build_review_message(request.language, request.findings)
+    else:
+        message = request.message
     if not request.study_id:
-        return request.message
-    return f"[The user is currently working on the study with id {request.study_id}.]\n\n{request.message}"
+        return message
+    return f"[The user is currently working on the study with id {request.study_id}.]\n\n{message}"
 
 
 def tool_text(content: list[Any]) -> str:
@@ -130,6 +178,8 @@ async def run_assistant(
         tools = [
             ToolSpec(name=tool.name, description=tool.description or "", input_schema=tool.input_schema)
             for tool in (await mcp.list_tools()).tools
+            # A review only gets the tools made for it: a small model picks better among six tools than among thirty.
+            if request.task != "review" or tool.name in REVIEW_TOOLS
         ]
 
         async def call_tool(name: str, arguments: dict[str, Any]) -> ToolOutcome:
@@ -167,6 +217,32 @@ async def run_assistant(
             await emit({"type": "text", "text": text})
 
         try:
+            if request.task == "check":
+                assert request.study_id is not None  # validated by the request
+                return await run_check(
+                    study_id=request.study_id,
+                    language=request.language,
+                    model=request.model or "",
+                    call_tool=call_tool,
+                )
+            if request.task == "explain":
+                return await run_explanation(
+                    findings=request.findings or [],
+                    language=request.language,
+                    provider=provider,
+                    call_tool=call_tool,
+                    on_text=on_text,
+                )
+            if request.task == "summary":
+                return await run_summary(
+                    findings=request.findings or [],
+                    language=request.language,
+                    model=request.model or "",
+                    provider=provider,
+                    call_tool=call_tool,
+                    on_text=on_text,
+                )
+            rounds = request.max_tool_rounds
             return await provider.run_turn(
                 system=build_system_prompt(request.read_only),
                 history=request.history,
@@ -174,7 +250,7 @@ async def run_assistant(
                 tools=tools,
                 call_tool=call_tool,
                 on_text=on_text,
-                max_tool_rounds=request.max_tool_rounds,
+                max_tool_rounds=min(rounds, MAX_REVIEW_ROUNDS) if request.task == "review" else rounds,
             )
         except ProviderError as e:
             # Raised below, outside the MCP client: its task group would wrap the error in an

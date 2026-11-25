@@ -11,7 +11,7 @@
 # This file is part of the Antares project.
 
 from http import HTTPStatus
-from typing import Any
+from typing import Annotated, Any, Literal
 
 from fastapi import HTTPException
 from pydantic import Field
@@ -79,37 +79,37 @@ class ChatResponseDTO(AntaresBaseModel):
     usage: UsageDTO
 
 
-CHECK_LANGUAGES = {"en": "English", "fr": "French"}
-
-CHECK_PROMPT = """\
-Check this study before it is simulated, in two steps.
-
-Step 1, the rules. Call `check_study` with `deep` set to true on the study. Call it once.
-
-Step 2, your own review. The rules only catch what they were written for. Look at the study yourself
-for what they cannot see: implausible orders of magnitude, values out of line with comparable
-objects (for instance one country against its neighbours), settings which contradict what the study
-seems to model, things left unfinished. Start with `get_study_context`, `get_study_configuration`,
-`describe_monte_carlo_scenarios` and `summarize_installed_capacity`, then dig only where something
-looks odd. Keep this review to about fifteen tool calls.
-
-Then write a report for the study engineer, in {language}:
-- First, one sentence: is the study ready to be simulated, or what blocks it?
-- Under a heading for the findings of the rules: for each finding of severity error or warning, most
-  severe first, what it means for the simulation results and what to verify or fix. Then one
-  sentence for all the findings of severity info together.
-- Under a heading for your other observations: what your own review found. For each one, give the
-  figures you read, why they are surprising, and what to confirm. A surprising value is often a
-  deliberate modelling choice: present these as questions for the author of the study, and as errors
-  only when it is certain. If your review found nothing, say so in one sentence.
-
-The user interface shows the list of findings of the rules and their objects next to your report:
-do not repeat the lists of objects, refer to a finding by its rule name. Do not use Markdown tables.
-"""
+LANGUAGES = {"en": "English", "fr": "French"}
 
 
-def build_check_prompt(language: str) -> str:
-    return CHECK_PROMPT.format(language=CHECK_LANGUAGES[language])
+# Bounds of what a client can send back to the model: far above what the rules report.
+MAX_FINDINGS = 500
+MAX_OBJECTS_PER_FINDING = 100
+MAX_FINDING_TEXT = 4000
+
+
+class FindingDTO(AntaresBaseModel, extra="forbid"):
+    """A finding of the rules of the check, as given in the `tool_result` event of `check_study`."""
+
+    rule: str = Field(max_length=100)
+    severity: Literal["error", "warning", "info"]
+    message: str = Field(max_length=MAX_FINDING_TEXT)
+    objects: list[Annotated[str, Field(max_length=MAX_FINDING_TEXT)]] = Field(max_length=MAX_OBJECTS_PER_FINDING)
+    count: int = Field(ge=0)
+
+
+class FindingsRequestDTO(AntaresBaseModel, extra="forbid"):
+    findings: list[FindingDTO] = Field(
+        max_length=MAX_FINDINGS, description="Findings of the check of the study, unchanged."
+    )
+
+
+class ReviewRequestDTO(AntaresBaseModel, extra="forbid"):
+    findings: list[FindingDTO] = Field(
+        default_factory=list,
+        max_length=MAX_FINDINGS,
+        description="Findings of the check of the study, unchanged: the review then does not repeat them.",
+    )
 
 
 EXPLAIN_JOB_PROMPT = """\
@@ -135,4 +135,4 @@ them in full. Do not use Markdown tables.
 
 
 def build_explain_job_prompt(job_id: str, language: str) -> str:
-    return EXPLAIN_JOB_PROMPT.format(job_id=job_id, language=CHECK_LANGUAGES[language])
+    return EXPLAIN_JOB_PROMPT.format(job_id=job_id, language=LANGUAGES[language])

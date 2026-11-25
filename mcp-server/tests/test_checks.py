@@ -123,7 +123,8 @@ def test_calendar_of_another_year_than_the_study_name() -> None:
 def test_calendar_inconsistent_with_horizon() -> None:
     (finding,) = check_calendar(study(general={"horizon": "2030", "firstMonth": "january", "firstJanuary": "Monday"}))
 
-    assert "does not match the horizon '2030'" in finding.message
+    # The expected day is in the message: a model explaining the finding must not have to compute it.
+    assert "1 January is set to a Monday, but 1 January 2030 is a Tuesday" in finding.message
 
 
 def test_thermal_rules() -> None:

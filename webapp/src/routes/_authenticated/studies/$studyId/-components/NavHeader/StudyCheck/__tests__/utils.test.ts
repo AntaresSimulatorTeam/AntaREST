@@ -12,15 +12,21 @@
  * This file is part of the Antares project.
  */
 
-import type { AssistantEvent } from "@/services/api/assistant/types";
+import type { AssistantEvent, CheckFinding } from "@/services/api/assistant/types";
 import {
-  buildFindingContext,
+  buildRuleContext,
   countIssues,
   extractRule,
   getProgressPercent,
-  parseCheckReport,
+  getVerdictSeverity,
+  groupFindingsByRule,
   INITIAL_CHECK_STATE,
+  INITIAL_REPORT_STATE,
+  INITIAL_REVIEW_STATE,
+  parseCheckReport,
   reduceCheckEvent,
+  reduceReportEvent,
+  reduceReviewEvent,
   type StudyCheckState,
 } from "../utils";
 
@@ -90,7 +96,7 @@ describe("extractRule", () => {
 });
 
 describe("reduceCheckEvent", () => {
-  test("follows a whole check: start, rules, findings, analysis", () => {
+  test("follows a whole check: start, rules, findings, verdict", () => {
     expect(getProgressPercent(RUNNING_CHECK_STATE)).toBeUndefined();
 
     const checking = reduce([CALL]);
@@ -101,27 +107,15 @@ describe("reduceCheckEvent", () => {
     expect(halfway.progress).toEqual({ current: 2, total: 5, rule: "thermal_availability" });
     expect(getProgressPercent(halfway)).toBe(40);
 
-    // The findings are available before the analysis of the assistant
-    const reporting = reduce([result(REPORT_JSON)], halfway);
-    expect(reporting.phase).toBe("reporting");
-    expect(reporting.status).toBe("running");
-    expect(reporting.report?.findings).toHaveLength(1);
-    expect(countIssues(reporting.report)).toBe(3);
-    expect(getProgressPercent(reporting)).toBeUndefined();
+    const found = reduce([result(REPORT_JSON)], halfway);
+    expect(found.report?.findings).toHaveLength(1);
+    expect(countIssues(found.report)).toBe(3);
 
-    const done = reduce(
-      [
-        { type: "tool_call", name: "get_matrix_stats", input: {} },
-        { type: "tool_result", name: "get_matrix_stats", is_error: false, duration_s: 1 },
-        { type: "text", text: "Looking at the series." },
-        { type: "done", answer: "The study **cannot** be simulated as is." },
-      ],
-      reporting,
-    );
+    // The verdict comes with the end of the check: no text of the AI model is awaited
+    const done = reduce([{ type: "done", answer: "The study is not ready." }], found);
     expect(done.status).toBe("success");
-    expect(done.answer).toBe("The study **cannot** be simulated as is.");
-    expect(done.extraTools).toEqual(["get_matrix_stats"]);
-    expect(done.report).toBe(reporting.report);
+    expect(done.verdict).toBe("The study is not ready.");
+    expect(done.report).toBe(found.report);
   });
 
   test("keeps the reason when the rules could not run", () => {
@@ -129,18 +123,17 @@ describe("reduceCheckEvent", () => {
 
     expect(state.report).toBeUndefined();
     expect(state.reportError).toBe("Antares Web returned HTTP 404: study not found");
-    expect(state.phase).toBe("reporting");
   });
 
-  test("stops on an error of the assistant, keeping the findings already received", () => {
+  test("stops on an error, keeping the findings already received", () => {
     const state = reduce([
       CALL,
       result(REPORT_JSON),
-      { type: "error", message: "The rate limit of the model server is reached." },
+      { type: "error", message: "The agent of the assistant stopped unexpectedly." },
     ]);
 
     expect(state.status).toBe("error");
-    expect(state.error).toBe("The rate limit of the model server is reached.");
+    expect(state.error).toBe("The agent of the assistant stopped unexpectedly.");
     expect(state.report?.findings).toHaveLength(1);
   });
 
@@ -154,33 +147,115 @@ describe("reduceCheckEvent", () => {
   });
 });
 
-describe("buildFindingContext", () => {
-  test("describes the finding for the assistant: rule, severity, message and objects", () => {
-    const context = buildFindingContext({
-      rule: "hydro_generation_power",
-      severity: "error",
-      message: "Hydro inflows but no generating power.",
-      objects: ["fr", "es"],
-      count: 39,
-    });
+function finding(rule: string, severity: CheckFinding["severity"], count = 1): CheckFinding {
+  return {
+    rule,
+    severity,
+    message: `Message of ${rule} (${severity}).`,
+    objects: ["fr", "es"].slice(0, count),
+    count,
+  };
+}
 
-    expect(context).toContain("hydro_generation_power (error)");
-    expect(context).toContain("Hydro inflows but no generating power.");
-    expect(context).toContain("fr; es");
-    // Only the first objects are listed in a finding
-    expect(context).toContain("the first 2 of 39");
+describe("groupFindingsByRule", () => {
+  test("makes one group per rule, with its most severe finding and all its objects", () => {
+    const groups = groupFindingsByRule([
+      finding("thermal_availability", "error", 3),
+      finding("unsupplied_energy_cost", "warning", 2),
+      finding("disabled_objects", "info", 40),
+      finding("unsupplied_energy_cost", "info", 5),
+      finding("disabled_objects", "info", 2),
+    ]);
+
+    expect(groups.map((group) => [group.rule, group.severity, group.count])).toEqual([
+      ["thermal_availability", "error", 3],
+      ["unsupplied_energy_cost", "warning", 7],
+      ["disabled_objects", "info", 42],
+    ]);
+    expect(groups[1].findings.map((item) => item.severity)).toEqual(["warning", "info"]);
   });
 
-  test("does not mention hidden objects when all are listed", () => {
-    const context = buildFindingContext({
-      rule: "calendar",
-      severity: "warning",
-      message: "The study uses the 2029 calendar.",
-      objects: ["settings/generaldata.ini"],
-      count: 1,
+  test("orders the rules by their most severe finding, whatever the order received", () => {
+    const groups = groupFindingsByRule([
+      finding("playlist", "info"),
+      finding("renewable_series", "warning"),
+      finding("renewable_series", "error"),
+    ]);
+
+    expect(groups.map((group) => [group.rule, group.severity])).toEqual([
+      ["renewable_series", "error"],
+      ["playlist", "info"],
+    ]);
+  });
+});
+
+describe("buildRuleContext", () => {
+  test("describes the findings of the rule for the assistant: severity, message and objects", () => {
+    const [group] = groupFindingsByRule([
+      { ...finding("hydro_generation_power", "error", 39), objects: ["fr", "es"] },
+      finding("hydro_generation_power", "info"),
+    ]);
+
+    const context = buildRuleContext(group);
+
+    expect(context).toContain("rule `hydro_generation_power`");
+    expect(context).toContain("- error: Message of hydro_generation_power (error).");
+    expect(context).toContain("- info: Message of hydro_generation_power (info).");
+    // Only the first objects are listed in a finding
+    expect(context).toContain("objects concerned (the first 2 of 39): fr; es");
+    expect(context).toContain("objects concerned: fr");
+  });
+});
+
+describe("getVerdictSeverity", () => {
+  test.each([
+    [{ error: 1, warning: 2, info: 0 }, "error"],
+    [{ error: 0, warning: 2, info: 4 }, "warning"],
+    [{ error: 0, warning: 0, info: 4 }, "success"],
+  ] as const)("is the one of the most severe findings: %o", (summary, expected) => {
+    expect(getVerdictSeverity({ summary, findings: [], notes: [] })).toBe(expected);
+  });
+});
+
+describe("reduceReportEvent", () => {
+  test("keeps the text of the assistant, or the reason of its failure", () => {
+    const running = { ...INITIAL_REPORT_STATE, status: "running" as const };
+
+    const ignored = reduceReportEvent(running, { type: "text", text: "Thinking." });
+    const done = reduceReportEvent(running, { type: "done", answer: "The rule checks **costs**." });
+    const failed = reduceReportEvent(running, { type: "error", message: "No model." });
+
+    expect(ignored).toBe(running);
+    expect(done).toEqual({ status: "success", answer: "The rule checks **costs**." });
+    expect(failed).toMatchObject({ status: "error", error: "No model." });
+  });
+});
+
+describe("reduceReviewEvent", () => {
+  test("counts the readings of the study, then keeps the observations", () => {
+    const events: AssistantEvent[] = [
+      { type: "tool_call", name: "survey_study", input: {} },
+      { type: "tool_result", name: "survey_study", is_error: false, duration_s: 1 },
+      { type: "tool_call", name: "get_table", input: {} },
+    ];
+
+    const reading = events.reduce(reduceReviewEvent, {
+      ...INITIAL_REVIEW_STATE,
+      status: "running",
+    });
+    const done = reduceReviewEvent(reading, {
+      type: "done",
+      answer: "Rien d'anormal.",
+      history: [],
     });
 
-    expect(context).toContain("settings/generaldata.ini");
-    expect(context).not.toContain("the first");
+    expect(reading).toMatchObject({ status: "running", readings: 2, answer: "" });
+    expect(done).toMatchObject({ status: "success", answer: "Rien d'anormal." });
+  });
+
+  test("keeps the reason of a failure", () => {
+    const failed = reduceReviewEvent(INITIAL_REVIEW_STATE, { type: "error", message: "No model." });
+
+    expect(failed).toMatchObject({ status: "error", error: "No model." });
   });
 });

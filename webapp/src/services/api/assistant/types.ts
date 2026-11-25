@@ -69,6 +69,11 @@ export interface StreamJobExplanationParams extends StreamHandlers {
 /** State of a conversation, as returned by the server: opaque, sent back with the next message. */
 export type AssistantHistory = unknown[];
 
+/** Findings of a check, sent back to the assistant: to be explained, or not to be repeated. */
+export interface StreamCheckFindingsParams extends StreamStudyCheckParams {
+  findings: CheckFinding[];
+}
+
 export interface StreamAssistantChatParams extends StreamHandlers {
   message: string;
   /** Study the user is working on, if any. */

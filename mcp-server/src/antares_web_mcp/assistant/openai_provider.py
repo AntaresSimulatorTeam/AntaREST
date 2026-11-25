@@ -42,14 +42,17 @@ STOP_REASONS = {"length": "max_tokens", "content_filter": "refusal"}
 
 
 class OpenAICompatibleProvider:
-    def __init__(self, client: httpx2.AsyncClient, *, model: str) -> None:
+    def __init__(self, client: httpx2.AsyncClient, *, model: str, reasoning_effort: str | None = None) -> None:
         """
         Args:
             client: HTTP client of the server: its base URL ends with `/v1/`, and it carries the API key, if any.
             model: Id of the model, as listed by `GET <base URL>/models`.
+            reasoning_effort: `reasoning_effort` parameter of the chat completions API (e.g. `none`, `low`),
+                for the servers which accept it. Not sent by default.
         """
         self._client = client
         self.model = model
+        self._reasoning_effort = reasoning_effort
 
     async def run_turn(
         self,
@@ -105,6 +108,8 @@ class OpenAICompatibleProvider:
 
     async def _complete(self, messages: list[dict[str, Any]], tools: list[dict[str, Any]]) -> dict[str, Any]:
         body = {"model": self.model, "messages": messages} | ({"tools": tools} if tools else {})
+        if self._reasoning_effort:
+            body["reasoning_effort"] = self._reasoning_effort
         try:
             response = await self._client.post("chat/completions", json=body, timeout=REQUEST_TIMEOUT)
         except httpx2.HTTPError as e:

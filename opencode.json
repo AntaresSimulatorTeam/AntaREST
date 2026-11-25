@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "servers": {
+      "antares-web": {
+        "type": "local",
+        "command": ["uv", "run", "--directory", "mcp-server", "antares-web-mcp"],
+        "codemode": false,
+        "environment": {
+          "ANTARES_WEB_URL": "http://localhost:8080",
+          "ANTARES_MCP_READ_ONLY": "true"
+        }
+      }
+    }
+  }
+}

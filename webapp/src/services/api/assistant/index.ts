@@ -20,6 +20,7 @@ import type {
   AssistantStatus,
   AssistantStatusDTO,
   StreamAssistantChatParams,
+  StreamCheckFindingsParams,
   StreamHandlers,
   StreamJobExplanationParams,
   StreamStudyCheckParams,
@@ -104,10 +105,11 @@ async function streamAssistant(params: StreamParams): Promise<void> {
 }
 
 /**
- * Checks a study with the AI assistant: progress of the rules, findings, then the analysis.
+ * Checks a study with the consistency rules: their progress, their findings, then the verdict.
+ * The AI model is not called: see `streamFindingsExplanation` and `streamCheckSummary`.
  *
- * @param params - Study, language of the analysis, abort signal and event callback.
- * @returns A promise resolved when the assistant has finished.
+ * @param params - Study, language of the verdict, abort signal and event callback.
+ * @returns A promise resolved when the rules have run.
  * @throws If the request fails or is aborted.
  */
 export function streamStudyCheck(params: StreamStudyCheckParams): Promise<void> {
@@ -115,6 +117,62 @@ export function streamStudyCheck(params: StreamStudyCheckParams): Promise<void> 
 
   return streamAssistant({
     path: `/studies/${encodeURIComponent(studyId)}/check?language=${language}`,
+    signal,
+    onEvent,
+  });
+}
+
+/**
+ * Asks the AI assistant to explain findings of a check, typically those of one rule.
+ *
+ * @param params - Study, language, findings to explain, abort signal and event callback.
+ * @returns A promise resolved when the assistant has finished.
+ * @throws If the request fails or is aborted.
+ */
+export function streamFindingsExplanation(params: StreamCheckFindingsParams): Promise<void> {
+  const { studyId, language, findings, signal, onEvent } = params;
+
+  return streamAssistant({
+    path: `/studies/${encodeURIComponent(studyId)}/check/explain?language=${language}`,
+    body: { findings },
+    signal,
+    onEvent,
+  });
+}
+
+/**
+ * Asks the AI assistant for one report on all the findings of a check.
+ *
+ * @param params - Study, language, findings of the check, abort signal and event callback.
+ * @returns A promise resolved when the assistant has finished.
+ * @throws If the request fails or is aborted.
+ */
+export function streamCheckSummary(params: StreamCheckFindingsParams): Promise<void> {
+  const { studyId, language, findings, signal, onEvent } = params;
+
+  return streamAssistant({
+    path: `/studies/${encodeURIComponent(studyId)}/check/summary?language=${language}`,
+    body: { findings },
+    signal,
+    onEvent,
+  });
+}
+
+/**
+ * Reviews a study with the AI assistant, beyond the rules of the check: values out of line with
+ * comparable objects. Slower and less certain than the check, hence asked for separately.
+ *
+ * @param params - Study, language, findings of the check (the review does not repeat them),
+ * abort signal and event callback.
+ * @returns A promise resolved when the assistant has finished.
+ * @throws If the request fails or is aborted.
+ */
+export function streamStudyReview(params: StreamCheckFindingsParams): Promise<void> {
+  const { studyId, language, findings, signal, onEvent } = params;
+
+  return streamAssistant({
+    path: `/studies/${encodeURIComponent(studyId)}/review?language=${language}`,
+    body: { findings },
     signal,
     onEvent,
   });

@@ -145,6 +145,21 @@ async def test_provider_runs_the_tool_loop() -> None:
     assert [message["role"] for message in result.history] == ["user", "assistant", "tool", "assistant"]
 
 
+async def test_provider_sends_the_reasoning_effort_only_when_asked() -> None:
+    default, quiet = (
+        FakeModelApi(model_response({"content": "Yes."})),
+        FakeModelApi(model_response({"content": "Yes."})),
+    )
+    client = httpx2.AsyncClient(base_url="http://model.test/v1/", transport=httpx2.MockTransport(quiet.handler))
+
+    await run_turn(default.provider())
+    await run_turn(OpenAICompatibleProvider(client, model=MODEL, reasoning_effort="none"))
+
+    # Not sent by default: a server which does not know the parameter could reject the request.
+    assert "reasoning_effort" not in default.bodies()[0]
+    assert quiet.bodies()[0]["reasoning_effort"] == "none"
+
+
 async def test_provider_continues_a_conversation() -> None:
     api = FakeModelApi(model_response({"content": "Yes."}))
     history = [{"role": "user", "content": "Hello"}, {"role": "assistant", "content": "Hi"}]
@@ -386,6 +401,32 @@ async def test_runner_reports_errors(request_: dict[str, Any], expected: str) ->
     (event,) = [json.loads(line) for line in out.getvalue().splitlines()]
     assert event["type"] == "error"
     assert expected in event["message"]
+
+
+@pytest.mark.parametrize(
+    "task, expected",
+    [
+        ({"task": "explain", "findings": []}, "none"),
+        ({"task": "summary", "findings": []}, "none"),
+        # Where the model decides (tools to call, what to look at), its reasoning is kept.
+        ({"task": "review"}, None),
+        ({"task": "chat", "message": "Hello"}, None),
+    ],
+)
+async def test_runner_turns_the_reasoning_off_for_the_writing_tasks_only(
+    task: dict[str, Any], expected: str | None, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    built: list[str | None] = []
+
+    def build(name: str, *, model: str | None, base_url: str | None, reasoning_effort: str | None) -> Any:
+        built.append(reasoning_effort)
+        raise ProviderError("stop here")
+
+    monkeypatch.setattr("antares_web_mcp.assistant.runner.build_provider", build)
+
+    await handle(json.dumps({"study_id": STUDY_ID, "writing_reasoning_effort": "none"} | task), io.StringIO())
+
+    assert built == [expected]
 
 
 # ----------------------------------------------------------------------

@@ -12,7 +12,8 @@
 
 import json
 import logging
-from typing import Annotated, Literal, TypeAlias
+from collections.abc import Iterator
+from typing import Annotated, Any, Literal, TypeAlias
 
 from fastapi import APIRouter, Depends, Query
 from starlette.requests import Request
@@ -22,7 +23,9 @@ from antarest.assistant.model import (
     AssistantStatusDTO,
     ChatRequestDTO,
     ChatResponseDTO,
-    build_check_prompt,
+    FindingDTO,
+    FindingsRequestDTO,
+    ReviewRequestDTO,
     build_explain_job_prompt,
 )
 from antarest.assistant.service import AssistantService
@@ -106,7 +109,7 @@ def create_assistant_api() -> APIRouter:
 
     @bp.post(
         "/assistant/studies/{study_id}/check",
-        summary="Check a study with the AI assistant, following its progress",
+        summary="Check a study with the rules of the assistant, following its progress",
         response_class=StreamingResponse,
         responses={200: {"content": {"application/x-ndjson": {}}}},
     )
@@ -118,16 +121,91 @@ def create_assistant_api() -> APIRouter:
         language: Annotated[Literal["en", "fr"], Query(description="Language of the report.")] = "en",
     ) -> StreamingResponse:
         """
-        Checks the consistency of the inputs of a study before a simulation: the assistant runs the
-        deterministic rules of `check_study` (time series included), then explains the findings.
+        Checks the consistency of the inputs of a study before a simulation: the deterministic rules of
+        `check_study` are run (time series included). The model is not called: the findings and the
+        verdict only depend on the rules. To have the findings explained, send them to `/check/explain`
+        (those of one rule) or to `/check/summary` (all of them).
 
         Same stream of events as `/assistant/chat/stream`. The `tool_progress` events of `check_study`
         give the progress of the rules, its `tool_result` event holds the findings as JSON in `content`,
-        and the final `done` event holds the report of the assistant in `answer`.
+        and the final `done` event holds the verdict in `answer` (whether the study can be simulated).
         """
         logger.info(f"Assistant check of study {study_id}")
-        body = ChatRequestDTO(message=build_check_prompt(language), study_id=study_id)
-        return _stream(request, body, service, config)
+        return _stream_workflow("check", request, study_id, language, None, service, config)
+
+    @bp.post(
+        "/assistant/studies/{study_id}/check/explain",
+        summary="Explain findings of the check of a study with the AI assistant",
+        response_class=StreamingResponse,
+        responses={200: {"content": {"application/x-ndjson": {}}}},
+    )
+    def explain_findings(
+        request: Request,
+        study_id: UuidStr,
+        body: FindingsRequestDTO,
+        service: AssistantServiceDep,
+        config: ConfigDep,
+        language: Annotated[Literal["en", "fr"], Query(description="Language of the explanation.")] = "en",
+    ) -> StreamingResponse:
+        """
+        Explains findings of the check, typically those of one rule: what the rule checks, what the
+        objects concerned show, what to verify or fix. The model has no tool and only gets the findings
+        sent: the rules are not run again.
+
+        Same stream of events as `/assistant/chat/stream`: the `done` event holds the explanation.
+        """
+        logger.info(f"Assistant explanation of {len(body.findings)} finding(s) of study {study_id}")
+        return _stream_workflow("explain", request, study_id, language, body.findings, service, config)
+
+    @bp.post(
+        "/assistant/studies/{study_id}/check/summary",
+        summary="Summarise the check of a study with the AI assistant",
+        response_class=StreamingResponse,
+        responses={200: {"content": {"application/x-ndjson": {}}}},
+    )
+    def summarise_check(
+        request: Request,
+        study_id: UuidStr,
+        body: FindingsRequestDTO,
+        service: AssistantServiceDep,
+        config: ConfigDep,
+        language: Annotated[Literal["en", "fr"], Query(description="Language of the report.")] = "en",
+    ) -> StreamingResponse:
+        """
+        Writes one report on all the findings of the check: the model explains the errors and the
+        warnings together, most severe first, without any tool. Every error and warning sent is in the
+        report: those the model does not name are added to it.
+
+        Same stream of events as `/assistant/chat/stream`: the `done` event holds the report.
+        """
+        logger.info(f"Assistant summary of the check of study {study_id}")
+        return _stream_workflow("summary", request, study_id, language, body.findings, service, config)
+
+    @bp.post(
+        "/assistant/studies/{study_id}/review",
+        summary="Review a study with the AI assistant, beyond the rules",
+        response_class=StreamingResponse,
+        responses={200: {"content": {"application/x-ndjson": {}}}},
+    )
+    def review_study(
+        request: Request,
+        study_id: UuidStr,
+        service: AssistantServiceDep,
+        config: ConfigDep,
+        body: ReviewRequestDTO | None = None,
+        language: Annotated[Literal["en", "fr"], Query(description="Language of the report.")] = "en",
+    ) -> StreamingResponse:
+        """
+        Looks in a study for what the rules of the check cannot see: values out of line with comparable
+        objects (`survey_study`), which the model then puts in context with a few other tools. Slower and
+        less certain than the check: its observations are questions for the author of the study.
+
+        Same stream of events as `/assistant/chat/stream`. Send the findings of the check to let the
+        review know what the rules already reported.
+        """
+        logger.info(f"Assistant review of study {study_id}")
+        findings = body.findings if body else None
+        return _stream_workflow("review", request, study_id, language, findings, service, config)
 
     @bp.post(
         "/assistant/jobs/{job_id}/explain",
@@ -161,5 +239,30 @@ def _stream(request: Request, body: ChatRequestDTO, service: AssistantService, c
     """Runs one turn of conversation, sending the events of the agent as they happen (one JSON object per line)."""
     # Started here, not in the generator: configuration errors must give an HTTP error status.
     events = service.stream(body, antares_url=antares_url(request, config), token=user_token(request))
+    return _ndjson(events)
+
+
+def _stream_workflow(
+    task: Literal["check", "explain", "summary", "review"],
+    request: Request,
+    study_id: str,
+    language: str,
+    findings: list[FindingDTO] | None,
+    service: AssistantService,
+    config: Config,
+) -> StreamingResponse:
+    """Runs a workflow of the agent on a study, sending its events as they happen."""
+    events = service.stream_workflow(
+        task,
+        study_id=study_id,
+        language=language,
+        findings=findings,
+        antares_url=antares_url(request, config),
+        token=user_token(request),
+    )
+    return _ndjson(events)
+
+
+def _ndjson(events: Iterator[dict[str, Any]]) -> StreamingResponse:
     lines = (json.dumps(event, ensure_ascii=False) + "\n" for event in events)
     return StreamingResponse(lines, media_type="application/x-ndjson")

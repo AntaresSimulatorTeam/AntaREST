@@ -33,6 +33,7 @@ from pydantic import ValidationError
 from antares_web_mcp.assistant.agent import AssistantRequest, run_assistant
 from antares_web_mcp.assistant.provider import ProviderError
 from antares_web_mcp.assistant.providers import build_provider
+from antares_web_mcp.assistant.workflows import WRITING_TASKS
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +47,10 @@ async def handle(raw_request: str, out: TextIO) -> None:
 
     try:
         request = AssistantRequest.model_validate_json(raw_request)
-        provider = build_provider(request.provider, model=request.model, base_url=request.base_url)
+        effort = request.writing_reasoning_effort if request.task in WRITING_TASKS else None
+        provider = build_provider(
+            request.provider, model=request.model, base_url=request.base_url, reasoning_effort=effort
+        )
         result = await run_assistant(request, provider, emit)
     except ValidationError as e:
         await emit({"type": "error", "message": f"Invalid assistant request: {e}"})

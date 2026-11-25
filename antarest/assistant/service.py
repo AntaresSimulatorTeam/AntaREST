@@ -32,7 +32,7 @@ import tempfile
 import threading
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from antarest.assistant.model import (
     AssistantError,
@@ -40,6 +40,7 @@ from antarest.assistant.model import (
     AssistantUnavailableError,
     ChatRequestDTO,
     ChatResponseDTO,
+    FindingDTO,
     ToolCallDTO,
 )
 from antarest.core.config import AssistantConfig
@@ -93,15 +94,43 @@ class AssistantService:
         """
         Runs one turn of conversation, yielding the events of the agent as they happen:
         `tool_call`, `tool_result`, `text`, then `done` or `error`.
+        """
+        return self._stream({**request.model_dump(), "task": "chat"}, antares_url=antares_url, token=token)
+
+    def stream_workflow(
+        self,
+        task: Literal["check", "explain", "summary", "review"],
+        *,
+        study_id: str,
+        language: str,
+        findings: list[FindingDTO] | None = None,
+        antares_url: str,
+        token: str | None,
+    ) -> Iterator[dict[str, Any]]:
+        """
+        Runs a workflow of the agent on a study, yielding the same events as `stream`. The steps of a
+        workflow are fixed by the agent (see `mcp-server/src/antares_web_mcp/assistant/workflows.py`):
+        `check` runs the rules without the model, `explain` and `summary` have the model explain `findings`
+        of the check, `review` looks for what the rules cannot see.
+        """
+        request: dict[str, Any] = {"task": task, "study_id": study_id, "language": language}
+        if findings is not None:
+            request["findings"] = [finding.model_dump() for finding in findings]
+        return self._stream(request, antares_url=antares_url, token=token)
+
+    def _stream(self, request: dict[str, Any], *, antares_url: str, token: str | None) -> Iterator[dict[str, Any]]:
+        """
+        Starts the agent for one request.
 
         Raises:
             AssistantUnavailableError: if the assistant is not configured (raised before the first event).
         """
         command = self._check_available()
         payload = {
-            **request.model_dump(),
+            **request,
             **self.config.model_dump(include={"read_only", "provider", "model", "max_tool_rounds"}),
             "base_url": self._base_url(),
+            "writing_reasoning_effort": self.config.writing_reasoning_effort or None,
             "antares_url": antares_url,
             "token": token,
         }

@@ -101,6 +101,7 @@ on a whole industrial study (hundreds of objects, series of 8760 x 1000 values).
 | `list_binding_constraints`       | Binding constraints written as equations, with their right-hand side paths  | read-only |
 | `read_study_file`                | Text files (generation logs, notes), filtered by a regular expression       | read-only |
 | `check_study`                    | Deterministic consistency checks (quick, or `deep` on the time series)      | read-only |
+| `survey_study`                   | Values out of line with comparable objects (costs, capacities, peak load)   | read-only |
 
 The MCP prompt **`analyse_study_inputs`** chains these tools into a report: what the study is for,
 the deliberate settings, the modelled system, the modelling tricks (helper areas, availability
@@ -319,12 +320,20 @@ assistant:
   # enabled: true
   # timeout: 900             # maximum duration of one answer, in seconds
   # max_tool_rounds: 40
+  # writing_reasoning_effort: "none"   # see below
   # antares_url: ""          # URL used by the agent to call the server; default http://127.0.0.1:<port>
   # command: []              # command of the agent; default `uv run antares-web-assistant` in mcp-server/
 ```
 
 `uv` must be installed on the server. `GET /v1/assistant` tells whether the assistant is available,
 and why if it is not.
+
+`writing_reasoning_effort` is the `reasoning_effort` parameter of the chat completions API, sent only
+for the tasks where the model writes from findings it is given (explanation of a rule, summary of a
+check). A "thinking" model spends most of its output, and of the wait, reasoning before it writes:
+`"none"` turns that off where there is nothing to decide. Measured on a Qwen3.8-27B behind a LiteLLM
+gateway: 1,005 of the 1,294 output tokens of an explanation were reasoning, and the same explanation
+took 8 s instead of 42 s without it. Leave it empty for a server which rejects the parameter.
 
 The model must support tool calling. Check the server and the key before starting Antares Web:
 
@@ -343,7 +352,10 @@ signed by an internal certificate authority.
 | `GET /v1/assistant`              | Status: `available`, `reason`, `provider`, `model`, `read_only`         |
 | `POST /v1/assistant/chat`        | Ask a question; returns the answer, the tool calls made and a `history` |
 | `POST /v1/assistant/chat/stream` | Same, as a stream of JSON lines to follow the progress of the agent     |
-| `POST /v1/assistant/studies/{study_id}/check` | Check a study (`check_study` with the time series, then an explanation of the findings), as a stream of JSON lines. Query parameter: `language` (`en` or `fr`) |
+| `POST /v1/assistant/studies/{study_id}/check` | Check a study: the rules of `check_study` are run with the time series. The model is not called. As a stream of JSON lines: the findings are in the `tool_result` event, the verdict in `done`. Query parameter: `language` (`en` or `fr`) |
+| `POST /v1/assistant/studies/{study_id}/check/explain` | Have the model explain findings of the check (typically those of one rule), without any tool. Body: `findings`, as received from the check. Query parameter: `language` |
+| `POST /v1/assistant/studies/{study_id}/check/summary` | Have the model write one report on all the findings of the check, without any tool. Body: `findings`. Query parameter: `language` |
+| `POST /v1/assistant/studies/{study_id}/review` | Look for what the rules cannot see (`survey_study`, then a few readings). Slower and less certain than the check. Body: `findings` of the check (optional), which the review does not repeat. Query parameter: `language` |
 | `POST /v1/assistant/jobs/{job_id}/explain` | Explain why a simulation failed (`diagnose_job` on the job and its logs, then an explanation and what to do), as a stream of JSON lines. Query parameter: `language` |
 
 ```bash
@@ -359,25 +371,59 @@ Events of the streams (one JSON object per line): `tool_call` (`name`, `input`),
 `duration_s`, `content`), `text` (progress note), then `done` (`answer`, `history`, `usage`...) or
 `error` (`message`).
 
+### Workflows: what the code decides, what the model writes
+
+A model hosted on a private network is smaller than the models of the vendors. It writes well, but
+it is less reliable when it must choose a tool, compute, or remember a figure. The check, its
+explanations and the review are therefore *workflows*: their steps are fixed by the agent
+(`mcp-server/src/antares_web_mcp/assistant/workflows.py`), not chosen by the model. And the model
+only writes when the user asks for it.
+
+- **Check**: the agent runs `check_study` and computes the verdict (whether the study can be
+  simulated) from the number of errors and warnings. The model is not called: the findings are shown
+  at once, cost nothing, cannot be altered by a model, and are available when the model server is
+  down.
+- **Explanation of a rule**: the model gets the findings of one rule, with the objects the rule
+  listed, and no tool. It explains what the rule checks, what the objects show and what to verify.
+- **Summary**: the model gets all the findings and the verdict, and no tool. The agent then verifies
+  that the report names every error and warning, and adds those the model left out. A check without
+  error nor warning gets its summary without any call to the model.
+- **Review**: the model gets six tools instead of the whole server. `survey_study` computes the
+  comparisons (a cost 100 times the median of its group, an area unlike the others); the model
+  comments them and reads a few more figures for context. Its observations are questions for the
+  author of the study.
+- **Chat** keeps all the tools: the questions of the users are open.
+
+The facts a model could get wrong (a weekday, a figure) are written in the findings by the rules.
+The explanation and the summary receive the findings from the caller, which got them from the
+check: the rules, which can take minutes on a large study, run once. The agent counts the findings
+again by severity, and the backend bounds their number and size. What is sent to the model depends
+on the number of findings, and is bounded (in a summary, the 20 most severe are explained, the
+others are listed): adding rules changes neither the prompts nor the workflows.
+
 ### In the web interface
 
 When the assistant is available, the header of a study shows a **Check study** button. It calls the
 check endpoint and opens a panel with:
 
-- the progress: a percentage while the rules run on the time series (the only step whose duration
-  can be predicted), an indeterminate bar while the assistant starts and writes;
-- the findings of the rules, by severity, as soon as the rules have run;
-- then the analysis written by the assistant.
+- the progress: a percentage while the rules run on the time series;
+- the verdict, then the findings of the rules, one block per rule, most severe first. A rule which
+  reports several findings (a warning and an information, for instance) has one block.
+
+Nothing is asked to the model until the user clicks:
+
+- **Explain**, in the block of a rule: the explanation of that rule by the assistant;
+- **Summary**: one report on all the errors and warnings;
+- **In-depth review**: the assistant looks further in the study (review endpoint). Its observations
+  are shown apart from the findings of the rules.
 
 The result stays available from the button (with the number of errors and warnings) as long as the
-user stays on the study.
+user stays on the study, with the texts of the assistant.
 
-Once the check is finished, each finding has its own conversation with the assistant: a text field
-under the finding to ask a question about it or to request a correction. The conversation continues
-the one of the check (the `history` of its last event, sent to `/v1/assistant/chat/stream`), so the
-assistant already knows the study and the findings. It corrects the study only if the server sets
-`assistant.read_only: false`, and otherwise tells what to correct; after a correction, the panel
-offers to run the check again.
+Each rule also has its own conversation with the assistant: a text field under its findings to ask
+a question or to request a correction (`/v1/assistant/chat/stream`, with the findings of the rule
+as context). The assistant corrects the study only if the server sets `assistant.read_only: false`,
+and otherwise tells what to correct; after a correction, the panel offers to run the check again.
 
 Next to it, the **Assistant** button opens a conversation about the study: a text field to ask
 questions or request changes ("create an area Spain and link it to France"), with the tool calls made
@@ -445,4 +491,8 @@ npx @modelcontextprotocol/inspector uv run --directory mcp-server antares-web-mc
 To add a consistency rule, write a `check_<rule>` function in `tools/checks.py` (a quick rule takes
 the `StudyData` loaded once, a deep rule also gets a `MatrixReader`), add it to `QUICK_CHECKS` (or
 `DEEP_CHECKS`) and test it in `tests/test_checks.py` without any server. The name of the rule is the
-name of the function without `check_`.
+name of the function without `check_`. Write in the message of the finding every fact needed to
+explain it (the expected value, the figures): the model explaining a rule has no tool and must
+not have to compute or guess. Nothing else changes when a rule is added: neither the prompts nor
+the workflows list the rules, and the web interface shows one block per rule whatever their
+number. Add its label for the web interface (`study.check.rule.<rule>`).

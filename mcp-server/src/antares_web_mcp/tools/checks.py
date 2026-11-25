@@ -14,7 +14,7 @@
 Consistency checks of the inputs of a study (`check_study`).
 
 Each rule is deterministic: the same study always gives the same findings, and each rule is unit
-tested. The model then explains and prioritizes the findings. A finding is a *possible* issue:
+tested. A model can then explain the findings, when the user asks for it. A finding is a *possible* issue:
 some are deliberate modelling choices, which only the author can confirm.
 
 Quick rules only read the properties of the objects (table mode); "deep" rules download time
@@ -121,10 +121,13 @@ def check_calendar(data: StudyData) -> list[Finding]:
 
     findings = []
     if horizon_years and all(january_first(y) != weekday for y in january_years(horizon_years)):
+        # The expected days are given: whoever explains the finding (a model) must not have to compute them.
+        expected = " and ".join(f"1 January {y} is a {january_first(y)}" for y in sorted(january_years(horizon_years)))
         findings += finding(
             "calendar",
             "warning",
-            f"1 January is set to a {weekday}, which does not match the horizon '{general.get('horizon')}'.",
+            f"1 January is set to a {weekday}, but {expected} (horizon '{general.get('horizon')}'): weekdays "
+            "and weekends of the time series are shifted.",
             ["settings/generaldata.ini"],
         )
     foreign = [y for y in name_years if y not in horizon_years]

@@ -16,11 +16,12 @@ import AssistantThread from "@/components/AssistantConversation/AssistantThread"
 import useAssistantRun from "@/components/AssistantConversation/useAssistantRun";
 import useAssistantThreads from "@/components/AssistantConversation/useAssistantThreads";
 import { assistantQueries } from "@/queries/assistant/queries";
-import { streamStudyCheck } from "@/services/api/assistant";
-import type { CheckFinding } from "@/services/api/assistant/types";
+import { streamCheckSummary, streamStudyCheck, streamStudyReview } from "@/services/api/assistant";
+import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
 import ReplayIcon from "@mui/icons-material/Replay";
+import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import {
   Alert,
   AlertTitle,
@@ -31,7 +32,6 @@ import {
   Divider,
   Drawer,
   IconButton,
-  Skeleton,
   Stack,
   Toolbar,
   Tooltip,
@@ -41,41 +41,71 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
+import AssistantReport from "./AssistantReport";
 import CheckProgress from "./CheckProgress";
 import FindingsList from "./FindingsList";
-import { buildFindingContext, countIssues, INITIAL_CHECK_STATE, reduceCheckEvent } from "./utils";
+import useRuleExplanations from "./useRuleExplanations";
+import {
+  buildRuleContext,
+  countIssues,
+  getVerdictSeverity,
+  INITIAL_CHECK_STATE,
+  INITIAL_REPORT_STATE,
+  INITIAL_REVIEW_STATE,
+  reduceCheckEvent,
+  reduceReportEvent,
+  reduceReviewEvent,
+  type RuleGroup,
+} from "./utils";
 
 interface Props {
   studyId: string;
 }
 
-// Button to check the consistency of a study with the AI assistant, and the panel showing the
-// progress while it runs, then the findings of the rules and the analysis of the assistant. The
-// findings are shown as soon as the rules have run, before the analysis is written, and each one
-// has its own conversation with the assistant. Nothing is rendered if the server has no assistant.
+// Button to check the consistency of a study, and the panel showing the progress of the rules,
+// then their findings, grouped by rule, and the verdict. Nothing is rendered if the server has no
+// assistant.
+//
+// The check itself does not call the AI model: the findings and the verdict come from
+// deterministic rules, at once. The model only writes when the user asks for it:
+// - the explanation of one rule, with a conversation to go further;
+// - a summary of all the findings;
+// - a review of the study beyond the rules (values out of line with comparable objects), slower
+//   and less certain.
 //
 // The result is kept while the user stays on the study: the button then shows the number of
-// findings to look at, and opens the result again. So are the conversations about the findings.
+// findings to look at, and opens the result again. So are the texts of the assistant.
 function StudyCheck({ studyId }: Props) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const { data: assistant } = useQuery(assistantQueries.status());
-  // The assistant writes its analysis in the language of the interface
+  // The assistant writes in the language of the interface
   const language = i18n.language?.startsWith("fr") ? "fr" : "en";
   const { state, start, cancel } = useAssistantRun(
     INITIAL_CHECK_STATE,
     reduceCheckEvent,
     (handlers) => streamStudyCheck({ studyId, language, ...handlers }),
   );
+  const findings = state.report?.findings ?? [];
+  const summary = useAssistantRun(INITIAL_REPORT_STATE, reduceReportEvent, (handlers) =>
+    streamCheckSummary({ studyId, language, findings, ...handlers }),
+  );
+  const review = useAssistantRun(INITIAL_REVIEW_STATE, reduceReviewEvent, (handlers) =>
+    streamStudyReview({ studyId, language, findings, ...handlers }),
+  );
+  const {
+    explanations,
+    explain,
+    reset: resetExplanations,
+  } = useRuleExplanations(studyId, language);
   const threads = useAssistantThreads(studyId);
 
   if (!assistant?.available) {
     return null;
   }
 
-  const { status, report, reportError, answer, error, extraTools } = state;
+  const { status, report, reportError, verdict, error } = state;
   const isRunning = status === "running";
-  const hasFindings = !!report && report.findings.length > 0;
   const canModify = !assistant.readOnly;
 
   ////////////////////////////////////////////////////////////////
@@ -91,8 +121,11 @@ function StudyCheck({ studyId }: Props) {
   };
 
   const handleRestart = () => {
-    // The conversations are about the findings of the previous check
+    // What the assistant wrote is about the findings of the previous check
     threads.reset();
+    resetExplanations();
+    summary.reset();
+    review.reset();
     start();
   };
 
@@ -105,29 +138,13 @@ function StudyCheck({ studyId }: Props) {
   // Utils
   ////////////////////////////////////////////////////////////////
 
-  const getDiscussionHint = () => {
-    if (isRunning) {
-      return t("study.check.finding.waitForCheck");
-    }
-    return canModify ? undefined : t("study.check.finding.readOnlyHint");
-  };
-
-  const renderDiscussion = (id: string, finding: CheckFinding) => (
+  const renderDiscussion = (group: RuleGroup) => (
     <AssistantThread
-      thread={threads.threads[id]}
-      onSend={(message) =>
-        threads.send(id, {
-          message,
-          context: buildFindingContext(finding),
-          // The assistant already knows the study and the findings: the conversation goes on
-          baseHistory: state.history,
-        })
-      }
-      onStop={() => threads.stop(id)}
+      thread={threads.threads[group.rule]}
+      onSend={(message) => threads.send(group.rule, { message, context: buildRuleContext(group) })}
+      onStop={() => threads.stop(group.rule)}
       placeholder={t(canModify ? "study.check.finding.ask" : "study.check.finding.askReadOnly")}
-      // A conversation continues the one of the check: it waits for its end
-      disabled={isRunning}
-      hint={getDiscussionHint()}
+      hint={canModify ? undefined : t("study.check.finding.readOnlyHint")}
     />
   );
 
@@ -193,54 +210,91 @@ function StudyCheck({ studyId }: Props) {
             </Alert>
           )}
 
+          {report && verdict && report.findings.length > 0 && (
+            <Alert severity={getVerdictSeverity(report)} sx={{ "& p": { m: 0 } }}>
+              <Markdown>{verdict}</Markdown>
+            </Alert>
+          )}
+
           {report && (
             <Box component="section">
               <Typography variant="subtitle1" component="h3" sx={{ mb: 1, fontWeight: "bold" }}>
                 {t("study.check.findings")}
               </Typography>
-              <FindingsList report={report} renderDiscussion={renderDiscussion} />
+              <FindingsList
+                report={report}
+                explanations={explanations}
+                onExplain={explain}
+                renderDiscussion={renderDiscussion}
+              />
             </Box>
           )}
 
-          {(answer || (isRunning && state.phase === "reporting" && hasFindings)) && (
+          {summary.state.status !== "idle" && (
             <Box component="section">
               <Typography variant="subtitle1" component="h3" sx={{ fontWeight: "bold" }}>
-                {t("study.check.analysis")}
+                {t("study.check.summary.title")}
               </Typography>
-              {answer ? (
-                <>
-                  <Box
-                    sx={{
-                      typography: "body2",
-                      overflowWrap: "anywhere",
-                      "& code": { fontSize: "0.9em" },
-                    }}
-                  >
-                    <Markdown>{answer}</Markdown>
-                  </Box>
-                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                    {t("study.check.aiDisclaimer")}
-                  </Typography>
-                </>
-              ) : (
-                <>
-                  <Typography variant="body2" sx={{ color: "text.secondary", my: 1 }}>
-                    {extraTools.length > 0
-                      ? t("study.check.analysisDigging", { count: extraTools.length })
-                      : t("study.check.analysisPending")}
-                  </Typography>
-                  <Skeleton />
-                  <Skeleton />
-                  <Skeleton width="60%" />
-                </>
-              )}
+              <AssistantReport
+                state={summary.state}
+                pendingText={t("study.check.summary.pending")}
+                failedText={t("study.check.explain.failed")}
+                disclaimer={t("study.check.summary.disclaimer")}
+              />
+            </Box>
+          )}
+
+          {review.state.status !== "idle" && (
+            <Box component="section">
+              <Typography variant="subtitle1" component="h3" sx={{ fontWeight: "bold" }}>
+                {t("study.check.review.title")}
+              </Typography>
+              <AssistantReport
+                state={review.state}
+                pendingText={t("study.check.review.pending", { count: review.state.readings })}
+                failedText={t("study.check.explain.failed")}
+                disclaimer={t("study.check.review.disclaimer")}
+              />
             </Box>
           )}
         </Stack>
         {!isRunning && status !== "idle" && (
           <>
             <Divider />
-            <Stack direction="row" sx={{ p: 2, justifyContent: "flex-end" }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{ p: 2, justifyContent: "flex-end", flexWrap: "wrap" }}
+              useFlexGap
+            >
+              {status === "success" && countIssues(report) > 0 && (
+                <Tooltip title={t("study.check.summary.tooltip")}>
+                  <span>
+                    <Button
+                      variant="text"
+                      startIcon={<AutoAwesomeOutlinedIcon />}
+                      disabled={summary.state.status === "running"}
+                      onClick={summary.start}
+                    >
+                      {t("study.check.summary.button")}
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
+              {status === "success" && (
+                <Tooltip title={t("study.check.review.tooltip")}>
+                  <span>
+                    <Button
+                      variant="text"
+                      startIcon={<TravelExploreIcon />}
+                      disabled={review.state.status === "running"}
+                      onClick={review.start}
+                    >
+                      {t("study.check.review.button")}
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
               <Button variant="outlined" startIcon={<ReplayIcon />} onClick={handleRestart}>
                 {t("study.check.restart")}
               </Button>
