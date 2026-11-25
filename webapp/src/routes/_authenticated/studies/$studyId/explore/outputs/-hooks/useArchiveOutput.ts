@@ -57,7 +57,7 @@ function useArchiveOutput() {
     onSuccess: async (taskId, output, onMutateResult) => {
       const { outputToArchive } = onMutateResult || {};
 
-      await waitForOutputArchiveTask(taskId);
+      await waitForOutputArchiveTask(queryClient, taskId);
       queryClient.removeQueries({ queryKey: outputKeys.detail(output) });
 
       if (outputToArchive) {

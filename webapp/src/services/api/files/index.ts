@@ -42,6 +42,7 @@ export async function getFileContent(
   } catch (error) {
     const response = isAxiosError(error) ? error.response : undefined;
 
+    // Axios returns JSON errors as Blobs too. Decode them so callers can read the server's description.
     if (response?.data instanceof Blob && response.data.type.split(";")[0] === "application/json") {
       try {
         response.data = fileErrorSchema.parse(JSON.parse(await response.data.text()));

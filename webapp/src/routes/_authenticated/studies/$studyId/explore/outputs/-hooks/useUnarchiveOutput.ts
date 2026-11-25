@@ -57,7 +57,7 @@ function useUnarchiveOutput() {
     onSuccess: async (taskId, output, onMutateResult) => {
       const { outputToUnarchive } = onMutateResult || {};
 
-      await waitForOutputArchiveTask(taskId);
+      await waitForOutputArchiveTask(queryClient, taskId);
       queryClient.removeQueries({ queryKey: outputKeys.detail(output) });
 
       if (outputToUnarchive) {

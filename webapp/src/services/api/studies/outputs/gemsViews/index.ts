@@ -43,6 +43,7 @@ export async function getGemsViews(
     return { status: "READY", views: gemsViewsSchema.parse(data) };
   } catch (error) {
     if (isAxiosError(error) && error.response?.status === 404) {
+      // This endpoint also uses 404 to report preparation status. Other 404s are rethrown.
       const preparation = gemsViewsPreparationSchema.safeParse(error.response.data);
 
       if (preparation.success) {
@@ -75,6 +76,7 @@ export async function materializeGemsViews({
     return z.string().min(1).parse(data);
   } catch (error) {
     if (isAxiosError(error) && error.response?.status === 417) {
+      // The views are already prepared, so there is no task to monitor.
       return undefined;
     }
 

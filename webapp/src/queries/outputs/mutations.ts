@@ -28,6 +28,18 @@ export const outputMutations = {
         const metadata = { queryKey: outputKeys.gemsViews(output), exact: true };
         const taskId = await materializeGemsViews(output);
 
+        if (taskId !== undefined) {
+          const views = client.getQueryData<GemsViewsState>(metadata.queryKey);
+
+          // A repeat response can arrive while the task's completion refetch is in flight.
+          if (
+            views?.status === "READY" ||
+            (views?.status === "IN_PROGRESS" && views.taskId === taskId)
+          ) {
+            return taskId;
+          }
+        }
+
         await client.cancelQueries(metadata);
 
         if (taskId === undefined) {

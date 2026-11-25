@@ -12,26 +12,28 @@
  * This file is part of the Antares project.
  */
 
+import type { GemsViewsState } from "@/services/api/studies/outputs/gemsViews/types";
 import type { OutputParams } from "@/services/api/studies/outputs/types";
-import type { Task } from "@/services/api/tasks/types";
 import { isTaskFinished } from "@/services/api/tasks/utils";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { taskQueries } from "../tasks/queries";
 import { outputQueries } from "./queries";
 
 // Kept here temporarily to test task polling and metadata refresh before the GEMS view exists.
 // TODO: Move this hook next to the GemsViews component when it is added.
-export default function useGemsViewsMaterializationTask(
+function useGemsViewsMaterializationTask(
   { studyId, outputId }: OutputParams,
-  taskId: Task["id"],
+  metadata: GemsViewsState | undefined,
 ) {
   const client = useQueryClient();
-  const task = useQuery(taskQueries.monitor(taskId));
-  const isFinished = task.data !== undefined && isTaskFinished(task.data);
+  const taskId = metadata?.status === "IN_PROGRESS" ? metadata.taskId : undefined;
+  const queries = taskId ? [taskQueries.monitor(taskId)] : [];
+  const [task] = useQueries({ queries });
+  const isFinished = task?.data !== undefined && isTaskFinished(task.data);
 
   useEffect(() => {
-    if (!isFinished) {
+    if (!taskId || !isFinished) {
       return;
     }
 
@@ -44,5 +46,7 @@ export default function useGemsViewsMaterializationTask(
     }
   }, [client, studyId, outputId, taskId, isFinished]);
 
-  return task;
+  return taskId ? task : undefined;
 }
+
+export default useGemsViewsMaterializationTask;
