@@ -134,3 +134,12 @@ MSW — mock API modules with `vi.mock`.
   fixtures are in `tests/conftest*.py`. `testcontainers` is used for
   Postgres-backed tests.
 - Frontend tests are colocated as `*.test.ts(x)` and run under vitest with `TZ=UTC`.
+
+## Skills
+
+Agent skills live in `.agents/skills/<name>/` (a `SKILL.md` plus its scripts), the location read
+by Codex and GitHub Copilot. If your agent does not load skills from there (Claude Code reads
+only `.claude/skills/`), read the `SKILL.md` and follow it.
+
+- `antarest-release` — runbook and tools for a release (branch, version, changelog, Jenkins,
+  `master` and `dev` merges, GitHub release, `antares-cd`, desktop build).
