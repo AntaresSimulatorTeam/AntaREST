@@ -40,8 +40,6 @@ library:
           scenario-dependent: false
           time-dependent: false
         - id: p_max
-          scenario-dependent: true
-          time-dependent: true
       variables:
         - id: power
           lower-bound: 0

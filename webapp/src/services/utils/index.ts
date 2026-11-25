@@ -156,13 +156,12 @@ export const buildModificationDate = (
   return duration.locale(language.substring(0, 2) === "fr" ? "fr" : "en").humanize();
 };
 
-export const createListFromTree = ({ node, children }: VariantTree): GenericInfo[] => {
+export const createListFromTree = ({
+  node,
+  children,
+}: VariantTree): Array<GenericInfo<Study["id"]>> => {
   const { id, name } = node;
-
-  return children.reduce<GenericInfo[]>(
-    (list, tree) => list.concat(createListFromTree(tree)),
-    [{ id, name }],
-  );
+  return children.reduce((list, tree) => list.concat(createListFromTree(tree)), [{ id, name }]);
 };
 
 export const sortByProp = <K extends string, T extends Record<K, string>>(key: K, list: T[]) =>
@@ -220,7 +219,7 @@ export function getParentNode(tree: VariantTree, studyId: string): Study | undef
   return undefined;
 }
 
-function getSubTree(tree: VariantTree, studyId: string): VariantTree | undefined {
+export function getSubTree(tree: VariantTree, studyId: string): VariantTree | undefined {
   if (studyId === tree.node.id) {
     return tree;
   }
@@ -236,12 +235,12 @@ function getSubTree(tree: VariantTree, studyId: string): VariantTree | undefined
   return undefined;
 }
 
-export function countDescendants(tree: VariantTree, studyId?: string): number {
+export function getDescendantCount(tree: VariantTree, studyId?: string): number {
   const rootTree = studyId ? getSubTree(tree, studyId) : tree;
 
   if (!rootTree) {
     return 0;
   }
 
-  return rootTree.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0);
+  return rootTree.children.reduce((sum, child) => sum + 1 + getDescendantCount(child), 0);
 }

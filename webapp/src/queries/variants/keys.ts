@@ -16,7 +16,7 @@ import { studyKeys } from "../studies/keys";
 
 export const variantKeys = {
   all: () => [...studyKeys.all(), "variants"] as const,
-  allTree: () => [...variantKeys.all(), "variantTrees"] as const,
+  allTree: () => [...variantKeys.all(), "trees"] as const,
   treeDetails: () => [...variantKeys.allTree(), "treeDetail"] as const,
   treeDetail: (studyId: string) => [...variantKeys.treeDetails(), { studyId }] as const,
 };

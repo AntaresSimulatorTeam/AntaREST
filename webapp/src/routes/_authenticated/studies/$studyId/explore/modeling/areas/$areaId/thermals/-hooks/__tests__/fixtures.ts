@@ -17,7 +17,7 @@ import { thermalClusterSchema } from "@/services/api/studies/areas/thermals/sche
 export const cluster = thermalClusterSchema.parse({
   id: "gas",
   name: "Gas",
-  group: null,
+  group: "",
   enabled: true,
   unitCount: 2,
   nominalCapacity: 100,

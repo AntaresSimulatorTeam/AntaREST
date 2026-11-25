@@ -52,6 +52,7 @@ class AdequacyPatchParameters(AntaresBaseModel):
     ntc_between_physical_areas_out_adequacy_patch: bool | None = None
     # Since v9.3
     redispatch: bool | None = None
+    threshold_ens: ThresholdType
 
 
 class AdequacyPatchParametersUpdate(AntaresBaseModel):
@@ -67,6 +68,7 @@ class AdequacyPatchParametersUpdate(AntaresBaseModel):
     threshold_csr_variable_bounds_relaxation: int | None = Field(default=None, ge=0)
     ntc_between_physical_areas_out_adequacy_patch: bool | None = None
     redispatch: bool | None = None
+    threshold_ens: ThresholdType
 
 
 def update_adequacy_patch_parameters(
@@ -105,6 +107,7 @@ def validate_adequacy_patch_parameters_against_version(
 
     if version < STUDY_VERSION_9_3:
         check_min_version(parameters_data, "redispatch", version)
+        check_min_version(parameters_data, "threshold_ens", version)
 
     if version >= STUDY_VERSION_9_2:
         check_min_version(parameters_data, "ntc_between_physical_areas_out_adequacy_patch", version)
@@ -134,3 +137,4 @@ def initialize_adequacy_patch_parameters(parameters: AdequacyPatchParameters, ve
 
     if version >= STUDY_VERSION_9_3:
         initialize_field_with_default_value(parameters, "redispatch", False)
+        initialize_field_with_default_value(parameters, "threshold_ens", 0)

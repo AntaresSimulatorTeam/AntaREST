@@ -374,7 +374,7 @@ class MatrixContentRepository:
             if matrix_path.exists():
                 return matrix_path, internal_format
 
-        return None, InternalMatrixFormat.HDF
+        return None, InternalMatrixFormat.TSV
 
     def infer_matrix_characteristics(self, matrix_id: str) -> Matrix:
         matrix_path, matrix_format = self._get_matrix_path_n_format(matrix_id)

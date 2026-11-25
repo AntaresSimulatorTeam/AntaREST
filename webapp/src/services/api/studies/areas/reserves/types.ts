@@ -14,21 +14,21 @@
 
 import type { AreaWithId } from "@/types/types";
 import type { z } from "zod";
+import type { Study } from "../../types";
 import type {
-  createReserveParamsSchema,
   productionTypeSchema,
   reserveCertificationSchema,
+  reserveCreationSchema,
   reserveGlobalParametersSchema,
+  reserveGlobalParametersUpdateSchema,
   reserveSchema,
   reserveTypeSchema,
+  reserveUpdateSchema,
   reservesCertificationsSchema,
   reservesSymmetriesSchema,
   storageReserveCertificationSchema,
   thermalReserveCertificationSchema,
-  updateReserveGlobalParametersSchema,
-  updateReserveParamsSchema,
 } from "./schemas";
-import type { Study } from "../../types";
 
 export type ReserveType = z.infer<typeof reserveTypeSchema>;
 export type Reserve = z.infer<typeof reserveSchema>;
@@ -44,37 +44,36 @@ export type ReserveCertificationField<
 export type ReservesCertifications = z.infer<typeof reservesCertificationsSchema>;
 export type ReservesSymmetries = z.infer<typeof reservesSymmetriesSchema>;
 
-export type CreateReserveData = z.infer<typeof createReserveParamsSchema>;
-export type UpdateReserveData = z.infer<typeof updateReserveParamsSchema>;
-export type UpdateReserveGlobalParametersData = z.infer<typeof updateReserveGlobalParametersSchema>;
+export type ReserveCreation = z.infer<typeof reserveCreationSchema>;
+export type ReserveUpdate = z.infer<typeof reserveUpdateSchema>;
+export type ReserveGlobalParametersUpdate = z.infer<typeof reserveGlobalParametersUpdateSchema>;
 
-export interface ReservesAreaParams {
+export interface ReservesParams {
   studyId: Study["id"];
   areaId: AreaWithId["id"];
 }
 
-export interface GetReserveParams extends ReservesAreaParams {
+export interface ReserveParams extends ReservesParams {
   reserveId: Reserve["id"];
 }
 
-export interface CreateReserveParams extends ReservesAreaParams {
-  data: CreateReserveData;
+export interface CreateReserveParams extends ReservesParams {
+  data: ReserveCreation;
 }
 
-export interface UpdateReserveParams extends ReservesAreaParams {
-  reserveId: Reserve["id"];
-  data: UpdateReserveData;
+export interface UpdateReserveParams extends ReserveParams {
+  data: ReserveUpdate;
 }
 
-export interface DeleteReservesParams extends ReservesAreaParams {
+export interface DeleteReservesParams extends ReservesParams {
   reserveIds: Array<Reserve["id"]>;
 }
 
-export interface UpdateReserveGlobalParametersParams extends ReservesAreaParams {
-  data: UpdateReserveGlobalParametersData;
+export interface UpdateReserveGlobalParametersParams extends ReservesParams {
+  data: ReserveGlobalParametersUpdate;
 }
 
-export interface ReservesProductionTypeParams extends ReservesAreaParams {
+export interface ReservesProductionTypeParams extends ReservesParams {
   productionType: ProductionType;
 }
 

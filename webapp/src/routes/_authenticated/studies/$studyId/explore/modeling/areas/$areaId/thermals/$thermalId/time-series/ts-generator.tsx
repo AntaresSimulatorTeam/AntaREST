@@ -13,8 +13,9 @@
  */
 
 import Matrix from "@/components/Matrix";
+import { buildKey } from "@/utils/reactUtils";
 import { createFileRoute } from "@tanstack/react-router";
-import { TS_GEN_MATRIX_COLS } from "../../-utils";
+import { TS_GEN_MATRIX_COLS } from "../../-constants";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/thermals/$thermalId/time-series/ts-generator",
@@ -23,11 +24,12 @@ export const Route = createFileRoute(
 });
 
 function TimeSeriesGenerator() {
-  const { studyId, areaId, thermalId } = Route.useParams();
+  const params = Route.useParams();
+  const { studyId, areaId, thermalId } = params;
 
   return (
     <Matrix
-      key={thermalId}
+      key={buildKey(params)}
       studyId={studyId}
       url={`input/thermal/prepro/${areaId}/${thermalId}/data`}
       filterKey="thermals.ts-generator"

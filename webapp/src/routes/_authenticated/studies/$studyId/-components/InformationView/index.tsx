@@ -15,32 +15,36 @@
 import CustomScrollbar from "@/components/CustomScrollbar";
 import ViewWrapper from "@/components/page/ViewWrapper";
 import RouterButton from "@/components/router/RouterButton";
+import RouterLink from "@/components/router/RouterLink";
 import useDialog from "@/hooks/useDialog";
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getReferenceStudy } from "@/redux/selectors";
 import { copyStudy } from "@/services/api/studies";
-import type { VariantTree } from "@/services/api/studies/variants/types";
 import { unarchiveStudy } from "@/services/api/study";
 import { toError } from "@/utils/fnUtils";
 import BoltIcon from "@mui/icons-material/Bolt";
 import UnarchiveOutlinedIcon from "@mui/icons-material/UnarchiveOutlined";
-import { Box, Button, Divider, Stack } from "@mui/material";
-import { useTranslation } from "react-i18next";
+import { Alert, Box, Button, Divider, Stack } from "@mui/material";
+import { Trans, useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
+import useStudyVariantTree from "../../-hooks/useStudyVariantTree";
 import LaunchStudiesDialog from "../../../../../-shared/components/studies/dialogs/LaunchStudiesDialog";
-import CreateVariantDialog from "./CreateVariantDialog";
+import CreateStudyVariantDialog from "./CreateStudyVariantDialog";
 import DetailsList from "./DetailsList";
 import LauncherHistory from "./LauncherHistory";
 import Notes from "./Notes";
 
-interface Props {
-  variantTree: VariantTree;
-}
-
-function InformationView({ variantTree }: Props) {
+function InformationView() {
   const [t] = useTranslation();
   const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { openDialog } = useDialog();
   const study = useStudy();
+  const { data: variantTree } = useStudyVariantTree({ studyId: study.id });
+  const referenceStudy = useAppSelector((state) => getReferenceStudy(state, study.id));
+  const isArchived = study.archived || referenceStudy.archived;
+  const studyToUnarchive = referenceStudy.archived ? referenceStudy : study;
+  const isVariant = study.type === "variantstudy";
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -58,17 +62,24 @@ function InformationView({ variantTree }: Props) {
     }
   };
 
-  const handleUnarchiveStudy = async () => {
+  const handleUnarchive = async () => {
     try {
-      await unarchiveStudy(study.id);
+      await unarchiveStudy(studyToUnarchive.id);
     } catch (err) {
-      enqueueErrorSnackbar(t("studies.error.unarchive", { studyname: study.name }), toError(err));
+      enqueueErrorSnackbar(
+        t("studies.error.unarchive", { studyname: studyToUnarchive.name }),
+        toError(err),
+      );
     }
   };
 
   const handleCreateVariant = () => {
     openDialog(({ onClose }) => (
-      <CreateVariantDialog parentId={study.id} variantTree={variantTree} onClose={onClose} />
+      <CreateStudyVariantDialog
+        defaultParentId={study.id}
+        variantTree={variantTree}
+        onClose={onClose}
+      />
     ));
   };
 
@@ -84,9 +95,23 @@ function InformationView({ variantTree }: Props) {
 
   return (
     <ViewWrapper flex={{ gap: 2 }}>
+      {referenceStudy.archived && isVariant && (
+        <Alert severity="warning">
+          <Trans
+            i18nKey="variants.unarchive.warning"
+            values={{ referenceStudyName: referenceStudy.name }}
+            components={{
+              referenceStudyLink: (
+                <RouterLink to="/studies/$studyId" params={{ studyId: referenceStudy.id }} />
+              ),
+            }}
+          />
+        </Alert>
+      )}
+
       <Stack flex={1} spacing={1} sx={{ overflow: "auto" }}>
         <LauncherHistory />
-        {!study.archived && (
+        {!isArchived && (
           <Stack direction="column" sx={{ height: 1, flex: 1, overflow: "hidden" }}>
             <Notes />
             <Divider flexItem variant="middle" />
@@ -101,7 +126,7 @@ function InformationView({ variantTree }: Props) {
         <CustomScrollbar>
           <Stack spacing={1} justifyContent="space-between">
             <Stack spacing={1}>
-              {!study.archived && (
+              {!isArchived && (
                 <>
                   <RouterButton
                     variant="contained"
@@ -122,13 +147,13 @@ function InformationView({ variantTree }: Props) {
                 </>
               )}
             </Stack>
-            {study.archived ? (
+            {isArchived ? (
               <Button
                 variant="contained"
-                onClick={handleUnarchiveStudy}
+                onClick={handleUnarchive}
                 startIcon={<UnarchiveOutlinedIcon />}
               >
-                {t("global.unarchive")}
+                {studyToUnarchive.id === study.id ? t("global.unarchive") : t("variants.unarchive")}
               </Button>
             ) : (
               <Button variant="contained" onClick={handleLaunchStudy} startIcon={<BoltIcon />}>

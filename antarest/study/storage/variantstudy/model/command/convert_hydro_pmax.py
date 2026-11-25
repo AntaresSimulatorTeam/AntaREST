@@ -15,6 +15,7 @@ from pydantic import model_validator
 from typing_extensions import override
 
 from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParametersUpdate,
     HydroPmax,
     validate_compatibility_parameters_against_version,
 )
@@ -40,7 +41,9 @@ class ConvertHydroPmax(ICommand):
 
     @model_validator(mode="after")
     def _validate_against_version(self) -> Self:
-        validate_compatibility_parameters_against_version(self.study_version)
+        validate_compatibility_parameters_against_version(
+            self.study_version, CompatibilityParametersUpdate(hydro_pmax=self.hydro_pmax)
+        )
         return self
 
     @override

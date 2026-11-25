@@ -19,10 +19,10 @@ import { updateStudyFilters, updateStudySortConfig } from "@/redux/ducks/studies
 import useAppDispatch from "@/redux/hooks/useAppDispatch";
 import useAppSelector from "@/redux/hooks/useAppSelector";
 import { getStudyFilters, getStudySortConfig } from "@/redux/selectors";
-import { getDescendantIds } from "@/routes/_authenticated/studies/-components/StudyTree/ManagedTree/utils";
 import type { Study } from "@/services/api/studies/types";
 import { scanFolder } from "@/services/api/study";
 import type { StudySortConfig } from "@/types/types";
+import { getDescendantIds } from "@/utils/directoryUtils";
 import { toError } from "@/utils/fnUtils";
 import { Box } from "@mui/material";
 import { useSuspenseQuery } from "@tanstack/react-query";

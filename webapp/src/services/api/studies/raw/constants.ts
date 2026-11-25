@@ -14,7 +14,6 @@
 
 export const TableExportFormat = {
   XLSX: "xlsx",
-  HDF5: "hdf5",
   TSV: "tsv",
   CSV: "csv",
   CSV_SEMICOLON: "csv (semicolon)",

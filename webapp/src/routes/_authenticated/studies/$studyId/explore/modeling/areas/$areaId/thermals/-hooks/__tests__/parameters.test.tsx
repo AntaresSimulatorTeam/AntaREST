@@ -16,12 +16,12 @@ import "./setup";
 
 import { thermalKeys } from "@/queries/thermals/keys";
 import * as api from "@/services/api/studies/areas/thermals";
-import type { QueryClient } from "@tanstack/react-query";
 import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
-import { cluster } from "./fixtures";
+import type { QueryClient } from "@tanstack/react-query";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route } from "../../$thermalId/parameters";
+import { cluster } from "./fixtures";
 
 const { params, notify } = vi.hoisted(() => ({
   params: { studyId: "study", areaId: "area", thermalId: "gas" },
@@ -98,10 +98,11 @@ describe("Thermal parameters", () => {
     await userEvent.click(screen.getByRole("button", { name: "global.save" }));
 
     await waitFor(() =>
-      expect(api.updateThermalCluster).toHaveBeenCalledWith(
-        { ...scope, clusterId: "gas", values: { nominalCapacity: 250 } },
-        expect.anything(),
-      ),
+      expect(api.updateThermalCluster).toHaveBeenCalledWith({
+        ...scope,
+        thermalId: "gas",
+        values: { nominalCapacity: 250 },
+      }),
     );
     await waitFor(() => expect(screen.getByRole("button", { name: "global.save" })).toBeDisabled());
     expect(input).toHaveValue(250);

@@ -41,14 +41,3 @@ class UserResourceDataCreation(AntaresBaseModel):
 
 class UserResourceDataRemoval(AntaresBaseModel):
     path: str
-
-
-class FolderTree(AntaresBaseModel):
-    name: str
-    files: list[str]
-    directories: list["FolderTree"]
-
-
-class UserResourcesTree(AntaresBaseModel):
-    files: list[str]
-    directories: list[FolderTree]

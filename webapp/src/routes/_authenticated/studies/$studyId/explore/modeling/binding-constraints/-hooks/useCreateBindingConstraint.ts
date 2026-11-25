@@ -58,7 +58,6 @@ function useCreateBindingConstraint() {
             ...DEFAULT_CONSTRAINT_VALUES,
             ...values,
             id: tempConstraintId,
-            name: values.name,
           }),
         ];
       });

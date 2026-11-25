@@ -15,7 +15,7 @@ from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from http import HTTPStatus
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, BinaryIO
 
 import pandas as pd
@@ -30,6 +30,7 @@ from antarest.launcher.model import LogType
 from antarest.output.filestudy.model import QueryFileType
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
+from antarest.output.model.gems_views import GemsTaxonomyViews
 from antarest.output.model.output_type import OutputType
 from antarest.study.business.model.config.general_model import Mode
 from antarest.study.model import MatrixFrequency
@@ -313,6 +314,50 @@ class IOutputStorage(ABC):
     def get_original_file(self, study_id: str, output_id: str, url: list[str]) -> OriginalFile:
         """
         Retrieves the original file as it exists on the file system
+        """
+
+    @abstractmethod
+    def list_raw_files(self, study_id: str, output_id: str) -> list[PurePosixPath]:
+        """
+        Lists all the files of the output, as written by the simulator, relative to the output root.
+        The output must not be archived.
+
+        Raises:
+            OutputNotFound: if the unarchived output does not exist.
+        """
+
+    @abstractmethod
+    def read_raw_file(self, study_id: str, output_id: str, path: PurePosixPath) -> bytes:
+        """
+        Returns the content of the output file located at `path` (relative to the output root).
+        The output must not be archived.
+
+        Raises:
+            OutputNotFound: if the unarchived output does not exist.
+            OutputFileNotFound: if the file does not exist in the output.
+        """
+
+    @abstractmethod
+    def get_gems_views(self, study_id: str, output_id: str) -> list[GemsTaxonomyViews] | None:
+        """
+        Returns the materialized GEMS views of the output grouped by taxonomy category, with their available locations.
+        Returns None if they have not been materialized yet, see `materialize_gems_views`.
+        The output must not be archived.
+
+        Raises:
+            OutputNotFound: if the unarchived output does not exist.
+            OutputGemsViewsNotFound: if the output does not contain GEMS views.
+        """
+
+    @abstractmethod
+    def materialize_gems_views(self, study_id: str, output_id: str) -> None:
+        """
+        Reads the GEMS views from the output and stores them, to be fetched with `get_gems_views`.
+        The output must not be archived.
+
+        Raises:
+            OutputNotFound: if the unarchived output does not exist.
+            OutputGemsViewsNotFound: if the output does not contain GEMS views.
         """
 
     @abstractmethod

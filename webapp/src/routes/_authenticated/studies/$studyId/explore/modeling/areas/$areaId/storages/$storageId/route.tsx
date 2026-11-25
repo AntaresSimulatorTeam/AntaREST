@@ -12,15 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import SelectFE, { type SelectFEChangeEvent } from "@/components/fieldEditors/SelectFE";
+import SelectFE, {
+  type Options,
+  type SelectFEChangeEvent,
+} from "@/components/fieldEditors/SelectFE";
 import TabsView from "@/components/page/TabsView";
-import usePromise from "@/hooks/usePromise";
+import { isQueryListItemOptimistic } from "@/queries/utils";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import type { Storage } from "@/services/api/studies/areas/storages/types";
 import { checkRouteAvailability } from "@/utils/routerUtils";
 import { createFileRoute, linkOptions, useNavigate, useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import semver from "semver";
-import { getStorages } from "../-utils";
+import useStorages from "../-hooks/useStorages";
 
 export const Route = createFileRoute(
   "/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/storages/$storageId",
@@ -28,24 +32,25 @@ export const Route = createFileRoute(
   component: StorageLayout,
 });
 
+function storagesToOptions(storages: Storage[]): Options<Storage["id"]> {
+  return storages.map((storage) => ({
+    label: storage.name,
+    value: storage.id,
+    group: storage.group ?? undefined,
+    disabled: isQueryListItemOptimistic(storage),
+  }));
+}
+
 function StorageLayout() {
   const study = useStudy();
   const params = Route.useParams();
   const { constraintId } = useParams({ strict: false });
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { areaId, storageId } = params;
-
-  const { data: storageOptions = [storageId], status: storageOptionsStatus } =
-    usePromise(async () => {
-      const storages = await getStorages(study.id, areaId);
-
-      return storages.map((storage) => ({
-        label: storage.name,
-        value: storage.id,
-        group: storage.group,
-      }));
-    }, [study.id, areaId]);
+  const { data: storageOptions } = useStorages({
+    ...params,
+    select: storagesToOptions,
+  });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
@@ -111,11 +116,10 @@ function StorageLayout() {
       primaryActions={
         <SelectFE
           label={t("study.modeling.storages.select")}
-          value={storageId}
+          value={params.storageId}
           options={storageOptions}
           onChange={handleChange}
           size="extra-small"
-          disabled={storageOptionsStatus !== "fulfilled"}
           sx={{ minWidth: 90, maxWidth: 150 }}
         />
       }

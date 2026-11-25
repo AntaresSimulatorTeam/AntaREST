@@ -16,8 +16,10 @@ import CustomScrollbar from "@/components/CustomScrollbar";
 import EditorIcon from "@/components/icons/EditorIcon";
 import RouterLink from "@/components/router/RouterLink";
 import { PUBLIC_MODE_LIST } from "@/components/utils/constants";
-import type { Study } from "@/services/api/studies/types";
-import { buildModificationDate, convertUTCToLocalTime } from "@/services/utils";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getParentStudy } from "@/redux/selectors";
+import type { VariantTree } from "@/services/api/studies/variants/types";
+import { buildModificationDate, convertUTCToLocalTime, getDescendantCount } from "@/services/utils";
 import { truncateTextSx } from "@/utils/muiUtils";
 import { compactSemanticVersion } from "@/utils/versionUtils";
 import AccountTreeOutlinedIcon from "@mui/icons-material/AccountTreeOutlined";
@@ -27,24 +29,37 @@ import ScheduleOutlinedIcon from "@mui/icons-material/ScheduleOutlined";
 import SecurityOutlinedIcon from "@mui/icons-material/SecurityOutlined";
 import UpdateOutlinedIcon from "@mui/icons-material/UpdateOutlined";
 import { Chip, Divider, Stack, Tooltip, Typography, styled } from "@mui/material";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import useStudy from "../../-hooks/useStudy";
+import useStudyVariantTree from "../../-hooks/useStudyVariantTree";
 
 const TinyText = styled(Typography)(({ theme }) => ({
   fontSize: 12,
   color: theme.vars.palette.text.secondary,
 }));
 
-interface Props {
-  parentStudy?: Study;
-  variantNb?: number;
-}
-
-function Details({ parentStudy, variantNb }: Props) {
+function Details() {
   const study = useStudy();
   const [t, i18n] = useTranslation();
+  const parentStudy = useAppSelector((state) => getParentStudy(state, study.id));
+
+  const selectDescendantCount = useCallback(
+    (variantTree: VariantTree) => getDescendantCount(variantTree, study.id),
+    [study.id],
+  );
+
+  const { data: descendantCount } = useStudyVariantTree({
+    studyId: study.id,
+    select: selectDescendantCount,
+  });
+
   const publicModeLabel =
     PUBLIC_MODE_LIST.find((mode) => mode.id === study?.publicMode)?.name || "";
+
+  ////////////////////////////////////////////////////////////////
+  // JSX
+  ////////////////////////////////////////////////////////////////
 
   const tooltipContent = (
     <Stack direction="column">
@@ -91,12 +106,10 @@ function Details({ parentStudy, variantNb }: Props) {
         <InfoOutlinedIcon fontSize="small" sx={{ color: "text.secondary", cursor: "pointer" }} />
       </Tooltip>
       <TinyText>{`v${compactSemanticVersion(study.version)}`}</TinyText>
-      {typeof variantNb === "number" && (
-        <Stack spacing={1}>
-          <AccountTreeOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
-          <TinyText>{variantNb}</TinyText>
-        </Stack>
-      )}
+      <Stack spacing={1}>
+        <AccountTreeOutlinedIcon fontSize="inherit" sx={{ color: "text.secondary" }} />
+        <TinyText>{descendantCount}</TinyText>
+      </Stack>
       <CustomScrollbar>
         <Stack spacing={1}>
           {study.managed ? (

@@ -12,15 +12,18 @@
  * This file is part of the Antares project.
  */
 
+import { DEFAULT_WORKSPACE_NAME } from "@/components/utils/constants";
+import { useAppMode } from "@/hooks/useAppMode";
+import { updateStudyFilters } from "@/redux/ducks/studies";
+import useAppDispatch from "@/redux/hooks/useAppDispatch";
+import useAppSelector from "@/redux/hooks/useAppSelector";
+import { getStudies, getStudyFilters } from "@/redux/selectors";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import StorageIcon from "@mui/icons-material/Storage";
 import { Box, Divider } from "@mui/material";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { updateStudyFilters } from "@/redux/ducks/studies";
-import useAppDispatch from "@/redux/hooks/useAppDispatch";
-import useAppSelector from "@/redux/hooks/useAppSelector";
-import { getStudies, getStudyFilters } from "@/redux/selectors";
+import DiskUsageIndicator from "./DiskUsageIndicator";
 import ExternalTree from "./ExternalTree";
 import ManagedTree from "./ManagedTree";
 import TreeSection, { type TreeSectionVariant } from "./TreeSection";
@@ -28,10 +31,21 @@ import { studyTreeGridSx } from "./styles";
 
 function StudyTree() {
   const { t } = useTranslation();
+  const { isWebMode } = useAppMode();
   const dispatch = useAppDispatch();
   const studies = useAppSelector(getStudies);
   const managedCollapsed = useAppSelector((s) => getStudyFilters(s).managed.collapsed);
   const externalCollapsed = useAppSelector((s) => getStudyFilters(s).external.collapsed);
+  const managedRootSelected = useAppSelector((s) => {
+    const filters = getStudyFilters(s);
+
+    return filters.activeTree === "managed" && filters.managed.directoryId === null;
+  });
+  const externalRootSelected = useAppSelector((s) => {
+    const filters = getStudyFilters(s);
+
+    return filters.activeTree === "external" && filters.external.path === "";
+  });
   const externalStudies = useMemo(() => studies.filter((s) => !s.managed), [studies]);
 
   const [isCreatingDirectory, setIsCreatingDirectory] = useState(false);
@@ -78,15 +92,24 @@ function StudyTree() {
   ////////////////////////////////////////////////////////////////
 
   return (
-    <Box sx={studyTreeGridSx(gridTemplateRows)}>
+    <Box sx={studyTreeGridSx(gridTemplateRows)} data-study-tree>
       <TreeSection
         variant="managed"
         title={t("studies.tree.managed")}
         icon={<AccountTreeIcon />}
         onToggleCollapse={() => handleToggleCollapse("managed")}
         onRootClick={handleManagedRootClick}
+        isRootSelected={managedRootSelected}
         onAddDirectory={handleAddDirectoryClick}
         scrollKey="study-tree-managed"
+        headerContent={
+          isWebMode && (
+            <DiskUsageIndicator
+              workspace={DEFAULT_WORKSPACE_NAME}
+              label={t("studies.tree.diskUsage.label")}
+            />
+          )
+        }
       >
         <ManagedTree
           isCreatingDirectory={isCreatingDirectory}
@@ -103,6 +126,7 @@ function StudyTree() {
         icon={<StorageIcon />}
         onToggleCollapse={() => handleToggleCollapse("external")}
         onRootClick={handleExternalRootClick}
+        isRootSelected={externalRootSelected}
         scrollKey="study-tree-external"
       >
         <ExternalTree studies={externalStudies} onRootClick={handleExternalRootClick} />

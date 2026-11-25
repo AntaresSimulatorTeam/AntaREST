@@ -17,8 +17,8 @@ import "./setup";
 import { reserveKeys } from "@/queries/reserves/keys";
 import { thermalKeys } from "@/queries/thermals/keys";
 import * as api from "@/services/api/studies/areas/thermals";
-import type { QueryClient } from "@tanstack/react-query";
 import { createQueryClient, createQueryWrapper } from "@/tests/queryUtils";
+import type { QueryClient } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import useCreateThermalCluster from "../useCreateThermalCluster";
 import useDeleteThermalClusters from "../useDeleteThermalClusters";
@@ -74,7 +74,7 @@ describe("Thermal mutations", () => {
     );
 
     await act(async () => {
-      await result.current.mutateAsync({ ...scope, clusterIds: [cluster.id] });
+      await result.current.mutateAsync({ ...scope, thermalIds: [cluster.id] });
     });
 
     expect(client.getQueryData(key)).toEqual([coal]);
@@ -115,7 +115,7 @@ describe("Thermal mutations", () => {
     await act(async () => {
       await result.current.duplicate.mutateAsync({
         ...scope,
-        clusterId: cluster.id,
+        thermalId: cluster.id,
         newName: duplicated.name,
       });
     });

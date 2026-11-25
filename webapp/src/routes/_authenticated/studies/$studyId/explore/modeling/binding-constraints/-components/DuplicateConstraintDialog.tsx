@@ -52,7 +52,7 @@ function DuplicateConstraintDialog({ constraintToDuplicate, onCancel }: Props) {
     duplicateConstraint.mutate({
       studyId: study.id,
       constraintId: constraintToDuplicate.id,
-      newConstraintName: values.name,
+      newName: values.name,
     });
   };
 

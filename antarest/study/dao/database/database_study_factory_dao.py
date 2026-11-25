@@ -28,7 +28,10 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     SheddingPolicy,
     initialize_advanced_parameters_against_version,
 )
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParameters,
+    initialize_compatibility_parameters,
+)
 from antarest.study.business.model.config.general_model import GeneralConfig, initialize_general_config_against_version
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
@@ -92,7 +95,9 @@ def _create_default_settings(dao: DatabaseStudyDao, study_version: StudyVersion)
         dao.save_adequacy_patch_parameters(adequacy_patch_parameters)
 
     if study_version >= STUDY_VERSION_9_2:
-        dao.save_compatibility_parameters(CompatibilityParameters())
+        compatibility_parameters = CompatibilityParameters()
+        initialize_compatibility_parameters(compatibility_parameters, study_version)
+        dao.save_compatibility_parameters(compatibility_parameters)
 
 
 class DatabaseStudyDaoFactory(StudyFactoryDao):

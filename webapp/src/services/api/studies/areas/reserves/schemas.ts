@@ -13,13 +13,13 @@
  */
 
 import { z } from "zod";
-import { HYDRO_ASSET_ID } from "./constants";
+import { HYDRO_ASSET_ID, RESERVE_TYPES } from "./constants";
 
 ////////////////////////////////////////////////////////////////
 // Response Schemas
 ////////////////////////////////////////////////////////////////
 
-export const reserveTypeSchema = z.enum(["up", "down"]);
+export const reserveTypeSchema = z.enum(RESERVE_TYPES);
 
 export const reserveSchema = z.object({
   id: z.string(),
@@ -34,12 +34,25 @@ export const reserveSchema = z.object({
 
 export const reservesSchema = z.array(reserveSchema);
 
+export const reserveCreationSchema = reserveSchema
+  .omit({ id: true })
+  .partial()
+  .required({ name: true, type: true });
+
+export const reserveUpdateSchema = reserveSchema.omit({ id: true, name: true }).partial();
+
+////////////////////////////////////////////////////////////////
+// Global Parameters
+////////////////////////////////////////////////////////////////
+
 export const reserveGlobalParametersSchema = z.object({
   referenceActivationDurationUp: z.number(),
   energyActivationRatioUp: z.number(),
   referenceActivationDurationDown: z.number(),
   energyActivationRatioDown: z.number(),
 });
+
+export const reserveGlobalParametersUpdateSchema = reserveGlobalParametersSchema.partial();
 
 ////////////////////////////////////////////////////////////////
 // Production Types
@@ -150,16 +163,3 @@ export const reservesSymmetriesCodecs: Record<
   storages: reservesSymmetriesSchema,
   hydro: hydroReservesSymmetriesCodec,
 };
-
-////////////////////////////////////////////////////////////////
-// Input Schemas
-////////////////////////////////////////////////////////////////
-
-export const createReserveParamsSchema = reserveSchema
-  .omit({ id: true })
-  .partial()
-  .required({ name: true, type: true });
-
-export const updateReserveParamsSchema = reserveSchema.omit({ id: true, name: true }).partial();
-
-export const updateReserveGlobalParametersSchema = reserveGlobalParametersSchema.partial();

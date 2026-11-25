@@ -77,9 +77,16 @@ def study_service_as_studies_repository(study_service: StudyService) -> IStudyMe
             return StudyMetadata(id=study.id, name=study.name or "<Unnamed study>", storage_mode=study.storage_mode)
 
         @override
-        def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
+        def assert_permission(
+            self, study_id: str, permission: StudyPermissionType, allow_archived: bool = False
+        ) -> None:
             study = study_service.get_study(study_id)
             assert_permission(study, permission)
-            study_service.assert_study_unarchived(study)
+            if not allow_archived:
+                study_service.assert_study_unarchived(study)
+
+        @override
+        def invalidate_disk_space(self, study_id: str) -> None:
+            study_service.invalidate_disk_space(study_id)
 
     return StudyServiceAdapter()

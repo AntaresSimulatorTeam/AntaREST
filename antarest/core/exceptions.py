@@ -412,6 +412,16 @@ class OutputAlreadyArchived(HTTPException):
         super().__init__(HTTPStatus.EXPECTATION_FAILED, message)
 
 
+class UnsupportedOperationOnArchivedOutput(HTTPException):
+    """
+    Exception raised when a user wants to access the content of an archived output.
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"Output '{output_id}' is archived"
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
 class OutputAlreadyUnarchived(HTTPException):
     """
     Exception raised when a user wants to unarchive an output which is already unarchived.
@@ -445,6 +455,26 @@ class OutputSubFolderNotFound(HTTPException):
     def __str__(self) -> str:
         """Return a string representation of the exception."""
         return self.detail
+
+
+class OutputFileNotFound(HTTPException):
+    """
+    Exception raised when a file does not exist inside an output
+    """
+
+    def __init__(self, output_id: str, path: str) -> None:
+        message = f"The output '{output_id}' file '{path}' does not exist"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class OutputGemsViewsNotFound(HTTPException):
+    """
+    Exception raised when an output does not contain any GEMS views
+    """
+
+    def __init__(self, output_id: str) -> None:
+        message = f"The output '{output_id}' does not contain GEMS views"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
 
 
 class InvalidOutputConversionRequest(HTTPException):
@@ -940,3 +970,50 @@ class GemsCatalogAlreadyExists(HTTPException):
 class GemsInvalidConnection(HTTPException):
     def __init__(self, message: str) -> None:
         super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class GemsScenarioNotFound(HTTPException):
+    def __init__(self, scenario_name: str, study_id: str) -> None:
+        message = f"Could not find scenario '{scenario_name}' inside gems scenario builder for study {study_id}"
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsScenarioAlreadyExists(HTTPException):
+    def __init__(self, scenario_name: str, study_id: str) -> None:
+        message = f"Scenario '{scenario_name}' already exists in the gems scenario builder of study {study_id}"
+        super().__init__(HTTPStatus.CONFLICT, message)
+
+
+class GemsInvalidComponents(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class GemsInvalidParameterValue(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class GemsParameterValueIsConstantButShouldNotBe(HTTPException):
+    def __init__(self, parameter_id: str, value: float) -> None:
+        message = (
+            f"Parameter '{parameter_id}' had this constant value: {value} but should be time and/or scenario dependent"
+        )
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class GemsParameterValueIsNotConstantButShouldBe(HTTPException):
+    def __init__(self, parameter_id: str, value: str) -> None:
+        message = f"Parameter '{parameter_id}' had this value: '{value}' but should be constant"
+        super().__init__(HTTPStatus.BAD_REQUEST, message)
+
+
+class GemsParameterNotFound(HTTPException):
+    def __init__(self, message: str) -> None:
+        super().__init__(HTTPStatus.NOT_FOUND, message)
+
+
+class GemsTaxonomyNotFound(HTTPException):
+    def __init__(self, taxonomy: str, study_id: str) -> None:
+        message = f"Taxonomy '{taxonomy}' not found inside study {study_id}"
+        super().__init__(HTTPStatus.CONFLICT, message)

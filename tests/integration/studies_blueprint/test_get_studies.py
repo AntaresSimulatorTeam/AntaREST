@@ -481,7 +481,7 @@ class TestStudiesListing:
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map = res.json()
         assert not all_studies.intersection(study_map)
-        assert all(map(lambda x: pm(x) in [PublicMode.READ, PublicMode.FULL], study_map.values()))
+        assert all(pm(x) in [PublicMode.READ, PublicMode.FULL] for x in study_map.values())
         # test pagination
         res = client.get(
             STUDIES_URL,
@@ -535,10 +535,7 @@ class TestStudiesListing:
         study_map = res.json()
         assert not james_bond_studies.difference(study_map)
         assert all(
-            map(
-                lambda x: pm(x) in [PublicMode.READ, PublicMode.FULL],
-                [e for k, e in study_map.items() if k not in james_bond_studies],
-            )
+            pm(x) in [PublicMode.READ, PublicMode.FULL] for k, x in study_map.items() if k not in james_bond_studies
         )
 
         # #TODO you need to update the permission for James Bond bot above
@@ -563,7 +560,7 @@ class TestStudiesListing:
         res = client.get(STUDIES_URL, headers={"Authorization": f"Bearer {admin_access_token}"}, params={"name": "840"})
         assert res.status_code == LIST_STATUS_CODE, res.json()
         study_map = res.json()
-        assert all(map(lambda x: "840" in x["name"], study_map.values())) and len(study_map) >= 5
+        assert all("840" in x["name"] for x in study_map.values()) and len(study_map) >= 5
         # test 2.b with no matching studies
         res = client.get(
             STUDIES_URL,

@@ -12,15 +12,15 @@
 
 import contextlib
 import shlex
-from typing import Any
+from typing import Any, Iterator
 
 import paramiko
 
 from antarest.launcher.ssh_config import SSHConfigDTO
 
 
-@contextlib.contextmanager  # type: ignore
-def ssh_client(ssh_config: SSHConfigDTO) -> paramiko.SSHClient:  # type: ignore
+@contextlib.contextmanager
+def ssh_client(ssh_config: SSHConfigDTO) -> Iterator[paramiko.SSHClient]:
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(
@@ -42,7 +42,7 @@ class SlurmError(Exception):
 def execute_command(ssh_config: SSHConfigDTO, args: list[str]) -> Any:
     command = " ".join(args)
     try:
-        with ssh_client(ssh_config) as client:  # type: paramiko.SSHClient
+        with ssh_client(ssh_config) as client:
             _, stdout, stderr = client.exec_command(command, timeout=10)
             output = stdout.read().decode("utf-8").strip()
             error = stderr.read().decode("utf-8").strip()

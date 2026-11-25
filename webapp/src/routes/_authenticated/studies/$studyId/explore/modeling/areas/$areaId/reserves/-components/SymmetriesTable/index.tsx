@@ -12,11 +12,11 @@
  * This file is part of the Antares project.
  */
 
-import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/GroupedDataTable/utils";
+import { getDarkModeFixStyles, getTableOptionsForAlign } from "@/components/DataTable/utils";
 import useThemeColorScheme from "@/hooks/useThemeColorScheme";
 import type { Reserve } from "@/services/api/studies/areas/reserves/types";
-import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import AddIcon from "@mui/icons-material/Add";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import RedoIcon from "@mui/icons-material/Redo";

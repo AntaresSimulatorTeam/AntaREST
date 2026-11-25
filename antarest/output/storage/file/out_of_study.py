@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 from typing_extensions import override
 
+from antarest.core.config import Config
 from antarest.core.interfaces.cache import ICache
 from antarest.core.remote.remote_executor import IRemoteExecutor
 from antarest.output.storage.file.abstract_storage import AbstractFileOutputStorage, IFileOutputsProvider
@@ -28,10 +29,13 @@ class OutOfStudyFileOutputStorage(AbstractFileOutputStorage):
         self,
         outputs_provider: IFileOutputsProvider,
         cache: ICache,
+        config: Config,
         remote_executor: IRemoteExecutor,
         repository: FileOutputRepository,
     ) -> None:
-        super().__init__(outputs_provider, cache, remote_executor, repository, OutputStorageType.OUT_OF_STUDY_FILE_TREE)
+        super().__init__(
+            outputs_provider, cache, config, remote_executor, repository, OutputStorageType.OUT_OF_STUDY_FILE_TREE
+        )
 
     @override
     @property

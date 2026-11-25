@@ -21,10 +21,12 @@ from antarest.matrixstore.service import ISimpleMatrixService
 from antarest.study.storage.variantstudy.business.matrix_constants_generator import GeneratorMatrixConstants
 from antarest.study.storage.variantstudy.model.command.common import CommandName
 from antarest.study.storage.variantstudy.model.command.convert_hydro_pmax import ConvertHydroPmax
+from antarest.study.storage.variantstudy.model.command.convert_hydro_rule_curves import ConvertHydroRuleCurves
 from antarest.study.storage.variantstudy.model.command.create_area import CreateArea
 from antarest.study.storage.variantstudy.model.command.create_binding_constraint import CreateBindingConstraint
 from antarest.study.storage.variantstudy.model.command.create_cluster import CreateCluster
 from antarest.study.storage.variantstudy.model.command.create_district import CreateDistrict
+from antarest.study.storage.variantstudy.model.command.create_gems_scenario import CreateGemsScenario
 from antarest.study.storage.variantstudy.model.command.create_layer import CreateLayer
 from antarest.study.storage.variantstudy.model.command.create_link import CreateLink
 from antarest.study.storage.variantstudy.model.command.create_renewables_cluster import CreateRenewablesCluster
@@ -47,6 +49,7 @@ from antarest.study.storage.variantstudy.model.command.icommand import ICommand
 from antarest.study.storage.variantstudy.model.command.remove_area import RemoveArea
 from antarest.study.storage.variantstudy.model.command.remove_cluster import RemoveCluster
 from antarest.study.storage.variantstudy.model.command.remove_district import RemoveDistrict
+from antarest.study.storage.variantstudy.model.command.remove_gems_scenario import RemoveGemsScenario
 from antarest.study.storage.variantstudy.model.command.remove_layer import RemoveLayer
 from antarest.study.storage.variantstudy.model.command.remove_link import RemoveLink
 from antarest.study.storage.variantstudy.model.command.remove_multiple_binding_constraints import (
@@ -102,6 +105,7 @@ from antarest.study.storage.variantstudy.model.command.update_binding_constraint
 from antarest.study.storage.variantstudy.model.command.update_binding_constraints import UpdateBindingConstraints
 from antarest.study.storage.variantstudy.model.command.update_config import UpdateConfig
 from antarest.study.storage.variantstudy.model.command.update_district import UpdateDistrict
+from antarest.study.storage.variantstudy.model.command.update_gems_scenario import UpdateGemsScenario
 from antarest.study.storage.variantstudy.model.command.update_general_config import UpdateGeneralConfig
 from antarest.study.storage.variantstudy.model.command.update_hydro_management import UpdateHydroManagement
 from antarest.study.storage.variantstudy.model.command.update_inflow_structure import UpdateInflowStructure
@@ -192,6 +196,7 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.REPLACE_HYDRO_ALLOCATION.value: ReplaceHydroAllocation,
     CommandName.REPLACE_HYDRO_CORRELATION.value: ReplaceHydroCorrelation,
     CommandName.CONVERT_HYDRO_PMAX.value: ConvertHydroPmax,
+    CommandName.CONVERT_HYDRO_RULE_CURVES.value: ConvertHydroRuleCurves,
     CommandName.CREATE_USER_RESOURCE.value: ReplaceUserResource,
     CommandName.REPLACE_USER_RESOURCE.value: ReplaceUserResource,
     CommandName.UPDATE_RESERVES_GLOBAL_PARAMETERS.value: UpdateReservesGlobalParameters,
@@ -204,6 +209,9 @@ COMMAND_MAPPING: dict[str, type[ICommand]] = {
     CommandName.REPLACE_ST_STORAGE_RESERVE_CERTIFICATIONS.value: ReplaceStStorageReserveCertifications,
     CommandName.REPLACE_HYDRO_RESERVE_CERTIFICATIONS.value: ReplaceHydroReserveCertifications,
     CommandName.REPLACE_HYDRO_RESERVE_SYMMETRIES.value: ReplaceHydroReserveSymmetries,
+    CommandName.CREATE_GEMS_SCENARIO.value: CreateGemsScenario,
+    CommandName.UPDATE_GEMS_SCENARIO.value: UpdateGemsScenario,
+    CommandName.REMOVE_GEMS_SCENARIO.value: RemoveGemsScenario,
 }
 
 

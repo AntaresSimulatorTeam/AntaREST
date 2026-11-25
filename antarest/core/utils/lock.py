@@ -38,7 +38,7 @@ class AntarestFileLock(FileLock):
     """
 
     @override
-    def acquire(  # noqa: C901
+    def acquire(
         self,
         timeout: float | None = None,
         poll_interval: float | None = None,

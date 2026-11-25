@@ -75,3 +75,9 @@ class TestAdequacyPatchParameters:
             UpdateAdequacyPatchParameters(
                 parameters=parameters, command_context=command_context, study_version=STUDY_VERSION_9_2
             )
+
+        parameters = AdequacyPatchParametersUpdate(**{"threshold_ens": 1.5})
+        with pytest.raises(ValidationError, match="Field threshold_ens is not a valid field for study version 9.2"):
+            UpdateAdequacyPatchParameters(
+                parameters=parameters, command_context=command_context, study_version=STUDY_VERSION_9_2
+            )

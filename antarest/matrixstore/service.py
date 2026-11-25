@@ -155,8 +155,8 @@ def check_dataframe_compliance(df: pl.DataFrame) -> None:
       is actually the default index.
 
     Notes:
-    pd.StringDType is considered experimental and not supported everywhere, for example
-    by to_hdf5, therefore we use `infer_dtype` to check object dtype are actually
+    pd.StringDType is considered experimental and not supported everywhere,
+    therefore we use `infer_dtype` to check object dtype are actually
     strings.
     """
     if df.is_empty():

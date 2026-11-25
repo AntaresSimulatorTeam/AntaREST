@@ -17,11 +17,20 @@ from antarest.study.storage.rawstudy.model.filesystem.raw_file_node import RawFi
 
 
 class GemsViewsFolderNode(FolderNode):
+    """
+    Node for the GEMS views folder of an output and its sub-folders
+    (`input` for the Simulator files, `output` for the views built by the GEMS views builder).
+    """
+
     @override
     def build(self) -> TREE:
         children: TREE = {}
         for resource in self.config.path.iterdir():
             if resource.is_file():
                 children[resource.stem] = RawFileNode(self.config.next_file(resource.name))
+            elif resource.is_dir():
+                children[resource.name] = GemsViewsFolderNode(
+                    self.matrix_storage_context, self.config.next_file(resource.name)
+                )
 
         return children

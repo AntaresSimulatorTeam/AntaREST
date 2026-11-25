@@ -23,7 +23,10 @@ from antarest.study.business.model.config.advanced_parameters_model import (
     SheddingPolicy,
     initialize_advanced_parameters_against_version,
 )
-from antarest.study.business.model.config.compatibility_parameters_model import CompatibilityParameters
+from antarest.study.business.model.config.compatibility_parameters_model import (
+    CompatibilityParameters,
+    initialize_compatibility_parameters,
+)
 from antarest.study.business.model.config.general_model import GeneralConfig, initialize_general_config_against_version
 from antarest.study.business.model.config.optimization_config_model import (
     OptimizationPreferences,
@@ -100,4 +103,5 @@ def test_initialize_study(dao_builder: Callable[[StudyVersion], StudyDao], versi
     if study_version >= STUDY_VERSION_9_2:
         actual_cp = dao.get_compatibility_parameters()
         expected_cp = CompatibilityParameters()
+        initialize_compatibility_parameters(expected_cp, study_version)
         assert actual_cp == expected_cp

@@ -12,19 +12,19 @@
  * This file is part of the Antares project.
  */
 
-import FormDrawer from "@/components/FormDrawer";
 import NumberFE from "@/components/fieldEditors/NumberFE";
 import Fieldset from "@/components/Fieldset";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import useArea from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-hooks/useArea";
-import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
-import { reserveMutations } from "@/queries/reserves/mutations";
+import FormDrawer from "@/components/FormDrawer";
 import { reserveQueries } from "@/queries/reserves/queries";
+import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
+import useArea from "@/routes/_authenticated/studies/$studyId/explore/modeling/areas/$areaId/-hooks/useArea";
 import type { ReserveGlobalParameters } from "@/services/api/studies/areas/reserves/types";
-import SettingsIcon from "@mui/icons-material/Settings";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
 import { validateNumber } from "@/utils/validation/number";
+import SettingsIcon from "@mui/icons-material/Settings";
+import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import useUpdateReserveGlobalParameters from "../-hooks/useUpdateReserveGlobalParameters";
 
 interface Props {
   open: boolean;
@@ -36,21 +36,14 @@ function UpdateGlobalParametersDrawer({ open, onClose }: Props) {
   const queryClient = useQueryClient();
   const { id: studyId } = useStudy();
   const { id: areaId } = useArea();
-  const { queryKey } = reserveQueries.globalParameters(studyId, areaId);
-
-  const updateMutation = useMutation({
-    ...reserveMutations.updateGlobalParameters(studyId, areaId),
-    onSuccess: (updatedParameters) => {
-      queryClient.setQueryData(queryKey, updatedParameters);
-    },
-  });
+  const updateGlobalParameters = useUpdateReserveGlobalParameters({ studyId, areaId });
 
   ////////////////////////////////////////////////////////////////
   // Event Handlers
   ////////////////////////////////////////////////////////////////
 
   const handleSubmit = ({ dirtyValues }: SubmitHandlerPlus<ReserveGlobalParameters>) => {
-    return updateMutation.mutateAsync({ studyId, areaId, data: dirtyValues });
+    return updateGlobalParameters.mutateAsync({ data: dirtyValues });
   };
 
   ////////////////////////////////////////////////////////////////

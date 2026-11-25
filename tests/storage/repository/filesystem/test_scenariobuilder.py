@@ -113,7 +113,7 @@ def test_get(tmp_path: Path) -> None:
     areas = {
         n: AreaConfig(
             name=n,
-            links=dict(),
+            links={},
             thermals=thermals,
             renewables=[],
             filters_year=[],
@@ -128,7 +128,7 @@ def test_get(tmp_path: Path) -> None:
             path=path,
             version=StudyVersion.parse("870"),
             areas=areas,
-            outputs=dict(),
+            outputs={},
             study_id="id",
         ),
     )

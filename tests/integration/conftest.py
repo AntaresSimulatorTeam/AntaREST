@@ -11,6 +11,7 @@
 # This file is part of the Antares project.
 import shutil
 import sys
+import tempfile
 import typing as t
 import uuid
 import zipfile
@@ -30,13 +31,16 @@ from antarest.core.utils.archives import archive_dir
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.dbmodel import Base
 from antarest.login.model import init_admin_user
+from antarest.login.utils import current_user_context
 from antarest.main import (
     base_fastapi_app,
     init_db,
     inject_services,
 )
+from antarest.maintenance.tasks.common import BackGroundTaskStatus
+from antarest.maintenance.tasks.disk_space_analyzer import disk_space_analysis
 from antarest.service_creator import Services
-from antarest.study.repository import AccessPermissions, StudyFilter
+from antarest.study.repository import AccessPermissions, StudyDiskSpaceRepository, StudyFilter
 from antarest.study.service import StudyService
 from tests.integration.assets import ASSETS_DIR
 from tests.integration.utils import wait_for
@@ -247,3 +251,12 @@ def output_zip(tmp_path_factory: pytest.TempPathFactory, sta_mini_zip_path: Path
     output_zip = output_zip_dir / "output.zip"
     archive_dir(output_dir, output_zip, remove_source_dir=True)
     return output_zip
+
+
+def run_disk_analysis_task(study_service: StudyService) -> None:
+    # Run the disk space analysis to compute the disk usage of the variant
+    with current_user_context(DEFAULT_ADMIN_USER):
+        analysis = disk_space_analysis(
+            service=study_service, disk_repo=StudyDiskSpaceRepository(), lock_folder=Path(tempfile.gettempdir())
+        )
+    assert analysis.status == BackGroundTaskStatus.SUCCESS

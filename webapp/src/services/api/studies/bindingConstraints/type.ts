@@ -129,7 +129,7 @@ export interface UpdateBindingConstraintsParams {
 export interface DuplicateBindingConstraintParams {
   studyId: StudyMetadata["id"];
   constraintId: BindingConstraintDTO["id"];
-  newConstraintName: BindingConstraintDTO["name"];
+  newName: BindingConstraintDTO["name"];
 }
 
 export interface DeleteBindingConstraintParams {

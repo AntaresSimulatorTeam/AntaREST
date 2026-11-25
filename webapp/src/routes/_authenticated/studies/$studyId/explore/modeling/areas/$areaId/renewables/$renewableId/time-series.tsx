@@ -13,6 +13,7 @@
  */
 
 import Matrix from "@/components/Matrix";
+import { buildKey } from "@/utils/reactUtils";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute(
@@ -22,11 +23,12 @@ export const Route = createFileRoute(
 });
 
 function TimeSeries() {
-  const { studyId, areaId, renewableId } = Route.useParams();
+  const params = Route.useParams();
+  const { studyId, areaId, renewableId } = params;
 
   return (
     <Matrix
-      key={renewableId}
+      key={buildKey(params)}
       studyId={studyId}
       url={`input/renewables/series/${areaId}/${renewableId}/series`}
       filterKey="renewables.time-series"
