@@ -10,6 +10,7 @@
 #
 # This file is part of the Antares project.
 
+import contextlib
 import logging
 import re
 import shutil
@@ -47,6 +48,7 @@ from antarest.core.tasks.service import (
     NoopNotifier,
     TaskNotFoundError,
 )
+from antarest.core.utils.archives import archive_dir, extract_archive_from_path
 from antarest.core.utils.fastapi_sqlalchemy import db
 from antarest.core.utils.utils import current_time
 from antarest.login.utils import get_user_id, get_user_impersonator, require_current_user
@@ -175,7 +177,10 @@ class VariantStudyService(AbstractStudyService):
 
     @override
     def delete_from_filesystem(self, study: Study) -> None:
-        # Unlike raw studies, an archived variant has no archive file: its outputs are still in its directory.
+        # Unlike raw studies, an archived variant only has an archive file if it had outputs in its directory.
+        if study.archived:
+            with contextlib.suppress(FileNotFoundError):
+                self.find_archive_path(study).unlink()
         if study.path is not None:
             shutil.rmtree(check_study_path(study), ignore_errors=True)
         remove_from_cache(self.cache, study.id)
@@ -206,20 +211,55 @@ class VariantStudyService(AbstractStudyService):
 
     def archive(self, variant_study: VariantStudy) -> None:
         """
-        Removes the snapshot of the variant and marks it as archived.
+        Removes the snapshot of the variant, moves what is left in its directory (its outputs)
+        to an archive file, and marks it as archived.
 
-        This is a low-level operation on a single variant: it neither archives its outputs
-        nor its descendants. Use `StudyService.archive` instead, which handles both.
+        This is a low-level operation on a single variant: it neither archives its descendants
+        nor its outputs stored outside its directory. Use `StudyService.archive` instead, which handles both.
 
         The generation lock is held, so that a running snapshot generation ends before the snapshot is removed.
         """
         with self._generation_lock(variant_study.id):
             self.clear_snapshot(variant_study)
             remove_from_cache(self.cache, variant_study.id)
+
+            study_path = check_study_path(variant_study)
+            if study_path.is_dir() and any(study_path.iterdir()):
+                archive_format = self.config.storage.archive_format
+                archive_path = self.config.storage.archive_dir / f"{variant_study.id}{archive_format}"
+                try:
+                    archive_dir(study_path, archive_path, archive_format=archive_format)
+                except Exception:
+                    archive_path.unlink(missing_ok=True)
+                    raise
+
+            # The directory is removed once the study is marked as archived,
+            # so that the archive file is never the only copy of a study which is not known as archived.
             variant_study.archived = True
             self.repository.save(variant_study)
-            # The snapshot is gone: the disk space of the study must be analyzed again.
+            shutil.rmtree(study_path, ignore_errors=True)
+            # The disk space of the study must be analyzed again.
             self.disk_space_repository.invalidate(variant_study.id)
+
+    def unarchive(self, variant_study: VariantStudy) -> None:
+        """
+        Restores the directory of the variant from its archive file, if any, and marks it as unarchived.
+        Its snapshot will be generated the next time the study is accessed.
+
+        This is a low-level operation on a single variant: use `StudyService.unarchive` instead.
+        """
+        try:
+            archive_path = self.find_archive_path(variant_study)
+        except FileNotFoundError:
+            pass  # Nothing was left in the directory of the variant when it was archived.
+        else:
+            extract_archive_from_path(archive_path, check_study_path(variant_study))
+            archive_path.unlink()
+
+        variant_study.archived = False
+        variant_study.last_access = current_time()
+        self.repository.save(variant_study)
+        self.disk_space_repository.invalidate(variant_study.id)
 
     def _generation_lock(self, study_id: str) -> FileLock:
         return FileLock(str(self.config.storage.tmp_dir / f"study-generation-{study_id}.lock"))
