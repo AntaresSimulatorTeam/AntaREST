@@ -74,7 +74,7 @@ from antarest.study.business.model.district_model import (
     DistrictDTO,
     DistrictUpdate,
 )
-from antarest.study.business.model.gems.library import GemsModelProperty
+from antarest.study.business.model.gems.library import GemsModelsProperties
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMappings,
     GemsScenarioBuilder,
@@ -2462,7 +2462,7 @@ def create_study_data_routes() -> APIRouter:
 
     @bp.get(
         "/studies/{uuid}/gems/{component_id}/properties",
-        summary="Fetches the existing properties (name and value) of a given GEMS component for a given study",
+        summary="Fetches the existing properties (id and value) of a given GEMS component for a given study",
     )
     def get_gems_component_properties(
         study_service: StudyServiceDep, uuid: UuidStr, component_id: str
@@ -2477,7 +2477,7 @@ def create_study_data_routes() -> APIRouter:
     )
     def get_gems_model_properties(
         study_service: StudyServiceDep, uuid: UuidStr, library_id: str, model_id: str
-    ) -> list[GemsModelProperty]:
+    ) -> list[GemsModelsProperties]:
         study = study_service.check_study_access(uuid, StudyPermissionType.READ)
         study_interface = study_service.get_study_interface(study)
         return study_service.gems_library_manager.get_model_properties(study_interface, library_id, model_id)

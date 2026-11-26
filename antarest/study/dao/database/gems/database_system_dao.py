@@ -531,13 +531,15 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         study_data_id = self._study_data_id
         session = self._db_session
 
-        self._assert_component_exists(component_id)
-
         stmt = select(GEMS_COMPONENT_PROPERTIES_TABLE).where(
             GEMS_COMPONENT_PROPERTIES_TABLE.c.study_data_id == study_data_id,
             GEMS_COMPONENT_PROPERTIES_TABLE.c.component_id == component_id,
         )
         properties_rows = session.execute(stmt).fetchall()
+
+        if len(properties_rows) == 0:
+            self._assert_component_exists(component_id)
+
         return [GemsProperties.model_validate({"id": row.property_id, "value": row.value}) for row in properties_rows]
 
     def _assert_component_exists(self, component_id: str) -> None:

@@ -14,8 +14,8 @@ from pathlib import Path
 
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsLibraryAlreadyExists
-from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.core.exceptions import GemsLibraryAlreadyExists, GemsUnavailableForFileSystemStudies
+from antarest.study.business.model.gems.library import GemsLibrary, GemsModelsProperties
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader, YAMLWriter
@@ -56,3 +56,7 @@ class FileStudyGemsLibraryDao(GemsLibraryDao, ABC):
         yaml_content = library.model_dump(mode="json", exclude_unset=True, by_alias=True, exclude_none=True)
         library_folder_path.mkdir(exist_ok=True)
         YAMLWriter().write({"library": yaml_content}, library_folder_path / "library.yml")
+
+    @override
+    def get_properties_ids(self, library_id: str, model_id: str) -> list[GemsModelsProperties]:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

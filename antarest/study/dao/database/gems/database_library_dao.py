@@ -17,7 +17,7 @@ from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
 from antarest.core.exceptions import GemsLibraryAlreadyExists, GemsTaxonomyNotFound
-from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.library import GemsLibrary, GemsModelsProperties
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.library import (
@@ -255,3 +255,16 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
             session.execute(insert(GEMS_MODELS_OBJECTIVE_CONTRIBUTIONS_TABLE), objective_contributions_values)
 
         session.commit()
+
+    @override
+    def get_properties_ids(self, library_id: str, model_id: str) -> list[GemsModelsProperties]:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        stmt = select(GEMS_MODELS_PARAMETERS_TABLE.c.parameter_id).where(
+            GEMS_MODELS_PARAMETERS_TABLE.c.study_data_id == study_data_id,
+            GEMS_MODELS_PARAMETERS_TABLE.c.model_id == model_id,
+        )
+
+        rows = session.execute(stmt).fetchall()
+        return [GemsModelsProperties(id=row.parameter_id) for row in rows]

@@ -12,7 +12,7 @@
 
 from abc import ABC, abstractmethod
 
-from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.library import GemsLibrary, GemsModelsProperties
 
 
 class ReadOnlyGemsLibraryDao(ABC):
@@ -20,6 +20,16 @@ class ReadOnlyGemsLibraryDao(ABC):
     def get_library(self) -> GemsLibrary | None:
         """
         For the moment, we consider that we only have one library per study even if the DB schema allows several ones.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_properties_ids(self, library_id: str, model_id: str) -> list[GemsModelsProperties]:
+        """
+        Returns the list of properties ids for a given model in a given library.
+
+        Raises `GemsLibraryNotFound` if the library does not exist, and
+        `GemsModelNotFound` if the model does not exist in the library.
         """
         raise NotImplementedError()
 

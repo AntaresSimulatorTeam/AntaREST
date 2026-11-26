@@ -32,7 +32,7 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.gems.calendar import GemsCalendar
 from antarest.study.business.model.gems.catalog import GemsCatalog
-from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.library import GemsLibrary, GemsModelsProperties
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMappings,
     GemsScenarioBuilder,
@@ -1016,6 +1016,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_library(self) -> GemsLibrary | None:
         return self._adaptee.get_library()
+
+    @override
+    def get_properties_ids(self, library_id: str, model_id: str) -> list[GemsModelsProperties]:
+        return self._adaptee.get_properties_ids(library_id, model_id)
 
     @override
     def get_components(self) -> list[GemsComponent]:
