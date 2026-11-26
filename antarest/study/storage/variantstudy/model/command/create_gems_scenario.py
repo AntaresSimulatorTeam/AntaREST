@@ -35,7 +35,7 @@ class CreateGemsScenario(ICommand):
 
     command_name: CommandName = CommandName.CREATE_GEMS_SCENARIO
 
-    scenario_name: GemsId
+    scenario_group: GemsId
     data: GemsScBuilderMappings
 
     @model_validator(mode="after")
@@ -48,13 +48,13 @@ class CreateGemsScenario(ICommand):
     def _apply_dao(
         self, study_dao: StudyDao, listener: ICommandListener | None = None
     ) -> CommandOutput[GemsScBuilderMappings]:
-        study_dao.save_scenario_inside_gems_scenario_builder(self.scenario_name, self.data)
-        return command_succeeded(message=f"Gems scenario {self.scenario_name} added successfully", result=self.data)
+        study_dao.save_scenario_inside_gems_scenario_builder(self.scenario_group, self.data)
+        return command_succeeded(message=f"Gems scenario {self.scenario_group} added successfully", result=self.data)
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={"scenario_name": self.scenario_name, "data": [mapping.model_dump() for mapping in self.data]},
+            args={"scenario_group": self.scenario_group, "data": [mapping.model_dump() for mapping in self.data]},
             study_version=self.study_version,
         )

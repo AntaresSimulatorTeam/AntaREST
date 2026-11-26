@@ -47,46 +47,46 @@ class GemsScenarioBuilderManager:
         return sc_builder
 
     def add_scenario_to_gems_scenario_builder(
-        self, study: StudyInterface, scenario_name: GemsId, data: GemsScBuilderMappings
+        self, study: StudyInterface, scenario_group: GemsId, data: GemsScBuilderMappings
     ) -> GemsScBuilderMappings:
         dao = study.get_study_dao()
         # First ensures the scenario does not already exist
-        if dao.scenario_exists_in_gems_scenario_builder(scenario_name):
-            raise GemsScenarioAlreadyExists(scenario_name, study.id)
+        if dao.scenario_exists_in_gems_scenario_builder(scenario_group):
+            raise GemsScenarioAlreadyExists(scenario_group, study.id)
 
         command = CreateGemsScenario(
-            scenario_name=scenario_name,
+            scenario_group=scenario_group,
             data=data,
             command_context=self._command_context,
             study_version=study.version,
         )
         study.add_commands([command])
 
-        return _get_sc_builder_mappings_filled(dao, scenario_name)
+        return _get_sc_builder_mappings_filled(dao, scenario_group)
 
     def update_scenario_from_gems_scenario_builder(
-        self, study: StudyInterface, scenario_name: GemsId, data: GemsScBuilderMappings
+        self, study: StudyInterface, scenario_group: GemsId, data: GemsScBuilderMappings
     ) -> GemsScBuilderMappings:
         dao = study.get_study_dao()
         # First ensures the scenario exists
-        dao.get_scenario_from_gems_scenario_builder(scenario_name)
+        dao.get_scenario_from_gems_scenario_builder(scenario_group)
 
         command = UpdateGemsScenario(
-            scenario_name=scenario_name,
+            scenario_group=scenario_group,
             data=data,
             command_context=self._command_context,
             study_version=study.version,
         )
         study.add_commands([command])
 
-        return _get_sc_builder_mappings_filled(dao, scenario_name)
+        return _get_sc_builder_mappings_filled(dao, scenario_group)
 
-    def delete_scenario_from_gems_scenario_builder(self, study: StudyInterface, scenario_name: GemsId) -> None:
+    def delete_scenario_from_gems_scenario_builder(self, study: StudyInterface, scenario_group: GemsId) -> None:
         # First ensures the scenario exists
-        study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_name)
+        study.get_study_dao().get_scenario_from_gems_scenario_builder(scenario_group)
 
         command = RemoveGemsScenario(
-            scenario_name=scenario_name,
+            scenario_group=scenario_group,
             command_context=self._command_context,
             study_version=study.version,
         )

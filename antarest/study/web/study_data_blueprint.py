@@ -2472,12 +2472,12 @@ def create_study_data_routes() -> APIRouter:
         summary="Creates a new scenario inside the GEMS scenario builder for a given study",
     )
     def add_scenario_to_gems_scenario_builder(
-        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: GemsId, data: GemsScBuilderMappings
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_group: GemsId, data: GemsScBuilderMappings
     ) -> GemsScBuilderMappings:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.gems_scenario_builder_manager.add_scenario_to_gems_scenario_builder(
-            study_interface, scenario_name, data
+            study_interface, scenario_group, data
         )
 
     @bp.put(
@@ -2485,12 +2485,12 @@ def create_study_data_routes() -> APIRouter:
         summary="Updates the mapping of a scenario inside the GEMS scenario builder for a given study",
     )
     def update_scenario_from_gems_scenario_builder(
-        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: GemsId, data: GemsScBuilderMappings
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_group: GemsId, data: GemsScBuilderMappings
     ) -> GemsScBuilderMappings:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         return study_service.gems_scenario_builder_manager.update_scenario_from_gems_scenario_builder(
-            study_interface, scenario_name, data
+            study_interface, scenario_group, data
         )
 
     @bp.delete(
@@ -2498,12 +2498,12 @@ def create_study_data_routes() -> APIRouter:
         summary="Deletes the given scenario from the gems scenario builder for a given study",
     )
     def delete_scenario_from_gems_scenario_builder(
-        study_service: StudyServiceDep, uuid: UuidStr, scenario_name: GemsId
+        study_service: StudyServiceDep, uuid: UuidStr, scenario_group: GemsId
     ) -> None:
         study = study_service.check_study_access(uuid, StudyPermissionType.WRITE)
         study_interface = study_service.get_study_interface(study)
         study_service.gems_scenario_builder_manager.delete_scenario_from_gems_scenario_builder(
-            study_interface, scenario_name
+            study_interface, scenario_group
         )
 
     return bp

@@ -37,12 +37,12 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     assert res.status_code == 200
 
     # Add 2 scenarios, one with default values and the other ones with custom values
-    res1 = client.post(sc_builder_url, params={"scenario_name": "scenario1"}, json=[])
+    res1 = client.post(sc_builder_url, params={"scenario_group": "scenario1"}, json=[])
     assert res1.status_code == 200
     assert res1.json() == [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 1}]
 
     res2 = client.post(
-        sc_builder_url, params={"scenario_name": "scenario2"}, json=[{"scenario": 1, "timeSeriesIndex": 5}]
+        sc_builder_url, params={"scenario_group": "scenario2"}, json=[{"scenario": 1, "timeSeriesIndex": 5}]
     )
     assert res2.status_code == 200
     assert res2.json() == [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 5}]
@@ -59,7 +59,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
 
     # Update the data of 1 scenario only. The second one should not be impacted
     res = client.put(
-        sc_builder_url, params={"scenario_name": "scenario1"}, json=[{"scenario": 0, "timeSeriesIndex": 3}]
+        sc_builder_url, params={"scenario_group": "scenario1"}, json=[{"scenario": 0, "timeSeriesIndex": 3}]
     )
     assert res.status_code == 200
     assert res.json() == [{"scenario": 0, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 1}]
@@ -74,7 +74,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     }
 
     # Delete the first scenario. The second one should not be impacted
-    res = client.delete(sc_builder_url, params={"scenario_name": "scenario1"})
+    res = client.delete(sc_builder_url, params={"scenario_group": "scenario1"})
     assert res.status_code == 200
 
     res = client.get(sc_builder_url)
@@ -86,7 +86,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     }
 
     # Delete the last scenario. Get response should be empty
-    res = client.delete(sc_builder_url, params={"scenario_name": "scenario2"})
+    res = client.delete(sc_builder_url, params={"scenario_group": "scenario2"})
     assert res.status_code == 200
 
     res = client.get(sc_builder_url)
@@ -98,7 +98,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     ##########################
 
     # Try to create a scenario with a name that does not match GemsId (^[a-z0-9_]+$)
-    res = client.post(sc_builder_url, params={"scenario_name": "MyScenario%"}, json=[])
+    res = client.post(sc_builder_url, params={"scenario_group": "MyScenario%"}, json=[])
     assert res.status_code == 422
     assert res.json()["description"] == "String should match pattern '^[a-z0-9_]+$'"
     assert res.json()["exception"] == "RequestValidationError"
@@ -106,7 +106,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     # Try to create a scenario with duplicated years
     res = client.post(
         sc_builder_url,
-        params={"scenario_name": "scenario1"},
+        params={"scenario_group": "scenario1"},
         json=[{"scenario": 1, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 4}],
     )
     assert res.status_code == 422
@@ -114,7 +114,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     assert res.json()["exception"] == "RequestValidationError"
 
     # Try to update a fake scenario
-    res = client.put(sc_builder_url, params={"scenario_name": "fake_scenario"}, json=[])
+    res = client.put(sc_builder_url, params={"scenario_group": "fake_scenario"}, json=[])
     assert res.status_code == 404
     assert res.json() == {
         "description": f"Could not find scenario 'fake_scenario' inside gems scenario builder for study {study_id}",
@@ -122,7 +122,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     }
 
     # Try to delete a fake scenario
-    res = client.delete(sc_builder_url, params={"scenario_name": "fake_scenario"})
+    res = client.delete(sc_builder_url, params={"scenario_group": "fake_scenario"})
     assert res.status_code == 404
     assert res.json() == {
         "description": f"Could not find scenario 'fake_scenario' inside gems scenario builder for study {study_id}",
@@ -131,23 +131,23 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
 
     # Try to create a scenario with wrong years
     res = client.post(
-        sc_builder_url, params={"scenario_name": "scenario1"}, json=[{"scenario": -1, "timeSeriesIndex": 1}]
+        sc_builder_url, params={"scenario_group": "scenario1"}, json=[{"scenario": -1, "timeSeriesIndex": 1}]
     )
     assert res.status_code == 422
     assert res.json()["description"] == "Input should be greater than or equal to 0"
     assert res.json()["exception"] == "RequestValidationError"
 
     res = client.post(
-        sc_builder_url, params={"scenario_name": "scenario1"}, json=[{"scenario": 1, "timeSeriesIndex": -1}]
+        sc_builder_url, params={"scenario_group": "scenario1"}, json=[{"scenario": 1, "timeSeriesIndex": -1}]
     )
     assert res.status_code == 422
     assert res.json()["description"] == "Input should be greater than or equal to 0"
     assert res.json()["exception"] == "RequestValidationError"
 
     # Try to create a scenario that already exists
-    res = client.post(sc_builder_url, params={"scenario_name": "scenario1"}, json=[])
+    res = client.post(sc_builder_url, params={"scenario_group": "scenario1"}, json=[])
     assert res.status_code == 200
-    res = client.post(sc_builder_url, params={"scenario_name": "scenario1"}, json=[])
+    res = client.post(sc_builder_url, params={"scenario_group": "scenario1"}, json=[])
     assert res.status_code == 409
     assert res.json() == {
         "description": f"Scenario 'scenario1' already exists in the gems scenario builder of study {study_id}",

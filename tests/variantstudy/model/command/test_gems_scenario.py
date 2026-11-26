@@ -31,7 +31,7 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     cmd = CreateGemsScenario(
         study_version=version,
         command_context=command_context,
-        scenario_name="scenario_1",
+        scenario_group="scenario_1",
         data=[
             GemsScBuilderMapping(scenario=3, time_series_index=1),
             GemsScBuilderMapping(scenario=4, time_series_index=8),
@@ -53,7 +53,7 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     cmd2 = UpdateGemsScenario(
         study_version=version,
         command_context=command_context,
-        scenario_name="scenario_1",
+        scenario_group="scenario_1",
         data=[
             GemsScBuilderMapping(scenario=0, time_series_index=6),
             GemsScBuilderMapping(scenario=4, time_series_index=7),
@@ -79,7 +79,7 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     )
 
     # Delete the scenario
-    cmd3 = RemoveGemsScenario(study_version=version, command_context=command_context, scenario_name="scenario_1")
+    cmd3 = RemoveGemsScenario(study_version=version, command_context=command_context, scenario_group="scenario_1")
     result = cmd3.apply(dao)
     assert result.status is True
     assert dao.get_gems_scenario_builder() is None
@@ -97,13 +97,15 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
     error_msg = "GEMS scenario-builder is only available since version 10.2 and was 8.8"
     with pytest.raises(ValueError, match=error_msg):
         CreateGemsScenario(
-            study_version=STUDY_VERSION_8_8, command_context=command_context, scenario_name="scenario_1", data=[]
+            study_version=STUDY_VERSION_8_8, command_context=command_context, scenario_group="scenario_1", data=[]
         )
 
     with pytest.raises(ValueError, match=error_msg):
         UpdateGemsScenario(
-            study_version=STUDY_VERSION_8_8, command_context=command_context, scenario_name="scenario_1", data=[]
+            study_version=STUDY_VERSION_8_8, command_context=command_context, scenario_group="scenario_1", data=[]
         )
 
     with pytest.raises(ValueError, match=error_msg):
-        RemoveGemsScenario(study_version=STUDY_VERSION_8_8, command_context=command_context, scenario_name="scenario_1")
+        RemoveGemsScenario(
+            study_version=STUDY_VERSION_8_8, command_context=command_context, scenario_group="scenario_1"
+        )
