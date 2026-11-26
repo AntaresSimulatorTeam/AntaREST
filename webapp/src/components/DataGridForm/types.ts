@@ -14,9 +14,8 @@
 
 import type { DataGridProps } from "@/components/DataGrid";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
-import type { Theme } from "@emotion/react";
 import type { DataEditorProps, GridColumn, Item } from "@glideapps/glide-data-grid";
-import type { ButtonProps, SxProps } from "@mui/material";
+import type { ButtonProps, SxProps, Theme } from "@mui/material";
 import type { Actions } from "use-undo";
 
 export type Data = Record<string, Record<string, string | boolean | number>>;

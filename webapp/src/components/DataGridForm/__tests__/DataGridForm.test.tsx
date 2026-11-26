@@ -58,14 +58,16 @@ function getSaveButton() {
 function renderForm(props: {
   onSubmit?: (data: DataGridFormSubmitData<TestData>) => void | Promise<void>;
   allowRowDeletion?: boolean;
+  defaultData?: TestData;
+  columns?: Array<{ id: string; title: string }>;
 }) {
   const onSubmit = vi.fn(props.onSubmit);
   const apiRef = createRef<DataGridFormApi<TestData>>();
 
   render(
     <DataGridForm
-      defaultData={createData()}
-      columns={columns}
+      defaultData={props.defaultData ?? createData()}
+      columns={props.columns ?? columns}
       onSubmit={onSubmit}
       apiRef={apiRef}
       allowRowDeletion={props.allowRowDeletion}
@@ -161,5 +163,26 @@ describe("DataGridForm changes with row IDs matching Object.prototype keys", () 
     await userEvent.click(getSaveButton());
 
     expect(getSubmitData().changes.deleted).toEqual(["constructor"]);
+  });
+});
+
+describe("DataGridForm changes with column IDs matching Object.prototype keys", () => {
+  test("applies and submits an edit on a `__proto__` column", async () => {
+    const { getSubmitData } = renderForm({
+      // Built like an API response (`JSON.parse`): "__proto__" is an own property
+      defaultData: JSON.parse('{ "fr": { "__proto__": 1 } }') as TestData,
+      columns: [{ id: "__proto__", title: "Proto" }],
+    });
+
+    // Column 0 is the row markers column added by DataGrid
+    act(() => {
+      editorProps.onCellsEdited?.([{ location: [1, 0], value: numberCell(4) }]);
+    });
+    await userEvent.click(getSaveButton());
+
+    const { values, changes } = getSubmitData();
+
+    expect(Object.getOwnPropertyDescriptor(values.fr, "__proto__")?.value).toBe(4);
+    expect(Object.getOwnPropertyDescriptor(changes.updated.fr, "__proto__")?.value).toBe(4);
   });
 });

@@ -35,7 +35,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
 import useUndo from "use-undo";
-import DataGrid, { type RowMarkers } from "../../../DataGrid";
+import DataGrid, { type RowMarkers } from "../DataGrid";
 import type {
   Changes,
   Data,
@@ -348,25 +348,32 @@ function DataGridForm<TData extends Data>({
   ////////////////////////////////////////////////////////////////
 
   const handleCellsEdited: DataEditorProps["onCellsEdited"] = (items) => {
-    setData(
-      produce(data, (draft) => {
-        for (const { location, value } of items) {
-          const [rowName, columnName] = getRowAndColumnNames(location);
-          const newValue = value.data;
+    // Object literals so any key is kept as an own property, even "__proto__"
+    // (see `getDirtyValues`). E.g. with a "__proto__" column, an Immer draft ignores
+    // the new value and `R.assoc` drops the key.
+    let nextData: TData | undefined;
 
-          // If transformCellValue callback is provided, it can transform the new value
-          // before it's stored. Return undefined to use default handling, or return a custom
-          // value to override the cell's new data.
-          const customValue = transformCellValue?.(location, newValue, data);
+    for (const { location, value } of items) {
+      const [rowName, columnName] = getRowAndColumnNames(location);
+      const newValue = value.data;
 
-          if (customValue !== undefined) {
-            draft[rowName][columnName] = customValue;
-          } else if (isValidCellValue(newValue)) {
-            draft[rowName][columnName] = newValue;
-          }
-        }
-      }),
-    );
+      // If transformCellValue callback is provided, it can transform the new value
+      // before it's stored. Return `undefined` to use default handling, or return a custom
+      // value to override the cell's new data.
+      const customValue = transformCellValue?.(location, newValue, data);
+      const cellValue = customValue ?? (isValidCellValue(newValue) ? newValue : undefined);
+
+      if (cellValue !== undefined) {
+        nextData ??= { ...data };
+        // `Object.assign` because TypeScript rejects direct writes to generic `TData` keys.
+        // Safe for a "__proto__" row: the key already exists as an own property of `nextData`.
+        Object.assign(nextData, { [rowName]: { ...nextData[rowName], [columnName]: cellValue } });
+      }
+    }
+
+    if (nextData) {
+      setData(nextData);
+    }
 
     return true;
   };

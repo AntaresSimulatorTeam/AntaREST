@@ -13,16 +13,16 @@
  */
 
 import CustomScrollbar from "@/components/CustomScrollbar";
-import BasicDialog from "@/components/dialogs/BasicDialog";
-import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
-import NumberSelectionsFE from "@/components/fieldEditors/NumberSelectionsFE";
-import DataGridForm from "@/components/Matrix/components/DataGridForm";
+import DataGridForm from "@/components/DataGridForm";
 import type {
   DataGridFormApi,
   DataGridFormProps,
   DataGridFormState,
   DataGridFormSubmitData,
-} from "@/components/Matrix/components/DataGridForm/types";
+} from "@/components/DataGridForm/types";
+import BasicDialog from "@/components/dialogs/BasicDialog";
+import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
+import NumberSelectionsFE from "@/components/fieldEditors/NumberSelectionsFE";
 import UsePromiseCond from "@/components/utils/UsePromiseCond";
 import useConfirm from "@/hooks/useConfirm";
 import { getPlaylistData, setPlaylistData } from "@/services/api/studies/config/playlist";

@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import DataGridForm from "@/components/Matrix/components/DataGridForm";
-import type { DataGridFormSubmitData } from "@/components/Matrix/components/DataGridForm/types";
+import DataGridForm from "@/components/DataGridForm";
+import type { DataGridFormSubmitData } from "@/components/DataGridForm/types";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { GridColumn } from "@glideapps/glide-data-grid";
 import AddIcon from "@mui/icons-material/Add";
