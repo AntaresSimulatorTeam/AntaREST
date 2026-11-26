@@ -66,13 +66,13 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
             raise
 
     @override
-    def save_scenario_inside_gems_scenario_builder(self, scenario_name: GemsId, data: GemsScBuilderMappings) -> None:
+    def save_scenario_inside_gems_scenario_builder(self, scenario_group: GemsId, data: GemsScBuilderMappings) -> None:
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
         values = [
             {
                 "study_data_id": self._study_data_id,
-                "scenario_group": scenario_name,
+                "scenario_group": scenario_group,
                 "data": json.dumps([mapping.model_dump() for mapping in data]),
             }
         ]
@@ -86,14 +86,14 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
             raise e
 
     @override
-    def remove_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> None:
+    def remove_scenario_from_gems_scenario_builder(self, scenario_group: GemsId) -> None:
         session = self._db_session
         # First clean the components table to avoid Foreign Key violations on the scenario group.
         session.execute(
             update(GEMS_COMPONENTS_TABLE)
             .where(
                 (GEMS_COMPONENTS_TABLE.c.study_data_id == self._study_data_id)
-                & (GEMS_COMPONENTS_TABLE.c.scenario_group == scenario_name)
+                & (GEMS_COMPONENTS_TABLE.c.scenario_group == scenario_group)
             )
             .values(scenario_group=None)
         )
@@ -102,33 +102,33 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         table = GEMS_SCENARIO_BUILDER_TABLE
         result = session.execute(
             delete(table).where(
-                (table.c.study_data_id == self._study_data_id) & (table.c.scenario_group == scenario_name)
+                (table.c.study_data_id == self._study_data_id) & (table.c.scenario_group == scenario_group)
             )
         )
         assert isinstance(result, CursorResult)
         if result.rowcount == 0:
             # Means the DELETE had no effect, so the scenario group did not exist
-            raise GemsScenarioNotFound(scenario_name, self._study_id)
+            raise GemsScenarioNotFound(scenario_group, self._study_id)
 
         session.commit()
 
     @override
-    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
-        return self._fetch_scenario(scenario_name) is not None
+    def scenario_exists_in_gems_scenario_builder(self, scenario_group: GemsId) -> bool:
+        return self._fetch_scenario(scenario_group) is not None
 
-    def _fetch_scenario(self, scenario_name: GemsId) -> Row[Any] | None:
+    def _fetch_scenario(self, scenario_group: GemsId) -> Row[Any] | None:
         table = GEMS_SCENARIO_BUILDER_TABLE
         return self._db_session.execute(
             select(table).where(
-                (table.c.study_data_id == self._study_data_id) & (table.c.scenario_group == scenario_name)
+                (table.c.study_data_id == self._study_data_id) & (table.c.scenario_group == scenario_group)
             )
         ).fetchone()
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
-        row = self._fetch_scenario(scenario_name)
+    def get_scenario_from_gems_scenario_builder(self, scenario_group: GemsId) -> GemsScBuilderMappings:
+        row = self._fetch_scenario(scenario_group)
 
         if not row:
-            raise GemsScenarioNotFound(scenario_name, self._study_id)
+            raise GemsScenarioNotFound(scenario_group, self._study_id)
 
         return [GemsScBuilderMapping.model_validate(mapping) for mapping in json.loads(row.data)]

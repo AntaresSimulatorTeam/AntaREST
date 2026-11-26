@@ -86,17 +86,17 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
                     stream.write(f"{group}, {mapping.mc_scenario} = {mapping.time_series_index}\n")
 
     @override
-    def save_scenario_inside_gems_scenario_builder(self, scenario_name: GemsId, data: GemsScBuilderMappings) -> None:
+    def save_scenario_inside_gems_scenario_builder(self, scenario_group: GemsId, data: GemsScBuilderMappings) -> None:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def remove_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> None:
+    def remove_scenario_from_gems_scenario_builder(self, scenario_group: GemsId) -> None:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
+    def get_scenario_from_gems_scenario_builder(self, scenario_group: GemsId) -> GemsScBuilderMappings:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
+    def scenario_exists_in_gems_scenario_builder(self, scenario_group: GemsId) -> bool:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

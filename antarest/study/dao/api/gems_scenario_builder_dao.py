@@ -26,11 +26,11 @@ class ReadOnlyGemsScenarioBuilderDao(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
+    def get_scenario_from_gems_scenario_builder(self, scenario_group: GemsId) -> GemsScBuilderMappings:
         raise NotImplementedError()
 
     @abstractmethod
-    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
+    def scenario_exists_in_gems_scenario_builder(self, scenario_group: GemsId) -> bool:
         raise NotImplementedError()
 
 
@@ -41,9 +41,9 @@ class GemsScenarioBuilderDao(ReadOnlyGemsScenarioBuilderDao):
         raise NotImplementedError()
 
     @abstractmethod
-    def save_scenario_inside_gems_scenario_builder(self, scenario_name: GemsId, data: GemsScBuilderMappings) -> None:
+    def save_scenario_inside_gems_scenario_builder(self, scenario_group: GemsId, data: GemsScBuilderMappings) -> None:
         raise NotImplementedError()
 
     @abstractmethod
-    def remove_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> None:
+    def remove_scenario_from_gems_scenario_builder(self, scenario_group: GemsId) -> None:
         raise NotImplementedError()
