@@ -22,7 +22,10 @@ from antarest.study.business.model.gems.system import split_library_and_model_id
 from antarest.study.dao.api.study_dao import StudyDao
 from antarest.study.dao.study_conversion.study_converter import StudyConverter
 from antarest.study.model import STUDY_VERSION_10_2
+from antarest.study.storage.rawstudy.model.filesystem.factory import StudyFactory
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
+from antarest.study.storage.variantstudy.model.command_context import CommandContext
+from tests.conftest import build_filesystem_dao
 
 ASSETS_PATH = Path(__file__).parent / "assets" / "gems" / "optim-config"
 EXAMPLES = ["frontal", "sequential", "parallel", "benders"]
@@ -196,7 +199,9 @@ def test_invalid_configs(content: dict[str, Any]) -> None:
 
 
 @pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
-def test_conversion_always_write_a_file(dao_10_2: StudyDao) -> None:
+def test_conversion_always_write_a_file(
+    dao_10_2: StudyDao, tmp_path: Path, command_context: CommandContext, study_factory: StudyFactory
+) -> None:
     dao = dao_10_2
     config = _load_example("frontal")
     dao.save_library(_build_library(config))
@@ -205,5 +210,9 @@ def test_conversion_always_write_a_file(dao_10_2: StudyDao) -> None:
 
     # Even if the DB does not have an optim config, when converting the data to FS we should write the file.
     # Because the Simulator always needs one to run the simulation.
-    converter = StudyConverter(dao, "target_dao", STUDY_VERSION_10_2, dao.matrix_service)
+    session = dao._db_session  # type: ignore
+    fs_dao = build_filesystem_dao(session, dao.get_version(), command_context, study_factory, tmp_path)
+    converter = StudyConverter(dao, fs_dao, STUDY_VERSION_10_2, dao.matrix_service)
     converter._convert_gems()
+
+    assert (tmp_path / "my_study" / "input" / "optim-config.yml").exists()
