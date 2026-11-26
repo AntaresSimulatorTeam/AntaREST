@@ -25,6 +25,7 @@ from starlette.responses import RedirectResponse, Response
 from antarest.core.api_types import SanitizedStr, UuidStr
 from antarest.core.files_tree import FilesTree
 from antarest.core.model import JSON, GemsId, StudyPermissionType
+from antarest.core.serde.json import to_json
 from antarest.core.utils.web import APITag
 from antarest.dependencies import StudyServiceDep, auth_required
 from antarest.matrixstore.matrix_editor import MatrixEditInstruction
@@ -2505,5 +2506,18 @@ def create_study_data_routes() -> APIRouter:
         study_service.gems_scenario_builder_manager.delete_scenario_from_gems_scenario_builder(
             study_interface, scenario_group
         )
+
+    @bp.get(
+        "/studies/{uuid}/gems/{component_id}/{parameter_id}/matrix",
+        summary="Fetches the matrix related to a GEMS component parameter for a given study",
+    )
+    def get_gems_matrix(
+        study_service: StudyServiceDep, uuid: UuidStr, component_id: str, parameter_id: str
+    ) -> Response:
+        study = study_service.check_study_access(uuid, StudyPermissionType.READ)
+        study_interface = study_service.get_study_interface(study)
+        dataframe = study_service.gems_input_matrix_manager.get_gems_matrix(study_interface, component_id, parameter_id)
+        content = to_json(dataframe.to_pandas().to_dict(orient="split"))
+        return Response(content=content, media_type="application/json")
 
     return bp
