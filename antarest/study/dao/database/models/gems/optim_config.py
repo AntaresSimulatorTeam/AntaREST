@@ -47,6 +47,11 @@ GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE = Table(
         ],
         ondelete="CASCADE",
     ),
+    ForeignKeyConstraint(
+        ["study_data_id"],
+        ["gems_optim_config.study_data_id"],
+        ondelete="CASCADE",
+    ),
 )
 
 GEMS_OPTIM_CONFIG_HEURISTICS_TABLE = Table(
@@ -59,6 +64,11 @@ GEMS_OPTIM_CONFIG_HEURISTICS_TABLE = Table(
     ForeignKeyConstraint(
         ["study_data_id", "library_id", "model_id"],
         ["gems_models.study_data_id", "gems_models.library_id", "gems_models.id"],
+        ondelete="CASCADE",
+    ),
+    ForeignKeyConstraint(
+        ["study_data_id"],
+        ["gems_optim_config.study_data_id"],
         ondelete="CASCADE",
     ),
 )
@@ -81,6 +91,11 @@ def _create_table(table_name: str, column_name: str, reference_table_name: str) 
                 f"{reference_table_name}.model_id",
                 f"{reference_table_name}.id",
             ],
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["study_data_id"],
+            ["gems_optim_config.study_data_id"],
             ondelete="CASCADE",
         ),
     )
