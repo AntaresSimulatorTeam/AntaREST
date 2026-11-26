@@ -89,7 +89,7 @@ def test_examples_content() -> None:
 
 @pytest.mark.parametrize("dao_10_2", ["file", "db"], indirect=True)
 @pytest.mark.parametrize("example", EXAMPLES)
-def test_roundtrip(dao_10_2: StudyDao, example: str) -> None:
+def test_roundtrip_on_real_examples(dao_10_2: StudyDao, example: str) -> None:
     dao = dao_10_2
     assert dao.get_optim_config() is None
 
