@@ -1193,7 +1193,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.CREATE_GEMS_SCENARIO.value,
-            args={"scenario_group": "my_scenario", "data": [{"scenario": 1, "time_series_index": 2}]},
+            args={"scenario_group": "my_scenario", "data": [{"mc_scenario": 1, "time_series_index": 2}]},
             study_version=STUDY_VERSION_10_2,
         ),
         None,
@@ -1211,7 +1211,7 @@ COMMANDS = [
     pytest.param(
         CommandDTO(
             action=CommandName.UPDATE_GEMS_SCENARIO.value,
-            args={"scenario_group": "my_scenario", "data": [{"scenario": 1, "time_series_index": 2}]},
+            args={"scenario_group": "my_scenario", "data": [{"mc_scenario": 1, "time_series_index": 2}]},
             study_version=STUDY_VERSION_10_2,
         ),
         None,
