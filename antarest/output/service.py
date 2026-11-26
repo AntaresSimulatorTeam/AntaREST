@@ -112,13 +112,20 @@ class IStudyMetadataProvider(ABC):
         pass
 
     @abstractmethod
-    def assert_permission(self, study_id: str, permission: StudyPermissionType) -> None:
+    def assert_permission(self, study_id: str, permission: StudyPermissionType, allow_archived: bool = False) -> None:
         """
         Check if the user has the given permission on the study
 
         Raises:
             UserHasNotPermissionError: if the user does not have the permission
-            UnsupportedOperationOnArchivedStudy: if the study is archived
+            UnsupportedOperationOnArchivedStudy: if the study is archived, unless `allow_archived` is set
+        """
+
+    @abstractmethod
+    def invalidate_disk_space(self, study_id: str) -> None:
+        """
+        Flags the study so that its disk space is analyzed again.
+        Must be called after a change on the outputs of the study.
         """
 
 
@@ -351,6 +358,7 @@ class OutputService:
                 storage.unarchive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} unarchived in {stopwatch}s")
                 self._output_repository.save_unarchiving_date(study_id, output_id, current_time())
+                self._studies_repository.invalidate_disk_space(study_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully unarchived",
@@ -451,6 +459,7 @@ class OutputService:
                 storage.delete_output(uuid, output_id)
                 raise OutputAlreadyExists(output_id)
 
+        self._studies_repository.invalidate_disk_space(uuid)
         logger.info(f"output added to study {uuid}")
 
         # TODO: as commented elsewhere, that workflow should be refactored to not span multiple files
@@ -541,21 +550,24 @@ class OutputService:
 
         return FileResponse(tmp_file, headers={"Content-Disposition": "inline"}, media_type="application/json")
 
-    def delete_output(self, uuid: str, output_name: str) -> None:
+    def delete_output(self, uuid: str, output_name: str, allow_archived_study: bool = False) -> None:
         """
         Delete specific output simulation in study
         Args:
             uuid: study uuid
             output_name: output simulation name
+            allow_archived_study: whether the output may be deleted although its study is archived,
+                which is needed to delete the study itself.
 
         Returns:
 
         """
-        self._studies_repository.assert_permission(uuid, StudyPermissionType.WRITE)
+        self._studies_repository.assert_permission(uuid, StudyPermissionType.WRITE, allow_archived=allow_archived_study)
 
         self._find_output_storage(uuid, output_name).delete_output(uuid, output_name)
 
         self._output_repository.delete(uuid, output_name)
+        self._studies_repository.invalidate_disk_space(uuid)
 
         logger.info(f"Output {output_name} deleted from study {uuid}")
 
@@ -635,6 +647,7 @@ class OutputService:
                 storage.archive_study_output(study_id, output_id)
                 logger.info(f"Output {output_id} of study {study_id} archived in {stopwatch}s")
                 self._output_repository.invalidate_disk_usage(study_id, output_id)
+                self._studies_repository.invalidate_disk_space(study_id)
                 return TaskResult(
                     success=True,
                     message=f"Study output {study_id}/{output_id} successfully archived",
@@ -935,6 +948,7 @@ class OutputService:
             current_storage.delete_output(study_id, output_id)
 
         self._output_repository.invalidate_disk_usage(study_id, output_id)
+        self._studies_repository.invalidate_disk_space(study_id)
 
     def get_output_raw_content(self, study_id: str, output_id: str, url: list[str], formatted: bool) -> Any:
         return self._find_output_storage(study_id, output_id).get_raw_content(study_id, output_id, url, formatted)

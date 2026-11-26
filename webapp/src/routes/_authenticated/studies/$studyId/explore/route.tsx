@@ -33,15 +33,13 @@ function StudyExploreLayout() {
   const params = Route.useParams();
   const study = useStudy();
   const referenceStudy = useAppSelector((state) => getReferenceStudy(state, study.id));
-
-  // When the reference study is archived, all its variants are considered archived as well
-  const isArchived = referenceStudy.archived;
+  const isArchived = study.archived || referenceStudy.archived;
   const isVariant = study.type === "variantstudy";
 
   if (isArchived) {
     return (
       <Stack direction="column" sx={{ height: 1 }}>
-        {isVariant && (
+        {referenceStudy.archived && isVariant && (
           <Alert severity="warning">
             <Trans
               i18nKey="variants.unarchive.warning"

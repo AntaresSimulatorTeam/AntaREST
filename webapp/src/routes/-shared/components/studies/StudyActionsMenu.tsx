@@ -74,8 +74,8 @@ function StudyActionsMenu({
   const isManaged = study.managed;
   const isReference = study.type === "rawstudy";
   const isVariant = !isReference;
-  // When the reference study is archived, all its variants are considered archived as well
-  const isArchived = referenceStudy.archived;
+  const isArchived = study.archived || referenceStudy.archived;
+  const studyToUnarchive = referenceStudy.archived ? referenceStudy : study;
 
   ////////////////////////////////////////////////////////////////
   // Utils
@@ -101,10 +101,9 @@ function StudyActionsMenu({
   };
 
   const handleUnarchive = () => {
-    // Only the reference study can be unarchived, not its variants
-    unarchiveStudy(referenceStudy.id).catch((err) => {
+    unarchiveStudy(studyToUnarchive.id).catch((err) => {
       enqueueErrorSnackbar(
-        t("studies.error.unarchive", { studyname: referenceStudy.name }),
+        t("studies.error.unarchive", { studyname: studyToUnarchive.name }),
         toError(err),
       );
     });
@@ -154,12 +153,12 @@ function StudyActionsMenu({
           menuItem(!isArchived, t("global.export"), DownloadOutlinedIcon, "export"),
           menuItem(
             isArchived,
-            isReference ? t("global.unarchive") : t("variants.unarchive"),
+            studyToUnarchive.id === study.id ? t("global.unarchive") : t("variants.unarchive"),
             UnarchiveOutlinedIcon,
             handleUnarchive,
           ),
           menuItem(
-            isManaged && isReference && !isArchived,
+            isManaged && !isArchived,
             t("global.archive"),
             ArchiveOutlinedIcon,
             handleArchive,

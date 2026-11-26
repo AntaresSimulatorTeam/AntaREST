@@ -140,6 +140,7 @@ from antarest.study.model import (
     StorageMode,
     Study,
     StudyContentStatus,
+    StudyDiskSpaceAnalysis,
     StudyFolder,
     StudyMetadataCopy,
     StudyMetadataDTO,
@@ -153,6 +154,7 @@ from antarest.study.model import (
     StudyRepairType,
 )
 from antarest.study.repository import (
+    StudyDiskSpaceRepository,
     StudyFilter,
     StudyMetadataRepository,
     StudyPagination,
@@ -639,11 +641,13 @@ class StudyService:
         task_service: ITaskService,
         cache_service: ICache,
         config: Config,
+        disk_space_repository: StudyDiskSpaceRepository | None = None,
     ):
         self.storage_service = StudyStorageService(raw_study_service, variant_study_service)
         self.user_service = user_service
         self.directory_service = directory_service
         self.repository = repository
+        self.disk_space_repository = disk_space_repository or StudyDiskSpaceRepository()
         self.job_result_repository = job_result_repository
         self.event_bus = event_bus
         self.file_transfer_manager = file_transfer_manager
@@ -2009,6 +2013,9 @@ class StudyService:
 
         self.assert_study_unarchived(study)
 
+        if isinstance(study, VariantStudy):
+            return self._archive_variant(study)
+
         if not isinstance(study, RawStudy):
             raise UnsupportedOperationOnThisStudyType(study.id, "archive", "raw")
 
@@ -2049,6 +2056,7 @@ class StudyService:
                 study_db.archived = True
                 self.repository.save(study_db)
                 notify_study_edition(self.event_bus, study_db)
+            self.disk_space_repository.invalidate(study_to_archive.id)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2059,6 +2067,66 @@ class StudyService:
             progress=None,
             custom_event_messages=None,
         )
+
+    def _archive_variant(self, variant: VariantStudy) -> str:
+        """
+        Archives a variant study and all its descendants.
+
+        For each of them, the outputs are archived, the snapshot is removed
+        and the study is marked as archived.
+        """
+        # Children come first: an archived variant must never have an unarchived descendant.
+        variant_ids: list[str] = []
+
+        def collect_variant(study: Study) -> None:
+            assert_permission(study, StudyPermissionType.WRITE)
+            variant_ids.append(study.id)
+
+        self.storage_service.variant_study_service.walk_children(variant.id, collect_variant, bottom_first=True)
+
+        for variant_id in variant_ids:
+            if self.task_service.list_tasks(
+                TaskListFilter(
+                    ref_id=variant_id,
+                    type=[TaskType.ARCHIVE, TaskType.UNARCHIVE],
+                    status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+                )
+            ):
+                raise TaskAlreadyRunning()
+
+        def archive_task(notifier: ITaskNotifier) -> TaskResult:
+            for index, variant_id in enumerate(variant_ids, start=1):
+                self._archive_single_variant(variant_id)
+                notifier.notify_message(f"Variant study {variant_id} archived ({index}/{len(variant_ids)})")
+            return TaskResult(success=True, message="ok")
+
+        return self.task_service.add_task(
+            archive_task,
+            f"Study {variant.name} archiving",
+            task_type=TaskType.ARCHIVE,
+            ref_id=variant.id,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    def _archive_single_variant(self, variant_id: str) -> None:
+        with db():
+            if self.get_study(variant_id).archived:
+                return
+
+        # The outputs must be scheduled for archiving before the study is marked as archived.
+        outputs_access = self._get_outputs_access()
+        for output in outputs_access.list_outputs(variant_id):
+            if not output.archived:
+                with contextlib.suppress(TaskAlreadyRunning):
+                    outputs_access.archive_output(variant_id, output.id)
+
+        with db():
+            variant = self.get_study(variant_id)
+            if not isinstance(variant, VariantStudy):
+                raise UnsupportedOperationOnThisStudyType(variant_id, "archive", "variant")
+            self.storage_service.variant_study_service.archive(variant)
+            notify_study_edition(self.event_bus, variant)
 
     def unarchive(self, uuid: str) -> str:
         study = self.get_study(uuid)
@@ -2075,6 +2143,9 @@ class StudyService:
             raise TaskAlreadyRunning()
 
         assert_permission(study, StudyPermissionType.WRITE)
+
+        if isinstance(study, VariantStudy):
+            return self._unarchive_variant(study)
 
         if not isinstance(study, RawStudy):
             raise UnsupportedOperationOnThisStudyType(study.id, "unarchive", "raw")
@@ -2093,6 +2164,7 @@ class StudyService:
                 study_db.last_access = current_time()
                 self.repository.save(study_db)
                 remove_from_cache(cache=self.cache_service, root_id=uuid)
+                self.disk_space_repository.invalidate(study_db.id)
                 self._get_outputs_access().on_study_unarchived(uuid)
                 notify_study_edition(self.event_bus, study_db)
 
@@ -2103,6 +2175,37 @@ class StudyService:
             f"Study {study.name} unarchiving",
             task_type=TaskType.UNARCHIVE,
             ref_id=study.id,
+            progress=None,
+            custom_event_messages=None,
+        )
+
+    def _unarchive_variant(self, variant: VariantStudy) -> str:
+        """
+        Unarchives a variant study, but not its descendants.
+
+        Its snapshot will be generated the next time the study is accessed, and its outputs stay archived.
+        """
+        # An archived study must never have an unarchived descendant.
+        if variant.parent_id is not None and self.get_study(variant.parent_id).archived:
+            raise UnsupportedOperationOnArchivedStudy(variant.parent_id)
+
+        uuid = variant.id
+
+        def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
+            with db():
+                study_db = self.get_study(uuid)
+                study_db.archived = False
+                study_db.last_access = current_time()
+                self.repository.save(study_db)
+                remove_from_cache(cache=self.cache_service, root_id=uuid)
+                notify_study_edition(self.event_bus, study_db)
+            return TaskResult(success=True, message="ok")
+
+        return self.task_service.add_task(
+            unarchive_task,
+            f"Study {variant.name} unarchiving",
+            task_type=TaskType.UNARCHIVE,
+            ref_id=uuid,
             progress=None,
             custom_event_messages=None,
         )
@@ -2599,7 +2702,15 @@ class StudyService:
             custom_event_messages=None,
         )
 
-    def get_disk_usage(self, uuid: str) -> int:
+    def invalidate_disk_space(self, study_id: str) -> None:
+        """
+        Flags the study so that its disk space is analyzed again.
+        Must be called after any change on the study disk space that doesn't update the study `updated_at`.
+        No permission check is done: it is meant to be called by internal services.
+        """
+        self.disk_space_repository.invalidate(study_id)
+
+    def compute_disk_usage(self, uuid: str) -> int:
         """
         Calculates the size of the disk used to store the study if the user has permissions.
 
@@ -2622,6 +2733,27 @@ class StudyService:
         for output in self._get_outputs_access().list_outputs(study.id):
             disk_usage += self._get_outputs_access().get_disk_usage(study.id, output.id)
         return disk_usage
+
+    def get_disk_usage(self, uuid: str) -> int:
+        study_analysis = self.disk_space_repository.get(uuid)
+        study = self.get_study(uuid=uuid)
+        assert_permission(study, StudyPermissionType.READ)
+
+        if not is_managed(study):
+            return self.compute_disk_usage(uuid)
+
+        elif study_analysis is None:
+            disk_usage = self.compute_disk_usage(uuid)
+            study_disk_analysis = StudyDiskSpaceAnalysis(
+                study_id=uuid,
+                disk_space_bytes=disk_usage,
+                last_analysis_date=current_time(),
+            )
+            self.disk_space_repository.save(study_disk_analysis)
+            return disk_usage
+
+        # If the study analysis is present, return the already stored value
+        return study_analysis.disk_space_bytes
 
     def get_matrix_with_index_and_header(
         self, *, study_id: str, path: str, with_index: bool, with_header: bool
@@ -2774,6 +2906,7 @@ class StudyService:
         self.assert_study_unarchived(study)
 
         self.storage_service.raw_study_service.normalize_study(study)
+        self.disk_space_repository.invalidate(study.id)
 
     def get_raw_content(self, uuid: str, path: str, depth: int, formatted: bool) -> Any:
         """

@@ -10,16 +10,69 @@
 #
 # This file is part of the Antares project.
 import io
+import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 from starlette.testclient import TestClient
 
+from antarest.core.jwt import DEFAULT_ADMIN_USER
 from antarest.core.tasks.model import TaskDTO, TaskStatus
+from antarest.core.utils.fastapi_sqlalchemy import db
+from antarest.core.utils.utils import current_time
+from antarest.login.utils import current_user_context
+from antarest.maintenance.tasks.common import BackGroundTaskStatus
+from antarest.maintenance.tasks.disk_space_analyzer import disk_space_analysis
+from antarest.service_creator import Services
+from antarest.study.model import StudyDiskSpaceAnalysis
+from antarest.study.repository import StudyDiskSpaceRepository
+from antarest.study.service import StudyService
 
 
 class TestDiskUsage:
+    def test_disk_usage_is_read_from_db_and_not_recomputed(
+        self, client: TestClient, user_access_token: str, services: Services, internal_study_id: str
+    ) -> None:
+        client.headers = {"Authorization": f"Bearer {user_access_token}"}
+
+        # Only managed studies are read from the DB (the others are always computed)
+        res = client.post(
+            f"/v1/studies/{internal_study_id}/copy", params={"study_name": "managed", "use_task": "false"}
+        )
+        res.raise_for_status()
+        study_id: str = res.json()
+
+        # A value which cannot be the real size of the study on the disk
+        stored_size = 123_456_789_012
+        with db():
+            db.session.merge(
+                StudyDiskSpaceAnalysis(
+                    study_id=study_id, disk_space_bytes=stored_size, last_analysis_date=current_time()
+                )
+            )
+            db.session.commit()
+
+        # Check that the endpoint returns the stored value and does not recompute it
+        with patch.object(StudyService, "compute_disk_usage") as compute:
+            res = client.get(f"/v1/studies/{study_id}/disk-usage")
+            assert res.status_code == 200, res.json()
+            assert res.json() == stored_size
+            compute.assert_not_called()
+
+        # The stored value is the only source: updating it changes the response
+        with db():
+            services.study.disk_space_repository.update(study_id, 42, current_time())
+        res = client.get(f"/v1/studies/{study_id}/disk-usage")
+        assert res.status_code == 200, res.json()
+        assert res.json() == 42
+
     def test_disk_usage_endpoint(
-        self, client: TestClient, user_access_token: str, internal_study_id: str, output_zip: Path
+        self,
+        client: TestClient,
+        user_access_token: str,
+        internal_study_id: str,
+        output_zip: Path,
+        services: Services,
     ) -> None:
         """
         Verify the functionality of the disk usage endpoint:
@@ -66,12 +119,12 @@ class TestDiskUsage:
         assert task_result.result is not None
         assert task_result.result.success
 
-        # Ensure a successful response is received and the disk usage is not zero
+        # Ensure a successful response is received and the disk usage is still zero
+        # This is because the snapshot creation does not change a lot the size of the study, therefore it does not trigger a recomputation of the disk usage
         res = client.get(f"/v1/studies/{variant_id}/disk-usage")
         assert res.status_code == 200, res.json()
         disk_usage = res.json()
-        # currently: 850 Kio on Ubuntu because the parent study is normalized as it was imported.
-        assert 0.1 * 1024 * 1024 < disk_usage < 0.5 * 1024 * 1024
+        assert disk_usage == 0
 
         # Import an output inside the variant
         res = client.post(
@@ -80,10 +133,17 @@ class TestDiskUsage:
         )
         assert res.status_code == 202, res.json()
 
+        # Run the disk space analysis to compute the disk usage of the variant
+        with current_user_context(DEFAULT_ADMIN_USER):
+            analysis = disk_space_analysis(
+                service=services.study, disk_repo=StudyDiskSpaceRepository(), lock_folder=Path(tempfile.gettempdir())
+            )
+        assert analysis.status == BackGroundTaskStatus.SUCCESS
+
         # Calculate the new disk usage
         res = client.get(f"/v1/studies/{variant_id}/disk-usage")
         assert res.status_code == 200, res.json()
         new_disk_usage = res.json()
         output_size = 79450
-        expected_disk_usage = disk_usage + output_size
-        assert expected_disk_usage - 1000 < new_disk_usage < expected_disk_usage + 1000  # Test with tolerance
+        # The analysis measures the whole variant: the snapshot (~250 Kio) and the output
+        assert 0.1 * 1024 * 1024 + output_size < new_disk_usage < 0.5 * 1024 * 1024 + output_size
