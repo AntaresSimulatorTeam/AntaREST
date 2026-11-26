@@ -53,8 +53,8 @@ def test_groups_are_stored_per_study(db_session: Session, matrix_service: ISimpl
     )
     rows = db_session.execute(select(table).where(table.c.study_data_id == study_data_id)).all()
     assert {row.scenario_group: json.loads(row.data) for row in rows} == {
-        "hydro": [{"scenario": 0, "time_series_index": 4}, {"scenario": 1, "time_series_index": 2}],
-        "load": [{"scenario": 0, "time_series_index": 1}, {"scenario": 1, "time_series_index": 5}],
+        "hydro": [{"mc_scenario": 0, "time_series_index": 4}, {"mc_scenario": 1, "time_series_index": 2}],
+        "load": [{"mc_scenario": 0, "time_series_index": 1}, {"mc_scenario": 1, "time_series_index": 5}],
     }
     assert first.get_gems_scenario_builder() == builder
     assert second.get_gems_scenario_builder() == other_builder
