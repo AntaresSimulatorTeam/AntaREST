@@ -30,7 +30,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     # Ensures at first there is no sc-builder
     res = client.get(sc_builder_url)
     assert res.status_code == 200
-    assert res.json() == {"scenarios": {}}
+    assert res.json() == {"scenarioGroups": {}}
 
     # Set nbYears to 2 for the rest of the test
     res = client.put(f"/v1/studies/{study_id}/config/general/form", json={"nbYears": 2})
@@ -39,37 +39,37 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     # Add 2 scenarios, one with default values and the other ones with custom values
     res1 = client.post(sc_builder_url, params={"scenario_group": "scenario1"}, json=[])
     assert res1.status_code == 200
-    assert res1.json() == [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 1}]
+    assert res1.json() == [{"mcScenario": 0, "timeSeriesIndex": 0}, {"mcScenario": 1, "timeSeriesIndex": 1}]
 
     res2 = client.post(
-        sc_builder_url, params={"scenario_group": "scenario2"}, json=[{"scenario": 1, "timeSeriesIndex": 5}]
+        sc_builder_url, params={"scenario_group": "scenario2"}, json=[{"mcScenario": 1, "timeSeriesIndex": 5}]
     )
     assert res2.status_code == 200
-    assert res2.json() == [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 5}]
+    assert res2.json() == [{"mcScenario": 0, "timeSeriesIndex": 0}, {"mcScenario": 1, "timeSeriesIndex": 5}]
 
     # Fetch the 2 scenarios
     res = client.get(sc_builder_url)
     assert res.status_code == 200
     assert res.json() == {
-        "scenarios": {
-            "scenario1": [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 1}],
-            "scenario2": [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 5}],
+        "scenarioGroups": {
+            "scenario1": [{"mcScenario": 0, "timeSeriesIndex": 0}, {"mcScenario": 1, "timeSeriesIndex": 1}],
+            "scenario2": [{"mcScenario": 0, "timeSeriesIndex": 0}, {"mcScenario": 1, "timeSeriesIndex": 5}],
         }
     }
 
     # Update the data of 1 scenario only. The second one should not be impacted
     res = client.put(
-        sc_builder_url, params={"scenario_group": "scenario1"}, json=[{"scenario": 0, "timeSeriesIndex": 3}]
+        sc_builder_url, params={"scenario_group": "scenario1"}, json=[{"mcScenario": 0, "timeSeriesIndex": 3}]
     )
     assert res.status_code == 200
-    assert res.json() == [{"scenario": 0, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 1}]
+    assert res.json() == [{"mcScenario": 0, "timeSeriesIndex": 3}, {"mcScenario": 1, "timeSeriesIndex": 1}]
 
     res = client.get(sc_builder_url)
     assert res.status_code == 200
     assert res.json() == {
-        "scenarios": {
-            "scenario1": [{"scenario": 0, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 1}],
-            "scenario2": [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 5}],
+        "scenarioGroups": {
+            "scenario1": [{"mcScenario": 0, "timeSeriesIndex": 3}, {"mcScenario": 1, "timeSeriesIndex": 1}],
+            "scenario2": [{"mcScenario": 0, "timeSeriesIndex": 0}, {"mcScenario": 1, "timeSeriesIndex": 5}],
         }
     }
 
@@ -80,8 +80,8 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     res = client.get(sc_builder_url)
     assert res.status_code == 200
     assert res.json() == {
-        "scenarios": {
-            "scenario2": [{"scenario": 0, "timeSeriesIndex": 0}, {"scenario": 1, "timeSeriesIndex": 5}],
+        "scenarioGroups": {
+            "scenario2": [{"mcScenario": 0, "timeSeriesIndex": 0}, {"mcScenario": 1, "timeSeriesIndex": 5}],
         }
     }
 
@@ -91,7 +91,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
 
     res = client.get(sc_builder_url)
     assert res.status_code == 200
-    assert res.json() == {"scenarios": {}}
+    assert res.json() == {"scenarioGroups": {}}
 
     ##########################
     # Error cases
@@ -107,7 +107,7 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
     res = client.post(
         sc_builder_url,
         params={"scenario_group": "scenario1"},
-        json=[{"scenario": 1, "timeSeriesIndex": 3}, {"scenario": 1, "timeSeriesIndex": 4}],
+        json=[{"mcScenario": 1, "timeSeriesIndex": 3}, {"mcScenario": 1, "timeSeriesIndex": 4}],
     )
     assert res.status_code == 422
     assert res.json()["description"] == "Value error, Found duplicated scenario inside GEMS scenario builder"
@@ -131,14 +131,14 @@ def test_scenario_builder_nominal_case(variant: bool, study_service: StudyServic
 
     # Try to create a scenario with wrong years
     res = client.post(
-        sc_builder_url, params={"scenario_group": "scenario1"}, json=[{"scenario": -1, "timeSeriesIndex": 1}]
+        sc_builder_url, params={"scenario_group": "scenario1"}, json=[{"mcScenario": -1, "timeSeriesIndex": 1}]
     )
     assert res.status_code == 422
     assert res.json()["description"] == "Input should be greater than or equal to 0"
     assert res.json()["exception"] == "RequestValidationError"
 
     res = client.post(
-        sc_builder_url, params={"scenario_group": "scenario1"}, json=[{"scenario": 1, "timeSeriesIndex": -1}]
+        sc_builder_url, params={"scenario_group": "scenario1"}, json=[{"mcScenario": 1, "timeSeriesIndex": -1}]
     )
     assert res.status_code == 422
     assert res.json()["description"] == "Input should be greater than or equal to 0"

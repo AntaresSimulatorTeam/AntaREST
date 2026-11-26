@@ -39,7 +39,7 @@ GemsScBuilderMappings: TypeAlias = Annotated[list[GemsScBuilderMapping], AfterVa
 
 
 class GemsScenarioBuilder(AntaresBaseModel):
-    """Map each group's zero-based scenarios to one-based data-series columns."""
+    """Map each group's zero-based scenarios to zero-based data-series columns."""
 
     model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
 
