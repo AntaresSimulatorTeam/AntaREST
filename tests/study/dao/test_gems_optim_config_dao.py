@@ -59,6 +59,14 @@ def _build_library(config: GemsOptimConfig) -> GemsLibrary:
     return GemsLibrary.model_validate({"id": library_ids.pop(), "models": models})
 
 
+def _check_optim_config_equality(config: GemsOptimConfig | None, expected: GemsOptimConfig) -> None:
+    assert config is not None
+    # Sort the models for test comparison
+    config.models = sorted(config.models, key=lambda m: m.id)
+    expected.models = sorted(expected.models, key=lambda m: m.id)
+    assert config == expected
+
+
 def test_examples_content() -> None:
     frontal = _load_example("frontal")
     assert frontal.time_scope is not None and frontal.time_scope.last_time_step == 167
@@ -88,12 +96,12 @@ def test_roundtrip(dao_10_2: StudyDao, example: str) -> None:
     config = _load_example(example)
     dao.save_library(_build_library(config))
     dao.save_optim_config(config)
-    assert dao.get_optim_config() == config
+    _check_optim_config_equality(dao.get_optim_config(), config)
 
     # Saving again with a slightly different data -> Should not raise and return the new data
     new_config = config.model_copy(update={"solver_options": None})
     dao.save_optim_config(new_config)
-    assert dao.get_optim_config() == new_config
+    _check_optim_config_equality(dao.get_optim_config(), new_config)
 
 
 @pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
