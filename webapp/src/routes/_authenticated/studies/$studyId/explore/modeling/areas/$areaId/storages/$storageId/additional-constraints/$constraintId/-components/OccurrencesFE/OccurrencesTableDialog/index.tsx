@@ -13,15 +13,16 @@
  */
 
 import CustomScrollbar from "@/components/CustomScrollbar";
-import DataGridForm, {
-  type DataGridFormApi,
-  type DataGridFormProps,
-} from "@/components/DataGridForm";
+import DataGridForm from "@/components/DataGridForm";
+import type {
+  DataGridFormApi,
+  DataGridFormProps,
+  DataGridFormSubmitData,
+} from "@/components/DataGridForm/types";
 import BasicDialog from "@/components/dialogs/BasicDialog";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import NumberFE from "@/components/fieldEditors/NumberFE";
 import NumberSelectionsFE from "@/components/fieldEditors/NumberSelectionsFE";
-import type { SubmitHandlerPlus } from "@/components/Form/types";
 import useConfirm from "@/hooks/useConfirm";
 import type {
   StorageConstraint,
@@ -98,8 +99,8 @@ function OccurrencesTableDialog({ open, onClose, onEdit, control, occurrences }:
   };
 
   const handleSubmit = (
-    { values }: SubmitHandlerPlus<OccurrencesData>,
-    event: React.FormEvent<HTMLFormElement>,
+    { values }: DataGridFormSubmitData<OccurrencesData>,
+    event: React.SubmitEvent<HTMLFormElement>,
   ) => {
     // Prevent to submit the constraint form
     event.stopPropagation();
