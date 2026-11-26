@@ -113,18 +113,26 @@ def test_db_foreign_keys(dao_10_2: StudyDao) -> None:
         dao.save_optim_config(config)
 
     dao.save_library(_build_library(config))
-    wrong = GemsOptimConfig.model_validate(
-        {
-            "models": [
-                {
-                    "id": config.models[0].id,
-                    "out-of-bounds-processing": {"constraints": [{"id": "unknown", "mode": "drop"}]},
-                }
-            ]
-        }
-    )
-    with pytest.raises(IntegrityError):
-        dao.save_optim_config(wrong)
+
+    # Fake constraint inside "out-of-bounds-processing" -> Should raise
+    fake_constraint_oob = {"out-of-bounds-processing": {"constraints": [{"id": "unknown", "mode": "drop"}]}}
+
+    # Fake variable inside "model-decomposition" -> Should raise
+    fake_variable = {"model_decomposition": {"variables": [{"id": "unknown", "location": "master"}]}}
+
+    # Fake constraint inside "model-decomposition" -> Should raise
+    fake_constraint = {"model_decomposition": {"constraints": [{"id": "unknown", "location": "master"}]}}
+
+    # Fake objective contribution inside "model-decomposition" -> Should raise
+    fake_objective = {"model_decomposition": {"objective_contributions": [{"id": "unknown", "location": "master"}]}}
+
+    for wrong_data in [fake_constraint_oob, fake_variable, fake_constraint, fake_objective]:
+        wrong_config = GemsOptimConfig.model_validate({"models": [{"id": config.models[0].id, **wrong_data}]})
+        with pytest.raises(IntegrityError):
+            dao.save_optim_config(wrong_config)
+
+    # Save real data just to ensure the test failed for the right reason and now it works
+    dao.save_optim_config(config)
 
 
 @pytest.mark.parametrize(
