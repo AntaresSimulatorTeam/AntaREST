@@ -22,7 +22,7 @@ from tests.study.dao.conftest import check_gems_taxonomy_integrity
 ASSETS_PATH = Path(__file__).parent / "assets"
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_nominal_cases(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 

@@ -75,7 +75,7 @@ def test_filename_collision_does_not_overwrite(
     assert not (folder / "new_catalog.yaml").exists()
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 @pytest.mark.parametrize("with_catalogs", [False, True])
 def test_conversion_roundtrip(
     dao_10_2: StudyDao,

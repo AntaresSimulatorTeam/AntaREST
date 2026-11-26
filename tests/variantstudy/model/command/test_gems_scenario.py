@@ -22,7 +22,7 @@ from antarest.study.storage.variantstudy.model.command.update_gems_scenario impo
 from antarest.study.storage.variantstudy.model.command_context import CommandContext
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> None:
     dao = dao_10_2
     version = dao.get_version()

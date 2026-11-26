@@ -178,7 +178,7 @@ def test_long_whitespace_prefix_without_comma(filestudy_dao_v10_2: FileStudyTree
         filestudy_dao_v10_2.get_gems_scenario_builder()
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 @pytest.mark.parametrize("empty", [False, True])
 @pytest.mark.parametrize("with_library", [False, True])
 def test_conversion_roundtrip(

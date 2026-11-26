@@ -106,7 +106,7 @@ def test_roundtrip_on_real_examples(dao_10_2: StudyDao, example: str) -> None:
     _check_optim_config_equality(dao.get_optim_config(), new_config)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_db_foreign_keys(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     config = _load_example("frontal")
@@ -195,7 +195,7 @@ def test_invalid_configs(content: dict[str, Any]) -> None:
         GemsOptimConfig.model_validate(content)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_conversion_always_write_a_file(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     config = _load_example("frontal")
