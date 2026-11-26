@@ -216,10 +216,8 @@ class _GemsHeuristicElement(AntaresBaseModel):
 
 
 def _check_unique_heuristic_elements(elements: list[_GemsHeuristicElement], context: str) -> None:
-    names = [e.heuristic_element for e in elements]
-    duplicates = sorted({n for n in names if names.count(n) > 1})
-    if duplicates:
-        raise ValueError(f"Heuristic elements must appear only once in {context}: {duplicates}")
+    if len(elements) != len({elt.heuristic_element for elt in elements}):
+        raise ValueError(f"Heuristic elements must appear only once in {context}")
 
 
 class _GemsHeuristic(AntaresBaseModel):
