@@ -9,7 +9,6 @@
 # SPDX-License-Identifier: MPL-2.0
 #
 # This file is part of the Antares project.
-from antarest.core.exceptions import GemsLibraryNotFound, GemsModelNotFound
 from antarest.study.business.model.gems.library import GemsModelsProperties
 from antarest.study.business.study_interface import StudyInterface
 
@@ -17,4 +16,3 @@ from antarest.study.business.study_interface import StudyInterface
 class GemsLibraryManager:
     def get_model_properties(self, study: StudyInterface, library_id: str, model_id: str) -> list[GemsModelsProperties]:
         return study.get_study_dao().get_properties_ids(library_id, model_id)
-
