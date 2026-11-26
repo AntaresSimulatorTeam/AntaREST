@@ -33,18 +33,18 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
         command_context=command_context,
         scenario_group="scenario_1",
         data=[
-            GemsScBuilderMapping(scenario=3, time_series_index=1),
-            GemsScBuilderMapping(scenario=4, time_series_index=8),
+            GemsScBuilderMapping(mc_scenario=3, time_series_index=1),
+            GemsScBuilderMapping(mc_scenario=4, time_series_index=8),
         ],
     )
     result = cmd.apply(dao)
     assert result.status is True
 
     assert dao.get_gems_scenario_builder() == GemsScenarioBuilder(
-        scenarios={
+        scenario_groups={
             "scenario_1": [
-                GemsScBuilderMapping(scenario=3, time_series_index=1),
-                GemsScBuilderMapping(scenario=4, time_series_index=8),
+                GemsScBuilderMapping(mc_scenario=3, time_series_index=1),
+                GemsScBuilderMapping(mc_scenario=4, time_series_index=8),
             ]
         }
     )
@@ -55,19 +55,19 @@ def test_nominal_case(dao_10_2: StudyDao, command_context: CommandContext) -> No
         command_context=command_context,
         scenario_group="scenario_1",
         data=[
-            GemsScBuilderMapping(scenario=0, time_series_index=6),
-            GemsScBuilderMapping(scenario=4, time_series_index=7),
+            GemsScBuilderMapping(mc_scenario=0, time_series_index=6),
+            GemsScBuilderMapping(mc_scenario=4, time_series_index=7),
         ],
     )
     result = cmd2.apply(dao)
     assert result.status is True
 
     assert dao.get_gems_scenario_builder() == GemsScenarioBuilder(
-        scenarios={
+        scenario_groups={
             "scenario_1": [
-                GemsScBuilderMapping(scenario=0, time_series_index=6),
-                GemsScBuilderMapping(scenario=3, time_series_index=1),  # Unmodified
-                GemsScBuilderMapping(scenario=4, time_series_index=7),
+                GemsScBuilderMapping(mc_scenario=0, time_series_index=6),
+                GemsScBuilderMapping(mc_scenario=3, time_series_index=1),  # Unmodified
+                GemsScBuilderMapping(mc_scenario=4, time_series_index=7),
             ]
         }
     )

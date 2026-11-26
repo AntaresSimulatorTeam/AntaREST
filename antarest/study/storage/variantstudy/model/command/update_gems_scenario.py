@@ -54,9 +54,9 @@ class UpdateGemsScenario(ICommand):
         existing_mappings = study_dao.get_scenario_from_gems_scenario_builder(self.scenario_group)
 
         final_mapping = list(self.data)  # Avoid mutating user inputs
-        new_scenarios = {mapping.scenario for mapping in final_mapping}
+        new_scenarios = {mapping.mc_scenario for mapping in final_mapping}
         for mapping in existing_mappings:
-            if mapping.scenario not in new_scenarios:
+            if mapping.mc_scenario not in new_scenarios:
                 final_mapping.append(mapping)
 
         study_dao.save_scenario_inside_gems_scenario_builder(self.scenario_group, final_mapping)

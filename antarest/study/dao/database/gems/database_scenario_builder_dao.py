@@ -39,7 +39,7 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
         if not rows:
             return None
 
-        return GemsScenarioBuilder(scenarios={row.scenario_group: json.loads(row.data) for row in rows})
+        return GemsScenarioBuilder(scenario_groups={row.scenario_group: json.loads(row.data) for row in rows})
 
     @override
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:

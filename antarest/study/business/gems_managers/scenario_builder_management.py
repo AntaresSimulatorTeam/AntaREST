@@ -38,11 +38,11 @@ class GemsScenarioBuilderManager:
         dao = study.get_study_dao()
         sc_builder = dao.get_gems_scenario_builder()
         if not sc_builder:
-            return GemsScenarioBuilder(scenarios={})
+            return GemsScenarioBuilder(scenario_groups={})
 
         simulation_nb_years = dao.get_general_config().nb_years
-        for scenario_id, mappings in sc_builder.scenarios.items():
-            sc_builder.scenarios[scenario_id] = fill_missing_years(mappings, simulation_nb_years)
+        for scenario_id, mappings in sc_builder.scenario_groups.items():
+            sc_builder.scenario_groups[scenario_id] = fill_missing_years(mappings, simulation_nb_years)
 
         return sc_builder
 
