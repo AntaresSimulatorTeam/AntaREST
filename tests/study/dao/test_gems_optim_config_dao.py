@@ -20,6 +20,8 @@ from antarest.study.business.model.gems.library import GemsLibrary
 from antarest.study.business.model.gems.optim_config import GemsOptimConfig, GemsResolutionMode
 from antarest.study.business.model.gems.system import split_library_and_model_id
 from antarest.study.dao.api.study_dao import StudyDao
+from antarest.study.dao.study_conversion.study_converter import StudyConverter
+from antarest.study.model import STUDY_VERSION_10_2
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
 
 ASSETS_PATH = Path(__file__).parent / "assets" / "gems" / "optim-config"
@@ -191,3 +193,17 @@ def test_db_foreign_keys(dao_10_2: StudyDao) -> None:
 def test_invalid_configs(content: dict[str, Any]) -> None:
     with pytest.raises(ValidationError):
         GemsOptimConfig.model_validate(content)
+
+
+@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+def test_conversion_always_write_a_file(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    config = _load_example("frontal")
+    dao.save_library(_build_library(config))
+
+    assert dao.get_optim_config() is None
+
+    # Even if the DB does not have an optim config, when converting the data to FS we should write the file.
+    # Because the Simulator always needs one to run the simulation.
+    converter = StudyConverter(dao, "target_dao", STUDY_VERSION_10_2, dao.matrix_service)
+    converter._convert_gems()
