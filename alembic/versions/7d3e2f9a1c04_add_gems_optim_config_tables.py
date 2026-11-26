@@ -1,7 +1,7 @@
 """add_gems_optim_config_tables
 
 Revision ID: 7d3e2f9a1c04
-Revises: 55ae4521e871
+Revises: 3d00272e8fcf
 Create Date: 2026-11-13 14:30:00.000000
 
 """
@@ -12,7 +12,7 @@ from antarest.study.dao.database.models import study_data_id_col
 
 # revision identifiers, used by Alembic.
 revision = '7d3e2f9a1c04'
-down_revision = '55ae4521e871'
+down_revision = '3d00272e8fcf'
 branch_labels = None
 depends_on = None
 
@@ -43,7 +43,13 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id", "constraint_id"],
             ["gems_models_constraints.study_data_id", "gems_models_constraints.library_id", "gems_models_constraints.model_id", "gems_models_constraints.id"],
-            name="fk_gems_optim_config_oob_processing",
+            name="fk_gems_optim_config_oob_processing_constraint",
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["study_data_id"],
+            ["gems_optim_config.study_data_id"],
+            name="fk_gems_optim_config_oob_processing_config",
             ondelete="CASCADE",
         )
     )
@@ -59,7 +65,13 @@ def upgrade():
         sa.ForeignKeyConstraint(
             ["study_data_id", "library_id", "model_id"],
             ["gems_models.study_data_id", "gems_models.library_id", "gems_models.id"],
-            name="fk_gems_optim_config_heuristics",
+            name="fk_gems_optim_config_heuristics_models",
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["study_data_id"],
+            ["gems_optim_config.study_data_id"],
+            name="fk_gems_optim_config_heuristics_config",
             ondelete="CASCADE",
         )
     )
@@ -82,9 +94,15 @@ def upgrade():
                     f"{reference_table_name}.library_id",
                     f"{reference_table_name}.model_id",
                     f"{reference_table_name}.id"],
-                name=f"fk_{table_name}",
+                name=f"fk_{table_name}_models",
                 ondelete="CASCADE",
-            )
+            ),
+        sa.ForeignKeyConstraint(
+            ["study_data_id"],
+            ["gems_optim_config.study_data_id"],
+            name=f"fk_{table_name}_config",
+            ondelete="CASCADE",
+        )
         )
 
     _create_model_decomposition_table(
