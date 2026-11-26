@@ -219,15 +219,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         session = self._db_session
 
         # The configuration is replaced as a whole
-        for table in [
-            GEMS_OPTIM_CONFIG_TABLE,
-            GEMS_OPTIM_CONFIG_OOB_PROCESSING_TABLE,
-            GEMS_OPTIM_CONFIG_HEURISTICS_TABLE,
-            GEMS_OPTIM_CONFIG_MD_VARIABLES_TABLE,
-            GEMS_OPTIM_CONFIG_MD_CONSTRAINTS_TABLE,
-            GEMS_OPTIM_CONFIG_MD_OBJECTIVE_CONTRIBUTIONS_TABLE,
-        ]:
-            session.execute(delete(table).where(table.c.study_data_id == study_data_id))
+        session.execute(delete(GEMS_OPTIM_CONFIG_TABLE).where(GEMS_OPTIM_CONFIG_TABLE.c.study_data_id == study_data_id))
 
         optim_config_values: dict[str, Any] = {"study_data_id": study_data_id}
         for parameter in ["time_scope", "scenario_scope", "solver_options", "resolution"]:
