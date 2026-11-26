@@ -597,7 +597,7 @@ def add_system_file_to_study_dao(dao: StudyDao) -> GemsSystem:
     add_library_file_to_study_dao(dao)
     add_legacy_objects_to_study_dao(dao)
     dao.save_gems_scenario_builder(
-        GemsScenarioBuilder(scenarios={"sg1": [GemsScBuilderMapping(scenario=0, time_series_index=1)]})
+        GemsScenarioBuilder(scenario_groups={"sg1": [GemsScBuilderMapping(mc_scenario=0, time_series_index=1)]})
     )
 
     gems_system_asset_path = ASSETS_PATH / "gems" / "system" / "system.yml"

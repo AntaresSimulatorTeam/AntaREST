@@ -38,7 +38,7 @@ class UpdateGemsScenario(ICommand):
 
     command_name: CommandName = CommandName.UPDATE_GEMS_SCENARIO
 
-    scenario_name: GemsId
+    scenario_group: GemsId
     data: GemsScBuilderMappings
 
     @model_validator(mode="after")
@@ -51,23 +51,23 @@ class UpdateGemsScenario(ICommand):
     def _apply_dao(
         self, study_dao: StudyDao, listener: ICommandListener | None = None
     ) -> CommandOutput[GemsScBuilderMappings]:
-        existing_mappings = study_dao.get_scenario_from_gems_scenario_builder(self.scenario_name)
+        existing_mappings = study_dao.get_scenario_from_gems_scenario_builder(self.scenario_group)
 
         final_mapping = list(self.data)  # Avoid mutating user inputs
-        new_scenarios = {mapping.scenario for mapping in final_mapping}
+        new_scenarios = {mapping.mc_scenario for mapping in final_mapping}
         for mapping in existing_mappings:
-            if mapping.scenario not in new_scenarios:
+            if mapping.mc_scenario not in new_scenarios:
                 final_mapping.append(mapping)
 
-        study_dao.save_scenario_inside_gems_scenario_builder(self.scenario_name, final_mapping)
+        study_dao.save_scenario_inside_gems_scenario_builder(self.scenario_group, final_mapping)
         return command_succeeded(
-            message=f"Gems scenario {self.scenario_name} updated successfully", result=final_mapping
+            message=f"Gems scenario {self.scenario_group} updated successfully", result=final_mapping
         )
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={"scenario_name": self.scenario_name, "data": [mapping.model_dump() for mapping in self.data]},
+            args={"scenario_group": self.scenario_group, "data": [mapping.model_dump() for mapping in self.data]},
             study_version=self.study_version,
         )

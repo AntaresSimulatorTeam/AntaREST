@@ -65,38 +65,38 @@ class FileStudyGemsScenarioBuilderDao(GemsScenarioBuilderDao, ABC):
             if (group, scenario_index) in seen:
                 raise ValueError(f"Duplicate GEMS scenario builder mapping at line {line_number}: {line!r}")
             seen.add((group, scenario_index))
-            mappings.append(GemsScBuilderMapping(scenario=scenario_index, time_series_index=int(column)))
+            mappings.append(GemsScBuilderMapping(mc_scenario=scenario_index, time_series_index=int(column)))
 
         if not groups:
             return None
 
-        return GemsScenarioBuilder(scenarios=groups)
+        return GemsScenarioBuilder(scenario_groups=groups)
 
     @override
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
         study = self.get_file_study()
         path = _get_gems_scenario_builder_file_path(study.config.study_path)
-        if not scenario_builder.scenarios:
+        if not scenario_builder.scenario_groups:
             path.unlink(missing_ok=True)
             return
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", encoding="utf-8") as stream:
-            for group, scenarios in scenario_builder.scenarios.items():
+            for group, scenarios in scenario_builder.scenario_groups.items():
                 for mapping in scenarios:
-                    stream.write(f"{group}, {mapping.scenario} = {mapping.time_series_index}\n")
+                    stream.write(f"{group}, {mapping.mc_scenario} = {mapping.time_series_index}\n")
 
     @override
-    def save_scenario_inside_gems_scenario_builder(self, scenario_name: GemsId, data: GemsScBuilderMappings) -> None:
+    def save_scenario_inside_gems_scenario_builder(self, scenario_group: GemsId, data: GemsScBuilderMappings) -> None:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def remove_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> None:
+    def remove_scenario_from_gems_scenario_builder(self, scenario_group: GemsId) -> None:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
+    def get_scenario_from_gems_scenario_builder(self, scenario_group: GemsId) -> GemsScBuilderMappings:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override
-    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
+    def scenario_exists_in_gems_scenario_builder(self, scenario_group: GemsId) -> bool:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

@@ -25,35 +25,37 @@ class GemsScBuilderMapping(AntaresBaseModel):
 
     model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
 
-    scenario: Year
+    mc_scenario: Year
     time_series_index: Year
 
 
 def _check_scenario_duplication(data: list[GemsScBuilderMapping]) -> list[GemsScBuilderMapping]:
-    if len(data) != len({mapping.scenario for mapping in data}):
+    if len(data) != len({mapping.mc_scenario for mapping in data}):
         raise ValueError("Found duplicated scenario inside GEMS scenario builder")
-    return sorted(data, key=lambda x: x.scenario)
+    return sorted(data, key=lambda x: x.mc_scenario)
 
 
 GemsScBuilderMappings: TypeAlias = Annotated[list[GemsScBuilderMapping], AfterValidator(_check_scenario_duplication)]
 
 
 class GemsScenarioBuilder(AntaresBaseModel):
-    """Map each group's zero-based scenarios to one-based data-series columns."""
+    """Map each group's zero-based scenarios to zero-based data-series columns."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel, populate_by_name=True)
 
-    scenarios: dict[GemsId, GemsScBuilderMappings] = Field(default_factory=dict)
+    scenario_groups: dict[GemsId, GemsScBuilderMappings] = Field(default_factory=dict)
 
 
 def fill_missing_years(data: GemsScBuilderMappings, nb_years: int) -> GemsScBuilderMappings:
     """
     GEMS scenario builder has default values for missing years, we should initialize them for the front-end
     """
-    existing = {mapping.scenario for mapping in data}
+    existing = {mapping.mc_scenario for mapping in data}
 
     new_mapping = data + [
-        GemsScBuilderMapping(scenario=year, time_series_index=year) for year in range(nb_years) if year not in existing
+        GemsScBuilderMapping(mc_scenario=year, time_series_index=year)
+        for year in range(nb_years)
+        if year not in existing
     ]
-    new_mapping.sort(key=lambda x: x.scenario)
+    new_mapping.sort(key=lambda x: x.mc_scenario)
     return new_mapping
