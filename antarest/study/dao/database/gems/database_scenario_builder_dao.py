@@ -45,7 +45,7 @@ class DatabaseGemsScenarioBuilderDao(GemsScenarioBuilderDao, DatabaseDaoBase):
     def save_gems_scenario_builder(self, scenario_builder: GemsScenarioBuilder) -> None:
         table = GEMS_SCENARIO_BUILDER_TABLE
         session = self._db_session
-        groups = scenario_builder.model_dump(mode="json")["scenarios"]
+        groups = scenario_builder.model_dump(mode="json")["scenario_groups"]
         try:
             upsert_multiple(
                 session,
