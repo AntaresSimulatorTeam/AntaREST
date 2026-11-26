@@ -21,7 +21,6 @@ import {
   CompactSelection,
   GridCellKind,
   type DataEditorProps,
-  type GridColumn,
   type GridSelection,
   type Item,
 } from "@glideapps/glide-data-grid";
@@ -29,119 +28,22 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import RedoIcon from "@mui/icons-material/Redo";
 import SaveIcon from "@mui/icons-material/Save";
 import UndoIcon from "@mui/icons-material/Undo";
-import {
-  Box,
-  Button,
-  Divider,
-  IconButton,
-  setRef,
-  Stack,
-  Tooltip,
-  type ButtonProps,
-  type SxProps,
-  type Theme,
-} from "@mui/material";
+import { Box, Button, Divider, IconButton, setRef, Stack, Tooltip } from "@mui/material";
 import { produce } from "immer";
 import * as R from "ramda";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useUpdateEffect } from "react-use";
-import useUndo, { type Actions } from "use-undo";
-import DataGrid, { type DataGridProps, type RowMarkers } from "./DataGrid";
-import type { SubmitHandlerPlus } from "./Form/types";
-
-type Data = Record<string, Record<string, string | boolean | number>>;
-
-export interface DataGridFormState {
-  isDirty: boolean;
-  isSubmitting: boolean;
-}
-
-export interface DataGridFormApi<TData extends Data> {
-  data: TData;
-  setData: Actions<TData>["set"];
-  formState: DataGridFormState;
-}
-
-interface Changes<TData extends Data> {
-  /** Rows present in the current data but not in the saved data, keyed by row ID. */
-  added: Partial<TData>;
-  /** Rows present in both, containing only the values that differ from the saved data, keyed by row ID. */
-  updated: Partial<TData>;
-  /** IDs of rows present in the saved data but no longer in the current data. */
-  // Typed as `string` rather than `keyof TData`, which can include numbers,
-  // because object keys are always strings at runtime.
-  deleted: string[];
-}
-
-export interface DataGridFormSubmitData<TData extends Data = Data>
-  extends SubmitHandlerPlus<TData> {
-  /** Row-level changes: added, updated and deleted rows */
-  changes: Changes<TData>;
-  /**
-   * Marks a row as saved as soon as its request succeeds.
-   * Useful when `onSubmit` sends several requests: if one fails, the rows
-   * already saved won't be included again in the next submit's changes.
-   */
-  markAsSaved: (rowName: string) => void;
-}
-
-export interface DataGridFormProps<TData extends Data = Data, SubmitReturnValue = unknown> {
-  defaultData: TData;
-  columns: ReadonlyArray<GridColumn & { id: keyof TData[string] }>;
-  rowMarkers?: DataGridProps["rowMarkers"];
-  allowedFillDirections?: DataGridProps["allowedFillDirections"];
-  onRowAppended?: DataGridProps["onRowAppended"];
-  trailingRowOptions?: DataGridProps["trailingRowOptions"];
-  enableColumnResize?: boolean;
-  getCellContent?: (
-    location: Item,
-    data: TData[string][keyof TData[string]],
-  ) => ReturnType<DataEditorProps["getCellContent"]>;
-  /**
-   * Transforms an edited value before it's stored.
-   *
-   * Called for each edited cell (typing, paste, fill or delete).
-   *
-   * @param location - The edited cell, as `[col, row]`.
-   * @param newValue - The value entered in the cell.
-   * @param data - The data before the edit. When several cells are edited at once
-   * (paste or fill), it doesn't include the new values of the other edited cells.
-   * @returns The value to store instead, or `undefined` to store the entered value as is.
-   */
-  transformCellValue?: (
-    location: Item,
-    newValue: unknown,
-    data: TData,
-  ) => TData[string][keyof TData[string]] | undefined;
-  onSubmit: (
-    data: DataGridFormSubmitData<TData>,
-    event: React.SubmitEvent<HTMLFormElement>,
-  ) => void | Promise<SubmitReturnValue>;
-  onSubmitSuccessful?: (
-    data: DataGridFormSubmitData<TData>,
-    submitResult: SubmitReturnValue,
-  ) => void;
-  onDataChange?: (data: TData) => void;
-  onStateChange?: (state: DataGridFormState) => void;
-  id?: string;
-  sx?: SxProps<Theme>;
-  extraActions?: React.ReactNode | ((state: { canSubmit: boolean }) => React.ReactNode);
-  apiRef?: React.Ref<DataGridFormApi<TData>>;
-  submitButtonText?: string;
-  submitButtonIcon?: ButtonProps["startIcon"];
-  hideSubmitButton?: boolean;
-  disableErrorSnackbar?: boolean;
-  isLoading?: boolean;
-  readOnly?: boolean;
-  allowRowDeletion?: boolean;
-}
-
-function isValidCellValue<TData extends Data>(
-  value: unknown,
-): value is TData[string][keyof TData[string]] {
-  return typeof value === "string" || typeof value === "number" || typeof value === "boolean";
-}
+import useUndo from "use-undo";
+import DataGrid, { type RowMarkers } from "../../../DataGrid";
+import type {
+  Changes,
+  Data,
+  DataGridFormProps,
+  DataGridFormState,
+  DataGridFormSubmitData,
+} from "./types";
+import { isValidCellValue } from "./utils";
 
 function DataGridForm<TData extends Data>({
   defaultData,
@@ -174,6 +76,7 @@ function DataGridForm<TData extends Data>({
   const [savedData, setSavedData] = useState(defaultData);
   const [error, setError] = useState<string | null>(null);
   const [selectedRows, setSelectedRows] = useState(CompactSelection.empty());
+  const errorId = useId();
 
   const [{ present: data }, { set: setData, undo, redo, canUndo: hasUndo, canRedo: hasRedo }] =
     useUndo(defaultData);
@@ -188,12 +91,14 @@ function DataGridForm<TData extends Data>({
   // immediately when `data` is `savedData` and skips unedited rows.
   const isDirty = useMemo(() => !R.equals(savedData, data), [savedData, data]);
 
-  const canEdit = !isSubmitting && !isLoading && !readOnly;
+  const isBusy = isSubmitting || isLoading;
+  const canEdit = !isBusy && !readOnly;
   const canSubmit = isDirty && canEdit;
   const canUndo = hasUndo && canEdit;
   const canRedo = hasRedo && canEdit;
   const canDelete = allowRowDeletion && canEdit;
   const hasSelectedRows = selectedRows.length > 0;
+  const hasError = error !== null;
 
   const formState = useMemo<DataGridFormState>(
     () => ({
@@ -256,14 +161,17 @@ function DataGridForm<TData extends Data>({
    */
   const getDirtyValues = () => {
     // Plain loops with a mutable accumulator: a `reduce` spreading the accumulator
-    // would copy it for each row, which gets very slow with many dirty rows
-    const dirtyValues: Changes<TData>["updated"] = {};
+    // would copy it for each row, which gets very slow with many dirty rows.
+    // `Object.create(null)` for the accumulators: on a `{}`, creating a "__proto__" key
+    // calls the inherited `__proto__` setter instead of adding the row.
+    const dirtyValues: Changes<TData>["updated"] = Object.create(null);
 
     for (const rowName of rowNames) {
       const rowData = data[rowName];
       const savedRowData = savedData[rowName];
 
-      // Same reference: the row hasn't been edited (edits always create a new row object)
+      // Same object: nothing can differ. Unedited rows keep their reference, and usually
+      // only a few rows are edited, so most rows are skipped here.
       if (rowData === savedRowData) {
         continue;
       }
@@ -275,22 +183,21 @@ function DataGridForm<TData extends Data>({
         continue;
       }
 
-      let dirtyColumns: Partial<TData[string]> | undefined;
+      // Same accumulator rule as `dirtyValues`
+      const dirtyColumns: Partial<TData[string]> = Object.create(null);
 
       // `Object.assign` because TypeScript rejects direct writes to generic `TData` keys
-
       for (const columnName in rowData) {
         if (!Object.hasOwn(rowData, columnName)) {
           continue;
         }
 
         if (rowData[columnName] !== savedRowData[columnName]) {
-          dirtyColumns ??= {};
           Object.assign(dirtyColumns, { [columnName]: rowData[columnName] });
         }
       }
 
-      if (dirtyColumns) {
+      if (Object.keys(dirtyColumns).length > 0) {
         Object.assign(dirtyValues, { [rowName]: dirtyColumns });
       }
     }
@@ -307,7 +214,8 @@ function DataGridForm<TData extends Data>({
    * - `deleted`: names of the rows that are no longer in the current data
    */
   const getChanges = (): Changes<TData> => {
-    const added: Partial<TData> = {};
+    // No prototype: see `getDirtyValues`
+    const added: Partial<TData> = Object.create(null);
     const deleted: string[] = [];
 
     // Row not in saved data → added
@@ -341,22 +249,25 @@ function DataGridForm<TData extends Data>({
    */
   const markAsSaved = (rowName: string) => {
     // Functional update so successive calls don't overwrite each other.
-    // `produce` returns `prev` when nothing changes.
-    setSavedData((prev) =>
-      produce(prev, (draft) => {
-        if (Object.hasOwn(data, rowName)) {
-          // Added or updated row.
-          // `Object.assign` because TypeScript rejects direct writes to generic `TData` keys.
-          Object.assign(draft, { [rowName]: data[rowName] });
-        } else if (Object.hasOwn(draft, rowName)) {
-          // Deleted row.
-          // The own-property check matters: Immer detects keys through the
-          // prototype chain (`in`), so deleting a missing inherited key such as
-          // "toString" would still produce a new object.
-          delete draft[rowName];
-        }
-      }),
-    );
+    // Unlike an assignment, a spread creates own properties,
+    // so a "__proto__" row is kept (see `getDirtyValues`)
+    setSavedData((prev) => {
+      // Added or updated row
+      if (Object.hasOwn(data, rowName)) {
+        return { ...prev, [rowName]: data[rowName] };
+      }
+
+      // Deleted row, already absent from the saved data: keep `prev` to avoid a needless update
+      if (!Object.hasOwn(prev, rowName)) {
+        return prev;
+      }
+
+      // Deleted row
+      const next = { ...prev };
+      delete next[rowName];
+
+      return next;
+    });
   };
 
   /**
@@ -539,6 +450,7 @@ function DataGridForm<TData extends Data>({
       component="form"
       id={id}
       onSubmit={handleSubmit}
+      aria-busy={isBusy}
     >
       <DataGrid
         getCellContent={getCellContent}
@@ -557,8 +469,8 @@ function DataGridForm<TData extends Data>({
         {...dataGridProps}
       />
       <Stack className="DataGridForm__Footer" direction="column" gap={1.5} sx={{ mt: 1.5 }}>
-        {error !== null && (
-          <Box color="error.main" sx={{ fontSize: "0.9rem" }}>
+        {hasError && (
+          <Box id={errorId} role="alert" color="error.main" sx={{ fontSize: "0.9rem" }}>
             {error || t("form.submit.error")}
           </Box>
         )}
@@ -572,6 +484,7 @@ function DataGridForm<TData extends Data>({
                 loadingPosition="start"
                 variant="contained"
                 startIcon={submitButtonIcon}
+                aria-describedby={hasError ? errorId : undefined}
               >
                 {submitButtonText || t("global.save")}
               </Button>
@@ -581,14 +494,14 @@ function DataGridForm<TData extends Data>({
           <Box>
             <Tooltip title={t("global.undo")}>
               <span>
-                <IconButton onClick={undo} disabled={!canUndo}>
+                <IconButton onClick={undo} disabled={!canUndo} aria-label={t("global.undo")}>
                   <UndoIcon />
                 </IconButton>
               </span>
             </Tooltip>
             <Tooltip title={t("global.redo")}>
               <span>
-                <IconButton onClick={redo} disabled={!canRedo}>
+                <IconButton onClick={redo} disabled={!canRedo} aria-label={t("global.redo")}>
                   <RedoIcon />
                 </IconButton>
               </span>
@@ -600,7 +513,12 @@ function DataGridForm<TData extends Data>({
               <Divider orientation="vertical" flexItem />
               <Tooltip title={t("global.delete")}>
                 <span>
-                  <IconButton onClick={handleDeleteClick} disabled={!canDelete || !hasSelectedRows}>
+                  <IconButton
+                    onClick={handleDeleteClick}
+                    disabled={!canDelete || !hasSelectedRows}
+                    aria-label={t("global.delete")}
+                    aria-keyshortcuts="Delete Backspace"
+                  >
                     <DeleteIcon />
                   </IconButton>
                 </span>

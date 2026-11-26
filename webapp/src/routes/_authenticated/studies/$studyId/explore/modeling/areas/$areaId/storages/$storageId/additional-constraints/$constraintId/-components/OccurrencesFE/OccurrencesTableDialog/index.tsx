@@ -13,15 +13,16 @@
  */
 
 import CustomScrollbar from "@/components/CustomScrollbar";
-import DataGridForm, {
-  type DataGridFormApi,
-  type DataGridFormProps,
-  type DataGridFormSubmitData,
-} from "@/components/DataGridForm";
 import BasicDialog from "@/components/dialogs/BasicDialog";
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import NumberFE from "@/components/fieldEditors/NumberFE";
 import NumberSelectionsFE from "@/components/fieldEditors/NumberSelectionsFE";
+import DataGridForm from "@/components/Matrix/components/DataGridForm";
+import type {
+  DataGridFormApi,
+  DataGridFormProps,
+  DataGridFormSubmitData,
+} from "@/components/Matrix/components/DataGridForm/types";
 import useConfirm from "@/hooks/useConfirm";
 import type {
   StorageConstraint,

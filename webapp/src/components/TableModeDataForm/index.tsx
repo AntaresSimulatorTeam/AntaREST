@@ -24,7 +24,11 @@ import { Box, Typography } from "@mui/material";
 import startCase from "lodash/startCase";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import DataGridForm, { type DataGridFormProps, type DataGridFormSubmitData } from "../DataGridForm";
+import DataGridForm from "../Matrix/components/DataGridForm";
+import type {
+  DataGridFormProps,
+  DataGridFormSubmitData,
+} from "../Matrix/components/DataGridForm/types";
 import EmptyView from "../page/EmptyView";
 import UsePromiseCond from "../utils/UsePromiseCond";
 import useUpdateTableModeData from "./hooks/useUpdateTableModeData";

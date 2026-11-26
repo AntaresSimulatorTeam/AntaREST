@@ -12,8 +12,8 @@
  * This file is part of the Antares project.
  */
 
-import DataGridForm from "@/components/DataGridForm";
 import type { SubmitHandlerPlus } from "@/components/Form/types";
+import DataGridForm from "@/components/Matrix/components/DataGridForm";
 import EmptyView from "@/components/page/EmptyView";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import { updateScenarioBuilderForm } from "@/services/api/studies/config/scenarioBuilder";
