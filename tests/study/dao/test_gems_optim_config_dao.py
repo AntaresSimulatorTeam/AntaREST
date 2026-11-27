@@ -215,3 +215,27 @@ def test_conversion_always_write_a_file(
     converter._convert_gems()
 
     assert (tmp_path / "my_study" / "input" / "optim-config.yml").exists()
+
+
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
+def test_heuristics(dao_10_2: StudyDao) -> None:
+    dao = dao_10_2
+    args = {
+        "models": [
+            {
+                "id": "library.model",
+                "heuristics": [
+                    {
+                        "id": "fast",
+                        "outputs": [],
+                        "inputs": [{"id": "h_input", "heuristic_element": "my_element", "type": "parameter"}],
+                    }
+                ],
+            }
+        ]
+    }
+    optim_config = GemsOptimConfig.model_validate(args)
+    library = _build_library(optim_config)
+    dao.save_library(library)
+    dao.save_optim_config(optim_config)
+    assert dao.get_optim_config() == optim_config
