@@ -147,21 +147,6 @@ def _build_dao_unreleased_version(
 
 
 @pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
-def dao_10_2(
-    request: pytest.FixtureRequest,
-    db_session: Session,
-    matrix_service: ISimpleMatrixService,
-    command_context: "CommandContext",
-    tmp_path: Path,
-    study_factory: StudyFactory,
-) -> StudyDao:
-    """A DAO parameterized over both backends (v10.2)."""
-    return _build_dao_unreleased_version(
-        request.param, STUDY_VERSION_10_2, db_session, matrix_service, command_context, tmp_path, study_factory
-    )
-
-
-@pytest.fixture(params=["db", "fs"], ids=["database", "filesystem"])
 def dao_10_3(
     request: pytest.FixtureRequest,
     db_session: Session,

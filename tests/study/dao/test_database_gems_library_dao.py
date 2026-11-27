@@ -23,7 +23,7 @@ from tests.study.dao.conftest import check_8_1_gems_library_integrity
 ASSETS_PATH = Path(__file__).parent / "assets"
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_nominal_cases(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 
@@ -46,7 +46,7 @@ def test_nominal_cases(dao_10_2: StudyDao) -> None:
     check_8_1_gems_library_integrity(saved_library)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_taxonomy_foreign_keys(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     assert dao.get_library() is None

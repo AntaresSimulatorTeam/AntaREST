@@ -149,13 +149,6 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
         yaml_content = system.model_dump(mode="json", exclude_unset=True, by_alias=True, exclude_none=True)
         YAMLWriter().write({"system": yaml_content}, system_file_path)
 
-        # The simulator always need a `optim-config.yml` file to run
-        # As we do not handle it in the DAO at the moment, we create it here
-        # todo: remove this once we support the optim-config.yml file in the DAO
-        optim_config_path = study_path / "input" / "optim-config.yml"
-        if not optim_config_path.exists():
-            optim_config_path.touch()
-
     @override
     def save_components(self, components: list[GemsComponent]) -> None:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)

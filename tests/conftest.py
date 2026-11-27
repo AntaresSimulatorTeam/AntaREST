@@ -46,6 +46,7 @@ from antarest.study.model import (
     STUDY_VERSION_8_8,
     STUDY_VERSION_9_2,
     STUDY_VERSION_9_3,
+    STUDY_VERSION_10_2,
     StorageMode,
     Study,
     StudyMetadataCreation,
@@ -348,3 +349,8 @@ def dao_92(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
 @pytest.fixture
 def dao_93(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
     return dao_builder(STUDY_VERSION_9_3)
+
+
+@pytest.fixture
+def dao_10_2(dao_builder: Callable[[StudyVersion], StudyDao]) -> StudyDao:
+    return dao_builder(STUDY_VERSION_10_2)
