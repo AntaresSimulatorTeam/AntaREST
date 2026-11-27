@@ -43,10 +43,11 @@ from antarest.output.model import (
     OutputViewResponse,
 )
 from antarest.output.model.download import MatrixIndex, StudyDownloadDTO
-from antarest.output.model.gems_views import GemsTaxonomyViews
+from antarest.output.model.gems_views import GemsTaxonomyViews, GemsViewMatrix
 from antarest.output.model.output_id import OutputId
 from antarest.output.storage.output_storage import OutputDetails, OutputStorageType
 from antarest.output.variable_view.model import OutputItemId
+from antarest.study.business.model.gems.view import GemsTimeGranularity
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
 
@@ -303,6 +304,44 @@ def create_output_routes() -> APIRouter:
         """
         logger.info(f"Materializing GEMS views of the output {output_id} for study {study_id}")
         return output_service.materialize_gems_views(study_id, output_id)
+
+    @bp.get(
+        "/studies/{study_id}/outputs/{output_id}/gems-views/{view_id}/matrix",
+        summary="Fetches one location of a GEMS view as a matrix",
+        responses={
+            400: {"description": "The output is archived"},
+            404: {
+                "description": "No such output, GEMS views, view, aggregation pattern, location, file or Monte Carlo"
+                " year, or the views are not materialized (`POST .../gems-views/materialize`)"
+            },
+            500: {"description": "The view file is invalid"},
+        },
+    )
+    def get_gems_view_matrix(
+        output_service: OutputServiceDep,
+        study_id: UuidStr,
+        output_id: OutputId,
+        view_id: SanitizedStr,
+        time_granularity: Annotated[
+            GemsTimeGranularity, Query(description="Time granularity of the aggregation pattern")
+        ],
+        metric_location: Annotated[SanitizedStr, Query(description="Exact `metric_location` value, e.g. `area1_node`")],
+        mc_year: Annotated[
+            int | None,
+            Query(
+                ge=1,
+                description="1-based Monte Carlo year (pattern with `scenario: false`)."
+                " Omit it for the statistics across years (`scenario: true`)",
+            ),
+        ] = None,
+    ) -> GemsViewMatrix:
+        logger.info(
+            f"Fetching GEMS view '{view_id}' matrix (time granularity '{time_granularity}',"
+            f" location '{metric_location}', mc_year {mc_year}) of the output {output_id} for study {study_id}"
+        )
+        return output_service.get_gems_view_matrix(
+            study_id, output_id, view_id, time_granularity, metric_location, mc_year
+        )
 
     @bp.get(
         "/studies/{study_id}/outputs",

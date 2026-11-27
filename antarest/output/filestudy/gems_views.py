@@ -11,18 +11,15 @@
 # This file is part of the Antares project.
 
 """
-Extraction of the GEMS views metadata from an output directory.
-
-Expected layout, as written by the Simulator and the GEMS views builder:
-
-    <output>/views/input/view_config_*.yml                              one file per view
-    <output>/views/output/<view_id>--<aggregation_id>--<timestamp>.parquet
+Extraction of the GEMS views metadata of an output (file layout in `gems_view_files`).
 """
 
 from pathlib import Path
 
 import polars as pl
 
+from antarest.core.exceptions import InvalidGemsViewData
+from antarest.output.filestudy.gems_view_files import METRIC_LOCATION_COL, list_view_config_files, list_view_files
 from antarest.output.model.gems_views import (
     GemsAggregationPattern,
     GemsMetricLocation,
@@ -30,24 +27,23 @@ from antarest.output.model.gems_views import (
     GemsViewLocations,
     ViewId,
 )
-from antarest.output.model.output_type import GEMS_VIEWS_DIR
 from antarest.study.business.model.gems.view import GemsViewConfig
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader
-
-_VIEWS_INPUT_DIR = "input"
-_VIEW_CONFIG_PATTERN = "view_config_*.yml"
-_VIEWS_OUTPUT_DIR = "output"
-_METRIC_LOCATION_COL = "metric_location"
 
 
 def parse_gems_view_configs(output_dir: Path) -> list[GemsViewConfig]:
     """
     Parses the configuration of every view of the output, sorted by file name.
+
+    Raises:
+        InvalidGemsViewData: if a config file is invalid.
     """
-    input_dir = output_dir / GEMS_VIEWS_DIR / _VIEWS_INPUT_DIR
     configs = []
-    for config_path in sorted(input_dir.glob(_VIEW_CONFIG_PATTERN)):
-        configs.append(GemsViewConfig.model_validate(YAMLReader().read(config_path)["view"]))
+    for config_path in list_view_config_files(output_dir):
+        try:
+            configs.append(GemsViewConfig.model_validate(YAMLReader().read(config_path)["view"]))
+        except Exception as e:
+            raise InvalidGemsViewData(config_path.name, "the file is not a valid view config") from e
     return configs
 
 
@@ -55,19 +51,16 @@ def read_metric_locations(output_dir: Path, view_config: GemsViewConfig) -> list
     """
     Returns the sorted, distinct locations (areas, links...) found in the files built for the given view.
     """
-    views_output_dir = output_dir / GEMS_VIEWS_DIR / _VIEWS_OUTPUT_DIR
     locations: set[str] = set()
-    prefixes = tuple(f"{view_config.id}--{aggregation.id}--" for aggregation in view_config.aggregations_patterns)
-    for parquet_path in views_output_dir.glob("*.parquet"):
-        if not parquet_path.name.startswith(prefixes):
-            continue
-        # Lazy scan: only the `metric_location` column is actually read from the file
-        df = (
-            pl.scan_parquet(parquet_path, glob=False)
-            .select(pl.col(_METRIC_LOCATION_COL).drop_nulls().unique())
-            .collect(engine="streaming")
-        )
-        locations.update(df[_METRIC_LOCATION_COL].to_list())
+    for aggregation in view_config.aggregations_patterns:
+        for parquet_path in list_view_files(output_dir, view_config.id, aggregation.id):
+            # Lazy scan: only the `metric_location` column is actually read from the file
+            df = (
+                pl.scan_parquet(parquet_path, glob=False)
+                .select(pl.col(METRIC_LOCATION_COL).drop_nulls().unique())
+                .collect(engine="streaming")
+            )
+            locations.update(df[METRIC_LOCATION_COL].to_list())
     return [GemsMetricLocation(id=location) for location in sorted(locations)]
 
 

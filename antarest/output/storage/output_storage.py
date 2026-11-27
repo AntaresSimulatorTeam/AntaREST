@@ -30,9 +30,10 @@ from antarest.launcher.model import LogType
 from antarest.output.filestudy.model import QueryFileType
 from antarest.output.model import MatrixAggregationResultDTO, OutputVariablesList, StudyDownloadDTO
 from antarest.output.model.download import MatrixIndex
-from antarest.output.model.gems_views import GemsTaxonomyViews
+from antarest.output.model.gems_views import GemsTaxonomyViews, GemsViewMatrix
 from antarest.output.model.output_type import OutputType
 from antarest.study.business.model.config.general_model import Mode
+from antarest.study.business.model.gems.view import GemsTimeGranularity
 from antarest.study.model import MatrixFrequency
 from antarest.study.storage.rawstudy.model.filesystem.inode import OriginalFile
 from antarest.study.storage.rawstudy.model.filesystem.root.output.simulation.mode.mcall.digest import DigestUI
@@ -358,6 +359,28 @@ class IOutputStorage(ABC):
         Raises:
             OutputNotFound: if the unarchived output does not exist.
             OutputGemsViewsNotFound: if the output does not contain GEMS views.
+        """
+
+    @abstractmethod
+    def get_gems_view_matrix(
+        self,
+        study_id: str,
+        output_id: str,
+        view_id: str,
+        time_granularity: GemsTimeGranularity,
+        metric_location: str,
+        mc_year: int | None,
+    ) -> GemsViewMatrix:
+        """
+        Returns one location of a GEMS view as a matrix: one Monte Carlo year, or the statistics without one.
+
+        Raises:
+            OutputNotFound: if the unarchived output does not exist.
+            OutputGemsViewsNotFound: if the output has no GEMS views.
+            GemsViewsNotMaterialized: if the GEMS views are not materialized.
+            GemsViewNotFound: if there is no view with this id.
+            GemsViewMatrixNotFound: if there is no such pattern, location, file or Monte Carlo year.
+            InvalidGemsViewData: if the view file is invalid.
         """
 
     @abstractmethod
