@@ -30,18 +30,20 @@ def test_groups_are_stored_per_study(db_session: Session, matrix_service: ISimpl
     second = build_db_dao_10_2(db_session, matrix_service)
     first.save_general_config(GeneralConfig(nb_years=2))  # As we have 2 scenarios in the rest of the test
     builder = GemsScenarioBuilder(
-        scenarios={
+        scenario_groups={
             "load": [
-                GemsScBuilderMapping(scenario=0, time_series_index=1),
-                GemsScBuilderMapping(scenario=1, time_series_index=5),
+                GemsScBuilderMapping(mc_scenario=0, time_series_index=1),
+                GemsScBuilderMapping(mc_scenario=1, time_series_index=5),
             ],
             "hydro": [
-                GemsScBuilderMapping(scenario=0, time_series_index=4),
-                GemsScBuilderMapping(scenario=1, time_series_index=2),
+                GemsScBuilderMapping(mc_scenario=0, time_series_index=4),
+                GemsScBuilderMapping(mc_scenario=1, time_series_index=2),
             ],
         }
     )
-    other_builder = GemsScenarioBuilder(scenarios={"load": [GemsScBuilderMapping(scenario=0, time_series_index=3)]})
+    other_builder = GemsScenarioBuilder(
+        scenario_groups={"load": [GemsScBuilderMapping(mc_scenario=0, time_series_index=3)]}
+    )
     first.save_gems_scenario_builder(builder)
     second.save_gems_scenario_builder(other_builder)
 
@@ -51,21 +53,21 @@ def test_groups_are_stored_per_study(db_session: Session, matrix_service: ISimpl
     )
     rows = db_session.execute(select(table).where(table.c.study_data_id == study_data_id)).all()
     assert {row.scenario_group: json.loads(row.data) for row in rows} == {
-        "hydro": [{"scenario": 0, "time_series_index": 4}, {"scenario": 1, "time_series_index": 2}],
-        "load": [{"scenario": 0, "time_series_index": 1}, {"scenario": 1, "time_series_index": 5}],
+        "hydro": [{"mc_scenario": 0, "time_series_index": 4}, {"mc_scenario": 1, "time_series_index": 2}],
+        "load": [{"mc_scenario": 0, "time_series_index": 1}, {"mc_scenario": 1, "time_series_index": 5}],
     }
     assert first.get_gems_scenario_builder() == builder
     assert second.get_gems_scenario_builder() == other_builder
 
     replacement = GemsScenarioBuilder(
-        scenarios={
+        scenario_groups={
             "load": [
-                GemsScBuilderMapping(scenario=0, time_series_index=9),
-                GemsScBuilderMapping(scenario=1, time_series_index=1),
+                GemsScBuilderMapping(mc_scenario=0, time_series_index=9),
+                GemsScBuilderMapping(mc_scenario=1, time_series_index=1),
             ],
             "wind": [
-                GemsScBuilderMapping(scenario=0, time_series_index=4),
-                GemsScBuilderMapping(scenario=1, time_series_index=29),
+                GemsScBuilderMapping(mc_scenario=0, time_series_index=4),
+                GemsScBuilderMapping(mc_scenario=1, time_series_index=29),
             ],
         }
     )
@@ -87,9 +89,9 @@ def test_save_preserves_referenced_groups(db_session: Session, matrix_service: I
     dao = build_db_dao_10_2(db_session, matrix_service)
     dao.save_gems_scenario_builder(
         GemsScenarioBuilder(
-            scenarios={
-                "load": [GemsScBuilderMapping(scenario=0, time_series_index=1)],
-                "hydro": [GemsScBuilderMapping(scenario=0, time_series_index=2)],
+            scenario_groups={
+                "load": [GemsScBuilderMapping(mc_scenario=0, time_series_index=1)],
+                "hydro": [GemsScBuilderMapping(mc_scenario=0, time_series_index=2)],
             }
         )
     )
@@ -109,14 +111,16 @@ def test_save_preserves_referenced_groups(db_session: Session, matrix_service: I
         {"study_data_id": study_data_id},
     )
     db_session.commit()
-    replacement = GemsScenarioBuilder(scenarios={"load": [GemsScBuilderMapping(scenario=0, time_series_index=4)]})
+    replacement = GemsScenarioBuilder(
+        scenario_groups={"load": [GemsScBuilderMapping(mc_scenario=0, time_series_index=4)]}
+    )
     dao.save_gems_scenario_builder(replacement)
     assert dao.get_gems_scenario_builder() == replacement
     assert db_session.scalar(text("SELECT scenario_group FROM scenario_group_reference")) == "load"
 
     with pytest.raises(IntegrityError):
         dao.save_gems_scenario_builder(
-            GemsScenarioBuilder(scenarios={"wind": [GemsScBuilderMapping(scenario=0, time_series_index=5)]})
+            GemsScenarioBuilder(scenario_groups={"wind": [GemsScBuilderMapping(mc_scenario=0, time_series_index=5)]})
         )
     # Neither the insertion nor the deletion is persisted when a reference prevents the replacement.
     assert dao.get_gems_scenario_builder() == replacement

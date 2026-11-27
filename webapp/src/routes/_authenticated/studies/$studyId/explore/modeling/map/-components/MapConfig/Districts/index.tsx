@@ -13,7 +13,7 @@
  */
 
 import DataGridForm from "@/components/DataGridForm";
-import type { SubmitHandlerPlus } from "@/components/Form/types";
+import type { DataGridFormSubmitData } from "@/components/DataGridForm/types";
 import useStudy from "@/routes/_authenticated/studies/$studyId/-hooks/useStudy";
 import type { GridColumn } from "@glideapps/glide-data-grid";
 import AddIcon from "@mui/icons-material/Add";
@@ -69,7 +69,7 @@ function Districts() {
   // Event handlers
   ////////////////////////////////////////////////////////////////
 
-  const handleSubmit = (data: SubmitHandlerPlus) => {
+  const handleSubmit = (data: DataGridFormSubmitData<typeof defaultData>) => {
     const areasByDistrict: Record<string, string[]> = {};
 
     Object.keys(data.dirtyValues).forEach((areaId) => {

@@ -30,16 +30,16 @@ def test_roundtrip(dao_10_2: StudyDao) -> None:
     dao_10_2.save_general_config(GeneralConfig(nb_years=3))
     assert dao_10_2.get_gems_scenario_builder() is None
     builder = GemsScenarioBuilder(
-        scenarios={
+        scenario_groups={
             "load": [
-                GemsScBuilderMapping(scenario=0, time_series_index=1),
-                GemsScBuilderMapping(scenario=1, time_series_index=5),
-                GemsScBuilderMapping(scenario=2, time_series_index=3),
+                GemsScBuilderMapping(mc_scenario=0, time_series_index=1),
+                GemsScBuilderMapping(mc_scenario=1, time_series_index=5),
+                GemsScBuilderMapping(mc_scenario=2, time_series_index=3),
             ],
             "hydro": [
-                GemsScBuilderMapping(scenario=0, time_series_index=1),
-                GemsScBuilderMapping(scenario=1, time_series_index=2),
-                GemsScBuilderMapping(scenario=2, time_series_index=7),
+                GemsScBuilderMapping(mc_scenario=0, time_series_index=1),
+                GemsScBuilderMapping(mc_scenario=1, time_series_index=2),
+                GemsScBuilderMapping(mc_scenario=2, time_series_index=7),
             ],
         }
     )
@@ -52,41 +52,41 @@ def test_roundtrip(dao_10_2: StudyDao) -> None:
 def test_replace_builder(dao_10_2: StudyDao) -> None:
     dao_10_2.save_gems_scenario_builder(
         GemsScenarioBuilder(
-            scenarios={
+            scenario_groups={
                 "load": [
-                    GemsScBuilderMapping(scenario=0, time_series_index=1),
-                    GemsScBuilderMapping(scenario=1, time_series_index=5),
+                    GemsScBuilderMapping(mc_scenario=0, time_series_index=1),
+                    GemsScBuilderMapping(mc_scenario=1, time_series_index=5),
                 ],
-                "hydro": [GemsScBuilderMapping(scenario=2, time_series_index=7)],
+                "hydro": [GemsScBuilderMapping(mc_scenario=2, time_series_index=7)],
             }
         )
     )
     assert dao_10_2.get_gems_scenario_builder() == GemsScenarioBuilder(
-        scenarios={
+        scenario_groups={
             "load": [
-                GemsScBuilderMapping(scenario=0, time_series_index=1),
-                GemsScBuilderMapping(scenario=1, time_series_index=5),
+                GemsScBuilderMapping(mc_scenario=0, time_series_index=1),
+                GemsScBuilderMapping(mc_scenario=1, time_series_index=5),
             ],
-            "hydro": [GemsScBuilderMapping(scenario=2, time_series_index=7)],
+            "hydro": [GemsScBuilderMapping(mc_scenario=2, time_series_index=7)],
         }
     )
     replacement = GemsScenarioBuilder(
-        scenarios={
-            "load": [GemsScBuilderMapping(scenario=0, time_series_index=4)],
-            "wind": [GemsScBuilderMapping(scenario=1, time_series_index=2)],
+        scenario_groups={
+            "load": [GemsScBuilderMapping(mc_scenario=0, time_series_index=4)],
+            "wind": [GemsScBuilderMapping(mc_scenario=1, time_series_index=2)],
         }
     )
     dao_10_2.save_gems_scenario_builder(replacement)
     assert dao_10_2.get_gems_scenario_builder() == GemsScenarioBuilder(
-        scenarios={
-            "load": [GemsScBuilderMapping(scenario=0, time_series_index=4)],
-            "wind": [GemsScBuilderMapping(scenario=1, time_series_index=2)],
+        scenario_groups={
+            "load": [GemsScBuilderMapping(mc_scenario=0, time_series_index=4)],
+            "wind": [GemsScBuilderMapping(mc_scenario=1, time_series_index=2)],
         }
     )
 
 
 def test_clear_builder(dao_10_2: StudyDao) -> None:
-    builder = GemsScenarioBuilder(scenarios={"load": [GemsScBuilderMapping(scenario=0, time_series_index=1)]})
+    builder = GemsScenarioBuilder(scenario_groups={"load": [GemsScBuilderMapping(mc_scenario=0, time_series_index=1)]})
     dao_10_2.save_gems_scenario_builder(builder)
     dao_10_2.save_gems_scenario_builder(GemsScenarioBuilder())
     assert dao_10_2.get_gems_scenario_builder() is None
@@ -98,7 +98,9 @@ def test_empty_builder(dao_10_2: StudyDao) -> None:
     builder = GemsScenarioBuilder()
     dao_10_2.save_gems_scenario_builder(builder)
     assert dao_10_2.get_gems_scenario_builder() is None
-    populated = GemsScenarioBuilder(scenarios={"load": [GemsScBuilderMapping(scenario=0, time_series_index=1)]})
+    populated = GemsScenarioBuilder(
+        scenario_groups={"load": [GemsScBuilderMapping(mc_scenario=0, time_series_index=1)]}
+    )
     dao_10_2.save_gems_scenario_builder(populated)
     assert dao_10_2.get_gems_scenario_builder() == populated
 
@@ -110,7 +112,7 @@ def test_save_after_empty_file(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n  \n")
     assert dao.get_gems_scenario_builder() is None
-    builder = GemsScenarioBuilder(scenarios={"load": [GemsScBuilderMapping(scenario=0, time_series_index=1)]})
+    builder = GemsScenarioBuilder(scenario_groups={"load": [GemsScBuilderMapping(mc_scenario=0, time_series_index=1)]})
     dao.save_gems_scenario_builder(builder)
     assert dao.get_gems_scenario_builder() == builder
 
@@ -122,13 +124,13 @@ def test_real_file_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     path.write_bytes(ASSET.read_bytes())
     builder = dao.get_gems_scenario_builder()
     assert builder is not None
-    assert len(builder.scenarios) == 21
+    assert len(builder.scenario_groups) == 21
     expected_mapping = [
-        GemsScBuilderMapping(scenario=0, time_series_index=1),
-        GemsScBuilderMapping(scenario=1, time_series_index=2),
+        GemsScBuilderMapping(mc_scenario=0, time_series_index=1),
+        GemsScBuilderMapping(mc_scenario=1, time_series_index=2),
     ]
-    assert all(mapping == expected_mapping for mapping in builder.scenarios.values())
-    assert "thermal_area2_lignite_group" in builder.scenarios
+    assert all(mapping == expected_mapping for mapping in builder.scenario_groups.values())
+    assert "thermal_area2_lignite_group" in builder.scenario_groups
     dao.save_gems_scenario_builder(builder)
     assert dao.get_gems_scenario_builder() == builder
     assert path.read_text().strip() == ASSET.read_text().strip()
@@ -161,10 +163,10 @@ def test_whitespace(filestudy_dao_v10_2: FileStudyTreeDao) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("\n  load_group , 0 = 2 \n\nload_group,3=5\n")
     assert filestudy_dao_v10_2.get_gems_scenario_builder() == GemsScenarioBuilder(
-        scenarios={
+        scenario_groups={
             "load_group": [
-                GemsScBuilderMapping(scenario=0, time_series_index=2),
-                GemsScBuilderMapping(scenario=3, time_series_index=5),
+                GemsScBuilderMapping(mc_scenario=0, time_series_index=2),
+                GemsScBuilderMapping(mc_scenario=3, time_series_index=5),
             ]
         }
     )

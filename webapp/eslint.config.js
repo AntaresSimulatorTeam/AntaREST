@@ -117,6 +117,7 @@ export default [
       "array-callback-return": ["error", { checkForEach: true }],
       curly: "error",
       eqeqeq: "error",
+      "guard-for-in": "error",
       "jsdoc/no-defaults": "off",
       "jsdoc/require-jsdoc": "off",
       "jsdoc/require-hyphen-before-param-description": "warn",

@@ -47,7 +47,7 @@ from antarest.study.model import STUDY_VERSION_8_6, STUDY_VERSION_8_8, STUDY_VER
     ],
 )
 def test_gems_scenario_builder_group_id(group: object, valid: bool) -> None:
-    data: dict[str, dict[object, list[object]]] = {"scenarios": {group: []}}
+    data: dict[str, dict[object, list[object]]] = {"scenario_groups": {group: []}}
     if valid:
         assert GemsScenarioBuilder.model_validate(data).model_dump() == data
     else:

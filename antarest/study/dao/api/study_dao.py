@@ -1042,12 +1042,12 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_gems_scenario_builder()
 
     @override
-    def get_scenario_from_gems_scenario_builder(self, scenario_name: GemsId) -> GemsScBuilderMappings:
-        return self._adaptee.get_scenario_from_gems_scenario_builder(scenario_name)
+    def get_scenario_from_gems_scenario_builder(self, scenario_group: GemsId) -> GemsScBuilderMappings:
+        return self._adaptee.get_scenario_from_gems_scenario_builder(scenario_group)
 
     @override
-    def scenario_exists_in_gems_scenario_builder(self, scenario_name: GemsId) -> bool:
-        return self._adaptee.scenario_exists_in_gems_scenario_builder(scenario_name)
+    def scenario_exists_in_gems_scenario_builder(self, scenario_group: GemsId) -> bool:
+        return self._adaptee.scenario_exists_in_gems_scenario_builder(scenario_group)
 
     @override
     def get_catalogs(self) -> list[GemsCatalog]:

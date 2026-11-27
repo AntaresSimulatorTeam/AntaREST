@@ -34,7 +34,7 @@ class RemoveGemsScenario(ICommand):
 
     command_name: CommandName = CommandName.REMOVE_GEMS_SCENARIO
 
-    scenario_name: GemsId
+    scenario_group: GemsId
 
     @model_validator(mode="after")
     def _validate_against_version(self) -> Self:
@@ -44,13 +44,13 @@ class RemoveGemsScenario(ICommand):
 
     @override
     def _apply_dao(self, study_dao: StudyDao, listener: ICommandListener | None = None) -> CommandOutput[None]:
-        study_dao.remove_scenario_from_gems_scenario_builder(self.scenario_name)
-        return command_succeeded(message=f"Gems scenario {self.scenario_name} removed successfully", result=None)
+        study_dao.remove_scenario_from_gems_scenario_builder(self.scenario_group)
+        return command_succeeded(message=f"Gems scenario {self.scenario_group} removed successfully", result=None)
 
     @override
     def to_dto(self) -> CommandDTO:
         return CommandDTO(
             action=self.command_name.value,
-            args={"scenario_name": self.scenario_name},
+            args={"scenario_group": self.scenario_group},
             study_version=self.study_version,
         )
