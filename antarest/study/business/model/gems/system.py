@@ -58,7 +58,7 @@ class GemsParameters(AntaresBaseModel):
         return str(self.value)
 
 
-class _GemsProperties(AntaresBaseModel):
+class GemsProperties(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
@@ -101,7 +101,7 @@ class GemsComponent(AntaresBaseModel):
     scenario_group: str | None = None
     integer_strategy: _IntegerStrategy | None = None
     parameters: List[GemsParameters] = []
-    properties: List[_GemsProperties] = []
+    properties: List[GemsProperties] = []
 
 
 class GemsComponentConnection(AntaresBaseModel):

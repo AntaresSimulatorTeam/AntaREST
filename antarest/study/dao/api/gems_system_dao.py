@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 
 from polars import DataFrame
 
-from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
+from antarest.study.business.model.gems.system import GemsComponent, GemsProperties, GemsSystem
 
 
 class ReadOnlyGemsSystemDao(ABC):
@@ -33,6 +33,15 @@ class ReadOnlyGemsSystemDao(ABC):
 
         Raises `GemsParameterNotFound` if the component/parameter does not exist, and
         `GemsInvalidParameterValue` if the parameter is a constant (not a matrix).
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get_properties(self, component_id: str) -> list[GemsProperties]:
+        """
+        Returns the properties of a component.
+
+        Raises `GemsParameterNotFound` if the component does not exist
         """
         raise NotImplementedError()
 

@@ -16,8 +16,13 @@ from sqlalchemy import insert, select
 from sqlalchemy.exc import IntegrityError
 from typing_extensions import override
 
-from antarest.core.exceptions import GemsLibraryAlreadyExists, GemsTaxonomyNotFound
-from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.core.exceptions import (
+    GemsLibraryAlreadyExists,
+    GemsLibraryNotFound,
+    GemsModelNotFound,
+    GemsTaxonomyNotFound,
+)
+from antarest.study.business.model.gems.library import GemsLibrary, GemsModelsProperties
 from antarest.study.dao.api.gems_library_dao import GemsLibraryDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
 from antarest.study.dao.database.models.gems.library import (
@@ -255,3 +260,36 @@ class DatabaseGemsLibraryDao(GemsLibraryDao, DatabaseDaoBase):
             session.execute(insert(GEMS_MODELS_OBJECTIVE_CONTRIBUTIONS_TABLE), objective_contributions_values)
 
         session.commit()
+
+    @override
+    def get_properties_ids(self, library_id: str, model_id: str) -> list[GemsModelsProperties]:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        model_stmt = select(GEMS_MODELS_TABLE.c.properties).where(
+            GEMS_MODELS_TABLE.c.study_data_id == study_data_id,
+            GEMS_MODELS_TABLE.c.library_id == library_id,
+            GEMS_MODELS_TABLE.c.id == model_id,
+        )
+        model_row = session.execute(model_stmt).fetchone()
+
+        if model_row is None:
+            self._check_library_exists(library_id)
+            raise GemsModelNotFound(
+                f"Model '{model_id}' not found in library '{library_id}' for study '{self._study_id}'"
+            )
+
+        properties = json.loads(model_row.properties) if model_row.properties is not None else []
+        return [GemsModelsProperties.model_validate(property_data) for property_data in properties]
+
+    def _check_library_exists(self, library_id: str) -> None:
+        study_data_id = self._study_data_id
+        session = self._db_session
+
+        stmt = select(GEMS_LIBRARY_METADATA_TABLE).where(
+            GEMS_LIBRARY_METADATA_TABLE.c.study_data_id == study_data_id,
+            GEMS_LIBRARY_METADATA_TABLE.c.id == library_id,
+        )
+        row = session.execute(stmt).fetchone()
+        if row is None:
+            raise GemsLibraryNotFound(f"Library '{library_id}' not found for study '{self._study_id}'")

@@ -24,7 +24,7 @@ from antarest.core.exceptions import (
     GemsUnavailableForFileSystemStudies,
 )
 from antarest.core.utils.polars import read_gems_tsv, write_tsv
-from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
+from antarest.study.business.model.gems.system import GemsComponent, GemsProperties, GemsSystem
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.storage.rawstudy.model.filesystem.factory import FileStudy
 from antarest.study.storage.rawstudy.model.filesystem.yaml_file_node import YAMLReader, YAMLWriter
@@ -131,6 +131,10 @@ class FileStudyGemsSystemDao(GemsSystemDao, ABC):
 
     @override
     def get_parameter_series(self, component_id: str, parameter_id: str) -> DataFrame:
+        raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
+
+    @override
+    def get_properties(self, component_id: str) -> list[GemsProperties]:
         raise GemsUnavailableForFileSystemStudies(self.get_file_study().config.study_id)
 
     @override

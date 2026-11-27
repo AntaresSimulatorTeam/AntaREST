@@ -50,7 +50,7 @@ class _GemsPortType(AntaresBaseModel):
     thermal_capacity_connection: _GemsThermalCapacityConnection | None = None
 
 
-class _GemsModelsProperties(AntaresBaseModel):
+class GemsModelsProperties(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     id: str
@@ -121,7 +121,7 @@ class _GemsModels(AntaresBaseModel):
     id: GemsId
     description: str | None = None
     taxonomy_category: str | None = None
-    properties: list[_GemsModelsProperties] = Field(default_factory=list)
+    properties: list[GemsModelsProperties] = Field(default_factory=list)
     parameters: list[_GemsModelsParameters] = Field(default_factory=list)
     ports: list[_GemsModelsPorts] = Field(default_factory=list)
     constraints: list[_GemsModelConstraints] = Field(default_factory=list)

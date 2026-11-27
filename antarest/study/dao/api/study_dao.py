@@ -32,12 +32,12 @@ from antarest.study.business.model.config.timeseries_config_model import TimeSer
 from antarest.study.business.model.district_model import District
 from antarest.study.business.model.gems.calendar import GemsCalendar
 from antarest.study.business.model.gems.catalog import GemsCatalog
-from antarest.study.business.model.gems.library import GemsLibrary
+from antarest.study.business.model.gems.library import GemsLibrary, GemsModelsProperties
 from antarest.study.business.model.gems.scenario_builder import (
     GemsScBuilderMappings,
     GemsScenarioBuilder,
 )
-from antarest.study.business.model.gems.system import GemsComponent, GemsSystem
+from antarest.study.business.model.gems.system import GemsComponent, GemsProperties, GemsSystem
 from antarest.study.business.model.gems.taxonomy import GemsTaxonomy
 from antarest.study.business.model.hydro_allocation_model import HydroAllocation
 from antarest.study.business.model.hydro_correlation_model import HydroCorrelation, HydroCorrelationMatrix
@@ -1018,6 +1018,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
         return self._adaptee.get_library()
 
     @override
+    def get_properties_ids(self, library_id: str, model_id: str) -> list[GemsModelsProperties]:
+        return self._adaptee.get_properties_ids(library_id, model_id)
+
+    @override
     def get_components(self) -> list[GemsComponent]:
         return self._adaptee.get_components()
 
@@ -1028,6 +1032,10 @@ class ReadOnlyAdapter(ReadOnlyStudyDao):
     @override
     def get_system(self) -> GemsSystem | None:
         return self._adaptee.get_system()
+
+    @override
+    def get_properties(self, component_id: str) -> list[GemsProperties]:
+        return self._adaptee.get_properties(component_id)
 
     @override
     def get_taxonomy(self) -> GemsTaxonomy | None:
