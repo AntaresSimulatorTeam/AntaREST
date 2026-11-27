@@ -46,6 +46,7 @@ def _make_study(spec: type[Study], study_id: str, days_ago: int, archived: bool 
 @with_db_context
 def test_selects_inactive_raw_studies_in_a_single_pass() -> None:
     svc = Mock()
+    svc.has_active_variants.return_value = False
     without_last_access = _make_study(RawStudy, "fallback", 90)
     without_last_access.last_access = None
     svc.repository.get_all.return_value = [

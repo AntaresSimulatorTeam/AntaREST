@@ -309,8 +309,10 @@ measured from their last successful unarchiving date when present, or otherwise 
 The unarchiving date is recorded only after successful unarchiving; reading or discovering an output does not change it.
 Old outputs without an unarchiving date are eligible from the first maintenance pass, with no deployment grace period.
 Outputs with neither an unarchiving date nor a valid ID date, and Parquet outputs, are excluded from this independent archival.
-Inactive raw studies are archived as a whole. Outputs of variants follow the same date rule,
-regardless of study activity.
+Inactive raw studies are archived as a whole, together with their variants. A raw study is kept as long as
+one of its variants is in use, which means that, within the same period, the variant was accessed or updated,
+or one of its outputs was created or unarchived.
+Outputs of variants follow the same date rule, regardless of study activity.
 Unarchiving a whole study renews its last access date and the grace period of its restored,
 uncompressed in-study outputs. Outputs that remain zipped or are stored outside the study are unaffected.
 

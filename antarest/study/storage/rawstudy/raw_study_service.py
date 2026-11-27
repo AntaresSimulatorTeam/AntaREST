@@ -132,9 +132,12 @@ class RawStudyService(AbstractStudyService):
         self._study_dao_factories[study.storage_mode].create_study_dao(metadata)
 
     def get_disk_usage(self, study: Study) -> int:
-        # Only raw studies are archived as a file: an archived variant has just lost its snapshot.
-        if study.archived and isinstance(study, RawStudy):
-            return get_disk_usage(self.find_archive_path(study))
+        if study.archived:
+            try:
+                return get_disk_usage(self.find_archive_path(study))
+            except FileNotFoundError:
+                if isinstance(study, RawStudy):
+                    raise
         return self._storage_mapping[study.storage_mode].get_disk_usage(study)
 
     def archive(self, study: RawStudy) -> None:

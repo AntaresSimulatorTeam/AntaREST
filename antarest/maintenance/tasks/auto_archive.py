@@ -80,11 +80,19 @@ def _archive_inactive_studies_and_outputs(
         study_id = study.id
         last_activity = study.last_access or study.updated_at
         if isinstance(study, RawStudy) and last_activity is not None and last_activity < cutoff:
-            result = _archive_study(study_id, study_service, dry_run, cutoff)
-            archived_studies += result.archived_studies
-            if result.error:
-                errors.append(result.error)
-            continue
+            try:
+                has_active_variants = study_service.has_active_variants(study_id, cutoff)
+            except Exception as e:
+                db.session.rollback()
+                logger.exception("Failed to check the variants of study %s", study_id)
+                errors.append(f"{study_id}: {e}")
+                continue
+            if not has_active_variants:
+                result = _archive_study(study_id, study_service, dry_run, cutoff)
+                archived_studies += result.archived_studies
+                if result.error:
+                    errors.append(result.error)
+                continue
 
         try:
             outputs = output_service.get_outputs_to_archive(study_id, cutoff)

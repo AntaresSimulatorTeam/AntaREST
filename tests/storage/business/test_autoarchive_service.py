@@ -60,6 +60,7 @@ def test_archives_study_based_on_its_access_date(tmp_path: Path, dry_run: bool, 
     )
     repository.session.commit()
     study_service, output_service = Mock(repository=repository), Mock()
+    study_service.has_active_variants.return_value = False
     output_service.get_outputs_to_archive.return_value = ["old"]
     study_service.task_service.status_task.return_value.result = TaskResult(success=True, message="ok")
 

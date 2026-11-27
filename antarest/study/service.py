@@ -592,6 +592,11 @@ class IOutputsAccess(ABC):
         raise NotImplementedError()
 
     @abstractmethod
+    def has_outputs_newer_than(self, study_id: str, date: datetime) -> bool:
+        """Tells whether an output of the study was created or unarchived after the given date."""
+        raise NotImplementedError()
+
+    @abstractmethod
     def get_disk_usage(self, study_id: str, output_id: str) -> int:
         raise NotImplementedError()
 
@@ -2022,26 +2027,32 @@ class StudyService:
         if not is_managed(study):
             raise NotAManagedStudyException(study.id)
 
-        if self.task_service.list_tasks(
-            TaskListFilter(
-                ref_id=uuid,
-                type=[TaskType.ARCHIVE, TaskType.UNARCHIVE],
-                status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-            )
-        ):
-            raise TaskAlreadyRunning()
+        # The variants of the study are archived with it.
+        variants = self._get_descendants(uuid)
+        for variant in variants:
+            assert_permission(variant, StudyPermissionType.WRITE)
+
+        self._assert_no_archiving_task([uuid, *(variant.id for variant in variants)])
 
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
             with db():
                 study_to_archive = clone_raw_study(assert_raw(self.get_study(uuid)))
                 last_activity = study_to_archive.last_access or study_to_archive.updated_at
-                # For automatic archiving, recheck eligibility in case the study was accessed after selection.
-                if last_access_before is not None and (last_activity is None or last_activity > last_access_before):
+                # For automatic archiving, recheck eligibility in case the study was used after selection.
+                if last_access_before is not None and (
+                    last_activity is None
+                    or last_activity > last_access_before
+                    or self.has_active_variants(uuid, last_access_before)
+                ):
                     return TaskResult(
                         success=True,
                         message="Automatic archiving skipped: study no longer eligible",
                         return_value="skipped",
                     )
+                variant_ids = [variant.id for variant in reversed(self._get_descendants(uuid))]
+
+            for variant_id in variant_ids:
+                self._archive_single_variant(variant_id)
 
             for output in self._get_outputs_access().list_outputs(study_to_archive.id):
                 if not output.in_study and not output.archived:
@@ -2084,15 +2095,7 @@ class StudyService:
 
         self.storage_service.variant_study_service.walk_children(variant.id, collect_variant, bottom_first=True)
 
-        for variant_id in variant_ids:
-            if self.task_service.list_tasks(
-                TaskListFilter(
-                    ref_id=variant_id,
-                    type=[TaskType.ARCHIVE, TaskType.UNARCHIVE],
-                    status=[TaskStatus.RUNNING, TaskStatus.PENDING],
-                )
-            ):
-                raise TaskAlreadyRunning()
+        self._assert_no_archiving_task(variant_ids)
 
         def archive_task(notifier: ITaskNotifier) -> TaskResult:
             for index, variant_id in enumerate(variant_ids, start=1):
@@ -2114,10 +2117,11 @@ class StudyService:
             if self.get_study(variant_id).archived:
                 return
 
-        # The outputs must be scheduled for archiving before the study is marked as archived.
+        # As for raw studies, the outputs stored in the directory of the study are archived with it.
+        # The other ones must be scheduled for archiving before the study is marked as archived.
         outputs_access = self._get_outputs_access()
         for output in outputs_access.list_outputs(variant_id):
-            if not output.archived:
+            if not output.in_study and not output.archived:
                 with contextlib.suppress(TaskAlreadyRunning):
                     outputs_access.archive_output(variant_id, output.id)
 
@@ -2181,34 +2185,82 @@ class StudyService:
 
     def _unarchive_variant(self, variant: VariantStudy) -> str:
         """
-        Unarchives a variant study, but not its descendants.
+        Unarchives a variant study and its archived ancestors, but not its descendants.
 
-        Its snapshot will be generated the next time the study is accessed, and its outputs stay archived.
+        Their directories are restored, and their snapshots will be generated the next time they are accessed.
         """
-        # An archived study must never have an unarchived descendant.
-        if variant.parent_id is not None and self.get_study(variant.parent_id).archived:
-            raise UnsupportedOperationOnArchivedStudy(variant.parent_id)
+        root, lineage = self.storage_service.variant_study_service.repository.get_study_lineage(variant.id)
+        # The reference study has to be unarchived on its own, since its data must be restored.
+        if root.archived:
+            raise UnsupportedOperationOnArchivedStudy(root.id)
 
-        uuid = variant.id
+        # Parents come first: an archived study must never have an unarchived descendant.
+        variant_ids = [ancestor.id for ancestor in lineage if ancestor.archived]
+        for ancestor in lineage:
+            if ancestor.archived:
+                assert_permission(ancestor, StudyPermissionType.WRITE)
+
+        # The reference study is included: the variant must not be unarchived while it is being archived.
+        self._assert_no_archiving_task([root.id, *(ancestor.id for ancestor in lineage)])
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             with db():
-                study_db = self.get_study(uuid)
-                study_db.archived = False
-                study_db.last_access = current_time()
-                self.repository.save(study_db)
-                remove_from_cache(cache=self.cache_service, root_id=uuid)
-                notify_study_edition(self.event_bus, study_db)
+                for variant_id in variant_ids:
+                    self._unarchive_single_variant(variant_id)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
             unarchive_task,
             f"Study {variant.name} unarchiving",
             task_type=TaskType.UNARCHIVE,
-            ref_id=uuid,
+            ref_id=variant.id,
             progress=None,
             custom_event_messages=None,
         )
+
+    def _unarchive_single_variant(self, variant_id: str) -> None:
+        variant = self.get_study(variant_id)
+        if not isinstance(variant, VariantStudy):
+            raise UnsupportedOperationOnThisStudyType(variant_id, "unarchive", "variant")
+        self.storage_service.variant_study_service.unarchive(variant)
+        self._get_outputs_access().on_study_unarchived(variant_id)
+        notify_study_edition(self.event_bus, variant)
+
+    def _get_descendants(self, study_id: str) -> list[VariantStudy]:
+        """Returns all the variants derived from the study, parents first."""
+        descendants: list[VariantStudy] = []
+        for child in self.storage_service.variant_study_service.get_children(study_id):
+            descendants.append(child)
+            descendants.extend(self._get_descendants(child.id))
+        return descendants
+
+    def has_active_variants(self, study_id: str, since: datetime) -> bool:
+        """
+        Tells whether a variant of the study has been used after the given date:
+        it has been accessed or updated, or one of its outputs has been created or unarchived.
+        """
+        variants = self._get_descendants(study_id)
+        if any(
+            date is not None and date > since
+            for variant in variants
+            for date in (variant.last_access, variant.updated_at)
+        ):
+            return True
+        # The outputs come last, since they have to be listed from their storage.
+        outputs_access = self._get_outputs_access()
+        return any(outputs_access.has_outputs_newer_than(variant.id, since) for variant in variants)
+
+    def _assert_no_archiving_task(self, study_ids: Iterable[str]) -> None:
+        """Raises `TaskAlreadyRunning` if one of the studies is being archived or unarchived."""
+        for study_id in study_ids:
+            if self.task_service.list_tasks(
+                TaskListFilter(
+                    ref_id=study_id,
+                    type=[TaskType.ARCHIVE, TaskType.UNARCHIVE],
+                    status=[TaskStatus.RUNNING, TaskStatus.PENDING],
+                )
+            ):
+                raise TaskAlreadyRunning()
 
     def repair_study(self, uuid: str, repair_request: StudyRepairRequest) -> str:
         study = self.get_study(uuid)
