@@ -62,9 +62,6 @@ def test_system_roundtrip(filestudy_dao_v10_2: FileStudyTreeDao, matrix_service:
     dao.save_system(system)
     data_series_folder = dao.get_file_study().config.study_path / "input" / "data-series"
 
-    # todo: remove this test once optim-config.yml is handled in the DAO
-    assert (dao.get_file_study().config.study_path / "input" / "optim-config.yml").exists()
-
     # As 2 parameters values point to the same matrix, we should have 2 CSV files only
     assert sorted(f.name for f in data_series_folder.iterdir()) == ["data_series_0.csv", "data_series_1.csv"]
     assert (data_series_folder / "data_series_0.csv").read_text().splitlines() == [

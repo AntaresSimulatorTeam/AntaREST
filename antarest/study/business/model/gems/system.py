@@ -10,9 +10,9 @@
 #
 # This file is part of the Antares project.
 from enum import StrEnum
-from typing import List, Self
+from typing import Annotated, List, Self, TypeAlias
 
-from pydantic import ConfigDict, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from antarest.core.exceptions import (
     GemsInvalidParameterValue,
@@ -93,11 +93,20 @@ class _IntegerStrategy(AntaresBaseModel):
         return self
 
 
+_MODEL_ID_REGEX = r"^[a-z0-9_-]+\.[a-z0-9_-]+$"  # library_id.model_id
+ModelId: TypeAlias = Annotated[str, Field(pattern=_MODEL_ID_REGEX)]
+
+
+def split_library_and_model_id(model_id: ModelId) -> tuple[str, str]:
+    library_id, model_id = model_id.split(".", maxsplit=1)
+    return library_id, model_id
+
+
 class GemsComponent(AntaresBaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid", alias_generator=to_kebab_case)
 
     id: str
-    model: str
+    model: ModelId
     scenario_group: str | None = None
     integer_strategy: _IntegerStrategy | None = None
     parameters: List[GemsParameters] = []

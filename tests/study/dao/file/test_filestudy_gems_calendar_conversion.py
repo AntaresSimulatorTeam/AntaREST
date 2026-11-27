@@ -38,7 +38,7 @@ SAMPLE_CALENDAR = GemsCalendar(
 )
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_calendar_conversion_roundtrip(
     dao_10_2: StudyDao,
     filestudy_dao_v10_2: FileStudyTreeDao,

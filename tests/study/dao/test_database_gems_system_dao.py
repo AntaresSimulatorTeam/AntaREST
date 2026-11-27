@@ -47,7 +47,7 @@ from tests.study.dao.conftest import (
 from tests.study.dao.utils import save_area
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_cannot_replace_system(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 
@@ -62,7 +62,7 @@ def test_cannot_replace_system(dao_10_2: StudyDao) -> None:
         dao.save_system(system)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_system_is_not_saved_if_an_error_is_raised(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 
@@ -84,7 +84,7 @@ def test_system_is_not_saved_if_an_error_is_raised(dao_10_2: StudyDao) -> None:
     assert dao.get_system() is not None
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_save_and_load_system(dao_10_2: StudyDao, matrix_service: ISimpleMatrixService) -> None:
     dao = dao_10_2
 
@@ -107,18 +107,18 @@ def test_save_and_load_system(dao_10_2: StudyDao, matrix_service: ISimpleMatrixS
     assert isinstance(p_max_parameter.value, str)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_cannot_save_components_without_system(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 
     assert dao.get_system() is None
 
-    new_component = GemsComponent.model_validate({"id": "comp3", "model": "model3"})
+    new_component = GemsComponent.model_validate({"id": "comp3", "model": "library.model3"})
     with pytest.raises(GemsSystemNotFound, match="No system configuration found for study"):
         dao.save_components([new_component])
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_save_components_fully_replaces_existing_ones(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 
@@ -174,7 +174,7 @@ def test_save_components_fully_replaces_existing_ones(dao_10_2: StudyDao) -> Non
     assert third_component.properties[0].value == "third_component"
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_connections_are_optional(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     add_library_file_to_study_dao(dao)
@@ -187,7 +187,7 @@ def test_connections_are_optional(dao_10_2: StudyDao) -> None:
     assert loaded_system.connections == []
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_connections_can_link_2_ports_of_the_same_component(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
 
@@ -215,7 +215,7 @@ def test_connections_can_link_2_ports_of_the_same_component(dao_10_2: StudyDao) 
     assert dao.get_system() is not None
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_cannot_have_duplicated_connections(dao_10_2: StudyDao) -> None:
 
     dao = dao_10_2
@@ -246,7 +246,7 @@ def test_cannot_have_duplicated_connections(dao_10_2: StudyDao) -> None:
         dao.save_system(system)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_symmetric_connections_are_detected_as_identical(dao_10_2: StudyDao) -> None:
 
     dao = dao_10_2
@@ -278,7 +278,7 @@ def test_symmetric_connections_are_detected_as_identical(dao_10_2: StudyDao) -> 
         dao.save_system(system)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_connections_cannot_link_a_port_of_a_component_to_itself(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     add_library_file_to_study_dao(dao)
@@ -298,7 +298,7 @@ def test_connections_cannot_link_a_port_of_a_component_to_itself(dao_10_2: Study
         dao.save_system(system)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     add_library_file_to_study_dao(dao)
@@ -317,7 +317,7 @@ def test_connections_must_link_2_existing_components(dao_10_2: StudyDao) -> None
         dao.save_system(system)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_deleting_a_cluster_removes_its_connections(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     add_library_file_to_study_dao(dao)
@@ -362,7 +362,7 @@ def test_deleting_a_cluster_removes_its_connections(dao_10_2: StudyDao) -> None:
     assert system.area_connections == system_before.area_connections
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_deleting_an_area_removes_its_connections_and_the_ones_of_its_clusters(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     add_system_file_to_study_dao(dao)
@@ -389,7 +389,7 @@ def test_deleting_an_area_removes_its_connections_and_the_ones_of_its_clusters(d
     assert [component.id for component in system.components] == ["dsr", "electrolyser", "electrolyser2"]
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 @pytest.mark.parametrize(
     "section, connections, error_msg",
     [
@@ -471,7 +471,7 @@ def test_cannot_save_invalid_legacy_connections(
         dao.save_system(system)
 
 
-@pytest.mark.parametrize("dao_10_2", ["fs"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["fs"], indirect=True)
 def test_cannot_delete_legacy_objects_connected_to_gems_in_filesystem_studies(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     system = add_system_file_to_study_dao(dao)
@@ -500,7 +500,7 @@ def test_cannot_delete_legacy_objects_connected_to_gems_in_filesystem_studies(da
     assert "east" not in dao.get_all_area_ids()
 
 
-@pytest.mark.parametrize("dao_10_2", ["fs"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["fs"], indirect=True)
 def test_cannot_delete_area_whose_clusters_are_connected_to_gems_in_filesystem_studies(
     dao_10_2: StudyDao,
 ) -> None:
@@ -535,7 +535,7 @@ def test_cannot_delete_area_whose_clusters_are_connected_to_gems_in_filesystem_s
     assert dao.get_system() == system
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     add_library_file_to_study_dao(dao)
@@ -557,7 +557,7 @@ def test_parameter_value_can_reference_an_existing_data_series(dao_10_2: StudyDa
     assert np.array_equal(dao.get_parameter_series("dsr", "param1"), expected_values)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: DatabaseStudyDao) -> None:
     # `dao_10_2` and `db_dao` point to two distinct studies sharing the same matrix store.
     max_load_path = DATA_SERIES_PATH / "max_load_values.tsv"
@@ -578,7 +578,7 @@ def test_matrices_are_isolated_between_studies(dao_10_2: StudyDao, db_dao: Datab
     assert np.array_equal(db_dao.get_parameter_series("dsr", "param1").to_numpy(), second_expected)
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_get_parameter_value_raises_when_component_or_parameter_not_found(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     add_system_file_to_study_dao(dao)
@@ -590,7 +590,7 @@ def test_get_parameter_value_raises_when_component_or_parameter_not_found(dao_10
         dao.get_parameter_series("unknown", "max_load")
 
 
-@pytest.mark.parametrize("dao_10_2", ["db"], indirect=True)
+@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_get_parameter_value_raises_when_parameter_is_a_constant(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     add_system_file_to_study_dao(dao)

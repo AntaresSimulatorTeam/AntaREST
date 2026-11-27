@@ -31,6 +31,7 @@ from antarest.study.business.model.gems.system import (
     GemsComponentConnection,
     GemsSystem,
     GemsThermalCapacityConnection,
+    split_library_and_model_id,
 )
 from antarest.study.dao.api.gems_system_dao import GemsSystemDao
 from antarest.study.dao.database.dao_context import DatabaseDaoBase
@@ -343,7 +344,7 @@ class DatabaseGemsSystemDao(GemsSystemDao, DatabaseDaoBase):
         component_values = []
 
         for component in components:
-            library_id, model_id = component.model.split(".", 1)
+            library_id, model_id = split_library_and_model_id(component.model)
 
             component_values.append(
                 {

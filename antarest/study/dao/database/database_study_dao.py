@@ -56,6 +56,7 @@ from antarest.study.dao.database.database_xpansion_dao import DatabaseXpansionDa
 from antarest.study.dao.database.gems.database_calendar_dao import DatabaseGemsCalendarDao
 from antarest.study.dao.database.gems.database_catalog_dao import DatabaseGemsCatalogDao
 from antarest.study.dao.database.gems.database_library_dao import DatabaseGemsLibraryDao
+from antarest.study.dao.database.gems.database_optim_config_dao import DatabaseGemsOptimConfigDao
 from antarest.study.dao.database.gems.database_scenario_builder_dao import DatabaseGemsScenarioBuilderDao
 from antarest.study.dao.database.gems.database_system_dao import DatabaseGemsSystemDao
 from antarest.study.dao.database.gems.database_taxonomy_dao import DatabaseGemsTaxonomyDao
@@ -95,6 +96,7 @@ class DatabaseStudyDao(
     DatabaseGemsTaxonomyDao,
     DatabaseGemsScenarioBuilderDao,
     DatabaseGemsCalendarDao,
+    DatabaseGemsOptimConfigDao,
 ):
     """
     Database implementation of StudyDao.
