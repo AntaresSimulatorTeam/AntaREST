@@ -13,7 +13,13 @@
  */
 
 import { getOutputs } from "@/services/api/studies/outputs";
+import { getGemsViews } from "@/services/api/studies/outputs/gemsViews";
+import { getOutputFileContent, getOutputFilesTree } from "@/services/api/studies/outputs/rawFiles";
+import type { OutputFileParams } from "@/services/api/studies/outputs/rawFiles/types";
+import type { OutputParams } from "@/services/api/studies/outputs/types";
 import type { Study } from "@/services/api/studies/types";
+import { queryOptions } from "@tanstack/react-query";
+import { DEFAULT_STALE_TIME_MS } from "../queryClient";
 import { queryListOptions } from "../utils";
 import { outputKeys } from "./keys";
 
@@ -24,4 +30,23 @@ export const outputQueries = {
       queryFn: () => getOutputs({ studyId }),
     });
   },
+  gemsViews: (output: OutputParams) =>
+    queryOptions({
+      queryKey: outputKeys.gemsViews(output),
+      queryFn: ({ signal }) => getGemsViews(output, signal),
+      staleTime: ({ state }) => (state.data?.status === "READY" ? DEFAULT_STALE_TIME_MS : 0),
+    }),
+  rawFiles: (output: OutputParams) =>
+    queryOptions({
+      queryKey: outputKeys.rawFiles(output),
+      queryFn: ({ signal }) => getOutputFilesTree(output, signal),
+    }),
+  rawFileContent: (file: OutputFileParams) =>
+    queryOptions({
+      queryKey: outputKeys.rawFileContent(file),
+      queryFn: ({ signal }) => getOutputFileContent(file, signal),
+      // Keep the original bytes for as long as the file is open.
+      staleTime: Infinity,
+      gcTime: 0,
+    }),
 };

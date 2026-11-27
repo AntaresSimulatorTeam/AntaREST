@@ -13,6 +13,10 @@
  */
 
 import { QueryClient } from "@tanstack/react-query";
+import { minutesToMilliseconds } from "date-fns";
+
+/** Cached query data stays fresh for one minute by default. */
+export const DEFAULT_STALE_TIME_MS = minutesToMilliseconds(1);
 
 /**
  * Note: use `useQueryClient()` instead of importing this directly in React components.
@@ -20,7 +24,7 @@ import { QueryClient } from "@tanstack/react-query";
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 1000, // 1 minute
+      staleTime: DEFAULT_STALE_TIME_MS,
     },
   },
 });

@@ -14,6 +14,7 @@
 
 import ConfirmationDialog from "@/components/dialogs/ConfirmationDialog";
 import EmptyView from "@/components/page/EmptyView";
+import { isTaskFinished } from "@/services/api/tasks/utils";
 import { WsChannel, WsEventType } from "@/services/webSocket/constants";
 import type { TaskEventPayload, WsEvent, WsEventTypeValue } from "@/services/webSocket/types";
 import BoltIcon from "@mui/icons-material/Bolt";
@@ -51,7 +52,6 @@ import {
   exportJson,
   fromCommandDTOToCommandItem,
   fromCommandDTOToJsonCommand,
-  isTaskFinal,
   updateCommandResults,
 } from "./utils";
 
@@ -198,7 +198,8 @@ function EditionView(props: Props) {
   const fetchTask = useCallback(async () => {
     if (generationStatus && generationTaskId) {
       const tmpTask = await getTask({ id: generationTaskId });
-      if (isTaskFinal(tmpTask)) {
+
+      if (isTaskFinished(tmpTask)) {
         setGenerationStatus(false);
         setGenerationTaskId(undefined);
       }
@@ -238,10 +239,10 @@ function EditionView(props: Props) {
         const task = await getStudyTask(studyId);
 
         let currentIndex = -1;
-        const isFinal = isTaskFinal(task);
+        const isFinished = isTaskFinished(task);
 
         if (task.logs === undefined || task.logs.length === 0) {
-          if (!isFinal) {
+          if (!isFinished) {
             currentIndex = 0;
           } else if (task.status !== TaskStatus.Completed) {
             debouncedFailureNotification();
@@ -255,11 +256,13 @@ function EditionView(props: Props) {
           items = res.commands;
           currentIndex = res.index;
         }
-        if (!isFinal) {
+
+        if (!isFinished) {
           setGenerationTaskId(task.id);
         }
+
         setCurrentCommandGenerationIndex(currentIndex);
-        setGenerationStatus(!isFinal);
+        setGenerationStatus(!isFinished);
         setCommands(items);
       } catch (error) {
         logError("Error: ", error);

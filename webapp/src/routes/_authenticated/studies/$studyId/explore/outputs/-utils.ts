@@ -12,9 +12,14 @@
  * This file is part of the Antares project.
  */
 
+import { taskQueries } from "@/queries/tasks/queries";
 import type { Job } from "@/services/api/launcher/jobs/types";
 import type { Output } from "@/services/api/studies/outputs/types";
-import { compareDesc, parseISO } from "date-fns";
+import { TaskStatus } from "@/services/api/tasks/constants";
+import type { Task } from "@/services/api/tasks/types";
+import { isTaskFinished } from "@/services/api/tasks/utils";
+import type { QueryClient } from "@tanstack/react-query";
+import { compareDesc, parseISO, secondsToMilliseconds } from "date-fns";
 
 export type OutputWithJob = Output & {
   job?: Job;
@@ -54,4 +59,28 @@ export function selectJobsData(jobs: Job[]) {
   const runningJobs = sortJobsByCreationDate(jobs.filter((job) => job.status === "running"));
 
   return { jobsByOutputId, runningJobs };
+}
+
+export async function waitForOutputArchiveTask(client: QueryClient, taskId: Task["id"]) {
+  const taskQuery = { ...taskQueries.detail(taskId), staleTime: 0, retry: 2 };
+
+  // A fast archive can send its completion event before the browser starts listening.
+  // Waiting for that WebSocket event would leave the output disabled forever. A status
+  // request still tells us the archive finished, even if we missed the event.
+  let task = await client.fetchQuery(taskQuery);
+
+  // Pending and Running are successful responses. If the task gets stuck, the retry limit
+  // never applies and the output's actions stay disabled.
+  //
+  // TODO: Give polling an overall deadline. On expiry, refresh the output list
+  // and show "Couldn't confirm completion". Keep the task ID so the user can check again.
+  // The archive can still finish on the server after the browser stops waiting.
+  while (!isTaskFinished(task)) {
+    await new Promise((resolve) => setTimeout(resolve, secondsToMilliseconds(2)));
+    task = await client.fetchQuery(taskQuery);
+  }
+
+  if (task.status !== TaskStatus.Completed) {
+    throw new Error(task.result?.message || task.name);
+  }
 }

@@ -13,20 +13,14 @@
  */
 
 import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
+import { outputKeys } from "@/queries/outputs/keys";
 import { outputMutations } from "@/queries/outputs/mutations";
 import { outputQueries } from "@/queries/outputs/queries";
 import { createOptimisticListItem } from "@/queries/utils";
-import { WsChannel, WsEventType } from "@/services/webSocket/constants";
-import type { WsEvent, WsEventListener } from "@/services/webSocket/types";
-import {
-  addWsEventListener,
-  removeWsEventListener,
-  subscribeWsChannels,
-  unsubscribeWsChannels,
-} from "@/services/webSocket/ws";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { waitForOutputArchiveTask } from "../-utils";
 
 function useUnarchiveOutput() {
   const { studyId } = useParams({
@@ -37,8 +31,6 @@ function useUnarchiveOutput() {
   const { t } = useTranslation();
 
   const { queryKey: queryListKey } = outputQueries.list(studyId);
-
-  let taskListener: WsEventListener | undefined;
 
   const mutation = useMutation({
     ...outputMutations.unarchive(studyId),
@@ -62,48 +54,18 @@ function useUnarchiveOutput() {
 
       return { outputToUnarchive };
     },
-    onSuccess: (taskId, variables, onMutateResult) => {
-      const { outputId } = variables;
+    onSuccess: async (taskId, output, onMutateResult) => {
       const { outputToUnarchive } = onMutateResult || {};
 
+      await waitForOutputArchiveTask(queryClient, taskId);
+      queryClient.removeQueries({ queryKey: outputKeys.detail(output) });
+
       if (outputToUnarchive) {
-        subscribeWsChannels(WsChannel.Task + taskId);
-
-        // `mutationFn` run a task to unarchive the output, we need to wait for the task to complete
-        // before updating the query cache by listening to the WebSocket events for the task.
-        return new Promise<void>((resolve, reject) => {
-          taskListener = (event: WsEvent) => {
-            switch (event.type) {
-              case WsEventType.TaskCompleted: {
-                const { id } = event.payload;
-
-                if (id === taskId) {
-                  queryClient.setQueryData(queryListKey, (old = []) => {
-                    return old.map((output) =>
-                      output.id === outputId ? { ...outputToUnarchive, archived: false } : output,
-                    );
-                  });
-
-                  resolve();
-                }
-
-                break;
-              }
-              case WsEventType.TaskFailed: {
-                const { id, message } = event.payload;
-
-                if (id === taskId) {
-                  // `onError` will be called after this
-                  reject(new Error(message));
-                }
-
-                break;
-              }
-            }
-          };
-
-          addWsEventListener(taskListener);
-        });
+        queryClient.setQueryData(queryListKey, (old = []) =>
+          old.map((item) =>
+            item.id === output.outputId ? { ...outputToUnarchive, archived: false } : item,
+          ),
+        );
       }
     },
     onError: (error, variables, onMutateResult) => {
@@ -124,14 +86,6 @@ function useUnarchiveOutput() {
         }),
         error,
       );
-    },
-    onSettled: (taskId) => {
-      if (taskId) {
-        unsubscribeWsChannels(WsChannel.Task + taskId);
-        if (taskListener) {
-          removeWsEventListener(taskListener);
-        }
-      }
     },
   });
 

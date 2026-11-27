@@ -13,8 +13,10 @@
  */
 
 import { queryOptions } from "@tanstack/react-query";
+import { secondsToMilliseconds } from "date-fns";
 import { getTask, getTasks } from "@/services/api/tasks";
 import type { GetTasksParams, Task } from "@/services/api/tasks/types";
+import { isTaskFinished } from "@/services/api/tasks/utils";
 import { taskKeys } from "./keys";
 
 export const taskQueries = {
@@ -28,7 +30,24 @@ export const taskQueries = {
   detail: (id: Task["id"]) => {
     return queryOptions({
       queryKey: taskKeys.detail(id),
-      queryFn: () => getTask({ id }),
+      queryFn: ({ signal }) => getTask({ id }, signal),
     });
   },
+
+  /**
+   * Polls the shared task detail query while the task is pending or running.
+   * Polling pauses if fetching the task exhausts its retries.
+   *
+   * @param id - Task to monitor.
+   * @returns Query options for observing the task with polling enabled.
+   */
+  monitor: (id: Task["id"]) =>
+    queryOptions({
+      ...taskQueries.detail(id),
+      staleTime: 0,
+      refetchInterval: ({ state }) =>
+        state.status === "success" && state.data && !isTaskFinished(state.data)
+          ? secondsToMilliseconds(2)
+          : false,
+    }),
 };
