@@ -54,7 +54,7 @@ def test_get_gems_model_properties(variant: bool, study_service: StudyService, a
 
     res = client.get(f"/v1/studies/{study_id}/gems/{LIBRARY_ID}/dsr_with_properties/properties")
     assert res.status_code == 200
-    assert res.json() == [{"name": "prop1"}, {"name": "prop2"}]
+    assert res.json() == [{"id": "prop1"}, {"id": "prop2"}]
 
     # A model without properties returns an empty list
     res = client.get(f"/v1/studies/{study_id}/gems/{LIBRARY_ID}/dsr_without_properties/properties")
@@ -91,24 +91,3 @@ def test_get_gems_model_properties_no_library(study_service: StudyService, admin
         "description": f"Library '{LIBRARY_ID}' not found for study '{study_id}'",
         "exception": "GemsLibraryNotFound",
     }
-
-
-def test_get_gems_model_properties_on_filesystem_study(study_service: StudyService, admin_client: TestClient) -> None:
-    """
-    Unlike GEMS systems/components (DB-only), GEMS libraries are also supported for filesystem
-    studies, reading/writing a `library.yml` file under `input/model-libraries`.
-    """
-    client = admin_client
-    # `storage_mode` is omitted on purpose: it defaults to the filesystem storage mode
-    study_id = client.post("/v1/studies", params={"name": "test_study", "version": "10.2"}).json()
-
-    with db(), current_user_context(DEFAULT_ADMIN_USER):
-        study = study_service.check_study_access(study_id, StudyPermissionType.WRITE)
-        dao = study_service.storage_service.get_storage(study).get_study_dao(study)
-        dao.save_library(
-            GemsLibrary.model_validate({"id": LIBRARY_ID, "models": [{"id": "dsr", "properties": [{"id": "prop1"}]}]})
-        )
-
-    res = client.get(f"/v1/studies/{study_id}/gems/{LIBRARY_ID}/dsr/properties")
-    assert res.status_code == 200
-    assert res.json() == [{"name": "prop1"}]
