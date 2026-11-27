@@ -30,7 +30,6 @@ from antares_web_mcp.assistant.provider import ChatProvider, ChatResult, Provide
 from antares_web_mcp.assistant.workflows import (
     MAX_REVIEW_ROUNDS,
     REVIEW_TOOLS,
-    Language,
     Task,
     build_review_message,
     run_check,
@@ -40,6 +39,7 @@ from antares_web_mcp.assistant.workflows import (
 from antares_web_mcp.client import AntaresWebClient
 from antares_web_mcp.server import INSTRUCTIONS, create_server
 from antares_web_mcp.tools.checks import Finding
+from antares_web_mcp.tools.common import Language
 
 logger = logging.getLogger(__name__)
 

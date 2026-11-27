@@ -15,11 +15,14 @@
 import AssistantThread from "@/components/AssistantConversation/AssistantThread";
 import useAssistantRun from "@/components/AssistantConversation/useAssistantRun";
 import useAssistantThreads from "@/components/AssistantConversation/useAssistantThreads";
+import useEnqueueErrorSnackbar from "@/hooks/useEnqueueErrorSnackbar";
 import { assistantQueries } from "@/queries/assistant/queries";
 import { streamCheckSummary, streamStudyCheck, streamStudyReview } from "@/services/api/assistant";
+import { toError } from "@/utils/fnUtils";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import FactCheckOutlinedIcon from "@mui/icons-material/FactCheckOutlined";
+import PictureAsPdfOutlinedIcon from "@mui/icons-material/PictureAsPdfOutlined";
 import ReplayIcon from "@mui/icons-material/Replay";
 import TravelExploreIcon from "@mui/icons-material/TravelExplore";
 import {
@@ -44,10 +47,15 @@ import Markdown from "react-markdown";
 import AssistantReport from "./AssistantReport";
 import CheckProgress from "./CheckProgress";
 import FindingsList from "./FindingsList";
+import { buildReportDocument } from "./pdf/buildReportDocument";
+import { buildReportFileName } from "./pdf/buildReportFileName";
+import { downloadPdf } from "./pdf/downloadPdf";
 import useRuleExplanations from "./useRuleExplanations";
 import {
   buildRuleContext,
   countIssues,
+  getFinishedAnswer,
+  getFinishedAnswers,
   getVerdictSeverity,
   INITIAL_CHECK_STATE,
   INITIAL_REPORT_STATE,
@@ -60,6 +68,7 @@ import {
 
 interface Props {
   studyId: string;
+  studyName: string;
 }
 
 // Button to check the consistency of a study, and the panel showing the progress of the rules,
@@ -75,9 +84,11 @@ interface Props {
 //
 // The result is kept while the user stays on the study: the button then shows the number of
 // findings to look at, and opens the result again. So are the texts of the assistant.
-function StudyCheck({ studyId }: Props) {
+function StudyCheck({ studyId, studyName }: Props) {
   const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [isDownloadingReport, setIsDownloadingReport] = useState(false);
+  const enqueueErrorSnackbar = useEnqueueErrorSnackbar();
   const { data: assistant } = useQuery(assistantQueries.status());
   // The assistant writes in the language of the interface
   const language = i18n.language?.startsWith("fr") ? "fr" : "en";
@@ -132,6 +143,36 @@ function StudyCheck({ studyId }: Props) {
   const handleCancel = () => {
     cancel();
     setOpen(false);
+  };
+
+  const handleDownloadReport = async () => {
+    if (!report) {
+      return;
+    }
+    const generatedAt = new Date();
+    const document = buildReportDocument(
+      {
+        studyId,
+        studyName,
+        generatedAt,
+        language,
+        report,
+        verdict,
+        explanations: getFinishedAnswers(explanations),
+        summary: getFinishedAnswer(summary.state),
+        review: getFinishedAnswer(review.state),
+      },
+      t,
+    );
+    setIsDownloadingReport(true);
+
+    try {
+      await downloadPdf(document, buildReportFileName(studyName, generatedAt, t));
+    } catch (err) {
+      enqueueErrorSnackbar(t("study.check.pdf.failed"), toError(err));
+    } finally {
+      setIsDownloadingReport(false);
+    }
   };
 
   ////////////////////////////////////////////////////////////////
@@ -291,6 +332,26 @@ function StudyCheck({ studyId }: Props) {
                       onClick={review.start}
                     >
                       {t("study.check.review.button")}
+                    </Button>
+                  </span>
+                </Tooltip>
+              )}
+              {status === "success" && report && (
+                <Tooltip title={t("study.check.pdf.tooltip")}>
+                  <span>
+                    <Button
+                      variant="text"
+                      startIcon={
+                        isDownloadingReport ? (
+                          <CircularProgress size={16} color="inherit" />
+                        ) : (
+                          <PictureAsPdfOutlinedIcon />
+                        )
+                      }
+                      disabled={isDownloadingReport}
+                      onClick={handleDownloadReport}
+                    >
+                      {t("study.check.pdf.button")}
                     </Button>
                   </span>
                 </Tooltip>

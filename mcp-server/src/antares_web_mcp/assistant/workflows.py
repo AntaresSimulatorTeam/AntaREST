@@ -38,9 +38,9 @@ from pydantic import ValidationError
 
 from antares_web_mcp.assistant.provider import ChatProvider, ChatResult, ProviderError, TextSink, ToolCaller, Usage
 from antares_web_mcp.tools.checks import SEVERITY_ORDER, CheckReport, Finding
+from antares_web_mcp.tools.common import Language
 
 Task = Literal["chat", "check", "explain", "summary", "review"]
-Language = Literal["en", "fr"]
 LANGUAGES: dict[Language, str] = {"en": "English", "fr": "French"}
 # The tasks where the model only writes, from findings it is given: it has nothing to decide, so the
 # reasoning of a "thinking" model (most of its output, and of the wait) can be turned off for them.
@@ -309,7 +309,7 @@ async def run_check(*, study_id: str, language: Language, model: str, call_tool:
     Raises:
         TaskError: if the rules could not be run.
     """
-    outcome = await call_tool("check_study", {"study_id": study_id, "deep": True})
+    outcome = await call_tool("check_study", {"study_id": study_id, "deep": True, "language": language})
     if outcome.is_error:
         raise TaskError(f"The rules could not be run on this study: {outcome.content}")
     try:

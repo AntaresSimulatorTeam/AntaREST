@@ -33,7 +33,8 @@ from pydantic import BaseModel, Field
 
 from antares_web_mcp.client import AntaresWebClient, AntaresWebError
 from antares_web_mcp.tools.analysis import matrix_stats, optional, rhs_paths
-from antares_web_mcp.tools.common import READ_ONLY, StudyId
+from antares_web_mcp.tools.check_messages import number, say, weekday_name
+from antares_web_mcp.tools.common import READ_ONLY, Language, StudyId
 
 Severity = Literal["error", "warning", "info"]
 SEVERITY_ORDER = {"error": 0, "warning": 1, "info": 2}
@@ -105,7 +106,7 @@ def january_first(year: int) -> str:
     return WEEKDAYS[datetime.date(year, 1, 1).weekday()]
 
 
-def check_calendar(data: StudyData) -> list[Finding]:
+def check_calendar(data: StudyData, language: Language = "en") -> list[Finding]:
     """The calendar (weekday of 1 January) must match the year the time series were built for."""
     general = data.general
     weekday = str(general.get("firstJanuary", ""))
@@ -119,71 +120,91 @@ def check_calendar(data: StudyData) -> list[Finding]:
         """Years whose 1 January is simulated (a year starting in July ends in the next calendar year)."""
         return set(years) | (set() if starts_in_january or not years else {years[0] + 1})
 
+    def day(year: int) -> str:
+        return weekday_name(january_first(year), language)
+
     findings = []
     if horizon_years and all(january_first(y) != weekday for y in january_years(horizon_years)):
         # The expected days are given: whoever explains the finding (a model) must not have to compute them.
-        expected = " and ".join(f"1 January {y} is a {january_first(y)}" for y in sorted(january_years(horizon_years)))
+        expected = say("calendar.and", language).join(
+            say("calendar.first_january", language, year=y, day=day(y)) for y in sorted(january_years(horizon_years))
+        )
         findings += finding(
             "calendar",
             "warning",
-            f"1 January is set to a {weekday}, but {expected} (horizon '{general.get('horizon')}'): weekdays "
-            "and weekends of the time series are shifted.",
+            say(
+                "calendar.horizon",
+                language,
+                weekday=weekday_name(weekday, language),
+                expected=expected,
+                horizon=general.get("horizon"),
+            ),
             ["settings/generaldata.ini"],
         )
     foreign = [y for y in name_years if y not in horizon_years]
     if foreign and all(january_first(y) != weekday for y in january_years(foreign)):
         matching = [y for y in sorted(january_years(horizon_years)) if january_first(y) == weekday]
-        calendar = f"the {matching[0]} calendar" if matching else "another calendar"
+        calendar = (
+            say("calendar.of_year", language, year=matching[0])
+            if matching
+            else say("calendar.of_another_year", language)
+        )
         findings += finding(
             "calendar",
             "warning",
-            f"The study name refers to {foreign[0]} (1 January {foreign[0]} is a {january_first(foreign[0])}), "
-            f"but the study uses {calendar} (horizon '{general.get('horizon')}', 1 January = {weekday}). "
-            "Check that time series built for that year are aligned with this calendar (weekends, holidays).",
+            say(
+                "calendar.name",
+                language,
+                year=foreign[0],
+                day=day(foreign[0]),
+                calendar=calendar,
+                horizon=general.get("horizon"),
+                weekday=weekday_name(weekday, language),
+            ),
             ["settings/generaldata.ini"],
         )
     return findings
 
 
-def check_playlist(data: StudyData) -> list[Finding]:
+def check_playlist(data: StudyData, language: Language = "en") -> list[Finding]:
     if not data.playlist or not data.general.get("selectionMode"):
         return []
     inactive = [year for year, value in data.playlist.items() if not value.get("status")]
     return finding(
         "playlist",
         "info",
-        f"{len(inactive)} of {len(data.playlist)} Monte-Carlo years are excluded by the playlist.",
-        [f"year {year}" for year in inactive],
+        say("playlist", language, inactive=len(inactive), total=len(data.playlist)),
+        [say("playlist.year", language, year=year) for year in inactive],
     )
 
 
-def check_thermal_min_stable_power(data: StudyData) -> list[Finding]:
+def check_thermal_min_stable_power(data: StudyData, language: Language = "en") -> list[Finding]:
     wrong = [
         f"{cluster_id} ({row.get('minStablePower')} > {row.get('nominalCapacity')} MW)"
         for cluster_id, row in data.thermals.items()
         if _enabled(row) and float(row.get("minStablePower", 0)) > float(row.get("nominalCapacity", 0))
     ]
-    return finding("thermal_min_stable_power", "error", "Min stable power above the unit capacity.", wrong)
+    return finding("thermal_min_stable_power", "error", say("thermal_min_stable_power", language), wrong)
 
 
-def check_thermal_market_bid(data: StudyData) -> list[Finding]:
+def check_thermal_market_bid(data: StudyData, language: Language = "en") -> list[Finding]:
     wrong = [
-        f"{cluster_id} (bid {row.get('marketBidCost')} < cost {row.get('marginalCost')} EUR/MWh)"
+        say(
+            "thermal_market_bid.object",
+            language,
+            cluster=cluster_id,
+            bid=row.get("marketBidCost"),
+            cost=row.get("marginalCost"),
+        )
         for cluster_id, row in data.thermals.items()
         if _enabled(row)
         and _capacity(row) > 0
         and float(row.get("marketBidCost", 0)) < float(row.get("marginalCost", 0))
     ]
-    return finding(
-        "thermal_market_bid",
-        "warning",
-        "Market bid below the marginal cost: the merit order uses the bid, so these plants run before "
-        "cheaper ones (intended only to model a subsidy or a must-run contract).",
-        wrong,
-    )
+    return finding("thermal_market_bid", "warning", say("thermal_market_bid", language), wrong)
 
 
-def check_unsupplied_energy_cost(data: StudyData) -> list[Finding]:
+def check_unsupplied_energy_cost(data: StudyData, language: Language = "en") -> list[Finding]:
     max_cost: dict[str, float] = {}
     for cluster_id, row in data.thermals.items():
         if _enabled(row) and _capacity(row) > 0:
@@ -197,69 +218,64 @@ def check_unsupplied_energy_cost(data: StudyData) -> list[Finding]:
         elif cost < max_cost.get(area, 0.0):
             too_low.append(f"{area} ({cost:g} < {max_cost[area]:g} EUR/MWh)")
     findings = []
-    findings += finding(
-        "unsupplied_energy_cost",
-        "warning",
-        "Unsupplied energy cost below the most expensive plant of the area: the optimiser sheds load "
-        "rather than running these plants.",
-        too_low,
-    )
-    findings += finding(
-        "unsupplied_energy_cost",
-        "info",
-        "Unsupplied energy cost of 0: the load of these areas can be left unserved for free. Usual for "
-        "technical (virtual) nodes modelling an optional consumption, an error for a real area.",
-        free,
-    )
+    findings += finding("unsupplied_energy_cost", "warning", say("unsupplied_energy_cost.too_low", language), too_low)
+    findings += finding("unsupplied_energy_cost", "info", say("unsupplied_energy_cost.free", language), free)
     return findings
 
 
-def check_storage_efficiency(data: StudyData) -> list[Finding]:
+def check_storage_efficiency(data: StudyData, language: Language = "en") -> list[Finding]:
     wrong = []
     for storage_id, row in data.storages.items():
         injection = float(row.get("efficiency", 1))
         withdrawal = float(row.get("efficiencyWithdrawal", 1) or 1)
         if _enabled(row) and (injection > 1 or withdrawal > 1):
-            wrong.append(f"{storage_id} (injection {injection:g}, withdrawal {withdrawal:g})")
-    return finding(
-        "storage_efficiency",
-        "warning",
-        "Storage efficiency above 1: the storage returns more energy than it absorbs. Check whether it "
-        "compensates a loss modelled elsewhere.",
-        wrong,
-    )
+            wrong.append(
+                say(
+                    "storage_efficiency.object",
+                    language,
+                    storage=storage_id,
+                    injection=injection,
+                    withdrawal=withdrawal,
+                )
+            )
+    return finding("storage_efficiency", "warning", say("storage_efficiency", language), wrong)
 
 
-def check_disabled_objects(data: StudyData) -> list[Finding]:
+def check_disabled_objects(data: StudyData, language: Language = "en") -> list[Finding]:
     findings = []
-    for kind, table, capacity in (
-        ("thermal clusters", data.thermals, _capacity),
-        ("renewable clusters", data.renewables, _capacity),
-        ("short-term storages", data.storages, lambda row: float(row.get("injectionNominalCapacity", 0))),
+    for kind_key, table, capacity in (
+        ("kind.thermals", data.thermals, _capacity),
+        ("kind.renewables", data.renewables, _capacity),
+        ("kind.storages", data.storages, lambda row: float(row.get("injectionNominalCapacity", 0))),
     ):
+        kind = say(kind_key, language)
         disabled = [object_id for object_id, row in table.items() if not _enabled(row)]
         empty = [object_id for object_id, row in table.items() if _enabled(row) and capacity(row) == 0]
-        findings += finding("disabled_objects", "info", f"{len(disabled)}/{len(table)} {kind} are disabled.", disabled)
-        findings += finding("disabled_objects", "info", f"{len(empty)} enabled {kind} have no capacity.", empty)
+        findings += finding(
+            "disabled_objects",
+            "info",
+            say("disabled_objects.disabled", language, count=len(disabled), total=len(table), kind=kind),
+            disabled,
+        )
+        findings += finding(
+            "disabled_objects",
+            "info",
+            say("disabled_objects.without_capacity", language, count=len(empty), kind=kind),
+            empty,
+        )
     disabled_constraints = [bc["id"] for bc in data.constraints if not bc.get("enabled", True)]
-    findings += finding("disabled_objects", "info", "Disabled binding constraints.", disabled_constraints)
+    findings += finding("disabled_objects", "info", say("disabled_objects.constraints", language), disabled_constraints)
     return findings
 
 
-def check_isolated_areas(data: StudyData) -> list[Finding]:
+def check_isolated_areas(data: StudyData, language: Language = "en") -> list[Finding]:
     isolated = sorted(set(data.areas) - data.linked_areas)
     if not data.links:
         return []
-    return finding(
-        "isolated_areas",
-        "info",
-        "Areas without any link: their production only serves their own load (or is spilled). Usual for "
-        "helper areas used in binding constraints.",
-        isolated,
-    )
+    return finding("isolated_areas", "info", say("isolated_areas", language), isolated)
 
 
-def check_constraint_references(data: StudyData) -> list[Finding]:
+def check_constraint_references(data: StudyData, language: Language = "en") -> list[Finding]:
     clusters = {cluster_id.replace(" / ", "."): row for cluster_id, row in {**data.thermals, **data.renewables}.items()}
     missing, disabled = [], []
     for bc in data.constraints:
@@ -276,20 +292,12 @@ def check_constraint_references(data: StudyData) -> list[Finding]:
             elif "area1" in target and f"{target['area1']} / {target.get('area2')}" not in data.links:
                 missing.append(f"{bc['id']}: {target['area1']} / {target.get('area2')}")
     findings = []
-    findings += finding(
-        "constraint_references", "error", "Binding constraint terms on objects that do not exist.", missing
-    )
-    findings += finding(
-        "constraint_references",
-        "warning",
-        "Binding constraint terms on disabled clusters: their production is 0, which may make the "
-        "constraint infeasible or meaningless.",
-        disabled,
-    )
+    findings += finding("constraint_references", "error", say("constraint_references.missing", language), missing)
+    findings += finding("constraint_references", "warning", say("constraint_references.disabled", language), disabled)
     return findings
 
 
-def check_relaxable_helper_terms(data: StudyData) -> list[Finding]:
+def check_relaxable_helper_terms(data: StudyData, language: Language = "en") -> list[Finding]:
     """
     A free (zero cost), optional (no must-run, no min stable power) production in an isolated area is a
     common trick to read an availability in a binding constraint. But its production can be lowered at no
@@ -320,18 +328,10 @@ def check_relaxable_helper_terms(data: StudyData) -> list[Finding]:
             if key in helpers and lowering_relaxes:
                 relaxable.append(f"{bc['id']} ({operator}, {weight:g} x {key})")
                 break
-    return finding(
-        "relaxable_helper_terms",
-        "warning",
-        "These constraints use a free and optional production of an isolated (helper) area on the side that "
-        "is relaxed by lowering it: the optimiser can reduce it at no cost, so the constraint probably never "
-        "binds. If the helper stands for an availability, it only works as an upper bound. Check in the "
-        "outputs whether the helper produces less than its availability.",
-        relaxable,
-    )
+    return finding("relaxable_helper_terms", "warning", say("relaxable_helper_terms", language), relaxable)
 
 
-QUICK_CHECKS: list[Callable[[StudyData], list[Finding]]] = [
+QUICK_CHECKS: list[Callable[[StudyData, Language], list[Finding]]] = [
     check_calendar,
     check_playlist,
     check_thermal_min_stable_power,
@@ -372,7 +372,9 @@ class MatrixReader:
         return list(await asyncio.gather(*(self.read(path) for path in paths)))
 
 
-async def check_hydro_generation_power(data: StudyData, reader: MatrixReader) -> list[Finding]:
+async def check_hydro_generation_power(
+    data: StudyData, reader: MatrixReader, language: Language = "en"
+) -> list[Finding]:
     areas = sorted(data.areas)
     inflows = await reader.read_all([f"input/hydro/series/{area}/mod" for area in areas])
     with_inflows = [
@@ -395,25 +397,19 @@ async def check_hydro_generation_power(data: StudyData, reader: MatrixReader) ->
     ]
     if not blocked:
         return []
-    message = "Hydro inflows but no generating power: the reservoir cannot be turbined."
+    message = say("hydro_generation_power", language)
     if hourly:
-        message += " Power read in 'input/hydro/series/<area>/maxHourlyGenPower' (`hydro-pmax = hourly`)."
+        message += say("hydro_generation_power.hourly", language)
         legacy = await reader.read_all([f"input/hydro/common/capacity/maxpower_{area}" for area in blocked])
         legacy_mw = sum((matrix_stats([row[:1] for row in m]).max or 0) for m in legacy if m)
         if legacy_mw > 0:
-            message += (
-                f" The legacy files maxpower_<area> still declare {legacy_mw:,.0f} MW in total but are ignored "
-                "in this mode: the switch to `hourly` probably did not migrate their values."
-            )
+            message += say("hydro_generation_power.legacy", language, power=number(legacy_mw, language))
     else:
-        message += (
-            " Power read in the 1st column of 'input/hydro/common/capacity/maxpower_<area>' (`hydro-pmax` is "
-            "not `hourly`: the hourly series are ignored)."
-        )
+        message += say("hydro_generation_power.daily", language)
     return finding("hydro_generation_power", "error", message, blocked)
 
 
-async def check_thermal_availability(data: StudyData, reader: MatrixReader) -> list[Finding]:
+async def check_thermal_availability(data: StudyData, reader: MatrixReader, language: Language = "en") -> list[Finding]:
     clusters = [
         (cluster_id, row)
         for cluster_id, row in data.thermals.items()
@@ -430,25 +426,15 @@ async def check_thermal_availability(data: StudyData, reader: MatrixReader) -> l
             zero.append(cluster_id)
         # Series are often rounded to the MW while capacities have decimals: tolerate 1 MW (or 0.1 %).
         elif stats.max is not None and stats.max > _capacity(row) + max(1.0, 0.001 * _capacity(row)):
-            above.append(f"{cluster_id} ({stats.max:,.1f} > {_capacity(row):,.1f} MW)")
+            availability, capacity = number(stats.max, language, 1), number(_capacity(row), language, 1)
+            above.append(f"{cluster_id} ({availability} > {capacity} MW)")
     findings = []
-    findings += finding(
-        "thermal_availability",
-        "error",
-        "Enabled clusters with a capacity but a null availability series: they never produce.",
-        zero,
-    )
-    findings += finding(
-        "thermal_availability",
-        "warning",
-        "Availability above the installed capacity (unit count x nominal capacity): the capacity was "
-        "probably changed without updating the series.",
-        above,
-    )
+    findings += finding("thermal_availability", "error", say("thermal_availability.null", language), zero)
+    findings += finding("thermal_availability", "warning", say("thermal_availability.above_capacity", language), above)
     return findings
 
 
-async def check_renewable_series(data: StudyData, reader: MatrixReader) -> list[Finding]:
+async def check_renewable_series(data: StudyData, reader: MatrixReader, language: Language = "en") -> list[Finding]:
     clusters = [(cid, row) for cid, row in data.renewables.items() if _enabled(row) and _capacity(row) > 0]
     paths = [f"input/renewables/series/{cid.split(' / ')[0]}/{cid.split(' / ')[1]}/series" for cid, _ in clusters]
     matrices = await reader.read_all(paths)
@@ -460,20 +446,16 @@ async def check_renewable_series(data: StudyData, reader: MatrixReader) -> list[
         if stats.all_zero:
             zero.append(cluster_id)
         elif row.get("tsInterpretation") == "production-factor" and ((stats.max or 0) > 1.0001 or (stats.min or 0) < 0):
-            out_of_range.append(f"{cluster_id} (factor from {stats.min:g} to {stats.max:g})")
+            out_of_range.append(
+                say("renewable_series.object", language, cluster=cluster_id, minimum=stats.min, maximum=stats.max)
+            )
     findings = []
-    findings += finding("renewable_series", "warning", "Enabled renewable clusters with a null series.", zero)
-    findings += finding(
-        "renewable_series",
-        "error",
-        "Production factors outside [0, 1]: the series is probably in MW while the cluster expects a "
-        "production factor (or the opposite).",
-        out_of_range,
-    )
+    findings += finding("renewable_series", "warning", say("renewable_series.null", language), zero)
+    findings += finding("renewable_series", "error", say("renewable_series.out_of_range", language), out_of_range)
     return findings
 
 
-async def check_link_capacities(data: StudyData, reader: MatrixReader) -> list[Finding]:
+async def check_link_capacities(data: StudyData, reader: MatrixReader, language: Language = "en") -> list[Finding]:
     links = [
         link_id for link_id, row in data.links.items() if row.get("transmissionCapacities", "enabled") == "enabled"
     ]
@@ -490,16 +472,12 @@ async def check_link_capacities(data: StudyData, reader: MatrixReader) -> list[F
         and matrix_stats(direct).all_zero
         and matrix_stats(indirect).all_zero
     ]
-    return finding(
-        "link_capacities",
-        "warning",
-        "Links with a 0 MW capacity in both directions: they carry nothing (placeholders, or capacities "
-        "never filled in).",
-        dead,
-    )
+    return finding("link_capacities", "warning", say("link_capacities", language), dead)
 
 
-async def check_scenarised_constraints(data: StudyData, reader: MatrixReader) -> list[Finding]:
+async def check_scenarised_constraints(
+    data: StudyData, reader: MatrixReader, language: Language = "en"
+) -> list[Finding]:
     groups = set((data.scenario_builder.get("bc") or {}).keys())
     constraints = [bc for bc in data.constraints if bc.get("group") in groups]
     paths = [path for bc in constraints for path in rhs_paths(bc["id"], bc.get("operator", ""))]
@@ -511,16 +489,10 @@ async def check_scenarised_constraints(data: StudyData, reader: MatrixReader) ->
             if matrix is not None and (stats := matrix_stats(matrix)).columns > 1 and stats.identical_columns
         }
     )
-    return finding(
-        "scenarised_constraints",
-        "info",
-        "Constraints of a scenarised group whose right-hand side columns are all identical: the "
-        "scenarisation has no effect.",
-        useless,
-    )
+    return finding("scenarised_constraints", "info", say("scenarised_constraints", language), useless)
 
 
-DEEP_CHECKS: list[Callable[[StudyData, MatrixReader], Awaitable[list[Finding]]]] = [
+DEEP_CHECKS: list[Callable[[StudyData, MatrixReader, Language], Awaitable[list[Finding]]]] = [
     check_hydro_generation_power,
     check_thermal_availability,
     check_renewable_series,
@@ -564,6 +536,9 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
                 )
             ),
         ] = False,
+        language: Annotated[
+            Language, Field(description="Language of the messages of the findings and of the notes.")
+        ] = "en",
     ) -> CheckReport:
         """
         Check the consistency of the inputs of a study with deterministic rules (calendar, costs, plant
@@ -572,16 +547,16 @@ def register(mcp: MCPServer, client: AntaresWebClient) -> None:
         which only the author of the study can confirm.
         """
         data = await load_study_data(client, study_id)
-        findings = [result for check in QUICK_CHECKS for result in check(data)]
+        findings = [result for check in QUICK_CHECKS for result in check(data, language)]
         notes = []
         if deep:
             reader = MatrixReader(client, study_id)
             for index, (rule, deep_check) in enumerate(zip(DEEP_RULES, DEEP_CHECKS, strict=True)):
                 # Progress notifications also keep waiting the clients that reset their timeout on progress.
                 await ctx.report_progress(index, len(DEEP_CHECKS), f"Checking {rule}")
-                findings += await deep_check(data, reader)
+                findings += await deep_check(data, reader, language)
             if reader.failures:
-                notes.append(f"{reader.failures} matrices could not be read and were not checked.")
+                notes.append(say("note.unreadable_matrices", language, count=reader.failures))
         findings.sort(key=lambda item: SEVERITY_ORDER[item.severity])
         summary = {severity: sum(1 for f in findings if f.severity == severity) for severity in SEVERITY_ORDER}
         return CheckReport(

@@ -11,12 +11,19 @@
 # This file is part of the Antares project.
 
 from dataclasses import replace
+from string import Formatter
 from typing import Any, override
 
 import pytest
 
 from antares_web_mcp.client import AntaresWebClient
+from antares_web_mcp.tools.check_messages import MESSAGES
 from antares_web_mcp.tools.checks import (
+    DEEP_CHECKS,
+    DEEP_RULES,
+    QUICK_CHECKS,
+    QUICK_RULES,
+    Finding,
     MatrixReader,
     StudyData,
     check_calendar,
@@ -25,6 +32,7 @@ from antares_web_mcp.tools.checks import (
     check_hydro_generation_power,
     check_isolated_areas,
     check_link_capacities,
+    check_playlist,
     check_relaxable_helper_terms,
     check_renewable_series,
     check_scenarised_constraints,
@@ -35,6 +43,7 @@ from antares_web_mcp.tools.checks import (
     check_unsupplied_energy_cost,
     load_study_data,
 )
+from antares_web_mcp.tools.common import Language
 from tests.fake_antares_web import FakeAntaresWeb
 from tests.helpers import STUDY_ID, call, data
 
@@ -332,3 +341,155 @@ async def test_check_study_tool(fake_api: FakeAntaresWeb, api_client: AntaresWeb
         "unsupplied_energy_cost",
     ]
     assert "hydro_generation_power" in report["rules_skipped"]
+
+
+def placeholders(template: str) -> set[str | None]:
+    return {name for _, name, _, _ in Formatter().parse(template) if name}
+
+
+@pytest.mark.parametrize("key", sorted(MESSAGES))
+def test_every_message_of_the_rules_is_written_in_french_with_the_same_values(key: str) -> None:
+    english, french = MESSAGES[key]["en"], MESSAGES[key]["fr"]
+
+    assert french != english
+    assert placeholders(french) == placeholders(english)
+
+
+def study_breaking_every_quick_rule() -> StudyData:
+    return study(
+        name="Scenario 2040",
+        general={"horizon": "2030", "firstMonth": "january", "firstJanuary": "Monday", "selectionMode": True},
+        playlist={"1": {"status": True}, "2": {"status": False}},
+        areas={
+            "fr": {"energyCostUnsupplied": 5.0},
+            "de": {"energyCostUnsupplied": 0.0},
+            "helper": {"energyCostUnsupplied": 10000.0},
+        },
+        thermals={
+            "fr / nuclear": thermal(minStablePower=2000.0, marketBidCost=1.0),
+            "fr / old": thermal(enabled=False),
+            "helper / free": thermal(marginalCost=0.0, marketBidCost=0.0),
+        },
+        storages={"fr / battery": {"enabled": True, "efficiency": 1.2, "injectionNominalCapacity": 10.0}},
+        constraints=[
+            {"id": "ghost", "operator": "less", "terms": [{"data": {"area": "fr", "cluster": "unknown"}}]},
+            {"id": "sleeping", "operator": "less", "terms": [{"data": {"area": "fr", "cluster": "old"}}]},
+            {
+                "id": "loose",
+                "operator": "less",
+                "terms": [{"weight": 1, "data": {"area": "helper", "cluster": "free"}}],
+            },
+            {"id": "off", "enabled": False},
+        ],
+    )
+
+
+def quick_findings(language: Language) -> list[Finding]:
+    return [finding for check in QUICK_CHECKS for finding in check(study_breaking_every_quick_rule(), language)]
+
+
+async def deep_findings(language: Language) -> list[Finding]:
+    renewable = {"enabled": True, "unitCount": 1, "nominalCapacity": 100.0, "tsInterpretation": "production-factor"}
+    data_ = study(
+        thermals={"fr / null": thermal(), "fr / changed": thermal()},
+        renewables={"fr / wind": renewable, "fr / solar": renewable},
+        constraints=[{"id": "nuc_limit", "operator": "less", "group": "scenarised", "terms": []}],
+        scenario_builder={"bc": {"scenarised": {"0": 1}}},
+    )
+    reader = FakeReader(
+        {
+            "input/hydro/series/fr/mod": constant(1000.0, rows=365),
+            "input/thermal/series/fr/changed/series": constant(3000.0),
+            "input/renewables/series/fr/solar/series": constant(80.0),
+            "input/bindingconstraints/nuc_limit_lt": constant(0.0, columns=2),
+        }
+    )
+    return [finding for check in DEEP_CHECKS for finding in await check(data_, reader, language)]
+
+
+def assert_translated(french: list[Finding], english: list[Finding]) -> None:
+    assert [(f.rule, f.severity, f.count) for f in french] == [(f.rule, f.severity, f.count) for f in english]
+    assert [f.rule for f in french if f.message in {e.message for e in english}] == []
+
+
+def test_every_quick_rule_reports_its_findings_in_french() -> None:
+    english = quick_findings("en")
+
+    assert {f.rule for f in english} == set(QUICK_RULES)
+    assert_translated(quick_findings("fr"), english)
+
+
+async def test_every_deep_rule_reports_its_findings_in_french() -> None:
+    english = await deep_findings("en")
+
+    assert {f.rule for f in english} == set(DEEP_RULES)
+    assert_translated(await deep_findings("fr"), english)
+
+
+def test_calendar_in_french_names_the_days_in_french() -> None:
+    data_ = study(general={"horizon": "2030", "firstMonth": "january", "firstJanuary": "Monday"})
+
+    (finding,) = check_calendar(data_, "fr")
+
+    assert finding.message == (
+        "Le 1er janvier est réglé sur un lundi, alors que le 1er janvier 2030 est un mardi (horizon « 2030 ») : "
+        "les jours de semaine et les week-ends des séries temporelles sont décalés."
+    )
+
+
+def test_objects_are_described_in_french() -> None:
+    data_ = study_breaking_every_quick_rule()
+
+    assert check_playlist(data_, "fr")[0].objects == ["année 2"]
+    assert check_thermal_market_bid(data_, "fr")[0].objects == ["fr / nuclear (offre 1.0 < coût 10.0 EUR/MWh)"]
+    assert check_storage_efficiency(data_, "fr")[0].objects == ["fr / battery (injection 1.2, soutirage 1)"]
+
+
+def test_disabled_objects_are_counted_in_french() -> None:
+    messages = [finding.message for finding in check_disabled_objects(study_breaking_every_quick_rule(), "fr")]
+
+    assert messages == ["1/3 clusters thermiques sont désactivés.", "Contraintes couplantes désactivées."]
+
+
+async def test_large_numbers_are_written_the_french_way() -> None:
+    """`3,000.0 MW` reads as 3 MW for a French reader."""
+    data_ = study(thermals={"fr / changed": thermal(unitCount=2)}, compatibility={"hydroPmax": "hourly"})
+    reader = FakeReader({"input/thermal/series/fr/changed/series": constant(3000.0)})
+
+    (above,) = await check_thermal_availability(data_, reader, "fr")
+    (hydro,) = await check_hydro_generation_power(data_, hydro_reader(), "fr")
+
+    assert above.objects == ["fr / changed (3\u00a0000,0 > 2\u00a0000,0 MW)"]
+    assert "déclarent encore 4\u00a0666 MW" in hydro.message
+
+
+async def test_check_study_tool_answers_in_english_by_default(
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient
+) -> None:
+    route_study(fake_api)
+
+    report = data(await call(api_client, "check_study", {"study_id": STUDY_ID}))
+
+    assert report["findings"][0]["message"] == "Min stable power above the unit capacity."
+
+
+async def test_check_study_tool_answers_in_french_when_asked(
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient
+) -> None:
+    route_study(fake_api)
+
+    report = data(await call(api_client, "check_study", {"study_id": STUDY_ID, "language": "fr"}))
+
+    assert report["findings"][0]["message"] == "Puissance minimale stable supérieure à la capacité d'une unité."
+
+
+async def test_check_study_tool_writes_its_notes_in_french(
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient
+) -> None:
+    route_study(fake_api)
+
+    report = data(await call(api_client, "check_study", {"study_id": STUDY_ID, "deep": True, "language": "fr"}))
+
+    assert [note.split(" ", 1)[1] for note in report["notes"]] == [
+        "matrices n'ont pas pu être lues et n'ont pas été vérifiées."
+    ]

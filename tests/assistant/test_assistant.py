@@ -65,6 +65,7 @@ emit({
         "request": request,
         "api_key": os.environ.get("OPENAI_API_KEY"),
         "virtual_env": os.environ.get("VIRTUAL_ENV"),
+        "uv_project_environment": os.environ.get("UV_PROJECT_ENVIRONMENT"),
     },
 })
 """
@@ -120,6 +121,17 @@ def test_agent_receives_the_user_token_and_the_configuration(
     }
     assert received["api_key"] == "sk-test"
     assert received["virtual_env"] is None  # the agent has its own environment
+
+
+def test_agent_does_not_install_itself_in_the_environment_of_the_backend(
+    assistant_config: AssistantConfig, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`uv run` and PyCharm start the backend with `UV_PROJECT_ENVIRONMENT`, which `uv` obeys in any directory."""
+    monkeypatch.setenv("UV_PROJECT_ENVIRONMENT", "/backend/.venv")
+
+    received = ask(AssistantService(assistant_config))[-1]["received"]
+
+    assert received["uv_project_environment"] is None
 
 
 def test_endpoint_and_key_from_the_environment(agent_command: list[str], monkeypatch: pytest.MonkeyPatch) -> None:

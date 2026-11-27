@@ -169,6 +169,7 @@ class AssistantService:
         environment = dict(os.environ)
         # The agent has its own virtual environment: it must not inherit the one of the backend.
         environment.pop("VIRTUAL_ENV", None)
+        environment.pop("UV_PROJECT_ENVIRONMENT", None)
         api_key = self.config.api_key.get_secret_value()
         if api_key:
             # Through the environment, never the command line (visible to the other users of the machine).

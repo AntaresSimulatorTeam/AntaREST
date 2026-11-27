@@ -72,7 +72,11 @@ async def test_check_runs_the_rules_and_never_calls_the_model(
     result, events = await collect(AssistantRequest(task="check", study_id=STUDY_ID), provider, api_client)
 
     # The user interface reads the findings in the events of the tool.
-    assert events[0] == {"type": "tool_call", "name": "check_study", "input": {"study_id": STUDY_ID, "deep": True}}
+    assert events[0] == {
+        "type": "tool_call",
+        "name": "check_study",
+        "input": {"study_id": STUDY_ID, "deep": True, "language": "en"},
+    }
     (findings,) = [event for event in events if event["type"] == "tool_result"]
     assert (findings["name"], findings["is_error"]) == ("check_study", False)
     assert '"thermal_min_stable_power"' in findings["content"]
@@ -95,6 +99,18 @@ async def test_check_without_error_nor_warning_says_the_study_can_be_simulated(
     )
 
     assert "aucun" in result.answer.lower()
+
+
+async def test_check_asks_the_rules_for_findings_in_the_language_of_the_user(
+    fake_api: FakeAntaresWeb, api_client: AntaresWebClient
+) -> None:
+    route_study(fake_api)
+    request = AssistantRequest(task="check", study_id=STUDY_ID, language="fr")
+
+    _, events = await collect(request, ScriptedProvider(), api_client)
+
+    (findings,) = [event for event in events if event["type"] == "tool_result"]
+    assert "Puissance minimale stable" in findings["content"]
 
 
 async def test_check_fails_when_the_rules_cannot_run(api_client: AntaresWebClient) -> None:

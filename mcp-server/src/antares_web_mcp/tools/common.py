@@ -12,7 +12,7 @@
 
 """Building blocks shared by all tool modules."""
 
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 
 from mcp.types import ToolAnnotations
 from pydantic import Field
@@ -29,6 +29,8 @@ StudyId = Annotated[
 AreaId = Annotated[str, Field(description="Area id, as returned by `list_areas` (lower-case normalized name).")]
 OutputId = Annotated[str, Field(description="Output id, as returned by `list_outputs` or `get_job`.")]
 JobId = Annotated[str, Field(description="Job id, as returned by `launch_study` or `list_jobs`.")]
+
+Language = Literal["en", "fr"]
 
 READ_ONLY = ToolAnnotations(read_only_hint=True, open_world_hint=False)
 ADDITIVE = ToolAnnotations(read_only_hint=False, destructive_hint=False, idempotent_hint=False, open_world_hint=False)

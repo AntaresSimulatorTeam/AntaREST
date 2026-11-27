@@ -91,7 +91,7 @@ function Actions() {
           </IconButton>
         )}
         {/* The keys reset the check and the conversation when navigating to another study */}
-        {!study.archived && <StudyCheck key={study.id} studyId={study.id} />}
+        {!study.archived && <StudyCheck key={study.id} studyId={study.id} studyName={study.name} />}
         {!study.archived && <AssistantChat key={`chat-${study.id}`} studyId={study.id} />}
         <Button
           variant="outlined"

@@ -26,7 +26,12 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import StudyCheck from "..";
+import { downloadPdf } from "../pdf/downloadPdf";
 
+const { enqueueErrorSnackbar } = vi.hoisted(() => ({ enqueueErrorSnackbar: vi.fn() }));
+
+vi.mock("../pdf/downloadPdf", () => ({ downloadPdf: vi.fn() }));
+vi.mock("@/hooks/useEnqueueErrorSnackbar", () => ({ default: () => enqueueErrorSnackbar }));
 vi.mock("@/services/api/assistant", () => ({
   getAssistantStatus: vi.fn(),
   streamAssistantChat: vi.fn(),
@@ -113,7 +118,7 @@ async function openRule(rule: string) {
 }
 
 function renderStudyCheck() {
-  return render(<StudyCheck studyId="study-1" />, {
+  return render(<StudyCheck studyId="study-1" studyName="Reference 2030" />, {
     wrapper: createQueryWrapper(createQueryClient()),
   });
 }
@@ -345,6 +350,89 @@ describe("StudyCheck", () => {
 
     expect(stream.requests[0].signal.aborted).toBe(true);
     await waitFor(() => expect(screen.queryByRole("progressbar")).not.toBeInTheDocument());
+  });
+
+  describe("PDF report", () => {
+    beforeEach(() => {
+      vi.mocked(downloadPdf).mockResolvedValue(undefined);
+    });
+
+    async function downloadReport() {
+      await userEvent.click(screen.getByRole("button", { name: "study.check.pdf.button" }));
+      await waitFor(() => expect(downloadPdf).toHaveBeenCalledOnce());
+      const [definition, fileName] = vi.mocked(downloadPdf).mock.calls[0];
+      return { text: JSON.stringify(definition.content), fileName };
+    }
+
+    test("the verdict and the findings are downloaded as a PDF named after the study", async () => {
+      await runCheck();
+
+      const { text, fileName } = await downloadReport();
+
+      expect(fileName).toBe("study.check.pdf.fileName.pdf");
+      expect(text).toContain("Reference 2030");
+      expect(text).toContain("not ready");
+      expect(text).toContain(HYDRO.message);
+      expect(text).toContain(COST_INFO.message);
+    });
+
+    test("the report has the texts the assistant has written", async () => {
+      const summary = mockAssistantStream(streamCheckSummary);
+      await runCheck();
+      await userEvent.click(screen.getByRole("button", { name: "study.check.summary.button" }));
+      summary.send({ type: "done", answer: "Fix the hydro power first." });
+      await summary.end();
+
+      const { text } = await downloadReport();
+
+      expect(text).toContain("study.check.summary.title");
+      expect(text).toContain("Fix the hydro power first.");
+    });
+
+    test("the report has the explanation of a rule the user asked for", async () => {
+      const explanation = mockAssistantStream(streamFindingsExplanation);
+      await runCheck();
+      const rule = await openRule("unsupplied_energy_cost");
+      await userEvent.click(rule.getByRole("button", { name: "study.check.explain.button" }));
+      explanation.send({ type: "done", answer: "Load is shed before the plant runs." });
+      await explanation.end();
+
+      const { text } = await downloadReport();
+
+      expect(text).toContain("study.check.pdf.explanation");
+      expect(text).toContain("Load is shed before the plant runs.");
+    });
+
+    test("the report leaves out a text the assistant is still writing", async () => {
+      mockAssistantStream(streamCheckSummary);
+      await runCheck();
+      await userEvent.click(screen.getByRole("button", { name: "study.check.summary.button" }));
+
+      const { text } = await downloadReport();
+
+      expect(text).not.toContain("study.check.summary.title");
+    });
+
+    test("no report is offered before the end of the check", async () => {
+      await runRules();
+
+      expect(
+        screen.queryByRole("button", { name: "study.check.pdf.button" }),
+      ).not.toBeInTheDocument();
+    });
+
+    test("the user is told when the report cannot be generated, and can try again", async () => {
+      const failure = new Error("The fonts could not be loaded.");
+      vi.mocked(downloadPdf).mockRejectedValue(failure);
+      await runCheck();
+
+      await userEvent.click(screen.getByRole("button", { name: "study.check.pdf.button" }));
+
+      await waitFor(() =>
+        expect(enqueueErrorSnackbar).toHaveBeenCalledWith("study.check.pdf.failed", failure),
+      );
+      expect(screen.getByRole("button", { name: "study.check.pdf.button" })).toBeEnabled();
+    });
   });
 
   describe("conversation about a rule", () => {

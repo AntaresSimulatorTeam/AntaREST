@@ -131,6 +131,9 @@ Rules of `check_study` (each finding is a *possible* issue, some are deliberate 
 \* deep rules (`deep=true`): they download the time series, about 1.5 minutes for a European study
 of 78 areas and 900 clusters. Progress is reported to the client while they run.
 
+The messages of the findings are written in English, or in French with `language="fr"`. The check of
+the user interface asks for the language of the interface.
+
 Start the server with `--read-only` (or `ANTARES_MCP_READ_ONLY=true`) to expose read-only tools only.
 
 ### Built-in Antares know-how

@@ -292,3 +292,30 @@ export function getVerdictSeverity(report: CheckReport): "error" | "warning" | "
   }
   return report.summary.warning > 0 ? "warning" : "success";
 }
+
+/**
+ * Gives the text of the AI assistant once it is finished.
+ *
+ * @param state - State of a text asked to the assistant.
+ * @returns The text, or `undefined` while it is not written (not asked, running or failed).
+ */
+export function getFinishedAnswer(state: AssistantReportState): string | undefined {
+  return state.status === "success" ? state.answer : undefined;
+}
+
+/**
+ * Keeps the texts of the AI assistant which are finished.
+ *
+ * @param states - States of the texts asked to the assistant, by rule.
+ * @returns The finished texts, by rule.
+ */
+export function getFinishedAnswers(
+  states: Record<string, AssistantReportState>,
+): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(states).flatMap(([rule, state]) => {
+      const answer = getFinishedAnswer(state);
+      return answer === undefined ? [] : [[rule, answer]];
+    }),
+  );
+}
