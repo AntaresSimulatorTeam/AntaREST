@@ -2049,11 +2049,8 @@ class StudyService:
                         message="Automatic archiving skipped: study no longer eligible",
                         return_value="skipped",
                     )
-                # Children come first: an archived study must never have an unarchived descendant.
                 variant_ids = [variant.id for variant in reversed(self._get_descendants(uuid))]
 
-            # The variants are archived before the study, so that it is left untouched if one of them fails:
-            # the archiving can then be retried.
             for variant_id in variant_ids:
                 self._archive_single_variant(variant_id)
 
