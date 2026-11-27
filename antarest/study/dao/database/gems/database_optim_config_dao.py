@@ -16,6 +16,7 @@ from sqlalchemy import Row, Table, delete, insert, select
 from sqlalchemy.orm import Session
 from typing_extensions import override
 
+from antarest.core.serde.json import from_json, to_json
 from antarest.dbmodel import get_row_representation_as_dict
 from antarest.study.business.model.gems.optim_config import GemsOptimConfig, GemsOptimConfigModel
 from antarest.study.business.model.gems.system import ModelId, split_library_and_model_id
@@ -64,7 +65,7 @@ def _save_models(study_data_id: int, session: Session, models: list[GemsOptimCon
                 "study_data_id": study_data_id,
                 "library_id": library_id,
                 "model_id": model_id,
-                "data": json.dumps([heuristic.model_dump_json() for heuristic in model.heuristics]),
+                "data": to_json(model.heuristics),
             }
         )
 
@@ -160,7 +161,7 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
         heuristic_rows = session.execute(select(table).where(table.c.study_data_id == study_data_id)).fetchall()
         for heuristic_row in heuristic_rows:
             model_id = _build_model_id(heuristic_row)
-            model_heuristics[model_id] = json.loads(heuristic_row.data)
+            model_heuristics[model_id] = from_json(heuristic_row.data)
             model_ids.add(model_id)
 
         # Out of bound processing
@@ -199,6 +200,8 @@ class DatabaseGemsOptimConfigDao(GemsOptimConfigDao, DatabaseDaoBase):
             args: dict[str, Any] = {"id": model_id}
             if constraints := model_oobs.get(model_id):
                 args["out_of_bounds_processing"] = {"constraints": constraints}
+            if heuristics := model_heuristics.get(model_id):
+                args["heuristics"] = heuristics
             variables = model_variables.get(model_id, [])
             constraints = model_constraints.get(model_id, [])
             objective_contributions = model_objective_contributions.get(model_id, [])

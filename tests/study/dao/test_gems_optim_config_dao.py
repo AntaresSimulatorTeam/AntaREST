@@ -217,7 +217,6 @@ def test_conversion_always_write_a_file(
     assert (tmp_path / "my_study" / "input" / "optim-config.yml").exists()
 
 
-@pytest.mark.parametrize("dao_builder", ["db"], indirect=True)
 def test_heuristics(dao_10_2: StudyDao) -> None:
     dao = dao_10_2
     args = {
