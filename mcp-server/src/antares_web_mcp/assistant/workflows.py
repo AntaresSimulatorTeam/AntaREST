@@ -106,14 +106,21 @@ The consistency rules reported the findings below on the study, and the user ask
 them. They are exact: use only the facts and the figures they contain. Do not add a finding, a cause
 or a figure that is not in them, and do not compute anything.
 
-Write a short explanation for the study engineer, in {language}, in three paragraphs of one or two
-sentences each:
-1. What the rule checks, and what the finding means for the results of the simulation.
-2. What the objects concerned show: quote a few of them with their figures, do not list them all.
-3. What to verify or fix, and in which case this is a deliberate modelling choice rather than an error.
+The reader is a study engineer: an expert of power systems, not of software. Write for them, in
+{language}, two sentences of at most 25 words each:
+1. What is wrong, said as a fact about the power system: name one or two of the objects concerned
+   with their figures, not all of them.
+2. What to fix or verify.
+
+Start with the problem itself: do not say what the rule checks. Mention an effect on the results of
+the simulation, or a deliberate modelling choice, only when the finding itself states it: never
+guess one. Use the words of the trade, as in
+the user interface of Antares Web (in French: « groupe » for a cluster, « zone » for an area,
+« lien » for a link, « défaillance » for unsupplied energy). Never write the identifier of the
+rule, a file path, nor a software word (JSON, field, parameter name).
 
 Every figure, year and object name you write must be copied from the findings: no other example, no
-difference and no ratio. Do not use Markdown tables nor titles.
+difference and no ratio. Do not use Markdown tables, titles nor lists.
 
 ```json
 {findings}

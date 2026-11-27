@@ -120,17 +120,21 @@ A simulation failed: explain why to the user who launched it. The id of the job 
    `get_job_logs`. When a cause points to the data of the study, look at the object named in the logs
    (for instance with `get_table`, `get_matrix_stats` or `check_study`). Keep it to a few calls.
 
-Then write your explanation, in {language}:
-- First, one sentence: the most probable reason of the failure, and whether it comes from the data of
-  the study or from the server.
-- Then the reasoning: the evidence found in the logs (quote the decisive lines) and how sure you are.
-  If several causes are possible, give the most probable first.
-- Last, what to do: concrete steps for the user, and when to contact the administrator of Antares Web
-  instead.
+Then write your explanation, in {language}. The reader is the study engineer who launched the
+simulation: an expert of power systems, not of software nor of the solver. Write at most four short
+sentences, in two paragraphs:
+- First, why the simulation failed, said as a fact about the study: name the object concerned (area,
+  plant, link, constraint) and its figures. If the study is not the cause, say that the failure
+  comes from the server.
+- Then what to do: the one or two concrete things to change in the study, or to contact the
+  administrator of Antares Web when the cause is on the server side.
 
-If the logs do not allow a conclusion, say so plainly, and say what would be needed to conclude.
-The user interface shows the probable causes and the log lines next to your explanation: do not copy
-them in full. Do not use Markdown tables.
+Use the words of the trade, as in the user interface of Antares Web (in French: « groupe » for a
+cluster, « zone » for an area, « lien » for a link, « contrainte couplante » for a binding
+constraint). Do not quote log lines, error codes, file paths nor tool names: the user interface
+shows the probable causes and the log lines next to your explanation. If you are not sure of the
+cause, say so in a few words, without listing hypotheses. If the logs do not allow a conclusion, say
+so plainly, and say what would be needed to conclude. Do not use Markdown tables, titles nor lists.
 """
 
 
