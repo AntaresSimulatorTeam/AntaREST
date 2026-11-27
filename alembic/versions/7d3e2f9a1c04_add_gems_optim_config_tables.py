@@ -28,6 +28,7 @@ def upgrade():
         sa.Column("scenario_scope", sa.String(), nullable=True),
         sa.Column("solver_options", sa.String(), nullable=True),
         sa.Column("resolution", sa.String(), nullable=True),
+        sa.PrimaryKeyConstraint("study_data_id", name="pk_gems_optim_config"),
         sa.ForeignKeyConstraint(["study_data_id"], ["study_data.study_data_id"], name="fk_gems_optim_config", ondelete="CASCADE"),
     )
 
@@ -130,3 +131,7 @@ def downgrade():
     op.drop_table("gems_optim_config_md_constraints")
     op.drop_table("gems_optim_config_md_objective_contributions")
     op.drop_table("gems_optim_config")
+
+    if op.get_context().dialect.name == "postgresql":
+        sa.Enum(name="gemsoutofboundsmode").drop(op.get_bind(), checkfirst=True)
+        sa.Enum(name="gemsdecompositionlocation").drop(op.get_bind(), checkfirst=True)

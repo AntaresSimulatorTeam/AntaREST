@@ -85,7 +85,7 @@ def sanitize_string(string: str) -> str:
 
 
 def get_default_config_path() -> Path | None:
-    config = Path("config.yaml")
+    config = Path("/home/belthlemar/Projects_Data/Antares/antares_web_data/tests_postgre/application.yaml")
     if config.exists():
         return config
 
