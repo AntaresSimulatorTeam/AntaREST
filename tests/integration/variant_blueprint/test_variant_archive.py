@@ -10,11 +10,16 @@
 #
 # This file is part of the Antares project.
 
+import threading
 import zipfile
 from pathlib import Path
+from typing import Any
 
+import pytest
 from starlette.testclient import TestClient
 
+from antarest.study.model import RawStudy
+from antarest.study.storage.rawstudy.raw_study_service import RawStudyService
 from tests.integration.utils import wait_task_completion
 
 
@@ -134,3 +139,81 @@ def test_archive_reference_study_and_its_variants(
     assert not _is_archived(client, raw_id)
     assert _is_archived(client, variant_id)
     assert variant_archive.is_file() and not variant_dir.exists()
+
+
+def test_archive_reference_study_when_a_variant_cannot_be_archived(
+    admin_client: TestClient,
+    admin_access_token: str,
+    tmp_path: Path,
+    output_zip: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = admin_client
+    raw_id = client.post("/v1/studies?name=raw").json()
+    variant_id = _create_variant(client, raw_id, "variant")
+    with zipfile.ZipFile(output_zip) as zf:
+        zf.extractall(tmp_path / "internal_workspace" / variant_id / "output" / "20201014-1427eco")
+
+    def failing_archive_dir(*args: Any, **kwargs: Any) -> None:
+        raise OSError("No space left on device")
+
+    # The archive file of the variant cannot be written
+    with monkeypatch.context() as patch:
+        patch.setattr("antarest.study.storage.variantstudy.variant_study_service.archive_dir", failing_archive_dir)
+        res = client.put(f"/v1/studies/{raw_id}/archive")
+        task = wait_task_completion(client, admin_access_token, res.json())
+    assert task.result is not None and not task.result.success, task
+
+    # The reference study is left untouched: it can still be used, as well as its variant
+    assert not _is_archived(client, raw_id)
+    assert not _is_archived(client, variant_id)
+    for study_id in (raw_id, variant_id):
+        res = client.get(f"/v1/studies/{study_id}/areas")
+        assert res.status_code == 200, res.json()
+
+    # The archiving can be retried
+    res = client.put(f"/v1/studies/{raw_id}/archive")
+    assert res.status_code == 200, res.json()
+    task = wait_task_completion(client, admin_access_token, res.json())
+    assert task.result is not None and task.result.success, task
+    assert _is_archived(client, raw_id)
+    assert _is_archived(client, variant_id)
+
+
+def test_unarchive_variant_while_its_reference_study_is_being_archived(
+    admin_client: TestClient, admin_access_token: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client = admin_client
+    raw_id = client.post("/v1/studies?name=raw").json()
+    variant_id = _create_variant(client, raw_id, "variant")
+    res = client.put(f"/v1/studies/{variant_id}/archive")
+    wait_task_completion(client, admin_access_token, res.json())
+    assert _is_archived(client, variant_id)
+
+    # Hold the archiving of the reference study while its task is running
+    started = threading.Event()
+    release = threading.Event()
+    archive_raw_study = RawStudyService.archive
+
+    def held_archive(self: RawStudyService, study: RawStudy) -> None:
+        started.set()
+        release.wait(timeout=10)
+        archive_raw_study(self, study)
+
+    monkeypatch.setattr(RawStudyService, "archive", held_archive)
+    res = client.put(f"/v1/studies/{raw_id}/archive")
+    assert res.status_code == 200, res.json()
+    archive_task_id = res.json()
+    try:
+        assert started.wait(timeout=10)
+        # The variant cannot be unarchived meanwhile: it would be left unarchived under an archived study
+        res = client.put(f"/v1/studies/{variant_id}/unarchive")
+        assert res.status_code == 417, res.json()
+        assert res.json()["exception"] == "TaskAlreadyRunning"
+    finally:
+        release.set()
+
+    task = wait_task_completion(client, admin_access_token, archive_task_id)
+    assert task.result is not None and task.result.success, task
+    assert _is_archived(client, raw_id)
+    assert _is_archived(client, variant_id)

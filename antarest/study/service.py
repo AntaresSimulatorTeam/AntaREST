@@ -2049,6 +2049,13 @@ class StudyService:
                         message="Automatic archiving skipped: study no longer eligible",
                         return_value="skipped",
                     )
+                # Children come first: an archived study must never have an unarchived descendant.
+                variant_ids = [variant.id for variant in reversed(self._get_descendants(uuid))]
+
+            # The variants are archived before the study, so that it is left untouched if one of them fails:
+            # the archiving can then be retried.
+            for variant_id in variant_ids:
+                self._archive_single_variant(variant_id)
 
             for output in self._get_outputs_access().list_outputs(study_to_archive.id):
                 if not output.in_study and not output.archived:
@@ -2063,13 +2070,7 @@ class StudyService:
                 study_db.archived = True
                 self.repository.save(study_db)
                 notify_study_edition(self.event_bus, study_db)
-                # The variants are archived once the study is, so that they are left untouched if it fails.
-                # Among them, children come first: an archived variant must never have an unarchived descendant.
-                variant_ids = [variant.id for variant in reversed(self._get_descendants(uuid))]
             self.disk_space_repository.invalidate(study_to_archive.id)
-
-            for variant_id in variant_ids:
-                self._archive_single_variant(variant_id)
             return TaskResult(success=True, message="ok")
 
         return self.task_service.add_task(
@@ -2202,7 +2203,8 @@ class StudyService:
             if ancestor.archived:
                 assert_permission(ancestor, StudyPermissionType.WRITE)
 
-        self._assert_no_archiving_task(ancestor.id for ancestor in lineage)
+        # The reference study is included: the variant must not be unarchived while it is being archived.
+        self._assert_no_archiving_task([root.id, *(ancestor.id for ancestor in lineage)])
 
         def unarchive_task(notifier: ITaskNotifier) -> TaskResult:
             with db():
